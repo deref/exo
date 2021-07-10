@@ -1,9 +1,22 @@
+import { gql, useQuery } from '@apollo/client';
 import React from 'react';
 import Layout from '../components/Layout';
 import { makeRoute } from '../lib/routing';
 
+const query = gql`
+  {
+    hello
+  }
+`;
+
 function Main() {
-  return <>compute resources go here</>;
+  const { loading, error, data } = useQuery(query);
+  return (
+    <>
+      RESUME WORK HERE, call an API to get list of compute resources.
+      {JSON.stringify({ loading, error, data })}
+    </>
+  );
 }
 
 export const route = makeRoute({
