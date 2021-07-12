@@ -13,10 +13,11 @@ import (
 
 func DerefJSON(filename string, v interface{}) error {
 	rv := reflect.ValueOf(v)
-	rv.Set(reflect.Zero(rv.Type()))
+	rv.Elem().Set(reflect.Zero(rv.Elem().Type()))
 
 	bs, err := ioutil.ReadFile(filename)
 	if os.IsNotExist(err) {
+		bs = []byte("null")
 		err = nil
 	}
 	if err != nil {
@@ -25,6 +26,19 @@ func DerefJSON(filename string, v interface{}) error {
 
 	if err := json.Unmarshal(bs, v); err != nil {
 		return fmt.Errorf("unmarshalling: %w", err)
+	}
+	return nil
+}
+
+func ResetJSON(filename string, v interface{}) error {
+	var buf bytes.Buffer
+	enc := json.NewEncoder(&buf)
+	enc.SetIndent("", "  ")
+	if err := enc.Encode(v); err != nil {
+		return fmt.Errorf("encoding: %w", err)
+	}
+	if err := atomic.WriteFile(filename, &buf); err != nil {
+		return fmt.Errorf("resetting: %w", err)
 	}
 	return nil
 }
@@ -40,6 +54,6 @@ func SwapJSON(filename string, v interface{}, f func() error) error {
 		}
 
 		// XXX Do a compare-and-set instead of just clobbering.
-		return atomic.WriteFile(filename, bytes.NewBuffer(bs))
+		return ResetJSON(filename, v)
 	}
 }

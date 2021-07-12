@@ -1,13 +1,10 @@
 package main
 
 import (
-	"context"
-
-	"github.com/deref/exo"
+	"github.com/deref/exo/logrot"
 	"github.com/deref/pier"
 )
 
 func main() {
-	ctx := exo.NewContext(context.Background())
-	pier.Main(logrot.Handler())
+	pier.Main(logrot.NewHandler())
 }

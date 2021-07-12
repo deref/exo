@@ -2,49 +2,54 @@ package logrot
 
 import (
 	"context"
-
-	"github.com/deref/exo/atom"
+	"errors"
+	"fmt"
+	"net/http"
 )
 
-type service struct {
-	statePath string
+func NewHandler() http.Handler {
+	statePath := "./var/logrot" // TODO: Configuration.
+	return NewMux("/", NewService(statePath))
 }
 
-func (svc *service) derefState() (*State, error) {
-	var state State
-	err := atom.DerefJSON(svc.statePath, &state)
-	return &state, err
-}
-
-func (svc *service) swapState(f func(state *State) error) (*State, error) {
-	var state State
-	err := atom.SwapJSON(svc.statePath, &state, func() error {
-		return f(&state)
-	})
-	return &state, err
+func validLogName(s string) bool {
+	return s != "" // TODO: More validation?
 }
 
 func (svc *service) AddLog(ctx context.Context, input *AddLogInput) (*AddLogOutput, error) {
+	if !validLogName(input.Name) {
+		return nil, fmt.Errorf("invalid log name: %q", input.Name)
+	}
+	if input.SourcePath == "" {
+		return nil, errors.New("log source path is required")
+	}
 	_, err := svc.swapState(func(state *State) error {
-		state.Logs[input.ID] = LogState{}
+		if state.Logs == nil {
+			state.Logs = make(map[string]LogState)
+		}
+		state.Logs[input.Name] = LogState{
+			SourcePath: input.SourcePath,
+		}
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
-	// XXX kick off a worker, if one doesn't already exist.
+	svc.startWorker(input.Name)
 	return &AddLogOutput{}, nil
 }
 
 func (svc *service) RemoveLog(ctx context.Context, input *RemoveLogInput) (*RemoveLogOutput, error) {
 	_, err := svc.swapState(func(state *State) error {
-		delete(state.Logs, input.ID)
+		if state.Logs != nil {
+			delete(state.Logs, input.Name)
+		}
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
-	// XXX kill the worker, if it exists.
+	svc.stopWorker(input.Name)
 	return &RemoveLogOutput{}, nil
 }
 
@@ -54,9 +59,10 @@ func (svc *service) DescribeLogs(context.Context, *DescribeLogsInput) (*Describe
 		return nil, err
 	}
 	var output DescribeLogsOutput
-	for id, description := range state.Logs {
+	output.Logs = []LogDescription{}
+	for name, description := range state.Logs {
 		output.Logs = append(output.Logs, LogDescription{
-			ID:          id,
+			Name:        name,
 			SourcePath:  description.SourcePath,
 			LastEventAt: nil, // XXX set me to last line of file.
 		})

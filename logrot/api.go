@@ -17,20 +17,20 @@ type Service interface {
 }
 
 type AddLogInput struct {
-	ID         string `json:"id"`
+	Name       string `json:"name"`
 	SourcePath string `json:"sourcePath"`
 }
 
 type AddLogOutput struct{}
 
 type RemoveLogInput struct {
-	ID string `json:"id"`
+	Name string `json:"name"`
 }
 
 type RemoveLogOutput struct{}
 
 type DescribeLogsInput struct {
-	IDs []string `json:"ids"`
+	Names []string `json:"names"`
 }
 
 type DescribeLogsOutput struct {
@@ -38,15 +38,15 @@ type DescribeLogsOutput struct {
 }
 
 type LogDescription struct {
-	ID          string  `json:"id"`
+	Name        string  `json:"name"`
 	SourcePath  string  `json:"sourcePath"`
 	LastEventAt *string `json:"lastEventAt"`
 }
 
 type GetEventsInput struct {
-	LogIDs []string `json:"logIds"`
-	Before string   `json:"before"`
-	After  string   `json:"after"`
+	LogNames []string `json:"logNames"`
+	Before   string   `json:"before"`
+	After    string   `json:"after"`
 }
 
 type GetEventsOutput struct {

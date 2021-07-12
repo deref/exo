@@ -56,13 +56,15 @@ func (handler *MethodHandler) ServeHTTP(w http.ResponseWriter, req *http.Request
 	// TODO: Check content-type, accepts, etc.
 	// TODO: Include a Request ID in logs?
 	// TODO: Differentiate 400s from 500s, internal vs external errors, etc.
-	dec := json.NewDecoder(req.Body)
 	input := reflect.New(handler.in)
-	if err := dec.Decode(input.Interface()); err != nil {
-		w.WriteHeader(http.StatusBadRequest)
-		log.Printf("error parsing request: %v", err)
-		w.Write([]byte("error parsing json\n"))
-		return
+	if req.Body != nil {
+		dec := json.NewDecoder(req.Body)
+		if err := dec.Decode(input.Interface()); err != nil {
+			w.WriteHeader(http.StatusBadRequest)
+			log.Printf("error parsing request: %v", err)
+			w.Write([]byte("error parsing json\n"))
+			return
+		}
 	}
 	results := handler.f.Call([]reflect.Value{
 		reflect.ValueOf(req.Context()),
