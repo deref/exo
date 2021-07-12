@@ -1,6 +1,8 @@
 package logrot
 
 import (
+	"bufio"
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -72,8 +74,55 @@ func (svc *service) DescribeLogs(context.Context, *DescribeLogsInput) (*Describe
 	return &output, nil
 }
 
-func (svc *service) GetEvents(context.Context, *GetEventsInput) (*GetEventsOutput, error) {
-	panic("TODO: GetEvents")
+func (svc *service) GetEvents(ctx context.Context, input *GetEventsInput) (*GetEventsOutput, error) {
+	var output GetEventsOutput
+	output.Events = []Event{}
+	switch len(input.LogNames) {
+	case 0:
+		// nop.
+	case 1:
+		logName := input.LogNames[0]
+		state, err := svc.derefState()
+		if err != nil {
+			return nil, err
+		}
+		logState, exists := state.Logs[logName]
+		if exists {
+			chunkIndex := 0 // TODO: Handle log rotation.
+			f, err := os.Open(makeChunkPath(logState.SourcePath, chunkIndex))
+			if err != nil {
+				return nil, fmt.Errorf("opening %s source: %w", logName, err)
+			}
+			r := bufio.NewReader(f)
+			line, isPrefix, err := r.ReadLine()
+			if err != nil {
+				return nil, fmt.Errorf("reading: %w", err)
+			}
+			// TODO: Do something better with lines that are too long.
+			for isPrefix {
+				// Skip remainder of line.
+				line = append([]byte{}, line...)
+				_, isPrefix, err = r.ReadLine()
+				if err != nil {
+					return nil, fmt.Errorf("reading: %w", err)
+				}
+			}
+			fields := bytes.SplitN(line, []byte(" "), 3)
+			if len(fields) != 3 {
+				return nil, fmt.Errorf("invalid log line")
+			}
+			event := Event{
+				LogName:   logName,
+				SID:       string(fields[0]),
+				Timestamp: string(fields[1]),
+				Message:   string(fields[2]),
+			}
+			output.Events = append(output.Events, event)
+		}
+	default:
+		return nil, fmt.Errorf("TODO: merge log streams")
+	}
+	return &output, nil
 }
 
 func (svc *service) CollectLogs(context.Context, *CollectLogsInput) (*CollectLogsOutput, error) {

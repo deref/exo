@@ -55,6 +55,7 @@ type GetEventsOutput struct {
 }
 
 type Event struct {
+	LogName   string `json:"logName"`
 	SID       string `json:"sid"`
 	Timestamp string `json:"timestamp"`
 	Message   string `json:"message"`

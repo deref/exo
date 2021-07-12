@@ -78,6 +78,8 @@ func (wkr *worker) run() error {
 		}
 		// TODO: Do something better with lines that are too long.
 		for isPrefix {
+			// Skip remainder of message.
+			message = append([]byte{}, message...)
 			_, isPrefix, err = r.ReadLine()
 			if err != nil {
 				return fmt.Errorf("reading: %w", err)
@@ -90,4 +92,8 @@ func (wkr *worker) run() error {
 			return fmt.Errorf("writing: %w", err)
 		}
 	}
+}
+
+func makeChunkPath(sourcePath string, chunkIndex int) string {
+	return fmt.Sprintf("%s.%d", sourcePath, chunkIndex)
 }
