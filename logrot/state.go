@@ -22,9 +22,10 @@ func NewService(statePath string) Service {
 }
 
 type service struct {
-	mx        sync.Mutex
 	statePath string
-	workers   map[string]*worker
+
+	mx      sync.Mutex
+	workers map[string]*worker
 }
 
 func (svc *service) derefState() (*State, error) {

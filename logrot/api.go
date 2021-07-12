@@ -14,6 +14,7 @@ type Service interface {
 	RemoveLog(context.Context, *RemoveLogInput) (*RemoveLogOutput, error)
 	DescribeLogs(context.Context, *DescribeLogsInput) (*DescribeLogsOutput, error)
 	GetEvents(context.Context, *GetEventsInput) (*GetEventsOutput, error)
+	CollectLogs(context.Context, *CollectLogsInput) (*CollectLogsOutput, error)
 }
 
 type AddLogInput struct {
@@ -59,11 +60,16 @@ type Event struct {
 	Message   string `json:"message"`
 }
 
+type CollectLogsInput struct{}
+
+type CollectLogsOutput struct{}
+
 func NewMux(prefix string, service Service) *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.Handle(prefix+"add-log", josh.NewMethodHandler(service.AddLog))
 	mux.Handle(prefix+"remove-log", josh.NewMethodHandler(service.RemoveLog))
 	mux.Handle(prefix+"describe-logs", josh.NewMethodHandler(service.DescribeLogs))
 	mux.Handle(prefix+"get-events", josh.NewMethodHandler(service.GetEvents))
+	mux.Handle(prefix+"collect-logs", josh.NewMethodHandler(service.CollectLogs))
 	return mux
 }

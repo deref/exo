@@ -5,6 +5,8 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
+	"os/signal"
 )
 
 func NewHandler() http.Handler {
@@ -23,7 +25,7 @@ func (svc *service) AddLog(ctx context.Context, input *AddLogInput) (*AddLogOutp
 	if input.SourcePath == "" {
 		return nil, errors.New("log source path is required")
 	}
-	_, err := svc.swapState(func(state *State) error {
+	state, err := svc.swapState(func(state *State) error {
 		if state.Logs == nil {
 			state.Logs = make(map[string]LogState)
 		}
@@ -35,7 +37,7 @@ func (svc *service) AddLog(ctx context.Context, input *AddLogInput) (*AddLogOutp
 	if err != nil {
 		return nil, err
 	}
-	svc.startWorker(input.Name)
+	svc.startWorker(input.Name, state.Logs[input.Name])
 	return &AddLogOutput{}, nil
 }
 
@@ -64,7 +66,7 @@ func (svc *service) DescribeLogs(context.Context, *DescribeLogsInput) (*Describe
 		output.Logs = append(output.Logs, LogDescription{
 			Name:        name,
 			SourcePath:  description.SourcePath,
-			LastEventAt: nil, // XXX set me to last line of file.
+			LastEventAt: nil, // XXX set me based on the last line of file.
 		})
 	}
 	return &output, nil
@@ -72,4 +74,18 @@ func (svc *service) DescribeLogs(context.Context, *DescribeLogsInput) (*Describe
 
 func (svc *service) GetEvents(context.Context, *GetEventsInput) (*GetEventsOutput, error) {
 	panic("TODO: GetEvents")
+}
+
+func (svc *service) CollectLogs(context.Context, *CollectLogsInput) (*CollectLogsOutput, error) {
+	state, err := svc.derefState()
+	if err != nil {
+		return nil, err
+	}
+	for name, logState := range state.Logs {
+		svc.startWorker(name, logState)
+	}
+	c := make(chan os.Signal, 1)
+	signal.Notify(c, os.Interrupt)
+	<-c
+	return &CollectLogsOutput{}, nil
 }
