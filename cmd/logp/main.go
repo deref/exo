@@ -10,5 +10,5 @@ import (
 
 func main() {
 	svc := logcol.NewService()
-	pier.Main(logcol.NewHandler(svc))
+	pier.Main(logcol.NewMux("/", svc))
 }
