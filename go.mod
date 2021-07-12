@@ -1,4 +1,4 @@
-module github.com/deref/exo/exod
+module github.com/deref/exo
 
 go 1.16
 

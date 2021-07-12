@@ -1,0 +1,1 @@
+echo: socat TCP4-LISTEN:2000,fork EXEC:cat

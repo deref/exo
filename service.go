@@ -1,17 +1,28 @@
-package main
+package exo
 
 import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
+	"path/filepath"
 
-	"github.com/deref/exo/exod/api"
-	"github.com/deref/exo/exod/plugin/process"
-	"github.com/deref/exo/exod/statefile"
-	"github.com/deref/pier"
+	"github.com/deref/exo/api"
+	"github.com/deref/exo/plugin/process"
+	"github.com/deref/exo/statefile"
 )
 
+func NewContext(ctx context.Context) context.Context {
+	return context.WithValue(ctx, stateKey, (State)(statefile.New("state.json")))
+}
+
 var mux *http.ServeMux
+
+func NewHandler(ctx context.Context) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+		mux.ServeHTTP(w, req.WithContext(ctx))
+	})
+}
 
 func init() {
 	mux = http.NewServeMux()
@@ -19,14 +30,6 @@ func init() {
 }
 
 var provider = &Provider{}
-
-func main() {
-	ctx := context.Background()
-	ctx = context.WithValue(ctx, stateKey, (State)(statefile.New("state.json")))
-	pier.Main(http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-		mux.ServeHTTP(w, req.WithContext(ctx))
-	}))
-}
 
 type contextKey int
 
@@ -37,7 +40,16 @@ type Provider struct{}
 func resolveProvider(typ string) (api.Provider, error) {
 	switch typ {
 	case "process":
-		return &process.Provider{}, nil
+		wd, err := os.Getwd()
+		if err != nil {
+			panic(err)
+		}
+		projectDir := wd                   // TODO: Get from component hierarchy.
+		varDir := filepath.Join(wd, "var") // TODO: Get from exod config.
+		return &process.Provider{
+			ProjectDir: projectDir,
+			VarDir:     filepath.Join(varDir, "proc"),
+		}, nil
 	}
 	return nil, fmt.Errorf("no provider for type: %q", typ)
 }

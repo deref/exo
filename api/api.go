@@ -6,7 +6,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/deref/exo/exod/josh"
+	"github.com/deref/exo/josh"
 )
 
 type Provider interface {
@@ -16,7 +16,7 @@ type Provider interface {
 type CreateInput struct {
 	Name string                 `json:"name"`
 	Type string                 `json:"type"`
-	Spec map[string]interface{} `json:"spec"`
+	Spec map[string]interface{} `json:"spec"` // TODO: content-type tagged data, default to application/json or whatever.
 }
 
 type CreateOutput struct {
