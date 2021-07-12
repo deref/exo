@@ -1,4 +1,4 @@
-package logrot
+package logcol
 
 import (
 	"bufio"
@@ -69,6 +69,8 @@ func (svc *service) DescribeLogs(context.Context, *DescribeLogsInput) (*Describe
 }
 
 func (svc *service) GetEvents(ctx context.Context, input *GetEventsInput) (*GetEventsOutput, error) {
+	// TODO: Handle Before & After pagination parameters.
+	// TODO: Limit number of returned events.
 	var output GetEventsOutput
 	output.Events = []Event{}
 	switch len(input.LogNames) {
@@ -119,7 +121,7 @@ func (svc *service) GetEvents(ctx context.Context, input *GetEventsInput) (*GetE
 	return &output, nil
 }
 
-func (svc *service) CollectLogs(context.Context, *CollectLogsInput) (*CollectLogsOutput, error) {
+func (svc *service) Collect(context.Context, *CollectInput) (*CollectOutput, error) {
 	state, err := svc.derefState()
 	if err != nil {
 		return nil, err
@@ -130,5 +132,5 @@ func (svc *service) CollectLogs(context.Context, *CollectLogsInput) (*CollectLog
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	<-c
-	return &CollectLogsOutput{}, nil
+	return &CollectOutput{}, nil
 }

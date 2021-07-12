@@ -1,4 +1,4 @@
-package logrot
+package logcol
 
 import (
 	"sync"
@@ -15,15 +15,15 @@ type LogState struct {
 }
 
 func NewService() Service {
-	statePath := "./var/logrot" // TODO: Configuration.
+	statePath := "./var/logcol" // TODO: Configuration.
 	return &service{
-		statePath: statePath,
-		workers:   make(map[string]*worker),
+		state:   atom.NewFileAtom(statePath, atom.CodecJSON),
+		workers: make(map[string]*worker),
 	}
 }
 
 type service struct {
-	statePath string
+	state atom.Atom
 
 	mx      sync.Mutex
 	workers map[string]*worker
@@ -31,13 +31,13 @@ type service struct {
 
 func (svc *service) derefState() (*State, error) {
 	var state State
-	err := atom.DerefJSON(svc.statePath, &state)
+	err := svc.state.Deref(&state)
 	return &state, err
 }
 
 func (svc *service) swapState(f func(state *State) error) (*State, error) {
 	var state State
-	err := atom.SwapJSON(svc.statePath, &state, func() error {
+	err := svc.state.Swap(&state, func() error {
 		return f(&state)
 	})
 	return &state, err

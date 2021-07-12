@@ -7,11 +7,13 @@ import (
 )
 
 func New(filename string) *StateFile {
-	return &StateFile{filename: filename}
+	return &StateFile{
+		atom: atom.NewFileAtom(filename, atom.CodecJSON),
+	}
 }
 
 type StateFile struct {
-	filename string
+	atom atom.Atom
 }
 
 type State struct {
@@ -24,7 +26,7 @@ type Component struct {
 
 func (sf *StateFile) swapState(f func(state *State) error) (*State, error) {
 	var state State
-	err := atom.SwapJSON(sf.filename, &state, func() error {
+	err := sf.atom.Swap(&state, func() error {
 		return f(&state)
 	})
 	return &state, err

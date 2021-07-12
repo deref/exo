@@ -1,6 +1,6 @@
 // TODO: Generate this with JOSH tools.
 
-package logrot
+package logcol
 
 import (
 	"context"
@@ -14,7 +14,7 @@ type Service interface {
 	RemoveLog(context.Context, *RemoveLogInput) (*RemoveLogOutput, error)
 	DescribeLogs(context.Context, *DescribeLogsInput) (*DescribeLogsOutput, error)
 	GetEvents(context.Context, *GetEventsInput) (*GetEventsOutput, error)
-	CollectLogs(context.Context, *CollectLogsInput) (*CollectLogsOutput, error)
+	Collect(context.Context, *CollectInput) (*CollectOutput, error)
 }
 
 type AddLogInput struct {
@@ -61,9 +61,9 @@ type Event struct {
 	Message   string `json:"message"`
 }
 
-type CollectLogsInput struct{}
+type CollectInput struct{}
 
-type CollectLogsOutput struct{}
+type CollectOutput struct{}
 
 func NewMux(prefix string, service Service) *http.ServeMux {
 	mux := http.NewServeMux()
@@ -71,6 +71,6 @@ func NewMux(prefix string, service Service) *http.ServeMux {
 	mux.Handle(prefix+"remove-log", josh.NewMethodHandler(service.RemoveLog))
 	mux.Handle(prefix+"describe-logs", josh.NewMethodHandler(service.DescribeLogs))
 	mux.Handle(prefix+"get-events", josh.NewMethodHandler(service.GetEvents))
-	mux.Handle(prefix+"collect-logs", josh.NewMethodHandler(service.CollectLogs))
+	mux.Handle(prefix+"collect", josh.NewMethodHandler(service.Collect))
 	return mux
 }
