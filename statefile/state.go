@@ -1,79 +1,44 @@
 package statefile
 
 import (
-	"bytes"
 	"context"
-	"encoding/json"
-	"fmt"
-	"io/ioutil"
-	"os"
-	"sync"
 
-	"github.com/natefinch/atomic"
+	"github.com/deref/exo/atom"
 )
 
-type State struct {
-	mx       sync.Mutex
+func New(filename string) *StateFile {
+	return &StateFile{filename: filename}
+}
+
+type StateFile struct {
 	filename string
 }
 
-func New(filename string) *State {
-	return &State{
-		filename: filename,
-	}
+type State struct {
+	Components map[string]Component `json:"components"`
 }
 
-type root struct {
-	Components map[string]component `json:"components"`
-}
-
-type component struct {
+type Component struct {
 	IRI string `json:"iri"`
 }
 
-func (state *State) update(ctx context.Context, f func(root *root) error) error {
-	state.mx.Lock()
-	defer state.mx.Unlock()
-
-	in, err := ioutil.ReadFile(state.filename)
-	if os.IsNotExist(err) {
-		in = []byte("{}")
-		err = nil
-	}
-	if err != nil {
-		return fmt.Errorf("reading: %w", err)
-	}
-
-	var root root
-	if err := json.Unmarshal(in, &root); err != nil {
-		return fmt.Errorf("unmarshalling: %w", err)
-	}
-	if root.Components == nil {
-		root.Components = make(map[string]component)
-	}
-
-	if err := f(&root); err != nil {
-		return err
-	}
-
-	var out bytes.Buffer
-	enc := json.NewEncoder(&out)
-	enc.SetIndent("", "  ")
-	if err := enc.Encode(&root); err != nil {
-		panic(err)
-	}
-
-	if err := atomic.WriteFile(state.filename, &out); err != nil {
-		return fmt.Errorf("writing: %w", err)
-	}
-	return nil
+func (sf *StateFile) swapState(f func(state *State) error) (*State, error) {
+	var state State
+	err := atom.SwapJSON(sf.filename, &state, func() error {
+		return f(&state)
+	})
+	return &state, err
 }
 
-func (state *State) Remember(ctx context.Context, name string, iri string) error {
-	return state.update(ctx, func(root *root) error {
-		root.Components[name] = component{
+func (sf *StateFile) Remember(ctx context.Context, name string, iri string) error {
+	_, err := sf.swapState(func(state *State) error {
+		if state.Components == nil {
+			state.Components = make(map[string]Component)
+		}
+		state.Components[name] = Component{
 			IRI: iri,
 		}
 		return nil
 	})
+	return err
 }

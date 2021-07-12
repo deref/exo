@@ -13,7 +13,7 @@ import (
 )
 
 func NewContext(ctx context.Context) context.Context {
-	return context.WithValue(ctx, stateKey, (State)(statefile.New("state.json")))
+	return context.WithValue(ctx, stateKey, (State)(statefile.New("./var/state.json")))
 }
 
 var mux *http.ServeMux
