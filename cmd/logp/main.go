@@ -6,5 +6,6 @@ import (
 )
 
 func main() {
-	pier.Main(logrot.NewHandler())
+	svc := logrot.NewService()
+	pier.Main(logrot.NewHandler(svc))
 }

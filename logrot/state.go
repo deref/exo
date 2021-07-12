@@ -14,7 +14,8 @@ type LogState struct {
 	SourcePath string `json:"sourcePath"`
 }
 
-func NewService(statePath string) Service {
+func NewService() Service {
+	statePath := "./var/logrot" // TODO: Configuration.
 	return &service{
 		statePath: statePath,
 		workers:   make(map[string]*worker),

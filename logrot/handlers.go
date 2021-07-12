@@ -6,15 +6,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"net/http"
 	"os"
 	"os/signal"
 )
-
-func NewHandler() http.Handler {
-	statePath := "./var/logrot" // TODO: Configuration.
-	return NewMux("/", NewService(statePath))
-}
 
 func validLogName(s string) bool {
 	return s != "" // TODO: More validation?
