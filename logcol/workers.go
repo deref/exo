@@ -17,29 +17,29 @@ type worker struct {
 	sink   *os.File
 }
 
-func (svc *service) startWorker(logName string, state LogState) {
-	svc.mx.Lock()
-	defer svc.mx.Unlock()
+func (lc *logCollector) startWorker(ctx context.Context, logName string, state LogState) {
+	lc.mx.Lock()
+	defer lc.mx.Unlock()
 
-	wkr, exists := svc.workers[logName]
+	wkr, exists := lc.workers[logName]
 	if !exists {
 		wkr = &worker{
 			sourcePath: state.SourcePath,
 		}
-		svc.workers[logName] = wkr
+		lc.workers[logName] = wkr
 	}
 	go func() {
-		wkr.err = wkr.run()
+		wkr.err = wkr.run(ctx)
 		// TODO: Don't log and do figure out how to handle.
 		fmt.Fprintf(os.Stderr, "worker error: %v\n", wkr.err)
 	}()
 }
 
-func (svc *service) stopWorker(logName string) {
-	svc.mx.Lock()
-	defer svc.mx.Unlock()
+func (lc *logCollector) stopWorker(logName string) {
+	lc.mx.Lock()
+	defer lc.mx.Unlock()
 
-	wkr := svc.workers[logName]
+	wkr := lc.workers[logName]
 	if wkr == nil {
 		return
 	}

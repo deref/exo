@@ -1,6 +1,6 @@
 // TODO: Generate this with JOSH tools.
 
-package logcol
+package api
 
 import (
 	"context"
@@ -9,7 +9,7 @@ import (
 	"github.com/deref/exo/josh"
 )
 
-type Service interface {
+type LogCollector interface {
 	AddLog(context.Context, *AddLogInput) (*AddLogOutput, error)
 	RemoveLog(context.Context, *RemoveLogInput) (*RemoveLogOutput, error)
 	DescribeLogs(context.Context, *DescribeLogsInput) (*DescribeLogsOutput, error)
@@ -65,12 +65,12 @@ type CollectInput struct{}
 
 type CollectOutput struct{}
 
-func NewMux(prefix string, service Service) *http.ServeMux {
+func NewLogCollectorMux(prefix string, collector LogCollector) *http.ServeMux {
 	mux := http.NewServeMux()
-	mux.Handle(prefix+"add-log", josh.NewMethodHandler(service.AddLog))
-	mux.Handle(prefix+"remove-log", josh.NewMethodHandler(service.RemoveLog))
-	mux.Handle(prefix+"describe-logs", josh.NewMethodHandler(service.DescribeLogs))
-	mux.Handle(prefix+"get-events", josh.NewMethodHandler(service.GetEvents))
-	mux.Handle(prefix+"collect", josh.NewMethodHandler(service.Collect))
+	mux.Handle(prefix+"add-log", josh.NewMethodHandler(collector.AddLog))
+	mux.Handle(prefix+"remove-log", josh.NewMethodHandler(collector.RemoveLog))
+	mux.Handle(prefix+"describe-logs", josh.NewMethodHandler(collector.DescribeLogs))
+	mux.Handle(prefix+"get-events", josh.NewMethodHandler(collector.GetEvents))
+	mux.Handle(prefix+"collect", josh.NewMethodHandler(collector.Collect))
 	return mux
 }

@@ -1,6 +1,10 @@
 package jsonutil
 
-import "encoding/json"
+import (
+	"encoding/json"
+	"io"
+	"io/ioutil"
+)
 
 func UnmarshalString(s string, v interface{}) error {
 	if s == "" {
@@ -15,4 +19,12 @@ func MustMarshalString(v interface{}) string {
 		panic(err)
 	}
 	return string(bs)
+}
+
+func UnmarshalReader(r io.Reader, v interface{}) error {
+	bs, err := ioutil.ReadAll(r)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(bs, v)
 }

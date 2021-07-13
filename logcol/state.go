@@ -4,6 +4,7 @@ import (
 	"sync"
 
 	"github.com/deref/exo/atom"
+	"github.com/deref/exo/logcol/api"
 )
 
 type State struct {
@@ -14,30 +15,30 @@ type LogState struct {
 	SourcePath string `json:"sourcePath"`
 }
 
-func NewService() Service {
+func NewLogCollector() api.LogCollector {
 	statePath := "./var/logcol" // TODO: Configuration.
-	return &service{
+	return &logCollector{
 		state:   atom.NewFileAtom(statePath, atom.CodecJSON),
 		workers: make(map[string]*worker),
 	}
 }
 
-type service struct {
+type logCollector struct {
 	state atom.Atom
 
 	mx      sync.Mutex
 	workers map[string]*worker
 }
 
-func (svc *service) derefState() (*State, error) {
+func (lc *logCollector) derefState() (*State, error) {
 	var state State
-	err := svc.state.Deref(&state)
+	err := lc.state.Deref(&state)
 	return &state, err
 }
 
-func (svc *service) swapState(f func(state *State) error) (*State, error) {
+func (lc *logCollector) swapState(f func(state *State) error) (*State, error) {
 	var state State
-	err := svc.state.Swap(&state, func() error {
+	err := lc.state.Swap(&state, func() error {
 		return f(&state)
 	})
 	return &state, err

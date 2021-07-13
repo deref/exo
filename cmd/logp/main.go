@@ -5,10 +5,11 @@ package main
 
 import (
 	"github.com/deref/exo/logcol"
+	"github.com/deref/exo/logcol/api"
 	"github.com/deref/pier"
 )
 
 func main() {
-	svc := logcol.NewService()
-	pier.Main(logcol.NewMux("/", svc))
+	lc := logcol.NewLogCollector()
+	pier.Main(api.NewLogCollectorMux("/", lc))
 }
