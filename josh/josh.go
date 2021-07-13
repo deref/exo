@@ -3,7 +3,7 @@ package josh
 import (
 	"context"
 	"encoding/json"
-	"log"
+	"log" // TODO: Use a request scoped logger.
 	"net/http"
 	"reflect"
 )

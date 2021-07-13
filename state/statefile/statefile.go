@@ -97,6 +97,10 @@ func (sto *Store) DescribeComponents(ctx context.Context, input *state.DescribeC
 func (sto *Store) AddComponent(ctx context.Context, input *state.AddComponentInput) (*state.AddComponentOutput, error) {
 	_, err := sto.swap(func(root *Root) error {
 		project := root.Projects[input.ProjectID]
+		if project == nil {
+			project = &Project{}
+			root.Projects[input.ProjectID] = project
+		}
 		if project.Components == nil {
 			project.Components = make(map[string]*Component)
 		}
