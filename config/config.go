@@ -12,7 +12,7 @@ type Config struct {
 type Component struct {
 	Name string
 	Type string
-	Spec map[string]interface{}
+	Spec interface{}
 }
 
 func NewConfig() *Config {

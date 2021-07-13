@@ -8,17 +8,17 @@ type Process interface {
 }
 
 type StartInput struct {
-	State map[string]interface{} `json:"state"`
+	State string `json:"state"`
 }
 
 type StartOutput struct {
-	State map[string]interface{} `json:"state"`
+	State string `json:"state"`
 }
 
 type StopInput struct {
-	State map[string]interface{} `json:"state"`
+	State string `json:"state"`
 }
 
 type StopOutput struct {
-	State map[string]interface{} `json:"state"`
+	State string `json:"state"`
 }

@@ -17,41 +17,42 @@ type Lifecycle interface {
 }
 
 type InitializeInput struct {
-	ID   string                 `json:"id"`
-	Spec map[string]interface{} `json:"spec"` // TODO: content-type tagged data, default to application/json or whatever.
+	ID   string `json:"id"`
+	Spec string `json:"spec"` // TODO: content-type tagged data, default to application/json or whatever.
 }
 
 type InitializeOutput struct {
-	State map[string]interface{} `json:"state"`
+	State string `json:"state"`
 }
 
 type UpdateInput struct {
-	ID      string                 `json:"id"`
-	OldSpec map[string]interface{} `json:"oldSpec"`
-	NewSpec map[string]interface{} `json:"newSpec"`
-	State   map[string]interface{} `json:"state"`
+	ID      string `json:"id"`
+	OldSpec string `json:"oldSpec"`
+	NewSpec string `json:"newSpec"`
+	State   string `json:"state"`
 }
 
 type UpdateOutput struct {
-	State map[string]interface{} `json:"state"`
+	State string `json:"state"`
 }
 
 type RefreshInput struct {
-	ID    string                 `json:"id"`
-	State map[string]interface{} `json:"state"`
+	ID    string `json:"id"`
+	State string `json:"state"`
 }
 
 type RefreshOutput struct {
-	State map[string]interface{} `json:"state"`
+	State string `json:"state"`
 }
 
 type DisposeInput struct {
-	ID    string                 `json:"id"`
-	State map[string]interface{} `json:"state"`
+	ID    string `json:"id"`
+	State string `json:"state"`
 }
 
 type DisposeOutput struct {
-	State map[string]interface{} `json:"state"`
+	State string `json:"state"`
+	// TODO: Return a promise that can be awaited for synchronous deletes.
 }
 
 func NewLifecycleMux(prefix string, lifecycle Lifecycle) *http.ServeMux {

@@ -19,6 +19,30 @@ type Project struct {
 	// TODO: Path to root of directory.
 }
 
+func (proj *Project) Apply(ctx context.Context, input *api.ApplyInput) (*api.ApplyOutput, error) {
+	panic("TODO: Apply")
+}
+
+func (proj *Project) Delete(ctx context.Context, input *api.DeleteInput) (*api.DeleteOutput, error) {
+	store := state.CurrentStore(ctx)
+	describeOutput, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
+		ProjectID: proj.ID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("describing components: %w", err)
+	}
+	// TODO: Parallelism / bulk delete.
+	for _, component := range describeOutput.Components {
+		_, err := proj.DeleteComponent(ctx, &api.DeleteComponentInput{
+			Name: component.Name,
+		})
+		if err != nil {
+			return nil, fmt.Errorf("deleting %s: %w", component.Name, err)
+		}
+	}
+	return &api.DeleteOutput{}, nil
+}
+
 func (proj *Project) DescribeComponents(ctx context.Context, input *api.DescribeComponentsInput) (*api.DescribeComponentsOutput, error) {
 	store := state.CurrentStore(ctx)
 	stateOutput, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
@@ -43,10 +67,6 @@ func (proj *Project) DescribeComponents(ctx context.Context, input *api.Describe
 		})
 	}
 	return output, nil
-}
-
-func (proj *Project) Apply(ctx context.Context, input *api.ApplyInput) (*api.ApplyOutput, error) {
-	panic("TODO: Apply")
 }
 
 func resolveLifecycle(typ string) api.Lifecycle {
@@ -79,11 +99,12 @@ func (proj *Project) CreateComponent(ctx context.Context, input *api.CreateCompo
 	id := gensym.Base32()
 
 	if _, err := store.AddComponent(ctx, &state.AddComponentInput{
-		ID:      id,
-		Name:    input.Name,
-		Type:    input.Type,
-		Spec:    input.Spec,
-		Created: chrono.NowString(ctx),
+		ProjectID: "default",
+		ID:        id,
+		Name:      input.Name,
+		Type:      input.Type,
+		Spec:      input.Spec,
+		Created:   chrono.NowString(ctx),
 	}); err != nil {
 		return nil, fmt.Errorf("adding component: %w", err)
 	}
@@ -98,6 +119,7 @@ func (proj *Project) CreateComponent(ctx context.Context, input *api.CreateCompo
 	}
 
 	if _, err := store.PatchComponent(ctx, &state.PatchComponentInput{
+		ID:          id,
 		State:       output.State,
 		Initialized: chrono.NowString(ctx),
 	}); err != nil {
@@ -125,6 +147,36 @@ func (proj *Project) DisposeComponent(ctx context.Context, input *api.DisposeCom
 	panic("TODO: DisposeComponent")
 }
 
+func (proj *Project) disposeComponent(ctx context.Context, name string) (id string, err error) {
+	store := state.CurrentStore(ctx)
+	describeOutput, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
+		ProjectID: proj.ID,
+		Names:     []string{name},
+	})
+	if err != nil {
+		return "", fmt.Errorf("describing components: %w", err)
+	}
+	if len(describeOutput.Components) < 1 {
+		return "", fmt.Errorf("no component named %q", name)
+	}
+	component := describeOutput.Components[0]
+	lifecycle := resolveLifecycle(component.Type)
+	_, err = lifecycle.Dispose(ctx, &api.DisposeInput{
+		ID:    component.ID,
+		State: component.State,
+	})
+	return component.ID, err
+}
+
 func (proj *Project) DeleteComponent(ctx context.Context, input *api.DeleteComponentInput) (*api.DeleteComponentOutput, error) {
-	panic("TODO: DeleteComponent")
+	componentID, err := proj.disposeComponent(ctx, input.Name)
+	if err != nil {
+		return nil, fmt.Errorf("disposing: %w", err)
+	}
+	// TODO: Await disposal.
+	store := state.CurrentStore(ctx)
+	if _, err := store.RemoveComponent(ctx, &state.RemoveComponentInput{ID: componentID}); err != nil {
+		return nil, fmt.Errorf("removing from state store: %w", err)
+	}
+	return &api.DeleteComponentOutput{}, nil
 }

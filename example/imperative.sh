@@ -9,10 +9,12 @@ function exop() {
 
 exop /describe-components
 
+exop post /delete
+
 exop /create-component \
   name=echo \
   type=process \
-  'spec:={
+  'spec={
     "command": "socat",
     "arguments": ["TCP4-LISTEN:2000,fork", "EXEC:cat"]
    }'

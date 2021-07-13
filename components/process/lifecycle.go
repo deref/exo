@@ -10,10 +10,11 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/deref/exo/api"
-	"github.com/mitchellh/mapstructure"
+	"github.com/deref/exo/jsonutil"
 )
 
 type Lifecycle struct {
@@ -22,15 +23,19 @@ type Lifecycle struct {
 }
 
 type spec struct {
-	Directory string
-	Command   string
-	Arguments []string
+	Directory string   `json:"directory"`
+	Command   string   `json:"command"`
+	Arguments []string `json:"arguments"`
+}
+
+type state struct {
+	Pid int `json:"pid"`
 }
 
 func (lc *Lifecycle) Initialize(ctx context.Context, input *api.InitializeInput) (*api.InitializeOutput, error) {
 	var spec spec
-	if err := mapstructure.Decode(input.Spec, &spec); err != nil {
-		return nil, fmt.Errorf("destructuring spec: %w", err)
+	if err := jsonutil.UnmarshalString(input.Spec, &spec); err != nil {
+		return nil, fmt.Errorf("unmarshalling spec: %w", err)
 	}
 
 	// Ensure top-level var directory.
@@ -54,12 +59,24 @@ func (lc *Lifecycle) Initialize(ctx context.Context, input *api.InitializeInput)
 		directory = lc.ProjectDir
 	}
 
+	// Resolve command path.
+	command := spec.Command
+	searchPaths, _ := os.LookupEnv("PATH")
+	for _, searchPath := range strings.Split(searchPaths, ":") {
+		candidate := filepath.Join(searchPath, command)
+		info, _ := os.Stat(candidate)
+		if info != nil {
+			command = candidate
+			break
+		}
+	}
+
 	// Construct supervised command.
 	fifofumPath := "./fifofum" // XXX Use exo home path.
 	fifofumArgs := append(
 		[]string{
 			procDir,
-			spec.Command,
+			command,
 		},
 		spec.Arguments...,
 	)
@@ -123,9 +140,9 @@ func (lc *Lifecycle) Initialize(ctx context.Context, input *api.InitializeInput)
 	}
 
 	var output api.InitializeOutput
-	output.State = map[string]interface{}{
-		"pid": pid,
-	}
+	output.State = jsonutil.MustMarshalString(state{
+		Pid: pid,
+	})
 	return &output, nil
 }
 
@@ -149,6 +166,18 @@ func (lc *Lifecycle) Refresh(context.Context, *api.RefreshInput) (*api.RefreshOu
 	panic("TODO: refresh")
 }
 
-func (lc *Lifecycle) Dispose(context.Context, *api.DisposeInput) (*api.DisposeOutput, error) {
-	panic("TODO: dispose")
+func (lc *Lifecycle) Dispose(ctx context.Context, input *api.DisposeInput) (*api.DisposeOutput, error) {
+	var state state
+	if err := jsonutil.UnmarshalString(input.State, &state); err != nil {
+		return nil, fmt.Errorf("unmarshalling state: %w", err)
+	}
+
+	proc, err := os.FindProcess(state.Pid)
+	if err != nil {
+		panic(err)
+	}
+	if err := proc.Kill(); err != nil {
+		// TODO: Report the error somehow?
+	}
+	return &api.DisposeOutput{State: input.State}, nil
 }

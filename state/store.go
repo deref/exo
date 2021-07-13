@@ -10,7 +10,8 @@ type Store interface {
 }
 
 type DescribeComponentsInput struct {
-	ProjectID string `json:"projectId"`
+	ProjectID string   `json:"projectId"`
+	Names     []string `json:"names"`
 }
 
 type DescribeComponentsOutput struct {
@@ -18,33 +19,33 @@ type DescribeComponentsOutput struct {
 }
 
 type ComponentDescription struct {
-	ID          string                 `json:"id"`
-	ProjectID   string                 `json:"projectId"`
-	Name        string                 `json:"name"`
-	Type        string                 `json:"type"`
-	Spec        map[string]interface{} `json:"spec"`
-	State       map[string]interface{} `json:"state"`
-	Created     string                 `json:"created"`
-	Initialized *string                `json:"initialized"`
-	Disposed    *string                `json:"disposed"`
+	ID          string  `json:"id"`
+	ProjectID   string  `json:"projectId"`
+	Name        string  `json:"name"`
+	Type        string  `json:"type"`
+	Spec        string  `json:"spec"`
+	State       string  `json:"state"`
+	Created     string  `json:"created"`
+	Initialized *string `json:"initialized"`
+	Disposed    *string `json:"disposed"`
 }
 
 type AddComponentInput struct {
-	ProjectID string                 `json:"projectId"`
-	ID        string                 `json:"id"`
-	Name      string                 `json:"name"`
-	Type      string                 `json:"type"`
-	Spec      map[string]interface{} `json:"spec"`
-	Created   string                 `json:"created"`
+	ProjectID string `json:"projectId"`
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Type      string `json:"type"`
+	Spec      string `json:"spec"`
+	Created   string `json:"created"`
 }
 
 type AddComponentOutput struct{}
 
 type PatchComponentInput struct {
-	ID          string                 `json:"id"`
-	State       map[string]interface{} `json:"state"`
-	Initialized string                 `json:"initialized"`
-	Disposed    string                 `json:"disposed"`
+	ID          string `json:"id"`
+	State       string `json:"state"`
+	Initialized string `json:"initialized"`
+	Disposed    string `json:"disposed"`
 }
 
 type PatchComponentOutput struct{}

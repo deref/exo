@@ -2,6 +2,7 @@ package statefile
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/deref/exo/atom"
@@ -31,13 +32,13 @@ type Project struct {
 }
 
 type Component struct {
-	Name        string                 `json:"name"`
-	Type        string                 `json:"type"`
-	Spec        map[string]interface{} `json:"spec"`
-	State       map[string]interface{} `json:"state"`
-	Created     string                 `json:"created"`
-	Initialized *string                `json:"initialized"`
-	Disposed    *string                `json:"disposed"`
+	Name        string  `json:"name"`
+	Type        string  `json:"type"`
+	Spec        string  `json:"spec"`
+	State       string  `json:"state"`
+	Created     string  `json:"created"`
+	Initialized *string `json:"initialized"`
+	Disposed    *string `json:"disposed"`
 }
 
 func (sto *Store) deref() (*Root, error) {
@@ -61,6 +62,10 @@ func (sto *Store) swap(f func(root *Root) error) (*Root, error) {
 }
 
 func (sto *Store) DescribeComponents(ctx context.Context, input *state.DescribeComponentsInput) (*state.DescribeComponentsOutput, error) {
+	if input.ProjectID == "" {
+		return nil, errors.New("project-id is required")
+	}
+
 	root, err := sto.deref()
 	if err != nil {
 		return nil, err
@@ -78,23 +83,36 @@ func (sto *Store) DescribeComponents(ctx context.Context, input *state.DescribeC
 		return output, nil
 	}
 
+	var names map[string]bool
+	if input.Names != nil {
+		names = make(map[string]bool, len(input.Names))
+	}
+	for _, name := range input.Names {
+		names[name] = true
+	}
+
 	for componentID, component := range project.Components {
-		output.Components = append(output.Components, state.ComponentDescription{
-			ID:          componentID,
-			ProjectID:   input.ProjectID,
-			Name:        component.Name,
-			Type:        component.Type,
-			Spec:        component.Spec,
-			State:       component.State,
-			Created:     component.Created,
-			Initialized: component.Initialized,
-			Disposed:    component.Disposed,
-		})
+		if names == nil || names[component.Name] {
+			output.Components = append(output.Components, state.ComponentDescription{
+				ID:          componentID,
+				ProjectID:   input.ProjectID,
+				Name:        component.Name,
+				Type:        component.Type,
+				Spec:        component.Spec,
+				State:       component.State,
+				Created:     component.Created,
+				Initialized: component.Initialized,
+				Disposed:    component.Disposed,
+			})
+		}
 	}
 	return output, nil
 }
 
 func (sto *Store) AddComponent(ctx context.Context, input *state.AddComponentInput) (*state.AddComponentOutput, error) {
+	if input.ProjectID == "" {
+		return nil, errors.New("project-id is required")
+	}
 	_, err := sto.swap(func(root *Root) error {
 		project := root.Projects[input.ProjectID]
 		if project == nil {
@@ -120,6 +138,7 @@ func (sto *Store) AddComponent(ctx context.Context, input *state.AddComponentInp
 			Spec:    input.Spec,
 			Created: input.Created,
 		}
+		root.ComponentProjects[input.ID] = input.ProjectID
 		return nil
 	})
 	if err != nil {
@@ -128,8 +147,37 @@ func (sto *Store) AddComponent(ctx context.Context, input *state.AddComponentInp
 	return &state.AddComponentOutput{}, nil
 }
 
-func (sto *Store) PatchComponent(context.Context, *state.PatchComponentInput) (*state.PatchComponentOutput, error) {
-	panic("TODO: change component")
+func (sto *Store) PatchComponent(ctx context.Context, input *state.PatchComponentInput) (*state.PatchComponentOutput, error) {
+	if input.ID == "" {
+		return nil, errors.New("component id is required")
+	}
+	_, err := sto.swap(func(root *Root) error {
+		projectId := root.ComponentProjects[input.ID]
+		if projectId == "" {
+			return errors.New("cannot find project for component")
+		}
+		project := root.Projects[projectId]
+		if project == nil {
+			return errors.New("corrupt state: no project for component")
+		}
+		component := project.Components[input.ID]
+		if component == nil {
+			return errors.New("corrupt state: component not in project")
+		}
+		if input.Disposed != "" {
+			// TODO: Validate disposed is date.
+			component.Disposed = &input.Disposed
+		}
+		if input.State != "" {
+			component.State = input.State
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &state.PatchComponentOutput{}, nil
+
 }
 
 func (sto *Store) RemoveComponent(ctx context.Context, input *state.RemoveComponentInput) (*state.RemoveComponentOutput, error) {
