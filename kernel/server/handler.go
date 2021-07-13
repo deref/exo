@@ -1,4 +1,4 @@
-package kernel
+package server
 
 import (
 	"context"

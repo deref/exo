@@ -1,4 +1,4 @@
-package kernel
+package server
 
 import (
 	"context"
@@ -8,10 +8,12 @@ import (
 
 	"github.com/deref/exo/chrono"
 	"github.com/deref/exo/components/invalid"
+	"github.com/deref/exo/components/log"
 	"github.com/deref/exo/components/process"
 	"github.com/deref/exo/gensym"
 	"github.com/deref/exo/kernel/api"
 	"github.com/deref/exo/kernel/state"
+	logcol "github.com/deref/exo/logcol/api"
 )
 
 type Project struct {
@@ -182,7 +184,38 @@ func (proj *Project) DeleteComponent(ctx context.Context, input *api.DeleteCompo
 }
 
 func (proj *Project) DescribeLogs(ctx context.Context, input *api.DescribeLogsInput) (*api.DescribeLogsOutput, error) {
-	panic("TODO: Project.DescribeLogs")
+	store := state.CurrentStore(ctx)
+	components, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
+		ProjectID: proj.ID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("describing components: %w", err)
+	}
+	// TODO: When we have subcomponents, do a search for type=log.
+	var logNames []string
+	for _, component := range components.Components {
+		if component.Type == "process" {
+			for _, role := range []string{"out", "err"} {
+				logNames = append(logNames, fmt.Sprintf("%s:%s", component.ID, role))
+			}
+		}
+	}
+
+	collector := log.CurrentLogCollector(ctx)
+	collectorLogs, err := collector.DescribeLogs(ctx, &logcol.DescribeLogsInput{
+		Names: logNames,
+	})
+	if err != nil {
+		return nil, err
+	}
+	logs := make([]api.LogDescription, len(collectorLogs.Logs))
+	for i, collectorLog := range collectorLogs.Logs {
+		logs[i] = api.LogDescription{
+			Name:        collectorLog.Name,
+			LastEventAt: collectorLog.LastEventAt,
+		}
+	}
+	return &api.DescribeLogsOutput{Logs: logs}, nil
 }
 
 func (proj *Project) GetEvents(ctx context.Context, input *api.GetEventsInput) (*api.GetEventsOutput, error) {

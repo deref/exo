@@ -9,6 +9,8 @@ import (
 	"github.com/deref/exo/josh"
 )
 
+// TODO: Bulk methods.
+
 type LogCollector interface {
 	AddLog(context.Context, *AddLogInput) (*AddLogOutput, error)
 	RemoveLog(context.Context, *RemoveLogInput) (*RemoveLogOutput, error)

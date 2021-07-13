@@ -13,8 +13,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/deref/exo/components/log"
 	"github.com/deref/exo/jsonutil"
 	"github.com/deref/exo/kernel/api"
+	logcol "github.com/deref/exo/logcol/api"
 )
 
 type Lifecycle struct {
@@ -139,6 +141,19 @@ func (lc *Lifecycle) Initialize(ctx context.Context, input *api.InitializeInput)
 		return nil, err
 	}
 
+	// Register logs.
+	// TODO: Don't do this synchronously here. Use some kind of component hierarchy mechanism.
+	collector := log.CurrentLogCollector(ctx)
+	for _, role := range []string{"out", "err"} {
+		_, err := collector.AddLog(ctx, &logcol.AddLogInput{
+			Name:       fmt.Sprintf("%s:%s", input.ID, role),
+			SourcePath: filepath.Join(procDir, role),
+		})
+		if err != nil {
+			return nil, fmt.Errorf("adding std%s log: %w", role, err)
+		}
+	}
+
 	var output api.InitializeOutput
 	output.State = jsonutil.MustMarshalString(state{
 		Pid: pid,
@@ -179,5 +194,18 @@ func (lc *Lifecycle) Dispose(ctx context.Context, input *api.DisposeInput) (*api
 	if err := proc.Kill(); err != nil {
 		// TODO: Report the error somehow?
 	}
+
+	// Deregister log streams.
+	// TODO: Don't do this synchronously here. Use some kind of component hierarchy mechanism.
+	collector := log.CurrentLogCollector(ctx)
+	for _, role := range []string{"out", "err"} {
+		_, err := collector.RemoveLog(ctx, &logcol.RemoveLogInput{
+			Name: fmt.Sprintf("%s:%s", input.ID, role),
+		})
+		if err != nil {
+			return nil, fmt.Errorf("removing std%s log: %w", role, err)
+		}
+	}
+
 	return &api.DisposeOutput{State: input.State}, nil
 }

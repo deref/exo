@@ -1,4 +1,4 @@
-package logcol
+package server
 
 import (
 	"sync"
@@ -16,7 +16,7 @@ type LogState struct {
 }
 
 func NewLogCollector() api.LogCollector {
-	statePath := "./var/logcol" // TODO: Configuration.
+	statePath := "./var/logcol.json" // TODO: Configuration.
 	return &logCollector{
 		state:   atom.NewFileAtom(statePath, atom.CodecJSON),
 		workers: make(map[string]*worker),

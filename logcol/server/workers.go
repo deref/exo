@@ -1,4 +1,4 @@
-package logcol
+package server
 
 import (
 	"bufio"
