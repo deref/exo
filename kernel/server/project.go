@@ -219,5 +219,25 @@ func (proj *Project) DescribeLogs(ctx context.Context, input *api.DescribeLogsIn
 }
 
 func (proj *Project) GetEvents(ctx context.Context, input *api.GetEventsInput) (*api.GetEventsOutput, error) {
-	panic("TODO: Project.GetEvents")
+	collector := log.CurrentLogCollector(ctx)
+	collectorEvents, err := collector.GetEvents(ctx, &logcol.GetEventsInput{
+		LogNames: input.LogNames,
+		Before:   input.Before,
+		After:    input.After,
+	})
+	if err != nil {
+		return nil, err
+	}
+	output := api.GetEventsOutput{
+		Events: make([]api.Event, len(collectorEvents.Events)),
+	}
+	for i, collectorEvent := range collectorEvents.Events {
+		output.Events[i] = api.Event{
+			LogName:   collectorEvent.LogName,
+			SID:       collectorEvent.SID,
+			Timestamp: collectorEvent.Timestamp,
+			Message:   collectorEvent.Message,
+		}
+	}
+	return &output, nil
 }

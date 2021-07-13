@@ -104,7 +104,6 @@ type DescribeLogsOutput struct {
 
 type LogDescription struct {
 	Name        string  `json:"name"`
-	SourcePath  string  `json:"sourcePath"`
 	LastEventAt *string `json:"lastEventAt"`
 }
 

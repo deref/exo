@@ -12,6 +12,11 @@ exop /describe-components
 exop post /delete
 
 exop /create-component \
+  name=tick \
+  type=process \
+  'spec={"command": "./tick"}'
+
+exop /create-component \
   name=echo \
   type=process \
   'spec={
