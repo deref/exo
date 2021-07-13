@@ -17,7 +17,12 @@ var varDir string
 func main() {
 	args := os.Args[1:]
 	if len(args) < 2 {
-		fatalf("usage: %s <vardir> <command> <args...>", os.Args[0])
+		fatalf(`usage: %s <vardir> <command> <args...>
+
+fifofum executes and supervises the given command. If successful, the child
+pid is written to stdout and two fifo files are created in vardir: out and err.
+The corresponding stdio streams will be proxied from the supervised process to
+those fifos.`, os.Args[0])
 	}
 	varDir = args[0]
 	command := args[1]
@@ -48,6 +53,7 @@ func main() {
 	}
 
 	// Forward signals to child.
+	// TODO: Process Group instead?
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, os.Kill)
 	go func() {

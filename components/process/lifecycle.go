@@ -1,11 +1,16 @@
 package process
 
 import (
+	"bufio"
 	"context"
+	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"strconv"
+	"time"
 
 	"github.com/deref/exo/api"
 	"github.com/mitchellh/mapstructure"
@@ -49,9 +54,6 @@ func (lc *Lifecycle) Initialize(ctx context.Context, input *api.InitializeInput)
 		directory = lc.ProjectDir
 	}
 
-	// Forward environment.
-	envv := []string{} // TODO: Get from spec.
-
 	// Construct supervised command.
 	fifofumPath := "./fifofum" // XXX Use exo home path.
 	fifofumArgs := append(
@@ -63,25 +65,80 @@ func (lc *Lifecycle) Initialize(ctx context.Context, input *api.InitializeInput)
 	)
 	cmd := exec.Command(fifofumPath, fifofumArgs...)
 
-	// Start supervisor process.
-	if err := cmd.Start(); err != nil {
-		return nil, fmt.Errorf("error starting: %w", err)
+	// Forward environment.
+	cmd.Env = []string{} // TODO: Get from spec.
+
+	// Connect pipes.
+	stdout, err := cmd.StdoutPipe()
+	if err != nil {
+		panic(err)
+	}
+	stderr, err := cmd.StderrPipe()
+	if err != nil {
+		panic(err)
 	}
 
+	// Start supervisor process.
+	if err := cmd.Start(); err != nil {
+		return nil, fmt.Errorf("starting fifofum: %w", err)
+	}
+
+	// Collect fifofum output.
+	pidC := make(chan int, 1)
+	errC := make(chan error, 2)
 	go func() {
-		// XXX read stdin for pid.
+		pidStr, err := readLine(stdout)
+		if err != nil {
+			errC <- fmt.Errorf("reading fifofum stdout: %w", err)
+			return
+		}
+		pid, err := strconv.Atoi(pidStr)
+		if err != nil {
+			errC <- fmt.Errorf("parsing fifofum output: %w", err)
+			return
+		}
+		pidC <- pid
 	}()
 	go func() {
-		// XXX read stdout for errors.
+		message, err := readLine(stderr)
+		if err != nil {
+			errC <- fmt.Errorf("reading fifofum stderr: %w", err)
+			return
+		}
+		if len(message) > 0 {
+			errC <- errors.New(message)
+		}
 	}()
 
-	// XXX
+	// Await fifofum result.
+	var pid int
+	select {
+	case pid = <-pidC:
+	case err = <-errC:
+	case <-time.After(300 * time.Millisecond):
+		err = errors.New("fifofum timeout")
+	}
+	if err != nil {
+		return nil, err
+	}
 
 	var output api.InitializeOutput
 	output.State = map[string]interface{}{
-		"pid": proc.Pid,
+		"pid": pid,
 	}
 	return &output, nil
+}
+
+func readLine(r io.Reader) (string, error) {
+	b := bufio.NewReader(r)
+	line, isPrefix, err := b.ReadLine()
+	if err != nil {
+		return "", err
+	}
+	if isPrefix {
+		return "", errors.New("line too long")
+	}
+	return string(line), nil
 }
 
 func (lc *Lifecycle) Update(context.Context, *api.UpdateInput) (*api.UpdateOutput, error) {
