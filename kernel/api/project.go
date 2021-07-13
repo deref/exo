@@ -13,6 +13,7 @@ type Project interface {
 	Delete(context.Context, *DeleteInput) (*DeleteOutput, error)
 	// Performs creates, updates, refreshes, disposes, as needed.
 	Apply(context.Context, *ApplyInput) (*ApplyOutput, error)
+
 	// Returns component descriptions.
 	DescribeComponents(context.Context, *DescribeComponentsInput) (*DescribeComponentsOutput, error)
 	// Creates a component and triggers an initialize lifecycle event.
@@ -26,6 +27,9 @@ type Project interface {
 	DisposeComponent(context.Context, *DisposeComponentInput) (*DisposeComponentOutput, error)
 	// Disposes a component and then awaits the record to be deleted synchronously.
 	DeleteComponent(context.Context, *DeleteComponentInput) (*DeleteComponentOutput, error)
+
+	DescribeLogs(context.Context, *DescribeLogsInput) (*DescribeLogsOutput, error)
+	GetEvents(context.Context, *GetEventsInput) (*GetEventsOutput, error)
 }
 
 type DeleteInput struct{}
@@ -90,6 +94,37 @@ type DeleteComponentInput struct {
 
 type DeleteComponentOutput struct{}
 
+type DescribeLogsInput struct {
+	Names []string `json:"names"`
+}
+
+type DescribeLogsOutput struct {
+	Logs []LogDescription `json:"logs"`
+}
+
+type LogDescription struct {
+	Name        string  `json:"name"`
+	SourcePath  string  `json:"sourcePath"`
+	LastEventAt *string `json:"lastEventAt"`
+}
+
+type GetEventsInput struct {
+	LogNames []string `json:"logNames"`
+	Before   string   `json:"before"`
+	After    string   `json:"after"`
+}
+
+type GetEventsOutput struct {
+	Events []Event `json:"events"`
+}
+
+type Event struct {
+	LogName   string `json:"logName"`
+	SID       string `json:"sid"`
+	Timestamp string `json:"timestamp"`
+	Message   string `json:"message"`
+}
+
 func NewProjectMux(prefix string, project Project) *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.Handle(prefix+"delete", josh.NewMethodHandler(project.Delete))
@@ -100,5 +135,7 @@ func NewProjectMux(prefix string, project Project) *http.ServeMux {
 	mux.Handle(prefix+"refresh-component", josh.NewMethodHandler(project.RefreshComponent))
 	mux.Handle(prefix+"dispose-component", josh.NewMethodHandler(project.DisposeComponent))
 	mux.Handle(prefix+"delete-component", josh.NewMethodHandler(project.DeleteComponent))
+	mux.Handle(prefix+"describe-logs", josh.NewMethodHandler(project.DescribeLogs))
+	mux.Handle(prefix+"get-events", josh.NewMethodHandler(project.GetEvents))
 	return mux
 }

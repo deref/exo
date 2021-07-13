@@ -13,8 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/deref/exo/api"
 	"github.com/deref/exo/jsonutil"
+	"github.com/deref/exo/kernel/api"
 )
 
 type Lifecycle struct {

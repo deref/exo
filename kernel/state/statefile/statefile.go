@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/deref/exo/atom"
-	"github.com/deref/exo/state"
+	"github.com/deref/exo/kernel/state"
 )
 
 func New(filename string) *Store {

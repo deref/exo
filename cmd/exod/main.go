@@ -4,10 +4,10 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/deref/exo/core"
+	"github.com/deref/exo/exod"
 )
 
 func main() {
-	ctx := core.NewContext(context.Background())
-	http.ListenAndServe(":3000", core.NewHandler(ctx))
+	ctx := exod.NewContext(context.Background())
+	http.ListenAndServe(":3000", exod.NewHandler(ctx))
 }

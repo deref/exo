@@ -1,12 +1,12 @@
-package core
+package kernel
 
 import (
 	"context"
 	"net/http"
 
-	"github.com/deref/exo/api"
-	"github.com/deref/exo/state"
-	"github.com/deref/exo/state/statefile"
+	"github.com/deref/exo/kernel/api"
+	"github.com/deref/exo/kernel/state"
+	"github.com/deref/exo/kernel/state/statefile"
 )
 
 func NewContext(ctx context.Context) context.Context {

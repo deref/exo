@@ -3,7 +3,7 @@ package invalid
 import (
 	"context"
 
-	"github.com/deref/exo/api"
+	"github.com/deref/exo/kernel/api"
 )
 
 type Lifecycle struct {

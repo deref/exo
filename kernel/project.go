@@ -1,4 +1,4 @@
-package core
+package kernel
 
 import (
 	"context"
@@ -6,12 +6,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/deref/exo/api"
 	"github.com/deref/exo/chrono"
 	"github.com/deref/exo/components/invalid"
 	"github.com/deref/exo/components/process"
 	"github.com/deref/exo/gensym"
-	"github.com/deref/exo/state"
+	"github.com/deref/exo/kernel/api"
+	"github.com/deref/exo/kernel/state"
 )
 
 type Project struct {
@@ -179,4 +179,12 @@ func (proj *Project) DeleteComponent(ctx context.Context, input *api.DeleteCompo
 		return nil, fmt.Errorf("removing from state store: %w", err)
 	}
 	return &api.DeleteComponentOutput{}, nil
+}
+
+func (proj *Project) DescribeLogs(ctx context.Context, input *api.DescribeLogsInput) (*api.DescribeLogsOutput, error) {
+	panic("TODO: Project.DescribeLogs")
+}
+
+func (proj *Project) GetEvents(ctx context.Context, input *api.GetEventsInput) (*api.GetEventsOutput, error) {
+	panic("TODO: Project.GetEvents")
 }
