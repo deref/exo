@@ -109,9 +109,8 @@ func pipeToFifo(name string, r io.Reader) {
 					fatalf("reading %s: %v", name, err)
 				}
 			}
-			if _, err := f.Write(line); err != nil {
-				fatalf("forwarding %s: %v", name, err)
-			}
+			line = append(line, '\n')
+			_, _ = f.Write(line)
 		}
 	}
 }

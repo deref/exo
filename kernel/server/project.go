@@ -256,9 +256,20 @@ func (proj *Project) DescribeLogs(ctx context.Context, input *api.DescribeLogsIn
 }
 
 func (proj *Project) GetEvents(ctx context.Context, input *api.GetEventsInput) (*api.GetEventsOutput, error) {
+	logNames := input.Logs
+	if input.Logs == nil {
+		logDescriptions, err := proj.DescribeLogs(ctx, &api.DescribeLogsInput{})
+		if err != nil {
+			return nil, fmt.Errorf("enumerating logs: %w", err)
+		}
+		for _, log := range logDescriptions.Logs {
+			logNames = append(logNames, log.Name)
+		}
+	}
+
 	collector := log.CurrentLogCollector(ctx)
 	collectorEvents, err := collector.GetEvents(ctx, &logcol.GetEventsInput{
-		Logs:   input.Logs,
+		Logs:   logNames,
 		Before: input.Before,
 		After:  input.After,
 	})

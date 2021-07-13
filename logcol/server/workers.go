@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/deref/exo/chrono"
@@ -67,6 +68,9 @@ func (wkr *worker) run(ctx context.Context) error {
 	for {
 		sid++
 		message, isPrefix, err := r.ReadLine()
+		if err == io.EOF {
+			break
+		}
 		if err != nil {
 			return fmt.Errorf("reading: %w", err)
 		}
@@ -75,6 +79,9 @@ func (wkr *worker) run(ctx context.Context) error {
 			// Skip remainder of message.
 			message = append([]byte{}, message...)
 			_, isPrefix, err = r.ReadLine()
+			if err == io.EOF {
+				break
+			}
 			if err != nil {
 				return fmt.Errorf("reading: %w", err)
 			}
@@ -85,6 +92,7 @@ func (wkr *worker) run(ctx context.Context) error {
 			return fmt.Errorf("writing: %w", err)
 		}
 	}
+	return nil
 }
 
 func makeChunkPath(source string, chunk int) string {

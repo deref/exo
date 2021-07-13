@@ -16,10 +16,10 @@ exop /create-component \
   type=process \
   'spec={"command": "./tick"}'
 
-exop /create-component \
-  name=echo \
-  type=process \
-  'spec={
-    "command": "socat",
-    "arguments": ["TCP4-LISTEN:2000,fork", "EXEC:cat"]
-   }'
+#exop /create-component \
+#  name=echo \
+#  type=process \
+#  'spec={
+#    "command": "socat",
+#    "arguments": ["TCP4-LISTEN:2000,fork", "EXEC:cat"]
+#   }'

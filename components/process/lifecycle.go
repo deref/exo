@@ -207,5 +207,11 @@ func (lc *Lifecycle) Dispose(ctx context.Context, input *api.DisposeInput) (*api
 		}
 	}
 
+	// Delete var directory.
+	procDir := filepath.Join(lc.VarDir, input.ID)
+	if err := os.RemoveAll(procDir); err != nil {
+		return nil, fmt.Errorf("removing var directory: %w", err)
+	}
+
 	return &api.DisposeOutput{State: input.State}, nil
 }

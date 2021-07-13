@@ -6,8 +6,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"os"
 	"os/signal"
+	"sort"
+	"strings"
 
 	"github.com/deref/exo/logcol/api"
 )
@@ -75,11 +78,7 @@ func (lc *logCollector) GetEvents(ctx context.Context, input *api.GetEventsInput
 	// TODO: Limit number of returned events.
 	var output api.GetEventsOutput
 	output.Events = []api.Event{}
-	switch len(input.Logs) {
-	case 0:
-		// nop.
-	case 1:
-		logName := input.Logs[0]
+	for _, logName := range input.Logs {
 		state, err := lc.derefState()
 		if err != nil {
 			return nil, err
@@ -92,35 +91,61 @@ func (lc *logCollector) GetEvents(ctx context.Context, input *api.GetEventsInput
 				return nil, fmt.Errorf("opening %s source: %w", logName, err)
 			}
 			r := bufio.NewReader(f)
-			line, isPrefix, err := r.ReadLine()
-			if err != nil {
-				return nil, fmt.Errorf("reading: %w", err)
-			}
-			// TODO: Do something better with lines that are too long.
-			for isPrefix {
-				// Skip remainder of line.
-				line = append([]byte{}, line...)
-				_, isPrefix, err = r.ReadLine()
+			for {
+				line, isPrefix, err := r.ReadLine()
+				if err == io.EOF {
+					break
+				}
 				if err != nil {
 					return nil, fmt.Errorf("reading: %w", err)
 				}
+				// TODO: Do something better with lines that are too long.
+				for isPrefix {
+					// Skip remainder of line.
+					line = append([]byte{}, line...)
+					_, isPrefix, err = r.ReadLine()
+					if err == io.EOF {
+						break
+					}
+					if err != nil {
+						return nil, fmt.Errorf("reading: %w", err)
+					}
+				}
+				fields := bytes.SplitN(line, []byte(" "), 3)
+				if len(fields) != 3 {
+					return nil, fmt.Errorf("invalid log line")
+				}
+				event := api.Event{
+					Log:       logName,
+					SID:       string(fields[0]),
+					Timestamp: string(fields[1]),
+					Message:   string(fields[2]),
+				}
+				output.Events = append(output.Events, event)
 			}
-			fields := bytes.SplitN(line, []byte(" "), 3)
-			if len(fields) != 3 {
-				return nil, fmt.Errorf("invalid log line")
-			}
-			event := api.Event{
-				Log:       logName,
-				SID:       string(fields[0]),
-				Timestamp: string(fields[1]),
-				Message:   string(fields[2]),
-			}
-			output.Events = append(output.Events, event)
 		}
-	default:
-		return nil, fmt.Errorf("TODO: merge log streams")
 	}
+	sort.Sort(&eventsSorter{output.Events})
 	return &output, nil
+}
+
+type eventsSorter struct {
+	events []api.Event
+}
+
+func (iface *eventsSorter) Len() int {
+	return len(iface.events)
+}
+
+func (iface *eventsSorter) Less(i, j int) bool {
+	// TODO: Account for sequence ids.
+	return strings.Compare(iface.events[i].Timestamp, iface.events[j].Timestamp) < 0
+}
+
+func (iface *eventsSorter) Swap(i, j int) {
+	tmp := iface.events[i]
+	iface.events[i] = iface.events[j]
+	iface.events[j] = tmp
 }
 
 func (lc *logCollector) Collect(ctx context.Context, input *api.CollectInput) (*api.CollectOutput, error) {
