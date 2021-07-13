@@ -45,9 +45,9 @@ Which has the following features:
 API:
 
 ```
-> http /start-process 'name=web'
+> http /start-process name=web
 
-> http /stop-process 'name=worker'
+> http /stop-process name=worker
 
 > http /describe-processes
 < { "processes": [

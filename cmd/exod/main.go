@@ -4,10 +4,10 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/deref/exo"
+	"github.com/deref/exo/core"
 )
 
 func main() {
-	ctx := exo.NewContext(context.Background())
-	http.ListenAndServe(":3000", exo.NewHandler(ctx))
+	ctx := core.NewContext(context.Background())
+	http.ListenAndServe(":3000", core.NewHandler(ctx))
 }

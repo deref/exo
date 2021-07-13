@@ -2,9 +2,11 @@ package logcol
 
 import (
 	"bufio"
+	"context"
 	"fmt"
 	"os"
-	"time"
+
+	"github.com/deref/exo/chrono"
 )
 
 type worker struct {
@@ -46,7 +48,7 @@ func (svc *service) stopWorker(logName string) {
 	_ = wkr.sink.Close()
 }
 
-func (wkr *worker) run() error {
+func (wkr *worker) run(ctx context.Context) error {
 	source, err := os.Open(wkr.sourcePath)
 	if err != nil {
 		return fmt.Errorf("opening source: %w", err)
@@ -78,8 +80,7 @@ func (wkr *worker) run() error {
 			}
 		}
 
-		timestamp := time.Now().Format("2006-01-02T15:04:05.999999999Z")
-
+		timestamp := chrono.NowString(ctx)
 		if _, err := fmt.Fprintf(sink, "%d %s %s\n", sid, timestamp, message); err != nil {
 			return fmt.Errorf("writing: %w", err)
 		}

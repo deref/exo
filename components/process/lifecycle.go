@@ -11,11 +11,10 @@ import (
 	"syscall"
 
 	"github.com/deref/exo/api"
-	"github.com/deref/exo/gensym"
 	"github.com/mitchellh/mapstructure"
 )
 
-type Provider struct {
+type Lifecycle struct {
 	ProjectDir string
 	VarDir     string
 }
@@ -26,7 +25,7 @@ type spec struct {
 	Arguments []string
 }
 
-func (provider *Provider) Create(ctx context.Context, input *api.CreateInput) (*api.CreateOutput, error) {
+func (lc *Lifecycle) Initialize(ctx context.Context, input *api.InitializeInput) (*api.InitializeOutput, error) {
 	var spec spec
 	if err := mapstructure.Decode(input.Spec, &spec); err != nil {
 		return nil, fmt.Errorf("decoding mapstructure: %w", err)
@@ -51,7 +50,7 @@ func (provider *Provider) Create(ctx context.Context, input *api.CreateInput) (*
 		}
 	}
 
-	err := os.Mkdir(provider.VarDir, 0700)
+	err := os.Mkdir(lc.VarDir, 0700)
 	if os.IsExist(err) {
 		err = nil
 	}
@@ -59,9 +58,7 @@ func (provider *Provider) Create(ctx context.Context, input *api.CreateInput) (*
 		return nil, fmt.Errorf("creating var directory: %w", err)
 	}
 
-	globalID := gensym.Base32()
-
-	procDir := filepath.Join(provider.VarDir, globalID)
+	procDir := filepath.Join(lc.VarDir, input.ID)
 	if err := os.Mkdir(procDir, 0700); err != nil {
 		return nil, fmt.Errorf("creating proc directory: %w", err)
 	}
@@ -83,7 +80,7 @@ func (provider *Provider) Create(ctx context.Context, input *api.CreateInput) (*
 
 	directory := spec.Directory
 	if directory == "" {
-		directory = provider.ProjectDir
+		directory = lc.ProjectDir
 	}
 
 	env := []string{} // TODO: Fill from config.
@@ -101,13 +98,15 @@ func (provider *Provider) Create(ctx context.Context, input *api.CreateInput) (*
 	}
 
 	// Write pid file.
-	if err := ioutil.WriteFile(filepath.Join(procDir, "pid"), []byte(globalID+"\n"), 0600); err != nil {
+	if err := ioutil.WriteFile(filepath.Join(procDir, "pid"), []byte(input.ID+"\n"), 0600); err != nil {
 		abort()
 		return nil, fmt.Errorf("writing pid: %w", err)
 	}
 
-	var output api.CreateOutput
-	output.IRI = fmt.Sprintf("process:%s", globalID)
+	var output api.InitializeOutput
+	output.State = map[string]interface{}{
+		"pid": proc.Pid,
+	}
 	return &output, nil
 }
 
@@ -139,4 +138,16 @@ func addCriticalEnv(env []string) []string {
 		}
 	}
 	return append(env, "SYSTEMROOT="+os.Getenv("SYSTEMROOT"))
+}
+
+func (lc *Lifecycle) Update(context.Context, *api.UpdateInput) (*api.UpdateOutput, error) {
+	panic("TODO: update")
+}
+
+func (lc *Lifecycle) Refresh(context.Context, *api.RefreshInput) (*api.RefreshOutput, error) {
+	panic("TODO: refresh")
+}
+
+func (lc *Lifecycle) Dispose(context.Context, *api.DisposeInput) (*api.DisposeOutput, error) {
+	panic("TODO: dispose")
 }
