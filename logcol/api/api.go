@@ -20,8 +20,8 @@ type LogCollector interface {
 }
 
 type AddLogInput struct {
-	Name       string `json:"name"`
-	SourcePath string `json:"sourcePath"`
+	Name   string `json:"name"`
+	Source string `json:"source"`
 }
 
 type AddLogOutput struct{}
@@ -42,14 +42,14 @@ type DescribeLogsOutput struct {
 
 type LogDescription struct {
 	Name        string  `json:"name"`
-	SourcePath  string  `json:"sourcePath"`
+	Source      string  `json:"source"`
 	LastEventAt *string `json:"lastEventAt"`
 }
 
 type GetEventsInput struct {
-	LogNames []string `json:"logNames"`
-	Before   string   `json:"before"`
-	After    string   `json:"after"`
+	Logs   []string `json:"logs"`
+	Before string   `json:"before"`
+	After  string   `json:"after"`
 }
 
 type GetEventsOutput struct {
@@ -57,7 +57,7 @@ type GetEventsOutput struct {
 }
 
 type Event struct {
-	LogName   string `json:"logName"`
+	Log       string `json:"log"`
 	SID       string `json:"sid"`
 	Timestamp string `json:"timestamp"`
 	Message   string `json:"message"`

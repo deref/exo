@@ -21,10 +21,6 @@ type Project struct {
 	// TODO: Path to root of directory.
 }
 
-func (proj *Project) Apply(ctx context.Context, input *api.ApplyInput) (*api.ApplyOutput, error) {
-	panic("TODO: Apply")
-}
-
 func (proj *Project) Delete(ctx context.Context, input *api.DeleteInput) (*api.DeleteOutput, error) {
 	store := state.CurrentStore(ctx)
 	describeOutput, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
@@ -36,13 +32,34 @@ func (proj *Project) Delete(ctx context.Context, input *api.DeleteInput) (*api.D
 	// TODO: Parallelism / bulk delete.
 	for _, component := range describeOutput.Components {
 		_, err := proj.DeleteComponent(ctx, &api.DeleteComponentInput{
-			Name: component.Name,
+			Ref: component.Name,
 		})
 		if err != nil {
 			return nil, fmt.Errorf("deleting %s: %w", component.Name, err)
 		}
 	}
 	return &api.DeleteOutput{}, nil
+}
+
+func (proj *Project) Apply(ctx context.Context, input *api.ApplyInput) (*api.ApplyOutput, error) {
+	panic("TODO: Apply")
+}
+
+func (proj *Project) Resolve(ctx context.Context, input *api.ResolveInput) (*api.ResolveOutput, error) {
+	store := state.CurrentStore(ctx)
+	storeOutput, err := store.Resolve(ctx, &state.ResolveInput{
+		ProjectID: proj.ID,
+		Refs:      input.Refs,
+	})
+	if err != nil {
+		return nil, err
+	}
+	var output api.ResolveOutput
+	output.IDs = make([]*string, len(storeOutput.IDs))
+	for i, id := range storeOutput.IDs {
+		output.IDs[i] = id
+	}
+	return &output, err
 }
 
 func (proj *Project) DescribeComponents(ctx context.Context, input *api.DescribeComponentsInput) (*api.DescribeComponentsOutput, error) {
@@ -146,38 +163,58 @@ func (proj *Project) RefreshComponent(ctx context.Context, input *api.RefreshCom
 }
 
 func (proj *Project) DisposeComponent(ctx context.Context, input *api.DisposeComponentInput) (*api.DisposeComponentOutput, error) {
-	panic("TODO: DisposeComponent")
+	id, err := proj.resolveRef(ctx, input.Ref)
+	if err != nil {
+		return nil, fmt.Errorf("resolving refs: %w", err)
+	}
+	err = proj.disposeComponent(ctx, id)
+	return &api.DisposeComponentOutput{}, err
 }
 
-func (proj *Project) disposeComponent(ctx context.Context, name string) (id string, err error) {
+func (proj *Project) resolveRef(ctx context.Context, ref string) (string, error) {
+	resolveOutput, err := proj.Resolve(ctx, &api.ResolveInput{Refs: []string{ref}})
+	if err != nil {
+		return "", err
+	}
+	id := resolveOutput.IDs[0]
+	if id == nil {
+		return "", nil
+	}
+	return *id, nil
+}
+
+func (proj *Project) disposeComponent(ctx context.Context, id string) error {
 	store := state.CurrentStore(ctx)
 	describeOutput, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
 		ProjectID: proj.ID,
-		Names:     []string{name},
+		IDs:       []string{id},
 	})
 	if err != nil {
-		return "", fmt.Errorf("describing components: %w", err)
+		return fmt.Errorf("describing components: %w", err)
 	}
 	if len(describeOutput.Components) < 1 {
-		return "", fmt.Errorf("no component named %q", name)
+		return fmt.Errorf("no component %q", id)
 	}
 	component := describeOutput.Components[0]
 	lifecycle := resolveLifecycle(component.Type)
 	_, err = lifecycle.Dispose(ctx, &api.DisposeInput{
-		ID:    component.ID,
+		ID:    id,
 		State: component.State,
 	})
-	return component.ID, err
+	return err
 }
 
 func (proj *Project) DeleteComponent(ctx context.Context, input *api.DeleteComponentInput) (*api.DeleteComponentOutput, error) {
-	componentID, err := proj.disposeComponent(ctx, input.Name)
+	id, err := proj.resolveRef(ctx, input.Ref)
 	if err != nil {
+		return nil, fmt.Errorf("resolving refs: %w", err)
+	}
+	if err := proj.disposeComponent(ctx, id); err != nil {
 		return nil, fmt.Errorf("disposing: %w", err)
 	}
 	// TODO: Await disposal.
 	store := state.CurrentStore(ctx)
-	if _, err := store.RemoveComponent(ctx, &state.RemoveComponentInput{ID: componentID}); err != nil {
+	if _, err := store.RemoveComponent(ctx, &state.RemoveComponentInput{ID: id}); err != nil {
 		return nil, fmt.Errorf("removing from state store: %w", err)
 	}
 	return &api.DeleteComponentOutput{}, nil
@@ -221,9 +258,9 @@ func (proj *Project) DescribeLogs(ctx context.Context, input *api.DescribeLogsIn
 func (proj *Project) GetEvents(ctx context.Context, input *api.GetEventsInput) (*api.GetEventsOutput, error) {
 	collector := log.CurrentLogCollector(ctx)
 	collectorEvents, err := collector.GetEvents(ctx, &logcol.GetEventsInput{
-		LogNames: input.LogNames,
-		Before:   input.Before,
-		After:    input.After,
+		Logs:   input.Logs,
+		Before: input.Before,
+		After:  input.After,
 	})
 	if err != nil {
 		return nil, err
@@ -233,7 +270,7 @@ func (proj *Project) GetEvents(ctx context.Context, input *api.GetEventsInput) (
 	}
 	for i, collectorEvent := range collectorEvents.Events {
 		output.Events[i] = api.Event{
-			LogName:   collectorEvent.LogName,
+			Log:       collectorEvent.Log,
 			SID:       collectorEvent.SID,
 			Timestamp: collectorEvent.Timestamp,
 			Message:   collectorEvent.Message,

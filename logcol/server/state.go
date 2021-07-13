@@ -12,7 +12,7 @@ type State struct {
 }
 
 type LogState struct {
-	SourcePath string `json:"sourcePath"`
+	Source string `json:"source"`
 }
 
 func NewLogCollector() api.LogCollector {

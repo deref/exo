@@ -14,6 +14,9 @@ type Project interface {
 	// Performs creates, updates, refreshes, disposes, as needed.
 	Apply(context.Context, *ApplyInput) (*ApplyOutput, error)
 
+	// Resolves a reference in to an ID.
+	Resolve(context.Context, *ResolveInput) (*ResolveOutput, error)
+
 	// Returns component descriptions.
 	DescribeComponents(context.Context, *DescribeComponentsInput) (*DescribeComponentsOutput, error)
 	// Creates a component and triggers an initialize lifecycle event.
@@ -41,6 +44,14 @@ type ApplyInput struct {
 }
 
 type ApplyOutput struct{}
+
+type ResolveInput struct {
+	Refs []string `json:"refs"`
+}
+
+type ResolveOutput struct {
+	IDs []*string `json:"ids"`
+}
 
 type DescribeComponentsInput struct{}
 
@@ -70,18 +81,18 @@ type CreateComponentOutput struct {
 }
 
 type UpdateComponentInput struct {
-	Name string `json:"name"`
+	Ref  string `json:"ref"`
 	Spec string `json:"spec"`
 }
 
 type UpdateComponentOutput struct{}
 
 type DisposeComponentInput struct {
-	Name string `json:"name"`
+	Ref string `json:"ref"`
 }
 
 type RefreshComponentInput struct {
-	Name string `json:"name"`
+	Ref string `json:"ref"`
 }
 
 type RefreshComponentOutput struct{}
@@ -89,13 +100,13 @@ type RefreshComponentOutput struct{}
 type DisposeComponentOutput struct{}
 
 type DeleteComponentInput struct {
-	Name string `json:"name"`
+	Ref string `json:"ref"`
 }
 
 type DeleteComponentOutput struct{}
 
 type DescribeLogsInput struct {
-	Names []string `json:"names"`
+	Refs []string `json:"refs"`
 }
 
 type DescribeLogsOutput struct {
@@ -108,9 +119,9 @@ type LogDescription struct {
 }
 
 type GetEventsInput struct {
-	LogNames []string `json:"logNames"`
-	Before   string   `json:"before"`
-	After    string   `json:"after"`
+	Logs   []string `json:"logs"`
+	Before string   `json:"before"`
+	After  string   `json:"after"`
 }
 
 type GetEventsOutput struct {
@@ -118,7 +129,7 @@ type GetEventsOutput struct {
 }
 
 type Event struct {
-	LogName   string `json:"logName"`
+	Log       string `json:"log"`
 	SID       string `json:"sid"`
 	Timestamp string `json:"timestamp"`
 	Message   string `json:"message"`
@@ -128,6 +139,7 @@ func NewProjectMux(prefix string, project Project) *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.Handle(prefix+"delete", josh.NewMethodHandler(project.Delete))
 	mux.Handle(prefix+"apply", josh.NewMethodHandler(project.Apply))
+	mux.Handle(prefix+"resolve", josh.NewMethodHandler(project.Resolve))
 	mux.Handle(prefix+"describe-components", josh.NewMethodHandler(project.DescribeComponents))
 	mux.Handle(prefix+"create-component", josh.NewMethodHandler(project.CreateComponent))
 	mux.Handle(prefix+"update-component", josh.NewMethodHandler(project.UpdateComponent))

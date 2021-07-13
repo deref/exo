@@ -24,7 +24,7 @@ func (lc *logCollector) startWorker(ctx context.Context, logName string, state L
 	wkr, exists := lc.workers[logName]
 	if !exists {
 		wkr = &worker{
-			sourcePath: state.SourcePath,
+			sourcePath: state.Source,
 		}
 		lc.workers[logName] = wkr
 	}
@@ -87,6 +87,6 @@ func (wkr *worker) run(ctx context.Context) error {
 	}
 }
 
-func makeChunkPath(sourcePath string, chunkIndex int) string {
-	return fmt.Sprintf("%s.%d", sourcePath, chunkIndex)
+func makeChunkPath(source string, chunk int) string {
+	return fmt.Sprintf("%s.%d", source, chunk)
 }

@@ -146,8 +146,8 @@ func (lc *Lifecycle) Initialize(ctx context.Context, input *api.InitializeInput)
 	collector := log.CurrentLogCollector(ctx)
 	for _, role := range []string{"out", "err"} {
 		_, err := collector.AddLog(ctx, &logcol.AddLogInput{
-			Name:       fmt.Sprintf("%s:%s", input.ID, role),
-			SourcePath: filepath.Join(procDir, role),
+			Name:   fmt.Sprintf("%s:%s", input.ID, role),
+			Source: filepath.Join(procDir, role),
 		})
 		if err != nil {
 			return nil, fmt.Errorf("adding std%s log: %w", role, err)

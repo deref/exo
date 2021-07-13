@@ -20,7 +20,7 @@ func (lc *logCollector) AddLog(ctx context.Context, input *api.AddLogInput) (*ap
 	if !validLogName(input.Name) {
 		return nil, fmt.Errorf("invalid log name: %q", input.Name)
 	}
-	if input.SourcePath == "" {
+	if input.Source == "" {
 		return nil, errors.New("log source path is required")
 	}
 	state, err := lc.swapState(func(state *State) error {
@@ -28,7 +28,7 @@ func (lc *logCollector) AddLog(ctx context.Context, input *api.AddLogInput) (*ap
 			state.Logs = make(map[string]LogState)
 		}
 		state.Logs[input.Name] = LogState{
-			SourcePath: input.SourcePath,
+			Source: input.Source,
 		}
 		return nil
 	})
@@ -63,7 +63,7 @@ func (lc *logCollector) DescribeLogs(context.Context, *api.DescribeLogsInput) (*
 	for name, description := range state.Logs {
 		output.Logs = append(output.Logs, api.LogDescription{
 			Name:        name,
-			SourcePath:  description.SourcePath,
+			Source:      description.Source,
 			LastEventAt: nil, // XXX set me based on the last line of file.
 		})
 	}
@@ -75,11 +75,11 @@ func (lc *logCollector) GetEvents(ctx context.Context, input *api.GetEventsInput
 	// TODO: Limit number of returned events.
 	var output api.GetEventsOutput
 	output.Events = []api.Event{}
-	switch len(input.LogNames) {
+	switch len(input.Logs) {
 	case 0:
 		// nop.
 	case 1:
-		logName := input.LogNames[0]
+		logName := input.Logs[0]
 		state, err := lc.derefState()
 		if err != nil {
 			return nil, err
@@ -87,7 +87,7 @@ func (lc *logCollector) GetEvents(ctx context.Context, input *api.GetEventsInput
 		logState, exists := state.Logs[logName]
 		if exists {
 			chunkIndex := 0 // TODO: Handle log rotation.
-			f, err := os.Open(makeChunkPath(logState.SourcePath, chunkIndex))
+			f, err := os.Open(makeChunkPath(logState.Source, chunkIndex))
 			if err != nil {
 				return nil, fmt.Errorf("opening %s source: %w", logName, err)
 			}
@@ -110,7 +110,7 @@ func (lc *logCollector) GetEvents(ctx context.Context, input *api.GetEventsInput
 				return nil, fmt.Errorf("invalid log line")
 			}
 			event := api.Event{
-				LogName:   logName,
+				Log:       logName,
 				SID:       string(fields[0]),
 				Timestamp: string(fields[1]),
 				Message:   string(fields[2]),

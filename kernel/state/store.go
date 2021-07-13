@@ -3,15 +3,25 @@ package state
 import "context"
 
 type Store interface {
+	Resolve(context.Context, *ResolveInput) (*ResolveOutput, error)
 	DescribeComponents(context.Context, *DescribeComponentsInput) (*DescribeComponentsOutput, error)
 	AddComponent(context.Context, *AddComponentInput) (*AddComponentOutput, error)
 	PatchComponent(context.Context, *PatchComponentInput) (*PatchComponentOutput, error)
 	RemoveComponent(context.Context, *RemoveComponentInput) (*RemoveComponentOutput, error)
 }
 
+type ResolveInput struct {
+	ProjectID string   `json:"projectId"`
+	Refs      []string `json:"refs"`
+}
+
+type ResolveOutput struct {
+	IDs []*string `json:"ids"`
+}
+
 type DescribeComponentsInput struct {
 	ProjectID string   `json:"projectId"`
-	Names     []string `json:"names"`
+	IDs       []string `json:"ids"`
 }
 
 type DescribeComponentsOutput struct {

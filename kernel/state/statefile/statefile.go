@@ -61,6 +61,33 @@ func (sto *Store) swap(f func(root *Root) error) (*Root, error) {
 	return &root, err
 }
 
+func (sto *Store) Resolve(ctx context.Context, input *state.ResolveInput) (*state.ResolveOutput, error) {
+	if input.ProjectID == "" {
+		return nil, errors.New("project-id is required")
+	}
+	var root Root
+	if err := sto.atom.Deref(&root); err != nil {
+		return nil, err
+	}
+	project := root.Projects[input.ProjectID]
+	if project == nil {
+		return nil, fmt.Errorf("no such project: %q", input.ProjectID)
+	}
+	results := make([]*string, len(input.Refs))
+	for i, ref := range input.Refs {
+		if _, isID := project.Components[ref]; isID {
+			id := ref
+			results[i] = &id
+			continue
+		}
+		id := project.Names[ref]
+		if id != "" {
+			results[i] = &id
+		}
+	}
+	return &state.ResolveOutput{IDs: results}, nil
+}
+
 func (sto *Store) DescribeComponents(ctx context.Context, input *state.DescribeComponentsInput) (*state.DescribeComponentsOutput, error) {
 	if input.ProjectID == "" {
 		return nil, errors.New("project-id is required")
@@ -83,16 +110,16 @@ func (sto *Store) DescribeComponents(ctx context.Context, input *state.DescribeC
 		return output, nil
 	}
 
-	var names map[string]bool
-	if input.Names != nil {
-		names = make(map[string]bool, len(input.Names))
+	var ids map[string]bool
+	if input.IDs != nil {
+		ids = make(map[string]bool, len(input.IDs))
 	}
-	for _, name := range input.Names {
-		names[name] = true
+	for _, id := range input.IDs {
+		ids[id] = true
 	}
 
 	for componentID, component := range project.Components {
-		if names == nil || names[component.Name] {
+		if ids == nil || ids[componentID] {
 			output.Components = append(output.Components, state.ComponentDescription{
 				ID:          componentID,
 				ProjectID:   input.ProjectID,
@@ -164,9 +191,11 @@ func (sto *Store) PatchComponent(ctx context.Context, input *state.PatchComponen
 		if component == nil {
 			return errors.New("corrupt state: component not in project")
 		}
+		if input.Initialized != "" {
+			component.Initialized = &input.Initialized // TODO: Validate iso8601.
+		}
 		if input.Disposed != "" {
-			// TODO: Validate disposed is date.
-			component.Disposed = &input.Disposed
+			component.Disposed = &input.Disposed // TODO: Validate iso8601.
 		}
 		if input.State != "" {
 			component.State = input.State
