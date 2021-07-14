@@ -21,13 +21,15 @@ func (provider *Provider) Start(ctx context.Context, input *core.StartInput) (*c
 	if err := jsonutil.UnmarshalString(input.State, &state); err != nil {
 		return nil, fmt.Errorf("unmarshalling state: %w", err)
 	}
-	if state.Pid != 0 {
-		return nil, errors.New("already running")
-	}
 
-	state, err := provider.start(ctx, procDir, input.Spec)
-	if err != nil {
-		return nil, err
+	provider.refresh(&state)
+
+	if state.Pid == 0 {
+		var err error
+		state, err = provider.start(ctx, procDir, input.Spec)
+		if err != nil {
+			return nil, err
+		}
 	}
 
 	var output core.StartOutput
@@ -132,7 +134,7 @@ func (provider *Provider) Stop(ctx context.Context, input *core.StopInput) (*cor
 		return nil, fmt.Errorf("unmarshalling state: %w", err)
 	}
 	if state.Pid == 0 {
-		return nil, errors.New("already stopped")
+		return nil, nil
 	}
 
 	provider.stop(state.Pid)

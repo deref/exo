@@ -35,6 +35,7 @@ type UpdateOutput struct {
 
 type RefreshInput struct {
 	ID    string `json:"id"`
+	Spec  string `json:"spec"`
 	State string `json:"state"`
 }
 

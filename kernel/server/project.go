@@ -161,7 +161,40 @@ func (proj *Project) UpdateComponent(ctx context.Context, input *api.UpdateCompo
 }
 
 func (proj *Project) RefreshComponent(ctx context.Context, input *api.RefreshComponentInput) (*api.RefreshComponentOutput, error) {
-	panic("TODO: RefreshComponent")
+	id, err := proj.resolveRef(ctx, input.Ref)
+	if err != nil {
+		return nil, fmt.Errorf("resolving ref: %w", err)
+	}
+
+	store := state.CurrentStore(ctx)
+	describeOutput, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
+		ProjectID: proj.ID,
+		IDs:       []string{id},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("describing components: %w", err)
+	}
+	if len(describeOutput.Components) < 1 {
+		return nil, fmt.Errorf("no component %q", id)
+	}
+	component := describeOutput.Components[0]
+
+	provider := proj.resolveProvider(component.Type)
+	refreshed, err := provider.Refresh(ctx, &core.RefreshInput{
+		ID:    component.ID,
+		Spec:  component.Spec,
+		State: component.State,
+	})
+
+	if _, err := store.PatchComponent(ctx, &state.PatchComponentInput{
+		ID:          id,
+		State:       refreshed.State,
+		Initialized: chrono.NowString(ctx),
+	}); err != nil {
+		return nil, fmt.Errorf("modifying component after initialization: %w", err)
+	}
+
+	return &api.RefreshComponentOutput{}, err
 }
 
 func (proj *Project) DisposeComponent(ctx context.Context, input *api.DisposeComponentInput) (*api.DisposeComponentOutput, error) {

@@ -8,6 +8,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"syscall"
 
 	"github.com/deref/exo/components/log"
 	"github.com/deref/exo/core"
@@ -71,8 +72,29 @@ func (provider *Provider) Update(context.Context, *core.UpdateInput) (*core.Upda
 	panic("TODO: update")
 }
 
-func (provider *Provider) Refresh(context.Context, *core.RefreshInput) (*core.RefreshOutput, error) {
-	panic("TODO: refresh")
+func (provider *Provider) Refresh(ctx context.Context, input *core.RefreshInput) (*core.RefreshOutput, error) {
+	var state state
+	if err := jsonutil.UnmarshalString(input.State, &state); err != nil {
+		return nil, fmt.Errorf("unmarshalling state: %w", err)
+	}
+
+	provider.refresh(&state)
+
+	var output core.RefreshOutput
+	output.State = jsonutil.MustMarshalString(state)
+	return &output, nil
+}
+
+func (provider *Provider) refresh(state *state) {
+	if state.Pid != 0 {
+		process, err := os.FindProcess(state.Pid)
+		if err != nil {
+			panic(err)
+		}
+		if err := process.Signal(syscall.Signal(0)); err != nil {
+			state.Pid = 0
+		}
+	}
 }
 
 func (provider *Provider) Dispose(ctx context.Context, input *core.DisposeInput) (*core.DisposeOutput, error) {
