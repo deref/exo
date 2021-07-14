@@ -374,7 +374,6 @@ func (proj *Project) GetEvents(ctx context.Context, input *api.GetEventsInput) (
 			logStreams = append(logStreams, fmt.Sprintf("%s:%s", group, stream))
 		}
 	}
-	fmt.Println(logGroups, logStreams)
 
 	collector := log.CurrentLogCollector(ctx)
 	collectorEvents, err := collector.GetEvents(ctx, &logcol.GetEventsInput{

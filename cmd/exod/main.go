@@ -3,18 +3,28 @@ package main
 import (
 	"context"
 	"net/http"
+	"os"
+	"os/signal"
 
 	"github.com/deref/exo/components/log"
-	josh "github.com/deref/exo/josh/client"
 	"github.com/deref/exo/kernel/server"
-	logcol "github.com/deref/exo/logcol/client"
+	"github.com/deref/exo/logcol/api"
+	logcol "github.com/deref/exo/logcol/server"
 )
 
 func main() {
 	ctx := server.NewContext(context.Background())
-	ctx = log.ContextWithLogCollector(ctx, logcol.NewLogCollector(&josh.Client{
-		HTTP: http.DefaultClient,
-		URL:  "http://localhost:3001/",
-	}))
+
+	lc := logcol.NewLogCollector()
+	ctx = log.ContextWithLogCollector(ctx, lc)
+	go lc.Collect(ctx, &api.CollectInput{})
+
+	go func() {
+		c := make(chan os.Signal, 1)
+		signal.Notify(c, os.Interrupt)
+		<-c
+		os.Exit(0)
+	}()
+
 	http.ListenAndServe(":3000", server.NewHandler(ctx))
 }
