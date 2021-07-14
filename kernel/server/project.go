@@ -165,7 +165,7 @@ func (proj *Project) RefreshComponent(ctx context.Context, input *api.RefreshCom
 func (proj *Project) DisposeComponent(ctx context.Context, input *api.DisposeComponentInput) (*api.DisposeComponentOutput, error) {
 	id, err := proj.resolveRef(ctx, input.Ref)
 	if err != nil {
-		return nil, fmt.Errorf("resolving refs: %w", err)
+		return nil, fmt.Errorf("resolving ref: %w", err)
 	}
 	err = proj.disposeComponent(ctx, id)
 	return &api.DisposeComponentOutput{}, err
@@ -207,7 +207,7 @@ func (proj *Project) disposeComponent(ctx context.Context, id string) error {
 func (proj *Project) DeleteComponent(ctx context.Context, input *api.DeleteComponentInput) (*api.DeleteComponentOutput, error) {
 	id, err := proj.resolveRef(ctx, input.Ref)
 	if err != nil {
-		return nil, fmt.Errorf("resolving refs: %w", err)
+		return nil, fmt.Errorf("resolving ref: %w", err)
 	}
 	if err := proj.disposeComponent(ctx, id); err != nil {
 		return nil, fmt.Errorf("disposing: %w", err)
@@ -288,4 +288,22 @@ func (proj *Project) GetEvents(ctx context.Context, input *api.GetEventsInput) (
 		}
 	}
 	return &output, nil
+}
+
+func (proj *Project) Start(ctx context.Context, input *api.StartInput) (*api.StartOutput, error) {
+	id, err := proj.resolveRef(ctx, input.Ref)
+	if err != nil {
+		return nil, fmt.Errorf("resolving ref: %w", err)
+	}
+	_ = id
+	panic("TODO: Start")
+}
+
+func (proj *Project) Stop(ctx context.Context, input *api.StopInput) (*api.StopOutput, error) {
+	id, err := proj.resolveRef(ctx, input.Ref)
+	if err != nil {
+		return nil, fmt.Errorf("resolving ref: %w", err)
+	}
+	_ = id
+	panic("TODO: Stop")
 }

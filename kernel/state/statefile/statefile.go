@@ -230,6 +230,9 @@ func (sto *Store) RemoveComponent(ctx context.Context, input *state.RemoveCompon
 		if project.Names != nil {
 			delete(project.Names, component.Name)
 		}
+		if root.ComponentProjects != nil {
+			delete(root.ComponentProjects, input.ID)
+		}
 		return nil
 	})
 	if err != nil {

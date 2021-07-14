@@ -33,6 +33,9 @@ type Project interface {
 
 	DescribeLogs(context.Context, *DescribeLogsInput) (*DescribeLogsOutput, error)
 	GetEvents(context.Context, *GetEventsInput) (*GetEventsOutput, error)
+
+	Start(context.Context, *StartInput) (*StartOutput, error)
+	Stop(context.Context, *StopInput) (*StopOutput, error)
 }
 
 type DeleteInput struct{}
@@ -135,6 +138,18 @@ type Event struct {
 	Message   string `json:"message"`
 }
 
+type StartInput struct {
+	Ref string `json:"ref"`
+}
+
+type StartOutput struct{}
+
+type StopInput struct {
+	Ref string `json:"ref"`
+}
+
+type StopOutput struct{}
+
 func NewProjectMux(prefix string, project Project) *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.Handle(prefix+"delete", josh.NewMethodHandler(project.Delete))
@@ -148,5 +163,7 @@ func NewProjectMux(prefix string, project Project) *http.ServeMux {
 	mux.Handle(prefix+"delete-component", josh.NewMethodHandler(project.DeleteComponent))
 	mux.Handle(prefix+"describe-logs", josh.NewMethodHandler(project.DescribeLogs))
 	mux.Handle(prefix+"get-events", josh.NewMethodHandler(project.GetEvents))
+	mux.Handle(prefix+"start", josh.NewMethodHandler(project.Start))
+	mux.Handle(prefix+"stop", josh.NewMethodHandler(project.Stop))
 	return mux
 }

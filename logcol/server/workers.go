@@ -3,6 +3,7 @@ package server
 import (
 	"bufio"
 	"context"
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -31,8 +32,10 @@ func (lc *logCollector) startWorker(ctx context.Context, logName string, state L
 	}
 	go func() {
 		wkr.err = wkr.run(ctx)
-		// TODO: Don't log and do figure out how to handle.
-		fmt.Fprintf(os.Stderr, "worker error: %v\n", wkr.err)
+		if wkr.err != nil {
+			// TODO: Panic instead.
+			fmt.Fprintf(os.Stderr, "worker error: %v\n", wkr.err)
+		}
 	}()
 }
 
@@ -69,7 +72,8 @@ func (wkr *worker) run(ctx context.Context) error {
 		sid++
 		message, isPrefix, err := r.ReadLine()
 		if err == io.EOF {
-			break
+			// TODO: Reconnect on EOF. Should only stop running on context cancelled.
+			return errors.New("TODO: handle fifo EOF")
 		}
 		if err != nil {
 			return fmt.Errorf("reading: %w", err)
@@ -92,7 +96,6 @@ func (wkr *worker) run(ctx context.Context) error {
 			return fmt.Errorf("writing: %w", err)
 		}
 	}
-	return nil
 }
 
 func makeChunkPath(source string, chunk int) string {
