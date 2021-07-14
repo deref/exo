@@ -354,26 +354,27 @@ func combineLastEventAt(a, b *string) *string {
 
 func (proj *Project) GetEvents(ctx context.Context, input *api.GetEventsInput) (*api.GetEventsOutput, error) {
 	logGroups := input.Logs
-	var logStreams []string
 	if logGroups == nil {
 		// No filter specified, use all streams.
 		logDescriptions, err := proj.DescribeLogs(ctx, &api.DescribeLogsInput{})
 		if err != nil {
 			return nil, fmt.Errorf("enumerating logs: %w", err)
 		}
-		for _, stream := range logDescriptions.Logs {
-			logStreams = append(logStreams, stream.Name)
-		}
-	} else {
-		// Expand log groups in to streams.
-		for _, group := range logGroups {
-			// Each process acts as a log group combining both stdout and stderr.
-			// TODO: Generalize handling of log groups.
-			for _, stream := range processLogStreams {
-				logStreams = append(logStreams, fmt.Sprintf("%s:%s", group, stream))
-			}
+		logGroups = make([]string, len(logDescriptions.Logs))
+		for i, group := range logDescriptions.Logs {
+			logGroups[i] = group.Name
 		}
 	}
+	var logStreams []string
+	// Expand log groups in to streams.
+	for _, group := range logGroups {
+		// Each process acts as a log group combining both stdout and stderr.
+		// TODO: Generalize handling of log groups.
+		for _, stream := range processLogStreams {
+			logStreams = append(logStreams, fmt.Sprintf("%s:%s", group, stream))
+		}
+	}
+	fmt.Println(logGroups, logStreams)
 
 	collector := log.CurrentLogCollector(ctx)
 	collectorEvents, err := collector.GetEvents(ctx, &logcol.GetEventsInput{
