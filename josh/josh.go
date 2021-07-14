@@ -6,6 +6,8 @@ import (
 	"log" // TODO: Use a request scoped logger.
 	"net/http"
 	"reflect"
+
+	"github.com/deref/exo/jsonutil"
 )
 
 type MethodHandler struct {
@@ -58,8 +60,7 @@ func (handler *MethodHandler) ServeHTTP(w http.ResponseWriter, req *http.Request
 	// TODO: Differentiate 400s from 500s, internal vs external errors, etc.
 	input := reflect.New(handler.in)
 	if req.Body != nil {
-		dec := json.NewDecoder(req.Body)
-		if err := dec.Decode(input.Interface()); err != nil {
+		if err := jsonutil.UnmarshalReader(req.Body, input.Interface()); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
 			log.Printf("error parsing request: %v", err)
 			w.Write([]byte("error parsing json\n"))

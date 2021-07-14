@@ -14,7 +14,7 @@ func main() {
 	ctx := server.NewContext(context.Background())
 	ctx = log.ContextWithLogCollector(ctx, logcol.NewLogCollector(&josh.Client{
 		HTTP: http.DefaultClient,
-		URL:  "http://localhost:3001",
+		URL:  "http://localhost:3001/",
 	}))
 	http.ListenAndServe(":3000", server.NewHandler(ctx))
 }

@@ -1,6 +1,7 @@
 package jsonutil
 
 import (
+	"bytes"
 	"encoding/json"
 	"io"
 	"io/ioutil"
@@ -25,6 +26,10 @@ func UnmarshalReader(r io.Reader, v interface{}) error {
 	bs, err := ioutil.ReadAll(r)
 	if err != nil {
 		return err
+	}
+	bs = bytes.TrimSpace(bs)
+	if len(bs) == 0 {
+		return nil
 	}
 	return json.Unmarshal(bs, v)
 }

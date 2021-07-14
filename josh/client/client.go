@@ -5,8 +5,9 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
-	"path"
+	"reflect"
 
 	"github.com/deref/exo/jsonutil"
 )
@@ -21,12 +22,21 @@ func (c *Client) Invoke(ctx context.Context, method string, input interface{}, o
 	if err != nil {
 		return fmt.Errorf("marshalling input: %w", err)
 	}
-	url := path.Join(c.URL, method)
+	url := c.URL + method
 	contentType := "application/json"
 	resp, err := c.HTTP.Post(url, contentType, bytes.NewBuffer(inputB))
 	if err != nil {
 		return fmt.Errorf("posting: %w", err)
 	}
+	if resp.StatusCode != http.StatusOK {
+		bs, err := ioutil.ReadAll(resp.Body)
+		if err != nil {
+			return fmt.Errorf("reading response body: %w", err)
+		}
+		return fmt.Errorf("%s", bs)
+	}
+	outputValue := reflect.ValueOf(output).Elem()
+	outputValue.Set(reflect.Zero(outputValue.Type()))
 	if err := jsonutil.UnmarshalReader(resp.Body, output); err != nil {
 		return fmt.Errorf("unmarshalling output: %w", err)
 	}
