@@ -83,7 +83,7 @@ those fifos.`, os.Args[0])
 func pipeToFifo(name string, r io.Reader) {
 	b := bufio.NewReader(r) // TODO: Use NewReaderSize and document max log line length.
 	fifoPath := filepath.Join(varDir, name)
-	if err := syscall.Mkfifo(fifoPath, 0600); err != nil {
+	if err := syscall.Mkfifo(fifoPath, 0600); err != nil && !os.IsExist(err) {
 		fatalf("making fifo %q: %v", fifoPath, err)
 	}
 	for {
