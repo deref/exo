@@ -9,6 +9,7 @@ import (
 	"path/filepath"
 	"strconv"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/deref/exo/core"
@@ -71,6 +72,9 @@ func (provider *Provider) start(ctx context.Context, procDir string, inputSpec s
 		spec.Arguments...,
 	)
 	cmd := exec.Command(fifofumPath, fifofumArgs...)
+	cmd.SysProcAttr = &syscall.SysProcAttr{
+		Setsid: true, // Run in background.
+	}
 
 	// Forward environment.
 	cmd.Env = []string{} // TODO: Get from spec.
