@@ -47,6 +47,24 @@ func (proj *Project) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 	panic("TODO: Apply")
 }
 
+func (proj *Project) Refresh(ctx context.Context, input *api.RefreshInput) (*api.RefreshOutput, error) {
+	store := state.CurrentStore(ctx)
+	components, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
+		ProjectID: proj.ID,
+	})
+	if err != nil {
+		return nil, err
+	}
+	// TODO: Parallelism.
+	for _, component := range components.Components {
+		if err := proj.refreshComponent(ctx, store, component); err != nil {
+			// TODO: Error recovery.
+			return nil, fmt.Errorf("refreshing %q: %w", component.Name, err)
+		}
+	}
+	return &api.RefreshOutput{}, nil
+}
+
 func (proj *Project) Resolve(ctx context.Context, input *api.ResolveInput) (*api.ResolveOutput, error) {
 	store := state.CurrentStore(ctx)
 	storeOutput, err := store.Resolve(ctx, &state.ResolveInput{
@@ -179,22 +197,32 @@ func (proj *Project) RefreshComponent(ctx context.Context, input *api.RefreshCom
 	}
 	component := describeOutput.Components[0]
 
+	if err := proj.refreshComponent(ctx, store, component); err != nil {
+		return nil, err
+	}
+
+	return &api.RefreshComponentOutput{}, err
+}
+
+func (proj *Project) refreshComponent(ctx context.Context, store state.Store, component state.ComponentDescription) error {
 	provider := proj.resolveProvider(component.Type)
 	refreshed, err := provider.Refresh(ctx, &core.RefreshInput{
 		ID:    component.ID,
 		Spec:  component.Spec,
 		State: component.State,
 	})
+	if err != nil {
+		return err
+	}
 
 	if _, err := store.PatchComponent(ctx, &state.PatchComponentInput{
-		ID:          id,
+		ID:          component.ID,
 		State:       refreshed.State,
 		Initialized: chrono.NowString(ctx),
 	}); err != nil {
-		return nil, fmt.Errorf("modifying component after initialization: %w", err)
+		return fmt.Errorf("modifying component after initialization: %w", err)
 	}
-
-	return &api.RefreshComponentOutput{}, err
+	return nil
 }
 
 func (proj *Project) DisposeComponent(ctx context.Context, input *api.DisposeComponentInput) (*api.DisposeComponentOutput, error) {

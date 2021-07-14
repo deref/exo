@@ -13,6 +13,8 @@ type Project interface {
 	Delete(context.Context, *DeleteInput) (*DeleteOutput, error)
 	// Performs creates, updates, refreshes, disposes, as needed.
 	Apply(context.Context, *ApplyInput) (*ApplyOutput, error)
+	// Refreshes all components.
+	Refresh(context.Context, *RefreshInput) (*RefreshOutput, error)
 
 	// Resolves a reference in to an ID.
 	Resolve(context.Context, *ResolveInput) (*ResolveOutput, error)
@@ -50,6 +52,10 @@ type ApplyInput struct {
 }
 
 type ApplyOutput struct{}
+
+type RefreshInput struct{}
+
+type RefreshOutput struct{}
 
 type ResolveInput struct {
 	Refs []string `json:"refs"`
@@ -169,6 +175,7 @@ func NewProjectMux(prefix string, project Project) *http.ServeMux {
 	b := josh.NewMuxBuilder(prefix)
 	b.AddMethod("delete", project.Delete)
 	b.AddMethod("apply", project.Apply)
+	b.AddMethod("refresh", project.Refresh)
 	b.AddMethod("resolve", project.Resolve)
 	b.AddMethod("describe-components", project.DescribeComponents)
 	b.AddMethod("create-component", project.CreateComponent)
