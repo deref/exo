@@ -88,7 +88,7 @@ func (proj *Project) DescribeComponents(ctx context.Context, input *api.Describe
 	return output, nil
 }
 
-func resolveLifecycle(typ string) api.Lifecycle {
+func resolveProvider(typ string) api.Provider {
 	switch typ {
 	case "process":
 		wd, err := os.Getwd()
@@ -97,12 +97,12 @@ func resolveLifecycle(typ string) api.Lifecycle {
 		}
 		projectDir := wd                   // TODO: Get from component hierarchy.
 		varDir := filepath.Join(wd, "var") // TODO: Get from exod config.
-		return &process.Lifecycle{
+		return &process.Provider{
 			ProjectDir: projectDir,
 			VarDir:     filepath.Join(varDir, "proc"),
 		}
 	default:
-		return &invalid.Lifecycle{
+		return &invalid.Provider{
 			Err: fmt.Errorf("unsupported component type: %q", typ),
 		}
 	}
@@ -128,8 +128,8 @@ func (proj *Project) CreateComponent(ctx context.Context, input *api.CreateCompo
 		return nil, fmt.Errorf("adding component: %w", err)
 	}
 
-	lifecycle := resolveLifecycle(input.Type)
-	output, err := lifecycle.Initialize(ctx, &api.InitializeInput{
+	provider := resolveProvider(input.Type)
+	output, err := provider.Initialize(ctx, &api.InitializeInput{
 		ID:   id,
 		Spec: input.Spec,
 	})
@@ -196,8 +196,8 @@ func (proj *Project) disposeComponent(ctx context.Context, id string) error {
 		return fmt.Errorf("no component %q", id)
 	}
 	component := describeOutput.Components[0]
-	lifecycle := resolveLifecycle(component.Type)
-	_, err = lifecycle.Dispose(ctx, &api.DisposeInput{
+	provider := resolveProvider(component.Type)
+	_, err = provider.Dispose(ctx, &api.DisposeInput{
 		ID:    id,
 		State: component.State,
 	})

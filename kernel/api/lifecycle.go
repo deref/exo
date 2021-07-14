@@ -4,9 +4,6 @@ package api
 
 import (
 	"context"
-	"net/http"
-
-	"github.com/deref/exo/josh"
 )
 
 type Lifecycle interface {
@@ -53,13 +50,4 @@ type DisposeInput struct {
 type DisposeOutput struct {
 	State string `json:"state"`
 	// TODO: Return a promise that can be awaited for synchronous deletes.
-}
-
-func NewLifecycleMux(prefix string, lifecycle Lifecycle) *http.ServeMux {
-	mux := http.NewServeMux()
-	mux.Handle(prefix+"initialize", josh.NewMethodHandler(lifecycle.Initialize))
-	mux.Handle(prefix+"update", josh.NewMethodHandler(lifecycle.Update))
-	mux.Handle(prefix+"refresh", josh.NewMethodHandler(lifecycle.Refresh))
-	mux.Handle(prefix+"dispose", josh.NewMethodHandler(lifecycle.Dispose))
-	return mux
 }

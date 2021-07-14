@@ -5,7 +5,7 @@ import (
 	"net/http"
 
 	"github.com/deref/exo/config"
-	"github.com/deref/exo/josh"
+	josh "github.com/deref/exo/josh/server"
 )
 
 type Project interface {
@@ -151,19 +151,19 @@ type StopInput struct {
 type StopOutput struct{}
 
 func NewProjectMux(prefix string, project Project) *http.ServeMux {
-	mux := http.NewServeMux()
-	mux.Handle(prefix+"delete", josh.NewMethodHandler(project.Delete))
-	mux.Handle(prefix+"apply", josh.NewMethodHandler(project.Apply))
-	mux.Handle(prefix+"resolve", josh.NewMethodHandler(project.Resolve))
-	mux.Handle(prefix+"describe-components", josh.NewMethodHandler(project.DescribeComponents))
-	mux.Handle(prefix+"create-component", josh.NewMethodHandler(project.CreateComponent))
-	mux.Handle(prefix+"update-component", josh.NewMethodHandler(project.UpdateComponent))
-	mux.Handle(prefix+"refresh-component", josh.NewMethodHandler(project.RefreshComponent))
-	mux.Handle(prefix+"dispose-component", josh.NewMethodHandler(project.DisposeComponent))
-	mux.Handle(prefix+"delete-component", josh.NewMethodHandler(project.DeleteComponent))
-	mux.Handle(prefix+"describe-logs", josh.NewMethodHandler(project.DescribeLogs))
-	mux.Handle(prefix+"get-events", josh.NewMethodHandler(project.GetEvents))
-	mux.Handle(prefix+"start", josh.NewMethodHandler(project.Start))
-	mux.Handle(prefix+"stop", josh.NewMethodHandler(project.Stop))
-	return mux
+	b := josh.NewMuxBuilder(prefix)
+	b.AddMethod("delete", project.Delete)
+	b.AddMethod("apply", project.Apply)
+	b.AddMethod("resolve", project.Resolve)
+	b.AddMethod("describe-components", project.DescribeComponents)
+	b.AddMethod("create-component", project.CreateComponent)
+	b.AddMethod("update-component", project.UpdateComponent)
+	b.AddMethod("refresh-component", project.RefreshComponent)
+	b.AddMethod("dispose-component", project.DisposeComponent)
+	b.AddMethod("delete-component", project.DeleteComponent)
+	b.AddMethod("describe-logs", project.DescribeLogs)
+	b.AddMethod("get-events", project.GetEvents)
+	b.AddMethod("start", project.Start)
+	b.AddMethod("stop", project.Stop)
+	return b.Mux()
 }

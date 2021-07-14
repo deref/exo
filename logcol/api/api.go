@@ -6,7 +6,7 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/deref/exo/josh"
+	josh "github.com/deref/exo/josh/server"
 )
 
 // TODO: Bulk methods.
@@ -68,11 +68,15 @@ type CollectInput struct{}
 type CollectOutput struct{}
 
 func NewLogCollectorMux(prefix string, collector LogCollector) *http.ServeMux {
-	mux := http.NewServeMux()
-	mux.Handle(prefix+"add-log", josh.NewMethodHandler(collector.AddLog))
-	mux.Handle(prefix+"remove-log", josh.NewMethodHandler(collector.RemoveLog))
-	mux.Handle(prefix+"describe-logs", josh.NewMethodHandler(collector.DescribeLogs))
-	mux.Handle(prefix+"get-events", josh.NewMethodHandler(collector.GetEvents))
-	mux.Handle(prefix+"collect", josh.NewMethodHandler(collector.Collect))
-	return mux
+	b := josh.NewMuxBuilder(prefix)
+	BuildLogCollectorMux(b, collector)
+	return b.Mux()
+}
+
+func BuildLogCollectorMux(b *josh.MuxBuilder, collector LogCollector) {
+	b.AddMethod("add-log", collector.AddLog)
+	b.AddMethod("remove-log", collector.RemoveLog)
+	b.AddMethod("describe-logs", collector.DescribeLogs)
+	b.AddMethod("get-events", collector.GetEvents)
+	b.AddMethod("collect", collector.Collect)
 }

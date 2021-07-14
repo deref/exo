@@ -1,4 +1,4 @@
-package josh
+package server
 
 import (
 	"context"
@@ -86,4 +86,24 @@ func (handler *MethodHandler) ServeHTTP(w http.ResponseWriter, req *http.Request
 	if err := enc.Encode(output); err != nil {
 		log.Printf("error encoding response: %v", err)
 	}
+}
+
+type MuxBuilder struct {
+	prefix string
+	mux    *http.ServeMux
+}
+
+func NewMuxBuilder(prefix string) *MuxBuilder {
+	return &MuxBuilder{
+		prefix: prefix,
+		mux:    http.NewServeMux(),
+	}
+}
+
+func (b *MuxBuilder) Mux() *http.ServeMux {
+	return b.mux
+}
+
+func (b *MuxBuilder) AddMethod(name string, f interface{}) {
+	b.mux.Handle(b.prefix+name, NewMethodHandler(f))
 }
