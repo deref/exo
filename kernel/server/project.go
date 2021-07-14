@@ -447,7 +447,7 @@ func (proj *Project) DescribeProcesses(ctx context.Context, input *api.DescribeP
 		if component.Type == "process" {
 			// XXX Do not utilize internal knowledge of process state.
 			var state struct {
-				Pid int `json:"prid"`
+				Pid int `json:"pid"`
 			}
 			if err := jsonutil.UnmarshalString(component.State, &state); err != nil {
 				// TODO: log error.
