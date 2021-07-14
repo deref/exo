@@ -55,6 +55,16 @@ var contextType = reflect.TypeOf((*context.Context)(nil)).Elem()
 var errorType = reflect.TypeOf((*error)(nil)).Elem()
 
 func (handler *MethodHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	// TODO: Figure out the "right" thing to do for cors.
+	w.Header().Set("Access-Control-Allow-Origin", "*")
+	w.Header().Set("Access-Control-Allow-Methods", "*")
+	w.Header().Set("Access-Control-Allow-Headers", "*")
+
+	if req.Method == "OPTIONS" {
+		w.WriteHeader(http.StatusOK)
+		return
+	}
+
 	// TODO: Check content-type, accepts, etc.
 	// TODO: Include a Request ID in logs?
 	// TODO: Differentiate 400s from 500s, internal vs external errors, etc.
@@ -81,6 +91,7 @@ func (handler *MethodHandler) ServeHTTP(w http.ResponseWriter, req *http.Request
 		return
 	}
 	w.Header().Set("Content-Type", "application/json")
+
 	w.WriteHeader(http.StatusOK)
 	enc := json.NewEncoder(w)
 	if err := enc.Encode(output); err != nil {
