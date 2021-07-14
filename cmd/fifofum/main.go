@@ -11,6 +11,7 @@ import (
 	"syscall"
 
 	"github.com/deref/exo/cmdutil"
+	"github.com/deref/exo/logcol/api"
 )
 
 var child *os.Process
@@ -87,7 +88,7 @@ those fifos.`, os.Args[0])
 }
 
 func pipeToFifo(name string, r io.Reader) {
-	b := bufio.NewReader(r) // TODO: Use NewReaderSize and document max log line length.
+	b := bufio.NewReaderSize(r, api.MaxMessageSize)
 	fifoPath := filepath.Join(varDir, name)
 	if err := syscall.Mkfifo(fifoPath, 0600); err != nil && !os.IsExist(err) {
 		fatalf("making fifo %q: %v", fifoPath, err)

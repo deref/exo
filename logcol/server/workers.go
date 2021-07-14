@@ -9,6 +9,7 @@ import (
 	"os"
 
 	"github.com/deref/exo/chrono"
+	"github.com/deref/exo/logcol/api"
 )
 
 type worker struct {
@@ -67,7 +68,7 @@ func (wkr *worker) run(ctx context.Context) error {
 
 	sid := 0 // XXX get sequence id from last line in file.
 
-	r := bufio.NewReader(source)
+	r := bufio.NewReaderSize(source, api.MaxMessageSize)
 	for {
 		sid++
 		message, isPrefix, err := r.ReadLine()
@@ -92,7 +93,7 @@ func (wkr *worker) run(ctx context.Context) error {
 		}
 
 		timestamp := chrono.NowString(ctx)
-		if _, err := fmt.Fprintf(sink, "%d %s %s\n", sid, timestamp, message); err != nil {
+		if _, err := fmt.Fprintf(sink, "%020d %s %s\n", sid, timestamp, message); err != nil {
 			return fmt.Errorf("writing: %w", err)
 		}
 	}

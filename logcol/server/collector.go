@@ -67,10 +67,51 @@ func (lc *logCollector) DescribeLogs(context.Context, *api.DescribeLogsInput) (*
 		output.Logs = append(output.Logs, api.LogDescription{
 			Name:        name,
 			Source:      description.Source,
-			LastEventAt: nil, // XXX set me based on the last line of file.
+			LastEventAt: lc.getLastEventAt(description),
 		})
 	}
 	return &output, nil
+}
+
+func (lc *logCollector) getLastEventAt(state LogState) *string {
+	chunk := 0 // XXX
+	chunkPath := makeChunkPath(state.Source, chunk)
+	f, err := os.Open(chunkPath)
+	if err != nil {
+		return nil
+	}
+	info, err := f.Stat()
+	if err != nil {
+		return nil
+	}
+	offset := info.Size() - api.MaxEventSize
+	if offset < 0 {
+		offset = 0
+	}
+	if _, err := f.Seek(offset, io.SeekStart); err != nil {
+		return nil
+	}
+	bs := make([]byte, api.MaxEventSize)
+	if _, err := f.Read(bs); err != nil && err != io.EOF {
+		return nil
+	}
+	if len(bs) == 0 {
+		return nil
+	}
+	nl := len(bs) - 2
+	for nl >= 0 {
+		if bs[nl] == '\n' {
+			break
+		}
+		nl--
+	}
+	bs = bs[:nl+1]
+	parts := bytes.SplitN(bs, []byte{'\n'}, 2)
+	event, err := parseEvent("", parts[0])
+	if err != nil {
+		return nil
+	}
+	return &event.Timestamp
 }
 
 func (lc *logCollector) GetEvents(ctx context.Context, input *api.GetEventsInput) (*api.GetEventsOutput, error) {
@@ -90,7 +131,7 @@ func (lc *logCollector) GetEvents(ctx context.Context, input *api.GetEventsInput
 			if err != nil {
 				return nil, fmt.Errorf("opening %s source: %w", logName, err)
 			}
-			r := bufio.NewReader(f)
+			r := bufio.NewReaderSize(f, api.MaxEventSize)
 			for {
 				line, isPrefix, err := r.ReadLine()
 				if err == io.EOF {
@@ -111,22 +152,29 @@ func (lc *logCollector) GetEvents(ctx context.Context, input *api.GetEventsInput
 						return nil, fmt.Errorf("reading: %w", err)
 					}
 				}
-				fields := bytes.SplitN(line, []byte(" "), 3)
-				if len(fields) != 3 {
-					return nil, fmt.Errorf("invalid log line")
+				event, err := parseEvent(logName, line)
+				if err != nil {
+					return nil, err
 				}
-				event := api.Event{
-					Log:       logName,
-					Sid:       string(fields[0]),
-					Timestamp: string(fields[1]),
-					Message:   string(fields[2]),
-				}
-				output.Events = append(output.Events, event)
+				output.Events = append(output.Events, *event)
 			}
 		}
 	}
 	sort.Sort(&eventsSorter{output.Events})
 	return &output, nil
+}
+
+func parseEvent(logName string, line []byte) (*api.Event, error) {
+	fields := bytes.SplitN(line, []byte(" "), 3)
+	if len(fields) != 3 {
+		return nil, fmt.Errorf("invalid log line")
+	}
+	return &api.Event{
+		Log:       logName,
+		Sid:       string(fields[0]),
+		Timestamp: string(fields[1]),
+		Message:   string(fields[2]),
+	}, nil
 }
 
 type eventsSorter struct {

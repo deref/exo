@@ -20,7 +20,7 @@ type Process struct {
 
 func Parse(r io.Reader) (*Procfile, error) {
 	var procfile Procfile
-	br := bufio.NewReader(r)
+	br := bufio.NewReaderSize(r, 4096)
 	lineIndex := 0
 	for {
 		lineIndex++

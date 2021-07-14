@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/deref/exo/chrono"
 	"github.com/deref/exo/components/invalid"
@@ -283,6 +284,8 @@ func (proj *Project) DeleteComponent(ctx context.Context, input *api.DeleteCompo
 	return &api.DeleteComponentOutput{}, nil
 }
 
+var processLogStreams = []string{"out", "err"}
+
 func (proj *Project) DescribeLogs(ctx context.Context, input *api.DescribeLogsInput) (*api.DescribeLogsOutput, error) {
 	store := state.CurrentStore(ctx)
 	components, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
@@ -291,48 +294,90 @@ func (proj *Project) DescribeLogs(ctx context.Context, input *api.DescribeLogsIn
 	if err != nil {
 		return nil, fmt.Errorf("describing components: %w", err)
 	}
-	// TODO: When we have subcomponents, do a search for type=log.
-	var logNames []string
+
+	// Find all logs in component hierarchy.
+	// TODO: More general handling of log groups, subcomponents, etc.
+	var logGroups []string
+	var logStreams []string
+	streamToGroup := make(map[string]int, len(logGroups))
 	for _, component := range components.Components {
 		if component.Type == "process" {
-			for _, role := range []string{"out", "err"} {
-				logNames = append(logNames, fmt.Sprintf("%s:%s", component.ID, role))
+			for _, stream := range processLogStreams {
+				streamName := fmt.Sprintf("%s:%s", component.ID, stream)
+				streamToGroup[streamName] = len(logGroups)
+				logStreams = append(logStreams, streamName)
+			}
+			logGroups = append(logGroups, component.ID)
+		}
+	}
+
+	// Initialize output and index by log group name.
+	logs := make([]api.LogDescription, len(logGroups))
+	for i, logGroup := range logGroups {
+		logs[i] = api.LogDescription{
+			Name: logGroup,
+		}
+	}
+
+	// Decorate output with information from the log collector.
+	collector := log.CurrentLogCollector(ctx)
+	collectorLogs, err := collector.DescribeLogs(ctx, &logcol.DescribeLogsInput{
+		Names: logStreams,
+	})
+	if err != nil {
+		return nil, err
+	}
+	for _, collectorLog := range collectorLogs.Logs {
+		groupIndex, ok := streamToGroup[collectorLog.Name]
+		if !ok {
+			continue
+		}
+		group := &logs[groupIndex]
+		group.LastEventAt = combineLastEventAt(group.LastEventAt, collectorLog.LastEventAt)
+	}
+	return &api.DescribeLogsOutput{Logs: logs}, nil
+}
+
+func combineLastEventAt(a, b *string) *string {
+	if a == nil {
+		return b
+	}
+	if b == nil {
+		return a
+	}
+	if strings.Compare(*a, *b) < 0 {
+		return a
+	} else {
+		return b
+	}
+}
+
+func (proj *Project) GetEvents(ctx context.Context, input *api.GetEventsInput) (*api.GetEventsOutput, error) {
+	logGroups := input.Logs
+	var logStreams []string
+	if logGroups == nil {
+		// No filter specified, use all streams.
+		logDescriptions, err := proj.DescribeLogs(ctx, &api.DescribeLogsInput{})
+		if err != nil {
+			return nil, fmt.Errorf("enumerating logs: %w", err)
+		}
+		for _, stream := range logDescriptions.Logs {
+			logStreams = append(logStreams, stream.Name)
+		}
+	} else {
+		// Expand log groups in to streams.
+		for _, group := range logGroups {
+			// Each process acts as a log group combining both stdout and stderr.
+			// TODO: Generalize handling of log groups.
+			for _, stream := range processLogStreams {
+				logStreams = append(logStreams, fmt.Sprintf("%s:%s", group, stream))
 			}
 		}
 	}
 
 	collector := log.CurrentLogCollector(ctx)
-	collectorLogs, err := collector.DescribeLogs(ctx, &logcol.DescribeLogsInput{
-		Names: logNames,
-	})
-	if err != nil {
-		return nil, err
-	}
-	logs := make([]api.LogDescription, len(collectorLogs.Logs))
-	for i, collectorLog := range collectorLogs.Logs {
-		logs[i] = api.LogDescription{
-			Name:        collectorLog.Name,
-			LastEventAt: collectorLog.LastEventAt,
-		}
-	}
-	return &api.DescribeLogsOutput{Logs: logs}, nil
-}
-
-func (proj *Project) GetEvents(ctx context.Context, input *api.GetEventsInput) (*api.GetEventsOutput, error) {
-	logNames := input.Logs
-	if input.Logs == nil {
-		logDescriptions, err := proj.DescribeLogs(ctx, &api.DescribeLogsInput{})
-		if err != nil {
-			return nil, fmt.Errorf("enumerating logs: %w", err)
-		}
-		for _, log := range logDescriptions.Logs {
-			logNames = append(logNames, log.Name)
-		}
-	}
-
-	collector := log.CurrentLogCollector(ctx)
 	collectorEvents, err := collector.GetEvents(ctx, &logcol.GetEventsInput{
-		Logs:   logNames,
+		Logs:   logStreams,
 		Before: input.Before,
 		After:  input.After,
 	})

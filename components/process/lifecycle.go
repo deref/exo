@@ -57,7 +57,7 @@ func (provider *Provider) Initialize(ctx context.Context, input *core.Initialize
 }
 
 func readLine(r io.Reader) (string, error) {
-	b := bufio.NewReader(r)
+	b := bufio.NewReaderSize(r, 4096)
 	line, isPrefix, err := b.ReadLine()
 	if err != nil {
 		return "", err

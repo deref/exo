@@ -19,6 +19,8 @@ CRUD operations: `/add-log`, `/remove-log`, and `/describe-logs`.
 Each log is made up of events, which combine a log line message with a per-log
 sequence id (abbreviated "sid") and a timestamp.
 
+Sequence IDs are zero-padded, 20 digit, positive integers beginning at 1.
+
 The `/get-events` operation provides paginated queries of the union of
 several log streams. The log storage format is indexed by sid.
 
