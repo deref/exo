@@ -92,28 +92,30 @@ func (lc *LogCollector) DescribeLogs(context.Context, *api.DescribeLogsInput) (*
 }
 
 func (lc *LogCollector) getLastEventAt(name string) *string {
-	fmt.Println("get last event", name)
+	prefix := append([]byte(name), 0)
 	var timestamp uint64
-	if err := lc.db.View(func(txn *badger.Txn) error {
-		prefix := append([]byte(name), 0)
-		it := txn.NewIterator(badger.IteratorOptions{
-			Prefix:  prefix,
-			Reverse: true,
-		})
+	err := lc.db.View(func(txn *badger.Txn) error {
+		opts := badger.DefaultIteratorOptions
+		opts.PrefetchSize = 10
+		opts.Reverse = true
+		it := txn.NewIterator(opts)
 		defer it.Close()
-		if !it.Valid() {
-			fmt.Println("not valid")
-			return nil
+		for it.Seek(append([]byte(name), 255)); it.ValidForPrefix(prefix); it.Next() {
+			item := it.Item()
+			err := item.Value(func(bs []byte) error {
+				timestamp = binary.BigEndian.Uint64(bs)
+				return nil
+			})
+			if err != nil {
+				return err
+			}
 		}
-		fmt.Print("HERE")
-		return it.Item().Value(func(bs []byte) error {
-			timestamp = binary.BigEndian.Uint64(bs)
-			return nil
-		})
-	}); err != nil {
-		fmt.Println("view err:", err)
+		return nil
+	})
+	if err != nil {
 		return nil
 	}
+
 	if timestamp != 0 {
 		s := chrono.NanoToIso(int64(timestamp))
 		return &s

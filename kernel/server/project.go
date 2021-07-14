@@ -173,7 +173,12 @@ func (proj *Project) CreateComponent(ctx context.Context, input *api.CreateCompo
 }
 
 func IsValidName(name string) bool {
-	return name != "" // XXX
+	for _, b := range []byte(name) {
+		if b == 0 || b == 255 {
+			return false
+		}
+	}
+	return name != ""
 }
 
 func (proj *Project) UpdateComponent(ctx context.Context, input *api.UpdateComponentInput) (*api.UpdateComponentOutput, error) {
