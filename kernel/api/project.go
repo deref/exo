@@ -36,6 +36,9 @@ type Project interface {
 
 	Start(context.Context, *StartInput) (*StartOutput, error)
 	Stop(context.Context, *StopInput) (*StopOutput, error)
+
+	// TODO: Move these to a plugin or similar.
+	DescribeProcesses(context.Context, *DescribeProcessesInput) (*DescribeProcessesOutput, error)
 }
 
 type DeleteInput struct{}
@@ -150,6 +153,18 @@ type StopInput struct {
 
 type StopOutput struct{}
 
+type DescribeProcessesInput struct{}
+
+type DescribeProcessesOutput struct {
+	Processes []ProcessDescription `json:"processes"`
+}
+
+type ProcessDescription struct {
+	ID      string `json:"id"`
+	Name    string `json:"name"`
+	Running bool   `json:"running"`
+}
+
 func NewProjectMux(prefix string, project Project) *http.ServeMux {
 	b := josh.NewMuxBuilder(prefix)
 	b.AddMethod("delete", project.Delete)
@@ -165,5 +180,6 @@ func NewProjectMux(prefix string, project Project) *http.ServeMux {
 	b.AddMethod("get-events", project.GetEvents)
 	b.AddMethod("start", project.Start)
 	b.AddMethod("stop", project.Stop)
+	b.AddMethod("describe-processes", project.DescribeProcesses)
 	return b.Mux()
 }

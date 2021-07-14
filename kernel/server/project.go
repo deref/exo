@@ -12,6 +12,7 @@ import (
 	"github.com/deref/exo/components/process"
 	"github.com/deref/exo/core"
 	"github.com/deref/exo/gensym"
+	"github.com/deref/exo/jsonutil"
 	"github.com/deref/exo/kernel/api"
 	"github.com/deref/exo/kernel/state"
 	logcol "github.com/deref/exo/logcol/api"
@@ -369,4 +370,37 @@ func (proj *Project) Stop(ctx context.Context, input *api.StopInput) (*api.StopO
 	}
 
 	return &api.StopOutput{}, nil
+}
+
+func (proj *Project) DescribeProcesses(ctx context.Context, input *api.DescribeProcessesInput) (*api.DescribeProcessesOutput, error) {
+	store := state.CurrentStore(ctx)
+	components, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
+		ProjectID: proj.ID,
+		// TODO: Filter by type.
+	})
+	if err != nil {
+		return nil, fmt.Errorf("describing components: %w", err)
+	}
+	var output api.DescribeProcessesOutput
+	for _, component := range components.Components {
+		if component.Type == "process" {
+			// XXX Do not utilize internal knowledge of process state.
+			var state struct {
+				Pid int `json:"prid"`
+			}
+			if err := jsonutil.UnmarshalString(component.State, &state); err != nil {
+				// TODO: log error.
+				fmt.Printf("unmarshalling process state: %v\n", err)
+				continue
+			}
+			running := state.Pid != 0
+			process := api.ProcessDescription{
+				ID:      component.ID,
+				Name:    component.Name,
+				Running: running,
+			}
+			output.Processes = append(output.Processes, process)
+		}
+	}
+	return &output, nil
 }
