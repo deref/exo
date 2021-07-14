@@ -8,21 +8,21 @@ import (
 
 	"github.com/deref/exo/components/log"
 	"github.com/deref/exo/kernel/server"
-	"github.com/deref/exo/logcol/api"
 	logcol "github.com/deref/exo/logcol/server"
 )
 
 func main() {
 	ctx := server.NewContext(context.Background())
 
-	lc := logcol.NewLogCollector()
-	ctx = log.ContextWithLogCollector(ctx, lc)
-	go lc.Collect(ctx, &api.CollectInput{})
+	collector := logcol.NewLogCollector()
+	collector.Start(ctx)
+	ctx = log.ContextWithLogCollector(ctx, collector)
 
 	go func() {
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, os.Interrupt)
 		<-c
+		collector.Stop(ctx)
 		os.Exit(0)
 	}()
 

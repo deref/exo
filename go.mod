@@ -4,6 +4,7 @@ go 1.16
 
 require (
 	github.com/deref/pier v0.0.0-20210620044641-0f71544154e7
+	github.com/dgraph-io/badger/v3 v3.2103.1
 	github.com/hashicorp/hcl/v2 v2.10.0
 	github.com/natefinch/atomic v1.0.1
 )

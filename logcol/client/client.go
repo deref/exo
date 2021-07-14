@@ -38,8 +38,3 @@ func (c *LogCollector) GetEvents(ctx context.Context, input *api.GetEventsInput)
 	err = c.client.Invoke(ctx, "get-events", input, &output)
 	return
 }
-
-func (c *LogCollector) Collect(ctx context.Context, input *api.CollectInput) (output *api.CollectOutput, err error) {
-	err = c.client.Invoke(ctx, "collect", input, &output)
-	return
-}

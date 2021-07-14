@@ -14,7 +14,6 @@ type LogCollector interface {
 	RemoveLog(context.Context, *RemoveLogInput) (*RemoveLogOutput, error)
 	DescribeLogs(context.Context, *DescribeLogsInput) (*DescribeLogsOutput, error)
 	GetEvents(context.Context, *GetEventsInput) (*GetEventsOutput, error)
-	Collect(context.Context, *CollectInput) (*CollectOutput, error)
 }
 
 type AddLogInput struct {
@@ -68,7 +67,6 @@ func BuildLogCollectorMux(b *josh.MuxBuilder, iface LogCollector) {
 	b.AddMethod("remove-log", iface.RemoveLog)
 	b.AddMethod("describe-logs", iface.DescribeLogs)
 	b.AddMethod("get-events", iface.GetEvents)
-	b.AddMethod("collect", iface.Collect)
 }
 
 type LogDescription struct {

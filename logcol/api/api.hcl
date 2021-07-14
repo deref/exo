@@ -23,8 +23,6 @@ interface "log-collector" {
     output "events" "[]Event" {}
   }
 
-  method "collect" {}
-
 }
 
 struct "log-description" {

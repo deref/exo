@@ -89,7 +89,7 @@ those fifos.`, os.Args[0])
 
 func pipeToFifo(name string, r io.Reader) {
 	b := bufio.NewReaderSize(r, api.MaxMessageSize)
-	fifoPath := filepath.Join(varDir, name)
+	fifoPath := filepath.Join(varDir, name) + ".fifo"
 	if err := syscall.Mkfifo(fifoPath, 0600); err != nil && !os.IsExist(err) {
 		fatalf("making fifo %q: %v", fifoPath, err)
 	}

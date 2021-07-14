@@ -1,3 +1,5 @@
+// Separate logd service for testing in isolation. Unused for production deployments.
+
 package main
 
 import (
@@ -13,13 +15,14 @@ import (
 func main() {
 	ctx := context.Background()
 	port := os.Getenv("PORT")
-	lc := server.NewLogCollector()
-	go lc.Collect(ctx, &api.CollectInput{})
+	collector := server.NewLogCollector()
+	collector.Start(ctx)
 	go func() {
 		c := make(chan os.Signal, 1)
 		signal.Notify(c, os.Interrupt)
 		<-c
+		collector.Stop(ctx)
 		os.Exit(0)
 	}()
-	http.ListenAndServe(":"+port, api.NewLogCollectorMux("/", lc))
+	http.ListenAndServe(":"+port, api.NewLogCollectorMux("/", collector))
 }

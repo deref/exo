@@ -3,7 +3,6 @@ package server
 import (
 	"bufio"
 	"context"
-	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -14,23 +13,39 @@ import (
 
 type worker struct {
 	sourcePath string
+	sink       sink
+	done       chan struct{}
 
 	err    error
 	source *os.File
-	sink   *os.File
 }
 
-func (lc *logCollector) startWorker(ctx context.Context, logName string, state LogState) {
+type sink interface {
+	AddEvent(ctx context.Context, sid uint64, timestamp uint64, message []byte) error
+}
+
+func (lc *LogCollector) ensureWorker(ctx context.Context, logName string, state LogState) {
 	lc.mx.Lock()
 	defer lc.mx.Unlock()
-
-	wkr, exists := lc.workers[logName]
-	if !exists {
-		wkr = &worker{
-			sourcePath: state.Source,
-		}
-		lc.workers[logName] = wkr
+	if lc.workers == nil {
+		// No worker support in peer mode.
+		return
 	}
+	lc.startWorker(ctx, logName, state)
+}
+
+func (lc *LogCollector) startWorker(ctx context.Context, logName string, state LogState) {
+	wkr, exists := lc.workers[logName]
+	if exists {
+		return
+	}
+	sink := newBadgerSink(lc.db, logName)
+	wkr = &worker{
+		sourcePath: state.Source,
+		sink:       sink,
+		done:       make(chan struct{}, 0),
+	}
+	lc.workers[logName] = wkr
 	go func() {
 		wkr.err = wkr.run(ctx)
 		if wkr.err != nil {
@@ -40,7 +55,7 @@ func (lc *logCollector) startWorker(ctx context.Context, logName string, state L
 	}()
 }
 
-func (lc *logCollector) stopWorker(logName string) {
+func (lc *LogCollector) stopWorker(logName string) {
 	lc.mx.Lock()
 	defer lc.mx.Unlock()
 
@@ -50,31 +65,27 @@ func (lc *logCollector) stopWorker(logName string) {
 	}
 
 	_ = wkr.source.Close()
-	_ = wkr.sink.Close()
 }
 
 func (wkr *worker) run(ctx context.Context) error {
-	source, err := os.Open(wkr.sourcePath)
+	source, err := os.Open(wkr.sourcePath + ".fifo")
 	if err != nil {
 		return fmt.Errorf("opening source: %w", err)
 	}
 
-	chunkIndex := 0 // TODO: Log rotation.
-	chunkPath := fmt.Sprintf("%s.%d", wkr.sourcePath, chunkIndex)
-	sink, err := os.OpenFile(chunkPath, os.O_WRONLY|os.O_APPEND|os.O_CREATE, 0600)
-	if err != nil {
-		return fmt.Errorf("opening sink: %w", err)
-	}
+	go func() {
+		<-wkr.done
+		_ = source.Close()
+	}()
 
-	sid := 0 // XXX get sequence id from last line in file.
+	sid := uint64(0) // XXX get sequence id from last line in file.
 
 	r := bufio.NewReaderSize(source, api.MaxMessageSize)
 	for {
 		sid++
 		message, isPrefix, err := r.ReadLine()
 		if err == io.EOF {
-			// TODO: Reconnect on EOF. Should only stop running on context cancelled.
-			return errors.New("TODO: handle fifo EOF")
+			return nil
 		}
 		if err != nil {
 			return fmt.Errorf("reading: %w", err)
@@ -92,13 +103,9 @@ func (wkr *worker) run(ctx context.Context) error {
 			}
 		}
 
-		timestamp := chrono.NowString(ctx)
-		if _, err := fmt.Fprintf(sink, "%020d %s %s\n", sid, timestamp, message); err != nil {
-			return fmt.Errorf("writing: %w", err)
+		timestamp := chrono.NowNano(ctx)
+		if err := wkr.sink.AddEvent(ctx, sid, timestamp, message); err != nil {
+			return fmt.Errorf("adding event: %w", err)
 		}
 	}
-}
-
-func makeChunkPath(source string, chunk int) string {
-	return fmt.Sprintf("%s.%d", source, chunk)
 }

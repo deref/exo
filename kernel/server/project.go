@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
@@ -242,7 +243,7 @@ func (proj *Project) resolveRef(ctx context.Context, ref string) (string, error)
 	}
 	id := resolveOutput.IDs[0]
 	if id == nil {
-		return "", nil
+		return "", errors.New("unresolvable")
 	}
 	return *id, nil
 }
