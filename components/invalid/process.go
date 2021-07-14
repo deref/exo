@@ -3,13 +3,13 @@ package invalid
 import (
 	"context"
 
-	"github.com/deref/exo/kernel/api"
+	"github.com/deref/exo/core"
 )
 
-func (p *Provider) Start(ctx context.Context, input *api.StartInput) (*api.StartOutput, error) {
+func (p *Provider) Start(ctx context.Context, input *core.StartInput) (*core.StartOutput, error) {
 	return nil, p.Err
 }
 
-func (p *Provider) Stop(ctx context.Context, input *api.StopInput) (*api.StopOutput, error) {
+func (p *Provider) Stop(ctx context.Context, input *core.StopInput) (*core.StopOutput, error) {
 	return nil, p.Err
 }

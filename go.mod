@@ -4,7 +4,6 @@ go 1.16
 
 require (
 	github.com/deref/pier v0.0.0-20210620044641-0f71544154e7
-	github.com/mitchellh/mapstructure v1.4.1
 	github.com/natefinch/atomic v1.0.1
 )
 

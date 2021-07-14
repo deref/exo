@@ -7,24 +7,15 @@ import (
 	"fmt"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
-	"strconv"
-	"strings"
-	"time"
 
 	"github.com/deref/exo/components/log"
+	"github.com/deref/exo/core"
 	"github.com/deref/exo/jsonutil"
-	"github.com/deref/exo/kernel/api"
 	logcol "github.com/deref/exo/logcol/api"
 )
 
-func (provider *Provider) Initialize(ctx context.Context, input *api.InitializeInput) (*api.InitializeOutput, error) {
-	var spec spec
-	if err := jsonutil.UnmarshalString(input.Spec, &spec); err != nil {
-		return nil, fmt.Errorf("unmarshalling spec: %w", err)
-	}
-
+func (provider *Provider) Initialize(ctx context.Context, input *core.InitializeInput) (*core.InitializeOutput, error) {
 	// Ensure top-level var directory.
 	err := os.Mkdir(provider.VarDir, 0700)
 	if os.IsExist(err) {
@@ -40,88 +31,8 @@ func (provider *Provider) Initialize(ctx context.Context, input *api.InitializeI
 		return nil, fmt.Errorf("creating proc directory: %w", err)
 	}
 
-	// Use configured working directory or fallback to project directory.
-	directory := spec.Directory
-	if directory == "" {
-		directory = provider.ProjectDir
-	}
-
-	// Resolve command path.
-	command := spec.Command
-	searchPaths, _ := os.LookupEnv("PATH")
-	for _, searchPath := range strings.Split(searchPaths, ":") {
-		candidate := filepath.Join(searchPath, command)
-		info, _ := os.Stat(candidate)
-		if info != nil {
-			command = candidate
-			break
-		}
-	}
-
-	// Construct supervised command.
-	fifofumPath := "./fifofum" // XXX Use exo home path.
-	fifofumArgs := append(
-		[]string{
-			procDir,
-			command,
-		},
-		spec.Arguments...,
-	)
-	cmd := exec.Command(fifofumPath, fifofumArgs...)
-
-	// Forward environment.
-	cmd.Env = []string{} // TODO: Get from spec.
-
-	// Connect pipes.
-	stdout, err := cmd.StdoutPipe()
-	if err != nil {
-		panic(err)
-	}
-	stderr, err := cmd.StderrPipe()
-	if err != nil {
-		panic(err)
-	}
-
-	// Start supervisor process.
-	if err := cmd.Start(); err != nil {
-		return nil, fmt.Errorf("starting fifofum: %w", err)
-	}
-
-	// Collect fifofum output.
-	pidC := make(chan int, 1)
-	errC := make(chan error, 2)
-	go func() {
-		pidStr, err := readLine(stdout)
-		if err != nil {
-			errC <- fmt.Errorf("reading fifofum stdout: %w", err)
-			return
-		}
-		pid, err := strconv.Atoi(pidStr)
-		if err != nil {
-			errC <- fmt.Errorf("parsing fifofum output: %w", err)
-			return
-		}
-		pidC <- pid
-	}()
-	go func() {
-		message, err := readLine(stderr)
-		if err != nil {
-			errC <- fmt.Errorf("reading fifofum stderr: %w", err)
-			return
-		}
-		if len(message) > 0 {
-			errC <- errors.New(message)
-		}
-	}()
-
-	// Await fifofum result.
-	var pid int
-	select {
-	case pid = <-pidC:
-	case err = <-errC:
-	case <-time.After(300 * time.Millisecond):
-		err = errors.New("fifofum timeout")
-	}
+	// Processes are started by default.
+	state, err := provider.start(ctx, procDir, input.Spec)
 	if err != nil {
 		return nil, err
 	}
@@ -139,10 +50,8 @@ func (provider *Provider) Initialize(ctx context.Context, input *api.InitializeI
 		}
 	}
 
-	var output api.InitializeOutput
-	output.State = jsonutil.MustMarshalString(state{
-		Pid: pid,
-	})
+	var output core.InitializeOutput
+	output.State = jsonutil.MustMarshalString(state)
 	return &output, nil
 }
 
@@ -158,27 +67,21 @@ func readLine(r io.Reader) (string, error) {
 	return string(line), nil
 }
 
-func (provider *Provider) Update(context.Context, *api.UpdateInput) (*api.UpdateOutput, error) {
+func (provider *Provider) Update(context.Context, *core.UpdateInput) (*core.UpdateOutput, error) {
 	panic("TODO: update")
 }
 
-func (provider *Provider) Refresh(context.Context, *api.RefreshInput) (*api.RefreshOutput, error) {
+func (provider *Provider) Refresh(context.Context, *core.RefreshInput) (*core.RefreshOutput, error) {
 	panic("TODO: refresh")
 }
 
-func (provider *Provider) Dispose(ctx context.Context, input *api.DisposeInput) (*api.DisposeOutput, error) {
+func (provider *Provider) Dispose(ctx context.Context, input *core.DisposeInput) (*core.DisposeOutput, error) {
 	var state state
 	if err := jsonutil.UnmarshalString(input.State, &state); err != nil {
 		return nil, fmt.Errorf("unmarshalling state: %w", err)
 	}
 
-	proc, err := os.FindProcess(state.Pid)
-	if err != nil {
-		panic(err)
-	}
-	if err := proc.Kill(); err != nil {
-		// TODO: Report the error somehow?
-	}
+	provider.stop(state.Pid)
 
 	// Deregister log streams.
 	// TODO: Don't do this synchronously here. Use some kind of component hierarchy mechanism.
@@ -198,5 +101,5 @@ func (provider *Provider) Dispose(ctx context.Context, input *api.DisposeInput) 
 		return nil, fmt.Errorf("removing var directory: %w", err)
 	}
 
-	return &api.DisposeOutput{State: input.State}, nil
+	return &core.DisposeOutput{State: input.State}, nil
 }

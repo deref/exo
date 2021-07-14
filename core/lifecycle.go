@@ -1,6 +1,6 @@
 // TODO: Generate this package via JOSH introspection.
 
-package api
+package core
 
 import (
 	"context"

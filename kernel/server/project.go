@@ -10,6 +10,7 @@ import (
 	"github.com/deref/exo/components/invalid"
 	"github.com/deref/exo/components/log"
 	"github.com/deref/exo/components/process"
+	"github.com/deref/exo/core"
 	"github.com/deref/exo/gensym"
 	"github.com/deref/exo/kernel/api"
 	"github.com/deref/exo/kernel/state"
@@ -88,7 +89,7 @@ func (proj *Project) DescribeComponents(ctx context.Context, input *api.Describe
 	return output, nil
 }
 
-func resolveProvider(typ string) api.Provider {
+func (proj *Project) resolveProvider(typ string) core.Provider {
 	switch typ {
 	case "process":
 		wd, err := os.Getwd()
@@ -128,8 +129,8 @@ func (proj *Project) CreateComponent(ctx context.Context, input *api.CreateCompo
 		return nil, fmt.Errorf("adding component: %w", err)
 	}
 
-	provider := resolveProvider(input.Type)
-	output, err := provider.Initialize(ctx, &api.InitializeInput{
+	provider := proj.resolveProvider(input.Type)
+	output, err := provider.Initialize(ctx, &core.InitializeInput{
 		ID:   id,
 		Spec: input.Spec,
 	})
@@ -196,8 +197,8 @@ func (proj *Project) disposeComponent(ctx context.Context, id string) error {
 		return fmt.Errorf("no component %q", id)
 	}
 	component := describeOutput.Components[0]
-	provider := resolveProvider(component.Type)
-	_, err = provider.Dispose(ctx, &api.DisposeInput{
+	provider := proj.resolveProvider(component.Type)
+	_, err = provider.Dispose(ctx, &core.DisposeInput{
 		ID:    id,
 		State: component.State,
 	})
@@ -291,19 +292,81 @@ func (proj *Project) GetEvents(ctx context.Context, input *api.GetEventsInput) (
 }
 
 func (proj *Project) Start(ctx context.Context, input *api.StartInput) (*api.StartOutput, error) {
+	store := state.CurrentStore(ctx)
+
 	id, err := proj.resolveRef(ctx, input.Ref)
 	if err != nil {
 		return nil, fmt.Errorf("resolving ref: %w", err)
 	}
-	_ = id
-	panic("TODO: Start")
+
+	components, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
+		ProjectID: proj.ID,
+		IDs:       []string{id},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("fetching component state: %w", err)
+	}
+	if len(components.Components) != 1 {
+		return nil, fmt.Errorf("no state for component: %s", id)
+	}
+	component := components.Components[0]
+
+	provider := proj.resolveProvider(component.Type)
+	providerOutput, err := provider.Start(ctx, &core.StartInput{
+		ID:    id,
+		Spec:  component.Spec,
+		State: component.State,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := store.PatchComponent(ctx, &state.PatchComponentInput{
+		ID:    id,
+		State: providerOutput.State,
+	}); err != nil {
+		return nil, fmt.Errorf("updating component state: %w", err)
+	}
+
+	return &api.StartOutput{}, nil
 }
 
 func (proj *Project) Stop(ctx context.Context, input *api.StopInput) (*api.StopOutput, error) {
+	store := state.CurrentStore(ctx)
+
 	id, err := proj.resolveRef(ctx, input.Ref)
 	if err != nil {
 		return nil, fmt.Errorf("resolving ref: %w", err)
 	}
-	_ = id
-	panic("TODO: Stop")
+
+	components, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
+		ProjectID: proj.ID,
+		IDs:       []string{id},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("fetching component state: %w", err)
+	}
+	if len(components.Components) != 1 {
+		return nil, fmt.Errorf("no state for component: %s", id)
+	}
+	component := components.Components[0]
+
+	provider := proj.resolveProvider(component.Type)
+	providerOutput, err := provider.Stop(ctx, &core.StopInput{
+		ID:    id,
+		Spec:  component.Spec,
+		State: component.State,
+	})
+	if err != nil {
+		return nil, err
+	}
+
+	if _, err := store.PatchComponent(ctx, &state.PatchComponentInput{
+		ID:    id,
+		State: providerOutput.State,
+	}); err != nil {
+		return nil, fmt.Errorf("updating component state: %w", err)
+	}
+
+	return &api.StopOutput{}, nil
 }

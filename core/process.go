@@ -1,4 +1,4 @@
-package process
+package core
 
 import "context"
 
@@ -8,6 +8,8 @@ type Process interface {
 }
 
 type StartInput struct {
+	ID    string `json:"id"`
+	Spec  string `json:"spec"`
 	State string `json:"state"`
 }
 
@@ -16,6 +18,8 @@ type StartOutput struct {
 }
 
 type StopInput struct {
+	ID    string `json:"id"`
+	Spec  string `json:"spec"`
 	State string `json:"state"`
 }
 

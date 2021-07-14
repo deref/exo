@@ -3,21 +3,21 @@ package invalid
 import (
 	"context"
 
-	"github.com/deref/exo/kernel/api"
+	"github.com/deref/exo/core"
 )
 
-func (p *Provider) Initialize(ctx context.Context, input *api.InitializeInput) (*api.InitializeOutput, error) {
+func (p *Provider) Initialize(ctx context.Context, input *core.InitializeInput) (*core.InitializeOutput, error) {
 	return nil, p.Err
 }
 
-func (p *Provider) Update(context.Context, *api.UpdateInput) (*api.UpdateOutput, error) {
+func (p *Provider) Update(context.Context, *core.UpdateInput) (*core.UpdateOutput, error) {
 	return nil, p.Err
 }
 
-func (p *Provider) Refresh(context.Context, *api.RefreshInput) (*api.RefreshOutput, error) {
+func (p *Provider) Refresh(context.Context, *core.RefreshInput) (*core.RefreshOutput, error) {
 	return nil, p.Err
 }
 
-func (p *Provider) Dispose(context.Context, *api.DisposeInput) (*api.DisposeOutput, error) {
+func (p *Provider) Dispose(context.Context, *core.DisposeInput) (*core.DisposeOutput, error) {
 	return nil, p.Err
 }
