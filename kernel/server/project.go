@@ -283,7 +283,7 @@ func (proj *Project) GetEvents(ctx context.Context, input *api.GetEventsInput) (
 	for i, collectorEvent := range collectorEvents.Events {
 		output.Events[i] = api.Event{
 			Log:       collectorEvent.Log,
-			SID:       collectorEvent.SID,
+			Sid:       collectorEvent.Sid,
 			Timestamp: collectorEvent.Timestamp,
 			Message:   collectorEvent.Message,
 		}

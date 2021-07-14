@@ -9,6 +9,8 @@ import (
 	"os/signal"
 	"path/filepath"
 	"syscall"
+
+	"github.com/deref/exo/cmdutil"
 )
 
 var child *os.Process
@@ -119,6 +121,5 @@ func fatalf(format string, v ...interface{}) {
 	if child != nil {
 		_ = child.Kill()
 	}
-	fmt.Fprintf(os.Stderr, format+"\n", v...)
-	os.Exit(1)
+	cmdutil.Fatalf(format, v...)
 }

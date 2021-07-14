@@ -133,7 +133,7 @@ type GetEventsOutput struct {
 
 type Event struct {
 	Log       string `json:"log"`
-	SID       string `json:"sid"`
+	Sid       string `json:"sid"`
 	Timestamp string `json:"timestamp"`
 	Message   string `json:"message"`
 }

@@ -117,7 +117,7 @@ func (lc *logCollector) GetEvents(ctx context.Context, input *api.GetEventsInput
 				}
 				event := api.Event{
 					Log:       logName,
-					SID:       string(fields[0]),
+					Sid:       string(fields[0]),
 					Timestamp: string(fields[1]),
 					Message:   string(fields[2]),
 				}
