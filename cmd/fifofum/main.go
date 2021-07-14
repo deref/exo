@@ -54,14 +54,20 @@ those fifos.`, os.Args[0])
 		fatalf("reporting pid: %v", err)
 	}
 
-	// Forward signals to child.
-	// TODO: Process Group instead?
+	// Handle signals.
 	c := make(chan os.Signal)
-	signal.Notify(c, os.Interrupt, os.Kill)
+	signal.Notify(c, os.Interrupt, os.Kill, syscall.SIGCHLD)
 	go func() {
 		for sig := range c {
-			if err := cmd.Process.Signal(sig); err != nil {
-				break
+			switch sig {
+			// Forward signals to child.
+			case os.Interrupt, os.Kill:
+				if err := cmd.Process.Signal(sig); err != nil {
+					break
+				}
+			// Exit when child exits.
+			case syscall.SIGCHLD:
+				os.Exit(1)
 			}
 		}
 	}()
