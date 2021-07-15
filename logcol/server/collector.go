@@ -12,6 +12,7 @@ import (
 	"github.com/deref/exo/atom"
 	"github.com/deref/exo/chrono"
 	"github.com/deref/exo/logcol/api"
+	"github.com/deref/exo/util/mathutil"
 	badger "github.com/dgraph-io/badger/v3"
 	"github.com/oklog/ulid/v2"
 )
@@ -193,7 +194,8 @@ func (lc *LogCollector) GetEvents(ctx context.Context, input *api.GetEventsInput
 	var cursor string
 	if len(events) > 0 {
 		sort.Sort(&eventsSorter{events})
-		events = events[:limit]
+		end := mathutil.IntMin(limit, len(events))
+		events = events[:end]
 
 		cursor = events[len(events)-1].ID
 	}
