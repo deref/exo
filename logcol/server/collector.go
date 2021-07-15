@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"path/filepath"
 	"sort"
-	"strconv"
 	"sync"
 
 	"github.com/deref/exo/atom"
@@ -212,13 +211,11 @@ func eventFromEntry(log string, key, val []byte) (api.Event, error) {
 		return api.Event{}, fmt.Errorf("parsing id: %w", err)
 	}
 
-	// Create value as (version, sid, timestamp, message).
+	// Create value as (version, timestamp, message).
 	// Version is used so that we can change the value format without rebuilding the database.
 	versionOffset := 0
 	versionLen := 1
-	sidOffset := versionOffset + versionLen
-	sidLen := 8
-	timestampOffset := sidOffset + sidLen
+	timestampOffset := versionOffset + versionLen
 	timestampLen := 8
 	messageOffset := timestampOffset + timestampLen
 
@@ -227,7 +224,6 @@ func eventFromEntry(log string, key, val []byte) (api.Event, error) {
 		return api.Event{}, fmt.Errorf("unsupported event version: %d; database may have been written with a newer version of exo.", version)
 	}
 
-	sid := binary.BigEndian.Uint64(val[sidOffset : sidOffset+sidLen])
 	tsNano := binary.BigEndian.Uint64(val[timestampOffset : timestampOffset+timestampLen])
 	message := string(val[messageOffset:])
 
@@ -235,7 +231,6 @@ func eventFromEntry(log string, key, val []byte) (api.Event, error) {
 		ID:        id,
 		Log:       log,
 		Timestamp: chrono.NanoToIso(int64(tsNano)),
-		Sid:       strconv.FormatUint(sid, 10),
 		Message:   message,
 	}, nil
 }

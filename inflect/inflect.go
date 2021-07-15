@@ -26,7 +26,6 @@ func (infl *Inflector) IsAcronym(s string) bool {
 
 func init() {
 	DefaultInflector.AddAcronym("id")
-	DefaultInflector.AddAcronym("sid")
 }
 
 func KebabToPublic(s string) string {

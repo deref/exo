@@ -26,7 +26,7 @@ func newBadgerSink(db *badger.DB, idGen *idGen, logName string) *badgerSink {
 	}
 }
 
-func (sink *badgerSink) AddEvent(ctx context.Context, sid uint64, timestamp uint64, message []byte) error {
+func (sink *badgerSink) AddEvent(ctx context.Context, timestamp uint64, message []byte) error {
 	// Generate an id that is guaranteed to be monotonically increasing within this process.
 	id, err := sink.idGen.nextId(ctx) // Assume that ID the trailing segment and does not need a terminator.
 	if err != nil {
@@ -43,20 +43,17 @@ func (sink *badgerSink) AddEvent(ctx context.Context, sid uint64, timestamp uint
 	copy(key[logNameOffset:logNameOffset+logNameLen], []byte(sink.logName))
 	copy(key[idOffset:idOffset+idLen], id)
 
-	// Create value as (version, sid, timestamp, message).
+	// Create value as (version, timestamp, message).
 	// Version is used so that we can change the value format without rebuilding the database.
 	versionOffset := 0
 	versionLen := 1
-	sidOffset := versionOffset + versionLen
-	sidLen := 8
-	timestampOffset := sidOffset + sidLen
+	timestampOffset := versionOffset + versionLen
 	timestampLen := 8
 	messageOffset := timestampOffset + timestampLen
 	messageLen := len(message)
 	val := make([]byte, messageOffset+messageLen)
 
 	val[versionOffset] = eventVersion
-	binary.BigEndian.PutUint64(val[sidOffset:sidOffset+sidLen], sid)
 	binary.BigEndian.PutUint64(val[timestampOffset:timestampOffset+timestampLen], timestamp)
 	copy(val[messageOffset:messageOffset+messageLen], message)
 

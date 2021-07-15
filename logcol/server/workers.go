@@ -21,7 +21,7 @@ type worker struct {
 }
 
 type sink interface {
-	AddEvent(ctx context.Context, sid uint64, timestamp uint64, message []byte) error
+	AddEvent(ctx context.Context, timestamp uint64, message []byte) error
 }
 
 func (lc *LogCollector) ensureWorker(ctx context.Context, logName string, state LogState) {
@@ -78,11 +78,8 @@ func (wkr *worker) run(ctx context.Context) error {
 		_ = source.Close()
 	}()
 
-	sid := uint64(0) // XXX get last sequence id.
-
 	r := bufio.NewReaderSize(source, api.MaxMessageSize)
 	for {
-		sid++
 		message, isPrefix, err := r.ReadLine()
 		if err == io.EOF {
 			return nil
@@ -104,7 +101,7 @@ func (wkr *worker) run(ctx context.Context) error {
 		}
 
 		timestamp := chrono.NowNano(ctx)
-		if err := wkr.sink.AddEvent(ctx, sid, timestamp, message); err != nil {
+		if err := wkr.sink.AddEvent(ctx, timestamp, message); err != nil {
 			return fmt.Errorf("adding event: %w", err)
 		}
 	}
