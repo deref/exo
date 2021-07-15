@@ -17,6 +17,10 @@ import (
 	"github.com/oklog/ulid/v2"
 )
 
+const (
+	defaultEventsPerRequest = 500
+)
+
 type Config struct {
 	VarDir string
 }
@@ -142,7 +146,7 @@ func (lc *LogCollector) GetEvents(ctx context.Context, input *api.GetEventsInput
 	}
 
 	// TODO: Allow override via input.
-	limit := api.DefaultEventsPerRequest
+	limit := defaultEventsPerRequest
 
 	// TODO: Sorted merge.
 	events := []api.Event{}
