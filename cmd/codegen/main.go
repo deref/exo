@@ -26,7 +26,10 @@ func main() {
 			return fmt.Errorf("parsing %q: %w", path, err)
 		}
 		outpath := strings.TrimSuffix(path, extension) + ".go"
-		bs, err := codegen.Generate(module)
+		bs, err := codegen.Generate(&codegen.Root{
+			Package: filepath.Base(filepath.Dir(path)),
+			Module:  *module,
+		})
 		if err != nil {
 			return fmt.Errorf("generating from %q: %w", path, err)
 		}

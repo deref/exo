@@ -1,9 +1,12 @@
-// TODO: Generate this package via JOSH introspection.
+// Generated file. DO NOT EDIT.
 
 package core
 
 import (
 	"context"
+	"net/http"
+
+	josh "github.com/deref/exo/josh/server"
 )
 
 type Lifecycle interface {
@@ -15,7 +18,7 @@ type Lifecycle interface {
 
 type InitializeInput struct {
 	ID   string `json:"id"`
-	Spec string `json:"spec"` // TODO: content-type tagged data, default to application/json or whatever.
+	Spec string `json:"spec"`
 }
 
 type InitializeOutput struct {
@@ -45,10 +48,23 @@ type RefreshOutput struct {
 
 type DisposeInput struct {
 	ID    string `json:"id"`
+	Spec  string `json:"spec"`
 	State string `json:"state"`
 }
 
 type DisposeOutput struct {
 	State string `json:"state"`
-	// TODO: Return a promise that can be awaited for synchronous deletes.
+}
+
+func NewLifecycleMux(prefix string, iface Lifecycle) *http.ServeMux {
+	b := josh.NewMuxBuilder(prefix)
+	BuildLifecycleMux(b, iface)
+	return b.Mux()
+}
+
+func BuildLifecycleMux(b *josh.MuxBuilder, iface Lifecycle) {
+	b.AddMethod("initialize", iface.Initialize)
+	b.AddMethod("update", iface.Update)
+	b.AddMethod("refresh", iface.Refresh)
+	b.AddMethod("dispose", iface.Dispose)
 }

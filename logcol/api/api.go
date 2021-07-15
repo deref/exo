@@ -72,7 +72,7 @@ type LogDescription struct {
 
 type Event struct {
 	Log       string `json:"log"`
-	Sid       string `json:"sid"`
+	SID       string `json:"sid"`
 	Timestamp string `json:"timestamp"`
 	Message   string `json:"message"`
 }

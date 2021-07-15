@@ -9,6 +9,11 @@ import (
 	"github.com/hashicorp/hcl/v2/hclsimple"
 )
 
+type Root struct {
+	Package string
+	Module
+}
+
 type Module struct {
 	Interfaces []Interface `hcl:"interface,block"`
 	Structs    []Struct    `hcl:"struct,block"`
@@ -56,7 +61,7 @@ func Validate(mod Module) error {
 	return nil
 }
 
-func Generate(module *Module) ([]byte, error) {
+func Generate(root *Root) ([]byte, error) {
 	tmpl := template.Must(
 		template.New("module").
 			Funcs(map[string]interface{}{
@@ -67,7 +72,7 @@ func Generate(module *Module) ([]byte, error) {
 			Parse(moduleTemplate),
 	)
 	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, module); err != nil {
+	if err := tmpl.Execute(&buf, root); err != nil {
 		return nil, err
 	}
 	bs := buf.Bytes()
@@ -82,7 +87,7 @@ func Generate(module *Module) ([]byte, error) {
 var moduleTemplate = `
 // Generated file. DO NOT EDIT.
 
-package api
+package {{.Package}}
 
 {{- define "doc" -}}
 {{if .Doc}}// {{.Doc}}
