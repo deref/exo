@@ -16,7 +16,7 @@ func main() {
 		VarDir: cmdutil.MustVarDir(),
 	}
 	ctx := context.Background()
-	collector := server.NewLogCollector(cfg)
+	collector := server.NewLogCollector(ctx, cfg)
 	collector.Start(ctx)
 	defer collector.Stop(ctx)
 	pier.Main(api.NewLogCollectorMux("/", collector))

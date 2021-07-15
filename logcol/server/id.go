@@ -15,8 +15,8 @@ type idGen struct {
 	entropy *ulid.MonotonicEntropy
 }
 
-func newIdGen() *idGen {
-	seed := int64(chrono.NowNano(context.Background()))
+func newIdGen(ctx context.Context) *idGen {
+	seed := int64(chrono.NowNano(ctx))
 	randRead := rand.New(rand.NewSource(seed))
 	return &idGen{
 		entropy: ulid.Monotonic(randRead, 0),

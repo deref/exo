@@ -24,12 +24,12 @@ type Config struct {
 	VarDir string
 }
 
-func NewLogCollector(cfg *Config) *LogCollector {
+func NewLogCollector(ctx context.Context, cfg *Config) *LogCollector {
 	statePath := filepath.Join(cfg.VarDir, "logcol.json")
 	return &LogCollector{
 		varDir: cfg.VarDir,
 		state:  atom.NewFileAtom(statePath, atom.CodecJSON),
-		idGen:  newIdGen(),
+		idGen:  newIdGen(ctx),
 	}
 }
 

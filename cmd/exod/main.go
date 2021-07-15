@@ -18,7 +18,7 @@ func main() {
 	}
 	ctx := server.NewContext(context.Background(), cfg)
 
-	collector := logcol.NewLogCollector(&logcol.Config{
+	collector := logcol.NewLogCollector(ctx, &logcol.Config{
 		VarDir: cfg.VarDir,
 	})
 	collector.Start(ctx)
