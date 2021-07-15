@@ -114,7 +114,10 @@ func (lc *LogCollector) getLastEventAt(name string) *string {
 		if it.ValidForPrefix(prefix) {
 			item := it.Item()
 			return item.Value(func(val []byte) error {
-				timestamp = binary.BigEndian.Uint64(val[9 : 9+8])
+				if err := validateVersion(val[versionOffset]); err != nil {
+					return err
+				}
+				timestamp = binary.BigEndian.Uint64(val[timestampOffset : timestampOffset+timestampLen])
 				return nil
 			})
 		}
@@ -199,60 +202,6 @@ func (lc *LogCollector) GetEvents(ctx context.Context, input *api.GetEventsInput
 		Events: events,
 		Cursor: cursor,
 	}, nil
-}
-
-func eventFromEntry(log string, key, val []byte) (api.Event, error) {
-	// Parse key as (logName, null, id).
-	logNameOffset := 0
-	logNameLen := len(log)
-	idOffset := logNameOffset + logNameLen + 1
-	id, err := parseID(key[idOffset:])
-	if err != nil {
-		return api.Event{}, fmt.Errorf("parsing id: %w", err)
-	}
-
-	// Create value as (version, timestamp, message).
-	// Version is used so that we can change the value format without rebuilding the database.
-	versionOffset := 0
-	versionLen := 1
-	timestampOffset := versionOffset + versionLen
-	timestampLen := 8
-	messageOffset := timestampOffset + timestampLen
-
-	version := val[versionOffset]
-	if version != 1 {
-		return api.Event{}, fmt.Errorf("unsupported event version: %d; database may have been written with a newer version of exo.", version)
-	}
-
-	tsNano := binary.BigEndian.Uint64(val[timestampOffset : timestampOffset+timestampLen])
-	message := string(val[messageOffset:])
-
-	return api.Event{
-		ID:        id,
-		Log:       log,
-		Timestamp: chrono.NanoToIso(int64(tsNano)),
-		Message:   message,
-	}, nil
-}
-
-// incrementBytes returns a byte slice that is incremented by 1 bit.
-// If `val` is not already only 255-valued bytes, then it is mutated and returned.
-// Otherwise, a new slice is allocated and returned.
-func incrementBytes(val []byte) []byte {
-	for idx := len(val) - 1; idx >= 0; idx-- {
-		byt := val[idx]
-		if byt == 255 {
-			val[idx] = 0
-		} else {
-			val[idx] = byt + 1
-			return val
-		}
-	}
-
-	// Still carrying from previously most significant byte, so add a new 1-valued byte.
-	newVal := make([]byte, len(val)+1)
-	newVal[0] = 1
-	return newVal
 }
 
 type eventsSorter struct {

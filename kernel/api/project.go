@@ -126,6 +126,7 @@ type GetEventsInput struct {
 
 type GetEventsOutput struct {
 	Events []Event `json:"events"`
+	Cursor string  `json:"cursor"`
 }
 
 type StartInput struct {

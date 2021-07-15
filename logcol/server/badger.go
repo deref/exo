@@ -34,7 +34,6 @@ func (sink *badgerSink) AddEvent(ctx context.Context, timestamp uint64, message 
 	}
 
 	// Create key as (logName, null, id).
-	logNameOffset := 0
 	logNameLen := len(sink.logName)
 	idOffset := logNameOffset + logNameLen + 1 // +1 is for null terminator.
 	idLen := len(id)                           // Assume that ID the trailing segment and does not need a terminator.
@@ -45,11 +44,6 @@ func (sink *badgerSink) AddEvent(ctx context.Context, timestamp uint64, message 
 
 	// Create value as (version, timestamp, message).
 	// Version is used so that we can change the value format without rebuilding the database.
-	versionOffset := 0
-	versionLen := 1
-	timestampOffset := versionOffset + versionLen
-	timestampLen := 8
-	messageOffset := timestampOffset + timestampLen
 	messageLen := len(message)
 	val := make([]byte, messageOffset+messageLen)
 

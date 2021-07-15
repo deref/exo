@@ -75,6 +75,7 @@ interface "project" {
 	  input "after" "string" {}
     
     output "events" "[]Event" {}
+    output "cursor" "string" {}
   }
 
   method "start" {
