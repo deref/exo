@@ -32,5 +32,5 @@ func main() {
 		os.Exit(0)
 	}()
 
-	http.ListenAndServe(":3000", server.NewHandler(ctx, cfg))
+	http.ListenAndServe(":4000", server.NewHandler(ctx, cfg))
 }
