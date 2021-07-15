@@ -6,6 +6,7 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/deref/exo/cmdutil"
 	"github.com/deref/exo/components/log"
 	"github.com/deref/exo/kernel/server"
 	logcol "github.com/deref/exo/logcol/server"
@@ -13,7 +14,7 @@ import (
 
 func main() {
 	cfg := &server.Config{
-		VarDir: "./var", // XXX
+		VarDir: cmdutil.MustVarDir(),
 	}
 	ctx := server.NewContext(context.Background(), cfg)
 

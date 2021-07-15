@@ -12,6 +12,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 
 	"github.com/deref/exo/cmdutil"
 	"github.com/deref/exo/logcol/api"
@@ -20,7 +21,7 @@ import (
 
 func main() {
 	cfg := &server.Config{
-		VarDir: "./var", // XXX
+		VarDir: cmdutil.MustVarDir(),
 	}
 	ctx := context.Background()
 	collector := server.NewLogCollector(cfg)
@@ -38,7 +39,7 @@ func main() {
 	var network, addr string
 	if port == "" {
 		network = "unix"
-		addr = "./var/logcol.sock"
+		addr = filepath.Join(cfg.VarDir, "logcol.sock")
 		_ = os.Remove(addr)
 	} else {
 		network = "tcp"

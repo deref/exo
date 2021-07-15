@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"path/filepath"
 
+	"github.com/deref/exo/cmdutil"
 	"github.com/deref/exo/components/log"
 	josh "github.com/deref/exo/josh/client"
 	"github.com/deref/exo/kernel/server"
@@ -15,7 +16,7 @@ import (
 
 func main() {
 	cfg := &server.Config{
-		VarDir: "./var", // XXX
+		VarDir: cmdutil.MustVarDir(),
 	}
 	ctx := server.NewContext(context.Background(), cfg)
 	ctx = log.ContextWithLogCollector(ctx, logcol.NewLogCollector(&josh.Client{

@@ -5,6 +5,7 @@ package main
 import (
 	"context"
 
+	"github.com/deref/exo/cmdutil"
 	"github.com/deref/exo/logcol/api"
 	"github.com/deref/exo/logcol/server"
 	"github.com/deref/pier"
@@ -12,7 +13,7 @@ import (
 
 func main() {
 	cfg := &server.Config{
-		VarDir: "./var", // XXX
+		VarDir: cmdutil.MustVarDir(),
 	}
 	ctx := context.Background()
 	collector := server.NewLogCollector(cfg)
