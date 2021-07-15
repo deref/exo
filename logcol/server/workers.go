@@ -39,7 +39,7 @@ func (lc *LogCollector) startWorker(ctx context.Context, logName string, state L
 	if exists {
 		return
 	}
-	sink := newBadgerSink(lc.db, logName)
+	sink := newBadgerSink(lc.db, lc.idGen, logName)
 	wkr = &worker{
 		sourcePath: state.Source,
 		sink:       sink,
@@ -78,7 +78,7 @@ func (wkr *worker) run(ctx context.Context) error {
 		_ = source.Close()
 	}()
 
-	sid := uint64(0) // XXX get sequence id from last line in file.
+	sid := uint64(0) // XXX get last sequence id.
 
 	r := bufio.NewReaderSize(source, api.MaxMessageSize)
 	for {

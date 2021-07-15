@@ -108,6 +108,7 @@ struct "log-description" {
 }
 
 struct "event" {
+	field "id" "string" {}
 	field "log" "string" {}
 	field "sid" "string" {}
 	field "timestamp" "string" {}

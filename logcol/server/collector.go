@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
+	"sort"
+	"strconv"
 	"strings"
 	"sync"
 
@@ -13,6 +15,7 @@ import (
 	"github.com/deref/exo/chrono"
 	"github.com/deref/exo/logcol/api"
 	badger "github.com/dgraph-io/badger/v3"
+	"github.com/oklog/ulid/v2"
 )
 
 type Config struct {
@@ -24,12 +27,14 @@ func NewLogCollector(cfg *Config) *LogCollector {
 	return &LogCollector{
 		varDir: cfg.VarDir,
 		state:  atom.NewFileAtom(statePath, atom.CodecJSON),
+		idGen:  newIdGen(),
 	}
 }
 
 type LogCollector struct {
 	varDir string
 	state  atom.Atom
+	idGen  *idGen
 	db     *badger.DB
 
 	mx      sync.Mutex
@@ -99,16 +104,17 @@ func (lc *LogCollector) getLastEventAt(name string) *string {
 	var timestamp uint64
 	err := lc.db.View(func(txn *badger.Txn) error {
 		opts := badger.DefaultIteratorOptions
-		opts.PrefetchValues = false
+		opts.PrefetchSize = 1
 		opts.Reverse = true
 		it := txn.NewIterator(opts)
 		defer it.Close()
 		it.Seek(append([]byte(name), 255))
 		if it.ValidForPrefix(prefix) {
 			item := it.Item()
-			key := item.Key()
-			start := len(name) + 1
-			timestamp = binary.BigEndian.Uint64(key[start : start+8])
+			return item.Value(func(val []byte) error {
+				timestamp = binary.BigEndian.Uint64(val[9 : 9+8])
+				return nil
+			})
 		}
 		return nil
 	})
@@ -124,7 +130,73 @@ func (lc *LogCollector) getLastEventAt(name string) *string {
 }
 
 func (lc *LogCollector) GetEvents(ctx context.Context, input *api.GetEventsInput) (*api.GetEventsOutput, error) {
-	return nil, nil
+	logs := input.Logs
+	if logs == nil {
+		state, err := lc.derefState()
+		if err != nil {
+			return nil, fmt.Errorf("getting state: %w", err)
+		}
+
+		for name := range state.Logs {
+			logs = append(logs, name)
+		}
+	}
+
+	// TODO: Allow override via input.
+	limit := api.DefaultEventsPerRequest
+
+	// TODO: Sorted merge.
+	events := []api.Event{}
+	for _, log := range logs {
+		if err := lc.db.View(func(txn *badger.Txn) error {
+			it := txn.NewIterator(badger.DefaultIteratorOptions)
+			defer it.Close()
+			prefix := append([]byte(log), 0)
+			start := prefix
+			if input.After != "" {
+				id, err := ulid.Parse(input.After)
+				if err != nil {
+					return fmt.Errorf("parsing cursor: %w", err)
+				}
+				idBytes, _ := id.MarshalBinary() // Cannot fail
+				start = append(start, incrementBytes(idBytes)...)
+			}
+
+			eventsProcessed := 0
+			for it.Seek(start); it.ValidForPrefix(prefix) && eventsProcessed < limit; it.Next() {
+				item := it.Item()
+				key := item.Key()
+				if err := item.Value(func(val []byte) error {
+					evt, err := eventFromEntry(log, key, val)
+					if err != nil {
+						return err
+					}
+
+					events = append(events, evt)
+					return nil
+				}); err != nil {
+					return err
+				}
+				eventsProcessed++
+			}
+			return nil
+		}); err != nil {
+			return nil, fmt.Errorf("scanning index: %w", err)
+		}
+	}
+
+	var cursor string
+	if len(events) > 0 {
+		sort.Sort(&eventsSorter{events})
+		events = events[:limit]
+
+		cursor = events[len(events)-1].ID
+	}
+
+	return &api.GetEventsOutput{
+		Events: events,
+		Cursor: cursor,
+	}, nil
 	/*
 		// TODO: Handle Before & After pagination parameters.
 		// TODO: Limit number of returned events.
@@ -174,6 +246,64 @@ func (lc *LogCollector) GetEvents(ctx context.Context, input *api.GetEventsInput
 		sort.Sort(&eventsSorter{output.Events})
 		return &output, nil
 	*/
+}
+
+func eventFromEntry(log string, key, val []byte) (api.Event, error) {
+	// Parse key as (logName, null, id).
+	logNameOffset := 0
+	logNameLen := len(log)
+	idOffset := logNameOffset + logNameLen + 1
+	id, err := parseID(key[idOffset:])
+	if err != nil {
+		return api.Event{}, fmt.Errorf("parsing id: %w", err)
+	}
+
+	// Create value as (version, sid, timestamp, message).
+	// Version is used so that we can change the value format without rebuilding the database.
+	versionOffset := 0
+	versionLen := 1
+	sidOffset := versionOffset + versionLen
+	sidLen := 8
+	timestampOffset := sidOffset + sidLen
+	timestampLen := 8
+	messageOffset := timestampOffset + timestampLen
+
+	version := val[versionOffset]
+	if version != 1 {
+		return api.Event{}, fmt.Errorf("unsupported event version: %d; database may have been written with a newer version of exo.", version)
+	}
+
+	sid := binary.BigEndian.Uint64(val[sidOffset : sidOffset+sidLen])
+	tsNano := binary.BigEndian.Uint64(val[timestampOffset : timestampOffset+timestampLen])
+	message := string(val[messageOffset:])
+
+	return api.Event{
+		ID:        id,
+		Log:       log,
+		Timestamp: chrono.NanoToIso(int64(tsNano)),
+		Sid:       strconv.FormatUint(sid, 10),
+		Message:   message,
+	}, nil
+}
+
+// incrementBytes returns a byte slice that is incremented by 1 bit.
+// If `val` is not already only 255-valued bytes, then it is mutated and returned.
+// Otherwise, a new slice is allocated and returned.
+func incrementBytes(val []byte) []byte {
+	for idx := len(val) - 1; idx >= 0; idx-- {
+		byt := val[idx]
+		if byt == 255 {
+			val[idx] = 0
+		} else {
+			val[idx] = byt + 1
+			return val
+		}
+	}
+
+	// Still carrying from previously most significant byte, so add a new 1-valued byte.
+	newVal := make([]byte, len(val)+1)
+	newVal[0] = 1
+	return newVal
 }
 
 type eventsSorter struct {

@@ -190,6 +190,7 @@ type LogDescription struct {
 }
 
 type Event struct {
+	ID        string `json:"id"`
 	Log       string `json:"log"`
 	SID       string `json:"sid"`
 	Timestamp string `json:"timestamp"`
