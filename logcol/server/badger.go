@@ -28,7 +28,7 @@ func newBadgerSink(db *badger.DB, idGen *idGen, logName string) *badgerSink {
 
 func (sink *badgerSink) AddEvent(ctx context.Context, timestamp uint64, message []byte) error {
 	// Generate an id that is guaranteed to be monotonically increasing within this process.
-	id, err := sink.idGen.nextId(ctx) // Assume that ID the trailing segment and does not need a terminator.
+	id, err := sink.idGen.nextId(ctx)
 	if err != nil {
 		return fmt.Errorf("generating id: %w", err)
 	}
@@ -37,7 +37,7 @@ func (sink *badgerSink) AddEvent(ctx context.Context, timestamp uint64, message 
 	logNameOffset := 0
 	logNameLen := len(sink.logName)
 	idOffset := logNameOffset + logNameLen + 1 // +1 is for null terminator.
-	idLen := len(id)
+	idLen := len(id)                           // Assume that ID the trailing segment and does not need a terminator.
 
 	key := make([]byte, idOffset+idLen)
 	copy(key[logNameOffset:logNameOffset+logNameLen], []byte(sink.logName))
