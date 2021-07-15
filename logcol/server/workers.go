@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"time"
 
 	"github.com/deref/exo/chrono"
 	"github.com/deref/exo/logcol/api"
@@ -22,6 +23,8 @@ type worker struct {
 
 type sink interface {
 	AddEvent(ctx context.Context, timestamp uint64, message []byte) error
+	// Remove oldest events beyond capacity limit.
+	GC(ctx context.Context) error
 }
 
 func (lc *LogCollector) ensureWorker(ctx context.Context, logName string, state LogState) {
@@ -46,11 +49,26 @@ func (lc *LogCollector) startWorker(ctx context.Context, logName string, state L
 		done:       make(chan struct{}, 0),
 	}
 	lc.workers[logName] = wkr
+
 	go func() {
 		wkr.err = wkr.run(ctx)
 		if wkr.err != nil {
 			// TODO: Panic instead.
-			fmt.Fprintf(os.Stderr, "worker error: %v\n", wkr.err)
+			fmt.Fprintf(os.Stderr, "worker run error: %v\n", wkr.err)
+		}
+	}()
+
+	go func() {
+		for {
+			select {
+			case <-wkr.done:
+				return
+			case <-time.After(5 * time.Second):
+				if err := wkr.sink.GC(ctx); err != nil {
+					// TODO: Panic instead?
+					fmt.Fprintf(os.Stderr, "worker evict error: %v\n", wkr.err)
+				}
+			}
 		}
 	}()
 }
@@ -64,7 +82,11 @@ func (lc *LogCollector) stopWorker(logName string) {
 		return
 	}
 
-	_ = wkr.source.Close()
+	wkr.stop()
+}
+
+func (wkr *worker) stop() {
+	close(wkr.done)
 }
 
 func (wkr *worker) run(ctx context.Context) error {

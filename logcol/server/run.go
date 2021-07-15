@@ -34,6 +34,7 @@ func (lc *LogCollector) Start(ctx context.Context) error {
 	for logName, logState := range state.Logs {
 		lc.startWorker(ctx, logName, logState)
 	}
+
 	return nil
 }
 
@@ -49,6 +50,6 @@ func (lc *LogCollector) Stop(ctx context.Context) {
 	lc.db = nil
 
 	for _, worker := range lc.workers {
-		close(worker.done)
+		worker.stop()
 	}
 }

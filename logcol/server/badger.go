@@ -55,3 +55,44 @@ func (sink *badgerSink) AddEvent(ctx context.Context, timestamp uint64, message 
 		return txn.Set(key[:], val)
 	})
 }
+
+const maxEventsPerStream = 3
+
+func (sink *badgerSink) GC(ctx context.Context) error {
+	prefix := append([]byte(sink.logName), 0)
+	var deleteFrom []byte
+	if err := sink.db.View(func(txn *badger.Txn) error {
+		opts := badger.DefaultIteratorOptions
+		opts.PrefetchValues = false
+		opts.Reverse = true
+		it := txn.NewIterator(opts)
+		defer it.Close()
+		remaining := maxEventsPerStream
+		for it.Seek(append([]byte(sink.logName), 255)); it.ValidForPrefix(prefix); it.Next() {
+			if remaining == 0 {
+				deleteFrom = it.Item().Key()
+				break
+			}
+			remaining--
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+	if deleteFrom == nil {
+		return nil
+	}
+	return sink.db.Update(func(txn *badger.Txn) error {
+		opts := badger.DefaultIteratorOptions
+		opts.PrefetchValues = false
+		opts.Reverse = true
+		it := txn.NewIterator(opts)
+		defer it.Close()
+		for it.Seek(deleteFrom); it.ValidForPrefix(prefix); it.Next() {
+			if err := txn.Delete(it.Item().Key()); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+}
