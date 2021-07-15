@@ -126,6 +126,7 @@ type GetEventsInput struct {
 
 type GetEventsOutput struct {
 	Events []Event `json:"events"`
+	Cursor string  `json:"cursor"`
 }
 
 type StartInput struct {
@@ -190,8 +191,8 @@ type LogDescription struct {
 }
 
 type Event struct {
+	ID        string `json:"id"`
 	Log       string `json:"log"`
-	SID       string `json:"sid"`
 	Timestamp string `json:"timestamp"`
 	Message   string `json:"message"`
 }

@@ -381,7 +381,7 @@ func (proj *Project) GetEvents(ctx context.Context, input *api.GetEventsInput) (
 	}
 
 	collector := log.CurrentLogCollector(ctx)
-	collectorEvents, err := collector.GetEvents(ctx, &logcol.GetEventsInput{
+	collectorOutput, err := collector.GetEvents(ctx, &logcol.GetEventsInput{
 		Logs:   logStreams,
 		Before: input.Before,
 		After:  input.After,
@@ -390,12 +390,13 @@ func (proj *Project) GetEvents(ctx context.Context, input *api.GetEventsInput) (
 		return nil, err
 	}
 	output := api.GetEventsOutput{
-		Events: make([]api.Event, len(collectorEvents.Events)),
+		Events: make([]api.Event, len(collectorOutput.Events)),
+		Cursor: collectorOutput.Cursor,
 	}
-	for i, collectorEvent := range collectorEvents.Events {
+	for i, collectorEvent := range collectorOutput.Events {
 		output.Events[i] = api.Event{
+			ID:        collectorEvent.ID,
 			Log:       collectorEvent.Log,
-			SID:       collectorEvent.SID,
 			Timestamp: collectorEvent.Timestamp,
 			Message:   collectorEvent.Message,
 		}

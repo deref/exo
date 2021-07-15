@@ -3,31 +3,55 @@ package server
 import (
 	"context"
 	"encoding/binary"
+	"fmt"
 
 	badger "github.com/dgraph-io/badger/v3"
 )
 
+const (
+	eventVersion uint8 = 1
+)
+
 type badgerSink struct {
 	db      *badger.DB
+	idGen   *idGen
 	logName string
 }
 
-func newBadgerSink(db *badger.DB, logName string) *badgerSink {
+func newBadgerSink(db *badger.DB, idGen *idGen, logName string) *badgerSink {
 	return &badgerSink{
 		db:      db,
+		idGen:   idGen,
 		logName: logName,
 	}
 }
 
-func (sink *badgerSink) AddEvent(ctx context.Context, sid uint64, timestamp uint64, message []byte) error {
-	return sink.db.Update(func(txn *badger.Txn) error {
-		key := make([]byte, len(sink.logName)+1+8+8)
-		pos := copy(key, []byte(sink.logName))
-		pos += 1 // Skip null delimiter
-		binary.BigEndian.PutUint64(key[pos:], timestamp)
-		pos += 8
-		binary.BigEndian.PutUint64(key[pos:], sid)
+func (sink *badgerSink) AddEvent(ctx context.Context, timestamp uint64, message []byte) error {
+	// Generate an id that is guaranteed to be monotonically increasing within this process.
+	id, err := sink.idGen.nextId(ctx)
+	if err != nil {
+		return fmt.Errorf("generating id: %w", err)
+	}
 
-		return txn.Set(key[:], []byte(message))
+	// Create key as (logName, null, id).
+	logNameLen := len(sink.logName)
+	idOffset := logNameOffset + logNameLen + 1 // +1 is for null terminator.
+	idLen := len(id)                           // Assume that ID the trailing segment and does not need a terminator.
+
+	key := make([]byte, idOffset+idLen)
+	copy(key[logNameOffset:logNameOffset+logNameLen], []byte(sink.logName))
+	copy(key[idOffset:idOffset+idLen], id)
+
+	// Create value as (version, timestamp, message).
+	// Version is used so that we can change the value format without rebuilding the database.
+	messageLen := len(message)
+	val := make([]byte, messageOffset+messageLen)
+
+	val[versionOffset] = eventVersion
+	binary.BigEndian.PutUint64(val[timestampOffset:timestampOffset+timestampLen], timestamp)
+	copy(val[messageOffset:messageOffset+messageLen], message)
+
+	return sink.db.Update(func(txn *badger.Txn) error {
+		return txn.Set(key[:], val)
 	})
 }

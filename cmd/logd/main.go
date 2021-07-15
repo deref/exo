@@ -24,7 +24,7 @@ func main() {
 		VarDir: cmdutil.MustVarDir(),
 	}
 	ctx := context.Background()
-	collector := server.NewLogCollector(cfg)
+	collector := server.NewLogCollector(ctx, cfg)
 	collector.Start(ctx)
 
 	go func() {

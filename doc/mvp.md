@@ -57,7 +57,7 @@ API:
 
 > http /get-events 'processes:=["web", "worker"]' before:=null
 < { "events": [
-<     { "sid": "12345",
+<     { "id": "01arz3ndektsv4rrffq69g5fav",
 <       "timestamp": "2021-07-12T20:18:39.965Z", 
 <       "log": "web",
 <       "message": "hello"

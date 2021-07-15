@@ -6,30 +6,37 @@ import (
 	"errors"
 	"fmt"
 	"path/filepath"
-	"strings"
+	"sort"
 	"sync"
 
 	"github.com/deref/exo/atom"
 	"github.com/deref/exo/chrono"
 	"github.com/deref/exo/logcol/api"
 	badger "github.com/dgraph-io/badger/v3"
+	"github.com/oklog/ulid/v2"
+)
+
+const (
+	defaultEventsPerRequest = 500
 )
 
 type Config struct {
 	VarDir string
 }
 
-func NewLogCollector(cfg *Config) *LogCollector {
+func NewLogCollector(ctx context.Context, cfg *Config) *LogCollector {
 	statePath := filepath.Join(cfg.VarDir, "logcol.json")
 	return &LogCollector{
 		varDir: cfg.VarDir,
 		state:  atom.NewFileAtom(statePath, atom.CodecJSON),
+		idGen:  newIdGen(ctx),
 	}
 }
 
 type LogCollector struct {
 	varDir string
 	state  atom.Atom
+	idGen  *idGen
 	db     *badger.DB
 
 	mx      sync.Mutex
@@ -99,16 +106,20 @@ func (lc *LogCollector) getLastEventAt(name string) *string {
 	var timestamp uint64
 	err := lc.db.View(func(txn *badger.Txn) error {
 		opts := badger.DefaultIteratorOptions
-		opts.PrefetchValues = false
+		opts.PrefetchSize = 1
 		opts.Reverse = true
 		it := txn.NewIterator(opts)
 		defer it.Close()
 		it.Seek(append([]byte(name), 255))
 		if it.ValidForPrefix(prefix) {
 			item := it.Item()
-			key := item.Key()
-			start := len(name) + 1
-			timestamp = binary.BigEndian.Uint64(key[start : start+8])
+			return item.Value(func(val []byte) error {
+				if err := validateVersion(val[versionOffset]); err != nil {
+					return err
+				}
+				timestamp = binary.BigEndian.Uint64(val[timestampOffset : timestampOffset+timestampLen])
+				return nil
+			})
 		}
 		return nil
 	})
@@ -124,56 +135,73 @@ func (lc *LogCollector) getLastEventAt(name string) *string {
 }
 
 func (lc *LogCollector) GetEvents(ctx context.Context, input *api.GetEventsInput) (*api.GetEventsOutput, error) {
-	return nil, nil
-	/*
-		// TODO: Handle Before & After pagination parameters.
-		// TODO: Limit number of returned events.
-		var output api.GetEventsOutput
-		output.Events = []api.Event{}
-		for _, logName := range input.Logs {
-			state, err := lc.derefState()
-			if err != nil {
-				return nil, err
-			}
-			logState, exists := state.Logs[logName]
-			if exists {
-				chunkIndex := 0 // TODO: Handle log rotation.
-				f, err := os.Open(makeChunkPath(logState.Source, chunkIndex))
-				if err != nil {
-					return nil, fmt.Errorf("opening %s source: %w", logName, err)
-				}
-				r := bufio.NewReaderSize(f, api.MaxEventSize)
-				for {
-					line, isPrefix, err := r.ReadLine()
-					if err == io.EOF {
-						break
-					}
-					if err != nil {
-						return nil, fmt.Errorf("reading: %w", err)
-					}
-					// TODO: Do something better with lines that are too long.
-					for isPrefix {
-						// Skip remainder of line.
-						line = append([]byte{}, line...)
-						_, isPrefix, err = r.ReadLine()
-						if err == io.EOF {
-							break
-						}
-						if err != nil {
-							return nil, fmt.Errorf("reading: %w", err)
-						}
-					}
-					event, err := parseEvent(logName, line)
-					if err != nil {
-						return nil, err
-					}
-					output.Events = append(output.Events, *event)
-				}
-			}
+	logs := input.Logs
+	if logs == nil {
+		state, err := lc.derefState()
+		if err != nil {
+			return nil, fmt.Errorf("getting state: %w", err)
 		}
-		sort.Sort(&eventsSorter{output.Events})
-		return &output, nil
-	*/
+
+		for name := range state.Logs {
+			logs = append(logs, name)
+		}
+	}
+
+	// TODO: Allow override via input.
+	limit := defaultEventsPerRequest
+
+	// TODO: Sorted merge.
+	events := []api.Event{}
+	for _, log := range logs {
+		if err := lc.db.View(func(txn *badger.Txn) error {
+			it := txn.NewIterator(badger.DefaultIteratorOptions)
+			defer it.Close()
+			prefix := append([]byte(log), 0)
+			start := prefix
+			if input.After != "" {
+				id, err := ulid.Parse(input.After)
+				if err != nil {
+					return fmt.Errorf("parsing cursor: %w", err)
+				}
+				idBytes, _ := id.MarshalBinary() // Cannot fail
+				start = append(start, incrementBytes(idBytes)...)
+			}
+
+			eventsProcessed := 0
+			for it.Seek(start); it.ValidForPrefix(prefix) && eventsProcessed < limit; it.Next() {
+				item := it.Item()
+				key := item.Key()
+				if err := item.Value(func(val []byte) error {
+					evt, err := eventFromEntry(log, key, val)
+					if err != nil {
+						return err
+					}
+
+					events = append(events, evt)
+					return nil
+				}); err != nil {
+					return err
+				}
+				eventsProcessed++
+			}
+			return nil
+		}); err != nil {
+			return nil, fmt.Errorf("scanning index: %w", err)
+		}
+	}
+
+	var cursor string
+	if len(events) > 0 {
+		sort.Sort(&eventsSorter{events})
+		events = events[:limit]
+
+		cursor = events[len(events)-1].ID
+	}
+
+	return &api.GetEventsOutput{
+		Events: events,
+		Cursor: cursor,
+	}, nil
 }
 
 type eventsSorter struct {
@@ -185,8 +213,9 @@ func (iface *eventsSorter) Len() int {
 }
 
 func (iface *eventsSorter) Less(i, j int) bool {
-	// TODO: Account for sequence ids.
-	return strings.Compare(iface.events[i].Timestamp, iface.events[j].Timestamp) < 0
+	iId := ulid.MustParse(iface.events[i].ID)
+	jId := ulid.MustParse(iface.events[j].ID)
+	return iId.Compare(jId) < 0
 }
 
 func (iface *eventsSorter) Swap(i, j int) {

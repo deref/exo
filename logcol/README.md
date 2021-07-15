@@ -16,21 +16,18 @@ CRUD operations: `/add-log`, `/remove-log`, and `/describe-logs`.
 
 ## Events
 
-Each log is made up of events, which combine a log line message with a per-log
-sequence id (abbreviated "sid") and a timestamp.
+Each log is made up of events, which combine a log line message with a globally unique ID that is guaranteed to increase monotonically.
 
-Sequence IDs are zero-padded, 20 digit, positive integers beginning at 1.
+IDs are 26-character base32-encoded (lowercase) strings.
 
 The `/get-events` operation provides paginated queries of the union of
-several log streams. The log storage format is indexed by sid.
-
-TODO: Scan with before/after parameters for both sid and timestamp ranges.
+several log streams.
 
 ### Collecting
 
 In normal operation, the `logd` deamon collects logs by reading from the
-source fifos, decorating each message with a sid and timestamp, and then
-writing the event to a log file.
+source fifos, decorating each message metadata, and then
+writing the event to BadgerDB.
 
 During development, the `/collect` operation can be invoked directly.
 

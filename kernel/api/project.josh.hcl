@@ -75,6 +75,7 @@ interface "project" {
 	  input "after" "string" {}
     
     output "events" "[]Event" {}
+    output "cursor" "string" {}
   }
 
   method "start" {
@@ -108,8 +109,8 @@ struct "log-description" {
 }
 
 struct "event" {
+	field "id" "string" {}
 	field "log" "string" {}
-	field "sid" "string" {}
 	field "timestamp" "string" {}
 	field "message" "string" {}
 }
