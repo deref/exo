@@ -587,7 +587,9 @@ func (proj *Project) DescribeProcesses(ctx context.Context, input *api.DescribeP
 	if err != nil {
 		return nil, fmt.Errorf("describing components: %w", err)
 	}
-	var output api.DescribeProcessesOutput
+	output := api.DescribeProcessesOutput{
+		Processes: make([]api.ProcessDescription, 0, len(components.Components)),
+	}
 	for _, component := range components.Components {
 		if component.Type == "process" {
 			// XXX Do not utilize internal knowledge of process state.
