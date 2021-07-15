@@ -5,6 +5,7 @@ import (
 	"io"
 
 	"github.com/deref/exo/config"
+	"github.com/deref/exo/jsonutil"
 )
 
 func Import(r io.Reader) (*config.Config, error) {
@@ -21,12 +22,12 @@ func Convert(procfile *Procfile) (*config.Config, error) {
 		component := config.Component{
 			Name: process.Name,
 			Type: "process",
-			Spec: map[string]interface{}{
+			Spec: jsonutil.MustMarshalString(map[string]interface{}{
 				"command":   process.Command,
 				"arguments": process.Arguments,
-			},
+			}),
 		}
 		cfg.Components = append(cfg.Components, component)
 	}
-	return nil, nil
+	return cfg, nil
 }

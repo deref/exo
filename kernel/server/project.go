@@ -12,8 +12,10 @@ import (
 	"github.com/deref/exo/components/invalid"
 	"github.com/deref/exo/components/log"
 	"github.com/deref/exo/components/process"
+	"github.com/deref/exo/config"
 	"github.com/deref/exo/core"
 	"github.com/deref/exo/gensym"
+	"github.com/deref/exo/import/procfile"
 	"github.com/deref/exo/jsonutil"
 	"github.com/deref/exo/kernel/api"
 	"github.com/deref/exo/kernel/state"
@@ -47,6 +49,66 @@ func (proj *Project) Delete(ctx context.Context, input *api.DeleteInput) (*api.D
 
 func (proj *Project) Apply(ctx context.Context, input *api.ApplyInput) (*api.ApplyOutput, error) {
 	panic("TODO: Apply")
+}
+
+func (proj *Project) apply(ctx context.Context, cfg *config.Config) error {
+	store := state.CurrentStore(ctx)
+	describeOutput, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
+		ProjectID: proj.ID,
+	})
+	if err != nil {
+		return fmt.Errorf("describing components: %w", err)
+	}
+
+	// Index old components by name.
+	oldComponents := make(map[string]state.ComponentDescription, len(describeOutput.Components))
+	for _, component := range describeOutput.Components {
+		oldComponents[component.Name] = component
+	}
+
+	// TODO: Handle partial failures.
+
+	// Apply component upserts.
+	newComponents := make(map[string]config.Component, len(cfg.Components))
+	for _, newComponent := range cfg.Components {
+		name := newComponent.Name
+		newComponents[name] = newComponent
+		if oldComponent, exists := oldComponents[name]; exists {
+			// Update existing component.
+			if err := proj.updateComponent(ctx, oldComponent, newComponent); err != nil {
+				return fmt.Errorf("updating %q: %w", name, err)
+			}
+		} else {
+			// Create new component.
+			if _, err := proj.createComponent(ctx, newComponent); err != nil {
+				return fmt.Errorf("adding %q: %w", name, err)
+			}
+		}
+	}
+
+	// Apply component deletions.
+	// TODO: Dispose in parallel. Optionally await deletion.
+	for name, oldComponent := range oldComponents {
+		if _, keep := newComponents[name]; keep {
+			continue
+		}
+		if err := proj.deleteComponent(ctx, oldComponent.ID); err != nil {
+			return fmt.Errorf("deleting %q: %w", name, err)
+		}
+	}
+
+	return nil
+}
+
+func (proj *Project) ApplyProcfile(ctx context.Context, input *api.ApplyProcfileInput) (*api.ApplyProcfileOutput, error) {
+	cfg, err := procfile.Import(strings.NewReader(input.Procfile))
+	if err != nil {
+		return nil, fmt.Errorf("importing: %w", err)
+	}
+	if err := proj.apply(ctx, cfg); err != nil {
+		return nil, err
+	}
+	return &api.ApplyProcfileOutput{}, nil
 }
 
 func (proj *Project) Refresh(ctx context.Context, input *api.RefreshInput) (*api.RefreshOutput, error) {
@@ -130,32 +192,46 @@ func (proj *Project) resolveProvider(typ string) core.Provider {
 }
 
 func (proj *Project) CreateComponent(ctx context.Context, input *api.CreateComponentInput) (*api.CreateComponentOutput, error) {
-	if !IsValidName(input.Name) {
-		return nil, fmt.Errorf("invalid name: %q", input.Name)
-	}
-
-	store := state.CurrentStore(ctx)
-
-	id := gensym.Base32()
-
-	if _, err := store.AddComponent(ctx, &state.AddComponentInput{
-		ProjectID: "default",
-		ID:        id,
-		Name:      input.Name,
-		Type:      input.Type,
-		Spec:      input.Spec,
-		Created:   chrono.NowString(ctx),
-	}); err != nil {
-		return nil, fmt.Errorf("adding component: %w", err)
-	}
-
-	provider := proj.resolveProvider(input.Type)
-	output, err := provider.Initialize(ctx, &core.InitializeInput{
-		ID:   id,
+	id, err := proj.createComponent(ctx, config.Component{
+		Name: input.Name,
+		Type: input.Type,
 		Spec: input.Spec,
 	})
 	if err != nil {
 		return nil, err
+	}
+	return &api.CreateComponentOutput{
+		ID: id,
+	}, nil
+}
+
+func (proj *Project) createComponent(ctx context.Context, component config.Component) (id string, err error) {
+	if !IsValidName(component.Name) {
+		return "", fmt.Errorf("invalid name: %q", component.Name)
+	}
+
+	store := state.CurrentStore(ctx)
+
+	id = gensym.Base32()
+
+	if _, err := store.AddComponent(ctx, &state.AddComponentInput{
+		ProjectID: "default",
+		ID:        id,
+		Name:      component.Name,
+		Type:      component.Type,
+		Spec:      component.Spec,
+		Created:   chrono.NowString(ctx),
+	}); err != nil {
+		return "", fmt.Errorf("adding component: %w", err)
+	}
+
+	provider := proj.resolveProvider(component.Type)
+	output, err := provider.Initialize(ctx, &core.InitializeInput{
+		ID:   id,
+		Spec: component.Spec,
+	})
+	if err != nil {
+		return "", err
 	}
 
 	if _, err := store.PatchComponent(ctx, &state.PatchComponentInput{
@@ -163,12 +239,10 @@ func (proj *Project) CreateComponent(ctx context.Context, input *api.CreateCompo
 		State:       output.State,
 		Initialized: chrono.NowString(ctx),
 	}); err != nil {
-		return nil, fmt.Errorf("modifying component after initialization: %w", err)
+		return "", fmt.Errorf("modifying component after initialization: %w", err)
 	}
 
-	return &api.CreateComponentOutput{
-		ID: id,
-	}, nil
+	return id, nil
 }
 
 func IsValidName(name string) bool {
@@ -182,6 +256,19 @@ func IsValidName(name string) bool {
 
 func (proj *Project) UpdateComponent(ctx context.Context, input *api.UpdateComponentInput) (*api.UpdateComponentOutput, error) {
 	panic("TODO: UpdateComponent")
+}
+
+func (proj *Project) updateComponent(ctx context.Context, oldComponent state.ComponentDescription, newComponent config.Component) error {
+	// TODO: Smart updating, using update lifecycle method.
+	name := oldComponent.Name
+	id := oldComponent.ID
+	if err := proj.deleteComponent(ctx, id); err != nil {
+		return fmt.Errorf("delete %q for replacement: %w", name, err)
+	}
+	if _, err := proj.createComponent(ctx, newComponent); err != nil {
+		return fmt.Errorf("adding replacement %q: %w", name, err)
+	}
+	return nil
 }
 
 func (proj *Project) RefreshComponent(ctx context.Context, input *api.RefreshComponentInput) (*api.RefreshComponentOutput, error) {
@@ -278,15 +365,22 @@ func (proj *Project) DeleteComponent(ctx context.Context, input *api.DeleteCompo
 	if err != nil {
 		return nil, fmt.Errorf("resolving ref: %w", err)
 	}
+	if err := proj.deleteComponent(ctx, id); err != nil {
+		return nil, err
+	}
+	return &api.DeleteComponentOutput{}, nil
+}
+
+func (proj *Project) deleteComponent(ctx context.Context, id string) error {
 	if err := proj.disposeComponent(ctx, id); err != nil {
-		return nil, fmt.Errorf("disposing: %w", err)
+		return fmt.Errorf("disposing: %w", err)
 	}
 	// TODO: Await disposal.
 	store := state.CurrentStore(ctx)
 	if _, err := store.RemoveComponent(ctx, &state.RemoveComponentInput{ID: id}); err != nil {
-		return nil, fmt.Errorf("removing from state store: %w", err)
+		return fmt.Errorf("removing from state store: %w", err)
 	}
-	return &api.DeleteComponentOutput{}, nil
+	return nil
 }
 
 var processLogStreams = []string{"out", "err"}

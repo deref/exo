@@ -52,6 +52,9 @@ func (provider *Provider) start(ctx context.Context, procDir string, inputSpec s
 
 	// Resolve command path.
 	command := spec.Command
+	if command == "" {
+		return state{}, errors.New("command is required")
+	}
 	searchPaths, _ := os.LookupEnv("PATH")
 	for _, searchPath := range strings.Split(searchPaths, ":") {
 		candidate := filepath.Join(searchPath, command)

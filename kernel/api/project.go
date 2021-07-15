@@ -14,6 +14,7 @@ type Project interface {
 	Delete(context.Context, *DeleteInput) (*DeleteOutput, error)
 	// Performs creates, updates, refreshes, disposes, as needed.
 	Apply(context.Context, *ApplyInput) (*ApplyOutput, error)
+	ApplyProcfile(context.Context, *ApplyProcfileInput) (*ApplyProcfileOutput, error)
 	// Refreshes all components.
 	Refresh(context.Context, *RefreshInput) (*RefreshOutput, error)
 	// Resolves a reference in to an ID.
@@ -48,6 +49,13 @@ type ApplyInput struct {
 }
 
 type ApplyOutput struct {
+}
+
+type ApplyProcfileInput struct {
+	Procfile string `json:"procfile"`
+}
+
+type ApplyProcfileOutput struct {
 }
 
 type RefreshInput struct {
@@ -159,6 +167,7 @@ func NewProjectMux(prefix string, iface Project) *http.ServeMux {
 func BuildProjectMux(b *josh.MuxBuilder, iface Project) {
 	b.AddMethod("delete", iface.Delete)
 	b.AddMethod("apply", iface.Apply)
+	b.AddMethod("apply-procfile", iface.ApplyProcfile)
 	b.AddMethod("refresh", iface.Refresh)
 	b.AddMethod("resolve", iface.Resolve)
 	b.AddMethod("describe-components", iface.DescribeComponents)

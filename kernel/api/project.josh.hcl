@@ -9,6 +9,10 @@ interface "project" {
     input "config" "string" {}
   }
   
+  method "apply-procfile" {
+    input "procfile" "string" {} 
+  }
+  
   method "refresh" {
     doc = "Refreshes all components."
   }
