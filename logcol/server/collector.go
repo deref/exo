@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"sort"
 	"strconv"
-	"strings"
 	"sync"
 
 	"github.com/deref/exo/atom"
@@ -197,55 +196,6 @@ func (lc *LogCollector) GetEvents(ctx context.Context, input *api.GetEventsInput
 		Events: events,
 		Cursor: cursor,
 	}, nil
-	/*
-		// TODO: Handle Before & After pagination parameters.
-		// TODO: Limit number of returned events.
-		var output api.GetEventsOutput
-		output.Events = []api.Event{}
-		for _, logName := range input.Logs {
-			state, err := lc.derefState()
-			if err != nil {
-				return nil, err
-			}
-			logState, exists := state.Logs[logName]
-			if exists {
-				chunkIndex := 0 // TODO: Handle log rotation.
-				f, err := os.Open(makeChunkPath(logState.Source, chunkIndex))
-				if err != nil {
-					return nil, fmt.Errorf("opening %s source: %w", logName, err)
-				}
-				r := bufio.NewReaderSize(f, api.MaxEventSize)
-				for {
-					line, isPrefix, err := r.ReadLine()
-					if err == io.EOF {
-						break
-					}
-					if err != nil {
-						return nil, fmt.Errorf("reading: %w", err)
-					}
-					// TODO: Do something better with lines that are too long.
-					for isPrefix {
-						// Skip remainder of line.
-						line = append([]byte{}, line...)
-						_, isPrefix, err = r.ReadLine()
-						if err == io.EOF {
-							break
-						}
-						if err != nil {
-							return nil, fmt.Errorf("reading: %w", err)
-						}
-					}
-					event, err := parseEvent(logName, line)
-					if err != nil {
-						return nil, err
-					}
-					output.Events = append(output.Events, *event)
-				}
-			}
-		}
-		sort.Sort(&eventsSorter{output.Events})
-		return &output, nil
-	*/
 }
 
 func eventFromEntry(log string, key, val []byte) (api.Event, error) {
@@ -315,8 +265,9 @@ func (iface *eventsSorter) Len() int {
 }
 
 func (iface *eventsSorter) Less(i, j int) bool {
-	// TODO: Account for sequence ids.
-	return strings.Compare(iface.events[i].Timestamp, iface.events[j].Timestamp) < 0
+	iId := ulid.MustParse(iface.events[i].ID)
+	jId := ulid.MustParse(iface.events[j].ID)
+	return iId.Compare(jId) < 0
 }
 
 func (iface *eventsSorter) Swap(i, j int) {
