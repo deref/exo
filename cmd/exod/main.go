@@ -12,9 +12,14 @@ import (
 )
 
 func main() {
-	ctx := server.NewContext(context.Background())
+	cfg := &server.Config{
+		VarDir: "./var", // XXX
+	}
+	ctx := server.NewContext(context.Background(), cfg)
 
-	collector := logcol.NewLogCollector()
+	collector := logcol.NewLogCollector(&logcol.Config{
+		VarDir: cfg.VarDir,
+	})
 	collector.Start(ctx)
 	ctx = log.ContextWithLogCollector(ctx, collector)
 
@@ -26,5 +31,5 @@ func main() {
 		os.Exit(0)
 	}()
 
-	http.ListenAndServe(":3000", server.NewHandler(ctx))
+	http.ListenAndServe(":3000", server.NewHandler(ctx, cfg))
 }

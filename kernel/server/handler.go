@@ -3,26 +3,29 @@ package server
 import (
 	"context"
 	"net/http"
+	"path/filepath"
 
 	"github.com/deref/exo/kernel/api"
 	"github.com/deref/exo/kernel/state"
 	"github.com/deref/exo/kernel/state/statefile"
 )
 
-func NewContext(ctx context.Context) context.Context {
-	return state.ContextWithStore(ctx, statefile.New("./var/state.json"))
+type Config struct {
+	VarDir string
 }
 
-var mux *http.ServeMux
+func NewContext(ctx context.Context, cfg *Config) context.Context {
+	statePath := filepath.Join(cfg.VarDir, "state.json")
+	return state.ContextWithStore(ctx, statefile.New(statePath))
+}
 
-func init() {
+func NewHandler(ctx context.Context, cfg *Config) http.Handler {
+	var mux *http.ServeMux
 	mux = http.NewServeMux()
 	mux.Handle("/", api.NewProjectMux("/", &Project{
-		ID: "default", // XXX
+		ID:     "default", // XXX
+		VarDir: cfg.VarDir,
 	}))
-}
-
-func NewHandler(ctx context.Context) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		mux.ServeHTTP(w, req.WithContext(ctx))
 	})

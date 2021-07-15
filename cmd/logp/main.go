@@ -11,8 +11,11 @@ import (
 )
 
 func main() {
+	cfg := &server.Config{
+		VarDir: "./var", // XXX
+	}
 	ctx := context.Background()
-	collector := server.NewLogCollector()
+	collector := server.NewLogCollector(cfg)
 	collector.Start(ctx)
 	defer collector.Stop(ctx)
 	pier.Main(api.NewLogCollectorMux("/", collector))

@@ -14,18 +14,21 @@ import (
 )
 
 func main() {
-	ctx := server.NewContext(context.Background())
-	varDir := "./var" // XXX parameterize and pass this around.
+	cfg := &server.Config{
+		VarDir: "./var", // XXX
+	}
+	ctx := server.NewContext(context.Background(), cfg)
 	ctx = log.ContextWithLogCollector(ctx, logcol.NewLogCollector(&josh.Client{
 		HTTP: &http.Client{
 			Transport: &http.Transport{
 				DialContext: func(ctx context.Context, network string, addr string) (net.Conn, error) {
 					dialer := net.Dialer{}
-					return dialer.DialContext(ctx, "unix", filepath.Join(varDir, "logcol.sock"))
+					sockPath := filepath.Join(cfg.VarDir, "logcol.sock")
+					return dialer.DialContext(ctx, "unix", sockPath)
 				},
 			},
 		},
 		URL: "http://unix/",
 	}))
-	pier.Main(server.NewHandler(ctx))
+	pier.Main(server.NewHandler(ctx, cfg))
 }

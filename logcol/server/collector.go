@@ -15,11 +15,14 @@ import (
 	badger "github.com/dgraph-io/badger/v3"
 )
 
-func NewLogCollector() *LogCollector {
-	varDir := "./var" // TODO: Configuration?
-	statePath := filepath.Join(varDir, "logcol.json")
+type Config struct {
+	VarDir string
+}
+
+func NewLogCollector(cfg *Config) *LogCollector {
+	statePath := filepath.Join(cfg.VarDir, "logcol.json")
 	return &LogCollector{
-		varDir: varDir,
+		varDir: cfg.VarDir,
 		state:  atom.NewFileAtom(statePath, atom.CodecJSON),
 	}
 }

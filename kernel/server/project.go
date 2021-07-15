@@ -21,8 +21,8 @@ import (
 )
 
 type Project struct {
-	ID string `json:"id"`
-	// TODO: Path to root of directory.
+	ID     string
+	VarDir string
 }
 
 func (proj *Project) Delete(ctx context.Context, input *api.DeleteInput) (*api.DeleteOutput, error) {
@@ -117,11 +117,10 @@ func (proj *Project) resolveProvider(typ string) core.Provider {
 		if err != nil {
 			panic(err)
 		}
-		projectDir := wd                   // TODO: Get from component hierarchy.
-		varDir := filepath.Join(wd, "var") // TODO: Get from exod config.
+		projectDir := wd // TODO: Get from component hierarchy.
 		return &process.Provider{
 			ProjectDir: projectDir,
-			VarDir:     filepath.Join(varDir, "proc"),
+			VarDir:     filepath.Join(proj.VarDir, "proc"),
 		}
 	default:
 		return &invalid.Provider{
