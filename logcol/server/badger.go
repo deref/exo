@@ -21,14 +21,13 @@ func newBadgerSink(db *badger.DB, logName string) *badgerSink {
 
 func (sink *badgerSink) AddEvent(ctx context.Context, sid uint64, timestamp uint64, message []byte) error {
 	return sink.db.Update(func(txn *badger.Txn) error {
-		key := make([]byte, len(sink.logName)+1+8)
-		copy(key, []byte(sink.logName))
-		binary.BigEndian.PutUint64(key[len(sink.logName)+1:], sid)
+		key := make([]byte, len(sink.logName)+1+8+8)
+		pos := copy(key, []byte(sink.logName))
+		pos += 1 // Skip null delimiter
+		binary.BigEndian.PutUint64(key[pos:], timestamp)
+		pos += 8
+		binary.BigEndian.PutUint64(key[pos:], sid)
 
-		val := make([]byte, 8+len(message))
-		binary.BigEndian.PutUint64(val, timestamp)
-		copy(val[9:], message)
-
-		return txn.Set(key[:], val)
+		return txn.Set(key[:], []byte(message))
 	})
 }

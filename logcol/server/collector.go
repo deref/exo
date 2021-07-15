@@ -99,19 +99,16 @@ func (lc *LogCollector) getLastEventAt(name string) *string {
 	var timestamp uint64
 	err := lc.db.View(func(txn *badger.Txn) error {
 		opts := badger.DefaultIteratorOptions
-		opts.PrefetchSize = 10
+		opts.PrefetchValues = false
 		opts.Reverse = true
 		it := txn.NewIterator(opts)
 		defer it.Close()
-		for it.Seek(append([]byte(name), 255)); it.ValidForPrefix(prefix); it.Next() {
+		it.Seek(append([]byte(name), 255))
+		if it.ValidForPrefix(prefix) {
 			item := it.Item()
-			err := item.Value(func(bs []byte) error {
-				timestamp = binary.BigEndian.Uint64(bs)
-				return nil
-			})
-			if err != nil {
-				return err
-			}
+			key := item.Key()
+			start := len(name) + 1
+			timestamp = binary.BigEndian.Uint64(key[start : start+8])
 		}
 		return nil
 	})
