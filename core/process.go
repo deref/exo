@@ -1,6 +1,13 @@
+// Generated file. DO NOT EDIT.
+
 package core
 
-import "context"
+import (
+	"context"
+	"net/http"
+
+	josh "github.com/deref/exo/josh/server"
+)
 
 type Process interface {
 	Start(context.Context, *StartInput) (*StartOutput, error)
@@ -25,4 +32,15 @@ type StopInput struct {
 
 type StopOutput struct {
 	State string `json:"state"`
+}
+
+func NewProcessMux(prefix string, iface Process) *http.ServeMux {
+	b := josh.NewMuxBuilder(prefix)
+	BuildProcessMux(b, iface)
+	return b.Mux()
+}
+
+func BuildProcessMux(b *josh.MuxBuilder, iface Process) {
+	b.AddMethod("start", iface.Start)
+	b.AddMethod("stop", iface.Stop)
 }

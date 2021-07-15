@@ -66,8 +66,8 @@ func Generate(root *Root) ([]byte, error) {
 		template.New("module").
 			Funcs(map[string]interface{}{
 				"tick":   func() string { return "`" },
-				"pascal": inflect.KebabToPascal,
-				"camel":  inflect.KebabToCamel,
+				"public": inflect.KebabToPublic,
+				"js":     inflect.KebabToJSVar,
 			}).
 			Parse(moduleTemplate),
 	)
@@ -96,7 +96,7 @@ package {{.Package}}
 {{- define "fields" -}}
 {{- range . }}
 {{template "doc" . -}}
-	{{.Name|pascal}} {{.Type}} {{tick}}json:"{{.Name|camel}}"{{tick}}
+	{{.Name|public}} {{.Type}} {{tick}}json:"{{.Name|js}}"{{tick}}
 {{- end}}{{end}}
 
 import (
@@ -108,39 +108,39 @@ import (
 
 {{range .Interfaces}}
 {{template "doc" . -}}
-type {{.Name|pascal}} interface {
+type {{.Name|public}} interface {
 {{- range .Methods}}
 {{template "doc" . -}}
-	{{.Name|pascal}}(context.Context, *{{.Name|pascal}}Input) (*{{.Name|pascal}}Output, error)
+	{{.Name|public}}(context.Context, *{{.Name|public}}Input) (*{{.Name|public}}Output, error)
 {{- end}}
 }
 
 {{range .Methods}}
-type {{.Name|pascal}}Input struct {
+type {{.Name|public}}Input struct {
 {{template "fields" .Input}}
 }
 
-type {{.Name|pascal}}Output struct {
+type {{.Name|public}}Output struct {
 {{template "fields" .Output}}
 }
 {{end}}
 
-func New{{.Name|pascal}}Mux(prefix string, iface {{.Name|pascal}}) *http.ServeMux {
+func New{{.Name|public}}Mux(prefix string, iface {{.Name|public}}) *http.ServeMux {
 	b := josh.NewMuxBuilder(prefix)
-	Build{{.Name|pascal}}Mux(b, iface)
+	Build{{.Name|public}}Mux(b, iface)
 	return b.Mux()
 }
 
-func Build{{.Name|pascal}}Mux(b *josh.MuxBuilder, iface {{.Name|pascal}}) {
+func Build{{.Name|public}}Mux(b *josh.MuxBuilder, iface {{.Name|public}}) {
 {{- range .Methods}}
-	b.AddMethod("{{.Name}}", iface.{{.Name|pascal}})
+	b.AddMethod("{{.Name}}", iface.{{.Name|public}})
 {{- end}}
 }
 {{end}}
 
 {{range .Structs}}
 {{template "doc" . -}}
-type {{.Name|pascal}} struct {
+type {{.Name|public}} struct {
 {{template "fields" .Fields}}
 }
 {{end}}

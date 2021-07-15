@@ -1,6 +1,13 @@
+// Generated file. DO NOT EDIT.
+
 package state
 
-import "context"
+import (
+	"context"
+	"net/http"
+
+	josh "github.com/deref/exo/josh/server"
+)
 
 type Store interface {
 	Resolve(context.Context, *ResolveInput) (*ResolveOutput, error)
@@ -28,6 +35,49 @@ type DescribeComponentsOutput struct {
 	Components []ComponentDescription `json:"components"`
 }
 
+type AddComponentInput struct {
+	ProjectID string `json:"projectId"`
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Type      string `json:"type"`
+	Spec      string `json:"spec"`
+	Created   string `json:"created"`
+}
+
+type AddComponentOutput struct {
+}
+
+type PatchComponentInput struct {
+	ID          string `json:"id"`
+	State       string `json:"state"`
+	Initialized string `json:"initialized"`
+	Disposed    string `json:"disposed"`
+}
+
+type PatchComponentOutput struct {
+}
+
+type RemoveComponentInput struct {
+	ID string `json:"id"`
+}
+
+type RemoveComponentOutput struct {
+}
+
+func NewStoreMux(prefix string, iface Store) *http.ServeMux {
+	b := josh.NewMuxBuilder(prefix)
+	BuildStoreMux(b, iface)
+	return b.Mux()
+}
+
+func BuildStoreMux(b *josh.MuxBuilder, iface Store) {
+	b.AddMethod("resolve", iface.Resolve)
+	b.AddMethod("describe-components", iface.DescribeComponents)
+	b.AddMethod("add-component", iface.AddComponent)
+	b.AddMethod("patch-component", iface.PatchComponent)
+	b.AddMethod("remove-component", iface.RemoveComponent)
+}
+
 type ComponentDescription struct {
 	ID          string  `json:"id"`
 	ProjectID   string  `json:"projectId"`
@@ -39,29 +89,3 @@ type ComponentDescription struct {
 	Initialized *string `json:"initialized"`
 	Disposed    *string `json:"disposed"`
 }
-
-type AddComponentInput struct {
-	ProjectID string `json:"projectId"`
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	Type      string `json:"type"`
-	Spec      string `json:"spec"`
-	Created   string `json:"created"`
-}
-
-type AddComponentOutput struct{}
-
-type PatchComponentInput struct {
-	ID          string `json:"id"`
-	State       string `json:"state"`
-	Initialized string `json:"initialized"`
-	Disposed    string `json:"disposed"`
-}
-
-type PatchComponentOutput struct{}
-
-type RemoveComponentInput struct {
-	ID string `json:"id"`
-}
-
-type RemoveComponentOutput struct{}
