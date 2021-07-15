@@ -22,11 +22,9 @@ const (
 
 func eventFromEntry(log string, key, val []byte) (api.Event, error) {
 	// Parse key as (logName, null, id).
-	logNameLen := len(log)
-	idOffset := logNameOffset + logNameLen + 1
-	id, err := parseID(key[idOffset:])
+	id, err := idFromKey(log, key)
 	if err != nil {
-		return api.Event{}, fmt.Errorf("parsing id: %w", err)
+		return api.Event{}, err
 	}
 
 	// Create value as (version, timestamp, message).
@@ -44,6 +42,26 @@ func eventFromEntry(log string, key, val []byte) (api.Event, error) {
 		Timestamp: chrono.NanoToIso(int64(tsNano)),
 		Message:   message,
 	}, nil
+}
+
+func idFromKey(log string, key []byte) (id string, err error) {
+	// Parse key as (logName, null, id).
+	logNameLen := len(log)
+	idOffset := logNameOffset + logNameLen + 1
+	id, err = parseID(key[idOffset:])
+	if err != nil {
+		return "", fmt.Errorf("parsing id: %w", err)
+	}
+	return id, nil
+}
+
+func mustIDFromKey(log string, key []byte) (id string) {
+	var err error
+	id, err = idFromKey(log, key)
+	if err != nil {
+		panic(err)
+	}
+	return id
 }
 
 // incrementBytes returns a byte slice that is incremented by 1 bit.

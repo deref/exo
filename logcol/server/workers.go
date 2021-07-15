@@ -86,6 +86,8 @@ func (lc *LogCollector) stopWorker(logName string) {
 }
 
 func (wkr *worker) stop() {
+	// XXX Saw a race on shutdown/interrupt where close called on already closed channel.
+	// TODO: Make stop safe to call on already stopped worker?
 	close(wkr.done)
 }
 

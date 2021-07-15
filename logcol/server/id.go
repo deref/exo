@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"math/rand"
+	"strings"
 	"sync"
 
 	"github.com/deref/exo/chrono"
@@ -40,5 +41,5 @@ func parseID(id []byte) (string, error) {
 		return "", errors.New("invalid length")
 	}
 
-	return asULID.String(), nil
+	return strings.ToLower(asULID.String()), nil
 }

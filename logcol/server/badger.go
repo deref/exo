@@ -56,7 +56,7 @@ func (sink *badgerSink) AddEvent(ctx context.Context, timestamp uint64, message 
 	})
 }
 
-const maxEventsPerStream = 3
+const maxEventsPerStream = 5000
 
 func (sink *badgerSink) GC(ctx context.Context) error {
 	prefix := append([]byte(sink.logName), 0)
@@ -89,7 +89,8 @@ func (sink *badgerSink) GC(ctx context.Context) error {
 		it := txn.NewIterator(opts)
 		defer it.Close()
 		for it.Seek(deleteFrom); it.ValidForPrefix(prefix); it.Next() {
-			if err := txn.Delete(it.Item().Key()); err != nil {
+			key := it.Item().KeyCopy(nil)
+			if err := txn.Delete(key); err != nil {
 				return err
 			}
 		}

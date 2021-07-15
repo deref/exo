@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"path/filepath"
 	"sort"
+	"strings"
 	"sync"
 
 	"github.com/deref/exo/atom"
@@ -160,7 +161,7 @@ func (lc *LogCollector) GetEvents(ctx context.Context, input *api.GetEventsInput
 			prefix := append([]byte(log), 0)
 			start := prefix
 			if input.After != "" {
-				id, err := ulid.Parse(input.After)
+				id, err := ulid.Parse(strings.ToUpper(input.After))
 				if err != nil {
 					return fmt.Errorf("parsing cursor: %w", err)
 				}
