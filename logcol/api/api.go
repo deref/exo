@@ -9,10 +9,12 @@ import (
 	josh "github.com/deref/exo/josh/server"
 )
 
+// Manages a set of logs. Collects and stores events from them.
 type LogCollector interface {
 	AddLog(context.Context, *AddLogInput) (*AddLogOutput, error)
 	RemoveLog(context.Context, *RemoveLogInput) (*RemoveLogOutput, error)
 	DescribeLogs(context.Context, *DescribeLogsInput) (*DescribeLogsOutput, error)
+	// Paginates events. Inputs before and after are mutually exclusive.
 	GetEvents(context.Context, *GetEventsInput) (*GetEventsOutput, error)
 }
 
@@ -49,12 +51,6 @@ type GetEventsOutput struct {
 	Events []Event `json:"events"`
 }
 
-type CollectInput struct {
-}
-
-type CollectOutput struct {
-}
-
 func NewLogCollectorMux(prefix string, iface LogCollector) *http.ServeMux {
 	b := josh.NewMuxBuilder(prefix)
 	BuildLogCollectorMux(b, iface)
@@ -62,7 +58,6 @@ func NewLogCollectorMux(prefix string, iface LogCollector) *http.ServeMux {
 }
 
 func BuildLogCollectorMux(b *josh.MuxBuilder, iface LogCollector) {
-
 	b.AddMethod("add-log", iface.AddLog)
 	b.AddMethod("remove-log", iface.RemoveLog)
 	b.AddMethod("describe-logs", iface.DescribeLogs)

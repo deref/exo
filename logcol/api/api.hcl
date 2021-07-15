@@ -1,5 +1,7 @@
 interface "log-collector" {
 
+  doc = "Manages a set of logs. Collects and stores events from them."
+
   # TODO: Bulk methods.
 
   method "add-log" {
@@ -17,6 +19,7 @@ interface "log-collector" {
   }
 
   method "get-events" {
+    doc = "Paginates events. Inputs before and after are mutually exclusive."
     input "logs" "[]string" {}
     input "before" "string" {}
     input "after" "string" {}

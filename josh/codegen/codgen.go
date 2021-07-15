@@ -16,25 +16,29 @@ type Module struct {
 
 type Interface struct {
 	Name    string   `hcl:"name,label"`
+	Doc     *string  `hcl:"doc"`
 	Methods []Method `hcl:"method,block"`
 }
 
 type Method struct {
 	Name   string  `hcl:"name,label"`
+	Doc    *string `hcl:"doc"`
 	Input  []Field `hcl:"input,block"`
 	Output []Field `hcl:"output,block"`
 }
 
 type Struct struct {
 	Name   string  `hcl:"name,label"`
+	Doc    *string `hcl:"doc"`
 	Fields []Field `hcl:"field,block"`
 }
 
 type Field struct {
-	Name     string `hcl:"name,label"`
-	Type     string `hcl:"type,label"`
-	Required *bool  `hcl:"required"`
-	Nullable *bool  `hcl:"nullable"`
+	Name     string  `hcl:"name,label"`
+	Doc      *string `hcl:"doc"`
+	Type     string  `hcl:"type,label"`
+	Required *bool   `hcl:"required"`
+	Nullable *bool   `hcl:"nullable"`
 }
 
 func ParseFile(filename string) (*Module, error) {
@@ -80,8 +84,13 @@ var moduleTemplate = `
 
 package api
 
+{{- define "doc" -}}
+{{if .Doc}}// {{.Doc}}
+{{end}}{{end}}
+
 {{- define "fields" -}}
 {{- range . }}
+{{template "doc" . -}}
 	{{.Name|pascal}} {{.Type}} {{tick}}json:"{{.Name|camel}}"{{tick}}
 {{- end}}{{end}}
 
@@ -93,8 +102,10 @@ import (
 )
 
 {{range .Interfaces}}
+{{template "doc" . -}}
 type {{.Name|pascal}} interface {
 {{- range .Methods}}
+{{template "doc" . -}}
 	{{.Name|pascal}}(context.Context, *{{.Name|pascal}}Input) (*{{.Name|pascal}}Output, error)
 {{- end}}
 }
@@ -116,13 +127,14 @@ func New{{.Name|pascal}}Mux(prefix string, iface {{.Name|pascal}}) *http.ServeMu
 }
 
 func Build{{.Name|pascal}}Mux(b *josh.MuxBuilder, iface {{.Name|pascal}}) {
-{{range .Methods}}
+{{- range .Methods}}
 	b.AddMethod("{{.Name}}", iface.{{.Name|pascal}})
 {{- end}}
 }
 {{end}}
 
 {{range .Structs}}
+{{template "doc" . -}}
 type {{.Name|pascal}} struct {
 {{template "fields" .Fields}}
 }
