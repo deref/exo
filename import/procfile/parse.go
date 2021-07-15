@@ -40,6 +40,9 @@ func Parse(r io.Reader) (*Procfile, error) {
 		if len(parts) != 2 {
 			return nil, fmt.Errorf("line %d is invalid", lineIndex)
 		}
+		for i, part := range parts {
+			parts[i] = bytes.TrimSpace(part)
+		}
 		name := string(parts[0])
 		// TODO: Validate name is alphanumeric.
 		argv := strings.Split(string(parts[1]), " ") // TODO: Handle argument quoting.

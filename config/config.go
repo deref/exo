@@ -1,6 +1,6 @@
 package config
 
-// TODO: Add yaml tags to struct fields.
+// TODO: HCL.
 
 var Version = "0.1"
 
@@ -12,7 +12,7 @@ type Config struct {
 type Component struct {
 	Name string
 	Type string
-	Spec interface{}
+	Spec string // TODO: Custom unmarshalling to allow convenient json representation.
 }
 
 func NewConfig() *Config {
