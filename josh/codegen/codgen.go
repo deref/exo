@@ -9,12 +9,7 @@ import (
 	"github.com/hashicorp/hcl/v2/hclsimple"
 )
 
-type Root struct {
-	Package string
-	Module
-}
-
-type Module struct {
+type Unit struct {
 	Interfaces []Interface `hcl:"interface,block"`
 	Structs    []Struct    `hcl:"struct,block"`
 }
@@ -46,33 +41,37 @@ type Field struct {
 	Nullable *bool   `hcl:"nullable"`
 }
 
-func ParseFile(filename string) (*Module, error) {
-	var module Module
-	if err := hclsimple.DecodeFile(filename, nil, &module); err != nil {
+func ParseFile(filename string) (*Unit, error) {
+	var unit Unit
+	if err := hclsimple.DecodeFile(filename, nil, &unit); err != nil {
 		return nil, err
 	}
-	err := Validate(module)
-	return &module, err
+	err := Validate(unit)
+	return &unit, err
 }
 
-func Validate(mod Module) error {
+func Validate(unit Unit) error {
 	// TODO: Validate no duplicate names.
 	// TODO: All type references.
 	return nil
 }
 
-func Generate(root *Root) ([]byte, error) {
+func GenerateAPI(unit *Unit) ([]byte, error) {
+	return generateGo(apiTemplate, unit)
+}
+
+func GenerateClient(unit *Unit) ([]byte, error) {
+	return generateGo(clientTemplate, unit)
+}
+
+func generateGo(t string, unit *Unit) ([]byte, error) {
 	tmpl := template.Must(
-		template.New("module").
-			Funcs(map[string]interface{}{
-				"tick":   func() string { return "`" },
-				"public": inflect.KebabToPublic,
-				"js":     inflect.KebabToJSVar,
-			}).
-			Parse(moduleTemplate),
+		template.New("unit").
+			Funcs(templateFuncs).
+			Parse(t),
 	)
 	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, root); err != nil {
+	if err := tmpl.Execute(&buf, unit); err != nil {
 		return nil, err
 	}
 	bs := buf.Bytes()
@@ -81,13 +80,18 @@ func Generate(root *Root) ([]byte, error) {
 		return bs, nil
 	}
 	return formatted, nil
-
 }
 
-var moduleTemplate = `
+var templateFuncs = map[string]interface{}{
+	"tick":   func() string { return "`" },
+	"public": inflect.KebabToPublic,
+	"js":     inflect.KebabToJSVar,
+}
+
+var apiTemplate = `
 // Generated file. DO NOT EDIT.
 
-package {{.Package}}
+package api
 
 {{- define "doc" -}}
 {{if .Doc}}// {{.Doc}}
@@ -144,4 +148,10 @@ type {{.Name|public}} struct {
 {{template "fields" .Fields}}
 }
 {{end}}
+`
+
+var clientTemplate = `
+// Generated file. DO NOT EDIT.
+
+package client
 `

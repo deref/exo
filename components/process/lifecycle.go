@@ -11,7 +11,7 @@ import (
 	"syscall"
 
 	"github.com/deref/exo/components/log"
-	"github.com/deref/exo/core"
+	core "github.com/deref/exo/core/api"
 	"github.com/deref/exo/jsonutil"
 	logcol "github.com/deref/exo/logcol/api"
 )

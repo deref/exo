@@ -13,7 +13,7 @@ import (
 	"github.com/deref/exo/components/log"
 	"github.com/deref/exo/components/process"
 	"github.com/deref/exo/config"
-	"github.com/deref/exo/core"
+	core "github.com/deref/exo/core/api"
 	"github.com/deref/exo/gensym"
 	"github.com/deref/exo/import/procfile"
 	"github.com/deref/exo/jsonutil"
