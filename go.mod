@@ -8,6 +8,7 @@ require (
 	github.com/hashicorp/hcl/v2 v2.10.0
 	github.com/natefinch/atomic v1.0.1
 	github.com/oklog/ulid/v2 v2.0.2
+	github.com/pkg/browser v0.0.0-20210706143420-7d21f8c997e2
 	github.com/spf13/cobra v0.0.5
 	gopkg.in/yaml.v2 v2.2.7 // indirect
 )

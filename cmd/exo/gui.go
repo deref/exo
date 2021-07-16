@@ -1,8 +1,9 @@
 package main
 
 import (
-	"errors"
+	"os"
 
+	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
 )
 
@@ -16,6 +17,7 @@ var guiCmd = &cobra.Command{
 	Long:  `Opens the exo gui in a web browser.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ensureDeamon()
-		return errors.New("TODO: gui command")
+		browser.Stdout = os.Stderr
+		return browser.OpenURL(runState.URL)
 	},
 }

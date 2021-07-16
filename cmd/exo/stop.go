@@ -1,8 +1,6 @@
 package main
 
 import (
-	"errors"
-
 	"github.com/spf13/cobra"
 )
 
@@ -16,6 +14,6 @@ var stopCmd = &cobra.Command{
 	Long:  `Stop a process.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ensureDeamon()
-		return errors.New("TODO: stop command")
+		return nil
 	},
 }

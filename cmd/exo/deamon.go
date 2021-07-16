@@ -1,12 +1,13 @@
 package main
 
 import (
+	"fmt"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"syscall"
 
 	"github.com/deref/exo/cmdutil"
+	"github.com/deref/exo/jsonutil"
 	"github.com/deref/exo/osutil"
 	"github.com/spf13/cobra"
 )
@@ -29,24 +30,27 @@ have to invoke this themselves.`,
 	},
 }
 
-func ensureDeamon() {
-	varDir := cmdutil.MustVarDir()
+var runState struct {
+	Pid int    `json:"pid"`
+	URL string `json:"url"`
+}
 
-	// Validate pid file.
-	pidPath := filepath.Join(varDir, "exod.pid")
-	_, err := os.Stat(pidPath)
+func ensureDeamon() {
+	paths := cmdutil.MustMakeDirectories()
+
+	// Validate exod process record.
+	err := loadRunState(paths.RunStateFile)
 	running := false
 	switch {
 	case err == nil:
-		pid := osutil.ReadPid(pidPath)
-		running = osutil.IsValidPid(pid)
+		running = osutil.IsValidPid(runState.Pid)
 		if !running {
-			_ = os.Remove(pidPath)
+			_ = os.Remove(paths.RunStateFile)
 		}
 	case os.IsNotExist(err):
 		// Not running.
 	default:
-		cmdutil.Fatalf("checking pid file: %w", err)
+		cmdutil.Fatalf("checking run state: %w", err)
 	}
 
 	if running {
@@ -64,9 +68,14 @@ func ensureDeamon() {
 		cmdutil.Fatalf("starting exo server: %w", err)
 	}
 
-	// Write pid file.
-	pid := cmd.Process.Pid
-	if err := osutil.WritePid(pidPath, pid); err != nil {
-		cmdutil.Fatalf("writing pid: %w", err)
+	// Write run state.
+	runState.Pid = cmd.Process.Pid
+	runState.URL = fmt.Sprintf("http://%s/", cmdutil.GetAddr())
+	if err := jsonutil.MarshalFile(paths.RunStateFile, runState); err != nil {
+		cmdutil.Fatalf("writing run state: %w", err)
 	}
+}
+
+func loadRunState(path string) error {
+	return jsonutil.UnmarshalFile(path, &runState)
 }

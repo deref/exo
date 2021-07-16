@@ -13,8 +13,9 @@ import (
 )
 
 func Main() {
+	paths := cmdutil.MustMakeDirectories()
 	cfg := &server.Config{
-		VarDir: cmdutil.MustVarDir(),
+		VarDir: paths.VarDir,
 	}
 	ctx := server.NewContext(context.Background(), cfg)
 
@@ -32,7 +33,9 @@ func Main() {
 		os.Exit(0)
 	}()
 
-	if err := http.ListenAndServe("localhost:4000", server.NewHandler(ctx, cfg)); err != nil {
+	addr := cmdutil.GetAddr()
+
+	if err := http.ListenAndServe(addr, server.NewHandler(ctx, cfg)); err != nil {
 		cmdutil.Fatalf("listening: %w", err)
 	}
 }

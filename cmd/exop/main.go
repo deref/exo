@@ -15,8 +15,9 @@ import (
 )
 
 func main() {
+	paths := cmdutil.MustMakeDirectories()
 	cfg := &server.Config{
-		VarDir: cmdutil.MustVarDir(),
+		VarDir: paths.VarDir,
 	}
 	ctx := server.NewContext(context.Background(), cfg)
 	ctx = log.ContextWithLogCollector(ctx, logcol.NewLogCollector(&josh.Client{
