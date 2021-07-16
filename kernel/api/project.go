@@ -11,7 +11,7 @@ import (
 
 type Project interface {
 	// Deletes all of the components in the project, then deletes the project itself.
-	Delete(context.Context, *DeleteInput) (*DeleteOutput, error)
+	Destroy(context.Context, *DestroyInput) (*DestroyOutput, error)
 	// Performs creates, updates, refreshes, disposes, as needed.
 	Apply(context.Context, *ApplyInput) (*ApplyOutput, error)
 	ApplyProcfile(context.Context, *ApplyProcfileInput) (*ApplyProcfileOutput, error)
@@ -38,10 +38,10 @@ type Project interface {
 	DescribeProcesses(context.Context, *DescribeProcessesInput) (*DescribeProcessesOutput, error)
 }
 
-type DeleteInput struct {
+type DestroyInput struct {
 }
 
-type DeleteOutput struct {
+type DestroyOutput struct {
 }
 
 type ApplyInput struct {
@@ -165,7 +165,7 @@ func NewProjectMux(prefix string, iface Project) *http.ServeMux {
 }
 
 func BuildProjectMux(b *josh.MuxBuilder, iface Project) {
-	b.AddMethod("delete", iface.Delete)
+	b.AddMethod("destroy", iface.Destroy)
 	b.AddMethod("apply", iface.Apply)
 	b.AddMethod("apply-procfile", iface.ApplyProcfile)
 	b.AddMethod("refresh", iface.Refresh)

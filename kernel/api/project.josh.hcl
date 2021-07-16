@@ -1,5 +1,5 @@
 interface "project" {
-  method "delete" {
+  method "destroy" {
     doc = "Deletes all of the components in the project, then deletes the project itself."
   }
   

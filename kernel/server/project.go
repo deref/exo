@@ -27,7 +27,7 @@ type Project struct {
 	VarDir string
 }
 
-func (proj *Project) Delete(ctx context.Context, input *api.DeleteInput) (*api.DeleteOutput, error) {
+func (proj *Project) Destroy(ctx context.Context, input *api.DestroyInput) (*api.DestroyOutput, error) {
 	store := state.CurrentStore(ctx)
 	describeOutput, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
 		ProjectID: proj.ID,
@@ -44,7 +44,7 @@ func (proj *Project) Delete(ctx context.Context, input *api.DeleteInput) (*api.D
 			return nil, fmt.Errorf("deleting %s: %w", component.Name, err)
 		}
 	}
-	return &api.DeleteOutput{}, nil
+	return &api.DestroyOutput{}, nil
 }
 
 func (proj *Project) Apply(ctx context.Context, input *api.ApplyInput) (*api.ApplyOutput, error) {

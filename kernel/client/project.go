@@ -21,8 +21,8 @@ func NewProject(client *josh.Client) *Project {
 	}
 }
 
-func (c *Project) Delete(ctx context.Context, input *api.DeleteInput) (output *api.DeleteOutput, err error) {
-	err = c.client.Invoke(ctx, "delete", input, &output)
+func (c *Project) Destroy(ctx context.Context, input *api.DestroyInput) (output *api.DestroyOutput, err error) {
+	err = c.client.Invoke(ctx, "destroy", input, &output)
 	return
 }
 
