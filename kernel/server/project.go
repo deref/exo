@@ -48,11 +48,21 @@ func (proj *Project) Destroy(ctx context.Context, input *api.DestroyInput) (*api
 }
 
 func (proj *Project) Apply(ctx context.Context, input *api.ApplyInput) (*api.ApplyOutput, error) {
-	panic("TODO: Apply")
+	cfg, err := config.Parse([]byte(input.Config))
+	if err != nil {
+		return nil, fmt.Errorf("parsing config: %w", err)
+	}
+	if err := proj.apply(ctx, cfg); err != nil {
+		return nil, err
+	}
+	return &api.ApplyOutput{}, nil
 }
 
 func (proj *Project) apply(ctx context.Context, cfg *config.Config) error {
 	store := state.CurrentStore(ctx)
+
+	// TODO: Validate config.
+
 	describeOutput, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
 		ProjectID: proj.ID,
 	})

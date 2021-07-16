@@ -1,7 +1,0 @@
-exo: 0.1
-components:
-  - name: echo
-    type: process
-    spec:
-      command: 'socat'
-      arguments: ["TCP4-LISTEN:2000,fork", "EXEC:cat"]
