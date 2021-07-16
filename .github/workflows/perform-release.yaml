@@ -116,7 +116,7 @@ jobs:
     - name: Build
       run: |
         mkdir -p "${{ env.artifact_dir }}"
-        GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -o "${{ env.binary_path }}" ./cmd/exo
+        GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -tags bundle -o "${{ env.binary_path }}" ./cmd/exo
         sha256sum "${{ env.binary_path }}" | cut -d ' ' -f 1 > "${{ env.binary_path }}.sha256"
     - name: Set upload URL
       id: get_release_info
