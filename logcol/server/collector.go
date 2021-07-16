@@ -5,6 +5,7 @@ import (
 	"encoding/binary"
 	"errors"
 	"fmt"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -24,6 +25,7 @@ const (
 
 type Config struct {
 	VarDir string
+	Debug  bool
 }
 
 func NewLogCollector(ctx context.Context, cfg *Config) *LogCollector {
@@ -32,6 +34,7 @@ func NewLogCollector(ctx context.Context, cfg *Config) *LogCollector {
 		varDir: cfg.VarDir,
 		state:  atom.NewFileAtom(statePath, atom.CodecJSON),
 		idGen:  newIdGen(ctx),
+		debug:  cfg.Debug,
 	}
 }
 
@@ -39,11 +42,18 @@ type LogCollector struct {
 	varDir string
 	state  atom.Atom
 	idGen  *idGen
+	debug  bool
 	db     *badger.DB
 	wg     sync.WaitGroup
 
 	mx      sync.Mutex
 	workers map[string]*worker
+}
+
+func (lc *LogCollector) debugf(format string, v ...interface{}) {
+	if lc.debug {
+		fmt.Fprintln(os.Stderr, "collector", fmt.Errorf(format, v...))
+	}
 }
 
 func validLogName(s string) bool {

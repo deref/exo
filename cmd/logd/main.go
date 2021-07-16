@@ -23,6 +23,7 @@ func main() {
 	paths := cmdutil.MustMakeDirectories()
 	cfg := &server.Config{
 		VarDir: paths.VarDir,
+		Debug:  true,
 	}
 	ctx := context.Background()
 	collector := server.NewLogCollector(ctx, cfg)

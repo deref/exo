@@ -10,6 +10,7 @@ import (
 )
 
 func (lc *LogCollector) Start(ctx context.Context) error {
+	lc.debugf("Start")
 	lc.mx.Lock()
 	defer lc.mx.Unlock()
 
@@ -39,6 +40,7 @@ func (lc *LogCollector) Start(ctx context.Context) error {
 }
 
 func (lc *LogCollector) Stop(ctx context.Context) {
+	lc.debugf("Stop")
 	lc.mx.Lock()
 	defer lc.mx.Unlock()
 
@@ -52,7 +54,10 @@ func (lc *LogCollector) Stop(ctx context.Context) {
 
 	lc.wg.Wait()
 	lc.workers = nil
+	lc.debugf("stopped")
 
+	lc.debugf("closing db")
 	_ = lc.db.Close()
+	lc.debugf("db closed")
 	lc.db = nil
 }
