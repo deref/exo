@@ -7,6 +7,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"sort"
 	"strconv"
 	"strings"
 	"syscall"
@@ -80,7 +81,30 @@ func (provider *Provider) start(ctx context.Context, procDir string, inputSpec s
 	}
 
 	// Forward environment.
-	cmd.Env = []string{} // TODO: Get from spec.
+	envv := os.Environ()
+	envMap := make(map[string]string, len(envv)+len(spec.Environment))
+	addEnv := func(key, val string) {
+		key = strings.TrimSpace(key)
+		val = strings.TrimSpace(val)
+		envMap[key] = val
+	}
+	for _, kvp := range envv {
+		parts := strings.SplitN(kvp, "=", 2)
+		if len(parts) < 2 {
+			parts = append(parts, "")
+		}
+		addEnv(parts[0], parts[1])
+	}
+	for key, val := range spec.Environment {
+		addEnv(key, val)
+	}
+	for key, val := range envMap {
+		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", key, val))
+	}
+	sort.Strings(cmd.Env)
+	for i, x := range cmd.Env {
+		fmt.Println(i, x)
+	}
 
 	// Connect pipes.
 	stdout, err := cmd.StdoutPipe()
