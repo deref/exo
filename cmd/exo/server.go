@@ -1,8 +1,7 @@
 package main
 
 import (
-	"errors"
-
+	"github.com/deref/exo/exod"
 	"github.com/spf13/cobra"
 )
 
@@ -17,8 +16,7 @@ var serverCmd = &cobra.Command{
 	Long: `Runs the exo server until interrupted.
 
 Prefer the deamonize command for normal operation.`,
-	RunE: func(cmd *cobra.Command, args []string) error {
-		ensureDeamon()
-		return errors.New("TODO: server command")
+	Run: func(cmd *cobra.Command, args []string) {
+		exod.Main()
 	},
 }

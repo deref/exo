@@ -7,7 +7,7 @@ import (
 )
 
 func Fatalf(format string, v ...interface{}) {
-	fmt.Fprintf(os.Stderr, format+"\n", v...)
+	fmt.Fprintf(os.Stderr, "%v\n", fmt.Errorf(format, v...))
 	os.Exit(1)
 }
 
