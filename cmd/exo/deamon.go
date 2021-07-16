@@ -28,6 +28,7 @@ var deamonCmd = &cobra.Command{
 
 Since most commands implicitly start the exo deamon, users generally do not
 have to invoke this themselves.`,
+	Args: cobra.ExactArgs(0),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ensureDeamon()
 		return nil

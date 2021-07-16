@@ -19,6 +19,7 @@ var applyCmd = &cobra.Command{
 	Use:   "apply [flags] <config-file>",
 	Short: "Applies a config to the current project",
 	Long:  `Applies a config to the current project.`,
+	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ensureDeamon()
 		return errors.New("TODO: apply command")
