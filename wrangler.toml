@@ -1,0 +1,11 @@
+# This file is used to configure the release build step that publishes the newly-released package version
+# For the install script and version check endpoint.
+
+type = "javascript"
+account_id = "b5d1a3835f0dd218f633c7d612935c6b"
+route = ""
+zone_id = ""
+
+kv_namespaces = [
+         { binding = "VERSIONS", id = "dedba216553b445681f5043a2dcaee68", preview_id = "59b38fdd3ea94a7c91122f3ffba1d308" }
+]
