@@ -15,6 +15,7 @@ var guiCmd = &cobra.Command{
 	Short: "Opens the exo gui in a web browser",
 	Long:  `Opens the exo gui in a web browser.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return errors.New("TODO: open command")
+		ensureDeamon()
+		return errors.New("TODO: gui command")
 	},
 }

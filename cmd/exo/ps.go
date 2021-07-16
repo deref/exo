@@ -15,6 +15,7 @@ var psCmd = &cobra.Command{
 	Short: "Lists defined processes.",
 	Long:  `Describes defined processes and their statuses.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		ensureDeamon()
 		return errors.New("TODO: ps command")
 	},
 }

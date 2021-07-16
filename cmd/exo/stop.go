@@ -15,6 +15,7 @@ var stopCmd = &cobra.Command{
 	Short: "Stop a process",
 	Long:  `Stop a process.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		ensureDeamon()
 		return errors.New("TODO: stop command")
 	},
 }
