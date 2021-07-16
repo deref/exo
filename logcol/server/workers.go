@@ -97,7 +97,7 @@ func (wkr *worker) stop() {
 }
 
 func (wkr *worker) run(ctx context.Context) error {
-	source, err := os.Open(wkr.sourcePath + ".fifo") // XXX This can block forever.
+	source, err := os.Open(wkr.sourcePath) // XXX This can block forever.
 	if err != nil {
 		return fmt.Errorf("opening source: %w", err)
 	}
