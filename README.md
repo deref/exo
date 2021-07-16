@@ -1,39 +1,26 @@
-# Exo
+# Exo: a process manager & log viewer for dev
 
 **exo-** _prefix_ – external; from outside.
 
-Exo provides an exoskeleton that supports and protects your services.
-
-(NOTE: THIS DOCUMENT IS VERY ASPIRATIONAL)
-
-In dev, Exo acts as a supervisor. In prod, you can use your favorite
-orchestration system. IO is instrumented with proxies, giving your service new
-functionality without any code changes in your process. All this functionality
-is exposed through a management console that lives as a sidecar to your
-service.
-
-## Features
-
-- Admin Console
-- Logging
-- HTTP Request Logging
-- Error Tracking
-- Online Help
-- Metrics
-- Lots more...
-
 ## Getting Started
 
-TODO: Write migration guides for...
+Install exo:
 
-- Procfiles
-- Docker Compose
-- Minikube
+```bash
+/bin/bash -c "$(curl -fsSL https://exo.deref.io/install.sh)"
+```
 
-## Concepts
+If you prefer manual installation, see [./doc/install.md](./doc/install.md) for
+details, including uninstall instructions.
 
-### Components.
+Navigate to a project directory and then launch the exo gui:
 
-Like resources in an Infrastructure-as-Code system.
+```bash
+exo gui
+```
 
-Each component has a typed and has a spec, plus some metadata.
+For more features, consult the builtin help:
+
+```bash
+exo help
+```
