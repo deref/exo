@@ -4,8 +4,11 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"sort"
+	"strings"
 
 	"github.com/deref/exo/atom"
+	"github.com/deref/exo/kernel/state/api"
 	state "github.com/deref/exo/kernel/state/api"
 )
 
@@ -133,7 +136,26 @@ func (sto *Store) DescribeComponents(ctx context.Context, input *state.DescribeC
 			})
 		}
 	}
+	sort.Sort(componentsSort{output.Components})
 	return output, nil
+}
+
+type componentsSort struct {
+	components []api.ComponentDescription
+}
+
+func (iface componentsSort) Len() int {
+	return len(iface.components)
+}
+
+func (iface componentsSort) Less(i, j int) bool {
+	return strings.Compare(iface.components[i].Name, iface.components[j].Name) < 0
+}
+
+func (iface componentsSort) Swap(i, j int) {
+	tmp := iface.components[i]
+	iface.components[i] = iface.components[j]
+	iface.components[j] = tmp
 }
 
 func (sto *Store) AddComponent(ctx context.Context, input *state.AddComponentInput) (*state.AddComponentOutput, error) {
