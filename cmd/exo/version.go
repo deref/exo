@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"runtime/debug"
 
+	"github.com/deref/exo/core"
 	"github.com/spf13/cobra"
 )
 
@@ -28,9 +29,9 @@ var versionCmd = &cobra.Command{
 		}
 		printInfo := func(mod debug.Module) {
 			if versionFlags.Verbose {
-				fmt.Println(mod.Path, mod.Version)
+				fmt.Println(mod.Path, core.Version)
 			} else {
-				fmt.Println(mod.Version)
+				fmt.Println(core.Version)
 			}
 		}
 		printInfo(buildInfo.Main)
