@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"os"
 
@@ -16,6 +17,10 @@ For more information, see https://exo.deref.io`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return cmd.Help()
 	},
+}
+
+func newContext() context.Context {
+	return context.Background()
 }
 
 func main() {

@@ -2,12 +2,16 @@ package main
 
 import (
 	"fmt"
+	"net/http"
 	"os"
 	"os/exec"
 	"syscall"
 
 	"github.com/deref/exo/cmdutil"
+	josh "github.com/deref/exo/josh/client"
 	"github.com/deref/exo/jsonutil"
+	"github.com/deref/exo/kernel/api"
+	"github.com/deref/exo/kernel/client"
 	"github.com/deref/exo/osutil"
 	"github.com/spf13/cobra"
 )
@@ -78,4 +82,11 @@ func ensureDeamon() {
 
 func loadRunState(path string) error {
 	return jsonutil.UnmarshalFile(path, &runState)
+}
+
+func newClient() api.Kernel {
+	return client.NewProject(&josh.Client{
+		HTTP: http.DefaultClient,
+		URL:  runState.URL,
+	})
 }
