@@ -111,8 +111,6 @@ func (wkr *worker) stop() {
 }
 
 func (wkr *worker) run(ctx context.Context) error {
-	// This will block until there is at least one writer on the fifo.
-	// Shutdown codepath will open-for-write, then close this path to unblock.
 	wkr.debugf("opening fifo")
 	fd, err := syscall.Open(wkr.sourcePath, syscall.O_RDONLY|syscall.O_NONBLOCK, 0)
 	if err != nil {
