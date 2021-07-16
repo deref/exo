@@ -9,6 +9,11 @@ import (
 	"github.com/hashicorp/hcl/v2/hclsimple"
 )
 
+type Package struct {
+	Path string
+	Unit
+}
+
 type Unit struct {
 	Interfaces []Interface `hcl:"interface,block"`
 	Structs    []Struct    `hcl:"struct,block"`
@@ -56,22 +61,22 @@ func Validate(unit Unit) error {
 	return nil
 }
 
-func GenerateAPI(unit *Unit) ([]byte, error) {
-	return generateGo(apiTemplate, unit)
+func GenerateAPI(pkg *Package) ([]byte, error) {
+	return generateGo(apiTemplate, pkg)
 }
 
-func GenerateClient(unit *Unit) ([]byte, error) {
-	return generateGo(clientTemplate, unit)
+func GenerateClient(pkg *Package) ([]byte, error) {
+	return generateGo(clientTemplate, pkg)
 }
 
-func generateGo(t string, unit *Unit) ([]byte, error) {
+func generateGo(t string, pkg *Package) ([]byte, error) {
 	tmpl := template.Must(
-		template.New("unit").
+		template.New("package").
 			Funcs(templateFuncs).
 			Parse(t),
 	)
 	var buf bytes.Buffer
-	if err := tmpl.Execute(&buf, unit); err != nil {
+	if err := tmpl.Execute(&buf, pkg); err != nil {
 		return nil, err
 	}
 	bs := buf.Bytes()
@@ -154,4 +159,32 @@ var clientTemplate = `
 // Generated file. DO NOT EDIT.
 
 package client
+
+import (
+	"context"
+
+	josh "github.com/deref/exo/josh/client"
+	"github.com/deref/{{.Path}}/api"
+)
+
+{{range $_, $iface := .Interfaces}}
+type {{.Name|public}} struct {
+	client *josh.Client
+}
+
+var _ api.{{.Name|public}} = (*{{.Name|public}})(nil)
+
+func New{{.Name|public}}(client *josh.Client) *{{.Name|public}} {
+	return &{{.Name|public}}{
+		client: client,
+	}
+}
+
+{{range .Methods}}
+func (c *{{$iface.Name|public}}) {{.Name|public}}(ctx context.Context, input *api.{{.Name|public}}Input) (output *api.{{.Name|public}}Output, err error) {
+	err = c.client.Invoke(ctx, "{{.Name}}", input, &output)
+	return
+}
+{{end}}
+{{end}}
 `

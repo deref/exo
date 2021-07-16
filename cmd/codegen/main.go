@@ -40,8 +40,13 @@ func main() {
 			return fmt.Errorf("parsing %q: %w", path, err)
 		}
 
-		generate := func(dir string, f func(*codegen.Unit) ([]byte, error)) error {
-			bs, err := f(unit)
+		pkg := &codegen.Package{
+			Path: filepath.Join("exo", filepath.Dir(apiDir)),
+			Unit: *unit,
+		}
+
+		generate := func(dir string, f func(*codegen.Package) ([]byte, error)) error {
+			bs, err := f(pkg)
 			if err != nil {
 				return err
 			}

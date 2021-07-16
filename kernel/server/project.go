@@ -18,7 +18,7 @@ import (
 	"github.com/deref/exo/import/procfile"
 	"github.com/deref/exo/jsonutil"
 	"github.com/deref/exo/kernel/api"
-	"github.com/deref/exo/kernel/state"
+	state "github.com/deref/exo/kernel/state/api"
 	logcol "github.com/deref/exo/logcol/api"
 )
 
