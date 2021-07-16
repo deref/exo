@@ -18,7 +18,9 @@ func main() {
 	}
 	ctx := context.Background()
 	collector := server.NewLogCollector(ctx, cfg)
-	collector.Start(ctx)
+	if err := collector.Start(ctx); err != nil {
+		cmdutil.Fatalf("starting collector: %w", err)
+	}
 	defer collector.Stop(ctx)
 	pier.Main(api.NewLogCollectorMux("/", collector))
 }

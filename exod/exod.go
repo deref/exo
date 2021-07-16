@@ -22,7 +22,9 @@ func Main() {
 	collector := logcol.NewLogCollector(ctx, &logcol.Config{
 		VarDir: cfg.VarDir,
 	})
-	collector.Start(ctx)
+	if err := collector.Start(ctx); err != nil {
+		cmdutil.Fatalf("starting collector: %w", err)
+	}
 	ctx = log.ContextWithLogCollector(ctx, collector)
 
 	go func() {

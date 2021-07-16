@@ -26,7 +26,9 @@ func main() {
 	}
 	ctx := context.Background()
 	collector := server.NewLogCollector(ctx, cfg)
-	collector.Start(ctx)
+	if err := collector.Start(ctx); err != nil {
+		cmdutil.Fatalf("starting collector: %w", err)
+	}
 
 	go func() {
 		c := make(chan os.Signal, 1)
