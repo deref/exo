@@ -7,5 +7,5 @@ route = ""
 zone_id = ""
 
 kv_namespaces = [
-         { binding = "VERSIONS", id = "dedba216553b445681f5043a2dcaee68", preview_id = "59b38fdd3ea94a7c91122f3ffba1d308" }
+         { binding = "VERSIONS", id = "4a962eeab391457896db4360bd3f4658", preview_id = "08bbd17bba074685bf9eb875cc46045a" }
 ]
