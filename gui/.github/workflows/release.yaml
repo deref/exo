@@ -1,5 +1,0 @@
-name: Publish a release
-on:
-  push:
-    branches:
-    - main
