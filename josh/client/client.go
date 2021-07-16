@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -32,6 +33,10 @@ func (c *Client) Invoke(ctx context.Context, method string, input interface{}, o
 		bs, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			return fmt.Errorf("reading response body: %w", err)
+		}
+		bs = bytes.TrimSpace(bs)
+		if len(bs) == 0 {
+			return errors.New("empty response")
 		}
 		return fmt.Errorf("%s", bs)
 	}

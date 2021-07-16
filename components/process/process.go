@@ -102,9 +102,6 @@ func (provider *Provider) start(ctx context.Context, procDir string, inputSpec s
 		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", key, val))
 	}
 	sort.Strings(cmd.Env)
-	for i, x := range cmd.Env {
-		fmt.Println(i, x)
-	}
 
 	// Connect pipes.
 	stdout, err := cmd.StdoutPipe()
