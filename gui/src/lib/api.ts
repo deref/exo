@@ -54,7 +54,7 @@ export type PaginationParams = {
   cursor: string | null;
 };
 
-const baseUrl = 'http://localhost:4000';
+const baseUrl = 'http://localhost:4000/_exo';
 const apiUrl = (path: string) => baseUrl + path;
 const rpc = async (path: string, data?: unknown): Promise<unknown> => {
   const res = await fetch(apiUrl(path), {

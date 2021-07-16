@@ -11,7 +11,8 @@ import (
 )
 
 type Config struct {
-	VarDir string
+	VarDir     string
+	MuxPattern string
 }
 
 func NewContext(ctx context.Context, cfg *Config) context.Context {
@@ -20,9 +21,8 @@ func NewContext(ctx context.Context, cfg *Config) context.Context {
 }
 
 func NewHandler(ctx context.Context, cfg *Config) http.Handler {
-	var mux *http.ServeMux
-	mux = http.NewServeMux()
-	mux.Handle("/", api.NewProjectMux("/", &Project{
+	mux := http.NewServeMux()
+	mux.Handle(cfg.MuxPattern, api.NewProjectMux(cfg.MuxPattern, &Project{
 		ID:     "default", // XXX
 		VarDir: cfg.VarDir,
 	}))

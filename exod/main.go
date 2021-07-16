@@ -8,16 +8,18 @@ import (
 
 	"github.com/deref/exo/cmdutil"
 	"github.com/deref/exo/components/log"
-	"github.com/deref/exo/kernel/server"
+	"github.com/deref/exo/gui"
+	kernel "github.com/deref/exo/kernel/server"
 	logcol "github.com/deref/exo/logcol/server"
 )
 
 func Main() {
 	paths := cmdutil.MustMakeDirectories()
-	cfg := &server.Config{
-		VarDir: paths.VarDir,
+	cfg := &kernel.Config{
+		VarDir:     paths.VarDir,
+		MuxPattern: "/",
 	}
-	ctx := server.NewContext(context.Background(), cfg)
+	ctx := kernel.NewContext(context.Background(), cfg)
 
 	collector := logcol.NewLogCollector(ctx, &logcol.Config{
 		VarDir: cfg.VarDir,
@@ -37,7 +39,17 @@ func Main() {
 
 	addr := cmdutil.GetAddr()
 
-	if err := http.ListenAndServe(addr, server.NewHandler(ctx, cfg)); err != nil {
+	mux := http.NewServeMux()
+
+	kernelPattern := "/_exo/"
+	mux.Handle(kernelPattern, kernel.NewHandler(ctx, &kernel.Config{
+		VarDir:     cfg.VarDir,
+		MuxPattern: kernelPattern,
+	}))
+
+	mux.Handle("/", gui.NewHandler(ctx))
+
+	if err := http.ListenAndServe(addr, mux); err != nil {
 		cmdutil.Fatalf("listening: %w", err)
 	}
 }
