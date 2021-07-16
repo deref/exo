@@ -56,7 +56,7 @@ func (lc *LogCollector) startWorker(ctx context.Context, logName string, state L
 		sourcePath: state.Source,
 		sink:       sink,
 		debug:      lc.debug,
-		shutdown:   make(chan struct{}),
+		shutdown:   make(chan struct{}, 2), // can be closed by self or by collector.
 	}
 	lc.workers[logName] = wkr
 
@@ -107,7 +107,7 @@ func (lc *LogCollector) stopWorker(logName string) {
 
 func (wkr *worker) stop() {
 	wkr.debugf("stop")
-	close(wkr.shutdown)
+	wkr.shutdown <- struct{}{}
 }
 
 func (wkr *worker) run(ctx context.Context) error {
