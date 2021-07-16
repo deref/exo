@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"io/fs"
 	"io/ioutil"
+	"os"
 	"path/filepath"
 	"strings"
 
@@ -21,20 +22,43 @@ func main() {
 		if !strings.HasSuffix(d.Name(), extension) {
 			return nil
 		}
-		module, err := codegen.ParseFile(path)
+
+		name := strings.TrimSuffix(filepath.Base(path), extension)
+
+		apiDir := filepath.Dir(path)
+		if filepath.Base(apiDir) != "api" {
+			return fmt.Errorf("expected %q to be in an api package", path)
+		}
+
+		clientDir := filepath.Join(filepath.Dir(apiDir), "client")
+		if err := os.Mkdir(clientDir, 0700); err != nil && !os.IsExist(err) {
+			return err
+		}
+
+		unit, err := codegen.ParseFile(path)
 		if err != nil {
 			return fmt.Errorf("parsing %q: %w", path, err)
 		}
-		outpath := strings.TrimSuffix(path, extension) + ".go"
-		bs, err := codegen.Generate(&codegen.Root{
-			Package: filepath.Base(filepath.Dir(path)),
-			Module:  *module,
-		})
-		if err != nil {
-			return fmt.Errorf("generating from %q: %w", path, err)
+
+		pkg := &codegen.Package{
+			Path: filepath.Join("exo", filepath.Dir(apiDir)),
+			Unit: *unit,
 		}
-		if err := ioutil.WriteFile(outpath, bs, 0600); err != nil {
-			return err
+
+		generate := func(dir string, f func(*codegen.Package) ([]byte, error)) error {
+			bs, err := f(pkg)
+			if err != nil {
+				return err
+			}
+			outpath := filepath.Join(dir, name+".go")
+			return ioutil.WriteFile(outpath, bs, 0600)
+		}
+
+		if err := generate(apiDir, codegen.GenerateAPI); err != nil {
+			return fmt.Errorf("generating %s api: %w", name, err)
+		}
+		if err := generate(clientDir, codegen.GenerateClient); err != nil {
+			return fmt.Errorf("generating %s client: %w", name, err)
 		}
 		return nil
 	})

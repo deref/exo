@@ -3,7 +3,7 @@ package invalid
 import (
 	"context"
 
-	"github.com/deref/exo/core"
+	core "github.com/deref/exo/core/api"
 )
 
 func (p *Provider) Start(ctx context.Context, input *core.StartInput) (*core.StartOutput, error) {

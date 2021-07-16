@@ -20,8 +20,9 @@ import (
 )
 
 func main() {
+	paths := cmdutil.MustMakeDirectories()
 	cfg := &server.Config{
-		VarDir: cmdutil.MustVarDir(),
+		VarDir: paths.VarDir,
 	}
 	ctx := context.Background()
 	collector := server.NewLogCollector(ctx, cfg)

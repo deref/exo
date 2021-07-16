@@ -33,3 +33,20 @@ func UnmarshalReader(r io.Reader, v interface{}) error {
 	}
 	return json.Unmarshal(bs, v)
 }
+
+func UnmarshalFile(filePath string, v interface{}) error {
+	bs, err := ioutil.ReadFile(filePath)
+	if err != nil {
+		return err
+	}
+	return json.Unmarshal(bs, v)
+}
+
+func MarshalFile(filePath string, v interface{}) error {
+	bs, err := json.MarshalIndent(v, "", "  ")
+	if err != nil {
+		return err
+	}
+	bs = append(bs, '\n')
+	return ioutil.WriteFile(filePath, bs, 0600)
+}

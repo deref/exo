@@ -12,7 +12,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/deref/exo/core"
+	core "github.com/deref/exo/core/api"
 	"github.com/deref/exo/jsonutil"
 )
 

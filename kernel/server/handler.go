@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/deref/exo/kernel/api"
-	"github.com/deref/exo/kernel/state"
+	state "github.com/deref/exo/kernel/state/api"
 	"github.com/deref/exo/kernel/state/statefile"
 )
 

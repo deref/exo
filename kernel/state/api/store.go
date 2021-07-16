@@ -1,6 +1,6 @@
 // Generated file. DO NOT EDIT.
 
-package state
+package api
 
 import (
 	"context"

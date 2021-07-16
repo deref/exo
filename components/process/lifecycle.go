@@ -8,12 +8,12 @@ import (
 	"io"
 	"os"
 	"path/filepath"
-	"syscall"
 
 	"github.com/deref/exo/components/log"
-	"github.com/deref/exo/core"
+	core "github.com/deref/exo/core/api"
 	"github.com/deref/exo/jsonutil"
 	logcol "github.com/deref/exo/logcol/api"
+	"github.com/deref/exo/osutil"
 )
 
 func (provider *Provider) Initialize(ctx context.Context, input *core.InitializeInput) (*core.InitializeOutput, error) {
@@ -86,14 +86,8 @@ func (provider *Provider) Refresh(ctx context.Context, input *core.RefreshInput)
 }
 
 func (provider *Provider) refresh(state *state) {
-	if state.Pid != 0 {
-		process, err := os.FindProcess(state.Pid)
-		if err != nil {
-			panic(err)
-		}
-		if err := process.Signal(syscall.Signal(0)); err != nil {
-			state.Pid = 0
-		}
+	if !osutil.IsValidPid(state.Pid) {
+		state.Pid = 0
 	}
 }
 

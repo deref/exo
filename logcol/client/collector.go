@@ -1,4 +1,4 @@
-// TODO: Generate this with JOSH tools.
+// Generated file. DO NOT EDIT.
 
 package client
 
@@ -16,7 +16,9 @@ type LogCollector struct {
 var _ api.LogCollector = (*LogCollector)(nil)
 
 func NewLogCollector(client *josh.Client) *LogCollector {
-	return &LogCollector{client: client}
+	return &LogCollector{
+		client: client,
+	}
 }
 
 func (c *LogCollector) AddLog(ctx context.Context, input *api.AddLogInput) (output *api.AddLogOutput, err error) {

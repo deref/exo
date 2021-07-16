@@ -13,12 +13,12 @@ import (
 	"github.com/deref/exo/components/log"
 	"github.com/deref/exo/components/process"
 	"github.com/deref/exo/config"
-	"github.com/deref/exo/core"
+	core "github.com/deref/exo/core/api"
 	"github.com/deref/exo/gensym"
 	"github.com/deref/exo/import/procfile"
 	"github.com/deref/exo/jsonutil"
 	"github.com/deref/exo/kernel/api"
-	"github.com/deref/exo/kernel/state"
+	state "github.com/deref/exo/kernel/state/api"
 	logcol "github.com/deref/exo/logcol/api"
 )
 
@@ -27,7 +27,7 @@ type Project struct {
 	VarDir string
 }
 
-func (proj *Project) Delete(ctx context.Context, input *api.DeleteInput) (*api.DeleteOutput, error) {
+func (proj *Project) Destroy(ctx context.Context, input *api.DestroyInput) (*api.DestroyOutput, error) {
 	store := state.CurrentStore(ctx)
 	describeOutput, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
 		ProjectID: proj.ID,
@@ -44,15 +44,25 @@ func (proj *Project) Delete(ctx context.Context, input *api.DeleteInput) (*api.D
 			return nil, fmt.Errorf("deleting %s: %w", component.Name, err)
 		}
 	}
-	return &api.DeleteOutput{}, nil
+	return &api.DestroyOutput{}, nil
 }
 
 func (proj *Project) Apply(ctx context.Context, input *api.ApplyInput) (*api.ApplyOutput, error) {
-	panic("TODO: Apply")
+	cfg, err := config.Parse([]byte(input.Config))
+	if err != nil {
+		return nil, fmt.Errorf("parsing config: %w", err)
+	}
+	if err := proj.apply(ctx, cfg); err != nil {
+		return nil, err
+	}
+	return &api.ApplyOutput{}, nil
 }
 
 func (proj *Project) apply(ctx context.Context, cfg *config.Config) error {
 	store := state.CurrentStore(ctx)
+
+	// TODO: Validate config.
+
 	describeOutput, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
 		ProjectID: proj.ID,
 	})
