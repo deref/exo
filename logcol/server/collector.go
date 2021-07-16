@@ -40,6 +40,7 @@ type LogCollector struct {
 	state  atom.Atom
 	idGen  *idGen
 	db     *badger.DB
+	wg     sync.WaitGroup
 
 	mx      sync.Mutex
 	workers map[string]*worker

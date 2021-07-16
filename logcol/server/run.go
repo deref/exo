@@ -46,10 +46,13 @@ func (lc *LogCollector) Stop(ctx context.Context) {
 		panic("not running")
 	}
 
-	_ = lc.db.Close()
-	lc.db = nil
-
 	for _, worker := range lc.workers {
 		worker.stop()
 	}
+
+	lc.wg.Wait()
+	lc.workers = nil
+
+	_ = lc.db.Close()
+	lc.db = nil
 }

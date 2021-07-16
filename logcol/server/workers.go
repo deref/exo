@@ -50,7 +50,10 @@ func (lc *LogCollector) startWorker(ctx context.Context, logName string, state L
 	}
 	lc.workers[logName] = wkr
 
+	lc.wg.Add(2)
+
 	go func() {
+		defer lc.wg.Done()
 		wkr.err = wkr.run(ctx)
 		if wkr.err != nil {
 			// TODO: Panic instead.
@@ -59,6 +62,7 @@ func (lc *LogCollector) startWorker(ctx context.Context, logName string, state L
 	}()
 
 	go func() {
+		defer lc.wg.Done()
 		for {
 			select {
 			case <-wkr.done:
@@ -88,11 +92,12 @@ func (lc *LogCollector) stopWorker(logName string) {
 func (wkr *worker) stop() {
 	// XXX Saw a race on shutdown/interrupt where close called on already closed channel.
 	// TODO: Make stop safe to call on already stopped worker?
+	_ = wkr.source.Close()
 	close(wkr.done)
 }
 
 func (wkr *worker) run(ctx context.Context) error {
-	source, err := os.Open(wkr.sourcePath + ".fifo")
+	source, err := os.Open(wkr.sourcePath + ".fifo") // XXX This can block forever.
 	if err != nil {
 		return fmt.Errorf("opening source: %w", err)
 	}
@@ -117,7 +122,7 @@ func (wkr *worker) run(ctx context.Context) error {
 			message = append([]byte{}, message...)
 			_, isPrefix, err = r.ReadLine()
 			if err == io.EOF {
-				break
+				return nil
 			}
 			if err != nil {
 				return fmt.Errorf("reading: %w", err)
