@@ -2,6 +2,10 @@
 
 **exo-** _prefix_ – external; from outside.
 
+## Status
+
+_Alpha!_
+
 ## Getting Started
 
 Install exo:
