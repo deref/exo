@@ -3,6 +3,7 @@ package procfile
 import (
 	"fmt"
 	"io"
+	"strconv"
 
 	"github.com/deref/exo/config"
 	"github.com/deref/exo/jsonutil"
@@ -16,8 +17,12 @@ func Import(r io.Reader) (*config.Config, error) {
 	return Convert(procfile)
 }
 
+const BasePort = 5000
+const PortStep = 100
+
 func Convert(procfile *Procfile) (*config.Config, error) {
 	cfg := config.NewConfig()
+	port := BasePort
 	for _, process := range procfile.Processes {
 		component := config.Component{
 			Name: process.Name,
@@ -25,8 +30,12 @@ func Convert(procfile *Procfile) (*config.Config, error) {
 			Spec: jsonutil.MustMarshalString(map[string]interface{}{
 				"command":   process.Command,
 				"arguments": process.Arguments,
+				"environment": map[string]interface{}{
+					"PORT": strconv.Itoa(port),
+				},
 			}),
 		}
+		port += PortStep
 		cfg.Components = append(cfg.Components, component)
 	}
 	return cfg, nil
