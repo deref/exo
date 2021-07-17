@@ -14,7 +14,7 @@ import (
 
 func init() {
 	rootCmd.AddCommand(applyCmd)
-	applyCmd.Flags().StringVar(&applyFlags.Format, "format", "", "exo, procfile, or compose")
+	applyCmd.Flags().StringVar(&applyFlags.Format, "format", "", "exo, compose, procfile")
 }
 
 var applyFlags struct {
@@ -26,14 +26,25 @@ var applyCmd = &cobra.Command{
 	Short: "Applies a config to the current project",
 	Long: `Applies a config to the current project.
 
-If no config file is provided, a search is conducted in the current directory
-in the following order of preference:
+If no config file is specified, a search is conducted in the current directory
+in the following order of format preference:
 
-  exo.hcl
+  1. exo
+	2. compose
+	3. procfile
+	
+The default exo filename is 'exo.hcl'.
+
+Docker compose files may have one of the following names in order of preference:
+
+	compose.yaml
+	compose.yml
+  docker-compose.yaml
   docker-compose.yml
-  Procfile
+	
+The expected procfile name 'Procfile'.
 
-If a config format will be guessed from the confif filename.  This can be
+If a config format will be guessed from the config filename.  This can be
 overidden explicitly with the --format flag.`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -49,6 +60,9 @@ overidden explicitly with the --format flag.`,
 			// Search for config.
 			for _, candidate := range []string{
 				"exo.hcl",
+				"compose.yaml",
+				"compose.yml",
+				"docker-compose.yaml",
 				"docker-compose.yml",
 				"Procfile",
 			} {
@@ -69,15 +83,19 @@ overidden explicitly with the --format flag.`,
 		if applyFlags.Format == "" {
 			// Guess format.
 			name := strings.ToLower(filepath.Base(configPath))
-			switch {
-			case name == "procfile" || strings.HasSuffix(name, ".procfile"):
+			switch name {
+			case "procfile":
 				applyFlags.Format = "procfile"
-			case name == "docker-compose.yml" || name == "docker-compose.yaml":
+			case "compose.yaml", "compose.yml", "docker-compose.yaml", "docker-compose.yml":
 				applyFlags.Format = "compose"
-			case name == "exo.hcl":
+			case "exo.hcl":
 				applyFlags.Format = "exo"
 			default:
-				return fmt.Errorf("cannot determine config format from name; try the --format flag")
+				if strings.HasSuffix(name, ".procfile") {
+					applyFlags.Format = "procfile"
+				} else {
+					return fmt.Errorf("cannot determine config format from name; try the --format flag")
+				}
 			}
 		}
 
