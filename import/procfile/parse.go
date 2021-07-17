@@ -14,7 +14,7 @@ type Procfile struct {
 
 type Process struct {
 	Name      string
-	Command   string
+	Program   string
 	Arguments []string
 }
 
@@ -51,7 +51,7 @@ func Parse(r io.Reader) (*Procfile, error) {
 		}
 		process := Process{
 			Name:      name,
-			Command:   argv[0],
+			Program:   argv[0],
 			Arguments: argv[1:],
 		}
 		procfile.Processes = append(procfile.Processes, process)

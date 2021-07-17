@@ -19,13 +19,13 @@ exop post /delete
 exop /create-component \
   name=tick \
   type=process \
-  'spec={"command": "./tick"}'
+  'spec={"program": "./tick"}'
 
 exop /create-component \
   name=echo \
   type=process \
   'spec={
-    "command": "socat",
+    "program": "socat",
     "arguments": ["TCP4-LISTEN:2000,fork", "EXEC:cat"]
    }'
 

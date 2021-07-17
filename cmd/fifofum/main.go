@@ -20,7 +20,7 @@ var varDir string
 func main() {
 	args := os.Args[1:]
 	if len(args) < 2 {
-		fatalf(`usage: %s <vardir> <command> <args...>
+		fatalf(`usage: %s <vardir> <program> <args...>
 
 fifofum executes and supervises the given command. If successful, the child
 pid is written to stdout and two fifo files are created in vardir: out and err.
@@ -28,10 +28,10 @@ The corresponding stdio streams will be proxied from the supervised process to
 those fifos.`, os.Args[0])
 	}
 	varDir = args[0]
-	command := args[1]
+	program := args[1]
 	arguments := args[2:]
 
-	cmd := exec.Command(command, arguments...)
+	cmd := exec.Command(program, arguments...)
 	cmd.Env = os.Environ()
 
 	// Connect pipes.
@@ -46,7 +46,7 @@ those fifos.`, os.Args[0])
 
 	// Start child process.
 	if err := cmd.Start(); err != nil {
-		fatalf("starting %q: %v", command, err)
+		fatalf("starting %q: %v", program, err)
 	}
 	child = cmd.Process
 

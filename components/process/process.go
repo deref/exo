@@ -51,17 +51,17 @@ func (provider *Provider) start(ctx context.Context, procDir string, inputSpec s
 		directory = provider.ProjectDir
 	}
 
-	// Resolve command path.
-	command := spec.Command
-	if command == "" {
-		return state{}, errors.New("command is required")
+	// Resolve program path.
+	program := spec.Program
+	if program == "" {
+		return state{}, errors.New("program is required")
 	}
 	searchPaths, _ := os.LookupEnv("PATH")
 	for _, searchPath := range strings.Split(searchPaths, ":") {
-		candidate := filepath.Join(searchPath, command)
+		candidate := filepath.Join(searchPath, program)
 		info, _ := os.Stat(candidate)
 		if info != nil {
-			command = candidate
+			program = candidate
 			break
 		}
 	}
@@ -71,7 +71,7 @@ func (provider *Provider) start(ctx context.Context, procDir string, inputSpec s
 	fifofumArgs := append(
 		[]string{
 			procDir,
-			command,
+			program,
 		},
 		spec.Arguments...,
 	)

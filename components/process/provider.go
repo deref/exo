@@ -7,14 +7,14 @@ type Provider struct {
 
 type spec struct {
 	Directory   string            `json:"directory"`
-	Command     string            `json:"command"`
+	Program     string            `json:"program"`
 	Arguments   []string          `json:"arguments"`
 	Environment map[string]string `json:"environment"`
 }
 
 type state struct {
 	Pid int `json:"pid"`
-	// TODO: Store resolved command path & full effective environment.
-	// Command string `json:"command"`
+	// TODO: Store resolved program path & full effective environment.
+	// Program string `json:"program"`
 	// Environment string `json:"environment"`
 }

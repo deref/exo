@@ -28,7 +28,7 @@ func Convert(procfile *Procfile) (*config.Config, error) {
 			Name: process.Name,
 			Type: "process",
 			Spec: jsonutil.MustMarshalString(map[string]interface{}{
-				"command":   process.Command,
+				"program":   process.Program,
 				"arguments": process.Arguments,
 				"environment": map[string]interface{}{
 					"PORT": strconv.Itoa(port),
