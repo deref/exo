@@ -1,8 +1,12 @@
 package config
 
 import (
+	"io"
+
 	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/gohcl"
 	"github.com/hashicorp/hcl/v2/hclsimple"
+	"github.com/hashicorp/hcl/v2/hclwrite"
 	"github.com/zclconf/go-cty/cty/function"
 	"github.com/zclconf/go-cty/cty/function/stdlib"
 )
@@ -37,4 +41,11 @@ func Parse(bs []byte) (*Config, error) {
 		return nil, err
 	}
 	return &cfg, nil
+}
+
+func Generate(w io.Writer, cfg *Config) error {
+	f := hclwrite.NewEmptyFile()
+	gohcl.EncodeIntoBody(cfg, f.Body())
+	_, err := f.WriteTo(w)
+	return err
 }

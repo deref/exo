@@ -11,6 +11,10 @@ func Fatalf(format string, v ...interface{}) {
 	os.Exit(1)
 }
 
+func Fatal(err error) {
+	Fatalf("%v", err)
+}
+
 type KnownPaths struct {
 	ExoDir string // Exo home directory.
 	BinDir string // Binaries.
