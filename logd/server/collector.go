@@ -13,6 +13,7 @@ import (
 
 	"github.com/deref/exo/atom"
 	"github.com/deref/exo/chrono"
+	"github.com/deref/exo/gensym"
 	"github.com/deref/exo/logd/api"
 	"github.com/deref/exo/util/mathutil"
 	badger "github.com/dgraph-io/badger/v3"
@@ -33,7 +34,7 @@ func NewLogCollector(ctx context.Context, cfg *Config) *LogCollector {
 	return &LogCollector{
 		varDir: cfg.VarDir,
 		state:  atom.NewFileAtom(statePath, atom.CodecJSON),
-		idGen:  newIdGen(ctx),
+		idGen:  gensym.NewULIDGenerator(ctx),
 		debug:  cfg.Debug,
 	}
 }
@@ -41,7 +42,7 @@ func NewLogCollector(ctx context.Context, cfg *Config) *LogCollector {
 type LogCollector struct {
 	varDir string
 	state  atom.Atom
-	idGen  *idGen
+	idGen  *gensym.ULIDGenerator
 	debug  bool
 	db     *badger.DB
 	wg     sync.WaitGroup

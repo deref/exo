@@ -3,9 +3,13 @@ package server
 import (
 	"context"
 	"encoding/binary"
+	"errors"
 	"fmt"
+	"strings"
 
+	"github.com/deref/exo/gensym"
 	badger "github.com/dgraph-io/badger/v3"
+	ulid "github.com/oklog/ulid/v2"
 )
 
 const (
@@ -14,11 +18,11 @@ const (
 
 type badgerSink struct {
 	db      *badger.DB
-	idGen   *idGen
+	idGen   *gensym.ULIDGenerator
 	logName string
 }
 
-func newBadgerSink(db *badger.DB, idGen *idGen, logName string) *badgerSink {
+func newBadgerSink(db *badger.DB, idGen *gensym.ULIDGenerator, logName string) *badgerSink {
 	return &badgerSink{
 		db:      db,
 		idGen:   idGen,
@@ -28,7 +32,7 @@ func newBadgerSink(db *badger.DB, idGen *idGen, logName string) *badgerSink {
 
 func (sink *badgerSink) AddEvent(ctx context.Context, timestamp uint64, message []byte) error {
 	// Generate an id that is guaranteed to be monotonically increasing within this process.
-	id, err := sink.idGen.nextId(ctx)
+	id, err := sink.idGen.NextID(ctx)
 	if err != nil {
 		return fmt.Errorf("generating id: %w", err)
 	}
@@ -96,4 +100,13 @@ func (sink *badgerSink) GC(ctx context.Context) error {
 		}
 		return nil
 	})
+}
+
+func parseID(id []byte) (string, error) {
+	var asULID ulid.ULID
+	if copy(asULID[:], id) != 16 {
+		return "", errors.New("invalid length")
+	}
+
+	return strings.ToLower(asULID.String()), nil
 }

@@ -222,7 +222,7 @@ func (proj *Project) createComponent(ctx context.Context, component config.Compo
 
 	store := state.CurrentStore(ctx)
 
-	id = gensym.Base32()
+	id = gensym.RandomBase32()
 
 	if _, err := store.AddComponent(ctx, &state.AddComponentInput{
 		ProjectID: "default",
