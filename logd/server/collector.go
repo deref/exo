@@ -9,10 +9,10 @@ import (
 	"sort"
 	"sync"
 
-	"github.com/deref/exo/atom"
 	"github.com/deref/exo/gensym"
 	"github.com/deref/exo/logd/api"
 	"github.com/deref/exo/logd/store"
+	"github.com/deref/exo/util/atom"
 	"github.com/deref/exo/util/mathutil"
 	"github.com/oklog/ulid/v2"
 )

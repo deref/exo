@@ -7,12 +7,12 @@ import (
 	"os/exec"
 	"syscall"
 
-	"github.com/deref/exo/cmdutil"
 	josh "github.com/deref/exo/josh/client"
-	"github.com/deref/exo/jsonutil"
 	"github.com/deref/exo/kernel/api"
 	"github.com/deref/exo/kernel/client"
-	"github.com/deref/exo/osutil"
+	"github.com/deref/exo/util/cmdutil"
+	"github.com/deref/exo/util/jsonutil"
+	"github.com/deref/exo/util/osutil"
 	"github.com/spf13/cobra"
 )
 

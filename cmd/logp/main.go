@@ -7,9 +7,9 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/deref/exo/cmdutil"
 	"github.com/deref/exo/logd/api"
 	"github.com/deref/exo/logd/server"
+	"github.com/deref/exo/util/cmdutil"
 	"github.com/deref/pier"
 )
 

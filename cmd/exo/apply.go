@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/deref/exo/cmdutil"
 	"github.com/deref/exo/kernel/api"
-	"github.com/deref/exo/osutil"
+	"github.com/deref/exo/util/cmdutil"
+	"github.com/deref/exo/util/osutil"
 	"github.com/spf13/cobra"
 )
 

@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/deref/exo/cmdutil"
 	"github.com/deref/exo/components/log"
 	josh "github.com/deref/exo/josh/client"
 	"github.com/deref/exo/kernel/server"
 	logd "github.com/deref/exo/logd/client"
+	"github.com/deref/exo/util/cmdutil"
 	"github.com/deref/pier"
 )
 

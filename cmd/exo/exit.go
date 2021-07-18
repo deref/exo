@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/deref/exo/cmdutil"
+	"github.com/deref/exo/util/cmdutil"
 	"github.com/spf13/cobra"
 )
 

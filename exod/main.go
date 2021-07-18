@@ -6,11 +6,11 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/deref/exo/cmdutil"
 	"github.com/deref/exo/components/log"
 	"github.com/deref/exo/gui"
 	kernel "github.com/deref/exo/kernel/server"
 	logd "github.com/deref/exo/logd/server"
+	"github.com/deref/exo/util/cmdutil"
 )
 
 func Main() {

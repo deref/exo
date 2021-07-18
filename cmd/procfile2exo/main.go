@@ -3,9 +3,9 @@ package main
 import (
 	"os"
 
-	"github.com/deref/exo/cmdutil"
 	"github.com/deref/exo/config"
 	"github.com/deref/exo/import/procfile"
+	"github.com/deref/exo/util/cmdutil"
 )
 
 func main() {

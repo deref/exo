@@ -14,9 +14,9 @@ import (
 	"os/signal"
 	"path/filepath"
 
-	"github.com/deref/exo/cmdutil"
 	"github.com/deref/exo/logd/api"
 	"github.com/deref/exo/logd/server"
+	"github.com/deref/exo/util/cmdutil"
 )
 
 func main() {

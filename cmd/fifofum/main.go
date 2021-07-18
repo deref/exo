@@ -10,8 +10,8 @@ import (
 	"path/filepath"
 	"syscall"
 
-	"github.com/deref/exo/cmdutil"
 	"github.com/deref/exo/logd/api"
+	"github.com/deref/exo/util/cmdutil"
 )
 
 var child *os.Process

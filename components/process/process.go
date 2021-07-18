@@ -14,7 +14,7 @@ import (
 	"time"
 
 	core "github.com/deref/exo/core/api"
-	"github.com/deref/exo/jsonutil"
+	"github.com/deref/exo/util/jsonutil"
 )
 
 func (provider *Provider) Start(ctx context.Context, input *core.StartInput) (*core.StartOutput, error) {

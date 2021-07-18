@@ -16,10 +16,10 @@ import (
 	core "github.com/deref/exo/core/api"
 	"github.com/deref/exo/gensym"
 	"github.com/deref/exo/import/procfile"
-	"github.com/deref/exo/jsonutil"
 	"github.com/deref/exo/kernel/api"
 	state "github.com/deref/exo/kernel/state/api"
 	logd "github.com/deref/exo/logd/api"
+	"github.com/deref/exo/util/jsonutil"
 )
 
 type Project struct {

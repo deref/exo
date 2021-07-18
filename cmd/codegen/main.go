@@ -8,8 +8,8 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/deref/exo/cmdutil"
 	"github.com/deref/exo/josh/codegen"
+	"github.com/deref/exo/util/cmdutil"
 )
 
 const extension = ".josh.hcl"

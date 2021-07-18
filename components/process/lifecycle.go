@@ -11,9 +11,9 @@ import (
 
 	"github.com/deref/exo/components/log"
 	core "github.com/deref/exo/core/api"
-	"github.com/deref/exo/jsonutil"
 	logd "github.com/deref/exo/logd/api"
-	"github.com/deref/exo/osutil"
+	"github.com/deref/exo/util/jsonutil"
+	"github.com/deref/exo/util/osutil"
 )
 
 func (provider *Provider) Initialize(ctx context.Context, input *core.InitializeInput) (*core.InitializeOutput, error) {
