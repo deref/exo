@@ -8,6 +8,7 @@ import (
 	"path/filepath"
 	"sort"
 	"sync"
+	"time"
 
 	"github.com/deref/exo/atom"
 	"github.com/deref/exo/gensym"
@@ -81,6 +82,62 @@ func (lc *LogCollector) AddLog(ctx context.Context, input *api.AddLogInput) (*ap
 	return &api.AddLogOutput{}, nil
 }
 
+func (lc *LogCollector) ensureWorker(ctx context.Context, logName string, state LogState) {
+	lc.mx.Lock()
+	defer lc.mx.Unlock()
+	if lc.workers == nil {
+		// No worker support in peer mode.
+		return
+	}
+	lc.startWorker(ctx, logName, state)
+}
+
+func (lc *LogCollector) startWorker(ctx context.Context, logName string, state LogState) {
+	wkr, exists := lc.workers[logName]
+	if exists {
+		return
+	}
+	wkr = &worker{
+		sourcePath: state.Source,
+		sink:       lc.store.GetLog(logName),
+		debug:      lc.debug,
+		shutdown:   make(chan struct{}, 2), // can be closed by self or by collector.
+	}
+	lc.workers[logName] = wkr
+
+	done := make(chan struct{})
+	lc.wg.Add(2)
+
+	go func() {
+		defer wkr.debugf("run done")
+		defer lc.wg.Done()
+		wkr.err = wkr.run(ctx)
+		if wkr.err != nil {
+			// TODO: Panic instead.
+			fmt.Fprintf(os.Stderr, "worker run error: %v\n", wkr.err)
+		}
+		close(done)
+	}()
+
+	go func() {
+		defer wkr.debugf("gc loop done")
+		defer lc.wg.Done()
+		for {
+			select {
+			case <-done:
+				return
+			case <-time.After(5 * time.Second):
+				wkr.debugf("gc start")
+				if err := wkr.sink.RemoveOldEvents(ctx); err != nil {
+					// TODO: Panic instead?
+					fmt.Fprintf(os.Stderr, "worker evict error: %v\n", wkr.err)
+				}
+				wkr.debugf("gc done")
+			}
+		}
+	}()
+}
+
 func (lc *LogCollector) RemoveLog(ctx context.Context, input *api.RemoveLogInput) (*api.RemoveLogOutput, error) {
 	_, err := lc.swapState(func(state *State) error {
 		if state.Logs != nil {
@@ -93,6 +150,18 @@ func (lc *LogCollector) RemoveLog(ctx context.Context, input *api.RemoveLogInput
 	}
 	lc.stopWorker(input.Name)
 	return &api.RemoveLogOutput{}, nil
+}
+
+func (lc *LogCollector) stopWorker(logName string) {
+	lc.mx.Lock()
+	defer lc.mx.Unlock()
+
+	wkr := lc.workers[logName]
+	if wkr == nil {
+		return
+	}
+
+	wkr.stop()
 }
 
 func (lc *LogCollector) DescribeLogs(ctx context.Context, input *api.DescribeLogsInput) (*api.DescribeLogsOutput, error) {
