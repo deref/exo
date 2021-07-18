@@ -20,23 +20,21 @@ import (
 )
 
 func main() {
+	ctx := context.Background()
+	ctx, done := signal.NotifyContext(ctx, os.Interrupt)
+	defer done()
+
 	paths := cmdutil.MustMakeDirectories()
 	cfg := &server.Config{
 		VarDir: paths.VarDir,
 		Debug:  true,
 	}
-	ctx := context.Background()
-	collector := server.NewLogCollector(ctx, cfg)
-	if err := collector.Start(ctx); err != nil {
-		cmdutil.Fatalf("starting collector: %w", err)
-	}
 
+	collector := server.NewLogCollector(ctx, cfg)
 	go func() {
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, os.Interrupt)
-		<-c
-		collector.Stop(ctx)
-		os.Exit(0)
+		if err := collector.Run(ctx); err != nil {
+			cmdutil.Warnf("log collector error: %w", err)
+		}
 	}()
 
 	port := os.Getenv("PORT")

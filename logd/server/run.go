@@ -9,7 +9,17 @@ import (
 	"github.com/deref/exo/logd/store/badger"
 )
 
-func (lc *LogCollector) Start(ctx context.Context) error {
+func (lc *LogCollector) Run(ctx context.Context) error {
+	if err := lc.start(ctx); err != nil {
+		return err
+	}
+
+	<-ctx.Done()
+	lc.stop()
+	return nil
+}
+
+func (lc *LogCollector) start(ctx context.Context) error {
 	lc.debugf("Start")
 	lc.mx.Lock()
 	defer lc.mx.Unlock()
@@ -39,7 +49,7 @@ func (lc *LogCollector) Start(ctx context.Context) error {
 	return nil
 }
 
-func (lc *LogCollector) Stop(ctx context.Context) {
+func (lc *LogCollector) stop() {
 	lc.debugf("Stop")
 	lc.mx.Lock()
 	defer lc.mx.Unlock()

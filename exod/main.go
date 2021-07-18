@@ -19,23 +19,15 @@ func Main() {
 		VarDir:     paths.VarDir,
 		MuxPattern: "/",
 	}
+
 	ctx := kernel.NewContext(context.Background(), cfg)
+	ctx, done := signal.NotifyContext(ctx, os.Interrupt)
+	defer done()
 
 	collector := logd.NewLogCollector(ctx, &logd.Config{
 		VarDir: cfg.VarDir,
 	})
-	if err := collector.Start(ctx); err != nil {
-		cmdutil.Fatalf("starting collector: %w", err)
-	}
 	ctx = log.ContextWithLogCollector(ctx, collector)
-
-	go func() {
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, os.Interrupt)
-		<-c
-		collector.Stop(ctx)
-		os.Exit(0)
-	}()
 
 	addr := cmdutil.GetAddr()
 
@@ -48,6 +40,12 @@ func Main() {
 	}))
 
 	mux.Handle("/", gui.NewHandler(ctx))
+
+	go func() {
+		if err := collector.Run(ctx); err != nil {
+			cmdutil.Warnf("log collector error: %w", err)
+		}
+	}()
 
 	if err := http.ListenAndServe(addr, mux); err != nil {
 		cmdutil.Fatalf("listening: %w", err)
