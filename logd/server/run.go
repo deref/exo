@@ -25,7 +25,7 @@ func (lc *LogCollector) Start(ctx context.Context) error {
 		return fmt.Errorf("opening store: %w", err)
 	}
 
-	lc.workers = make(map[string]*worker)
+	lc.workers = make(map[string]*collectorWorker)
 
 	state, err := lc.derefState()
 	if err != nil {

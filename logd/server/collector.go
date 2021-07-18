@@ -46,7 +46,12 @@ type LogCollector struct {
 	wg     sync.WaitGroup
 
 	mx      sync.Mutex
-	workers map[string]*worker
+	workers map[string]*collectorWorker
+}
+
+type collectorWorker struct {
+	worker
+	stop func()
 }
 
 func (lc *LogCollector) debugf(format string, v ...interface{}) {
@@ -97,11 +102,14 @@ func (lc *LogCollector) startWorker(ctx context.Context, logName string, state L
 	if exists {
 		return
 	}
-	wkr = &worker{
-		sourcePath: state.Source,
-		sink:       lc.store.GetLog(logName),
-		debug:      lc.debug,
-		shutdown:   make(chan struct{}, 2), // can be closed by self or by collector.
+	ctx, stop := context.WithCancel(ctx)
+	wkr = &collectorWorker{
+		worker: worker{
+			sourcePath: state.Source,
+			sink:       lc.store.GetLog(logName),
+			debug:      lc.debug,
+		},
+		stop: stop,
 	}
 	lc.workers[logName] = wkr
 
@@ -111,7 +119,7 @@ func (lc *LogCollector) startWorker(ctx context.Context, logName string, state L
 	go func() {
 		defer wkr.debugf("run done")
 		defer lc.wg.Done()
-		wkr.err = wkr.run(ctx)
+		wkr.err = wkr.Run(ctx)
 		if wkr.err != nil {
 			// TODO: Panic instead.
 			fmt.Fprintf(os.Stderr, "worker run error: %v\n", wkr.err)

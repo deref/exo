@@ -19,9 +19,8 @@ type worker struct {
 	sink       store.Log
 	debug      bool
 
-	err      error
-	source   *os.File
-	shutdown chan struct{}
+	err    error
+	source *os.File
 }
 
 func (wkr *worker) debugf(format string, v ...interface{}) {
@@ -30,12 +29,7 @@ func (wkr *worker) debugf(format string, v ...interface{}) {
 	}
 }
 
-func (wkr *worker) stop() {
-	wkr.debugf("stop")
-	wkr.shutdown <- struct{}{}
-}
-
-func (wkr *worker) run(ctx context.Context) error {
+func (wkr *worker) Run(ctx context.Context) error {
 	wkr.debugf("opening fifo")
 	fd, err := syscall.Open(wkr.sourcePath, syscall.O_RDONLY|syscall.O_NONBLOCK, 0)
 	if err != nil {
@@ -46,7 +40,7 @@ func (wkr *worker) run(ctx context.Context) error {
 	wkr.debugf("fifo open")
 
 	go func() {
-		<-wkr.shutdown
+		<-ctx.Done()
 		err := wkr.source.Close()
 		wkr.debugf("closed source: %v", err)
 	}()
