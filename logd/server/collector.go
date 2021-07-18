@@ -74,6 +74,8 @@ func (lc *LogCollector) AddLog(ctx context.Context, input *api.AddLogInput) (*ap
 		if state.Logs == nil {
 			state.Logs = make(map[string]LogState)
 		}
+		// XXX If a log with this name already exists, but uses a different source
+		// path, we need to replace the worker.
 		state.Logs[input.Name] = LogState{
 			Source: input.Source,
 		}
