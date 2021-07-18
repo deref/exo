@@ -12,11 +12,12 @@ import (
 
 	"github.com/deref/exo/chrono"
 	"github.com/deref/exo/logd/api"
+	"github.com/deref/exo/logd/store"
 )
 
 type worker struct {
 	sourcePath string
-	sink       sink
+	sink       store.Log
 	debug      bool
 
 	err      error
@@ -28,12 +29,6 @@ func (wkr *worker) debugf(format string, v ...interface{}) {
 	if wkr.debug {
 		fmt.Fprintln(os.Stderr, "worker", wkr.sourcePath, fmt.Errorf(format, v...))
 	}
-}
-
-type sink interface {
-	AddEvent(ctx context.Context, timestamp uint64, message []byte) error
-	// Remove oldest events beyond capacity limit.
-	GC(ctx context.Context) error
 }
 
 func (lc *LogCollector) ensureWorker(ctx context.Context, logName string, state LogState) {
@@ -51,10 +46,9 @@ func (lc *LogCollector) startWorker(ctx context.Context, logName string, state L
 	if exists {
 		return
 	}
-	sink := newBadgerSink(lc.db, lc.idGen, logName)
 	wkr = &worker{
 		sourcePath: state.Source,
-		sink:       sink,
+		sink:       lc.store.GetLog(logName),
 		debug:      lc.debug,
 		shutdown:   make(chan struct{}, 2), // can be closed by self or by collector.
 	}
@@ -83,7 +77,7 @@ func (lc *LogCollector) startWorker(ctx context.Context, logName string, state L
 				return
 			case <-time.After(5 * time.Second):
 				wkr.debugf("gc start")
-				if err := wkr.sink.GC(ctx); err != nil {
+				if err := wkr.sink.RemoveOldEvents(ctx); err != nil {
 					// TODO: Panic instead?
 					fmt.Fprintf(os.Stderr, "worker evict error: %v\n", wkr.err)
 				}

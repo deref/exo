@@ -2,21 +2,18 @@ package server
 
 import (
 	"context"
-	"encoding/binary"
 	"errors"
 	"fmt"
 	"os"
 	"path/filepath"
 	"sort"
-	"strings"
 	"sync"
 
 	"github.com/deref/exo/atom"
-	"github.com/deref/exo/chrono"
 	"github.com/deref/exo/gensym"
 	"github.com/deref/exo/logd/api"
+	"github.com/deref/exo/logd/store"
 	"github.com/deref/exo/util/mathutil"
-	badger "github.com/dgraph-io/badger/v3"
 	"github.com/oklog/ulid/v2"
 )
 
@@ -44,7 +41,7 @@ type LogCollector struct {
 	state  atom.Atom
 	idGen  *gensym.ULIDGenerator
 	debug  bool
-	db     *badger.DB
+	store  store.Store
 	wg     sync.WaitGroup
 
 	mx      sync.Mutex
@@ -98,7 +95,7 @@ func (lc *LogCollector) RemoveLog(ctx context.Context, input *api.RemoveLogInput
 	return &api.RemoveLogOutput{}, nil
 }
 
-func (lc *LogCollector) DescribeLogs(context.Context, *api.DescribeLogsInput) (*api.DescribeLogsOutput, error) {
+func (lc *LogCollector) DescribeLogs(ctx context.Context, input *api.DescribeLogsInput) (*api.DescribeLogsOutput, error) {
 	state, err := lc.derefState()
 	if err != nil {
 		return nil, err
@@ -109,43 +106,10 @@ func (lc *LogCollector) DescribeLogs(context.Context, *api.DescribeLogsInput) (*
 		output.Logs = append(output.Logs, api.LogDescription{
 			Name:        name,
 			Source:      description.Source,
-			LastEventAt: lc.getLastEventAt(name),
+			LastEventAt: lc.store.GetLog(name).GetLastEventAt(ctx),
 		})
 	}
 	return &output, nil
-}
-
-func (lc *LogCollector) getLastEventAt(name string) *string {
-	prefix := append([]byte(name), 0)
-	var timestamp uint64
-	err := lc.db.View(func(txn *badger.Txn) error {
-		opts := badger.DefaultIteratorOptions
-		opts.PrefetchSize = 1
-		opts.Reverse = true
-		it := txn.NewIterator(opts)
-		defer it.Close()
-		it.Seek(append([]byte(name), 255))
-		if it.ValidForPrefix(prefix) {
-			item := it.Item()
-			return item.Value(func(val []byte) error {
-				if err := validateVersion(val[versionOffset]); err != nil {
-					return err
-				}
-				timestamp = binary.BigEndian.Uint64(val[timestampOffset : timestampOffset+timestampLen])
-				return nil
-			})
-		}
-		return nil
-	})
-	if err != nil {
-		return nil
-	}
-
-	if timestamp != 0 {
-		s := chrono.NanoToIso(int64(timestamp))
-		return &s
-	}
-	return nil
 }
 
 func (lc *LogCollector) GetEvents(ctx context.Context, input *api.GetEventsInput) (*api.GetEventsOutput, error) {
@@ -166,42 +130,13 @@ func (lc *LogCollector) GetEvents(ctx context.Context, input *api.GetEventsInput
 
 	// TODO: Sorted merge.
 	events := []api.Event{}
-	for _, log := range logs {
-		if err := lc.db.View(func(txn *badger.Txn) error {
-			it := txn.NewIterator(badger.DefaultIteratorOptions)
-			defer it.Close()
-			prefix := append([]byte(log), 0)
-			start := prefix
-			if input.After != "" {
-				id, err := ulid.Parse(strings.ToUpper(input.After))
-				if err != nil {
-					return fmt.Errorf("parsing cursor: %w", err)
-				}
-				idBytes, _ := id.MarshalBinary() // Cannot fail
-				start = append(start, incrementBytes(idBytes)...)
-			}
-
-			eventsProcessed := 0
-			for it.Seek(start); it.ValidForPrefix(prefix) && eventsProcessed < limit; it.Next() {
-				item := it.Item()
-				key := item.Key()
-				if err := item.Value(func(val []byte) error {
-					evt, err := eventFromEntry(log, key, val)
-					if err != nil {
-						return err
-					}
-
-					events = append(events, evt)
-					return nil
-				}); err != nil {
-					return err
-				}
-				eventsProcessed++
-			}
-			return nil
-		}); err != nil {
-			return nil, fmt.Errorf("scanning index: %w", err)
+	for _, logName := range logs {
+		log := lc.store.GetLog(logName)
+		logEvents, err := log.GetEvents(ctx, input.After, limit)
+		if err != nil {
+			return nil, fmt.Errorf("getting %q events: %w", logName, err)
 		}
+		events = append(events, logEvents...)
 	}
 
 	var cursor string

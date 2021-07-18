@@ -1,14 +1,19 @@
-package server
+package badger
 
 import (
 	"encoding/binary"
+	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/deref/exo/chrono"
 	"github.com/deref/exo/logd/api"
+	"github.com/oklog/ulid/v2"
 )
 
 const (
+	eventVersion uint8 = 1
+
 	// Key offsets.
 	logNameOffset = 0
 
@@ -89,4 +94,13 @@ func validateVersion(version byte) error {
 		return nil
 	}
 	return fmt.Errorf("unsupported event version: %d; database may have been written with a newer version of exo.", version)
+}
+
+func parseID(id []byte) (string, error) {
+	var asULID ulid.ULID
+	if copy(asULID[:], id) != 16 {
+		return "", errors.New("invalid length")
+	}
+
+	return strings.ToLower(asULID.String()), nil
 }

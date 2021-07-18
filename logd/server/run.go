@@ -6,7 +6,7 @@ import (
 	"fmt"
 	"path/filepath"
 
-	badger "github.com/dgraph-io/badger/v3"
+	"github.com/deref/exo/logd/store/badger"
 )
 
 func (lc *LogCollector) Start(ctx context.Context) error {
@@ -18,11 +18,11 @@ func (lc *LogCollector) Start(ctx context.Context) error {
 		return errors.New("already started")
 	}
 
-	dbDir := filepath.Join(lc.varDir, "logs")
+	logsDir := filepath.Join(lc.varDir, "logs")
 	var err error
-	lc.db, err = badger.Open(badger.DefaultOptions(dbDir))
+	lc.store, err = badger.Open(ctx, logsDir)
 	if err != nil {
-		return fmt.Errorf("opening db: %w", err)
+		return fmt.Errorf("opening store: %w", err)
 	}
 
 	lc.workers = make(map[string]*worker)
@@ -56,8 +56,8 @@ func (lc *LogCollector) Stop(ctx context.Context) {
 	lc.workers = nil
 	lc.debugf("stopped")
 
-	lc.debugf("closing db")
-	_ = lc.db.Close()
-	lc.debugf("db closed")
-	lc.db = nil
+	lc.debugf("closing store")
+	_ = lc.store.Close()
+	lc.debugf("store closed")
+	lc.store = nil
 }
