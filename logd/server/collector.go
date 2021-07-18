@@ -50,7 +50,7 @@ type LogCollector struct {
 }
 
 type collectorWorker struct {
-	worker
+	Worker
 	stop func()
 }
 
@@ -104,10 +104,10 @@ func (lc *LogCollector) startWorker(ctx context.Context, logName string, state L
 	}
 	ctx, stop := context.WithCancel(ctx)
 	wkr = &collectorWorker{
-		worker: worker{
-			sourcePath: state.Source,
-			sink:       lc.store.GetLog(logName),
-			debug:      lc.debug,
+		Worker: Worker{
+			Source: state.Source,
+			Sink:   lc.store.GetLog(logName),
+			Debug:  lc.debug,
 		},
 		stop: stop,
 	}
@@ -119,10 +119,10 @@ func (lc *LogCollector) startWorker(ctx context.Context, logName string, state L
 	go func() {
 		defer wkr.debugf("run done")
 		defer lc.wg.Done()
-		wkr.err = wkr.Run(ctx)
-		if wkr.err != nil {
+		err := wkr.Run(ctx)
+		if err != nil {
 			// TODO: Panic instead.
-			fmt.Fprintf(os.Stderr, "worker run error: %v\n", wkr.err)
+			fmt.Fprintf(os.Stderr, "worker run error: %v\n", err)
 		}
 		close(done)
 	}()
@@ -136,9 +136,9 @@ func (lc *LogCollector) startWorker(ctx context.Context, logName string, state L
 				return
 			case <-time.After(5 * time.Second):
 				wkr.debugf("gc start")
-				if err := wkr.sink.RemoveOldEvents(ctx); err != nil {
+				if err := wkr.Sink.RemoveOldEvents(ctx); err != nil {
 					// TODO: Panic instead?
-					fmt.Fprintf(os.Stderr, "worker evict error: %v\n", wkr.err)
+					fmt.Fprintf(os.Stderr, "worker evict error: %v\n", err)
 				}
 				wkr.debugf("gc done")
 			}

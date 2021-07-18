@@ -14,29 +14,28 @@ import (
 	"github.com/deref/exo/logd/store"
 )
 
-type worker struct {
-	sourcePath string
-	sink       store.Log
-	debug      bool
+type Worker struct {
+	Source string
+	Sink   store.Log
+	Debug  bool
 
-	err    error
 	source *os.File
 }
 
-func (wkr *worker) debugf(format string, v ...interface{}) {
-	if wkr.debug {
-		fmt.Fprintln(os.Stderr, "worker", wkr.sourcePath, fmt.Errorf(format, v...))
+func (wkr *Worker) debugf(format string, v ...interface{}) {
+	if wkr.Debug {
+		fmt.Fprintln(os.Stderr, "worker", wkr.Source, fmt.Errorf(format, v...))
 	}
 }
 
-func (wkr *worker) Run(ctx context.Context) error {
+func (wkr *Worker) Run(ctx context.Context) error {
 	wkr.debugf("opening fifo")
-	fd, err := syscall.Open(wkr.sourcePath, syscall.O_RDONLY|syscall.O_NONBLOCK, 0)
+	fd, err := syscall.Open(wkr.Source, syscall.O_RDONLY|syscall.O_NONBLOCK, 0)
 	if err != nil {
 		wkr.debugf("error opening fifo: %w", err)
 		return fmt.Errorf("opening source: %w", err)
 	}
-	wkr.source = os.NewFile(uintptr(fd), wkr.sourcePath)
+	wkr.source = os.NewFile(uintptr(fd), wkr.Source)
 	wkr.debugf("fifo open")
 
 	go func() {
@@ -71,7 +70,7 @@ func (wkr *worker) Run(ctx context.Context) error {
 		}
 
 		timestamp := chrono.NowNano(ctx)
-		if err := wkr.sink.AddEvent(ctx, timestamp, message); err != nil {
+		if err := wkr.Sink.AddEvent(ctx, timestamp, message); err != nil {
 			return fmt.Errorf("adding event: %w", err)
 		}
 	}
