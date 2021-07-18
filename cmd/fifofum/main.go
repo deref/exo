@@ -11,7 +11,7 @@ import (
 	"syscall"
 
 	"github.com/deref/exo/cmdutil"
-	"github.com/deref/exo/logcol/api"
+	"github.com/deref/exo/logd/api"
 )
 
 var child *os.Process

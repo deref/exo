@@ -19,7 +19,7 @@ import (
 	"github.com/deref/exo/jsonutil"
 	"github.com/deref/exo/kernel/api"
 	state "github.com/deref/exo/kernel/state/api"
-	logcol "github.com/deref/exo/logcol/api"
+	logd "github.com/deref/exo/logd/api"
 )
 
 type Project struct {
@@ -430,7 +430,7 @@ func (proj *Project) DescribeLogs(ctx context.Context, input *api.DescribeLogsIn
 
 	// Decorate output with information from the log collector.
 	collector := log.CurrentLogCollector(ctx)
-	collectorLogs, err := collector.DescribeLogs(ctx, &logcol.DescribeLogsInput{
+	collectorLogs, err := collector.DescribeLogs(ctx, &logd.DescribeLogsInput{
 		Names: logStreams,
 	})
 	if err != nil {
@@ -485,7 +485,7 @@ func (proj *Project) GetEvents(ctx context.Context, input *api.GetEventsInput) (
 	}
 
 	collector := log.CurrentLogCollector(ctx)
-	collectorOutput, err := collector.GetEvents(ctx, &logcol.GetEventsInput{
+	collectorOutput, err := collector.GetEvents(ctx, &logd.GetEventsInput{
 		Logs:   logStreams,
 		Before: input.Before,
 		After:  input.After,

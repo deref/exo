@@ -3,7 +3,7 @@ package log
 import (
 	"context"
 
-	"github.com/deref/exo/logcol/api"
+	"github.com/deref/exo/logd/api"
 )
 
 type contextKey int

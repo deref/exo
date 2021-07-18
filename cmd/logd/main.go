@@ -15,8 +15,8 @@ import (
 	"path/filepath"
 
 	"github.com/deref/exo/cmdutil"
-	"github.com/deref/exo/logcol/api"
-	"github.com/deref/exo/logcol/server"
+	"github.com/deref/exo/logd/api"
+	"github.com/deref/exo/logd/server"
 )
 
 func main() {
@@ -43,7 +43,7 @@ func main() {
 	var network, addr string
 	if port == "" {
 		network = "unix"
-		addr = filepath.Join(cfg.VarDir, "logcol.sock")
+		addr = filepath.Join(cfg.VarDir, "logd.sock")
 		_ = os.Remove(addr)
 	} else {
 		network = "tcp"

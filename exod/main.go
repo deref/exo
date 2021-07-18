@@ -10,7 +10,7 @@ import (
 	"github.com/deref/exo/components/log"
 	"github.com/deref/exo/gui"
 	kernel "github.com/deref/exo/kernel/server"
-	logcol "github.com/deref/exo/logcol/server"
+	logd "github.com/deref/exo/logd/server"
 )
 
 func Main() {
@@ -21,7 +21,7 @@ func Main() {
 	}
 	ctx := kernel.NewContext(context.Background(), cfg)
 
-	collector := logcol.NewLogCollector(ctx, &logcol.Config{
+	collector := logd.NewLogCollector(ctx, &logd.Config{
 		VarDir: cfg.VarDir,
 	})
 	if err := collector.Start(ctx); err != nil {

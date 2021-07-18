@@ -5,7 +5,7 @@ import (
 	"fmt"
 
 	"github.com/deref/exo/chrono"
-	"github.com/deref/exo/logcol/api"
+	"github.com/deref/exo/logd/api"
 )
 
 const (

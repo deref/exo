@@ -13,7 +13,7 @@ import (
 
 	"github.com/deref/exo/atom"
 	"github.com/deref/exo/chrono"
-	"github.com/deref/exo/logcol/api"
+	"github.com/deref/exo/logd/api"
 	"github.com/deref/exo/util/mathutil"
 	badger "github.com/dgraph-io/badger/v3"
 	"github.com/oklog/ulid/v2"
@@ -29,7 +29,7 @@ type Config struct {
 }
 
 func NewLogCollector(ctx context.Context, cfg *Config) *LogCollector {
-	statePath := filepath.Join(cfg.VarDir, "logcol.json")
+	statePath := filepath.Join(cfg.VarDir, "logd.json")
 	return &LogCollector{
 		varDir: cfg.VarDir,
 		state:  atom.NewFileAtom(statePath, atom.CodecJSON),

@@ -6,7 +6,7 @@ import (
 	"context"
 
 	josh "github.com/deref/exo/josh/client"
-	"github.com/deref/exo/logcol/api"
+	"github.com/deref/exo/logd/api"
 )
 
 type LogCollector struct {
