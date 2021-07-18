@@ -8,7 +8,6 @@ import (
 	"path/filepath"
 	"sort"
 	"sync"
-	"time"
 
 	"github.com/deref/exo/atom"
 	"github.com/deref/exo/gensym"
@@ -114,7 +113,7 @@ func (lc *LogCollector) startWorker(ctx context.Context, logName string, state L
 	lc.workers[logName] = wkr
 
 	done := make(chan struct{})
-	lc.wg.Add(2)
+	lc.wg.Add(1)
 
 	go func() {
 		defer wkr.debugf("run done")
@@ -127,23 +126,6 @@ func (lc *LogCollector) startWorker(ctx context.Context, logName string, state L
 		close(done)
 	}()
 
-	go func() {
-		defer wkr.debugf("gc loop done")
-		defer lc.wg.Done()
-		for {
-			select {
-			case <-done:
-				return
-			case <-time.After(5 * time.Second):
-				wkr.debugf("gc start")
-				if err := wkr.Sink.RemoveOldEvents(ctx); err != nil {
-					// TODO: Panic instead?
-					fmt.Fprintf(os.Stderr, "worker evict error: %v\n", err)
-				}
-				wkr.debugf("gc done")
-			}
-		}
-	}()
 }
 
 func (lc *LogCollector) RemoveLog(ctx context.Context, input *api.RemoveLogInput) (*api.RemoveLogOutput, error) {
