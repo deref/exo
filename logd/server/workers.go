@@ -18,8 +18,6 @@ type Worker struct {
 	Source string
 	Sink   store.Log
 	Debug  bool
-
-	source *os.File
 }
 
 func (wkr *Worker) debugf(format string, v ...interface{}) {
@@ -35,16 +33,16 @@ func (wkr *Worker) Run(ctx context.Context) error {
 		wkr.debugf("error opening fifo: %w", err)
 		return fmt.Errorf("opening source: %w", err)
 	}
-	wkr.source = os.NewFile(uintptr(fd), wkr.Source)
+	source := os.NewFile(uintptr(fd), wkr.Source)
 	wkr.debugf("fifo open")
 
 	go func() {
 		<-ctx.Done()
-		err := wkr.source.Close()
+		err := source.Close()
 		wkr.debugf("closed source: %v", err)
 	}()
 
-	r := bufio.NewReaderSize(wkr.source, api.MaxMessageSize)
+	r := bufio.NewReaderSize(source, api.MaxMessageSize)
 	for {
 		wkr.debugf("reading line")
 		message, isPrefix, err := r.ReadLine()
