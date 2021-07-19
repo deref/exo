@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"log" // TODO: Use a request scoped logger.
 	"net/http"
+	"path"
 	"reflect"
 
 	"github.com/deref/exo/util/jsonutil"
@@ -90,18 +91,22 @@ func (handler *MethodHandler) ServeHTTP(w http.ResponseWriter, req *http.Request
 		w.Write([]byte("internal server error\n"))
 		return
 	}
-	w.Header().Set("Content-Type", "application/json")
+	writeJSON(w, output)
+}
 
+func writeJSON(w http.ResponseWriter, v interface{}) {
+	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(http.StatusOK)
 	enc := json.NewEncoder(w)
-	if err := enc.Encode(output); err != nil {
+	if err := enc.Encode(v); err != nil {
 		log.Printf("error encoding response: %v", err)
 	}
 }
 
 type MuxBuilder struct {
-	prefix string
-	mux    *http.ServeMux
+	prefix  string
+	mux     *http.ServeMux
+	methods []string
 }
 
 func NewMuxBuilder(prefix string) *MuxBuilder {
@@ -111,10 +116,16 @@ func NewMuxBuilder(prefix string) *MuxBuilder {
 	}
 }
 
-func (b *MuxBuilder) Mux() *http.ServeMux {
-	return b.mux
+func (b *MuxBuilder) Build() *http.ServeMux {
+	mux := b.mux
+	mux.Handle(b.prefix, &IntrospectionHandler{
+		MethodNames: b.methods,
+	})
+	b.mux = nil
+	return mux
 }
 
 func (b *MuxBuilder) AddMethod(name string, f interface{}) {
-	b.mux.Handle(b.prefix+name, NewMethodHandler(f))
+	b.mux.Handle(path.Join(b.prefix, name), NewMethodHandler(f))
+	b.methods = append(b.methods, name)
 }
