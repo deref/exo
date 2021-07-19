@@ -16,7 +16,7 @@ import (
 func UpgradeSelf() error {
 	tmpfile, err := ioutil.TempFile("", "example")
 	if err != nil {
-		fmt.Errorf("creating temporary file: %w", err)
+		return fmt.Errorf("creating temporary file: %w", err)
 	}
 	defer os.Remove(tmpfile.Name())
 
