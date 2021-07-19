@@ -28,3 +28,14 @@ For more features, consult the builtin help:
 ```bash
 exo help
 ```
+
+---
+
+## Telemetry
+
+**exo** collects limited and anonymous telemetry data by default. This behavior can be disabled by adding the following setting to your exo config (located at `~/.exo/config.toml` by default):
+```bash
+[telemetry]
+enabled: false
+```
+
