@@ -3,8 +3,8 @@ package core
 import _ "embed"
 
 const (
-	CheckVersionEndpoint = "https://download-page.deref.workers.dev/version.txt"
-	UpdateScriptEndpoint = "https://download-page.deref.workers.dev/install.sh"
+	CheckVersionEndpoint = "https://exo.deref.io/latest-version"
+	UpdateScriptEndpoint = "https://exo.deref.io/install"
 )
 
 //go:embed VERSION
