@@ -31,11 +31,16 @@ func main() {
 	}
 
 	collector := server.NewLogCollector(ctx, cfg)
-	go func() {
-		if err := collector.Run(ctx); err != nil {
-			cmdutil.Warnf("log collector error: %w", err)
-		}
-	}()
+
+	{
+		ctx, shutdown := context.WithCancel(ctx)
+		defer shutdown()
+		go func() {
+			if err := collector.Run(ctx); err != nil {
+				cmdutil.Warnf("log collector error: %w", err)
+			}
+		}()
+	}
 
 	port := os.Getenv("PORT")
 	var network, addr string
@@ -51,12 +56,9 @@ func main() {
 	if err != nil {
 		cmdutil.Fatalf("error listening: %v", err)
 	}
-
 	fmt.Println("listening at", addr)
 
-	handler := api.NewLogCollectorMux("/", collector)
-	server := http.Server{
-		Handler: handler,
-	}
-	server.Serve(listener)
+	cmdutil.Serve(ctx, listener, &http.Server{
+		Handler: api.NewLogCollectorMux("/", collector),
+	})
 }

@@ -3,8 +3,6 @@ package exod
 import (
 	"context"
 	"net/http"
-	"os"
-	"os/signal"
 
 	"github.com/deref/exo/components/log"
 	"github.com/deref/exo/gui"
@@ -21,15 +19,11 @@ func Main() {
 	}
 
 	ctx := kernel.NewContext(context.Background(), cfg)
-	ctx, done := signal.NotifyContext(ctx, os.Interrupt)
-	defer done()
 
 	collector := logd.NewLogCollector(ctx, &logd.Config{
 		VarDir: cfg.VarDir,
 	})
 	ctx = log.ContextWithLogCollector(ctx, collector)
-
-	addr := cmdutil.GetAddr()
 
 	mux := http.NewServeMux()
 
@@ -41,13 +35,18 @@ func Main() {
 
 	mux.Handle("/", gui.NewHandler(ctx))
 
-	go func() {
-		if err := collector.Run(ctx); err != nil {
-			cmdutil.Warnf("log collector error: %w", err)
-		}
-	}()
-
-	if err := http.ListenAndServe(addr, mux); err != nil {
-		cmdutil.Fatalf("listening: %w", err)
+	{
+		ctx, shutdown := context.WithCancel(ctx)
+		defer shutdown()
+		go func() {
+			if err := collector.Run(ctx); err != nil {
+				cmdutil.Warnf("log collector error: %w", err)
+			}
+		}()
 	}
+
+	cmdutil.ListenAndServe(ctx, &http.Server{
+		Addr:    cmdutil.GetAddr(),
+		Handler: mux,
+	})
 }

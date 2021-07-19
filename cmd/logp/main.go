@@ -25,11 +25,15 @@ func main() {
 
 	collector := server.NewLogCollector(ctx, cfg)
 
-	go func() {
-		if err := collector.Run(ctx); err != nil {
-			cmdutil.Warnf("log collector error: %w", err)
-		}
-	}()
+	{
+		ctx, shutdown := context.WithCancel(ctx)
+		defer shutdown()
+		go func() {
+			if err := collector.Run(ctx); err != nil {
+				cmdutil.Warnf("log collector error: %w", err)
+			}
+		}()
+	}
 
 	pier.Main(api.NewLogCollectorMux("/", collector))
 }
