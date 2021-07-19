@@ -3,6 +3,7 @@ package exod
 import (
 	"context"
 	"net/http"
+	"os"
 
 	"github.com/deref/exo/components/log"
 	"github.com/deref/exo/gui"
@@ -16,6 +17,10 @@ func Main() {
 	cfg := &kernel.Config{
 		VarDir:     paths.VarDir,
 		MuxPattern: "/",
+	}
+
+	if err := os.Chdir("/"); err != nil {
+		cmdutil.Fatalf("chdir failed: %w", err)
 	}
 
 	ctx := kernel.NewContext(context.Background(), cfg)
