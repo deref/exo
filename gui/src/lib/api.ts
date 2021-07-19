@@ -54,10 +54,23 @@ export type PaginationParams = {
   cursor: string | null;
 };
 
-const baseUrl = 'http://localhost:4000/_exo/kernel';
-const apiUrl = (path: string) => baseUrl + path;
-const rpc = async (path: string, data?: unknown): Promise<unknown> => {
-  const res = await fetch(apiUrl(path), {
+const baseUrl = 'http://localhost:4000/_exo';
+
+const apiUrl = (path: string, query: Record<string, string>) => {
+  let qs = '';
+  let sep = '?';
+  for (const [key, value] of Object.entries(query)) {
+    qs += sep;
+    sep = '&';
+    qs += encodeURIComponent(key);
+    qs += '=';
+    qs += encodeURIComponent(value);
+  }
+  return baseUrl + path + qs;
+}
+
+const rpc = async (path: string, query: Record<string, string>, data?: unknown): Promise<unknown> => {
+  const res = await fetch(apiUrl(path, query), {
     method: 'POST',
     headers: {
       accept: 'application/json',
@@ -71,32 +84,50 @@ const rpc = async (path: string, data?: unknown): Promise<unknown> => {
 }
 
 export const api = (() => {
+  const kernel = (() => {
+    const invoke = (method: string, data?: unknown) => rpc(`/kernel/${method}`, {}, data);
+    return {
+      async createWorkspace(root: string): Promise<string> {
+        const { id } = await invoke('create-workspace', { root }) as any;
+        return id;
+      },
+    };
+  })()
+
+  const workspace = (id: string) => {
+    const invoke = (method: string, data?: unknown) => rpc(`/workspace/${method}`, {id}, data);
+    return {
+      async describeProcesses(): Promise<ProcessDescription[]> {
+        const { processes } = await invoke('describe-processes') as any;
+        return processes;
+      },
+
+      async startProcess(ref: string): Promise<void> {
+        await invoke('start', { ref });
+      },
+
+      async stopProcess(ref: string): Promise<void> {
+        await invoke('stop', { ref });
+      },
+
+      async refreshAllProcesses(): Promise<void> {
+        await invoke('refresh');
+      },
+
+      async getEvents(logs: string[], pagination?: PaginationParams): Promise<LogsResponse> {
+        if (pagination?.type === 'before-cursor') {
+          throw new Error("Before cursor not supported.");
+        }
+        return await invoke('get-events', {
+          logs,
+          ...(pagination?.cursor ? { after: pagination?.cursor } : {}),
+        }) as any;
+      },
+    };
+  };
+
   return {
-    async describeProcesses(): Promise<ProcessDescription[]> {
-      const { processes } = await rpc('/describe-processes') as any;
-      return processes;
-    },
-
-    async startProcess(ref: string): Promise<void> {
-      await rpc('/start', { ref });
-    },
-
-    async stopProcess(ref: string): Promise<void> {
-      await rpc('/stop', { ref });
-    },
-
-    async refreshAllProcesses(): Promise<void> {
-      await rpc('/refresh');
-    },
-
-    async getEvents(logs: string[], pagination?: PaginationParams): Promise<LogsResponse> {
-      if (pagination?.type === 'before-cursor') {
-        throw new Error("Before cursor not supported.");
-      }
-      return await rpc('/get-events', {
-        logs,
-        ...(pagination?.cursor ? { after: pagination?.cursor } : {}),
-      }) as any;
-    }
+    kernel,
+    workspace,
   };
 })();

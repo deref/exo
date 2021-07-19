@@ -47,28 +47,28 @@ If no subcommand is given, describes the current workspace.`,
 	},
 }
 
-func requireWorkspace(ctx context.Context, root *client.Root) api.Workspace {
-	workspace := mustFindWorkspace(ctx, root)
+func requireWorkspace(ctx context.Context, cl *client.Root) api.Workspace {
+	workspace := mustFindWorkspace(ctx, cl)
 	if workspace == nil {
 		cmdutil.Fatalf("no workspace for current directory")
 	}
 	return workspace
 }
 
-func mustFindWorkspace(ctx context.Context, root *client.Root) api.Workspace {
-	workspace, err := findWorkspace(ctx, root)
+func mustFindWorkspace(ctx context.Context, cl *client.Root) api.Workspace {
+	workspace, err := findWorkspace(ctx, cl)
 	if err != nil {
 		cmdutil.Fatal(err)
 	}
 	return workspace
 }
 
-func findWorkspace(ctx context.Context, root *client.Root) (api.Workspace, error) {
+func findWorkspace(ctx context.Context, cl *client.Root) (api.Workspace, error) {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return nil, fmt.Errorf("getwd: %w", err)
 	}
-	output, err := root.Kernel().FindWorkspace(ctx, &api.FindWorkspaceInput{
+	output, err := cl.Kernel().FindWorkspace(ctx, &api.FindWorkspaceInput{
 		Path: cwd,
 	})
 	if err != nil {
@@ -76,7 +76,7 @@ func findWorkspace(ctx context.Context, root *client.Root) (api.Workspace, error
 	}
 	var workspace api.Workspace
 	if output.ID != nil {
-		workspace = root.GetWorkspace(*output.ID)
+		workspace = cl.GetWorkspace(*output.ID)
 	}
 	return workspace, nil
 }
