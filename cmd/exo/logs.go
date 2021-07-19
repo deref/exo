@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/deref/exo/kernel/api"
+	"github.com/deref/exo/exod/api"
 	"github.com/spf13/cobra"
 )
 
@@ -22,10 +22,11 @@ If refs are provided, filters for the logs of those processes.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := newContext()
 		ensureDeamon()
-		client := newClient()
+		cl := newClient()
+		workspace := requireWorkspace(ctx, cl)
 		cursor := ""
 		for {
-			output, err := client.GetEvents(ctx, &api.GetEventsInput{
+			output, err := workspace.GetEvents(ctx, &api.GetEventsInput{
 				Logs:  args,
 				After: cursor,
 			})

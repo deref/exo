@@ -15,7 +15,7 @@ type LogCollector struct {
 
 var _ api.LogCollector = (*LogCollector)(nil)
 
-func NewLogCollector(client *josh.Client) *LogCollector {
+func GetLogCollector(client *josh.Client) *LogCollector {
 	return &LogCollector{
 		client: client,
 	}

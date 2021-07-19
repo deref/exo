@@ -134,15 +134,11 @@ type {{.Name|public}}Output struct {
 }
 {{end}}
 
-func New{{.Name|public}}Mux(prefix string, iface {{.Name|public}}) *http.ServeMux {
-	b := josh.NewMuxBuilder(prefix)
-	Build{{.Name|public}}Mux(b, iface)
-	return b.Mux()
-}
-
-func Build{{.Name|public}}Mux(b *josh.MuxBuilder, iface {{.Name|public}}) {
+func Build{{.Name|public}}Mux(b *josh.MuxBuilder, factory func(req *http.Request) {{.Name|public}}) {
 {{- range .Methods}}
-	b.AddMethod("{{.Name}}", iface.{{.Name|public}})
+	b.AddMethod("{{.Name}}", func (req *http.Request) interface{} {
+		return factory(req).{{.Name|public}}
+	})
 {{- end}}
 }
 {{end}}
@@ -174,7 +170,7 @@ type {{.Name|public}} struct {
 
 var _ api.{{.Name|public}} = (*{{.Name|public}})(nil)
 
-func New{{.Name|public}}(client *josh.Client) *{{.Name|public}} {
+func Get{{.Name|public}}(client *josh.Client) *{{.Name|public}} {
 	return &{{.Name|public}}{
 		client: client,
 	}

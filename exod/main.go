@@ -4,40 +4,41 @@ import (
 	"context"
 	"net/http"
 	"os"
+	"path/filepath"
 
 	"github.com/deref/exo/components/log"
+	"github.com/deref/exo/exod/server"
+	kernel "github.com/deref/exo/exod/server"
+	"github.com/deref/exo/exod/state/statefile"
 	"github.com/deref/exo/gui"
-	kernel "github.com/deref/exo/kernel/server"
 	logd "github.com/deref/exo/logd/server"
 	"github.com/deref/exo/util/cmdutil"
+	"github.com/deref/exo/util/httputil"
 )
 
 func Main() {
+	ctx := context.Background()
+
 	paths := cmdutil.MustMakeDirectories()
-	cfg := &kernel.Config{
-		VarDir:     paths.VarDir,
-		MuxPattern: "/",
-	}
 
 	if err := os.Chdir("/"); err != nil {
 		cmdutil.Fatalf("chdir failed: %w", err)
 	}
 
-	ctx := kernel.NewContext(context.Background(), cfg)
+	statePath := filepath.Join(paths.VarDir, "state.json")
+	store := statefile.New(statePath)
+
+	cfg := &kernel.Config{
+		VarDir: paths.VarDir,
+		Store:  store,
+	}
 
 	collector := logd.NewLogCollector(ctx, &logd.Config{
 		VarDir: cfg.VarDir,
 	})
 	ctx = log.ContextWithLogCollector(ctx, collector)
 
-	mux := http.NewServeMux()
-
-	kernelPattern := "/_exo/"
-	mux.Handle(kernelPattern, kernel.NewHandler(ctx, &kernel.Config{
-		VarDir:     cfg.VarDir,
-		MuxPattern: kernelPattern,
-	}))
-
+	mux := server.BuildRootMux("/_exo/", cfg)
 	mux.Handle("/", gui.NewHandler(ctx))
 
 	{
@@ -52,6 +53,6 @@ func Main() {
 
 	cmdutil.ListenAndServe(ctx, &http.Server{
 		Addr:    cmdutil.GetAddr(),
-		Handler: mux,
+		Handler: httputil.HandlerWithContext(ctx, mux),
 	})
 }

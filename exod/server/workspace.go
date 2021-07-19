@@ -14,10 +14,10 @@ import (
 	"github.com/deref/exo/components/process"
 	"github.com/deref/exo/config"
 	core "github.com/deref/exo/core/api"
+	"github.com/deref/exo/exod/api"
+	state "github.com/deref/exo/exod/state/api"
 	"github.com/deref/exo/gensym"
 	"github.com/deref/exo/import/procfile"
-	"github.com/deref/exo/kernel/api"
-	state "github.com/deref/exo/kernel/state/api"
 	logd "github.com/deref/exo/logd/api"
 	"github.com/deref/exo/util/jsonutil"
 )
@@ -25,11 +25,29 @@ import (
 type Workspace struct {
 	ID     string
 	VarDir string
+	Store  state.Store
+}
+
+func (ws *Workspace) Describe(ctx context.Context, input *api.DescribeInput) (*api.DescribeOutput, error) {
+	output, err := ws.Store.DescribeWorkspaces(ctx, &state.DescribeWorkspacesInput{
+		IDs: []string{ws.ID},
+	})
+	if err != nil {
+		return nil, err
+	}
+	if len(output.Workspaces) != 1 {
+		return nil, fmt.Errorf("invalid workspace: %q", ws.ID)
+	}
+	return &api.DescribeOutput{
+		Description: api.WorkspaceDescription{
+			ID:   ws.ID,
+			Root: output.Workspaces[0].Root,
+		},
+	}, nil
 }
 
 func (ws *Workspace) Destroy(ctx context.Context, input *api.DestroyInput) (*api.DestroyOutput, error) {
-	store := state.CurrentStore(ctx)
-	describeOutput, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
+	describeOutput, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
 		WorkspaceID: ws.ID,
 	})
 	if err != nil {
@@ -43,6 +61,11 @@ func (ws *Workspace) Destroy(ctx context.Context, input *api.DestroyInput) (*api
 		if err != nil {
 			return nil, fmt.Errorf("deleting %s: %w", component.Name, err)
 		}
+	}
+	if _, err := ws.Store.RemoveWorkspace(ctx, &state.RemoveWorkspaceInput{
+		ID: ws.ID,
+	}); err != nil {
+		return nil, fmt.Errorf("removing workspace from store: %w", err)
 	}
 	return &api.DestroyOutput{}, nil
 }
@@ -59,11 +82,9 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 }
 
 func (ws *Workspace) apply(ctx context.Context, cfg *config.Config) error {
-	store := state.CurrentStore(ctx)
-
 	// TODO: Validate config.
 
-	describeOutput, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
+	describeOutput, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
 		WorkspaceID: ws.ID,
 	})
 	if err != nil {
@@ -122,8 +143,7 @@ func (ws *Workspace) ApplyProcfile(ctx context.Context, input *api.ApplyProcfile
 }
 
 func (ws *Workspace) Refresh(ctx context.Context, input *api.RefreshInput) (*api.RefreshOutput, error) {
-	store := state.CurrentStore(ctx)
-	components, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
+	components, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
 		WorkspaceID: ws.ID,
 	})
 	if err != nil {
@@ -131,7 +151,7 @@ func (ws *Workspace) Refresh(ctx context.Context, input *api.RefreshInput) (*api
 	}
 	// TODO: Parallelism.
 	for _, component := range components.Components {
-		if err := ws.refreshComponent(ctx, store, component); err != nil {
+		if err := ws.refreshComponent(ctx, ws.Store, component); err != nil {
 			// TODO: Error recovery.
 			return nil, fmt.Errorf("refreshing %q: %w", component.Name, err)
 		}
@@ -140,8 +160,7 @@ func (ws *Workspace) Refresh(ctx context.Context, input *api.RefreshInput) (*api
 }
 
 func (ws *Workspace) Resolve(ctx context.Context, input *api.ResolveInput) (*api.ResolveOutput, error) {
-	store := state.CurrentStore(ctx)
-	storeOutput, err := store.Resolve(ctx, &state.ResolveInput{
+	storeOutput, err := ws.Store.Resolve(ctx, &state.ResolveInput{
 		WorkspaceID: ws.ID,
 		Refs:        input.Refs,
 	})
@@ -157,8 +176,7 @@ func (ws *Workspace) Resolve(ctx context.Context, input *api.ResolveInput) (*api
 }
 
 func (ws *Workspace) DescribeComponents(ctx context.Context, input *api.DescribeComponentsInput) (*api.DescribeComponentsOutput, error) {
-	store := state.CurrentStore(ctx)
-	stateOutput, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
+	stateOutput, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
 		WorkspaceID: ws.ID,
 	})
 	if err != nil {
@@ -220,11 +238,9 @@ func (ws *Workspace) createComponent(ctx context.Context, component config.Compo
 		return "", fmt.Errorf("invalid name: %q", component.Name)
 	}
 
-	store := state.CurrentStore(ctx)
-
 	id = gensym.RandomBase32()
 
-	if _, err := store.AddComponent(ctx, &state.AddComponentInput{
+	if _, err := ws.Store.AddComponent(ctx, &state.AddComponentInput{
 		WorkspaceID: "default",
 		ID:          id,
 		Name:        component.Name,
@@ -244,7 +260,7 @@ func (ws *Workspace) createComponent(ctx context.Context, component config.Compo
 		return "", err
 	}
 
-	if _, err := store.PatchComponent(ctx, &state.PatchComponentInput{
+	if _, err := ws.Store.PatchComponent(ctx, &state.PatchComponentInput{
 		ID:          id,
 		State:       output.State,
 		Initialized: chrono.NowString(ctx),
@@ -287,8 +303,7 @@ func (ws *Workspace) RefreshComponent(ctx context.Context, input *api.RefreshCom
 		return nil, fmt.Errorf("resolving ref: %w", err)
 	}
 
-	store := state.CurrentStore(ctx)
-	describeOutput, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
+	describeOutput, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
 		WorkspaceID: ws.ID,
 		IDs:         []string{id},
 	})
@@ -300,7 +315,7 @@ func (ws *Workspace) RefreshComponent(ctx context.Context, input *api.RefreshCom
 	}
 	component := describeOutput.Components[0]
 
-	if err := ws.refreshComponent(ctx, store, component); err != nil {
+	if err := ws.refreshComponent(ctx, ws.Store, component); err != nil {
 		return nil, err
 	}
 
@@ -350,8 +365,7 @@ func (ws *Workspace) resolveRef(ctx context.Context, ref string) (string, error)
 }
 
 func (ws *Workspace) disposeComponent(ctx context.Context, id string) error {
-	store := state.CurrentStore(ctx)
-	describeOutput, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
+	describeOutput, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
 		WorkspaceID: ws.ID,
 		IDs:         []string{id},
 	})
@@ -386,8 +400,7 @@ func (ws *Workspace) deleteComponent(ctx context.Context, id string) error {
 		return fmt.Errorf("disposing: %w", err)
 	}
 	// TODO: Await disposal.
-	store := state.CurrentStore(ctx)
-	if _, err := store.RemoveComponent(ctx, &state.RemoveComponentInput{ID: id}); err != nil {
+	if _, err := ws.Store.RemoveComponent(ctx, &state.RemoveComponentInput{ID: id}); err != nil {
 		return fmt.Errorf("removing from state store: %w", err)
 	}
 	return nil
@@ -396,8 +409,7 @@ func (ws *Workspace) deleteComponent(ctx context.Context, id string) error {
 var processLogStreams = []string{"out", "err"}
 
 func (ws *Workspace) DescribeLogs(ctx context.Context, input *api.DescribeLogsInput) (*api.DescribeLogsOutput, error) {
-	store := state.CurrentStore(ctx)
-	components, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
+	components, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
 		WorkspaceID: ws.ID,
 	})
 	if err != nil {
@@ -509,14 +521,12 @@ func (ws *Workspace) GetEvents(ctx context.Context, input *api.GetEventsInput) (
 }
 
 func (ws *Workspace) Start(ctx context.Context, input *api.StartInput) (*api.StartOutput, error) {
-	store := state.CurrentStore(ctx)
-
 	id, err := ws.resolveRef(ctx, input.Ref)
 	if err != nil {
 		return nil, fmt.Errorf("resolving ref: %w", err)
 	}
 
-	components, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
+	components, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
 		WorkspaceID: ws.ID,
 		IDs:         []string{id},
 	})
@@ -538,7 +548,7 @@ func (ws *Workspace) Start(ctx context.Context, input *api.StartInput) (*api.Sta
 		return nil, err
 	}
 
-	if _, err := store.PatchComponent(ctx, &state.PatchComponentInput{
+	if _, err := ws.Store.PatchComponent(ctx, &state.PatchComponentInput{
 		ID:    id,
 		State: providerOutput.State,
 	}); err != nil {
@@ -549,14 +559,12 @@ func (ws *Workspace) Start(ctx context.Context, input *api.StartInput) (*api.Sta
 }
 
 func (ws *Workspace) Stop(ctx context.Context, input *api.StopInput) (*api.StopOutput, error) {
-	store := state.CurrentStore(ctx)
-
 	id, err := ws.resolveRef(ctx, input.Ref)
 	if err != nil {
 		return nil, fmt.Errorf("resolving ref: %w", err)
 	}
 
-	components, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
+	components, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
 		WorkspaceID: ws.ID,
 		IDs:         []string{id},
 	})
@@ -578,7 +586,7 @@ func (ws *Workspace) Stop(ctx context.Context, input *api.StopInput) (*api.StopO
 		return nil, err
 	}
 
-	if _, err := store.PatchComponent(ctx, &state.PatchComponentInput{
+	if _, err := ws.Store.PatchComponent(ctx, &state.PatchComponentInput{
 		ID:    id,
 		State: providerOutput.State,
 	}); err != nil {
@@ -589,8 +597,7 @@ func (ws *Workspace) Stop(ctx context.Context, input *api.StopInput) (*api.StopO
 }
 
 func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeProcessesInput) (*api.DescribeProcessesOutput, error) {
-	store := state.CurrentStore(ctx)
-	components, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
+	components, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
 		WorkspaceID: ws.ID,
 		// TODO: Filter by type.
 	})

@@ -5,8 +5,8 @@ package client
 import (
 	"context"
 
+	"github.com/deref/exo/exod/state/api"
 	josh "github.com/deref/exo/josh/client"
-	"github.com/deref/exo/kernel/state/api"
 )
 
 type Store struct {
@@ -15,10 +15,30 @@ type Store struct {
 
 var _ api.Store = (*Store)(nil)
 
-func NewStore(client *josh.Client) *Store {
+func GetStore(client *josh.Client) *Store {
 	return &Store{
 		client: client,
 	}
+}
+
+func (c *Store) DescribeWorkspaces(ctx context.Context, input *api.DescribeWorkspacesInput) (output *api.DescribeWorkspacesOutput, err error) {
+	err = c.client.Invoke(ctx, "describe-workspaces", input, &output)
+	return
+}
+
+func (c *Store) AddWorkspace(ctx context.Context, input *api.AddWorkspaceInput) (output *api.AddWorkspaceOutput, err error) {
+	err = c.client.Invoke(ctx, "add-workspace", input, &output)
+	return
+}
+
+func (c *Store) RemoveWorkspace(ctx context.Context, input *api.RemoveWorkspaceInput) (output *api.RemoveWorkspaceOutput, err error) {
+	err = c.client.Invoke(ctx, "remove-workspace", input, &output)
+	return
+}
+
+func (c *Store) FindWorkspace(ctx context.Context, input *api.FindWorkspaceInput) (output *api.FindWorkspaceOutput, err error) {
+	err = c.client.Invoke(ctx, "find-workspace", input, &output)
+	return
 }
 
 func (c *Store) Resolve(ctx context.Context, input *api.ResolveInput) (output *api.ResolveOutput, err error) {

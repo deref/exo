@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"reflect"
 
 	"github.com/deref/exo/util/jsonutil"
@@ -23,9 +24,15 @@ func (c *Client) Invoke(ctx context.Context, method string, input interface{}, o
 	if err != nil {
 		return fmt.Errorf("marshalling input: %w", err)
 	}
-	url := c.URL + method
+
+	endpoint, err := url.Parse(c.URL)
+	if err != nil {
+		return fmt.Errorf("invalid endpoint: %w", err)
+	}
+	endpoint.Path += "/" + method
+
 	contentType := "application/json"
-	resp, err := c.HTTP.Post(url, contentType, bytes.NewBuffer(inputB))
+	resp, err := c.HTTP.Post(endpoint.String(), contentType, bytes.NewBuffer(inputB))
 	if err != nil {
 		return fmt.Errorf("posting: %w", err)
 	}

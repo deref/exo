@@ -7,9 +7,7 @@ import (
 	"os/exec"
 	"syscall"
 
-	josh "github.com/deref/exo/josh/client"
-	"github.com/deref/exo/kernel/api"
-	"github.com/deref/exo/kernel/client"
+	"github.com/deref/exo/exod/client"
 	"github.com/deref/exo/util/cmdutil"
 	"github.com/deref/exo/util/jsonutil"
 	"github.com/deref/exo/util/osutil"
@@ -65,7 +63,7 @@ func ensureDeamon() {
 
 	// Start server in background.
 	exoPath := os.Args[0]
-	cmd := exec.Command(exoPath, "server")
+	cmd := exec.Command(exoPath, "server") // TODO: CommandContext.
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Setsid: true,
 	}
@@ -85,9 +83,9 @@ func loadRunState(path string) error {
 	return jsonutil.UnmarshalFile(path, &runState)
 }
 
-func newClient() api.Kernel {
-	return client.NewWorkspace(&josh.Client{
+func newClient() *client.Root {
+	return &client.Root{
 		HTTP: http.DefaultClient,
 		URL:  runState.URL + "_exo/",
-	})
+	}
 }

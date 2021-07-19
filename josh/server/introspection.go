@@ -6,7 +6,15 @@ type IntrospectionHandler struct {
 	MethodNames []string
 }
 
-func (h *IntrospectionHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+func (h *IntrospectionHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
+	if handleOptions(w, req) {
+		return
+	}
+	if req.Method != "GET" {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
 	type method struct {
 		Name string `json:"name"`
 	}

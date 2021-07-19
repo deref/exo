@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/deref/exo/kernel/api"
+	"github.com/deref/exo/exod/api"
 	"github.com/deref/exo/util/cmdutil"
 	"github.com/deref/exo/util/osutil"
 	"github.com/spf13/cobra"
@@ -104,17 +104,18 @@ overidden explicitly with the --format flag.`,
 			return fmt.Errorf("reading config: %w", err)
 		}
 
-		client := newClient()
+		cl := newClient()
+		workspace := requireWorkspace(ctx, cl)
 
 		switch applyFlags.Format {
 		case "procfile":
-			_, err = client.ApplyProcfile(ctx, &api.ApplyProcfileInput{
+			_, err = workspace.ApplyProcfile(ctx, &api.ApplyProcfileInput{
 				Procfile: string(bs),
 			})
 		case "compose":
 			cmdutil.Fatalf("docker compose configs not yet implemented")
 		case "exo":
-			_, err = client.Apply(ctx, &api.ApplyInput{
+			_, err = workspace.Apply(ctx, &api.ApplyInput{
 				Config: string(bs),
 			})
 		}

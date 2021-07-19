@@ -15,7 +15,7 @@ type Process struct {
 
 var _ api.Process = (*Process)(nil)
 
-func NewProcess(client *josh.Client) *Process {
+func GetProcess(client *josh.Client) *Process {
 	return &Process{
 		client: client,
 	}

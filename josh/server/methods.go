@@ -12,42 +12,8 @@ import (
 )
 
 type MethodHandler struct {
-	f   reflect.Value
-	in  reflect.Type
-	out reflect.Type
-}
-
-func NewMethodHandler(f interface{}) *MethodHandler {
-	fv := reflect.ValueOf(f)
-	if fv.Kind() != reflect.Func {
-		panic("expected function, got " + fv.Kind().String())
-	}
-	typ := fv.Type()
-	if typ.NumIn() != 2 {
-		panic("wrong number of parameters. " + expectedSignature)
-	}
-	if typ.NumOut() != 2 {
-		panic("wrong number of results. " + expectedSignature)
-	}
-	if typ.In(0) != contextType {
-		panic("first parameter must be a context. " + expectedSignature)
-	}
-	in := typ.In(1)
-	if in.Kind() != reflect.Ptr {
-		panic("first parameter must be a pointer. " + expectedSignature)
-	}
-	out := typ.Out(0)
-	if out.Kind() != reflect.Ptr {
-		panic("first result must be a pointer. " + expectedSignature)
-	}
-	if typ.Out(1) != errorType {
-		panic("second result must be an error. " + expectedSignature)
-	}
-	return &MethodHandler{
-		f:   fv,
-		in:  in.Elem(),
-		out: out,
-	}
+	Factory func(req *http.Request) interface{}
+	Name    string
 }
 
 const expectedSignature = "expected signature: func (ctx context.Context, input *YourInput) (*YourOutput, error)"
@@ -56,20 +22,21 @@ var contextType = reflect.TypeOf((*context.Context)(nil)).Elem()
 var errorType = reflect.TypeOf((*error)(nil)).Elem()
 
 func (handler *MethodHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	// TODO: Figure out the "right" thing to do for cors.
-	w.Header().Set("Access-Control-Allow-Origin", "*")
-	w.Header().Set("Access-Control-Allow-Methods", "*")
-	w.Header().Set("Access-Control-Allow-Headers", "*")
-
-	if req.Method == "OPTIONS" {
-		w.WriteHeader(http.StatusOK)
+	if handleOptions(w, req) {
 		return
 	}
+	if req.Method != "POST" {
+		w.WriteHeader(http.StatusMethodNotAllowed)
+		return
+	}
+
+	method := reflect.ValueOf(handler.Factory(req))
+	inputType := method.Type().In(1).Elem()
 
 	// TODO: Check content-type, accepts, etc.
 	// TODO: Include a Request ID in logs?
 	// TODO: Differentiate 400s from 500s, internal vs external errors, etc.
-	input := reflect.New(handler.in)
+	input := reflect.New(inputType)
 	if req.Body != nil {
 		if err := jsonutil.UnmarshalReader(req.Body, input.Interface()); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
@@ -78,7 +45,7 @@ func (handler *MethodHandler) ServeHTTP(w http.ResponseWriter, req *http.Request
 			return
 		}
 	}
-	results := handler.f.Call([]reflect.Value{
+	results := method.Call([]reflect.Value{
 		reflect.ValueOf(req.Context()),
 		input,
 	})
@@ -117,15 +84,34 @@ func NewMuxBuilder(prefix string) *MuxBuilder {
 }
 
 func (b *MuxBuilder) Build() *http.ServeMux {
+	b.end()
 	mux := b.mux
-	mux.Handle(b.prefix, &IntrospectionHandler{
-		MethodNames: b.methods,
-	})
 	b.mux = nil
 	return mux
 }
 
-func (b *MuxBuilder) AddMethod(name string, f interface{}) {
-	b.mux.Handle(path.Join(b.prefix, name), NewMethodHandler(f))
+func (b *MuxBuilder) AddMethod(name string, factory func(req *http.Request) interface{}) {
+	b.mux.Handle(path.Join(b.prefix, name), &MethodHandler{
+		Factory: factory,
+		Name:    name,
+	})
 	b.methods = append(b.methods, name)
+}
+
+func (b *MuxBuilder) Begin(prefix string) func() {
+	oldPrefix := b.prefix
+	oldMethods := b.methods
+	b.prefix += prefix
+	b.methods = nil
+	return func() {
+		b.end()
+		b.prefix = oldPrefix
+		b.methods = oldMethods
+	}
+}
+
+func (b *MuxBuilder) end() {
+	b.mux.Handle(b.prefix, &IntrospectionHandler{
+		MethodNames: b.methods,
+	})
 }

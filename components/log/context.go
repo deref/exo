@@ -1,3 +1,5 @@
+// TODO: Delete this file & pass LogCollector around like state.Store.
+
 package log
 
 import (
