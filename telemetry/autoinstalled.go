@@ -35,11 +35,13 @@ func UpgradeSelf() error {
 		return fmt.Errorf("making script executable: %w", err)
 	}
 
-	out, err := exec.Command(tmpfile.Name()).Output()
-	if err != nil {
+	cmd := exec.Command(tmpfile.Name())
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+
+	if err := cmd.Run(); err != nil {
 		return fmt.Errorf("running update script: %w", err)
 	}
-	fmt.Printf(string(out))
 
 	return nil
 }
