@@ -11,7 +11,7 @@ _Alpha!_
 Install exo:
 
 ```bash
-/bin/bash -c "$(curl -fsSL https://exo.deref.io/install.sh)"
+curl -sL https://exo.deref.io/install | sh
 ```
 
 If you prefer manual installation, see [./doc/install.md](./doc/install.md) for
