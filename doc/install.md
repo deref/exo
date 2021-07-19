@@ -3,7 +3,7 @@
 ## Quick Install
 
 ```bash
-/bin/bash -c "$(curl -fsSL https://exo.deref.io/install.sh)"
+curl -sL https://exo.deref.io/install | sh
 ```
 
 ## Manual Installation
