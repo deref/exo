@@ -45,10 +45,10 @@ func (provider *Provider) start(ctx context.Context, procDir string, inputSpec s
 		return state{}, fmt.Errorf("unmarshalling spec: %w", err)
 	}
 
-	// Use configured working directory or fallback to project directory.
+	// Use configured working directory or fallback to workspace directory.
 	directory := spec.Directory
 	if directory == "" {
-		directory = provider.ProjectDir
+		directory = provider.WorkspaceDir
 	}
 
 	// Resolve program path.

@@ -22,22 +22,22 @@ import (
 	"github.com/deref/exo/util/jsonutil"
 )
 
-type Project struct {
+type Workspace struct {
 	ID     string
 	VarDir string
 }
 
-func (proj *Project) Destroy(ctx context.Context, input *api.DestroyInput) (*api.DestroyOutput, error) {
+func (ws *Workspace) Destroy(ctx context.Context, input *api.DestroyInput) (*api.DestroyOutput, error) {
 	store := state.CurrentStore(ctx)
 	describeOutput, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
-		ProjectID: proj.ID,
+		WorkspaceID: ws.ID,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("describing components: %w", err)
 	}
 	// TODO: Parallelism / bulk delete.
 	for _, component := range describeOutput.Components {
-		_, err := proj.DeleteComponent(ctx, &api.DeleteComponentInput{
+		_, err := ws.DeleteComponent(ctx, &api.DeleteComponentInput{
 			Ref: component.Name,
 		})
 		if err != nil {
@@ -47,24 +47,24 @@ func (proj *Project) Destroy(ctx context.Context, input *api.DestroyInput) (*api
 	return &api.DestroyOutput{}, nil
 }
 
-func (proj *Project) Apply(ctx context.Context, input *api.ApplyInput) (*api.ApplyOutput, error) {
+func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.ApplyOutput, error) {
 	cfg, err := config.Parse([]byte(input.Config))
 	if err != nil {
 		return nil, fmt.Errorf("parsing config: %w", err)
 	}
-	if err := proj.apply(ctx, cfg); err != nil {
+	if err := ws.apply(ctx, cfg); err != nil {
 		return nil, err
 	}
 	return &api.ApplyOutput{}, nil
 }
 
-func (proj *Project) apply(ctx context.Context, cfg *config.Config) error {
+func (ws *Workspace) apply(ctx context.Context, cfg *config.Config) error {
 	store := state.CurrentStore(ctx)
 
 	// TODO: Validate config.
 
 	describeOutput, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
-		ProjectID: proj.ID,
+		WorkspaceID: ws.ID,
 	})
 	if err != nil {
 		return fmt.Errorf("describing components: %w", err)
@@ -85,12 +85,12 @@ func (proj *Project) apply(ctx context.Context, cfg *config.Config) error {
 		newComponents[name] = newComponent
 		if oldComponent, exists := oldComponents[name]; exists {
 			// Update existing component.
-			if err := proj.updateComponent(ctx, oldComponent, newComponent); err != nil {
+			if err := ws.updateComponent(ctx, oldComponent, newComponent); err != nil {
 				return fmt.Errorf("updating %q: %w", name, err)
 			}
 		} else {
 			// Create new component.
-			if _, err := proj.createComponent(ctx, newComponent); err != nil {
+			if _, err := ws.createComponent(ctx, newComponent); err != nil {
 				return fmt.Errorf("adding %q: %w", name, err)
 			}
 		}
@@ -102,7 +102,7 @@ func (proj *Project) apply(ctx context.Context, cfg *config.Config) error {
 		if _, keep := newComponents[name]; keep {
 			continue
 		}
-		if err := proj.deleteComponent(ctx, oldComponent.ID); err != nil {
+		if err := ws.deleteComponent(ctx, oldComponent.ID); err != nil {
 			return fmt.Errorf("deleting %q: %w", name, err)
 		}
 	}
@@ -110,28 +110,28 @@ func (proj *Project) apply(ctx context.Context, cfg *config.Config) error {
 	return nil
 }
 
-func (proj *Project) ApplyProcfile(ctx context.Context, input *api.ApplyProcfileInput) (*api.ApplyProcfileOutput, error) {
+func (ws *Workspace) ApplyProcfile(ctx context.Context, input *api.ApplyProcfileInput) (*api.ApplyProcfileOutput, error) {
 	cfg, err := procfile.Import(strings.NewReader(input.Procfile))
 	if err != nil {
 		return nil, fmt.Errorf("importing: %w", err)
 	}
-	if err := proj.apply(ctx, cfg); err != nil {
+	if err := ws.apply(ctx, cfg); err != nil {
 		return nil, err
 	}
 	return &api.ApplyProcfileOutput{}, nil
 }
 
-func (proj *Project) Refresh(ctx context.Context, input *api.RefreshInput) (*api.RefreshOutput, error) {
+func (ws *Workspace) Refresh(ctx context.Context, input *api.RefreshInput) (*api.RefreshOutput, error) {
 	store := state.CurrentStore(ctx)
 	components, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
-		ProjectID: proj.ID,
+		WorkspaceID: ws.ID,
 	})
 	if err != nil {
 		return nil, err
 	}
 	// TODO: Parallelism.
 	for _, component := range components.Components {
-		if err := proj.refreshComponent(ctx, store, component); err != nil {
+		if err := ws.refreshComponent(ctx, store, component); err != nil {
 			// TODO: Error recovery.
 			return nil, fmt.Errorf("refreshing %q: %w", component.Name, err)
 		}
@@ -139,11 +139,11 @@ func (proj *Project) Refresh(ctx context.Context, input *api.RefreshInput) (*api
 	return &api.RefreshOutput{}, nil
 }
 
-func (proj *Project) Resolve(ctx context.Context, input *api.ResolveInput) (*api.ResolveOutput, error) {
+func (ws *Workspace) Resolve(ctx context.Context, input *api.ResolveInput) (*api.ResolveOutput, error) {
 	store := state.CurrentStore(ctx)
 	storeOutput, err := store.Resolve(ctx, &state.ResolveInput{
-		ProjectID: proj.ID,
-		Refs:      input.Refs,
+		WorkspaceID: ws.ID,
+		Refs:        input.Refs,
 	})
 	if err != nil {
 		return nil, err
@@ -156,10 +156,10 @@ func (proj *Project) Resolve(ctx context.Context, input *api.ResolveInput) (*api
 	return &output, err
 }
 
-func (proj *Project) DescribeComponents(ctx context.Context, input *api.DescribeComponentsInput) (*api.DescribeComponentsOutput, error) {
+func (ws *Workspace) DescribeComponents(ctx context.Context, input *api.DescribeComponentsInput) (*api.DescribeComponentsOutput, error) {
 	store := state.CurrentStore(ctx)
 	stateOutput, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
-		ProjectID: proj.ID,
+		WorkspaceID: ws.ID,
 	})
 	if err != nil {
 		return nil, err
@@ -182,17 +182,17 @@ func (proj *Project) DescribeComponents(ctx context.Context, input *api.Describe
 	return output, nil
 }
 
-func (proj *Project) resolveProvider(typ string) core.Provider {
+func (ws *Workspace) resolveProvider(typ string) core.Provider {
 	switch typ {
 	case "process":
 		wd, err := os.Getwd()
 		if err != nil {
 			panic(err)
 		}
-		projectDir := wd // TODO: Get from component hierarchy.
+		workspaceDir := wd // TODO: Get from component hierarchy.
 		return &process.Provider{
-			ProjectDir: projectDir,
-			VarDir:     filepath.Join(proj.VarDir, "proc"),
+			WorkspaceDir: workspaceDir,
+			VarDir:       filepath.Join(ws.VarDir, "proc"),
 		}
 	default:
 		return &invalid.Provider{
@@ -201,8 +201,8 @@ func (proj *Project) resolveProvider(typ string) core.Provider {
 	}
 }
 
-func (proj *Project) CreateComponent(ctx context.Context, input *api.CreateComponentInput) (*api.CreateComponentOutput, error) {
-	id, err := proj.createComponent(ctx, config.Component{
+func (ws *Workspace) CreateComponent(ctx context.Context, input *api.CreateComponentInput) (*api.CreateComponentOutput, error) {
+	id, err := ws.createComponent(ctx, config.Component{
 		Name: input.Name,
 		Type: input.Type,
 		Spec: input.Spec,
@@ -215,7 +215,7 @@ func (proj *Project) CreateComponent(ctx context.Context, input *api.CreateCompo
 	}, nil
 }
 
-func (proj *Project) createComponent(ctx context.Context, component config.Component) (id string, err error) {
+func (ws *Workspace) createComponent(ctx context.Context, component config.Component) (id string, err error) {
 	if !IsValidName(component.Name) {
 		return "", fmt.Errorf("invalid name: %q", component.Name)
 	}
@@ -225,17 +225,17 @@ func (proj *Project) createComponent(ctx context.Context, component config.Compo
 	id = gensym.RandomBase32()
 
 	if _, err := store.AddComponent(ctx, &state.AddComponentInput{
-		ProjectID: "default",
-		ID:        id,
-		Name:      component.Name,
-		Type:      component.Type,
-		Spec:      component.Spec,
-		Created:   chrono.NowString(ctx),
+		WorkspaceID: "default",
+		ID:          id,
+		Name:        component.Name,
+		Type:        component.Type,
+		Spec:        component.Spec,
+		Created:     chrono.NowString(ctx),
 	}); err != nil {
 		return "", fmt.Errorf("adding component: %w", err)
 	}
 
-	provider := proj.resolveProvider(component.Type)
+	provider := ws.resolveProvider(component.Type)
 	output, err := provider.Initialize(ctx, &core.InitializeInput{
 		ID:   id,
 		Spec: component.Spec,
@@ -264,33 +264,33 @@ func IsValidName(name string) bool {
 	return name != ""
 }
 
-func (proj *Project) UpdateComponent(ctx context.Context, input *api.UpdateComponentInput) (*api.UpdateComponentOutput, error) {
+func (ws *Workspace) UpdateComponent(ctx context.Context, input *api.UpdateComponentInput) (*api.UpdateComponentOutput, error) {
 	panic("TODO: UpdateComponent")
 }
 
-func (proj *Project) updateComponent(ctx context.Context, oldComponent state.ComponentDescription, newComponent config.Component) error {
+func (ws *Workspace) updateComponent(ctx context.Context, oldComponent state.ComponentDescription, newComponent config.Component) error {
 	// TODO: Smart updating, using update lifecycle method.
 	name := oldComponent.Name
 	id := oldComponent.ID
-	if err := proj.deleteComponent(ctx, id); err != nil {
+	if err := ws.deleteComponent(ctx, id); err != nil {
 		return fmt.Errorf("delete %q for replacement: %w", name, err)
 	}
-	if _, err := proj.createComponent(ctx, newComponent); err != nil {
+	if _, err := ws.createComponent(ctx, newComponent); err != nil {
 		return fmt.Errorf("adding replacement %q: %w", name, err)
 	}
 	return nil
 }
 
-func (proj *Project) RefreshComponent(ctx context.Context, input *api.RefreshComponentInput) (*api.RefreshComponentOutput, error) {
-	id, err := proj.resolveRef(ctx, input.Ref)
+func (ws *Workspace) RefreshComponent(ctx context.Context, input *api.RefreshComponentInput) (*api.RefreshComponentOutput, error) {
+	id, err := ws.resolveRef(ctx, input.Ref)
 	if err != nil {
 		return nil, fmt.Errorf("resolving ref: %w", err)
 	}
 
 	store := state.CurrentStore(ctx)
 	describeOutput, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
-		ProjectID: proj.ID,
-		IDs:       []string{id},
+		WorkspaceID: ws.ID,
+		IDs:         []string{id},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("describing components: %w", err)
@@ -300,15 +300,15 @@ func (proj *Project) RefreshComponent(ctx context.Context, input *api.RefreshCom
 	}
 	component := describeOutput.Components[0]
 
-	if err := proj.refreshComponent(ctx, store, component); err != nil {
+	if err := ws.refreshComponent(ctx, store, component); err != nil {
 		return nil, err
 	}
 
 	return &api.RefreshComponentOutput{}, err
 }
 
-func (proj *Project) refreshComponent(ctx context.Context, store state.Store, component state.ComponentDescription) error {
-	provider := proj.resolveProvider(component.Type)
+func (ws *Workspace) refreshComponent(ctx context.Context, store state.Store, component state.ComponentDescription) error {
+	provider := ws.resolveProvider(component.Type)
 	refreshed, err := provider.Refresh(ctx, &core.RefreshInput{
 		ID:    component.ID,
 		Spec:  component.Spec,
@@ -328,17 +328,17 @@ func (proj *Project) refreshComponent(ctx context.Context, store state.Store, co
 	return nil
 }
 
-func (proj *Project) DisposeComponent(ctx context.Context, input *api.DisposeComponentInput) (*api.DisposeComponentOutput, error) {
-	id, err := proj.resolveRef(ctx, input.Ref)
+func (ws *Workspace) DisposeComponent(ctx context.Context, input *api.DisposeComponentInput) (*api.DisposeComponentOutput, error) {
+	id, err := ws.resolveRef(ctx, input.Ref)
 	if err != nil {
 		return nil, fmt.Errorf("resolving ref: %w", err)
 	}
-	err = proj.disposeComponent(ctx, id)
+	err = ws.disposeComponent(ctx, id)
 	return &api.DisposeComponentOutput{}, err
 }
 
-func (proj *Project) resolveRef(ctx context.Context, ref string) (string, error) {
-	resolveOutput, err := proj.Resolve(ctx, &api.ResolveInput{Refs: []string{ref}})
+func (ws *Workspace) resolveRef(ctx context.Context, ref string) (string, error) {
+	resolveOutput, err := ws.Resolve(ctx, &api.ResolveInput{Refs: []string{ref}})
 	if err != nil {
 		return "", err
 	}
@@ -349,11 +349,11 @@ func (proj *Project) resolveRef(ctx context.Context, ref string) (string, error)
 	return *id, nil
 }
 
-func (proj *Project) disposeComponent(ctx context.Context, id string) error {
+func (ws *Workspace) disposeComponent(ctx context.Context, id string) error {
 	store := state.CurrentStore(ctx)
 	describeOutput, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
-		ProjectID: proj.ID,
-		IDs:       []string{id},
+		WorkspaceID: ws.ID,
+		IDs:         []string{id},
 	})
 	if err != nil {
 		return fmt.Errorf("describing components: %w", err)
@@ -362,7 +362,7 @@ func (proj *Project) disposeComponent(ctx context.Context, id string) error {
 		return fmt.Errorf("no component %q", id)
 	}
 	component := describeOutput.Components[0]
-	provider := proj.resolveProvider(component.Type)
+	provider := ws.resolveProvider(component.Type)
 	_, err = provider.Dispose(ctx, &core.DisposeInput{
 		ID:    id,
 		State: component.State,
@@ -370,19 +370,19 @@ func (proj *Project) disposeComponent(ctx context.Context, id string) error {
 	return err
 }
 
-func (proj *Project) DeleteComponent(ctx context.Context, input *api.DeleteComponentInput) (*api.DeleteComponentOutput, error) {
-	id, err := proj.resolveRef(ctx, input.Ref)
+func (ws *Workspace) DeleteComponent(ctx context.Context, input *api.DeleteComponentInput) (*api.DeleteComponentOutput, error) {
+	id, err := ws.resolveRef(ctx, input.Ref)
 	if err != nil {
 		return nil, fmt.Errorf("resolving ref: %w", err)
 	}
-	if err := proj.deleteComponent(ctx, id); err != nil {
+	if err := ws.deleteComponent(ctx, id); err != nil {
 		return nil, err
 	}
 	return &api.DeleteComponentOutput{}, nil
 }
 
-func (proj *Project) deleteComponent(ctx context.Context, id string) error {
-	if err := proj.disposeComponent(ctx, id); err != nil {
+func (ws *Workspace) deleteComponent(ctx context.Context, id string) error {
+	if err := ws.disposeComponent(ctx, id); err != nil {
 		return fmt.Errorf("disposing: %w", err)
 	}
 	// TODO: Await disposal.
@@ -395,10 +395,10 @@ func (proj *Project) deleteComponent(ctx context.Context, id string) error {
 
 var processLogStreams = []string{"out", "err"}
 
-func (proj *Project) DescribeLogs(ctx context.Context, input *api.DescribeLogsInput) (*api.DescribeLogsOutput, error) {
+func (ws *Workspace) DescribeLogs(ctx context.Context, input *api.DescribeLogsInput) (*api.DescribeLogsOutput, error) {
 	store := state.CurrentStore(ctx)
 	components, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
-		ProjectID: proj.ID,
+		WorkspaceID: ws.ID,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("describing components: %w", err)
@@ -461,11 +461,11 @@ func combineLastEventAt(a, b *string) *string {
 	}
 }
 
-func (proj *Project) GetEvents(ctx context.Context, input *api.GetEventsInput) (*api.GetEventsOutput, error) {
+func (ws *Workspace) GetEvents(ctx context.Context, input *api.GetEventsInput) (*api.GetEventsOutput, error) {
 	logGroups := input.Logs
 	if logGroups == nil {
 		// No filter specified, use all streams.
-		logDescriptions, err := proj.DescribeLogs(ctx, &api.DescribeLogsInput{})
+		logDescriptions, err := ws.DescribeLogs(ctx, &api.DescribeLogsInput{})
 		if err != nil {
 			return nil, fmt.Errorf("enumerating logs: %w", err)
 		}
@@ -508,17 +508,17 @@ func (proj *Project) GetEvents(ctx context.Context, input *api.GetEventsInput) (
 	return &output, nil
 }
 
-func (proj *Project) Start(ctx context.Context, input *api.StartInput) (*api.StartOutput, error) {
+func (ws *Workspace) Start(ctx context.Context, input *api.StartInput) (*api.StartOutput, error) {
 	store := state.CurrentStore(ctx)
 
-	id, err := proj.resolveRef(ctx, input.Ref)
+	id, err := ws.resolveRef(ctx, input.Ref)
 	if err != nil {
 		return nil, fmt.Errorf("resolving ref: %w", err)
 	}
 
 	components, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
-		ProjectID: proj.ID,
-		IDs:       []string{id},
+		WorkspaceID: ws.ID,
+		IDs:         []string{id},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("fetching component state: %w", err)
@@ -528,7 +528,7 @@ func (proj *Project) Start(ctx context.Context, input *api.StartInput) (*api.Sta
 	}
 	component := components.Components[0]
 
-	provider := proj.resolveProvider(component.Type)
+	provider := ws.resolveProvider(component.Type)
 	providerOutput, err := provider.Start(ctx, &core.StartInput{
 		ID:    id,
 		Spec:  component.Spec,
@@ -548,17 +548,17 @@ func (proj *Project) Start(ctx context.Context, input *api.StartInput) (*api.Sta
 	return &api.StartOutput{}, nil
 }
 
-func (proj *Project) Stop(ctx context.Context, input *api.StopInput) (*api.StopOutput, error) {
+func (ws *Workspace) Stop(ctx context.Context, input *api.StopInput) (*api.StopOutput, error) {
 	store := state.CurrentStore(ctx)
 
-	id, err := proj.resolveRef(ctx, input.Ref)
+	id, err := ws.resolveRef(ctx, input.Ref)
 	if err != nil {
 		return nil, fmt.Errorf("resolving ref: %w", err)
 	}
 
 	components, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
-		ProjectID: proj.ID,
-		IDs:       []string{id},
+		WorkspaceID: ws.ID,
+		IDs:         []string{id},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("fetching component state: %w", err)
@@ -568,7 +568,7 @@ func (proj *Project) Stop(ctx context.Context, input *api.StopInput) (*api.StopO
 	}
 	component := components.Components[0]
 
-	provider := proj.resolveProvider(component.Type)
+	provider := ws.resolveProvider(component.Type)
 	providerOutput, err := provider.Stop(ctx, &core.StopInput{
 		ID:    id,
 		Spec:  component.Spec,
@@ -588,10 +588,10 @@ func (proj *Project) Stop(ctx context.Context, input *api.StopInput) (*api.StopO
 	return &api.StopOutput{}, nil
 }
 
-func (proj *Project) DescribeProcesses(ctx context.Context, input *api.DescribeProcessesInput) (*api.DescribeProcessesOutput, error) {
+func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeProcessesInput) (*api.DescribeProcessesOutput, error) {
 	store := state.CurrentStore(ctx)
 	components, err := store.DescribeComponents(ctx, &state.DescribeComponentsInput{
-		ProjectID: proj.ID,
+		WorkspaceID: ws.ID,
 		// TODO: Filter by type.
 	})
 	if err != nil {

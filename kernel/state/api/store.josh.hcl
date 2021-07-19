@@ -1,19 +1,19 @@
 interface "store" {
 
   method "resolve" {
-    input "project-id" "string" {}
+    input "workspace-id" "string" {}
     input "refs" "[]string" {}
     output "ids" "[]*string" {}
   }
 
   method "describe-components" {
-    input "project-id" "string" {}
+    input "workspace-id" "string" {}
     input "ids" "[]string" {}
     output "components" "[]ComponentDescription" {}
   }
 
   method "add-component" {
-    input "project-id" "string" {}
+    input "workspace-id" "string" {}
     input "id" "string" {}
     input "name" "string" {}
     input "type" "string" {}
@@ -36,7 +36,7 @@ interface "store" {
 
 struct "component-description" {
 	field "id" "string" {}
-	field "project-id" "string" {}
+	field "workspace-id" "string" {}
 	field "name" "string" {}
 	field "type" "string" {}
 	field "spec" "string" {}

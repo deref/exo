@@ -86,7 +86,7 @@ func loadRunState(path string) error {
 }
 
 func newClient() api.Kernel {
-	return client.NewProject(&josh.Client{
+	return client.NewWorkspace(&josh.Client{
 		HTTP: http.DefaultClient,
 		URL:  runState.URL + "_exo/",
 	})

@@ -9,8 +9,8 @@ import (
 	josh "github.com/deref/exo/josh/server"
 )
 
-type Project interface {
-	// Deletes all of the components in the project, then deletes the project itself.
+type Workspace interface {
+	// Deletes all of the components in the workspace, then deletes the workspace itself.
 	Destroy(context.Context, *DestroyInput) (*DestroyOutput, error)
 	// Performs creates, updates, refreshes, disposes, as needed.
 	Apply(context.Context, *ApplyInput) (*ApplyOutput, error)
@@ -158,13 +158,13 @@ type DescribeProcessesOutput struct {
 	Processes []ProcessDescription `json:"processes"`
 }
 
-func NewProjectMux(prefix string, iface Project) *http.ServeMux {
+func NewWorkspaceMux(prefix string, iface Workspace) *http.ServeMux {
 	b := josh.NewMuxBuilder(prefix)
-	BuildProjectMux(b, iface)
+	BuildWorkspaceMux(b, iface)
 	return b.Mux()
 }
 
-func BuildProjectMux(b *josh.MuxBuilder, iface Project) {
+func BuildWorkspaceMux(b *josh.MuxBuilder, iface Workspace) {
 	b.AddMethod("destroy", iface.Destroy)
 	b.AddMethod("apply", iface.Apply)
 	b.AddMethod("apply-procfile", iface.ApplyProcfile)

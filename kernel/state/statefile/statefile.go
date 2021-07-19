@@ -25,11 +25,11 @@ type Store struct {
 var _ state.Store = (*Store)(nil)
 
 type Root struct {
-	Projects          map[string]*Project `json:"projects"`          // Keyed by ID.
-	ComponentProjects map[string]string   `json:"componentProjects"` // Component ID -> Project ID.
+	Workspaces          map[string]*Workspace `json:"workspaces"`          // Keyed by ID.
+	ComponentWorkspaces map[string]string     `json:"componentWorkspaces"` // Component ID -> Workspace ID.
 }
 
-type Project struct {
+type Workspace struct {
 	Names      map[string]string     `json:"names"`      // Name -> ID.
 	Components map[string]*Component `json:"components"` // Keyed by ID.
 }
@@ -53,11 +53,11 @@ func (sto *Store) deref() (*Root, error) {
 func (sto *Store) swap(f func(root *Root) error) (*Root, error) {
 	var root Root
 	err := sto.atom.Swap(&root, func() error {
-		if root.Projects == nil {
-			root.Projects = make(map[string]*Project)
+		if root.Workspaces == nil {
+			root.Workspaces = make(map[string]*Workspace)
 		}
-		if root.ComponentProjects == nil {
-			root.ComponentProjects = make(map[string]string)
+		if root.ComponentWorkspaces == nil {
+			root.ComponentWorkspaces = make(map[string]string)
 		}
 		return f(&root)
 	})
@@ -65,25 +65,25 @@ func (sto *Store) swap(f func(root *Root) error) (*Root, error) {
 }
 
 func (sto *Store) Resolve(ctx context.Context, input *state.ResolveInput) (*state.ResolveOutput, error) {
-	if input.ProjectID == "" {
-		return nil, errors.New("project-id is required")
+	if input.WorkspaceID == "" {
+		return nil, errors.New("workspace-id is required")
 	}
 	var root Root
 	if err := sto.atom.Deref(&root); err != nil {
 		return nil, err
 	}
-	project := root.Projects[input.ProjectID]
-	if project == nil {
-		return nil, fmt.Errorf("no such project: %q", input.ProjectID)
+	workspace := root.Workspaces[input.WorkspaceID]
+	if workspace == nil {
+		return nil, fmt.Errorf("no such workspace: %q", input.WorkspaceID)
 	}
 	results := make([]*string, len(input.Refs))
 	for i, ref := range input.Refs {
-		if _, isID := project.Components[ref]; isID {
+		if _, isID := workspace.Components[ref]; isID {
 			id := ref
 			results[i] = &id
 			continue
 		}
-		id := project.Names[ref]
+		id := workspace.Names[ref]
 		if id != "" {
 			results[i] = &id
 		}
@@ -92,8 +92,8 @@ func (sto *Store) Resolve(ctx context.Context, input *state.ResolveInput) (*stat
 }
 
 func (sto *Store) DescribeComponents(ctx context.Context, input *state.DescribeComponentsInput) (*state.DescribeComponentsOutput, error) {
-	if input.ProjectID == "" {
-		return nil, errors.New("project-id is required")
+	if input.WorkspaceID == "" {
+		return nil, errors.New("workspace-id is required")
 	}
 
 	root, err := sto.deref()
@@ -105,11 +105,11 @@ func (sto *Store) DescribeComponents(ctx context.Context, input *state.DescribeC
 		Components: []state.ComponentDescription{},
 	}
 
-	var project *Project
-	if root.Projects != nil {
-		project = root.Projects[input.ProjectID]
+	var workspace *Workspace
+	if root.Workspaces != nil {
+		workspace = root.Workspaces[input.WorkspaceID]
 	}
-	if project == nil {
+	if workspace == nil {
 		return output, nil
 	}
 
@@ -121,11 +121,11 @@ func (sto *Store) DescribeComponents(ctx context.Context, input *state.DescribeC
 		ids[id] = true
 	}
 
-	for componentID, component := range project.Components {
+	for componentID, component := range workspace.Components {
 		if ids == nil || ids[componentID] {
 			output.Components = append(output.Components, state.ComponentDescription{
 				ID:          componentID,
-				ProjectID:   input.ProjectID,
+				WorkspaceID: input.WorkspaceID,
 				Name:        component.Name,
 				Type:        component.Type,
 				Spec:        component.Spec,
@@ -159,35 +159,35 @@ func (iface componentsSort) Swap(i, j int) {
 }
 
 func (sto *Store) AddComponent(ctx context.Context, input *state.AddComponentInput) (*state.AddComponentOutput, error) {
-	if input.ProjectID == "" {
-		return nil, errors.New("project-id is required")
+	if input.WorkspaceID == "" {
+		return nil, errors.New("workspace-id is required")
 	}
 	_, err := sto.swap(func(root *Root) error {
-		project := root.Projects[input.ProjectID]
-		if project == nil {
-			project = &Project{}
-			root.Projects[input.ProjectID] = project
+		workspace := root.Workspaces[input.WorkspaceID]
+		if workspace == nil {
+			workspace = &Workspace{}
+			root.Workspaces[input.WorkspaceID] = workspace
 		}
-		if project.Components == nil {
-			project.Components = make(map[string]*Component)
+		if workspace.Components == nil {
+			workspace.Components = make(map[string]*Component)
 		}
-		if project.Names == nil {
-			project.Names = make(map[string]string)
+		if workspace.Names == nil {
+			workspace.Names = make(map[string]string)
 		}
-		if project.Names[input.Name] != "" {
+		if workspace.Names[input.Name] != "" {
 			return fmt.Errorf("component named %q already exits", input.Name)
 		}
-		project.Names[input.Name] = input.ID
-		if project.Components[input.ID] != nil {
+		workspace.Names[input.Name] = input.ID
+		if workspace.Components[input.ID] != nil {
 			return fmt.Errorf("component id %q already exists", input.ID)
 		}
-		project.Components[input.ID] = &Component{
+		workspace.Components[input.ID] = &Component{
 			Name:    input.Name,
 			Type:    input.Type,
 			Spec:    input.Spec,
 			Created: input.Created,
 		}
-		root.ComponentProjects[input.ID] = input.ProjectID
+		root.ComponentWorkspaces[input.ID] = input.WorkspaceID
 		return nil
 	})
 	if err != nil {
@@ -201,17 +201,17 @@ func (sto *Store) PatchComponent(ctx context.Context, input *state.PatchComponen
 		return nil, errors.New("component id is required")
 	}
 	_, err := sto.swap(func(root *Root) error {
-		projectId := root.ComponentProjects[input.ID]
-		if projectId == "" {
-			return errors.New("cannot find project for component")
+		workspaceId := root.ComponentWorkspaces[input.ID]
+		if workspaceId == "" {
+			return errors.New("cannot find workspace for component")
 		}
-		project := root.Projects[projectId]
-		if project == nil {
-			return errors.New("corrupt state: no project for component")
+		workspace := root.Workspaces[workspaceId]
+		if workspace == nil {
+			return errors.New("corrupt state: no workspace for component")
 		}
-		component := project.Components[input.ID]
+		component := workspace.Components[input.ID]
 		if component == nil {
-			return errors.New("corrupt state: component not in project")
+			return errors.New("corrupt state: component not in workspace")
 		}
 		if input.Initialized != "" {
 			component.Initialized = &input.Initialized // TODO: Validate iso8601.
@@ -233,27 +233,27 @@ func (sto *Store) PatchComponent(ctx context.Context, input *state.PatchComponen
 
 func (sto *Store) RemoveComponent(ctx context.Context, input *state.RemoveComponentInput) (*state.RemoveComponentOutput, error) {
 	_, err := sto.swap(func(root *Root) error {
-		projectID := root.ComponentProjects[input.ID]
-		if projectID == "" {
-			return fmt.Errorf("cannot find project for component %q", input.ID)
+		workspaceID := root.ComponentWorkspaces[input.ID]
+		if workspaceID == "" {
+			return fmt.Errorf("cannot find workspace for component %q", input.ID)
 		}
-		project := root.Projects[projectID]
-		if project == nil {
-			return fmt.Errorf("component %q has invalid project %q", input.ID, projectID)
+		workspace := root.Workspaces[workspaceID]
+		if workspace == nil {
+			return fmt.Errorf("component %q has invalid workspace %q", input.ID, workspaceID)
 		}
 		var component *Component
-		if project.Components != nil {
-			component = project.Components[input.ID]
+		if workspace.Components != nil {
+			component = workspace.Components[input.ID]
 		}
 		if component == nil {
 			return fmt.Errorf("no component for id: %q", input.ID)
 		}
-		delete(project.Components, input.ID)
-		if project.Names != nil {
-			delete(project.Names, component.Name)
+		delete(workspace.Components, input.ID)
+		if workspace.Names != nil {
+			delete(workspace.Names, component.Name)
 		}
-		if root.ComponentProjects != nil {
-			delete(root.ComponentProjects, input.ID)
+		if root.ComponentWorkspaces != nil {
+			delete(root.ComponentWorkspaces, input.ID)
 		}
 		return nil
 	})

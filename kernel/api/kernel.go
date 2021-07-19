@@ -1,3 +1,3 @@
 package api
 
-type Kernel = Project // XXX
+type Kernel = Workspace // XXX
