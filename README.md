@@ -17,7 +17,7 @@ Install exo:
 If you prefer manual installation, see [./doc/install.md](./doc/install.md) for
 details, including uninstall instructions.
 
-Navigate to a project directory and then launch the exo gui:
+Navigate to your code directory and then launch the exo gui:
 
 ```bash
 exo gui

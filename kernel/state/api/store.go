@@ -18,8 +18,8 @@ type Store interface {
 }
 
 type ResolveInput struct {
-	ProjectID string   `json:"projectId"`
-	Refs      []string `json:"refs"`
+	WorkspaceID string   `json:"workspaceId"`
+	Refs        []string `json:"refs"`
 }
 
 type ResolveOutput struct {
@@ -27,8 +27,8 @@ type ResolveOutput struct {
 }
 
 type DescribeComponentsInput struct {
-	ProjectID string   `json:"projectId"`
-	IDs       []string `json:"ids"`
+	WorkspaceID string   `json:"workspaceId"`
+	IDs         []string `json:"ids"`
 }
 
 type DescribeComponentsOutput struct {
@@ -36,12 +36,12 @@ type DescribeComponentsOutput struct {
 }
 
 type AddComponentInput struct {
-	ProjectID string `json:"projectId"`
-	ID        string `json:"id"`
-	Name      string `json:"name"`
-	Type      string `json:"type"`
-	Spec      string `json:"spec"`
-	Created   string `json:"created"`
+	WorkspaceID string `json:"workspaceId"`
+	ID          string `json:"id"`
+	Name        string `json:"name"`
+	Type        string `json:"type"`
+	Spec        string `json:"spec"`
+	Created     string `json:"created"`
 }
 
 type AddComponentOutput struct {
@@ -80,7 +80,7 @@ func BuildStoreMux(b *josh.MuxBuilder, iface Store) {
 
 type ComponentDescription struct {
 	ID          string  `json:"id"`
-	ProjectID   string  `json:"projectId"`
+	WorkspaceID string  `json:"workspaceId"`
 	Name        string  `json:"name"`
 	Type        string  `json:"type"`
 	Spec        string  `json:"spec"`

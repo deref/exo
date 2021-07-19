@@ -22,7 +22,7 @@ func NewContext(ctx context.Context, cfg *Config) context.Context {
 
 func NewHandler(ctx context.Context, cfg *Config) http.Handler {
 	mux := http.NewServeMux()
-	mux.Handle(cfg.MuxPattern, api.NewProjectMux(cfg.MuxPattern, &Project{
+	mux.Handle(cfg.MuxPattern, api.NewWorkspaceMux(cfg.MuxPattern, &Workspace{
 		ID:     "default", // XXX
 		VarDir: cfg.VarDir,
 	}))

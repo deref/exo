@@ -1,6 +1,6 @@
-interface "project" {
+interface "workspace" {
   method "destroy" {
-    doc = "Deletes all of the components in the project, then deletes the project itself."
+    doc = "Deletes all of the components in the workspace, then deletes the workspace itself."
   }
   
   method "apply" {

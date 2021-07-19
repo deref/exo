@@ -11,8 +11,8 @@ func init() {
 
 var destroyCmd = &cobra.Command{
 	Use:   "destroy",
-	Short: "Deletes all components in the project",
-	Long:  `Deletes all components in the project.`,
+	Short: "Deletes the current workspace",
+	Long:  `Deletes all components in the current workspace, then the workspace itself.`,
 	Args:  cobra.ExactArgs(0),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := newContext()

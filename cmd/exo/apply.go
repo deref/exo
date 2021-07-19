@@ -23,8 +23,8 @@ var applyFlags struct {
 
 var applyCmd = &cobra.Command{
 	Use:   "apply [flags] [config-file]",
-	Short: "Applies a config to the current project",
-	Long: `Applies a config to the current project.
+	Short: "Applies a config in the current workspace",
+	Long: `Applies a config in the current workspace.
 
 If no config file is specified, a search is conducted in the current directory
 in the following order of format preference:

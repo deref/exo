@@ -1,8 +1,8 @@
 package process
 
 type Provider struct {
-	ProjectDir string
-	VarDir     string
+	WorkspaceDir string
+	VarDir       string
 }
 
 type spec struct {
