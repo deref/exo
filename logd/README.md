@@ -1,6 +1,6 @@
-# Log Collector
+# Log Deamon
 
-This is a simple log collector service for fifo pipe sources.
+This is a simple log collection service for fifo pipe sources.
 
 Collector processes are pseudo-stateless. That is, all state is externalized to
 the file system with the exception of collection streaming workers. These

@@ -1,6 +1,7 @@
 package atom
 
-// An uncoordinated, atomic reference cell in the style of Clojure.
+// Atom are uncoordinated, atomic reference cells.
+// Inspired by <https://clojure.org/reference/atoms>.
 type Atom interface {
 	// Sets v to the current value in the atom.
 	Deref(v interface{}) error

@@ -14,36 +14,39 @@ import (
 	"os/signal"
 	"path/filepath"
 
-	"github.com/deref/exo/cmdutil"
-	"github.com/deref/exo/logcol/api"
-	"github.com/deref/exo/logcol/server"
+	"github.com/deref/exo/logd/api"
+	"github.com/deref/exo/logd/server"
+	"github.com/deref/exo/util/cmdutil"
 )
 
 func main() {
+	ctx := context.Background()
+	ctx, done := signal.NotifyContext(ctx, os.Interrupt)
+	defer done()
+
 	paths := cmdutil.MustMakeDirectories()
 	cfg := &server.Config{
 		VarDir: paths.VarDir,
 		Debug:  true,
 	}
-	ctx := context.Background()
-	collector := server.NewLogCollector(ctx, cfg)
-	if err := collector.Start(ctx); err != nil {
-		cmdutil.Fatalf("starting collector: %w", err)
-	}
 
-	go func() {
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, os.Interrupt)
-		<-c
-		collector.Stop(ctx)
-		os.Exit(0)
-	}()
+	collector := server.NewLogCollector(ctx, cfg)
+
+	{
+		ctx, shutdown := context.WithCancel(ctx)
+		defer shutdown()
+		go func() {
+			if err := collector.Run(ctx); err != nil {
+				cmdutil.Warnf("log collector error: %w", err)
+			}
+		}()
+	}
 
 	port := os.Getenv("PORT")
 	var network, addr string
 	if port == "" {
 		network = "unix"
-		addr = filepath.Join(cfg.VarDir, "logcol.sock")
+		addr = filepath.Join(cfg.VarDir, "logd.sock")
 		_ = os.Remove(addr)
 	} else {
 		network = "tcp"
@@ -53,12 +56,9 @@ func main() {
 	if err != nil {
 		cmdutil.Fatalf("error listening: %v", err)
 	}
-
 	fmt.Println("listening at", addr)
 
-	handler := api.NewLogCollectorMux("/", collector)
-	server := http.Server{
-		Handler: handler,
-	}
-	server.Serve(listener)
+	cmdutil.Serve(ctx, listener, &http.Server{
+		Handler: api.NewLogCollectorMux("/", collector),
+	})
 }

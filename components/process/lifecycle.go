@@ -11,9 +11,9 @@ import (
 
 	"github.com/deref/exo/components/log"
 	core "github.com/deref/exo/core/api"
-	"github.com/deref/exo/jsonutil"
-	logcol "github.com/deref/exo/logcol/api"
-	"github.com/deref/exo/osutil"
+	logd "github.com/deref/exo/logd/api"
+	"github.com/deref/exo/util/jsonutil"
+	"github.com/deref/exo/util/osutil"
 )
 
 func (provider *Provider) Initialize(ctx context.Context, input *core.InitializeInput) (*core.InitializeOutput, error) {
@@ -42,7 +42,7 @@ func (provider *Provider) Initialize(ctx context.Context, input *core.Initialize
 	// TODO: Don't do this synchronously here. Use some kind of component hierarchy mechanism.
 	collector := log.CurrentLogCollector(ctx)
 	for _, role := range []string{"out", "err"} {
-		_, err := collector.AddLog(ctx, &logcol.AddLogInput{
+		_, err := collector.AddLog(ctx, &logd.AddLogInput{
 			Name:   fmt.Sprintf("%s:%s", input.ID, role),
 			Source: filepath.Join(procDir, role),
 		})
@@ -103,7 +103,7 @@ func (provider *Provider) Dispose(ctx context.Context, input *core.DisposeInput)
 	// TODO: Don't do this synchronously here. Use some kind of component hierarchy mechanism.
 	collector := log.CurrentLogCollector(ctx)
 	for _, role := range []string{"out", "err"} {
-		_, err := collector.RemoveLog(ctx, &logcol.RemoveLogInput{
+		_, err := collector.RemoveLog(ctx, &logd.RemoveLogInput{
 			Name: fmt.Sprintf("%s:%s", input.ID, role),
 		})
 		if err != nil {

@@ -6,8 +6,12 @@ import (
 	"path/filepath"
 )
 
-func Fatalf(format string, v ...interface{}) {
+func Warnf(format string, v ...interface{}) {
 	fmt.Fprintf(os.Stderr, "%v\n", fmt.Errorf(format, v...))
+}
+
+func Fatalf(format string, v ...interface{}) {
+	Warnf(format, v...)
 	os.Exit(1)
 }
 

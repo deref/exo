@@ -6,7 +6,7 @@ import (
 	"strconv"
 
 	"github.com/deref/exo/config"
-	"github.com/deref/exo/jsonutil"
+	"github.com/deref/exo/util/jsonutil"
 )
 
 func Import(r io.Reader) (*config.Config, error) {

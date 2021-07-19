@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"io/ioutil"
+	"os"
 )
 
 func UnmarshalString(s string, v interface{}) error {
@@ -36,8 +37,15 @@ func UnmarshalReader(r io.Reader, v interface{}) error {
 
 func UnmarshalFile(filePath string, v interface{}) error {
 	bs, err := ioutil.ReadFile(filePath)
+	if os.IsNotExist(err) {
+		return nil
+	}
 	if err != nil {
 		return err
+	}
+	bs = bytes.TrimSpace(bs)
+	if len(bs) == 0 {
+		return nil
 	}
 	return json.Unmarshal(bs, v)
 }

@@ -8,7 +8,7 @@ import (
 
 var encoding32 = base32.NewEncoding("0123456789abcdefghjkmnpqrstvwxyz").WithPadding(base32.NoPadding)
 
-func Base32() string {
+func RandomBase32() string {
 	var bs [16]byte
 	n, err := rand.Read(bs[:])
 	if n != 16 {

@@ -4,23 +4,36 @@ package main
 
 import (
 	"context"
+	"os"
+	"os/signal"
 
-	"github.com/deref/exo/cmdutil"
-	"github.com/deref/exo/logcol/api"
-	"github.com/deref/exo/logcol/server"
+	"github.com/deref/exo/logd/api"
+	"github.com/deref/exo/logd/server"
+	"github.com/deref/exo/util/cmdutil"
 	"github.com/deref/pier"
 )
 
 func main() {
+	ctx := context.Background()
+	ctx, done := signal.NotifyContext(ctx, os.Interrupt)
+	defer done()
+
 	paths := cmdutil.MustMakeDirectories()
 	cfg := &server.Config{
 		VarDir: paths.VarDir,
 	}
-	ctx := context.Background()
+
 	collector := server.NewLogCollector(ctx, cfg)
-	if err := collector.Start(ctx); err != nil {
-		cmdutil.Fatalf("starting collector: %w", err)
+
+	{
+		ctx, shutdown := context.WithCancel(ctx)
+		defer shutdown()
+		go func() {
+			if err := collector.Run(ctx); err != nil {
+				cmdutil.Warnf("log collector error: %w", err)
+			}
+		}()
 	}
-	defer collector.Stop(ctx)
+
 	pier.Main(api.NewLogCollectorMux("/", collector))
 }

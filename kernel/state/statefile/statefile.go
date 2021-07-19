@@ -7,9 +7,9 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/deref/exo/atom"
 	"github.com/deref/exo/kernel/state/api"
 	state "github.com/deref/exo/kernel/state/api"
+	"github.com/deref/exo/util/atom"
 )
 
 func New(filename string) *Store {

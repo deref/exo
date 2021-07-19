@@ -6,11 +6,11 @@ import (
 	"net/http"
 	"path/filepath"
 
-	"github.com/deref/exo/cmdutil"
 	"github.com/deref/exo/components/log"
 	josh "github.com/deref/exo/josh/client"
 	"github.com/deref/exo/kernel/server"
-	logcol "github.com/deref/exo/logcol/client"
+	logd "github.com/deref/exo/logd/client"
+	"github.com/deref/exo/util/cmdutil"
 	"github.com/deref/pier"
 )
 
@@ -21,12 +21,12 @@ func main() {
 		MuxPattern: "/",
 	}
 	ctx := server.NewContext(context.Background(), cfg)
-	ctx = log.ContextWithLogCollector(ctx, logcol.NewLogCollector(&josh.Client{
+	ctx = log.ContextWithLogCollector(ctx, logd.NewLogCollector(&josh.Client{
 		HTTP: &http.Client{
 			Transport: &http.Transport{
 				DialContext: func(ctx context.Context, network string, addr string) (net.Conn, error) {
 					dialer := net.Dialer{}
-					sockPath := filepath.Join(cfg.VarDir, "logcol.sock")
+					sockPath := filepath.Join(cfg.VarDir, "logd.sock")
 					return dialer.DialContext(ctx, "unix", sockPath)
 				},
 			},

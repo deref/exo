@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"reflect"
 
-	"github.com/deref/exo/jsonutil"
+	"github.com/deref/exo/util/jsonutil"
 )
 
 type Client struct {

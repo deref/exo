@@ -3,14 +3,12 @@ package exod
 import (
 	"context"
 	"net/http"
-	"os"
-	"os/signal"
 
-	"github.com/deref/exo/cmdutil"
 	"github.com/deref/exo/components/log"
 	"github.com/deref/exo/gui"
 	kernel "github.com/deref/exo/kernel/server"
-	logcol "github.com/deref/exo/logcol/server"
+	logd "github.com/deref/exo/logd/server"
+	"github.com/deref/exo/util/cmdutil"
 )
 
 func Main() {
@@ -19,25 +17,13 @@ func Main() {
 		VarDir:     paths.VarDir,
 		MuxPattern: "/",
 	}
+
 	ctx := kernel.NewContext(context.Background(), cfg)
 
-	collector := logcol.NewLogCollector(ctx, &logcol.Config{
+	collector := logd.NewLogCollector(ctx, &logd.Config{
 		VarDir: cfg.VarDir,
 	})
-	if err := collector.Start(ctx); err != nil {
-		cmdutil.Fatalf("starting collector: %w", err)
-	}
 	ctx = log.ContextWithLogCollector(ctx, collector)
-
-	go func() {
-		c := make(chan os.Signal, 1)
-		signal.Notify(c, os.Interrupt)
-		<-c
-		collector.Stop(ctx)
-		os.Exit(0)
-	}()
-
-	addr := cmdutil.GetAddr()
 
 	mux := http.NewServeMux()
 
@@ -49,7 +35,18 @@ func Main() {
 
 	mux.Handle("/", gui.NewHandler(ctx))
 
-	if err := http.ListenAndServe(addr, mux); err != nil {
-		cmdutil.Fatalf("listening: %w", err)
+	{
+		ctx, shutdown := context.WithCancel(ctx)
+		defer shutdown()
+		go func() {
+			if err := collector.Run(ctx); err != nil {
+				cmdutil.Warnf("log collector error: %w", err)
+			}
+		}()
 	}
+
+	cmdutil.ListenAndServe(ctx, &http.Server{
+		Addr:    cmdutil.GetAddr(),
+		Handler: mux,
+	})
 }
