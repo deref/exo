@@ -13,7 +13,7 @@ type FifofumConfig struct {
 
 var FifofumDevConfig = FifofumConfig{
 	Path: "go",
-	Args: []string{"run", "./cmd/fifofum"},
+	Args: []string{"run", "./cmd/fifofum"}, // XXX Bad relative path.
 }
 
 type spec struct {
