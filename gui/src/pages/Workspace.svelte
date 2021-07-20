@@ -1,10 +1,11 @@
 <script lang="ts">
-  import ProcessList from './ProcessList.svelte'
-  import LogsViewer from './LogsViewer.svelte'
+  import ProcessList from '../components/ProcessList.svelte'
+  import LogsViewer from '../components/LogsViewer.svelte'
   import { api } from '../lib/api';
-  import { workspaceId } from '../lib/workspaces/store';
   
-  const workspace = api.workspace($workspaceId);
+  export let params = { workspace: '' };
+  
+  const workspace = api.workspace(params.workspace);
 </script>
 
 <div class="layout">
