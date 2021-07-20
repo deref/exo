@@ -7,21 +7,29 @@ import (
 	"path/filepath"
 
 	"github.com/deref/exo/components/log"
+	"github.com/deref/exo/exod/server"
+	"github.com/deref/exo/exod/state/statefile"
 	josh "github.com/deref/exo/josh/client"
-	"github.com/deref/exo/kernel/server"
 	logd "github.com/deref/exo/logd/client"
 	"github.com/deref/exo/util/cmdutil"
+	"github.com/deref/exo/util/httputil"
 	"github.com/deref/pier"
 )
 
 func main() {
+	ctx := context.Background()
+
 	paths := cmdutil.MustMakeDirectories()
+
+	statePath := filepath.Join(paths.VarDir, "state.json")
+	store := statefile.New(statePath)
+
 	cfg := &server.Config{
-		VarDir:     paths.VarDir,
-		MuxPattern: "/",
+		VarDir: paths.VarDir,
+		Store:  store,
 	}
-	ctx := server.NewContext(context.Background(), cfg)
-	ctx = log.ContextWithLogCollector(ctx, logd.NewLogCollector(&josh.Client{
+
+	ctx = log.ContextWithLogCollector(ctx, logd.GetLogCollector(&josh.Client{
 		HTTP: &http.Client{
 			Transport: &http.Transport{
 				DialContext: func(ctx context.Context, network string, addr string) (net.Conn, error) {
@@ -33,5 +41,7 @@ func main() {
 		},
 		URL: "http://unix/",
 	}))
-	pier.Main(server.NewHandler(ctx, cfg))
+
+	mux := server.BuildRootMux("/", cfg)
+	pier.Main(httputil.HandlerWithContext(ctx, mux))
 }

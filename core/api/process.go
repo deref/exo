@@ -34,13 +34,11 @@ type StopOutput struct {
 	State string `json:"state"`
 }
 
-func NewProcessMux(prefix string, iface Process) *http.ServeMux {
-	b := josh.NewMuxBuilder(prefix)
-	BuildProcessMux(b, iface)
-	return b.Mux()
-}
-
-func BuildProcessMux(b *josh.MuxBuilder, iface Process) {
-	b.AddMethod("start", iface.Start)
-	b.AddMethod("stop", iface.Stop)
+func BuildProcessMux(b *josh.MuxBuilder, factory func(req *http.Request) Process) {
+	b.AddMethod("start", func(req *http.Request) interface{} {
+		return factory(req).Start
+	})
+	b.AddMethod("stop", func(req *http.Request) interface{} {
+		return factory(req).Stop
+	})
 }

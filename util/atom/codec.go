@@ -12,7 +12,9 @@ type jsonCodec struct{}
 var CodecJSON = &jsonCodec{}
 
 func (codec *jsonCodec) Marshal(v interface{}) ([]byte, error) {
-	return json.MarshalIndent(v, "", "  ")
+	bs, err := json.MarshalIndent(v, "", "  ")
+	bs = append(bs, '\n')
+	return bs, err
 }
 
 func (codec *jsonCodec) Unmarshal(bs []byte, v interface{}) error {

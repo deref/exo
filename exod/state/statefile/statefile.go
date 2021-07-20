@@ -4,11 +4,12 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path/filepath"
 	"sort"
 	"strings"
 
-	"github.com/deref/exo/kernel/state/api"
-	state "github.com/deref/exo/kernel/state/api"
+	"github.com/deref/exo/exod/state/api"
+	state "github.com/deref/exo/exod/state/api"
 	"github.com/deref/exo/util/atom"
 )
 
@@ -30,6 +31,7 @@ type Root struct {
 }
 
 type Workspace struct {
+	Root       string                `json:"root"`
 	Names      map[string]string     `json:"names"`      // Name -> ID.
 	Components map[string]*Component `json:"components"` // Keyed by ID.
 }
@@ -62,6 +64,103 @@ func (sto *Store) swap(f func(root *Root) error) (*Root, error) {
 		return f(&root)
 	})
 	return &root, err
+}
+
+func (sto *Store) DescribeWorkspaces(ctx context.Context, input *state.DescribeWorkspacesInput) (*state.DescribeWorkspacesOutput, error) {
+	var root Root
+	if err := sto.atom.Deref(&root); err != nil {
+		return nil, err
+	}
+
+	var ids map[string]bool
+	if input.IDs != nil {
+		ids = make(map[string]bool, len(input.IDs))
+	}
+	for _, id := range input.IDs {
+		ids[id] = true
+	}
+
+	var output state.DescribeWorkspacesOutput
+	for id, workspace := range root.Workspaces {
+		if ids == nil || ids[id] {
+			output.Workspaces = append(output.Workspaces, state.WorkspaceDescription{
+				ID:   id,
+				Root: workspace.Root,
+			})
+		}
+	}
+	return &output, nil
+}
+
+func (sto *Store) AddWorkspace(ctx context.Context, input *state.AddWorkspaceInput) (*state.AddWorkspaceOutput, error) {
+	rootPath := filepath.Clean(input.Root)
+	if !filepath.IsAbs(rootPath) {
+		return nil, errors.New("root must be absolute path")
+	}
+	_, err := sto.swap(func(root *Root) error {
+		if root.Workspaces == nil {
+			root.Workspaces = make(map[string]*Workspace)
+		}
+		if _, exists := root.Workspaces[input.ID]; exists {
+			return fmt.Errorf("workspace %q already exists", input.ID)
+		}
+		for _, workspace := range root.Workspaces {
+			if rootPath == workspace.Root {
+				return fmt.Errorf("workspace with root %q already exists", rootPath)
+			}
+		}
+		root.Workspaces[input.ID] = &Workspace{
+			Root: rootPath,
+		}
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &state.AddWorkspaceOutput{}, nil
+}
+
+func (sto *Store) RemoveWorkspace(ctx context.Context, input *state.RemoveWorkspaceInput) (*state.RemoveWorkspaceOutput, error) {
+	_, err := sto.swap(func(root *Root) error {
+		if root.Workspaces == nil {
+			root.Workspaces = make(map[string]*Workspace)
+		}
+		workspace := root.Workspaces[input.ID]
+		if workspace == nil {
+			return nil
+		}
+		if len(workspace.Components) > 0 {
+			return fmt.Errorf("cannot remove non-empty workspace %q", input.ID)
+		}
+		delete(root.Workspaces, input.ID)
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &state.RemoveWorkspaceOutput{}, nil
+}
+
+func (sto *Store) FindWorkspace(ctx context.Context, input *state.FindWorkspaceInput) (*state.FindWorkspaceOutput, error) {
+	var root Root
+	if err := sto.atom.Deref(&root); err != nil {
+		return nil, err
+	}
+	// Find the deepest root prefix match.
+	maxLen := 0
+	found := ""
+	for id, workspace := range root.Workspaces {
+		n := len(workspace.Root)
+		if n > maxLen && filepath.HasPrefix(input.Path, workspace.Root) {
+			found = id
+			maxLen = n
+		}
+	}
+	var output state.FindWorkspaceOutput
+	if maxLen > 0 {
+		output.ID = &found
+	}
+	return &output, nil
 }
 
 func (sto *Store) Resolve(ctx context.Context, input *state.ResolveInput) (*state.ResolveOutput, error) {
@@ -106,8 +205,8 @@ func (sto *Store) DescribeComponents(ctx context.Context, input *state.DescribeC
 	}
 
 	var workspace *Workspace
-	if root.Workspaces != nil {
-		workspace = root.Workspaces[input.WorkspaceID]
+	if root.Workspaces == nil {
+		return nil, fmt.Errorf("no such workspace: %q", input.WorkspaceID)
 	}
 	if workspace == nil {
 		return output, nil
@@ -165,8 +264,7 @@ func (sto *Store) AddComponent(ctx context.Context, input *state.AddComponentInp
 	_, err := sto.swap(func(root *Root) error {
 		workspace := root.Workspaces[input.WorkspaceID]
 		if workspace == nil {
-			workspace = &Workspace{}
-			root.Workspaces[input.WorkspaceID] = workspace
+			return fmt.Errorf("no such workspace: %q", input.WorkspaceID)
 		}
 		if workspace.Components == nil {
 			workspace.Components = make(map[string]*Component)

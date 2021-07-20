@@ -15,7 +15,7 @@ type Lifecycle struct {
 
 var _ api.Lifecycle = (*Lifecycle)(nil)
 
-func NewLifecycle(client *josh.Client) *Lifecycle {
+func GetLifecycle(client *josh.Client) *Lifecycle {
 	return &Lifecycle{
 		client: client,
 	}

@@ -14,6 +14,7 @@ import (
 	"os/signal"
 	"path/filepath"
 
+	josh "github.com/deref/exo/josh/server"
 	"github.com/deref/exo/logd/api"
 	"github.com/deref/exo/logd/server"
 	"github.com/deref/exo/util/cmdutil"
@@ -58,7 +59,11 @@ func main() {
 	}
 	fmt.Println("listening at", addr)
 
+	muxb := josh.NewMuxBuilder("/")
+	api.BuildLogCollectorMux(muxb, func(req *http.Request) api.LogCollector {
+		return collector
+	})
 	cmdutil.Serve(ctx, listener, &http.Server{
-		Handler: api.NewLogCollectorMux("/", collector),
+		Handler: muxb.Build(),
 	})
 }

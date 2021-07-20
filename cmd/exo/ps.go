@@ -5,7 +5,7 @@ import (
 	"os"
 	"text/tabwriter"
 
-	"github.com/deref/exo/kernel/api"
+	"github.com/deref/exo/exod/api"
 	"github.com/spf13/cobra"
 )
 
@@ -21,8 +21,9 @@ var psCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := newContext()
 		ensureDeamon()
-		client := newClient()
-		output, err := client.DescribeProcesses(ctx, &api.DescribeProcessesInput{})
+		cl := newClient()
+		workspace := requireWorkspace(ctx, cl)
+		output, err := workspace.DescribeProcesses(ctx, &api.DescribeProcessesInput{})
 		if err != nil {
 			return err
 		}

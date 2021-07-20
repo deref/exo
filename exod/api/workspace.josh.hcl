@@ -1,4 +1,9 @@
 interface "workspace" {
+  method "describe" {
+    doc = "Describes this workspace."
+    output "description" "WorkspaceDescription" {}
+  }
+
   method "destroy" {
     doc = "Deletes all of the components in the workspace, then deletes the workspace itself."
   }
@@ -94,6 +99,11 @@ interface "workspace" {
   method "describe-processes" {
     output "processes" "[]ProcessDescription" {}
   }
+}
+
+struct "workspace-description" {
+  field "id" "string" {}
+  field "root" "string" {}
 }
 
 struct "component-description" {

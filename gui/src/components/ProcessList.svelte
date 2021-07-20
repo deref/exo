@@ -12,6 +12,8 @@ import Stop from './mono/stop.svelte'
 import Show from './mono/eye.svelte'
 import Hide from './mono/eye-off.svelte'
 
+export let workspace;
+
 let statusPending = new Set<string>();
 
 let loggedProcesses: string[] = [];
@@ -27,7 +29,6 @@ const unsubscribeProcesses = processes.subscribe(processes => {
   // and should not be automatically refreshed.
 });
 
-
 function toggleProc(id: string) {
   if (processList.stage !== 'success') {
     return;
@@ -39,22 +40,22 @@ function toggleProc(id: string) {
     return;
   }
   if (proc.running) {
-    stopProcess(id).then(() => {
+    stopProcess(workspace, id).then(() => {
       statusPending.delete(id);
     });
   } else {
-    startProcess(id).then(() => {
+    startProcess(workspace, id).then(() => {
       statusPending.delete(id);
     });
   }
 }
 
 function toggleProcLogs(id: string) {
-  setLogVisibility(id, !loggedProcesses.includes(id));
+  setLogVisibility(workspace, id, !loggedProcesses.includes(id));
 }
 
 onMount(() => {
-  fetchProcesses();
+  fetchProcesses(workspace);
 });
 
 onDestroy(() => {
@@ -64,7 +65,7 @@ onDestroy(() => {
 </script>
 
 <section>
-  <h1>Processes <a on:click={refreshAllProcesses}>(refresh)</a></h1>
+  <h1>Processes <a on:click={() => refreshAllProcesses(workspace)}>(refresh)</a></h1>
   {#if processList.stage == 'pending' || processList.stage == 'idle'}
     Loading...
   {:else if processList.stage == 'success' || processList.stage == 'refetching'}
@@ -76,9 +77,9 @@ onDestroy(() => {
         {#if statusPending.has(name)}
         <button disabled><Loading /></button>
         {:else if running}
-        <button on:click={() => toggleProc(id)}><Stop /></button>
+        <button on:click={() => toggleProc(workspace, id)}><Stop /></button>
         {:else}
-        <button on:click={() => toggleProc(id)}><Run /></button>
+        <button on:click={() => toggleProc(workspace, id)}><Run /></button>
         {/if}
 
         {#if loggedProcesses.includes(id)}

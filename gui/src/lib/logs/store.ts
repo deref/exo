@@ -15,7 +15,7 @@ export const logsStore = writable<LogsStore>({
   logBufferSize: 1000,
 });
 
-export const refreshLogs = async (fromStart = false) => {
+export const refreshLogs = async (workspace, fromStart = false) => {
   if (fromStart) {
     lastCursor = null;
   }
@@ -45,7 +45,7 @@ export const refreshLogs = async (fromStart = false) => {
     }
   });
 
-  const newEvents = await api.getEvents(matchProcs, {
+  const newEvents = await workspace.getEvents(matchProcs, {
     type: 'after-cursor',
     cursor: fromStart ? null : lastCursor,
   });
@@ -75,11 +75,11 @@ const addToList = <T>(xs: T[], x: T): T[] => {
 const removeFromList = <T>(xs: T[], x: T): T[] =>
   xs.filter(elem => elem !== x);
 
-export const setLogVisibility = (processId: string, isVisible: boolean) => {
+export const setLogVisibility = (workspace, processId: string, isVisible: boolean) => {
   // XXX: This is broken because `value.log` no longer matches the process name.
   logsStore.update(value => ({
     ...value,
     logs: isVisible ? addToList(value.logs, processId) : removeFromList(value.logs, processId),
   }));
-  refreshLogs(true);
+  refreshLogs(workspace, true);
 };

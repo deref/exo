@@ -4,9 +4,11 @@ package main
 
 import (
 	"context"
+	"net/http"
 	"os"
 	"os/signal"
 
+	josh "github.com/deref/exo/josh/server"
 	"github.com/deref/exo/logd/api"
 	"github.com/deref/exo/logd/server"
 	"github.com/deref/exo/util/cmdutil"
@@ -35,5 +37,9 @@ func main() {
 		}()
 	}
 
-	pier.Main(api.NewLogCollectorMux("/", collector))
+	muxb := josh.NewMuxBuilder("/")
+	api.BuildLogCollectorMux(muxb, func(req *http.Request) api.LogCollector {
+		return collector
+	})
+	pier.Main(muxb.Build())
 }

@@ -56,15 +56,17 @@ type DisposeOutput struct {
 	State string `json:"state"`
 }
 
-func NewLifecycleMux(prefix string, iface Lifecycle) *http.ServeMux {
-	b := josh.NewMuxBuilder(prefix)
-	BuildLifecycleMux(b, iface)
-	return b.Mux()
-}
-
-func BuildLifecycleMux(b *josh.MuxBuilder, iface Lifecycle) {
-	b.AddMethod("initialize", iface.Initialize)
-	b.AddMethod("update", iface.Update)
-	b.AddMethod("refresh", iface.Refresh)
-	b.AddMethod("dispose", iface.Dispose)
+func BuildLifecycleMux(b *josh.MuxBuilder, factory func(req *http.Request) Lifecycle) {
+	b.AddMethod("initialize", func(req *http.Request) interface{} {
+		return factory(req).Initialize
+	})
+	b.AddMethod("update", func(req *http.Request) interface{} {
+		return factory(req).Update
+	})
+	b.AddMethod("refresh", func(req *http.Request) interface{} {
+		return factory(req).Refresh
+	})
+	b.AddMethod("dispose", func(req *http.Request) interface{} {
+		return factory(req).Dispose
+	})
 }

@@ -10,6 +10,8 @@ import (
 )
 
 type Workspace interface {
+	// Describes this workspace.
+	Describe(context.Context, *DescribeInput) (*DescribeOutput, error)
 	// Deletes all of the components in the workspace, then deletes the workspace itself.
 	Destroy(context.Context, *DestroyInput) (*DestroyOutput, error)
 	// Performs creates, updates, refreshes, disposes, as needed.
@@ -36,6 +38,13 @@ type Workspace interface {
 	Start(context.Context, *StartInput) (*StartOutput, error)
 	Stop(context.Context, *StopInput) (*StopOutput, error)
 	DescribeProcesses(context.Context, *DescribeProcessesInput) (*DescribeProcessesOutput, error)
+}
+
+type DescribeInput struct {
+}
+
+type DescribeOutput struct {
+	Description WorkspaceDescription `json:"description"`
 }
 
 type DestroyInput struct {
@@ -158,29 +167,63 @@ type DescribeProcessesOutput struct {
 	Processes []ProcessDescription `json:"processes"`
 }
 
-func NewWorkspaceMux(prefix string, iface Workspace) *http.ServeMux {
-	b := josh.NewMuxBuilder(prefix)
-	BuildWorkspaceMux(b, iface)
-	return b.Mux()
+func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Workspace) {
+	b.AddMethod("describe", func(req *http.Request) interface{} {
+		return factory(req).Describe
+	})
+	b.AddMethod("destroy", func(req *http.Request) interface{} {
+		return factory(req).Destroy
+	})
+	b.AddMethod("apply", func(req *http.Request) interface{} {
+		return factory(req).Apply
+	})
+	b.AddMethod("apply-procfile", func(req *http.Request) interface{} {
+		return factory(req).ApplyProcfile
+	})
+	b.AddMethod("refresh", func(req *http.Request) interface{} {
+		return factory(req).Refresh
+	})
+	b.AddMethod("resolve", func(req *http.Request) interface{} {
+		return factory(req).Resolve
+	})
+	b.AddMethod("describe-components", func(req *http.Request) interface{} {
+		return factory(req).DescribeComponents
+	})
+	b.AddMethod("create-component", func(req *http.Request) interface{} {
+		return factory(req).CreateComponent
+	})
+	b.AddMethod("update-component", func(req *http.Request) interface{} {
+		return factory(req).UpdateComponent
+	})
+	b.AddMethod("refresh-component", func(req *http.Request) interface{} {
+		return factory(req).RefreshComponent
+	})
+	b.AddMethod("dispose-component", func(req *http.Request) interface{} {
+		return factory(req).DisposeComponent
+	})
+	b.AddMethod("delete-component", func(req *http.Request) interface{} {
+		return factory(req).DeleteComponent
+	})
+	b.AddMethod("describe-logs", func(req *http.Request) interface{} {
+		return factory(req).DescribeLogs
+	})
+	b.AddMethod("get-events", func(req *http.Request) interface{} {
+		return factory(req).GetEvents
+	})
+	b.AddMethod("start", func(req *http.Request) interface{} {
+		return factory(req).Start
+	})
+	b.AddMethod("stop", func(req *http.Request) interface{} {
+		return factory(req).Stop
+	})
+	b.AddMethod("describe-processes", func(req *http.Request) interface{} {
+		return factory(req).DescribeProcesses
+	})
 }
 
-func BuildWorkspaceMux(b *josh.MuxBuilder, iface Workspace) {
-	b.AddMethod("destroy", iface.Destroy)
-	b.AddMethod("apply", iface.Apply)
-	b.AddMethod("apply-procfile", iface.ApplyProcfile)
-	b.AddMethod("refresh", iface.Refresh)
-	b.AddMethod("resolve", iface.Resolve)
-	b.AddMethod("describe-components", iface.DescribeComponents)
-	b.AddMethod("create-component", iface.CreateComponent)
-	b.AddMethod("update-component", iface.UpdateComponent)
-	b.AddMethod("refresh-component", iface.RefreshComponent)
-	b.AddMethod("dispose-component", iface.DisposeComponent)
-	b.AddMethod("delete-component", iface.DeleteComponent)
-	b.AddMethod("describe-logs", iface.DescribeLogs)
-	b.AddMethod("get-events", iface.GetEvents)
-	b.AddMethod("start", iface.Start)
-	b.AddMethod("stop", iface.Stop)
-	b.AddMethod("describe-processes", iface.DescribeProcesses)
+type WorkspaceDescription struct {
+	ID   string `json:"id"`
+	Root string `json:"root"`
 }
 
 type ComponentDescription struct {

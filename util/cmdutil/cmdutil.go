@@ -59,3 +59,11 @@ func GetAddr() string {
 	}
 	return "localhost:" + port
 }
+
+func MustGetwd() string {
+	wd, err := os.Getwd()
+	if err != nil {
+		panic(err)
+	}
+	return wd
+}

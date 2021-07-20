@@ -4,8 +4,8 @@ import type { ProcessDescription } from './types';
 
 export const processes = writable(notRequested<ProcessDescription[]>());
 
-const refetchProcesses = () =>
-  api.describeProcesses()
+const refetchProcesses = (workspace) =>
+  workspace.describeProcesses()
     .then((data) => {
       processes.set(successResponse(data));
     })
@@ -13,33 +13,33 @@ const refetchProcesses = () =>
       processes.set(errorResponse(err.message));
     });
 
-export const fetchProcesses = () => {
+export const fetchProcesses = (workspace) => {
   processes.update((req) => {
     switch (req.stage) {
       case 'idle':
-        refetchProcesses();
+        refetchProcesses(workspace);
         return pendingRequest();
       case 'pending':
         // Do not refetch.
         return req;
       case 'error':
-        refetchProcesses();
+        refetchProcesses(workspace);
         return pendingRequest();
       case 'success':
-        refetchProcesses();
+        refetchProcesses(workspace);
         return refetchingResponse(req.data);
     }
   });
 }
 
-export const startProcess = async (id: string) =>
-  api.startProcess(id)
-    .then(() => fetchProcesses());
+export const startProcess = async (workspace, id: string) =>
+  workspace.startProcess(id)
+    .then(() => fetchProcesses(workspace));
 
-export const stopProcess = async (id: string) =>
-  api.stopProcess(id)
-    .then(() => fetchProcesses());
+export const stopProcess = async (workspace, id: string) =>
+  workspace.stopProcess(id)
+    .then(() => fetchProcesses(workspace));
 
-export const refreshAllProcesses = async () =>
-  api.refreshAllProcesses()
-  .then(() => fetchProcesses());
+export const refreshAllProcesses = async (workspace) =>
+  workspace.refreshAllProcesses()
+    .then(() => fetchProcesses(workspace));

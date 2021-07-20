@@ -6,6 +6,8 @@ import { logsStore, refreshLogs } from '../lib/logs/store';
 import type { LogEvent } from '../lib/logs/types';
 import { shortDate } from '../lib/time';
 
+export let workspace;
+
 const logsPollInterval = 1000;
 
 let logEvents: RemoteData<LogEvent[]> = notRequested();
@@ -16,7 +18,7 @@ const unsubscribeProcesses = logsStore.subscribe(data => {
 // Poll server for new logs.
 let pollRefreshTimer = null;
 const scheduleNextPoll = () => {
-  refreshLogs();
+  refreshLogs(workspace);
   pollRefreshTimer = setTimeout(scheduleNextPoll, logsPollInterval);
 };
 

@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/deref/exo/kernel/api"
+	"github.com/deref/exo/exod/api"
 	"github.com/spf13/cobra"
 )
 
@@ -17,8 +17,9 @@ var startCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := newContext()
 		ensureDeamon()
-		client := newClient()
-		_, err := client.Start(ctx, &api.StartInput{
+		cl := newClient()
+		workspace := requireWorkspace(ctx, cl)
+		_, err := workspace.Start(ctx, &api.StartInput{
 			Ref: args[0],
 		})
 		return err

@@ -52,17 +52,19 @@ type GetEventsOutput struct {
 	Cursor string  `json:"cursor"`
 }
 
-func NewLogCollectorMux(prefix string, iface LogCollector) *http.ServeMux {
-	b := josh.NewMuxBuilder(prefix)
-	BuildLogCollectorMux(b, iface)
-	return b.Mux()
-}
-
-func BuildLogCollectorMux(b *josh.MuxBuilder, iface LogCollector) {
-	b.AddMethod("add-log", iface.AddLog)
-	b.AddMethod("remove-log", iface.RemoveLog)
-	b.AddMethod("describe-logs", iface.DescribeLogs)
-	b.AddMethod("get-events", iface.GetEvents)
+func BuildLogCollectorMux(b *josh.MuxBuilder, factory func(req *http.Request) LogCollector) {
+	b.AddMethod("add-log", func(req *http.Request) interface{} {
+		return factory(req).AddLog
+	})
+	b.AddMethod("remove-log", func(req *http.Request) interface{} {
+		return factory(req).RemoveLog
+	})
+	b.AddMethod("describe-logs", func(req *http.Request) interface{} {
+		return factory(req).DescribeLogs
+	})
+	b.AddMethod("get-events", func(req *http.Request) interface{} {
+		return factory(req).GetEvents
+	})
 }
 
 type LogDescription struct {

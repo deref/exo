@@ -5,8 +5,8 @@ package client
 import (
 	"context"
 
+	"github.com/deref/exo/exod/api"
 	josh "github.com/deref/exo/josh/client"
-	"github.com/deref/exo/kernel/api"
 )
 
 type Workspace struct {
@@ -15,10 +15,15 @@ type Workspace struct {
 
 var _ api.Workspace = (*Workspace)(nil)
 
-func NewWorkspace(client *josh.Client) *Workspace {
+func GetWorkspace(client *josh.Client) *Workspace {
 	return &Workspace{
 		client: client,
 	}
+}
+
+func (c *Workspace) Describe(ctx context.Context, input *api.DescribeInput) (output *api.DescribeOutput, err error) {
+	err = c.client.Invoke(ctx, "describe", input, &output)
+	return
 }
 
 func (c *Workspace) Destroy(ctx context.Context, input *api.DestroyInput) (output *api.DestroyOutput, err error) {
