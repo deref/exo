@@ -23,17 +23,21 @@ var exitCmd = &cobra.Command{
 			return nil
 		}
 
-		process, err := os.FindProcess(runState.Pid)
-		if err != nil {
-			panic(err)
-		}
-		_ = process.Kill()
-
-		// TODO: Wait for process to exit.
-
-		if err := os.Remove(paths.RunStateFile); err != nil {
-			cmdutil.Fatalf("removing pid file: %w", err)
-		}
+		killExod(paths)
 		return nil
 	},
+}
+
+func killExod(paths *cmdutil.KnownPaths) {
+	process, err := os.FindProcess(runState.Pid)
+	if err != nil {
+		panic(err)
+	}
+	_ = process.Kill()
+
+	// TODO: Wait for process to exit.
+
+	if err := os.Remove(paths.RunStateFile); err != nil {
+		cmdutil.Fatalf("removing run state file: %w", err)
+	}
 }

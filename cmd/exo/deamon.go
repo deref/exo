@@ -1,11 +1,14 @@
 package main
 
 import (
+	"bytes"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
 	"syscall"
+	"time"
 
 	"github.com/deref/exo/exod/client"
 	"github.com/deref/exo/util/cmdutil"
@@ -76,6 +79,31 @@ func ensureDeamon() {
 	runState.URL = fmt.Sprintf("http://%s/", cmdutil.GetAddr())
 	if err := jsonutil.MarshalFile(paths.RunStateFile, runState); err != nil {
 		cmdutil.Fatalf("writing run state: %w", err)
+	}
+
+	// Wait server to be healthy.
+	ok := false
+	var delay time.Duration
+	for attempt := 0; attempt < 15; attempt++ {
+		<-time.After(delay)
+		delay = 20 * time.Millisecond
+		res, err := http.Get(runState.URL + "_exo/health")
+		if err != nil {
+			continue
+		}
+		bs, _ := ioutil.ReadAll(res.Body)
+		// See note [HEALTH_CHECK].
+		if string(bytes.TrimSpace(bs)) == "ok" {
+			ok = true
+			break
+		}
+	}
+
+	// Cleanup if unhealthy.
+	if !ok {
+		cmdutil.Warnf("deamon not healthy")
+		killExod(paths)
+		os.Exit(1)
 	}
 }
 

@@ -35,5 +35,9 @@ func BuildRootMux(prefix string, cfg *Config) *http.ServeMux {
 	})
 	endWorkspace()
 
-	return b.Build()
+	mux := b.Build()
+
+	mux.Handle(prefix+"health", HandleHealth)
+
+	return mux
 }
