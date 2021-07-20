@@ -67,14 +67,10 @@ func (provider *Provider) start(ctx context.Context, procDir string, inputSpec s
 	}
 
 	// Construct supervised command.
-	fifofumPath := "./fifofum" // XXX Use exo home path.
-	fifofumArgs := append(
-		[]string{
-			procDir,
-			program,
-		},
-		spec.Arguments...,
-	)
+	fifofumPath := provider.Fifofum.Path
+	fifofumArgs := append([]string{}, provider.Fifofum.Args...)
+	fifofumArgs = append(fifofumArgs, procDir, program)
+	fifofumArgs = append(fifofumArgs, spec.Arguments...)
 	cmd := exec.Command(fifofumPath, fifofumArgs...)
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Setsid: true, // Run in background.

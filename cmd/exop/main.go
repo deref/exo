@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/deref/exo/components/log"
+	"github.com/deref/exo/components/process"
 	"github.com/deref/exo/exod/server"
 	"github.com/deref/exo/exod/state/statefile"
 	josh "github.com/deref/exo/josh/client"
@@ -25,8 +26,9 @@ func main() {
 	store := statefile.New(statePath)
 
 	cfg := &server.Config{
-		VarDir: paths.VarDir,
-		Store:  store,
+		VarDir:  paths.VarDir,
+		Store:   store,
+		Fifofum: process.FifofumDevConfig,
 	}
 
 	ctx = log.ContextWithLogCollector(ctx, logd.GetLogCollector(&josh.Client{

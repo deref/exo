@@ -23,9 +23,10 @@ import (
 )
 
 type Workspace struct {
-	ID     string
-	VarDir string
-	Store  state.Store
+	ID      string
+	VarDir  string
+	Store   state.Store
+	Fifofum process.FifofumConfig
 }
 
 func (ws *Workspace) Describe(ctx context.Context, input *api.DescribeInput) (*api.DescribeOutput, error) {
@@ -211,6 +212,7 @@ func (ws *Workspace) resolveProvider(typ string) core.Provider {
 		return &process.Provider{
 			WorkspaceDir: workspaceDir,
 			VarDir:       filepath.Join(ws.VarDir, "proc"),
+			Fifofum:      ws.Fifofum,
 		}
 	default:
 		return &invalid.Provider{
