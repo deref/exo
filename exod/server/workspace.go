@@ -56,10 +56,7 @@ func (ws *Workspace) Destroy(ctx context.Context, input *api.DestroyInput) (*api
 	}
 	// TODO: Parallelism / bulk delete.
 	for _, component := range describeOutput.Components {
-		_, err := ws.DeleteComponent(ctx, &api.DeleteComponentInput{
-			Ref: component.Name,
-		})
-		if err != nil {
+		if err := ws.deleteComponent(ctx, component.ID); err != nil {
 			return nil, fmt.Errorf("deleting %s: %w", component.Name, err)
 		}
 	}

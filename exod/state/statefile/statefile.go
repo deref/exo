@@ -208,6 +208,7 @@ func (sto *Store) DescribeComponents(ctx context.Context, input *state.DescribeC
 	if root.Workspaces == nil {
 		return nil, fmt.Errorf("no such workspace: %q", input.WorkspaceID)
 	}
+	workspace = root.Workspaces[input.WorkspaceID]
 	if workspace == nil {
 		return output, nil
 	}
@@ -273,7 +274,7 @@ func (sto *Store) AddComponent(ctx context.Context, input *state.AddComponentInp
 			workspace.Names = make(map[string]string)
 		}
 		if workspace.Names[input.Name] != "" {
-			return fmt.Errorf("component named %q already exits", input.Name)
+			return fmt.Errorf("component named %q already exists", input.Name)
 		}
 		workspace.Names[input.Name] = input.ID
 		if workspace.Components[input.ID] != nil {
