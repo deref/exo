@@ -24,7 +24,7 @@ func (q *Query) Run() (string, error) {
 		program = filepath.Join(q.WorkingDirectory, program)
 	} else {
 		// Search.
-		for _, searchPath := range strings.Split(q.PathVariable, string(os.PathSeparator)) {
+		for _, searchPath := range strings.Split(q.PathVariable, string(os.PathListSeparator)) {
 			candidate := filepath.Join(searchPath, program)
 			info, _ := os.Stat(candidate)
 			if info != nil {
