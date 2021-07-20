@@ -20,7 +20,7 @@ var psCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(0),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := newContext()
-		ensureDeamon()
+		ensureDaemon()
 		cl := newClient()
 		workspace := requireWorkspace(ctx, cl)
 		output, err := workspace.DescribeProcesses(ctx, &api.DescribeProcessesInput{})

@@ -25,7 +25,7 @@ type KnownPaths struct {
 	VarDir string // Durable state.
 	RunDir string // Volatile state.
 
-	RunStateFile string // Contains information about the exo deamon.
+	RunStateFile string // Contains information about the exo daemon.
 }
 
 func MustMakeDirectories() *KnownPaths {

@@ -30,7 +30,7 @@ If no subcommand is given, describes the current workspace.`,
 			return nil
 		}
 		ctx := newContext()
-		ensureDeamon()
+		ensureDaemon()
 
 		cl := newClient()
 		workspace := requireWorkspace(ctx, cl)

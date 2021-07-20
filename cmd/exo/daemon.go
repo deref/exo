@@ -18,20 +18,20 @@ import (
 )
 
 func init() {
-	rootCmd.AddCommand(deamonCmd)
+	rootCmd.AddCommand(daemonCmd)
 }
 
-var deamonCmd = &cobra.Command{
+var daemonCmd = &cobra.Command{
 	Hidden: true,
-	Use:    "deamon",
-	Short:  "Start the exo deamon",
-	Long: `Start the exo deamon and then do nothing else.
+	Use:    "daemon",
+	Short:  "Start the exo daemon",
+	Long: `Start the exo daemon and then do nothing else.
 
-Since most commands implicitly start the exo deamon, users generally do not
+Since most commands implicitly start the exo daemon, users generally do not
 have to invoke this themselves.`,
 	Args: cobra.ExactArgs(0),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		ensureDeamon()
+		ensureDaemon()
 		return nil
 	},
 }
@@ -41,7 +41,7 @@ var runState struct {
 	URL string `json:"url"`
 }
 
-func ensureDeamon() {
+func ensureDaemon() {
 	paths := cmdutil.MustMakeDirectories()
 
 	// Validate exod process record.
@@ -101,7 +101,7 @@ func ensureDeamon() {
 
 	// Cleanup if unhealthy.
 	if !ok {
-		cmdutil.Warnf("deamon not healthy")
+		cmdutil.Warnf("daemon not healthy")
 		killExod(paths)
 		os.Exit(1)
 	}

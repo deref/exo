@@ -49,7 +49,7 @@ overidden explicitly with the --format flag.`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := newContext()
-		ensureDeamon()
+		ensureDaemon()
 
 		configPath := ""
 		if len(args) > 0 {
