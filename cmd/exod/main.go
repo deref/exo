@@ -3,8 +3,13 @@
 
 package main
 
-import "github.com/deref/exo/exod"
+import (
+	"github.com/deref/exo/components/process"
+	"github.com/deref/exo/exod"
+)
 
 func main() {
-	exod.Main()
+	exod.Main(exod.Config{
+		Fifofum: process.FifofumDevConfig,
+	})
 }

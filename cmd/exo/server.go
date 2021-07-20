@@ -1,6 +1,7 @@
 package main
 
 import (
+	"github.com/deref/exo/components/process"
 	"github.com/deref/exo/exod"
 	"github.com/spf13/cobra"
 )
@@ -18,6 +19,13 @@ var serverCmd = &cobra.Command{
 Prefer the daemonize command for normal operation.`,
 	Args: cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		exod.Main()
+		exod.Main(exod.Config{
+			Fifofum: fifofumBundleConfig,
+		})
 	},
+}
+
+var fifofumBundleConfig = process.FifofumConfig{
+	Path: "exo",
+	Args: []string{"fifofum"},
 }

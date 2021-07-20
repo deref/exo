@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/deref/exo/components/log"
+	"github.com/deref/exo/components/process"
 	"github.com/deref/exo/exod/server"
 	kernel "github.com/deref/exo/exod/server"
 	"github.com/deref/exo/exod/state/statefile"
@@ -16,7 +17,11 @@ import (
 	"github.com/deref/exo/util/httputil"
 )
 
-func Main() {
+type Config struct {
+	Fifofum process.FifofumConfig
+}
+
+func Main(cfg Config) {
 	ctx := context.Background()
 
 	paths := cmdutil.MustMakeDirectories()
@@ -31,17 +36,18 @@ func Main() {
 	statePath := filepath.Join(paths.VarDir, "state.json")
 	store := statefile.New(statePath)
 
-	cfg := &kernel.Config{
-		VarDir: paths.VarDir,
-		Store:  store,
+	kernelCfg := &kernel.Config{
+		VarDir:  paths.VarDir,
+		Store:   store,
+		Fifofum: cfg.Fifofum,
 	}
 
 	collector := logd.NewLogCollector(ctx, &logd.Config{
-		VarDir: cfg.VarDir,
+		VarDir: kernelCfg.VarDir,
 	})
 	ctx = log.ContextWithLogCollector(ctx, collector)
 
-	mux := server.BuildRootMux("/_exo/", cfg)
+	mux := server.BuildRootMux("/_exo/", kernelCfg)
 	mux.Handle("/", gui.NewHandler(ctx))
 
 	{
