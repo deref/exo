@@ -1,4 +1,4 @@
-import type { LogEvent, LogsResponse } from './logs/types';
+import type { LogsResponse } from './logs/types';
 import type { ProcessDescription } from "./process/types";
 
 interface IdleRequest {

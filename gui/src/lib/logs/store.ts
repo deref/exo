@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store';
-import { api, notRequested, pendingRequest, refetchingResponse, RemoteData, successResponse } from '../api';
+import { notRequested, pendingRequest, refetchingResponse, RemoteData, successResponse } from '../api';
 import type { LogEvent } from './types';
 export interface LogsStore {
   logs: string[];

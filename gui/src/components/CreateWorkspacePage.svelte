@@ -12,7 +12,7 @@
 </script>
 
 <main>
-  <form on:submit|preventDefault={async e => {
+  <form on:submit|preventDefault={async () => {
     const id = await api.kernel.createWorkspace(root)
     workspaceId.set(id);
     history.pushState(null, null, `/workspaces/${encodeURIComponent(id)}`);

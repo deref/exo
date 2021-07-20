@@ -77,9 +77,9 @@ onDestroy(() => {
         {#if statusPending.has(name)}
         <button disabled><Loading /></button>
         {:else if running}
-        <button on:click={() => toggleProc(workspace, id)}><Stop /></button>
+        <button on:click={() => toggleProc(id)}><Stop /></button>
         {:else}
-        <button on:click={() => toggleProc(workspace, id)}><Run /></button>
+        <button on:click={() => toggleProc(id)}><Run /></button>
         {/if}
 
         {#if loggedProcesses.includes(id)}

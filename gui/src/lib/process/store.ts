@@ -1,5 +1,5 @@
 import { writable } from 'svelte/store';
-import { api, errorResponse, notRequested, pendingRequest, refetchingResponse, successResponse } from '../api';
+import { errorResponse, notRequested, pendingRequest, refetchingResponse, successResponse } from '../api';
 import type { ProcessDescription } from './types';
 
 export const processes = writable(notRequested<ProcessDescription[]>());
