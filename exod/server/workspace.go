@@ -243,7 +243,7 @@ func (ws *Workspace) createComponent(ctx context.Context, component config.Compo
 	id = gensym.RandomBase32()
 
 	if _, err := ws.Store.AddComponent(ctx, &state.AddComponentInput{
-		WorkspaceID: "default",
+		WorkspaceID: ws.ID,
 		ID:          id,
 		Name:        component.Name,
 		Type:        component.Type,
