@@ -38,9 +38,9 @@ If the current directory is part of a workspace, navigates to it.`,
 
 		endpoint := runState.URL
 		if output.ID == nil {
-			endpoint += "?root=" + url.QueryEscape(cwd)
+			endpoint += "#/new-workspace?root=" + url.QueryEscape(cwd)
 		} else {
-			endpoint += "/workspaces/" + url.PathEscape(*output.ID)
+			endpoint += "#/workspaces/" + url.PathEscape(*output.ID)
 		}
 
 		browser.Stdout = os.Stderr

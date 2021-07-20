@@ -1,21 +1,18 @@
 <script lang="ts">
   import { api } from '../lib/api';
-  import { workspaceId } from '../lib/workspaces/store'
+  import * as qs from 'qs'
+  import * as router from 'svelte-spa-router'
+  import { querystring } from 'svelte-spa-router'
 
-  let root: string = '';
+  const query = qs.parse($querystring);
 
-  // XXX Janky parameter handling.
-  const match = window.location.search.match(/\?root=(.*)/);
-  if (match) {
-    root = decodeURIComponent(match[1]);
-  }
+  let root = typeof query.root === 'string' ? query.root : '';
 </script>
 
 <main>
   <form on:submit|preventDefault={async () => {
     const id = await api.kernel.createWorkspace(root)
-    workspaceId.set(id);
-    history.pushState(null, null, `/workspaces/${encodeURIComponent(id)}`);
+    router.push(`/workspaces/${encodeURIComponent(id)}`);
   }}>
     <label>
       Root:
