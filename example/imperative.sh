@@ -19,7 +19,7 @@ exop post /delete
 exop /create-component \
   name=tick \
   type=process \
-  'spec={"program": "./tick"}'
+  'spec={"program": "./bin/tick"}'
 
 exop /create-component \
   name=echo \

@@ -18,8 +18,6 @@ var serverCmd = &cobra.Command{
 Prefer the daemonize command for normal operation.`,
 	Args: cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
-		exod.Main(exod.Config{
-			Fifofum: fifofumConfig,
-		})
+		exod.Main()
 	},
 }

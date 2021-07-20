@@ -15,6 +15,7 @@ import (
 
 	core "github.com/deref/exo/core/api"
 	"github.com/deref/exo/util/jsonutil"
+	"github.com/deref/exo/util/which"
 )
 
 func (provider *Provider) Start(ctx context.Context, input *core.StartInput) (*core.StartOutput, error) {
@@ -46,31 +47,33 @@ func (provider *Provider) start(ctx context.Context, procDir string, inputSpec s
 	}
 
 	// Use configured working directory or fallback to workspace directory.
-	directory := spec.Directory
-	if directory == "" {
-		directory = provider.WorkspaceDir
+	whichQ := which.Query{
+		Program: spec.Program,
 	}
-
-	// Resolve program path.
-	program := spec.Program
-	if program == "" {
-		return state{}, errors.New("program is required")
+	whichQ.WorkingDirectory = spec.Directory
+	if whichQ.WorkingDirectory == "" {
+		whichQ.WorkingDirectory = provider.WorkspaceDir
 	}
-	searchPaths, _ := os.LookupEnv("PATH")
-	for _, searchPath := range strings.Split(searchPaths, ":") {
-		candidate := filepath.Join(searchPath, program)
-		info, _ := os.Stat(candidate)
-		if info != nil {
-			program = candidate
-			break
-		}
+	whichQ.PathVariable = spec.Environment["PATH"]
+	if whichQ.PathVariable == "" {
+		// TODO: Daemon path from config.
+		whichQ.PathVariable, _ = os.LookupEnv("PATH")
+	}
+	program, err := whichQ.Run()
+	if err != nil {
+		return state{}, err
 	}
 
 	// Construct supervised command.
-	fifofumPath := provider.Fifofum.Path
-	fifofumArgs := append([]string{}, provider.Fifofum.Args...)
-	fifofumArgs = append(fifofumArgs, procDir, program)
-	fifofumArgs = append(fifofumArgs, spec.Arguments...)
+	fifofumPath := os.Args[0]
+	fifofumArgs := append(
+		[]string{
+			"fifofum",
+			procDir,
+			program,
+		},
+		spec.Arguments...,
+	)
 	cmd := exec.Command(fifofumPath, fifofumArgs...)
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Setsid: true, // Run in background.

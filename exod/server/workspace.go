@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"os"
 	"path/filepath"
 	"strings"
 
@@ -23,13 +22,22 @@ import (
 )
 
 type Workspace struct {
-	ID      string
-	VarDir  string
-	Store   state.Store
-	Fifofum process.FifofumConfig
+	ID     string
+	VarDir string
+	Store  state.Store
 }
 
 func (ws *Workspace) Describe(ctx context.Context, input *api.DescribeInput) (*api.DescribeOutput, error) {
+	description, err := ws.describe(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &api.DescribeOutput{
+		Description: *description,
+	}, nil
+}
+
+func (ws *Workspace) describe(ctx context.Context) (*api.WorkspaceDescription, error) {
 	output, err := ws.Store.DescribeWorkspaces(ctx, &state.DescribeWorkspacesInput{
 		IDs: []string{ws.ID},
 	})
@@ -39,11 +47,9 @@ func (ws *Workspace) Describe(ctx context.Context, input *api.DescribeInput) (*a
 	if len(output.Workspaces) != 1 {
 		return nil, fmt.Errorf("invalid workspace: %q", ws.ID)
 	}
-	return &api.DescribeOutput{
-		Description: api.WorkspaceDescription{
-			ID:   ws.ID,
-			Root: output.Workspaces[0].Root,
-		},
+	return &api.WorkspaceDescription{
+		ID:   ws.ID,
+		Root: output.Workspaces[0].Root,
 	}, nil
 }
 
@@ -198,18 +204,18 @@ func (ws *Workspace) DescribeComponents(ctx context.Context, input *api.Describe
 	return output, nil
 }
 
-func (ws *Workspace) resolveProvider(typ string) core.Provider {
+func (ws *Workspace) resolveProvider(ctx context.Context, typ string) core.Provider {
 	switch typ {
 	case "process":
-		wd, err := os.Getwd()
+		description, err := ws.describe(ctx)
 		if err != nil {
-			panic(err)
+			return &invalid.Provider{
+				fmt.Errorf("workspace error: %w", err),
+			}
 		}
-		workspaceDir := wd // TODO: Get from component hierarchy.
 		return &process.Provider{
-			WorkspaceDir: workspaceDir,
+			WorkspaceDir: description.Root,
 			VarDir:       filepath.Join(ws.VarDir, "proc"),
-			Fifofum:      ws.Fifofum,
 		}
 	default:
 		return &invalid.Provider{
@@ -250,7 +256,7 @@ func (ws *Workspace) createComponent(ctx context.Context, component config.Compo
 		return "", fmt.Errorf("adding component: %w", err)
 	}
 
-	provider := ws.resolveProvider(component.Type)
+	provider := ws.resolveProvider(ctx, component.Type)
 	output, err := provider.Initialize(ctx, &core.InitializeInput{
 		ID:   id,
 		Spec: component.Spec,
@@ -322,7 +328,7 @@ func (ws *Workspace) RefreshComponent(ctx context.Context, input *api.RefreshCom
 }
 
 func (ws *Workspace) refreshComponent(ctx context.Context, store state.Store, component state.ComponentDescription) error {
-	provider := ws.resolveProvider(component.Type)
+	provider := ws.resolveProvider(ctx, component.Type)
 	refreshed, err := provider.Refresh(ctx, &core.RefreshInput{
 		ID:    component.ID,
 		Spec:  component.Spec,
@@ -375,7 +381,7 @@ func (ws *Workspace) disposeComponent(ctx context.Context, id string) error {
 		return fmt.Errorf("no component %q", id)
 	}
 	component := describeOutput.Components[0]
-	provider := ws.resolveProvider(component.Type)
+	provider := ws.resolveProvider(ctx, component.Type)
 	_, err = provider.Dispose(ctx, &core.DisposeInput{
 		ID:    id,
 		State: component.State,
@@ -537,7 +543,7 @@ func (ws *Workspace) Start(ctx context.Context, input *api.StartInput) (*api.Sta
 	}
 	component := components.Components[0]
 
-	provider := ws.resolveProvider(component.Type)
+	provider := ws.resolveProvider(ctx, component.Type)
 	providerOutput, err := provider.Start(ctx, &core.StartInput{
 		ID:    id,
 		Spec:  component.Spec,
@@ -575,7 +581,7 @@ func (ws *Workspace) Stop(ctx context.Context, input *api.StopInput) (*api.StopO
 	}
 	component := components.Components[0]
 
-	provider := ws.resolveProvider(component.Type)
+	provider := ws.resolveProvider(ctx, component.Type)
 	providerOutput, err := provider.Stop(ctx, &core.StopInput{
 		ID:    id,
 		Spec:  component.Spec,

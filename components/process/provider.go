@@ -3,17 +3,6 @@ package process
 type Provider struct {
 	WorkspaceDir string
 	VarDir       string
-	Fifofum      FifofumConfig
-}
-
-type FifofumConfig struct {
-	Path string
-	Args []string
-}
-
-var FifofumDevConfig = FifofumConfig{
-	Path: "go",
-	Args: []string{"run", "./cmd/fifofum"}, // XXX Bad relative path.
 }
 
 type spec struct {

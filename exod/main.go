@@ -2,26 +2,39 @@ package exod
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
 
 	"github.com/deref/exo/components/log"
-	"github.com/deref/exo/components/process"
 	"github.com/deref/exo/exod/server"
 	kernel "github.com/deref/exo/exod/server"
 	"github.com/deref/exo/exod/state/statefile"
+	"github.com/deref/exo/fifofum"
 	"github.com/deref/exo/gui"
 	logd "github.com/deref/exo/logd/server"
 	"github.com/deref/exo/util/cmdutil"
 	"github.com/deref/exo/util/httputil"
 )
 
-type Config struct {
-	Fifofum process.FifofumConfig
+func Main() {
+	if len(os.Args) > 1 {
+		subcommand := os.Args[1]
+		switch subcommand {
+		case "fifofum":
+			fifofum.Main(fmt.Sprintf("%s %s", os.Args[0], subcommand), os.Args[2:])
+		case "server":
+			RunServer()
+		default:
+			cmdutil.Fatalf("unknown subcommand: %q", subcommand)
+		}
+	} else {
+		RunServer()
+	}
 }
 
-func Main(cfg Config) {
+func RunServer() {
 	ctx := context.Background()
 
 	paths := cmdutil.MustMakeDirectories()
@@ -37,9 +50,8 @@ func Main(cfg Config) {
 	store := statefile.New(statePath)
 
 	kernelCfg := &kernel.Config{
-		VarDir:  paths.VarDir,
-		Store:   store,
-		Fifofum: cfg.Fifofum,
+		VarDir: paths.VarDir,
+		Store:  store,
 	}
 
 	collector := logd.NewLogCollector(ctx, &logd.Config{
