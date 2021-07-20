@@ -21,7 +21,7 @@ var workspaceLSCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(0),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := newContext()
-		ensureDeamon()
+		ensureDaemon()
 		cl := newClient()
 		output, err := cl.Kernel().DescribeWorkspaces(ctx, &api.DescribeWorkspacesInput{})
 		if err != nil {

@@ -1,4 +1,4 @@
-# Log Deamon
+# Log Daemon
 
 This is a simple log collection service for fifo pipe sources.
 
@@ -25,7 +25,7 @@ several log streams.
 
 ### Collecting
 
-In normal operation, the `logd` deamon collects logs by reading from the
+In normal operation, the `logd` daemon collects logs by reading from the
 source fifos, decorating each message metadata, and then
 writing the event to BadgerDB.
 

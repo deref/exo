@@ -21,7 +21,7 @@ func Main() {
 
 	paths := cmdutil.MustMakeDirectories()
 
-	// When running as a deamon, we want to use the root filesystem to
+	// When running as a daemon, we want to use the root filesystem to
 	// avoid accidental relative path handling and to prevent tieing up
 	// and mounted filesystem.
 	if err := os.Chdir("/"); err != nil {

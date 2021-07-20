@@ -13,8 +13,8 @@ func init() {
 
 var exitCmd = &cobra.Command{
 	Use:   "exit",
-	Short: "Stop the exo deamon",
-	Long:  `Stop the exo deamon process.`,
+	Short: "Stop the exo daemon",
+	Long:  `Stop the exo daemon process.`,
 	Args:  cobra.ExactArgs(0),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		paths := cmdutil.MustMakeDirectories()

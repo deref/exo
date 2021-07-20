@@ -15,7 +15,7 @@ var serverCmd = &cobra.Command{
 	Short:  "Runs the exo server",
 	Long: `Runs the exo server until interrupted.
 
-Prefer the deamonize command for normal operation.`,
+Prefer the daemonize command for normal operation.`,
 	Args: cobra.ExactArgs(0),
 	Run: func(cmd *cobra.Command, args []string) {
 		exod.Main()

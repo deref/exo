@@ -20,7 +20,7 @@ will be rooted at the current working directory.`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := newContext()
-		ensureDeamon()
+		ensureDaemon()
 		cl := newClient()
 		var root string
 		if len(args) < 1 {

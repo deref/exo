@@ -16,7 +16,7 @@ var startCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := newContext()
-		ensureDeamon()
+		ensureDaemon()
 		cl := newClient()
 		workspace := requireWorkspace(ctx, cl)
 		_, err := workspace.Start(ctx, &api.StartInput{

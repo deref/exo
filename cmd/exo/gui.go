@@ -25,7 +25,7 @@ If the current directory is part of a workspace, navigates to it.`,
 	Args: cobra.ExactArgs(0),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := context.Background()
-		ensureDeamon()
+		ensureDaemon()
 		cl := newClient()
 
 		cwd := cmdutil.MustGetwd()
