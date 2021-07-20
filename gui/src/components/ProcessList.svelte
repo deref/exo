@@ -4,6 +4,8 @@ import type { RemoteData } from '../lib/api';
 import { logsStore, setLogVisibility } from '../lib/logs/store';
 import { fetchProcesses, processes, startProcess, stopProcess, refreshAllProcesses } from '../lib/process/store';
 import type { ProcessDescription } from '../lib/process/types';
+import * as router from 'svelte-spa-router';
+import { link } from 'svelte-spa-router';
 
 //Icons
 import Run from './mono/play.svelte'
@@ -13,6 +15,7 @@ import Show from './mono/eye.svelte'
 import Hide from './mono/eye-off.svelte'
 
 export let workspace;
+export let workspaceId: string;
 
 let statusPending = new Set<string>();
 
@@ -65,7 +68,22 @@ onDestroy(() => {
 </script>
 
 <section>
-  <h1>Processes <a on:click={() => refreshAllProcesses(workspace)}>(refresh)</a></h1>
+  <h1>
+    Processes
+    <a
+      href={`#/workspaces/${encodeURIComponent(workspaceId)}`}
+      on:click={(event) => {
+        if (event.metaKey || event.ctrlKey) {  
+          return;
+        }
+        refreshAllProcesses(workspace);
+        event.preventDefault();
+      }}
+    >
+      (refresh)
+    </a>
+    <a use:link href={`#/workspaces/${encodeURIComponent(workspaceId)}/new-process`}>[+]</a>
+  </h1>
   {#if processList.stage == 'pending' || processList.stage == 'idle'}
     Loading...
   {:else if processList.stage == 'success' || processList.stage == 'refetching'}

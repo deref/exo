@@ -5,11 +5,12 @@
   
   export let params = { workspace: '' };
   
-  const workspace = api.workspace(params.workspace);
+  const workspaceId = params.workspace;
+  const workspace = api.workspace(workspaceId);
 </script>
 
 <div class="layout">
-  <ProcessList workspace={workspace}/>
+  <ProcessList workspace={workspace} workspaceId={workspaceId}/>
   <LogsViewer workspace={workspace}/>
 </div>
 
