@@ -7,11 +7,20 @@ import (
 	"os"
 	"os/signal"
 	"time"
+
+	"golang.org/x/sync/errgroup"
 )
 
 func ListenAndServe(ctx context.Context, svr *http.Server) {
-	go svr.ListenAndServe()
-	ShutdownOnInterrupt(ctx, svr)
+	eg, ctx := errgroup.WithContext(ctx)
+	eg.Go(svr.ListenAndServe)
+	eg.Go(func() error {
+		ShutdownOnInterrupt(ctx, svr)
+		return nil
+	})
+	if err := eg.Wait(); err != nil {
+		Fatal(err)
+	}
 }
 
 func Serve(ctx context.Context, l net.Listener, svr *http.Server) {
