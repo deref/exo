@@ -2,17 +2,19 @@
 import { onDestroy, onMount } from 'svelte';
 import type { RemoteData } from '../lib/api';
 import { logsStore, setLogVisibility } from '../lib/logs/store';
-import { fetchProcesses, processes, startProcess, stopProcess, refreshAllProcesses } from '../lib/process/store';
+import { fetchProcesses, processes, startProcess, stopProcess, refreshAllProcesses, deleteProcess } from '../lib/process/store';
 import type { ProcessDescription } from '../lib/process/types';
 import * as router from 'svelte-spa-router';
-import { link } from 'svelte-spa-router';
+import IconButton from './IconButton.svelte';
 
 //Icons
+import Add from './mono/add.svelte';
 import Run from './mono/play.svelte'
 import Loading from './mono/refresh.svelte'
 import Stop from './mono/stop.svelte'
 import Show from './mono/eye.svelte'
 import Hide from './mono/eye-off.svelte'
+import Delete from './mono/delete.svelte'
 
 export let workspace;
 export let workspaceId: string;
@@ -75,8 +77,13 @@ onDestroy(() => {
 <section>
   <h1>
     Processes
-    <a use:link href={`#/workspaces/${encodeURIComponent(workspaceId)}/new-process`}>[+]</a>
+    <IconButton on:click={() => {
+      router.push(`#/workspaces/${encodeURIComponent(workspaceId)}/new-process`)
+    }}>
+      <Add/>
+    </IconButton>
   </h1>
+  <div>
   {#if processList.stage == 'pending' || processList.stage == 'idle'}
     Loading...
   {:else if processList.stage == 'success' || processList.stage == 'refetching'}
@@ -88,27 +95,35 @@ onDestroy(() => {
         {#if statusPending.has(name)}
         <button disabled><Loading /></button>
         {:else if running}
-        <button on:click={() => toggleProc(id)}><Stop /></button>
+        <IconButton on:click={() => toggleProc(id)}><Stop /></IconButton>
         {:else}
-        <button on:click={() => toggleProc(id)}><Run /></button>
+        <IconButton on:click={() => toggleProc(id)}><Run /></IconButton>
         {/if}
 
         {#if loggedProcesses.includes(id)}
-        <button on:click={() => toggleProcLogs(id)}><Hide /></button>
+        <IconButton on:click={() => toggleProcLogs(id)}><Hide /></IconButton>
         {:else}
-        <button on:click={() => toggleProcLogs(id)}><Show /></button>
+        <IconButton on:click={() => toggleProcLogs(id)}><Show /></IconButton>
         {/if}
+        <IconButton on:click={() => deleteProcess(workspace, id)}><Delete/></IconButton>
       </div>
     </div>
     {:else}
-    <div><i>No processes yet.</i></div>
+    <i>No processes yet.</i>
     {/each}
   {:else if processList.stage == 'error'}
-    <p>Error fetching process list: {processList.message}</p>
+    Error fetching process list: {processList.message}
   {/if}
+  </div>
 </section>
 
 <style>
+
+section {
+  display: grid;
+  grid-auto-flow: row;
+  grid-template-rows: max-content 1fr;
+}
 
 .process-description {
   display: grid;
@@ -116,6 +131,12 @@ onDestroy(() => {
   gap: 12px;
   margin-bottom: 8px;
   align-items: center;
+}
+
+h1 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
 }
 
 h2 {
@@ -127,37 +148,6 @@ h2 {
   border-radius: 6px;
   color: #bb0000;
   background: #ff000022;
-}
-
-h1 a {
-  font-size: 14px;
-  color: blue;
-}
-
-button {
-  font-family: inherit;
-  font-size: 0;
-  font-weight: 450;
-  padding: 6px;
-  color: #777777;
-  background-color: #77777700;
-  border-radius: 4px;
-  border: none;
-  outline: none;
-  margin-left: 4px;
-}
-
-button :global(svg), button :global(svg *) {
-  fill: currentColor;
-}
-
-button:hover {
-  background-color: #77777711;
-  color: #444444;
-}
-
-button:focus {
-  background-color: #77777733;
 }
 
 p {

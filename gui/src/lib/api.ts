@@ -125,6 +125,10 @@ export const api = (() => {
         await invoke('stop', { ref });
       },
 
+      async deleteComponent(ref: string): Promise<void> {
+        await invoke('delete-component', { ref });
+      },
+
       async refreshAllProcesses(): Promise<void> {
         await invoke('refresh');
       },
