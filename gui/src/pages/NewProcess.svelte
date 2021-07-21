@@ -69,7 +69,7 @@
     </div>
     <div class="edit-as">
       Edit as:
-      <button class:selected={!structured} on:click={(e) => {
+      <button class:selected={!structured} on:click|preventDefault={(e) => {
         if (!structured) {
           return;
         }
@@ -78,7 +78,7 @@
       }}>
         script
       </button>
-      <button class:selected={structured} on:click={() => {
+      <button class:selected={structured} on:click|preventDefault={() => {
         if (structured) {
           return;
         }
