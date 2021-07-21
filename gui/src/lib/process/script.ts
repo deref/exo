@@ -89,11 +89,11 @@ lines:
 
 export const generateScript = (spec: ProcessSpec): string => {
   let script = '';
-  if (spec.directory) {
-    script += `cd ${shellQuote(spec.directory)}\n`;
-  }
   for (const [k, v] of Object.entries(spec.environment ?? {})) {
     script += `export ${shellQuote(k)}=${shellQuote(v)}\n`;
+  }
+  if (spec.directory) {
+    script += `cd ${shellQuote(spec.directory)}\n`;
   }
   const words: string[] = [];
   if (spec.program !== '') {
