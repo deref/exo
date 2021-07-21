@@ -80,6 +80,8 @@ afterUpdate(async () => {
 <style>
 
 section {
+  overflow: hidden;
+  padding: 1px;
   display: grid;
   grid-auto-flow: row;
   grid-template-rows: max-content 1fr;
