@@ -9,16 +9,16 @@
   const workspace = api.workspace(workspaceId);
 </script>
 
-<div class="layout">
+<div class="container">
   <ProcessList workspace={workspace} workspaceId={workspaceId}/>
   <LogsViewer workspace={workspace}/>
 </div>
 
 <style>
 
-  .layout {
+  .container {
     display: grid;
-    grid-template-columns: 2fr 3fr;
+    grid-template-columns: 280px 1fr;
     gap: 30px;
     margin: 0 30px;
   }

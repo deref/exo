@@ -80,7 +80,7 @@ afterUpdate(async () => {
 <style>
 
     .log-table-overflow-wrapper {
-      height: 400px;
+      min-height: calc(100vh - 150px);
       overflow: hidden;
       border-radius: 4px;
       box-shadow: 0px 12px 16px -8px #00000033, 0px 0.25px 0px 1px #00000033;
@@ -88,7 +88,7 @@ afterUpdate(async () => {
 
     .log-table-container {
       width: 100%;
-      height: 400px;
+      min-height: calc(100vh - 150px);
       overflow-x: auto;
       overflow-y: scroll;
     }
