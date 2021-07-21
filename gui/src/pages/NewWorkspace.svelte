@@ -32,7 +32,7 @@
     <Textbox bind:value={root} name="root" id="root"/>
     <Button type="submit">Create Workspace</Button>
   </form>
-  <ErrorLabel error={error}/>
+  <ErrorLabel value={error}/>
 </section>
 </Layout>
 

@@ -1,6 +1,7 @@
 package errutil
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 )
@@ -19,24 +20,32 @@ func HTTPStatus(err error) int {
 
 type httpError struct {
 	status  int
-	message string
-}
-
-func (err *httpError) Error() string {
-	return err.message
+	wrapped error
 }
 
 func (err *httpError) HTTPStatus() int {
 	return err.status
 }
 
-func NewHTTPError(status int, message string) HTTPError {
+func (err *httpError) Error() string {
+	return err.wrapped.Error()
+}
+
+func (err *httpError) Unwrap() error {
+	return err.wrapped
+}
+
+func WithHTTPStatus(status int, err error) HTTPError {
 	return &httpError{
 		status:  status,
-		message: message,
+		wrapped: err,
 	}
 }
 
+func NewHTTPError(status int, message string) HTTPError {
+	return WithHTTPStatus(status, errors.New(message))
+}
+
 func HTTPErrorf(status int, format string, v ...interface{}) HTTPError {
-	return NewHTTPError(status, fmt.Sprintf(format, v...))
+	return WithHTTPStatus(status, fmt.Errorf(format, v...))
 }

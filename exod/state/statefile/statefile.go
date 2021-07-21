@@ -276,7 +276,7 @@ func (sto *Store) AddComponent(ctx context.Context, input *state.AddComponentInp
 			workspace.Names = make(map[string]string)
 		}
 		if workspace.Names[input.Name] != "" {
-			return fmt.Errorf("component named %q already exists", input.Name)
+			return errutil.HTTPErrorf(http.StatusConflict, "component named %q already exists", input.Name)
 		}
 		workspace.Names[input.Name] = input.ID
 		if workspace.Components[input.ID] != nil {

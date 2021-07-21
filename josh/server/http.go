@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"net/http"
 
@@ -34,8 +35,9 @@ func writeJSON(w http.ResponseWriter, status int, v interface{}) {
 func writeError(w http.ResponseWriter, req *http.Request, err error) {
 	status := http.StatusInternalServerError
 	message := "internal server error"
-	if err, ok := err.(errutil.HTTPError); ok {
-		status = err.HTTPStatus()
+	var httpErr errutil.HTTPError
+	if errors.As(err, &httpErr) {
+		status = httpErr.HTTPStatus()
 		message = err.Error()
 	}
 	if status == http.StatusInternalServerError {

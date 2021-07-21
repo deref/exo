@@ -1,14 +1,14 @@
 <script type="ts">
   import Warning from './mono/warning.svelte';
 
-  export let error: Error | null = null;
+  export let value: Error | null = null;
 </script>
 
 
-{#if error}
+{#if value}
 <div>
   <Warning/>
-  <span>{error.message}</span>
+  <span>{value.message}</span>
 </div>
 {/if}
 
