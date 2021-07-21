@@ -2,7 +2,7 @@ package process
 
 type Provider struct {
 	WorkspaceDir string
-	VarDir       string
+	SyslogAddr   string
 }
 
 type Spec struct {

@@ -164,6 +164,9 @@ func getEventWithCursors(event api.Event) (store.EventWithCursors, error) {
 	return eventWithCursors, nil
 }
 
+// TODO: RemoveOldEvents also needs to delete events over a certain age,
+// not just a count limit. This is necessary for cleanup of no-longer-tracked
+// log streams.
 const maxEventsPerStream = 5000
 
 func (log *Log) RemoveOldEvents(ctx context.Context) error {

@@ -9,8 +9,9 @@ import (
 )
 
 type Config struct {
-	VarDir string
-	Store  state.Store
+	VarDir     string
+	Store      state.Store
+	SyslogAddr string
 }
 
 func BuildRootMux(prefix string, cfg *Config) *http.ServeMux {
@@ -28,9 +29,10 @@ func BuildRootMux(prefix string, cfg *Config) *http.ServeMux {
 	endWorkspace := b.Begin("workspace")
 	api.BuildWorkspaceMux(b, func(req *http.Request) api.Workspace {
 		return &Workspace{
-			ID:     req.URL.Query().Get("id"),
-			VarDir: cfg.VarDir,
-			Store:  cfg.Store,
+			ID:         req.URL.Query().Get("id"),
+			VarDir:     cfg.VarDir,
+			Store:      cfg.Store,
+			SyslogAddr: cfg.SyslogAddr,
 		}
 	})
 	endWorkspace()

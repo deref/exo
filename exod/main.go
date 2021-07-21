@@ -13,9 +13,9 @@ import (
 	"github.com/deref/exo/exod/server"
 	kernel "github.com/deref/exo/exod/server"
 	"github.com/deref/exo/exod/state/statefile"
-	"github.com/deref/exo/fifofum"
 	"github.com/deref/exo/gui"
-	logd "github.com/deref/exo/logd/server"
+	"github.com/deref/exo/logd"
+	"github.com/deref/exo/logio"
 	"github.com/deref/exo/util/cmdutil"
 	"github.com/deref/exo/util/httputil"
 	"github.com/deref/exo/util/sysutil"
@@ -27,8 +27,8 @@ func Main() {
 	if len(os.Args) > 1 {
 		subcommand := os.Args[1]
 		switch subcommand {
-		case "fifofum":
-			fifofum.Main(fmt.Sprintf("%s %s", os.Args[0], subcommand), os.Args[2:])
+		case "logio":
+			logio.Main(fmt.Sprintf("%s %s", os.Args[0], subcommand), os.Args[2:])
 		case "server":
 			RunServer()
 		default:
@@ -88,14 +88,14 @@ func RunServer() {
 	store := statefile.New(statePath)
 
 	kernelCfg := &kernel.Config{
-		VarDir: paths.VarDir,
-		Store:  store,
+		VarDir:     paths.VarDir,
+		Store:      store,
+		SyslogAddr: "localhost:4500", // XXX Configurable?
 	}
 
-	collector := logd.NewLogCollector(ctx, &logd.Config{
-		VarDir: kernelCfg.VarDir,
-	})
-	ctx = log.ContextWithLogCollector(ctx, collector)
+	logd := &logd.Service{}
+	logd.VarDir = kernelCfg.VarDir
+	ctx = log.ContextWithLogCollector(ctx, &logd.LogCollector)
 
 	mux := server.BuildRootMux("/_exo/", kernelCfg)
 	mux.Handle("/", gui.NewHandler(ctx))
@@ -104,7 +104,7 @@ func RunServer() {
 		ctx, shutdown := context.WithCancel(ctx)
 		defer shutdown()
 		go func() {
-			if err := collector.Run(ctx); err != nil {
+			if err := logd.Run(ctx); err != nil {
 				cmdutil.Fatalf("log collector error: %w", err)
 			}
 		}()

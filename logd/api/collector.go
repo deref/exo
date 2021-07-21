@@ -11,26 +11,19 @@ import (
 
 // Manages a set of logs. Collects and stores events from them.
 type LogCollector interface {
-	AddLog(context.Context, *AddLogInput) (*AddLogOutput, error)
-	RemoveLog(context.Context, *RemoveLogInput) (*RemoveLogOutput, error)
+	ClearEvents(context.Context, *ClearEventsInput) (*ClearEventsOutput, error)
 	DescribeLogs(context.Context, *DescribeLogsInput) (*DescribeLogsOutput, error)
+	AddEvent(context.Context, *AddEventInput) (*AddEventOutput, error)
 	// Returns pages of log events for some set of logs. If `cursor` is specified, standard pagination behavior is used. Otherwise the cursor is assumed to represent the current tail of the log.
 	GetEvents(context.Context, *GetEventsInput) (*GetEventsOutput, error)
+	RemoveOldEvents(context.Context, *RemoveOldEventsInput) (*RemoveOldEventsOutput, error)
 }
 
-type AddLogInput struct {
-	Name   string `json:"name"`
-	Source string `json:"source"`
+type ClearEventsInput struct {
+	Logs []string `json:"logs"`
 }
 
-type AddLogOutput struct {
-}
-
-type RemoveLogInput struct {
-	Name string `json:"name"`
-}
-
-type RemoveLogOutput struct {
+type ClearEventsOutput struct {
 }
 
 type DescribeLogsInput struct {
@@ -39,6 +32,15 @@ type DescribeLogsInput struct {
 
 type DescribeLogsOutput struct {
 	Logs []LogDescription `json:"logs"`
+}
+
+type AddEventInput struct {
+	Log       string `json:"log"`
+	Timestamp string `json:"timestamp"`
+	Message   string `json:"message"`
+}
+
+type AddEventOutput struct {
 }
 
 type GetEventsInput struct {
@@ -54,24 +56,32 @@ type GetEventsOutput struct {
 	NextCursor string  `json:"nextCursor"`
 }
 
+type RemoveOldEventsInput struct {
+}
+
+type RemoveOldEventsOutput struct {
+}
+
 func BuildLogCollectorMux(b *josh.MuxBuilder, factory func(req *http.Request) LogCollector) {
-	b.AddMethod("add-log", func(req *http.Request) interface{} {
-		return factory(req).AddLog
-	})
-	b.AddMethod("remove-log", func(req *http.Request) interface{} {
-		return factory(req).RemoveLog
+	b.AddMethod("clear-events", func(req *http.Request) interface{} {
+		return factory(req).ClearEvents
 	})
 	b.AddMethod("describe-logs", func(req *http.Request) interface{} {
 		return factory(req).DescribeLogs
 	})
+	b.AddMethod("add-event", func(req *http.Request) interface{} {
+		return factory(req).AddEvent
+	})
 	b.AddMethod("get-events", func(req *http.Request) interface{} {
 		return factory(req).GetEvents
+	})
+	b.AddMethod("remove-old-events", func(req *http.Request) interface{} {
+		return factory(req).RemoveOldEvents
 	})
 }
 
 type LogDescription struct {
 	Name        string  `json:"name"`
-	Source      string  `json:"source"`
 	LastEventAt *string `json:"lastEventAt"`
 }
 

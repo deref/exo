@@ -15,8 +15,8 @@ import (
 	"path/filepath"
 
 	josh "github.com/deref/exo/josh/server"
+	"github.com/deref/exo/logd"
 	"github.com/deref/exo/logd/api"
-	"github.com/deref/exo/logd/server"
 	"github.com/deref/exo/util/cmdutil"
 )
 
@@ -26,18 +26,16 @@ func main() {
 	defer done()
 
 	paths := cmdutil.MustMakeDirectories()
-	cfg := &server.Config{
-		VarDir: paths.VarDir,
-		Debug:  true,
-	}
 
-	collector := server.NewLogCollector(ctx, cfg)
+	logd := &logd.Service{}
+	logd.Debug = true
+	logd.VarDir = paths.VarDir
 
 	{
 		ctx, shutdown := context.WithCancel(ctx)
 		defer shutdown()
 		go func() {
-			if err := collector.Run(ctx); err != nil {
+			if err := logd.Run(ctx); err != nil {
 				cmdutil.Warnf("log collector error: %w", err)
 			}
 		}()
@@ -47,7 +45,7 @@ func main() {
 	var network, addr string
 	if port == "" {
 		network = "unix"
-		addr = filepath.Join(cfg.VarDir, "logd.sock")
+		addr = filepath.Join(paths.VarDir, "logd.sock")
 		_ = os.Remove(addr)
 	} else {
 		network = "tcp"
@@ -61,7 +59,7 @@ func main() {
 
 	muxb := josh.NewMuxBuilder("/")
 	api.BuildLogCollectorMux(muxb, func(req *http.Request) api.LogCollector {
-		return collector
+		return &logd.LogCollector
 	})
 	cmdutil.Serve(ctx, listener, &http.Server{
 		Handler: muxb.Build(),

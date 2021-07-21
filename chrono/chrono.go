@@ -6,7 +6,8 @@ import (
 )
 
 const (
-	RFC3339NanoUTC = "2006-01-02T15:04:05.999999999Z"
+	RFC3339NanoUTC  = "2006-01-02T15:04:05.999999999Z"
+	RFC3339MicroUTC = "2006-01-02T15:04:05.999999Z"
 )
 
 func Now(ctx context.Context) time.Time {
