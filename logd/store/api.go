@@ -13,9 +13,18 @@ type Store interface {
 }
 
 type Log interface {
-	GetEvents(ctx context.Context, after string, limit int) ([]api.Event, error)
+	// GetCursorForTimestamp returns a cursor that points to the first entry at or past `timestamp`.
+	// If a negative value is given for timestamp, the cursor is for the most recent entry.
+	// When no entries are found, this method returns a nil cursor.
+	GetCursorForTimestamp(ctx context.Context, timestamp int64) (*Cursor, error)
+	GetEvents(ctx context.Context, cursor *Cursor, limit int) (*EventPage, error)
 	GetLastEventAt(context.Context) *string
-	AddEvent(ctx context.Context, timestamp uint64, message []byte) error
+	AddEvent(ctx context.Context, timestamp int64, message []byte) error
 	// Remove oldest events beyond capacity limit.
 	RemoveOldEvents(context.Context) error
+}
+
+type EventPage struct {
+	Events []api.Event
+	Cursor Cursor
 }

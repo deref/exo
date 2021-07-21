@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -15,7 +16,6 @@ import (
 	"github.com/deref/exo/logd/store/badger"
 	"github.com/deref/exo/util/agent"
 	"github.com/deref/exo/util/jsonutil"
-	"github.com/deref/exo/util/mathutil"
 	"github.com/oklog/ulid/v2"
 	"golang.org/x/sync/errgroup"
 )
@@ -252,32 +252,43 @@ func (lc *LogCollector) getEvents(ctx context.Context, input *api.GetEventsInput
 		}
 	}
 
-	// TODO: Allow override via input.
-	limit := defaultEventsPerRequest
+	limit := input.Limit
+	if limit == 0 {
+		limit = defaultEventsPerRequest
+	}
+
+	parsedCursor, err := store.ParseCursor(input.Cursor)
+	if err != nil {
+		return nil, fmt.Errorf("parsing cursor: %w", err)
+	}
 
 	// TODO: Merge sort.
 	events := []api.Event{}
+	var cursor *store.Cursor
 	for _, logName := range logs {
 		log := lc.store.GetLog(logName)
-		logEvents, err := log.GetEvents(ctx, input.After, limit)
+		logEvents, err := log.GetEvents(ctx, parsedCursor, limit)
 		if err != nil {
 			return nil, fmt.Errorf("getting %q events: %w", logName, err)
 		}
-		events = append(events, logEvents...)
+		if logEvents == nil {
+			continue
+		}
+		events = append(events, logEvents.Events...)
+		if cursor == nil || bytes.Compare(logEvents.Cursor.ID, cursor.ID) > 0 {
+			cursor = &logEvents.Cursor
+		}
 	}
 	sort.Sort(&eventsSorter{events})
 
-	cursor := input.After // XXX
-	if len(events) > 0 {
-		end := mathutil.IntMin(limit, len(events))
-		events = events[:end]
-
-		cursor = events[len(events)-1].ID
+	var encodedCursor string
+	if cursor != nil {
+		encodedCursor = cursor.Serialize()
 	}
 
 	return &api.GetEventsOutput{
 		Events: events,
-		Cursor: cursor,
+		Cursor: encodedCursor,
 	}, nil
 }
 

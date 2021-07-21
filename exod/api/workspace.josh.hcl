@@ -83,9 +83,10 @@ interface "workspace" {
   }
   
   method "get-events" {
-	  input "logs" "[]string" {}
-	  input "before" "string" {}
-	  input "after" "string" {}
+	  input "logs" "[]string" {} 
+	  input "cursor" "string" {}
+	  input "since" "string" {}
+	  input "limit" "int" {}
     
     output "events" "[]Event" {}
     output "cursor" "string" {}

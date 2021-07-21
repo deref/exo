@@ -43,8 +43,9 @@ type DescribeLogsOutput struct {
 
 type GetEventsInput struct {
 	Logs   []string `json:"logs"`
-	Before string   `json:"before"`
-	After  string   `json:"after"`
+	Cursor string   `json:"cursor"`
+	Since  string   `json:"since"`
+	Limit  int      `json:"limit"`
 }
 
 type GetEventsOutput struct {

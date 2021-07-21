@@ -8,7 +8,7 @@ import (
 	"github.com/dgraph-io/badger/v3"
 )
 
-func (log *Log) AddEvent(ctx context.Context, timestamp uint64, message []byte) error {
+func (log *Log) AddEvent(ctx context.Context, timestamp int64, message []byte) error {
 	// Generate an id that is guaranteed to be monotonically increasing within this process.
 	id, err := log.idGen.NextID(ctx)
 	if err != nil {
@@ -30,7 +30,7 @@ func (log *Log) AddEvent(ctx context.Context, timestamp uint64, message []byte) 
 	val := make([]byte, messageOffset+messageLen)
 
 	val[versionOffset] = eventVersion
-	binary.BigEndian.PutUint64(val[timestampOffset:timestampOffset+timestampLen], timestamp)
+	binary.BigEndian.PutUint64(val[timestampOffset:timestampOffset+timestampLen], uint64(timestamp))
 	copy(val[messageOffset:messageOffset+messageLen], message)
 
 	return log.db.Update(func(txn *badger.Txn) error {

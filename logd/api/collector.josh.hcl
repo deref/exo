@@ -21,10 +21,10 @@ interface "log-collector" {
   method "get-events" {
     doc = "Paginates events. Inputs before and after are mutually exclusive."
     input "logs" "[]string" {}
-    // TODO: "since" and "until" for timestamp queries instead-or of
-    // in-addition-to cursor-based queries.
-    input "before" "string" {}
-    input "after" "string" {}
+	  input "cursor" "string" {}
+	  input "since" "string" {}
+	  input "limit" "int" {}
+    
     output "events" "[]Event" {}
     output "cursor" "string" {}
   }

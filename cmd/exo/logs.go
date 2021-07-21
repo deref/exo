@@ -67,12 +67,11 @@ If refs are provided, filters for the logs of those processes.`,
 			}
 		}
 
-		cursor := ""
+		in := &api.GetEventsInput{
+			Logs: logIDs,
+		}
 		for {
-			output, err := workspace.GetEvents(ctx, &api.GetEventsInput{
-				Logs:  logIDs,
-				After: cursor,
-			})
+			output, err := workspace.GetEvents(ctx, in)
 			if err != nil {
 				return err
 			}
@@ -105,7 +104,7 @@ If refs are provided, filters for the logs of those processes.`,
 
 				fmt.Printf("%s %s\n", prefix, event.Message)
 			}
-			cursor = output.Cursor
+			in.Cursor = output.Cursor
 			if len(output.Events) < 10 { // TODO: OK heuristic?
 				<-time.After(250 * time.Millisecond)
 			}

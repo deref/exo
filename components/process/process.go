@@ -76,6 +76,7 @@ func (provider *Provider) start(ctx context.Context, procDir string, inputSpec s
 		},
 		spec.Arguments...,
 	)
+	fmt.Println("Executing", fifofumPath, fifofumArgs)
 	cmd := exec.Command(fifofumPath, fifofumArgs...)
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Setsid: true, // Run in background.
