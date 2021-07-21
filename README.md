@@ -1,4 +1,4 @@
-# Exo: a process manager & log viewer for dev
+# exo: a process manager & log viewer for dev
 
 **exo-** _prefix_ – external; from outside.
 
