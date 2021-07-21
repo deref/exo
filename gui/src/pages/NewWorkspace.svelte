@@ -1,4 +1,7 @@
 <script lang="ts">
+  import Layout from '../components/Layout.svelte';
+  import Button from '../components/Button.svelte';
+  import Textbox from '../components/Textbox.svelte';
   import { api } from '../lib/api';
   import * as qs from 'qs'
   import * as router from 'svelte-spa-router'
@@ -9,21 +12,33 @@
   let root = typeof query.root === 'string' ? query.root : '';
 </script>
 
-<main>
+<Layout>
+<section>
   <form on:submit|preventDefault={async () => {
     const id = await api.kernel.createWorkspace(root)
     router.push(`/workspaces/${encodeURIComponent(id)}`);
   }}>
-    <label>
-      Root:
-      <input bind:value={root} name="root"/>
-    </label>
-    <button type="submit">Create Workspace</button>
+    <label for="root">Root:</label>
+    <Textbox bind:value={root} name="root" id="root"/>
+    <Button type="submit">Create Workspace</Button>
   </form>
-</main>
+</section>
+</Layout>
 
 <style>
-  main {
+  section {
+    display: flex;
+    height: 100%;
+    width: 100%;
+    align-items: center;
+    justify-content: center;
+  }
+
+  form {
     padding: 20px;
+    display: flex;
+    flex-direction: row;
+    gap: 20px;
+    align-items: center;
   }
 </style>

@@ -1,0 +1,25 @@
+<script type="ts">
+
+  export let id: string | undefined;
+  export let name: string | undefined;
+  
+  export let value: string;
+
+</script>
+
+<input id={id} bind:value={value} name={name}/>
+
+<style>
+
+input {
+  border: none;
+  border-radius: 6px;
+  padding: 12px 18px;
+  box-shadow:
+    0 .33px 0 1px hsla(0,0%,100%,.15),
+    0 6px 9px -4px rgba(0,0,0,.1) inset,
+    0 .4px 0 .8px rgba(0,0,0,.1) inset;
+  width: 300px;
+}
+
+</style>
