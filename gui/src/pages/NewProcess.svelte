@@ -1,9 +1,14 @@
 <script lang="ts">
+  import Layout from '../components/Layout.svelte';
   import { api } from '../lib/api';
   import * as router from 'svelte-spa-router';
   import { parseScript, generateScript } from '../lib/process/script';
   import EnvironmentInput from '../components/EnvironmentInput.svelte';
   import ArgumentsInput from '../components/ArgumentsInput.svelte';
+  import Textbox from '../components/Textbox.svelte';
+  import Textarea from '../components/Textarea.svelte';
+  import Button from '../components/Button.svelte';
+  import CodeBlock from '../components/CodeBlock.svelte';
   
   export let params = { workspace: '' };
   
@@ -39,7 +44,7 @@
   };
 </script>
 
-<div class="layout">
+<Layout>
   <form on:submit|preventDefault={async () => {
     updateFields();
     await workspace.createProcess(name, {
@@ -50,47 +55,65 @@
     });
     router.push(`/workspaces/${encodeURIComponent(params.workspace)}`);
   }}>
-    <label>
-      Name:
-      <input bind:value={name} name="name"/>
-    </label>
-    {#if structured}
-      <button on:click={() => {
+    <div>
+    <label for="name">Name:</label>
+      <Textbox id="name" name="name" bind:value={name} />
+    </div>
+    <div class="edit-as">
+      Edit as:
+      <button class:selected={!structured} on:click={(e) => {
+        if (!structured) {
+          return;
+        }
         structured = false;
         updateScript();
       }}>
-        Edit Script
+        script
       </button>
-      <label>
-        Program:
-        <input name="program" bind:value={program}/>
-      </label>
-      <label for="args">
-        Arguments: (one per line)
-        <ArgumentsInput name="args" bind:value={args}/>
-      </label>
-      <label>
-        Working Directory:
-        <input name="directory" bind:value={directory}/>
-      </label>
-      <label for="environment">
-        Environment:
-        <EnvironmentInput name="environment" bind:environment={environment}/>
-      </label>
-    {:else}
-      <button on:click={() => {
+      <button class:selected={structured} on:click={() => {
+        if (structured) {
+          return;
+        }
         structured = true;
         updateFields();
       }}>
-        Edit Fields
+        fields
       </button>
-      <label>
-        Script:
-        <textarea name="script" bind:value={script}/>
-      </label>
+    </div>
+    {#if structured}
       <div>
-        Example:
-        <pre>
+        <label for="program">Program:</label>
+        <Textbox id="program" name="program" bind:value={program}/>
+      </div>
+      <div>
+        <label for="args">Arguments: (one per line)</label>
+        <ArgumentsInput id="args" name="args" bind:value={args}/>
+      </div>
+      <div>
+        <label for="directory">Working Directory:</label>
+        <Textbox id="directory" name="directory" bind:value={directory}/>
+      </div>
+      <div>
+        <label>Environment:</label>
+        <EnvironmentInput name="environment" bind:environment={environment}/>
+      </div>
+      <div class="buttons">
+        <Button type="submit">Create Process</Button>
+      </div>
+    {:else}
+      <div class="columns">
+        <div>
+          <div>
+            <label for="script">Script:</label>
+            <Textarea id="script" name="script" bind:value={script}/>
+          </div>
+          <div class="buttons">
+            <Button type="submit">Create Process</Button>
+          </div>
+        </div>
+        <div>
+          <label>Example:</label>
+          <CodeBlock>
 # Export environment variables.
 export DEBUG=true
 
@@ -99,33 +122,58 @@ cd /
 
 # Specify command with arguments.
 my-app --port 4000
-        </pre>
+          </CodeBlock>
+        </div>
       </div>
     {/if}
-    <button type="submit">Create Process</button>
   </form>
-</div>
+</Layout>
 
 <style>
 
-  .layout {
-    display: grid;
-    grid-template-columns: 2fr 3fr;
-    gap: 30px;
-    margin: 30px;
-  }
-  
-  label {
-    display: block;
-  }
-  
-  [name=script] {
-    width: 400px;
-    height: 100px;
-  }
-  
-  button {
-    margin: 16px;
-  }
+form {
+  padding: 40px;
+  max-width: 1000px;
+  margin: 0 auto;
+}
+
+.columns {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+}
+
+label {
+  display: block;
+  margin-top: 24px;
+  margin-bottom: 8px;
+}
+
+.buttons {
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  margin-top: 8px;
+}
+
+.edit-as {
+  padding-top: 32px;
+}
+
+.edit-as button {
+  border: none;
+  background: none;
+  color: #777;
+}
+
+.edit-as button:hover {
+  text-decoration: underline;
+}
+
+.edit-as .selected {
+  color: #06e;
+  font-weight: 450;
+  text-decoration: underline;
+}
 
 </style>

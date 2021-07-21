@@ -39,6 +39,8 @@ h1 {
 
 div {
   position: relative;
+  overflow-y: auto;
+  overflow-x: hidden;
 }
 
 </style>

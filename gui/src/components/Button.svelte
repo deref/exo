@@ -1,10 +1,10 @@
 <script type="ts">
 
-export let type: string | undefined;
+export let type: string | undefined = undefined;
 
 </script>
 
-<button type={type}>
+<button on:click type={type}>
   <slot/>
 </button>
 

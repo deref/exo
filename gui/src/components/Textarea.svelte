@@ -7,11 +7,11 @@
 
 </script>
 
-<input id={id} bind:value={value} name={name} on:blur on:focus on:input />
+<textarea id={id} bind:value={value} name={name} on:blur on:focus on:input />
 
 <style>
 
-input {
+textarea {
   border: none;
   border-radius: 6px;
   padding: 12px 18px;
@@ -19,7 +19,9 @@ input {
     0 .33px 0 1px hsla(0,0%,100%,.15),
     0 6px 9px -4px rgba(0,0,0,.1) inset,
     0 .4px 0 .8px rgba(0,0,0,.1) inset;
-  width: 300px;
+  width: 100%;
+  height: 120px;
+  resize: vertical;
 }
 
 </style>

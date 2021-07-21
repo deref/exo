@@ -1,4 +1,6 @@
 <script lang="ts">
+  import Textbox from './Textbox.svelte';
+
   export let name: string;
   export let environment: Record<string, string> = {};
 
@@ -54,7 +56,7 @@
   <tr>
   {#each ['name', 'value'] as field }
     <td>
-      <input
+      <Textbox
         value={variable[field]}
         name={`${name}[${variable.id}].${field}`}
         on:blur={() => {
