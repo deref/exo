@@ -32,14 +32,22 @@ export const fetchProcesses = (workspace) => {
   });
 }
 
-export const startProcess = async (workspace, id: string) =>
-  workspace.startProcess(id)
-    .then(() => fetchProcesses(workspace));
+export const startProcess = async (workspace, id: string) => {
+  await workspace.startProcess(id)
+  fetchProcesses(workspace);
+};
 
-export const stopProcess = async (workspace, id: string) =>
-  workspace.stopProcess(id)
-    .then(() => fetchProcesses(workspace));
+export const stopProcess = async (workspace, id: string) => {
+  await workspace.stopProcess(id)
+  fetchProcesses(workspace);
+};
 
-export const refreshAllProcesses = async (workspace) =>
-  workspace.refreshAllProcesses()
-    .then(() => fetchProcesses(workspace));
+export const deleteProcess = async (workspace, id: string) => {
+  await workspace.deleteComponent(id);
+  fetchProcesses(workspace);
+};
+
+export const refreshAllProcesses = async (workspace) => {
+  await workspace.refreshAllProcesses()
+  fetchProcesses(workspace);
+};

@@ -83,6 +83,13 @@ const rpc = async (path: string, query: Record<string, string>, data?: unknown):
   return await res.json();
 }
 
+export interface ProcessSpec {
+  directory?: string;
+  program: string;
+  arguments: string[];
+  environment?: Record<string, string>;
+}
+
 export const api = (() => {
   const kernel = (() => {
     const invoke = (method: string, data?: unknown) => rpc(`/kernel/${method}`, {}, data);
@@ -101,6 +108,14 @@ export const api = (() => {
         const { processes } = await invoke('describe-processes') as any;
         return processes;
       },
+    
+      async createProcess(name: string, spec: ProcessSpec): Promise<void> {
+        await invoke('create-component', {
+          name,
+          type: 'process',
+          spec: JSON.stringify(spec),
+        });
+      },
 
       async startProcess(ref: string): Promise<void> {
         await invoke('start', { ref });
@@ -108,6 +123,10 @@ export const api = (() => {
 
       async stopProcess(ref: string): Promise<void> {
         await invoke('stop', { ref });
+      },
+
+      async deleteComponent(ref: string): Promise<void> {
+        await invoke('delete-component', { ref });
       },
 
       async refreshAllProcesses(): Promise<void> {
