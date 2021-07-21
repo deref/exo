@@ -45,7 +45,7 @@ those fifos.`, command)
 
 	// Start child process.
 	if err := cmd.Start(); err != nil {
-		fatalf("starting %q: %v", program, err)
+		fatalf("%v", err)
 	}
 	child = cmd.Process
 

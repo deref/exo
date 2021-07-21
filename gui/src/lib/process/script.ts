@@ -5,7 +5,7 @@ const shellQuote = (s: string) => shell.quote([s]);
 
 export interface ParseResult {
   spec: Partial<ProcessSpec>; 
-  error: string | null;
+  error: Error | null;
 }
 
 export const parseScript = (script: string): ParseResult => {
@@ -15,7 +15,7 @@ export const parseScript = (script: string): ParseResult => {
     program: '',
     arguments: [],
   }
-  let error: string | null = null;
+  let error: Error | null = null;
 
   let lineIndex = 0;
 lines:
@@ -26,7 +26,7 @@ lines:
       if (error) {
         return;
       }
-      error = `line ${lineIndex}: ${message}`;
+      error = new Error(`line ${lineIndex}: ${message}`);
     };
 
     const entries = shell.parse(line);

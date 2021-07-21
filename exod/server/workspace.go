@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"path/filepath"
 	"strings"
 
@@ -18,6 +19,7 @@ import (
 	"github.com/deref/exo/gensym"
 	"github.com/deref/exo/import/procfile"
 	logd "github.com/deref/exo/logd/api"
+	"github.com/deref/exo/util/errutil"
 	"github.com/deref/exo/util/jsonutil"
 )
 
@@ -240,7 +242,7 @@ func (ws *Workspace) CreateComponent(ctx context.Context, input *api.CreateCompo
 
 func (ws *Workspace) createComponent(ctx context.Context, component config.Component) (id string, err error) {
 	if !IsValidName(component.Name) {
-		return "", fmt.Errorf("invalid name: %q", component.Name)
+		return "", errutil.NewHTTPError(http.StatusBadRequest, "invalid component name")
 	}
 
 	id = gensym.RandomBase32()

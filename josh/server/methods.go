@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"encoding/json"
 	"log" // TODO: Use a request scoped logger.
 	"net/http"
 	"path"
@@ -53,21 +52,10 @@ func (handler *MethodHandler) ServeHTTP(w http.ResponseWriter, req *http.Request
 	errv := results[1].Interface()
 	if errv != nil {
 		err := errv.(error)
-		w.WriteHeader(http.StatusInternalServerError)
-		log.Printf("error processing request: %v", err)
-		w.Write([]byte("internal server error\n"))
+		writeError(w, req, err)
 		return
 	}
-	writeJSON(w, output)
-}
-
-func writeJSON(w http.ResponseWriter, v interface{}) {
-	w.Header().Set("Content-Type", "application/json")
-	w.WriteHeader(http.StatusOK)
-	enc := json.NewEncoder(w)
-	if err := enc.Encode(v); err != nil {
-		log.Printf("error encoding response: %v", err)
-	}
+	writeJSON(w, http.StatusOK, output)
 }
 
 type MuxBuilder struct {

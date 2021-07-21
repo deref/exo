@@ -1,6 +1,6 @@
 <script lang="ts">
   import Layout from '../components/Layout.svelte';
-  import { api } from '../lib/api';
+  import { api, isClientError } from '../lib/api';
   import * as router from 'svelte-spa-router';
   import { parseScript, generateScript } from '../lib/process/script';
   import EnvironmentInput from '../components/EnvironmentInput.svelte';
@@ -9,6 +9,7 @@
   import Textarea from '../components/Textarea.svelte';
   import Button from '../components/Button.svelte';
   import CodeBlock from '../components/CodeBlock.svelte';
+  import ErrorLabel from '../components/ErrorLabel.svelte';
   
   export let params = { workspace: '' };
   
@@ -18,7 +19,7 @@
 
   let script: string = '';
   let structured = false;
-  let error: string | null = null;
+  let error: Error | null = null;
   
   let directory: string = '';
   let program: string = '';
@@ -47,13 +48,20 @@
 <Layout>
   <form on:submit|preventDefault={async () => {
     updateFields();
-    await workspace.createProcess(name, {
-      directory,
-      environment,
-      program,
-      arguments: args,
-    });
-    router.push(`/workspaces/${encodeURIComponent(params.workspace)}`);
+    try {
+      await workspace.createProcess(name, {
+        directory,
+        environment,
+        program,
+        arguments: args,
+      });
+      router.push(`/workspaces/${encodeURIComponent(params.workspace)}`);
+    } catch (ex) {
+      if (!isClientError(ex)) {
+        throw ex;
+      }
+      error = ex;
+    }
   }}>
     <div>
     <label for="name">Name:</label>
@@ -126,6 +134,7 @@ my-app --port 4000
         </div>
       </div>
     {/if}
+    <ErrorLabel value={error}/>
   </form>
 </Layout>
 

@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -14,6 +15,7 @@ import (
 	"time"
 
 	core "github.com/deref/exo/core/api"
+	"github.com/deref/exo/util/errutil"
 	"github.com/deref/exo/util/jsonutil"
 	"github.com/deref/exo/util/which"
 )
@@ -61,7 +63,7 @@ func (provider *Provider) start(ctx context.Context, procDir string, inputSpec s
 	}
 	program, err := whichQ.Run()
 	if err != nil {
-		return state{}, err
+		return state{}, errutil.WithHTTPStatus(http.StatusBadRequest, err)
 	}
 
 	// Construct supervised command.
@@ -140,7 +142,9 @@ func (provider *Provider) start(ctx context.Context, procDir string, inputSpec s
 			return
 		}
 		if len(message) > 0 {
-			errC <- errors.New(message)
+			// TODO: Do not treat as a bad request. Record the error somewhere,
+			// mark the component as being in an error state.
+			errC <- errutil.NewHTTPError(http.StatusBadRequest, message)
 		}
 	}()
 
