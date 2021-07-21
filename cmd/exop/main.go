@@ -24,7 +24,10 @@ func main() {
 	// subcommand so that it always uses the latest veresion of the code rather than relying
 	// on a prebuilt version of `fifofum` being on the path.
 	if len(os.Args) > 1 && os.Args[1] == "fifofum" {
-		fifofum.Main(fmt.Sprintf("%s %s", os.Args[0], os.Args[1]), os.Args[2:])
+		selfExec := os.Args[0]
+		subCmd := os.Args[1]
+		subCmdArgs := os.Args[2:]
+		fifofum.Main(fmt.Sprintf("%s %s", selfExec, subCmd), subCmdArgs)
 		return
 	}
 
