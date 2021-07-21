@@ -10,6 +10,10 @@
 
 <style>
 
+:global(body) {
+  overscroll-behavior: none;
+}
+
 main {
   display: grid;
   grid-auto-flow: row;

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Layout from '../components/Layout.svelte'
   import ProcessList from '../components/ProcessList.svelte'
   import LogsViewer from '../components/LogsViewer.svelte'
   import { api } from '../lib/api';
@@ -9,18 +10,22 @@
   const workspace = api.workspace(workspaceId);
 </script>
 
-<div class="container">
-  <ProcessList workspace={workspace} workspaceId={workspaceId}/>
-  <LogsViewer workspace={workspace}/>
-</div>
+<Layout>
+  <section>
+    <ProcessList workspace={workspace} workspaceId={workspaceId}/>
+    <LogsViewer workspace={workspace}/>
+  </section>
+</Layout>
 
 <style>
 
-  .container {
-    display: grid;
-    grid-template-columns: 280px 1fr;
-    gap: 30px;
-    margin: 0 30px;
-  }
+section {
+  height: 100%;
+  display: grid;
+  grid-template-columns: 280px 1fr;
+  gap: 30px;
+  margin: 0 30px;
+  padding-bottom: 30px;
+}
 
 </style>

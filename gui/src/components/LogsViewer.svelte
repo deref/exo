@@ -57,67 +57,72 @@ afterUpdate(async () => {
 </script>
 
 <section>
-    <h1>Logs</h1>
-    {#if hasData(logEvents)}
-    <div class="log-table-overflow-wrapper">
-      <div class="log-table-container" bind:this={logViewport}>
-        <table>
-          {#each logEvents.data as event (event.id)}
-          <tr class="log-entry">
-              <td>{event.log}</td> <td>{shortDate(event.timestamp)}</td> <td>{event.message}</td>
-          </tr>
-          {/each}
-        </table>
-      </div>
+  <h1>Logs</h1>
+  {#if hasData(logEvents)}
+  <div class="log-table-overflow-wrapper">
+    <div class="log-table-container" bind:this={logViewport}>
+      <table>
+        {#each logEvents.data as event (event.id)}
+        <tr class="log-entry">
+            <td>{event.log}</td> <td>{shortDate(event.timestamp)}</td> <td>{event.message}</td>
+        </tr>
+        {/each}
+      </table>
     </div>
-    {:else if IsUnresolved(logEvents)}
-      Loading logs...
-    {:else}
-      <p>Error fetching logs: {logEvents.message}</p>
-    {/if}
+  </div>
+  {:else if IsUnresolved(logEvents)}
+    <div>Loading logs...</div>
+  {:else}
+    <div>Error fetching logs: {logEvents.message}</div>
+  {/if}
 </section>
 
 <style>
 
-    .log-table-overflow-wrapper {
-      min-height: calc(100vh - 150px);
-      overflow: hidden;
-      border-radius: 4px;
-      box-shadow: 0px 12px 16px -8px #00000033, 0px 0.25px 0px 1px #00000033;
-    }
+section {
+  display: grid;
+  grid-auto-flow: row;
+  grid-template-rows: max-content 1fr;
+}
 
-    .log-table-container {
-      width: 100%;
-      min-height: calc(100vh - 150px);
-      overflow-x: auto;
-      overflow-y: scroll;
-    }
-    table {
-      font-family: 'Fira Code', monospace;
-      font-weight: 450;
-      font-size: 15px;
-    }
+.log-table-overflow-wrapper {
+  overflow: hidden;
+  border-radius: 4px;
+  box-shadow: 0px 12px 16px -8px #00000033, 0px 0.25px 0px 1px #00000033;
+}
 
-    table, tr, td {
-      border: none;
-      border-collapse: collapse;
-    }
+.log-table-container {
+  width: 100%;
+  height: 100%;
+  overflow-x: auto;
+  overflow-y: scroll;
+}
 
-    td {
-      padding: 0 0.4em;
-      white-space: nowrap;
-    }
+table {
+  font-family: 'Fira Code', monospace;
+  font-weight: 450;
+  font-size: 15px;
+}
 
-    td:nth-child(1) {
-      background: #ff000022;
-      color: #bb0000;
-      border-right: 1px solid #bb000044;
-    }
+table, tr, td {
+  border: none;
+  border-collapse: collapse;
+}
 
-    td:nth-child(2) {
-      background: #77777711;
-      color: #777777;
-      border-right: 1px solid #77777777;
-    }
+td {
+  padding: 0 0.4em;
+  white-space: nowrap;
+}
 
+td:nth-child(1) {
+  background: #ff000022;
+  color: #bb0000;
+  border-right: 1px solid #bb000044;
+}
+
+td:nth-child(2) {
+  background: #77777711;
+  color: #777777;
+  border-right: 1px solid #77777777;
+}
 </style>
