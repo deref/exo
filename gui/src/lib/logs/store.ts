@@ -45,7 +45,8 @@ export const refreshLogs = async (workspace, fromStart = false) => {
     }
   });
 
-  const newEvents = await workspace.getEvents(matchProcs, {
+  const logs = matchProcs.flatMap(procId => ([ `${procId}:out`, `${procId}:err` ]));
+  const newEvents = await workspace.getEvents(logs, {
     type: 'after-cursor',
     cursor: fromStart ? null : lastCursor,
   });

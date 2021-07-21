@@ -273,7 +273,7 @@ func (lc *LogCollector) getEvents(ctx context.Context, input *api.GetEventsInput
 	}
 	sort.Sort(&eventsSorter{events})
 
-	var cursor string
+	cursor := input.After // XXX
 	if len(events) > 0 {
 		end := mathutil.IntMin(limit, len(events))
 		events = events[:end]
