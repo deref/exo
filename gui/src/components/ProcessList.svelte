@@ -59,6 +59,11 @@ function toggleProcLogs(id: string) {
 
 onMount(() => {
   fetchProcesses(workspace);
+  
+  // TODO: Server-sent events or websockets!
+  setInterval(() => {
+    refreshAllProcesses(workspace);
+  }, 5000);
 });
 
 onDestroy(() => {
@@ -70,18 +75,6 @@ onDestroy(() => {
 <section>
   <h1>
     Processes
-    <a
-      href={`#/workspaces/${encodeURIComponent(workspaceId)}`}
-      on:click={(event) => {
-        if (event.metaKey || event.ctrlKey) {  
-          return;
-        }
-        refreshAllProcesses(workspace);
-        event.preventDefault();
-      }}
-    >
-      (refresh)
-    </a>
     <a use:link href={`#/workspaces/${encodeURIComponent(workspaceId)}/new-process`}>[+]</a>
   </h1>
   {#if processList.stage == 'pending' || processList.stage == 'idle'}
@@ -107,6 +100,8 @@ onDestroy(() => {
         {/if}
       </div>
     </div>
+    {:else}
+    <div><i>No processes yet.</i></div>
     {/each}
   {:else if processList.stage == 'error'}
     <p>Error fetching process list: {processList.message}</p>
@@ -115,57 +110,58 @@ onDestroy(() => {
 
 <style>
 
-  .process-description {
-    display: grid;
-    grid-template-columns: max-content auto max-content;
-    gap: 12px;
-    margin-bottom: 8px;
-    align-items: center;
-  }
+.process-description {
+  display: grid;
+  grid-template-columns: max-content auto max-content;
+  gap: 12px;
+  margin-bottom: 8px;
+  align-items: center;
+}
 
-  h2 {
-    margin: 0;
-    line-height: 1;
-    font-size: 18px;
-    font-weight: 550;
-    padding: 6px 12px;
-    border-radius: 6px;
-    color: #bb0000;
-    background: #ff000022;
-  }
+h2 {
+  margin: 0;
+  line-height: 1;
+  font-size: 18px;
+  font-weight: 550;
+  padding: 6px 12px;
+  border-radius: 6px;
+  color: #bb0000;
+  background: #ff000022;
+}
 
-  h1 a {
-    font-size: 14px;
-    color: blue;
-  }
+h1 a {
+  font-size: 14px;
+  color: blue;
+}
 
-  button {
-    font-family: inherit;
-    font-size: 0;
-    font-weight: 450;
-    padding: 6px;
-    color: #777777;
-    background-color: #77777700;
-    border-radius: 4px;
-    border: none;
-    outline: none;
-    margin-left: 4px;
-  }
+button {
+  font-family: inherit;
+  font-size: 0;
+  font-weight: 450;
+  padding: 6px;
+  color: #777777;
+  background-color: #77777700;
+  border-radius: 4px;
+  border: none;
+  outline: none;
+  margin-left: 4px;
+}
 
-  button :global(svg), button :global(svg *) {
-    fill: currentColor;
-  }
+button :global(svg), button :global(svg *) {
+  fill: currentColor;
+}
 
-  button:hover {
-    background-color: #77777711;
-    color: #444444;
-  }
+button:hover {
+  background-color: #77777711;
+  color: #444444;
+}
 
-  button:focus {
-    background-color: #77777733;
-  }
+button:focus {
+  background-color: #77777733;
+}
 
-  p {
-    font-weight: bold;
-  }
+p {
+  font-weight: bold;
+}
+
 </style>
