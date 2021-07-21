@@ -69,6 +69,36 @@ const apiUrl = (path: string, query: Record<string, string>) => {
   return baseUrl + path + qs;
 }
 
+const isErrorLike = (x: any): x is { message: string } => {
+  return x != null && 'message' in x && typeof x.message === 'string';
+};
+
+export class APIError extends Error {
+  constructor(public readonly httpStatus: number, message: string) {
+    super(message);
+  }
+}
+
+export const isClientError = (err: Error): err is APIError =>
+  err instanceof APIError && 400 <= err.httpStatus && err.httpStatus < 500;
+
+const responseToError = async (res: Response): Promise<Error | null> => {
+  if (200 <= res.status && res.status < 300) {
+    return null;
+  }
+  const text = await res.text();
+  let json: unknown;
+  try {
+    json = JSON.parse(text);
+  } catch (_: unknown) {
+    json = text;
+  }
+  if (!isErrorLike(json)) {
+    return new Error(`malformed error from server: ${JSON.stringify(json)}`);
+  }
+  return new APIError(res.status, json.message);
+}
+
 const rpc = async (path: string, query: Record<string, string>, data?: unknown): Promise<unknown> => {
   const res = await fetch(apiUrl(path, query), {
     method: 'POST',
@@ -80,6 +110,10 @@ const rpc = async (path: string, query: Record<string, string>, data?: unknown):
       body: JSON.stringify(data)
     } : {}),
   });
+  const err = await responseToError(res);
+  if (err !== null) {
+    throw err;
+  }
   return await res.json();
 }
 

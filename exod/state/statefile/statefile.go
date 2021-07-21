@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -11,6 +12,7 @@ import (
 	"github.com/deref/exo/exod/state/api"
 	state "github.com/deref/exo/exod/state/api"
 	"github.com/deref/exo/util/atom"
+	"github.com/deref/exo/util/errutil"
 )
 
 func New(filename string) *Store {
@@ -95,7 +97,7 @@ func (sto *Store) DescribeWorkspaces(ctx context.Context, input *state.DescribeW
 func (sto *Store) AddWorkspace(ctx context.Context, input *state.AddWorkspaceInput) (*state.AddWorkspaceOutput, error) {
 	rootPath := filepath.Clean(input.Root)
 	if !filepath.IsAbs(rootPath) {
-		return nil, errors.New("root must be absolute path")
+		return nil, errutil.NewHTTPError(http.StatusBadRequest, "root must be absolute path")
 	}
 	_, err := sto.swap(func(root *Root) error {
 		if root.Workspaces == nil {
@@ -106,7 +108,7 @@ func (sto *Store) AddWorkspace(ctx context.Context, input *state.AddWorkspaceInp
 		}
 		for _, workspace := range root.Workspaces {
 			if rootPath == workspace.Root {
-				return fmt.Errorf("workspace with root %q already exists", rootPath)
+				return errutil.HTTPErrorf(http.StatusConflict, "workspace with root %q already exists", rootPath)
 			}
 		}
 		root.Workspaces[input.ID] = &Workspace{
