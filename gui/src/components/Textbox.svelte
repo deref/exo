@@ -1,4 +1,4 @@
-<script type="ts">
+<script lang="ts">
 
   export let id: string | undefined = undefined;
   export let name: string | undefined = undefined;

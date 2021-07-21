@@ -1,4 +1,4 @@
-<script type="ts">
+<script lang="ts">
   import Warning from './mono/warning.svelte';
 
   export let value: Error | null = null;

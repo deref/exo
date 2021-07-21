@@ -1,4 +1,4 @@
-<script type="ts">
+<script lang="ts">
   import Layout from '../components/Layout.svelte';
   import Code from '../components/Code.svelte';
 </script>
