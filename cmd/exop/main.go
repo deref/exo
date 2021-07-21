@@ -2,13 +2,16 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"net/http"
+	"os"
 	"path/filepath"
 
 	"github.com/deref/exo/components/log"
 	"github.com/deref/exo/exod/server"
 	"github.com/deref/exo/exod/state/statefile"
+	"github.com/deref/exo/fifofum"
 	josh "github.com/deref/exo/josh/client"
 	logd "github.com/deref/exo/logd/client"
 	"github.com/deref/exo/util/cmdutil"
@@ -17,6 +20,14 @@ import (
 )
 
 func main() {
+	// In development, exop starts a process by exec-ing a copy of itself with the "fifofum"
+	// subcommand so that it always uses the latest veresion of the code rather than relying
+	// on a prebuilt version of `fifofum` being on the path.
+	if len(os.Args) > 1 && os.Args[1] == "fifofum" {
+		fifofum.Main(fmt.Sprintf("%s %s", os.Args[0], os.Args[1]), os.Args[2:])
+		return
+	}
+
 	ctx := context.Background()
 
 	paths := cmdutil.MustMakeDirectories()
@@ -39,7 +50,7 @@ func main() {
 				},
 			},
 		},
-		URL: "http://unix/",
+		URL: "http://unix",
 	}))
 
 	mux := server.BuildRootMux("/", cfg)
