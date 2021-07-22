@@ -142,6 +142,10 @@ export const api = (() => {
         const { processes } = await invoke('describe-processes') as any;
         return processes;
       },
+
+      async apply() {
+        await invoke('apply', {});
+      },
     
       async createProcess(name: string, spec: ProcessSpec): Promise<void> {
         await invoke('create-component', {

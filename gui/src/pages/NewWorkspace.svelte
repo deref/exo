@@ -18,14 +18,22 @@
 <section>
   <form on:submit|preventDefault={async () => {
     error = null;
+    let workspaceId;
     try {
-      const id = await api.kernel.createWorkspace(root)
-      router.push(`/workspaces/${encodeURIComponent(id)}`);
+      workspaceId = await api.kernel.createWorkspace(root)
+      router.push(`/workspaces/${encodeURIComponent(workspaceId)}`);
     } catch (ex) {
       if (!isClientError(ex)) {
         throw ex;
       }
       error = ex;
+    }
+    // XXX Hack to address lack of GUI for applying procfiles, etc.
+    try {
+      await api.workspace(workspaceId).apply();
+    } catch (ex) {
+      // Swallow error.
+      console.error(ex);
     }
   }}>
     <label for="root">Root:</label>
