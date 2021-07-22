@@ -55,3 +55,11 @@ func (kern *Kernel) FindWorkspace(ctx context.Context, input *api.FindWorkspaceI
 		ID: output.ID,
 	}, nil
 }
+
+func (kern *Kernel) Panic(ctx context.Context, input *api.PanicInput) (*api.PanicOutput, error) {
+	message := input.Message
+	if input.Message == "" {
+		message = "test error"
+	}
+	panic(message)
+}

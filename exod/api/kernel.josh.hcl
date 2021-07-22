@@ -15,5 +15,11 @@ interface "kernel" {
 
     output "id" "*string" {}
   }
+  
+  method "panic" {
+    doc = "Debug method to test what happens when the service panics."
+
+    input "message" "string" {}
+  }
 
 }
