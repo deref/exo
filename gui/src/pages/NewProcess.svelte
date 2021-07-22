@@ -142,7 +142,7 @@ my-app --port 4000
 
 form {
   padding: 40px;
-  max-width: 1080px;
+  max-width: 980px;
   margin: 0 auto;
 }
 
@@ -151,6 +151,8 @@ form {
   grid-template-columns: 1fr 1fr;
   gap: 30px;
 }
+
+* :global(input) { width: 100% }
 
 label {
   display: block;
