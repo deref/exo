@@ -233,8 +233,8 @@ func (ws *Workspace) CreateComponent(ctx context.Context, input *api.CreateCompo
 }
 
 func (ws *Workspace) createComponent(ctx context.Context, component manifest.Component) (id string, err error) {
-	if !IsValidName(component.Name) {
-		return "", errutil.NewHTTPError(http.StatusBadRequest, "invalid component name")
+	if !manifest.IsValidName(component.Name) {
+		return "", errutil.HTTPErrorf(http.StatusBadRequest, "component name must match %q", manifest.NamePattern)
 	}
 
 	id = gensym.RandomBase32()
@@ -268,15 +268,6 @@ func (ws *Workspace) createComponent(ctx context.Context, component manifest.Com
 	}
 
 	return id, nil
-}
-
-func IsValidName(name string) bool {
-	for _, b := range []byte(name) {
-		if b == 0 || b == 255 {
-			return false
-		}
-	}
-	return name != ""
 }
 
 func (ws *Workspace) UpdateComponent(ctx context.Context, input *api.UpdateComponentInput) (*api.UpdateComponentOutput, error) {
