@@ -7,24 +7,12 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestRoundtrip(t *testing.T) {
-	cursors := []*store.Cursor{
-		{
-			ID:        []byte("some-id"),
-			Direction: store.DirectionForward,
-		},
-		{
-			ID:        []byte("some-id"),
-			Direction: store.DirectionReverse,
-		},
+func TestCursorRoundTrip(t *testing.T) {
+	initial := "01fb7m0krevg0kkkkqtd66a0xA"
+	cursor, err := store.ParseCursor(initial)
+	if !assert.NoError(t, err) {
+		return
 	}
 
-	for _, cursor := range cursors {
-		serialized := cursor.Serialize()
-		parsed, err := store.ParseCursor(serialized)
-		if !assert.NoError(t, err) {
-			continue
-		}
-		assert.Equal(t, cursor, parsed)
-	}
+	assert.Equal(t, initial, cursor.Serialize())
 }

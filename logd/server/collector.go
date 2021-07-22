@@ -1,7 +1,6 @@
 package server
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -15,13 +14,15 @@ import (
 	"github.com/deref/exo/logd/store"
 	"github.com/deref/exo/logd/store/badger"
 	"github.com/deref/exo/util/agent"
+	"github.com/deref/exo/util/binaryutil"
 	"github.com/deref/exo/util/jsonutil"
+	"github.com/deref/exo/util/mathutil"
 	"github.com/oklog/ulid/v2"
 	"golang.org/x/sync/errgroup"
 )
 
 const (
-	defaultEventsPerRequest = 500
+	defaultLimit = 500
 )
 
 type Config struct {
@@ -252,43 +253,77 @@ func (lc *LogCollector) getEvents(ctx context.Context, input *api.GetEventsInput
 		}
 	}
 
-	limit := input.Limit
-	if limit == 0 {
-		limit = defaultEventsPerRequest
+	limit := defaultLimit
+	var direction store.Direction
+	if input.Next != nil {
+		if input.Prev != nil {
+			return nil, errors.New("Only one of prev or next may be specified")
+		}
+		limit = *input.Next
+		direction = store.DirectionForward
+	} else if input.Prev != nil {
+		limit = *input.Prev
+		direction = store.DirectionBackward
+	} else {
+		// Use default limit, and move forward
+		direction = store.DirectionForward
 	}
 
-	parsedCursor, err := store.ParseCursor(input.Cursor)
-	if err != nil {
-		return nil, fmt.Errorf("parsing cursor: %w", err)
+	var parsedCursor *store.Cursor
+	if input.Cursor != nil {
+		var err error
+		if parsedCursor, err = store.ParseCursor(*input.Cursor); err != nil {
+			return nil, fmt.Errorf("parsing cursor: %w", err)
+		}
 	}
-
 	// TODO: Merge sort.
 	events := []api.Event{}
-	var cursor *store.Cursor
 	for _, logName := range logs {
 		log := lc.store.GetLog(logName)
-		logEvents, err := log.GetEvents(ctx, parsedCursor, limit)
+
+		logEvents, err := log.GetEvents(ctx, parsedCursor, limit, direction)
 		if err != nil {
 			return nil, fmt.Errorf("getting %q events: %w", logName, err)
 		}
 		if logEvents == nil {
 			continue
 		}
-		events = append(events, logEvents.Events...)
-		if cursor == nil || bytes.Compare(logEvents.Cursor.ID, cursor.ID) > 0 {
-			cursor = &logEvents.Cursor
-		}
+		events = append(events, logEvents...)
 	}
 	sort.Sort(&eventsSorter{events})
 
-	var encodedCursor string
-	if cursor != nil {
-		encodedCursor = cursor.Serialize()
+	effectiveLimit := mathutil.IntMin(limit, len(events))
+	if direction == store.DirectionForward {
+		events = events[0:effectiveLimit]
+	} else {
+		end := len(events)
+		start := end - effectiveLimit
+		events = events[start:end]
+	}
+
+	prevCursor := store.NilCursor
+	nextCursor := store.NilCursor
+	if len(events) > 0 {
+		// TODO: Separate encoding from badger code.
+		if idBytes, err := badger.DecodeID(events[0].ID); err != nil {
+			return nil, err
+		} else {
+			// We don't care about the error if this is already a (zero-valued) NilCursor
+			_ = binaryutil.DecrementBytes(idBytes)
+			prevCursor = &store.Cursor{ID: idBytes}
+		}
+
+		if idBytes, err := badger.DecodeID(events[len(events)-1].ID); err != nil {
+			return nil, err
+		} else {
+			nextCursor = &store.Cursor{ID: binaryutil.IncrementBytes(idBytes)}
+		}
 	}
 
 	return &api.GetEventsOutput{
-		Events: events,
-		Cursor: encodedCursor,
+		Events:     events,
+		PrevCursor: prevCursor.Serialize(),
+		NextCursor: nextCursor.Serialize(),
 	}, nil
 }
 
