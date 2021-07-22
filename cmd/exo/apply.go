@@ -26,22 +26,37 @@ If no config file is specified, a search is conducted in the current directory
 in the following order of format preference:
 
   1. exo
-	2. compose
-	3. procfile
+	2. procfile
 	
 The default exo filename is 'exo.hcl'.
 
-Docker compose files may have one of the following names in order of preference:
-
-	compose.yaml
-	compose.yml
-  docker-compose.yaml
-  docker-compose.yml
-	
 The expected procfile name 'Procfile'.
 
 If a config format will be guessed from the config filename.  This can be
 overidden explicitly with the --format flag.`,
+	// TODO: Replace docs when we have docker-compose support.
+	//	Long: `Applies a config in the current workspace.
+	//
+	//If no config file is specified, a search is conducted in the current directory
+	//in the following order of format preference:
+	//
+	//  1. exo
+	//	2. compose
+	//	3. procfile
+	//
+	//The default exo filename is 'exo.hcl'.
+	//
+	//Compose files may have one of the following names in order of preference:
+	//
+	//	compose.yaml
+	//	compose.yml
+	//  docker-compose.yaml
+	//  docker-compose.yml
+	//
+	//The expected procfile name 'Procfile'.
+	//
+	//If a config format will be guessed from the config filename.  This can be
+	//overidden explicitly with the --format flag.`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := newContext()

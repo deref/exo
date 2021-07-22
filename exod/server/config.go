@@ -24,10 +24,11 @@ type configCandidate struct {
 
 var configCandidates = []configCandidate{
 	{"exo", "exo.hcl"},
-	{"compose", "compose.yaml"},
-	{"compose", "compose.yml"},
-	{"compose", "docker-compose.yaml"},
-	{"compose", "docker-compose.yml"},
+	// TODO: Uncomment when we have docker-compose support.
+	//{"compose", "compose.yaml"},
+	//{"compose", "compose.yml"},
+	//{"compose", "docker-compose.yaml"},
+	//{"compose", "docker-compose.yml"},
 	{"procfile", "Procfile"},
 }
 
