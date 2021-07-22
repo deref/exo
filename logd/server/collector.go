@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -228,10 +229,15 @@ func (lc *LogCollector) describeLogs(ctx context.Context, input *api.DescribeLog
 	var output api.DescribeLogsOutput
 	output.Logs = []api.LogDescription{}
 	for name, description := range lc.state.Logs {
+		var lastEventAt *string
+		if lastEvent := lc.store.GetLog(name).GetLastEvent(ctx); lastEvent != nil {
+			lastEventAt = &lastEvent.Timestamp
+		}
+
 		output.Logs = append(output.Logs, api.LogDescription{
 			Name:        name,
 			Source:      description.Source,
-			LastEventAt: lc.store.GetLog(name).GetLastEventAt(ctx),
+			LastEventAt: lastEventAt,
 		})
 	}
 	return &output, nil
@@ -269,19 +275,36 @@ func (lc *LogCollector) getEvents(ctx context.Context, input *api.GetEventsInput
 		direction = store.DirectionForward
 	}
 
-	var parsedCursor *store.Cursor
-	if input.Cursor != nil {
-		var err error
-		if parsedCursor, err = store.ParseCursor(*input.Cursor); err != nil {
+	var cursor *store.Cursor
+	var err error
+	if input.Cursor == nil {
+		if cursor, err = lc.getLatestCursor(ctx, input.Logs); err != nil {
+			return nil, fmt.Errorf("finding latest cursor: %w", err)
+		}
+	} else {
+		if cursor, err = store.ParseCursor(*input.Cursor); err != nil {
 			return nil, fmt.Errorf("parsing cursor: %w", err)
 		}
 	}
+
 	// TODO: Merge sort.
 	events := []api.Event{}
 	for _, logName := range logs {
 		log := lc.store.GetLog(logName)
 
-		logEvents, err := log.GetEvents(ctx, parsedCursor, limit, direction)
+		logCursor := cursor
+		if logCursor == nil {
+			if lastEvent := log.GetLastEvent(ctx); lastEvent != nil {
+				idBytes, err := badger.DecodeID(lastEvent.ID)
+				if err != nil {
+					return nil, fmt.Errorf("decoding id: %w", err)
+				}
+				idBytes = binaryutil.IncrementBytes(idBytes)
+				logCursor = &store.Cursor{ID: idBytes}
+			}
+		}
+
+		logEvents, err := log.GetEvents(ctx, logCursor, limit, direction)
 		if err != nil {
 			return nil, fmt.Errorf("getting %q events: %w", logName, err)
 		}
@@ -301,8 +324,8 @@ func (lc *LogCollector) getEvents(ctx context.Context, input *api.GetEventsInput
 		events = events[start:end]
 	}
 
-	prevCursor := store.NilCursor
-	nextCursor := store.NilCursor
+	prevCursor := cursor
+	nextCursor := cursor
 	if len(events) > 0 {
 		// TODO: Separate encoding from badger code.
 		if idBytes, err := badger.DecodeID(events[0].ID); err != nil {
@@ -325,6 +348,19 @@ func (lc *LogCollector) getEvents(ctx context.Context, input *api.GetEventsInput
 		PrevCursor: prevCursor.Serialize(),
 		NextCursor: nextCursor.Serialize(),
 	}, nil
+}
+
+func (lc *LogCollector) getLatestCursor(ctx context.Context, logs []string) (*store.Cursor, error) {
+	cursor := store.NilCursor
+	for _, logName := range logs {
+		log := lc.store.GetLog(logName)
+		logCursor := log.GetLastCursor(ctx)
+		if logCursor != nil && bytes.Compare(logCursor.ID, cursor.ID) > 0 {
+			cursor = logCursor
+		}
+	}
+
+	return cursor, nil
 }
 
 type eventsSorter struct {

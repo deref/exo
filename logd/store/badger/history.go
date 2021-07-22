@@ -6,15 +6,17 @@ import (
 
 	"github.com/deref/exo/logd/api"
 	"github.com/deref/exo/logd/store"
+	"github.com/deref/exo/util/binaryutil"
 	"github.com/dgraph-io/badger/v3"
 )
 
-func (log *Log) GetLastEventAt(ctx context.Context) *string {
+func (log *Log) GetLastEvent(ctx context.Context) *api.Event {
 	lastEvent, err := log.getLastEvent(ctx)
 	if err != nil || lastEvent == nil {
 		return nil
 	}
-	return &lastEvent.Timestamp
+
+	return lastEvent
 }
 
 func (log *Log) getLastEvent(ctx context.Context) (*api.Event, error) {
@@ -25,12 +27,14 @@ func (log *Log) getLastEvent(ctx context.Context) (*api.Event, error) {
 		opts := badger.DefaultIteratorOptions
 		opts.PrefetchSize = 1
 		opts.Reverse = true
+
 		it := txn.NewIterator(opts)
 		defer it.Close()
+
 		it.Seek(append([]byte(log.name), 255))
 		if it.ValidForPrefix(prefix) {
 			item := it.Item()
-			key := it.Item().Key()
+			key := item.Key()
 			return item.Value(func(val []byte) error {
 				if err := validateVersion(val[versionOffset]); err != nil {
 					return err
@@ -49,6 +53,34 @@ func (log *Log) getLastEvent(ctx context.Context) (*api.Event, error) {
 	}
 
 	return event, nil
+}
+
+func (log *Log) GetLastCursor(ctx context.Context) (cursor *store.Cursor) {
+	cursor = new(store.Cursor)
+	prefix := append([]byte(log.name), 0)
+
+	_ = log.db.View(func(txn *badger.Txn) error {
+		opts := badger.DefaultIteratorOptions
+		opts.PrefetchValues = false
+		opts.Reverse = true
+
+		it := txn.NewIterator(opts)
+		defer it.Close()
+
+		it.Seek(append([]byte(log.name), 255))
+		if it.ValidForPrefix(prefix) {
+			id, err := idFromKey(log.name, it.Item().Key())
+			if err != nil {
+				return err
+			}
+			// If `idFromKey` succeeded, this cannot fail.
+			cursor.ID, _ = DecodeID(id)
+			cursor.ID = binaryutil.IncrementBytes(cursor.ID)
+		}
+		return nil
+	})
+
+	return
 }
 
 func (log *Log) GetEvents(ctx context.Context, cursor *store.Cursor, limit int, direction store.Direction) ([]api.Event, error) {
