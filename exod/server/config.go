@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
+	"net/http"
 	"path/filepath"
 	"strings"
 
@@ -12,6 +13,7 @@ import (
 	"github.com/deref/exo/exod/api"
 	"github.com/deref/exo/import/compose"
 	"github.com/deref/exo/import/procfile"
+	"github.com/deref/exo/util/errutil"
 	"github.com/deref/exo/util/osutil"
 )
 
@@ -53,7 +55,7 @@ func (ws *Workspace) resolveConfig(rootDir string, input *api.ApplyInput) (*conf
 				}
 			}
 			if configPath == "" {
-				return nil, errors.New("could not find config file")
+				return nil, errutil.NewHTTPError(http.StatusBadRequest, "could not find config file")
 			}
 		}
 

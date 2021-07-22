@@ -36,16 +36,26 @@ func (c *Client) Invoke(ctx context.Context, method string, input interface{}, o
 	if err != nil {
 		return fmt.Errorf("posting: %w", err)
 	}
+	defer resp.Body.Close()
 	if resp.StatusCode != http.StatusOK {
 		bs, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
 			return fmt.Errorf("reading response body: %w", err)
 		}
-		bs = bytes.TrimSpace(bs)
-		if len(bs) == 0 {
-			return errors.New("empty response")
+		var obj struct {
+			Message string `json:"message"`
 		}
-		return fmt.Errorf("%s", bs)
+		if resp.Header.Get("content-type") == "application/json" {
+			_ = json.Unmarshal(bs, &obj)
+		}
+		if obj.Message == "" {
+			bs = bytes.TrimSpace(bs)
+			if len(bs) == 0 {
+				return errors.New("empty response")
+			}
+			return fmt.Errorf("%s", bs)
+		}
+		return errors.New(obj.Message)
 	}
 	outputValue := reflect.ValueOf(output).Elem()
 	outputValue.Set(reflect.Zero(outputValue.Type()))
