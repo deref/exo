@@ -2,6 +2,7 @@ package badger
 
 import (
 	"context"
+	"log"
 
 	"github.com/deref/exo/gensym"
 	"github.com/deref/exo/logd/store"
@@ -20,7 +21,10 @@ type Log struct {
 }
 
 func Open(ctx context.Context, logsDir string) (*Store, error) {
-	db, err := badger.Open(badger.DefaultOptions(logsDir))
+	db, err := badger.Open(
+		badger.DefaultOptions(logsDir).
+			WithLogger(newLogger(log.Default(), defaultLogLevel)),
+	)
 	if err != nil {
 		return nil, err
 	}

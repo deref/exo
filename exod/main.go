@@ -6,6 +6,9 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"syscall"
+
+	golog "log"
 
 	"github.com/deref/exo/components/log"
 	"github.com/deref/exo/exod/server"
@@ -16,6 +19,7 @@ import (
 	logd "github.com/deref/exo/logd/server"
 	"github.com/deref/exo/util/cmdutil"
 	"github.com/deref/exo/util/httputil"
+	"gopkg.in/natefinch/lumberjack.v2"
 )
 
 func Main() {
@@ -38,6 +42,39 @@ func RunServer() {
 	ctx := context.Background()
 
 	paths := cmdutil.MustMakeDirectories()
+
+	if cmdutil.NonTerminalStdio() {
+		// Replace the standard logger with a logger writes to the var directory
+		// and handles log rotation.
+		golog.SetOutput(&lumberjack.Logger{
+			Filename:   filepath.Join(paths.VarDir, "exod.log"),
+			MaxSize:    20, // megabytes
+			MaxBackups: 3,
+			MaxAge:     28, //days
+		})
+
+		// Panics will still write to stderr and some malbehaved code may write to
+		// stdout or stderr. Redirect these file descriptors to truncated,
+		// non-rotating, log files in the var directory. These logs  won't be
+		// preserved across runs, but can help us debug crashes where there is no
+		// terminal attached.
+		for _, redirect := range []struct {
+			FD   int
+			Name string
+		}{
+			{1, "stdout"},
+			{2, "stderr"},
+		} {
+			dumpPath := filepath.Join(paths.VarDir, "exod."+redirect.Name)
+			dumpFile, err := os.OpenFile(dumpPath, os.O_WRONLY|os.O_CREATE|os.O_SYNC|os.O_TRUNC, 0600)
+			if err != nil {
+				golog.Printf("creating %s dump file: %v", redirect.Name, err)
+			}
+			if err := syscall.Dup2(int(dumpFile.Fd()), redirect.FD); err != nil {
+				golog.Printf("redirecting %s: %v", redirect.Name, err)
+			}
+		}
+	}
 
 	// When running as a daemon, we want to use the root filesystem to
 	// avoid accidental relative path handling and to prevent tieing up
@@ -72,8 +109,11 @@ func RunServer() {
 		}()
 	}
 
+	addr := cmdutil.GetAddr()
+	golog.Printf("listening at %s", addr)
+
 	cmdutil.ListenAndServe(ctx, &http.Server{
-		Addr:    cmdutil.GetAddr(),
+		Addr:    addr,
 		Handler: httputil.HandlerWithContext(ctx, mux),
 	})
 }
