@@ -2,6 +2,7 @@ package config
 
 import (
 	"io"
+	"io/ioutil"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/gohcl"
@@ -30,7 +31,15 @@ func NewConfig() *Config {
 	}
 }
 
-func Parse(bs []byte) (*Config, error) {
+func Read(r io.Reader) (*Config, error) {
+	bs, err := ioutil.ReadAll(r)
+	if err != nil {
+		return nil, err
+	}
+	return ReadBytes(bs)
+}
+
+func ReadBytes(bs []byte) (*Config, error) {
 	var cfg Config
 	evalCtx := &hcl.EvalContext{
 		Functions: map[string]function.Function{

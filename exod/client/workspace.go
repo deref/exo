@@ -36,11 +36,6 @@ func (c *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (output *a
 	return
 }
 
-func (c *Workspace) ApplyProcfile(ctx context.Context, input *api.ApplyProcfileInput) (output *api.ApplyProcfileOutput, err error) {
-	err = c.client.Invoke(ctx, "apply-procfile", input, &output)
-	return
-}
-
 func (c *Workspace) Refresh(ctx context.Context, input *api.RefreshInput) (output *api.RefreshOutput, err error) {
 	err = c.client.Invoke(ctx, "refresh", input, &output)
 	return
