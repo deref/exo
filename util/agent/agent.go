@@ -10,6 +10,7 @@ import (
 // Note: This is not quite a Clojure agent, since there is no way to deref.
 type Agent struct {
 	inbox chan action
+	exit  chan struct{}
 	fail  chan error
 }
 
@@ -21,6 +22,7 @@ type action struct {
 func NewAgent(size int) *Agent {
 	return &Agent{
 		inbox: make(chan action, size),
+		exit:  make(chan struct{}),
 		fail:  make(chan error, 1),
 	}
 }
@@ -40,6 +42,7 @@ loop:
 		}
 	}
 	// Drain queue.
+	close(a.exit)
 	close(a.inbox)
 	for action := range a.inbox {
 		action.reply <- context.Canceled
@@ -64,6 +67,8 @@ var InboxFull = errors.New("inbox full")
 func (a *Agent) Send(f func() error) error {
 	reply := make(chan error, 1)
 	select {
+	case <-a.exit:
+		reply <- context.Canceled
 	case a.inbox <- action{
 		f:     f,
 		reply: reply,
