@@ -85,7 +85,7 @@ func (ws *Workspace) resolveManifest(rootDir string, input *api.ApplyInput) (*ma
 		case "exo.hcl", "":
 			format = "exo"
 		default:
-			if strings.HasSuffix(name, ".procfile") {
+			if strings.HasPrefix(name, "procfile.") || strings.HasSuffix(name, ".procfile") {
 				format = "procfile"
 			} else {
 				return nil, errors.New("cannot determine manifest format from file name")
