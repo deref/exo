@@ -16,7 +16,6 @@ type Workspace interface {
 	Destroy(context.Context, *DestroyInput) (*DestroyOutput, error)
 	// Performs creates, updates, refreshes, disposes, as needed.
 	Apply(context.Context, *ApplyInput) (*ApplyOutput, error)
-	ApplyProcfile(context.Context, *ApplyProcfileInput) (*ApplyProcfileOutput, error)
 	// Refreshes all components.
 	Refresh(context.Context, *RefreshInput) (*RefreshOutput, error)
 	// Resolves a reference in to an ID.
@@ -54,17 +53,16 @@ type DestroyOutput struct {
 }
 
 type ApplyInput struct {
-	Config string `json:"config"`
+
+	// One of 'exo', 'compose', or 'procfile'.
+	Format *string `json:"format"`
+	// Path of config file to load. May be relative to the workspace root. If format is not provided, will be inferred from path name.
+	ConfigPath *string `json:"configPath"`
+	// Contents of the config file. Not required if config-path is provided.
+	Config *string `json:"config"`
 }
 
 type ApplyOutput struct {
-}
-
-type ApplyProcfileInput struct {
-	Procfile string `json:"procfile"`
-}
-
-type ApplyProcfileOutput struct {
 }
 
 type RefreshInput struct {
@@ -176,9 +174,6 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	})
 	b.AddMethod("apply", func(req *http.Request) interface{} {
 		return factory(req).Apply
-	})
-	b.AddMethod("apply-procfile", func(req *http.Request) interface{} {
-		return factory(req).ApplyProcfile
 	})
 	b.AddMethod("refresh", func(req *http.Request) interface{} {
 		return factory(req).Refresh

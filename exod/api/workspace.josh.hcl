@@ -11,11 +11,15 @@ interface "workspace" {
   method "apply" {
     doc = "Performs creates, updates, refreshes, disposes, as needed."
 
-    input "config" "string" {}
-  }
-  
-  method "apply-procfile" {
-    input "procfile" "string" {} 
+    input "format" "*string" {
+      doc = "One of 'exo', 'compose', or 'procfile'."
+    }
+    input "config-path" "*string" {
+      doc = "Path of config file to load. May be relative to the workspace root. If format is not provided, will be inferred from path name."
+    }
+    input "config" "*string" {
+      doc = "Contents of the config file. Not required if config-path is provided."
+    }
   }
   
   method "refresh" {

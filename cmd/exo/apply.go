@@ -3,12 +3,8 @@ package main
 import (
 	"fmt"
 	"io/ioutil"
-	"path/filepath"
-	"strings"
 
 	"github.com/deref/exo/exod/api"
-	"github.com/deref/exo/util/cmdutil"
-	"github.com/deref/exo/util/osutil"
 	"github.com/spf13/cobra"
 )
 
@@ -51,75 +47,28 @@ overidden explicitly with the --format flag.`,
 		ctx := newContext()
 		ensureDaemon()
 
-		configPath := ""
-		if len(args) > 0 {
-			configPath = args[0]
-		}
-
-		if configPath == "" {
-			// Search for config.
-			for _, candidate := range []string{
-				"exo.hcl",
-				"compose.yaml",
-				"compose.yml",
-				"docker-compose.yaml",
-				"docker-compose.yml",
-				"Procfile",
-			} {
-				exist, err := osutil.Exists(candidate)
-				if err != nil {
-					return fmt.Errorf("searching for config: %w", err)
-				}
-				if exist {
-					configPath = candidate
-					break
-				}
-			}
-			if configPath == "" {
-				return fmt.Errorf("could not find config file")
-			}
-		}
-
-		if applyFlags.Format == "" {
-			// Guess format.
-			name := strings.ToLower(filepath.Base(configPath))
-			switch name {
-			case "procfile":
-				applyFlags.Format = "procfile"
-			case "compose.yaml", "compose.yml", "docker-compose.yaml", "docker-compose.yml":
-				applyFlags.Format = "compose"
-			case "exo.hcl":
-				applyFlags.Format = "exo"
-			default:
-				if strings.HasSuffix(name, ".procfile") {
-					applyFlags.Format = "procfile"
-				} else {
-					return fmt.Errorf("cannot determine config format from name; try the --format flag")
-				}
-			}
-		}
-
-		bs, err := ioutil.ReadFile(configPath)
-		if err != nil {
-			return fmt.Errorf("reading config: %w", err)
-		}
-
 		cl := newClient()
 		workspace := requireWorkspace(ctx, cl)
 
-		switch applyFlags.Format {
-		case "procfile":
-			_, err = workspace.ApplyProcfile(ctx, &api.ApplyProcfileInput{
-				Procfile: string(bs),
-			})
-		case "compose":
-			cmdutil.Fatalf("docker compose configs not yet implemented")
-		case "exo":
-			_, err = workspace.Apply(ctx, &api.ApplyInput{
-				Config: string(bs),
-			})
+		input := &api.ApplyInput{}
+		if len(args) > 0 {
+			configPath := args[0]
+			input.ConfigPath = &configPath
+
+			// We're not necessarily in the workspace root here,
+			// so send the file contents too.
+			bs, err := ioutil.ReadFile(configPath)
+			if err != nil {
+				return fmt.Errorf("reading config file: %w", err)
+			}
+			s := string(bs)
+			input.Config = &s
+		}
+		if applyFlags.Format != "" {
+			input.Format = &applyFlags.Format
 		}
 
+		_, err := workspace.Apply(ctx, input)
 		return err
 	},
 }

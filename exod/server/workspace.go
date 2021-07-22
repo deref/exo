@@ -17,7 +17,6 @@ import (
 	"github.com/deref/exo/exod/api"
 	state "github.com/deref/exo/exod/state/api"
 	"github.com/deref/exo/gensym"
-	"github.com/deref/exo/import/procfile"
 	logd "github.com/deref/exo/logd/api"
 	"github.com/deref/exo/util/errutil"
 	"github.com/deref/exo/util/jsonutil"
@@ -77,9 +76,13 @@ func (ws *Workspace) Destroy(ctx context.Context, input *api.DestroyInput) (*api
 }
 
 func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.ApplyOutput, error) {
-	cfg, err := config.Parse([]byte(input.Config))
+	description, err := ws.describe(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("parsing config: %w", err)
+		return nil, fmt.Errorf("describing workspace: %w", err)
+	}
+	cfg, err := ws.resolveConfig(description.Root, input)
+	if err != nil {
+		return nil, err
 	}
 	if err := ws.apply(ctx, cfg); err != nil {
 		return nil, err
@@ -135,17 +138,6 @@ func (ws *Workspace) apply(ctx context.Context, cfg *config.Config) error {
 	}
 
 	return nil
-}
-
-func (ws *Workspace) ApplyProcfile(ctx context.Context, input *api.ApplyProcfileInput) (*api.ApplyProcfileOutput, error) {
-	cfg, err := procfile.Import(strings.NewReader(input.Procfile))
-	if err != nil {
-		return nil, fmt.Errorf("importing: %w", err)
-	}
-	if err := ws.apply(ctx, cfg); err != nil {
-		return nil, err
-	}
-	return &api.ApplyProcfileOutput{}, nil
 }
 
 func (ws *Workspace) Refresh(ctx context.Context, input *api.RefreshInput) (*api.RefreshOutput, error) {
@@ -212,7 +204,7 @@ func (ws *Workspace) resolveProvider(ctx context.Context, typ string) core.Provi
 		description, err := ws.describe(ctx)
 		if err != nil {
 			return &invalid.Provider{
-				fmt.Errorf("workspace error: %w", err),
+				Err: fmt.Errorf("workspace error: %w", err),
 			}
 		}
 		return &process.Provider{
