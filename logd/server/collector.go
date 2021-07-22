@@ -101,13 +101,11 @@ func (lc *LogCollector) Run(ctx context.Context) error {
 		lc.startWorker(ctx, logName, logState)
 	}
 
-	lc.eg, ctx = errgroup.WithContext(ctx)
-
-	lc.eg.Go(func() error {
+	go func() {
 		for {
 			select {
 			case <-ctx.Done():
-				return nil
+				return
 			case <-time.After(5 * time.Second):
 				go func() {
 					if err := lc.agent.Send(func() error {
@@ -118,13 +116,9 @@ func (lc *LogCollector) Run(ctx context.Context) error {
 				}()
 			}
 		}
-	})
+	}()
 
-	lc.eg.Go(func() error {
-		return lc.agent.Run(ctx)
-	})
-
-	return lc.eg.Wait()
+	return lc.agent.Run(ctx)
 }
 
 func (lc *LogCollector) removeOldEvents(ctx context.Context) error {
