@@ -14,7 +14,7 @@ type LogCollector interface {
 	AddLog(context.Context, *AddLogInput) (*AddLogOutput, error)
 	RemoveLog(context.Context, *RemoveLogInput) (*RemoveLogOutput, error)
 	DescribeLogs(context.Context, *DescribeLogsInput) (*DescribeLogsOutput, error)
-	// Returns pages of log events for some set of logs. If `cursor` is spefied, standard pagination behavior is used; if `since` is supplied, the page of results following that timestamp is returned; and if neither is supplied, the cursor is assumed to represent the current tail of the log.
+	// Returns pages of log events for some set of logs. If `cursor` is spefied, standard pagination behavior is used. Otherwise the cursor is assumed to represent the current tail of the log.
 	GetEvents(context.Context, *GetEventsInput) (*GetEventsOutput, error)
 }
 
@@ -43,7 +43,6 @@ type DescribeLogsOutput struct {
 
 type GetEventsInput struct {
 	Logs   []string `json:"logs"`
-	Since  *string  `json:"since"`
 	Cursor *string  `json:"cursor"`
 	Prev   *int     `json:"prev"`
 	Next   *int     `json:"next"`
