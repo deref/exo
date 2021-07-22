@@ -51,36 +51,32 @@
 </script>
 
 <div class="container">
-<table>
 {#each variables as variable (variable.id)}
-  <tr>
+  <div class="subcontainer">
   {#each ['name', 'value'] as field }
-    <td>
-      <Textbox
-        value={variable[field]}
-        name={`${name}[${variable.id}].${field}`}
-        on:blur={() => {
-          if (isBlank(variable) && !isLast(variable)) {
-            removeVariable(variable.id);
-          }
-        }}
-        on:input={(e) => {
-          const text = e.currentTarget.value.trim();
-          const newVariable = {...variable};
-          newVariable[field] = text;
-          variables = variables.map(variable =>
-            variable.id === newVariable.id ? newVariable : variable
-          );
-          if (!isBlank(newVariable) && isLast(variable)) {
-            pushBlank();
-          }
-        }}
-      />
-    </td>
+    <Textbox
+      value={variable[field]}
+      name={`${name}[${variable.id}].${field}`}
+      on:blur={() => {
+        if (isBlank(variable) && !isLast(variable)) {
+          removeVariable(variable.id);
+        }
+      }}
+      on:input={(e) => {
+        const text = e.currentTarget.value.trim();
+        const newVariable = {...variable};
+        newVariable[field] = text;
+        variables = variables.map(variable =>
+          variable.id === newVariable.id ? newVariable : variable
+        );
+        if (!isBlank(newVariable) && isLast(variable)) {
+          pushBlank();
+        }
+      }}
+    />
   {/each}
-  </tr>
+  </div>
 {/each}
-</table>
 
 </div>
 
@@ -88,5 +84,12 @@
   .container {
     display: flex;
     flex-direction: column;
+    gap: 24px;
+    margin-bottom: 24px;
+  }
+
+  .subcontainer {
+    display: flex;
+    gap: 12px;
   }
 </style>

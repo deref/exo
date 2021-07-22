@@ -68,7 +68,7 @@
       <Textbox id="name" name="name" bind:value={name} />
     </div>
     <div class="edit-as">
-      Edit as:
+      <span>Edit as:</span>
       <button class:selected={!structured} on:click|preventDefault={(e) => {
         if (!structured) {
           return;
@@ -142,15 +142,17 @@ my-app --port 4000
 
 form {
   padding: 40px;
-  max-width: 1000px;
+  max-width: 980px;
   margin: 0 auto;
 }
 
 .columns {
   display: grid;
   grid-template-columns: 1fr 1fr;
-  gap: 16px;
+  gap: 30px;
 }
+
+* :global(input) { width: 100% }
 
 label {
   display: block;
@@ -169,9 +171,14 @@ label {
   padding-top: 32px;
 }
 
+.edit-as span {
+  margin-right: 8px;
+}
+
 .edit-as button {
   border: none;
   background: none;
+  font-weight: 450;
   color: #777;
 }
 
