@@ -1,5 +1,6 @@
-# This file is used to configure the release build step that publishes the newly-released package version
-# For the install script and version check endpoint.
+# This file is used to configure the release build step that publishes the
+# newly-released package version For the install script and version check
+# endpoint.
 
 type = "javascript"
 account_id = "b5d1a3835f0dd218f633c7d612935c6b"

@@ -1,4 +1,4 @@
-package config
+package manifest
 
 import (
 	"io"
@@ -14,7 +14,7 @@ import (
 
 var Version = "0.1"
 
-type Config struct {
+type Manifest struct {
 	Exo        string      `hcl:"exo"`
 	Components []Component `hcl:"component,block"`
 }
@@ -25,13 +25,13 @@ type Component struct {
 	Spec string `hcl:"spec"` // TODO: Custom unmarshalling to allow convenient json representation.
 }
 
-func NewConfig() *Config {
-	return &Config{
+func NewManifest() *Manifest {
+	return &Manifest{
 		Exo: Version,
 	}
 }
 
-func Read(r io.Reader) (*Config, error) {
+func Read(r io.Reader) (*Manifest, error) {
 	bs, err := ioutil.ReadAll(r)
 	if err != nil {
 		return nil, err
@@ -39,22 +39,22 @@ func Read(r io.Reader) (*Config, error) {
 	return ReadBytes(bs)
 }
 
-func ReadBytes(bs []byte) (*Config, error) {
-	var cfg Config
+func ReadBytes(bs []byte) (*Manifest, error) {
+	var manifest Manifest
 	evalCtx := &hcl.EvalContext{
 		Functions: map[string]function.Function{
 			"jsonencode": stdlib.JSONEncodeFunc,
 		},
 	}
-	if err := hclsimple.Decode("exo.hcl", bs, evalCtx, &cfg); err != nil {
+	if err := hclsimple.Decode("exo.hcl", bs, evalCtx, &manifest); err != nil {
 		return nil, err
 	}
-	return &cfg, nil
+	return &manifest, nil
 }
 
-func Generate(w io.Writer, cfg *Config) error {
+func Generate(w io.Writer, manifest *Manifest) error {
 	f := hclwrite.NewEmptyFile()
-	gohcl.EncodeIntoBody(cfg, f.Body())
+	gohcl.EncodeIntoBody(manifest, f.Body())
 	_, err := f.WriteTo(w)
 	return err
 }

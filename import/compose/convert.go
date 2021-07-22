@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"io"
 
-	"github.com/deref/exo/config"
+	"github.com/deref/exo/manifest"
 )
 
-func Import(r io.Reader) (*config.Config, error) {
+func Import(r io.Reader) (*manifest.Manifest, error) {
 	procfile, err := Parse(r)
 	if err != nil {
 		return nil, fmt.Errorf("parsing: %w", err)
@@ -15,7 +15,7 @@ func Import(r io.Reader) (*config.Config, error) {
 	return Convert(procfile)
 }
 
-func Convert(comp *Compose) (*config.Config, error) {
+func Convert(comp *Compose) (*manifest.Manifest, error) {
 	// TODO: convert compose to exo.
-	return &config.Config{}, nil
+	return &manifest.Manifest{}, nil
 }

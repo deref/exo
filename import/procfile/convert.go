@@ -5,11 +5,11 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/deref/exo/config"
+	"github.com/deref/exo/manifest"
 	"github.com/deref/exo/util/jsonutil"
 )
 
-func Import(r io.Reader) (*config.Config, error) {
+func Import(r io.Reader) (*manifest.Manifest, error) {
 	procfile, err := Parse(r)
 	if err != nil {
 		return nil, fmt.Errorf("parsing: %w", err)
@@ -20,11 +20,11 @@ func Import(r io.Reader) (*config.Config, error) {
 const BasePort = 5000
 const PortStep = 100
 
-func Convert(procfile *Procfile) (*config.Config, error) {
-	cfg := config.NewConfig()
+func Convert(procfile *Procfile) (*manifest.Manifest, error) {
+	m := manifest.NewManifest()
 	port := BasePort
 	for _, process := range procfile.Processes {
-		component := config.Component{
+		component := manifest.Component{
 			Name: process.Name,
 			Type: "process",
 			Spec: jsonutil.MustMarshalString(map[string]interface{}{
@@ -36,7 +36,7 @@ func Convert(procfile *Procfile) (*config.Config, error) {
 			}),
 		}
 		port += PortStep
-		cfg.Components = append(cfg.Components, component)
+		m.Components = append(m.Components, component)
 	}
-	return cfg, nil
+	return m, nil
 }

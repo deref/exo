@@ -14,11 +14,11 @@ interface "workspace" {
     input "format" "*string" {
       doc = "One of 'exo', 'compose', or 'procfile'."
     }
-    input "config-path" "*string" {
-      doc = "Path of config file to load. May be relative to the workspace root. If format is not provided, will be inferred from path name."
+    input "manifest-path" "*string" {
+      doc = "Path of manifest file to load. May be relative to the workspace root. If format is not provided, will be inferred from path name."
     }
-    input "config" "*string" {
-      doc = "Contents of the config file. Not required if config-path is provided."
+    input "manifest" "*string" {
+      doc = "Contents of the manifest file. Not required if manifest-path is provided."
     }
   }
   

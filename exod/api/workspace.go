@@ -56,10 +56,10 @@ type ApplyInput struct {
 
 	// One of 'exo', 'compose', or 'procfile'.
 	Format *string `json:"format"`
-	// Path of config file to load. May be relative to the workspace root. If format is not provided, will be inferred from path name.
-	ConfigPath *string `json:"configPath"`
-	// Contents of the config file. Not required if config-path is provided.
-	Config *string `json:"config"`
+	// Path of manifest file to load. May be relative to the workspace root. If format is not provided, will be inferred from path name.
+	ManifestPath *string `json:"manifestPath"`
+	// Contents of the manifest file. Not required if manifest-path is provided.
+	Manifest *string `json:"manifest"`
 }
 
 type ApplyOutput struct {
