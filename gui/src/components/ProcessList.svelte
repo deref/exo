@@ -146,8 +146,8 @@ h2 {
   font-weight: 550;
   padding: 6px 12px;
   border-radius: 6px;
-  color: #bb0000;
-  background: #ff000022;
+  color: #555;
+  background: #eee;
 }
 
 p {
