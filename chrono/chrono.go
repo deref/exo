@@ -6,7 +6,7 @@ import (
 )
 
 const (
-	nanoFmt = "2006-01-02T15:04:05.999999999Z"
+	RFC3339NanoUTC = "2006-01-02T15:04:05.999999999Z"
 )
 
 func Now(ctx context.Context) time.Time {
@@ -26,7 +26,7 @@ func NanoToIso(nano int64) string {
 }
 
 func ParseIsoToNano(iso string) (int64, error) {
-	t, err := time.Parse(nanoFmt, iso)
+	t, err := time.Parse(RFC3339NanoUTC, iso)
 	if err != nil {
 		return 0, err
 	}
@@ -35,5 +35,5 @@ func ParseIsoToNano(iso string) (int64, error) {
 }
 
 func IsoNano(t time.Time) string {
-	return t.Format(nanoFmt)
+	return t.Format(RFC3339NanoUTC)
 }
