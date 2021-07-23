@@ -20,7 +20,7 @@ func init() {
 
 var workspaceCmd = &cobra.Command{
 	Use:   "workspace",
-	Short: "Create, inspect, and modify workspaces.",
+	Short: "Create, inspect, and modify workspaces",
 	Long: `Contains subcommands for operating on workspaces.
 
 If no subcommand is given, describes the current workspace.`,

@@ -18,7 +18,7 @@ func init() {
 
 var guiCmd = &cobra.Command{
 	Use:   "gui",
-	Short: "Opens the exo gui in a web browser",
+	Short: "Open exo gui in a web browser",
 	Long: `Opens the exo gui in a web browser.
 
 If the current directory is part of a workspace, navigates to it.`,
