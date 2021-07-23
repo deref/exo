@@ -11,16 +11,7 @@ import (
 	"github.com/dgraph-io/badger/v3"
 )
 
-func (log *Log) GetLastEvent(ctx context.Context) *api.Event {
-	lastEvent, err := log.getLastEvent(ctx)
-	if err != nil || lastEvent == nil {
-		return nil
-	}
-
-	return lastEvent
-}
-
-func (log *Log) getLastEvent(ctx context.Context) (*api.Event, error) {
+func (log *Log) GetLastEvent(ctx context.Context) (*api.Event, error) {
 	var event *api.Event
 	prefix := append([]byte(log.name), 0)
 
@@ -56,11 +47,11 @@ func (log *Log) getLastEvent(ctx context.Context) (*api.Event, error) {
 	return event, nil
 }
 
-func (log *Log) GetLastCursor(ctx context.Context) (cursor *store.Cursor) {
-	cursor = new(store.Cursor)
+func (log *Log) GetLastCursor(ctx context.Context) (*store.Cursor, error) {
+	var cursor *store.Cursor
 	prefix := append([]byte(log.name), 0)
 
-	_ = log.db.View(func(txn *badger.Txn) error {
+	err := log.db.View(func(txn *badger.Txn) error {
 		opts := badger.DefaultIteratorOptions
 		opts.PrefetchValues = false
 		opts.Reverse = true
@@ -74,6 +65,7 @@ func (log *Log) GetLastCursor(ctx context.Context) (cursor *store.Cursor) {
 			if err != nil {
 				return err
 			}
+			cursor = new(store.Cursor)
 			// If `idFromKey` succeeded, this cannot fail.
 			cursor.ID, _ = DecodeID(id)
 			cursor.ID = binaryutil.IncrementBytes(cursor.ID)
@@ -81,7 +73,7 @@ func (log *Log) GetLastCursor(ctx context.Context) (cursor *store.Cursor) {
 		return nil
 	})
 
-	return
+	return cursor, err
 }
 
 func (log *Log) GetEvents(ctx context.Context, cursor *store.Cursor, limit int, direction store.Direction) ([]api.Event, error) {

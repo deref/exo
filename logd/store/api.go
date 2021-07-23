@@ -17,8 +17,8 @@ type Log interface {
 	// If `cursor` is nil, returns the most recent page of events, which is useful for the UI's default tailing behaviour.
 	GetEvents(ctx context.Context, cursor *Cursor, limit int, direction Direction) ([]api.Event, error)
 
-	GetLastCursor(context.Context) *Cursor
-	GetLastEvent(context.Context) *api.Event
+	GetLastCursor(context.Context) (*Cursor, error)
+	GetLastEvent(context.Context) (*api.Event, error)
 	AddEvent(ctx context.Context, timestamp int64, message []byte) error
 	// Remove oldest events beyond capacity limit.
 	RemoveOldEvents(context.Context) error

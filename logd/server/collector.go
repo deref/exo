@@ -231,7 +231,11 @@ func (lc *LogCollector) describeLogs(ctx context.Context, input *api.DescribeLog
 	output.Logs = []api.LogDescription{}
 	for name, description := range lc.state.Logs {
 		var lastEventAt *string
-		if lastEvent := lc.store.GetLog(name).GetLastEvent(ctx); lastEvent != nil {
+		lastEvent, err := lc.store.GetLog(name).GetLastEvent(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("getting last event: %w", err)
+		}
+		if lastEvent != nil {
 			lastEventAt = &lastEvent.Timestamp
 		}
 
@@ -344,9 +348,14 @@ func (lc *LogCollector) getEvents(ctx context.Context, input *api.GetEventsInput
 
 func (lc *LogCollector) getLatestCursor(ctx context.Context, logs []string) (*store.Cursor, error) {
 	cursor := store.NilCursor
+
 	for _, logName := range logs {
 		log := lc.store.GetLog(logName)
-		logCursor := log.GetLastCursor(ctx)
+		logCursor, err := log.GetLastCursor(ctx)
+		if err != nil {
+			return nil, err
+		}
+
 		if logCursor != nil && bytes.Compare(logCursor.ID, cursor.ID) > 0 {
 			cursor = logCursor
 		}
