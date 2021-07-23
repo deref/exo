@@ -3,3 +3,7 @@ export interface ProcessDescription {
   name: string;
   running: boolean;
 }
+
+export interface CreateProcessResponse {
+  id: string;
+}

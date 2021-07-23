@@ -1,5 +1,5 @@
 import type { LogsResponse } from './logs/types';
-import type { ProcessDescription } from "./process/types";
+import type { CreateProcessResponse, ProcessDescription } from "./process/types";
 
 interface IdleRequest {
   stage: 'idle';
@@ -145,12 +145,12 @@ export const api = (() => {
         await invoke('apply', {});
       },
     
-      async createProcess(name: string, spec: ProcessSpec): Promise<void> {
-        await invoke('create-component', {
+      async createProcess(name: string, spec: ProcessSpec): Promise<CreateProcessResponse> {
+        return await invoke('create-component', {
           name,
           type: 'process',
           spec: JSON.stringify(spec),
-        });
+        }) as CreateProcessResponse;
       },
 
       async startProcess(ref: string): Promise<void> {
@@ -173,7 +173,7 @@ export const api = (() => {
         return await invoke('get-events', {
           logs,
           ...pagination,
-        }) as any;
+        }) as LogsResponse;
       },
     };
   };
