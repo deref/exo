@@ -85,7 +85,7 @@ func parseID(id []byte) (string, error) {
 	return strings.ToLower(asULID.String()), nil
 }
 
-func DecodeID(id string) ([]byte, error) {
+func decodeID(id string) ([]byte, error) {
 	asULID, err := ulid.Parse(strings.ToUpper(id))
 	if err != nil {
 		return nil, fmt.Errorf("decoding id: %d", err)

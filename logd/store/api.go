@@ -15,7 +15,7 @@ type Store interface {
 type Log interface {
 	// GetEvents returns a page of events along with cursors for moving forward or backward in the result set.
 	// If `cursor` is nil, returns the most recent page of events, which is useful for the UI's default tailing behaviour.
-	GetEvents(ctx context.Context, cursor *Cursor, limit int, direction Direction) ([]api.Event, error)
+	GetEvents(ctx context.Context, cursor *Cursor, limit int, direction Direction) ([]EventWithCursors, error)
 
 	GetLastCursor(context.Context) (*Cursor, error)
 	GetLastEvent(context.Context) (*api.Event, error)
@@ -30,3 +30,9 @@ const (
 	DirectionForward  Direction = 1
 	DirectionBackward Direction = -1
 )
+
+type EventWithCursors struct {
+	Event      api.Event
+	PrevCursor Cursor
+	NextCursor Cursor
+}

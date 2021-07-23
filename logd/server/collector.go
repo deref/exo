@@ -15,7 +15,6 @@ import (
 	"github.com/deref/exo/logd/store"
 	"github.com/deref/exo/logd/store/badger"
 	"github.com/deref/exo/util/agent"
-	"github.com/deref/exo/util/binaryutil"
 	"github.com/deref/exo/util/jsonutil"
 	"github.com/deref/exo/util/mathutil"
 	"github.com/oklog/ulid/v2"
@@ -296,47 +295,41 @@ func (lc *LogCollector) getEvents(ctx context.Context, input *api.GetEventsInput
 	}
 
 	// TODO: Merge sort.
-	events := []api.Event{}
+	eventsWithCursors := make([]store.EventWithCursors, 0, limit)
 	for _, logName := range logs {
 		log := lc.store.GetLog(logName)
 
-		logEvents, err := log.GetEvents(ctx, cursor, limit, direction)
+		logEventsWithCursors, err := log.GetEvents(ctx, cursor, limit, direction)
+		fmt.Printf("Got %d events from %q\n", len(logEventsWithCursors), logName)
 		if err != nil {
 			return nil, fmt.Errorf("getting %q events: %w", logName, err)
 		}
-		if logEvents == nil {
+		if logEventsWithCursors == nil {
 			continue
 		}
-		events = append(events, logEvents...)
+		eventsWithCursors = append(eventsWithCursors, logEventsWithCursors...)
 	}
-	sort.Sort(&eventsSorter{events})
+	sort.Sort(&eventWithCursorsSorter{eventsWithCursors})
 
-	effectiveLimit := mathutil.IntMin(limit, len(events))
+	effectiveLimit := mathutil.IntMin(limit, len(eventsWithCursors))
 	if direction == store.DirectionForward {
-		events = events[0:effectiveLimit]
+		eventsWithCursors = eventsWithCursors[0:effectiveLimit]
 	} else {
-		end := len(events)
+		end := len(eventsWithCursors)
 		start := end - effectiveLimit
-		events = events[start:end]
+		eventsWithCursors = eventsWithCursors[start:end]
 	}
 
 	prevCursor := cursor
 	nextCursor := cursor
-	if len(events) > 0 {
-		// TODO: Separate encoding from badger code.
-		if idBytes, err := badger.DecodeID(events[0].ID); err != nil {
-			return nil, err
-		} else {
-			// We don't care about the error if this is already a (zero-valued) NilCursor
-			_ = binaryutil.DecrementBytes(idBytes)
-			prevCursor = &store.Cursor{ID: idBytes}
-		}
+	if len(eventsWithCursors) > 0 {
+		prevCursor = &eventsWithCursors[0].PrevCursor
+		nextCursor = &eventsWithCursors[len(eventsWithCursors)-1].NextCursor
+	}
 
-		if idBytes, err := badger.DecodeID(events[len(events)-1].ID); err != nil {
-			return nil, err
-		} else {
-			nextCursor = &store.Cursor{ID: binaryutil.IncrementBytes(idBytes)}
-		}
+	events := make([]api.Event, len(eventsWithCursors))
+	for i, eventWithCursors := range eventsWithCursors {
+		events[i] = eventWithCursors.Event
 	}
 
 	return &api.GetEventsOutput{
@@ -364,22 +357,22 @@ func (lc *LogCollector) getLatestCursor(ctx context.Context, logs []string) (*st
 	return cursor, nil
 }
 
-type eventsSorter struct {
-	events []api.Event
+type eventWithCursorsSorter struct {
+	items []store.EventWithCursors
 }
 
-func (iface *eventsSorter) Len() int {
-	return len(iface.events)
+func (iface *eventWithCursorsSorter) Len() int {
+	return len(iface.items)
 }
 
-func (iface *eventsSorter) Less(i, j int) bool {
-	iId := ulid.MustParse(iface.events[i].ID)
-	jId := ulid.MustParse(iface.events[j].ID)
+func (iface *eventWithCursorsSorter) Less(i, j int) bool {
+	iId := ulid.MustParse(iface.items[i].Event.ID)
+	jId := ulid.MustParse(iface.items[j].Event.ID)
 	return iId.Compare(jId) < 0
 }
 
-func (iface *eventsSorter) Swap(i, j int) {
-	tmp := iface.events[i]
-	iface.events[i] = iface.events[j]
-	iface.events[j] = tmp
+func (iface *eventWithCursorsSorter) Swap(i, j int) {
+	tmp := iface.items[i]
+	iface.items[i] = iface.items[j]
+	iface.items[j] = tmp
 }

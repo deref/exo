@@ -7,7 +7,6 @@ import (
 	"github.com/deref/exo/logd/api"
 	"github.com/deref/exo/logd/store"
 	"github.com/deref/exo/util/binaryutil"
-	"github.com/deref/exo/util/mathutil"
 	"github.com/dgraph-io/badger/v3"
 )
 
@@ -67,7 +66,7 @@ func (log *Log) GetLastCursor(ctx context.Context) (*store.Cursor, error) {
 			}
 			cursor = new(store.Cursor)
 			// If `idFromKey` succeeded, this cannot fail.
-			cursor.ID, _ = DecodeID(id)
+			cursor.ID, _ = decodeID(id)
 			cursor.ID = binaryutil.IncrementBytes(cursor.ID)
 		}
 		return nil
@@ -76,7 +75,7 @@ func (log *Log) GetLastCursor(ctx context.Context) (*store.Cursor, error) {
 	return cursor, err
 }
 
-func (log *Log) GetEvents(ctx context.Context, cursor *store.Cursor, limit int, direction store.Direction) ([]api.Event, error) {
+func (log *Log) GetEvents(ctx context.Context, cursor *store.Cursor, limit int, direction store.Direction) ([]store.EventWithCursors, error) {
 	prefix := append([]byte(log.name), 0)
 	start := prefix
 	if cursor != nil {
@@ -129,10 +128,40 @@ func (log *Log) GetEvents(ctx context.Context, cursor *store.Cursor, limit int, 
 	if direction == store.DirectionForward {
 		events = events[0:curIndex]
 	} else {
-		events = events[mathutil.IntMax(curIndex, 0) : len(events)-1]
+		start := curIndex - indexDelta
+		events = events[start:]
 	}
 
-	return events, nil
+	eventsWithCursors := make([]store.EventWithCursors, len(events))
+	var err error
+	for i, event := range events {
+		if eventsWithCursors[i], err = getEventWithCursors(event); err != nil {
+			return nil, fmt.Errorf("creating cursors for event %q: %w", event.ID, err)
+		}
+	}
+
+	return eventsWithCursors, nil
+}
+
+func getEventWithCursors(event api.Event) (store.EventWithCursors, error) {
+	eventWithCursors := store.EventWithCursors{
+		Event: event,
+	}
+	idBytes, err := decodeID(event.ID)
+	if err != nil {
+		return store.EventWithCursors{}, err
+	}
+
+	// Copy the ID since increment/decrement operations mutate.
+	prevCursorID := make([]byte, len(idBytes))
+	copy(prevCursorID, idBytes)
+
+	// We don't care about the error if this is already a (zero-valued) NilCursor
+	_ = binaryutil.DecrementBytes(prevCursorID)
+	eventWithCursors.PrevCursor = store.Cursor{ID: prevCursorID}
+	eventWithCursors.NextCursor = store.Cursor{ID: binaryutil.IncrementBytes(idBytes)}
+
+	return eventWithCursors, nil
 }
 
 const maxEventsPerStream = 5000
