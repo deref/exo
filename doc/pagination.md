@@ -6,9 +6,11 @@
 
 | Parameter | required? | Description |
 | --------- | --------- | ----------- |
-| `cursor` | N | A cursor previously returned by another request, which represents a specific location in the collection |
-| `prev` | N | Maximum number of results to return before the cursor. In most cases, the default will be `0`. *Cannot be specified if `next` is specified*  |
-| `next` | N | Maximum number of results to return at or after the cursor. Each resource type will set a reasonable default, which is not guaranteed to be consistent between different resource types. *Cannot be specified if `prev` is specified* |
+| `cursor` | N | A cursor previously returned by another request, which represents a specific location in the collection. |
+| `prev` | N | Maximum number of results to return before the cursor. In most cases, the default will be `0`. *Cannot be specified if `next` is specified.*  |
+| `next` | N | Maximum number of results to return after the cursor. Each collection will set a reasonable default if not specified. *Cannot be specified if `prev` is specified.* |
+
+Both `prev` and `next` may be constrained to some maximum value on a per-collection basis. In this case, setting a higher value would have no effect.
 
 Collections may specify other mechanism for filtering or ordering results. For example, a collection could allow a `since` timestamp parameter to be specified, which would return a page of results that are at least as recent as the timestamp supplied. However, only the cursor is necessary to retrieve subsequent pages of data. In these cases, the `next` parameter should be honored as the initial limit on the number of results that could be returned.
 
@@ -18,7 +20,7 @@ Collections may specify other mechanism for filtering or ordering results. For e
 | --------- | ----------- |
 | `prevCursor` | Cursor to be passed in the requests for the previous page of data. |
 | `nextCursor` | Cursor to be passed in the requests for the next page of data. |
-| `data` | Array of results. |
+| `items` | Array of results. |
 
 ## Example:
 

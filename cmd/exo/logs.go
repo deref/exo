@@ -105,7 +105,7 @@ If refs are provided, filters for the logs of those processes.`,
 				fmt.Printf("%s %s\n", prefix, event.Message)
 			}
 			in.Cursor = &output.NextCursor
-			if len(output.Events) < 10 { // TODO: OK heuristic?
+			if len(output.Items) < 10 { // TODO: OK heuristic?
 				<-time.After(250 * time.Millisecond)
 			}
 		}

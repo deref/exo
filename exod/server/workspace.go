@@ -501,12 +501,12 @@ func (ws *Workspace) GetEvents(ctx context.Context, input *api.GetEventsInput) (
 		return nil, err
 	}
 	output := api.GetEventsOutput{
-		Events:     make([]api.Event, len(collectorOutput.Events)),
+		Items:      make([]api.Event, len(collectorOutput.Items)),
 		PrevCursor: collectorOutput.PrevCursor,
 		NextCursor: collectorOutput.NextCursor,
 	}
-	for i, collectorEvent := range collectorOutput.Events {
-		output.Events[i] = api.Event{
+	for i, collectorEvent := range collectorOutput.Items {
+		output.Items[i] = api.Event{
 			ID:        collectorEvent.ID,
 			Log:       collectorEvent.Log,
 			Timestamp: collectorEvent.Timestamp,

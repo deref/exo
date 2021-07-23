@@ -19,7 +19,7 @@ interface "log-collector" {
   }
 
   method "get-events" {
-    doc = "Returns pages of log events for some set of logs. If `cursor` is spefied, standard pagination behavior is used. Otherwise the cursor is assumed to represent the current tail of the log."
+    doc = "Returns pages of log events for some set of logs. If `cursor` is specified, standard pagination behavior is used. Otherwise the cursor is assumed to represent the current tail of the log."
 
     # TODO: Replace this with some filter expression.
     input "logs" "[]string" {}
@@ -28,7 +28,7 @@ interface "log-collector" {
     input "prev" "*int" {}
     input "next" "*int" {}
 
-    output "events" "[]Event" {}
+    output "items" "[]Event" {}
     output "prevCursor" "string" {}
     output "nextCursor" "string" {}
   }

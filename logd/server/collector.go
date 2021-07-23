@@ -23,7 +23,8 @@ import (
 )
 
 const (
-	defaultLimit = 500
+	defaultNextLimit = 500
+	maxLimit         = 10000
 )
 
 type Config struct {
@@ -259,7 +260,7 @@ func (lc *LogCollector) getEvents(ctx context.Context, input *api.GetEventsInput
 		}
 	}
 
-	limit := defaultLimit
+	limit := defaultNextLimit
 	var direction store.Direction
 	if input.Next != nil {
 		if input.Prev != nil {
@@ -274,6 +275,7 @@ func (lc *LogCollector) getEvents(ctx context.Context, input *api.GetEventsInput
 		// Use default limit, and move forward
 		direction = store.DirectionForward
 	}
+	limit = mathutil.IntClamp(limit, 0, maxLimit)
 
 	var cursor *store.Cursor
 	var err error
@@ -344,7 +346,7 @@ func (lc *LogCollector) getEvents(ctx context.Context, input *api.GetEventsInput
 	}
 
 	return &api.GetEventsOutput{
-		Events:     events,
+		Items:      events,
 		PrevCursor: prevCursor.Serialize(),
 		NextCursor: nextCursor.Serialize(),
 	}, nil
