@@ -9,20 +9,20 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/deref/exo/config"
 	"github.com/deref/exo/exod/api"
 	"github.com/deref/exo/import/compose"
 	"github.com/deref/exo/import/procfile"
+	"github.com/deref/exo/manifest"
 	"github.com/deref/exo/util/errutil"
 	"github.com/deref/exo/util/osutil"
 )
 
-type configCandidate struct {
+type manifestCandidate struct {
 	Format   string
 	Filename string
 }
 
-var configCandidates = []configCandidate{
+var manifestCandidates = []manifestCandidate{
 	{"exo", "exo.hcl"},
 	// TODO: Uncomment when we have docker-compose support.
 	//{"compose", "compose.yaml"},
@@ -32,51 +32,51 @@ var configCandidates = []configCandidate{
 	{"procfile", "Procfile"},
 }
 
-func (ws *Workspace) resolveConfig(rootDir string, input *api.ApplyInput) (*config.Config, error) {
-	configString := ""
-	configPath := ""
-	if input.ConfigPath != nil {
-		configPath = *input.ConfigPath
+func (ws *Workspace) resolveManifest(rootDir string, input *api.ApplyInput) (*manifest.Manifest, error) {
+	manifestString := ""
+	manifestPath := ""
+	if input.ManifestPath != nil {
+		manifestPath = *input.ManifestPath
 	}
-	if input.Config == nil {
-		if input.ConfigPath == nil {
-			// Search for config.
-			for _, candidate := range configCandidates {
+	if input.Manifest == nil {
+		if input.ManifestPath == nil {
+			// Search for manifest.
+			for _, candidate := range manifestCandidates {
 				if input.Format != nil && *input.Format != candidate.Format {
 					continue
 				}
 				candidatePath := filepath.Join(rootDir, candidate.Filename)
 				exist, err := osutil.Exists(candidatePath)
 				if err != nil {
-					return nil, fmt.Errorf("searching for config: %w", err)
+					return nil, fmt.Errorf("searching for manifest: %w", err)
 				}
 				if exist {
-					configPath = candidatePath
+					manifestPath = candidatePath
 					break
 				}
 			}
-			if configPath == "" {
-				return nil, errutil.NewHTTPError(http.StatusBadRequest, "could not find config file")
+			if manifestPath == "" {
+				return nil, errutil.NewHTTPError(http.StatusBadRequest, "could not find manifest file")
 			}
 		}
 
-		if !filepath.HasPrefix(configPath, rootDir) {
-			return nil, errors.New("cannot read config outside of workspace root")
+		if !filepath.HasPrefix(manifestPath, rootDir) {
+			return nil, errors.New("cannot read manifest outside of workspace root")
 		}
 
-		bs, err := ioutil.ReadFile(configPath)
+		bs, err := ioutil.ReadFile(manifestPath)
 		if err != nil {
-			return nil, fmt.Errorf("reading config file: %w", err)
+			return nil, fmt.Errorf("reading manifest file: %w", err)
 		}
-		configString = string(bs)
+		manifestString = string(bs)
 	} else {
-		configString = *input.Config
+		manifestString = *input.Manifest
 	}
 
 	format := ""
 	if input.Format == nil {
 		// Guess format.
-		name := strings.ToLower(filepath.Base(configPath))
+		name := strings.ToLower(filepath.Base(manifestPath))
 		switch name {
 		case "procfile":
 			format = "procfile"
@@ -85,27 +85,27 @@ func (ws *Workspace) resolveConfig(rootDir string, input *api.ApplyInput) (*conf
 		case "exo.hcl", "":
 			format = "exo"
 		default:
-			if strings.HasSuffix(name, ".procfile") {
+			if strings.HasPrefix(name, "procfile.") || strings.HasSuffix(name, ".procfile") {
 				format = "procfile"
 			} else {
-				return nil, errors.New("cannot determine config format from file name")
+				return nil, errors.New("cannot determine manifest format from file name")
 			}
 		}
 	} else {
 		format = *input.Format
 	}
 
-	var load func(r io.Reader) (*config.Config, error)
+	var load func(r io.Reader) (*manifest.Manifest, error)
 	switch format {
 	case "procfile":
 		load = procfile.Import
 	case "compose":
 		load = compose.Import
 	case "exo":
-		load = config.Read
+		load = manifest.Read
 	default:
-		return nil, fmt.Errorf("unknown config format: %q", format)
+		return nil, fmt.Errorf("unknown manifest format: %q", format)
 	}
 
-	return load(strings.NewReader(configString))
+	return load(strings.NewReader(manifestString))
 }

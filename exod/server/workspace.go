@@ -12,12 +12,12 @@ import (
 	"github.com/deref/exo/components/invalid"
 	"github.com/deref/exo/components/log"
 	"github.com/deref/exo/components/process"
-	"github.com/deref/exo/config"
 	core "github.com/deref/exo/core/api"
 	"github.com/deref/exo/exod/api"
 	state "github.com/deref/exo/exod/state/api"
 	"github.com/deref/exo/gensym"
 	logd "github.com/deref/exo/logd/api"
+	"github.com/deref/exo/manifest"
 	"github.com/deref/exo/util/errutil"
 	"github.com/deref/exo/util/jsonutil"
 )
@@ -80,18 +80,18 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 	if err != nil {
 		return nil, fmt.Errorf("describing workspace: %w", err)
 	}
-	cfg, err := ws.resolveConfig(description.Root, input)
+	manifest, err := ws.resolveManifest(description.Root, input)
 	if err != nil {
 		return nil, err
 	}
-	if err := ws.apply(ctx, cfg); err != nil {
+	if err := ws.apply(ctx, manifest); err != nil {
 		return nil, err
 	}
 	return &api.ApplyOutput{}, nil
 }
 
-func (ws *Workspace) apply(ctx context.Context, cfg *config.Config) error {
-	// TODO: Validate config.
+func (ws *Workspace) apply(ctx context.Context, m *manifest.Manifest) error {
+	// TODO: Validate manifest.
 
 	describeOutput, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
 		WorkspaceID: ws.ID,
@@ -109,8 +109,8 @@ func (ws *Workspace) apply(ctx context.Context, cfg *config.Config) error {
 	// TODO: Handle partial failures.
 
 	// Apply component upserts.
-	newComponents := make(map[string]config.Component, len(cfg.Components))
-	for _, newComponent := range cfg.Components {
+	newComponents := make(map[string]manifest.Component, len(m.Components))
+	for _, newComponent := range m.Components {
 		name := newComponent.Name
 		newComponents[name] = newComponent
 		if oldComponent, exists := oldComponents[name]; exists {
@@ -219,7 +219,7 @@ func (ws *Workspace) resolveProvider(ctx context.Context, typ string) core.Provi
 }
 
 func (ws *Workspace) CreateComponent(ctx context.Context, input *api.CreateComponentInput) (*api.CreateComponentOutput, error) {
-	id, err := ws.createComponent(ctx, config.Component{
+	id, err := ws.createComponent(ctx, manifest.Component{
 		Name: input.Name,
 		Type: input.Type,
 		Spec: input.Spec,
@@ -232,9 +232,9 @@ func (ws *Workspace) CreateComponent(ctx context.Context, input *api.CreateCompo
 	}, nil
 }
 
-func (ws *Workspace) createComponent(ctx context.Context, component config.Component) (id string, err error) {
-	if !IsValidName(component.Name) {
-		return "", errutil.NewHTTPError(http.StatusBadRequest, "invalid component name")
+func (ws *Workspace) createComponent(ctx context.Context, component manifest.Component) (id string, err error) {
+	if !manifest.IsValidName(component.Name) {
+		return "", errutil.HTTPErrorf(http.StatusBadRequest, "component name must match %q", manifest.NamePattern)
 	}
 
 	id = gensym.RandomBase32()
@@ -270,20 +270,11 @@ func (ws *Workspace) createComponent(ctx context.Context, component config.Compo
 	return id, nil
 }
 
-func IsValidName(name string) bool {
-	for _, b := range []byte(name) {
-		if b == 0 || b == 255 {
-			return false
-		}
-	}
-	return name != ""
-}
-
 func (ws *Workspace) UpdateComponent(ctx context.Context, input *api.UpdateComponentInput) (*api.UpdateComponentOutput, error) {
 	panic("TODO: UpdateComponent")
 }
 
-func (ws *Workspace) updateComponent(ctx context.Context, oldComponent state.ComponentDescription, newComponent config.Component) error {
+func (ws *Workspace) updateComponent(ctx context.Context, oldComponent state.ComponentDescription, newComponent manifest.Component) error {
 	// TODO: Smart updating, using update lifecycle method.
 	name := oldComponent.Name
 	id := oldComponent.ID

@@ -35,3 +35,8 @@ func (c *Kernel) FindWorkspace(ctx context.Context, input *api.FindWorkspaceInpu
 	err = c.client.Invoke(ctx, "find-workspace", input, &output)
 	return
 }
+
+func (c *Kernel) Panic(ctx context.Context, input *api.PanicInput) (output *api.PanicOutput, err error) {
+	err = c.client.Invoke(ctx, "panic", input, &output)
+	return
+}

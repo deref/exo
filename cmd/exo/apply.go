@@ -18,11 +18,11 @@ var applyFlags struct {
 }
 
 var applyCmd = &cobra.Command{
-	Use:   "apply [flags] [config-file]",
-	Short: "Applies a config in the current workspace",
-	Long: `Applies a config in the current workspace.
+	Use:   "apply [flags] [manifest-file]",
+	Short: "Applies a manifest in the current workspace",
+	Long: `Applies a manifest in the current workspace.
 
-If no config file is specified, a search is conducted in the current directory
+If no manifest file is specified, a search is conducted in the current directory
 in the following order of format preference:
 
   1. exo
@@ -32,12 +32,12 @@ The default exo filename is 'exo.hcl'.
 
 The expected procfile name 'Procfile'.
 
-If a config format will be guessed from the config filename.  This can be
+If a manifest format will be guessed from the manifest filename.  This can be
 overidden explicitly with the --format flag.`,
 	// TODO: Replace docs when we have docker-compose support.
-	//	Long: `Applies a config in the current workspace.
+	//	Long: `Applies a manifest in the current workspace.
 	//
-	//If no config file is specified, a search is conducted in the current directory
+	//If no manifest file is specified, a search is conducted in the current directory
 	//in the following order of format preference:
 	//
 	//  1. exo
@@ -55,7 +55,7 @@ overidden explicitly with the --format flag.`,
 	//
 	//The expected procfile name 'Procfile'.
 	//
-	//If a config format will be guessed from the config filename.  This can be
+	//If a manifest format will be guessed from the manifest filename.  This can be
 	//overidden explicitly with the --format flag.`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -67,17 +67,17 @@ overidden explicitly with the --format flag.`,
 
 		input := &api.ApplyInput{}
 		if len(args) > 0 {
-			configPath := args[0]
-			input.ConfigPath = &configPath
+			manifestPath := args[0]
+			input.ManifestPath = &manifestPath
 
 			// We're not necessarily in the workspace root here,
 			// so send the file contents too.
-			bs, err := ioutil.ReadFile(configPath)
+			bs, err := ioutil.ReadFile(manifestPath)
 			if err != nil {
-				return fmt.Errorf("reading config file: %w", err)
+				return fmt.Errorf("reading manifest file: %w", err)
 			}
 			s := string(bs)
-			input.Config = &s
+			input.Manifest = &s
 		}
 		if applyFlags.Format != "" {
 			input.Format = &applyFlags.Format
