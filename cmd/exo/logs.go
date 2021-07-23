@@ -31,10 +31,13 @@ If refs are provided, filters for the logs of those processes.`,
 
 		colors := NewColorCache()
 
+		logNames := args
+		showName := len(logNames) != 1
+
 		cursor := ""
 		for {
 			output, err := workspace.GetEvents(ctx, &api.GetEventsInput{
-				Logs:  args,
+				Logs:  logNames,
 				After: cursor,
 			})
 			if err != nil {
@@ -42,8 +45,6 @@ If refs are provided, filters for the logs of those processes.`,
 			}
 
 			for _, event := range output.Events {
-				color := colors.Color(event.Log)
-
 				t, err := time.Parse(chrono.RFC3339NanoUTC, event.Timestamp)
 				if err != nil {
 					cmdutil.Warnf("invalid event timestamp: %q", event.Timestamp)
@@ -51,11 +52,18 @@ If refs are provided, filters for the logs of those processes.`,
 				}
 				timestamp := t.Format("15:04:05")
 
-				prefix := fmt.Sprintf("%s %s", timestamp, event.Log)
-				fmt.Printf("%s %s\n",
-					rgbterm.FgString(prefix, color.Red, color.Green, color.Blue),
-					event.Message,
-				)
+				var prefix string
+				if showName {
+					color := colors.Color(event.Log)
+					prefix = rgbterm.FgString(
+						fmt.Sprintf("%s %s", timestamp, event.Log),
+						color.Red, color.Green, color.Blue,
+					)
+				} else {
+					prefix = timestamp
+				}
+
+				fmt.Printf("%s %s\n", prefix, event.Message)
 			}
 			cursor = output.Cursor
 			if len(output.Events) < 10 { // TODO: OK heuristic?
