@@ -67,9 +67,10 @@ If refs are provided, filters for the logs of those processes.`,
 
 				var prefix string
 				if showName {
-					color := colors.Color(event.Log)
+					componentName := event.Log // TODO: Reverse-resolve.
+					color := colors.Color(componentName)
 					prefix = rgbterm.FgString(
-						fmt.Sprintf("%s %s", timestamp, event.Log),
+						fmt.Sprintf("%s %s", timestamp, componentName),
 						color.Red, color.Green, color.Blue,
 					)
 				} else {
