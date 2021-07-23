@@ -31,13 +31,26 @@ If refs are provided, filters for the logs of those processes.`,
 
 		colors := NewColorCache()
 
-		logNames := args
-		showName := len(logNames) != 1
+		logRefs := args
+		showName := len(logRefs) != 1
+
+		resolved, err := workspace.Resolve(ctx, &api.ResolveInput{
+			Refs: logRefs,
+		})
+		if err != nil {
+			return fmt.Errorf("resolving refs: %w", err)
+		}
+		logIDs := make([]string, 0, len(logRefs))
+		for _, logID := range resolved.IDs {
+			if logID != nil {
+				logIDs = append(logIDs, *logID)
+			}
+		}
 
 		cursor := ""
 		for {
 			output, err := workspace.GetEvents(ctx, &api.GetEventsInput{
-				Logs:  logNames,
+				Logs:  logIDs,
 				After: cursor,
 			})
 			if err != nil {
