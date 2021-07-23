@@ -1,4 +1,6 @@
 <script lang="ts">
+  
+import { logStyleFromHash } from '../lib/color';
 import { onMount, onDestroy, afterUpdate, beforeUpdate } from 'svelte';
 import type { RemoteData } from '../lib/api';
 import { hasData, IsUnresolved, notRequested } from '../lib/api';
@@ -63,7 +65,7 @@ afterUpdate(async () => {
     <div class="log-table-container" bind:this={logViewport}>
       <table>
         {#each logEvents.data as event (event.id)}
-        <tr class="log-entry">
+        <tr class="log-entry" style={logStyleFromHash(event.log)}>
             <td>{event.log}</td> <td>{shortDate(event.timestamp)}</td> <td>{event.message}</td>
         </tr>
         {/each}
@@ -117,9 +119,9 @@ td {
 }
 
 td:nth-child(1) {
-  background: #ff000022;
-  color: #bb0000;
-  border-right: 1px solid #bb000044;
+  background: var(--log-bg-color);
+  color: var(--log-color);
+  border-right: 1px solid var(--log-border-color);
 }
 
 td:nth-child(2) {

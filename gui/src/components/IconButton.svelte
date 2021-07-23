@@ -1,4 +1,11 @@
-<button on:click>
+<script lang="ts">
+
+export let active: boolean = false;
+export let tooltip: string = '';
+
+</script>
+
+<button on:click class={active ? 'active' : ''} title={tooltip !== '' ? tooltip : undefined}>
   <slot/>
 </button>
 
@@ -17,6 +24,10 @@ button {
   margin-left: 4px;
 }
 
+button.active {
+  background-color: #55ccff33;
+}
+
 button :global(svg), button :global(svg *) {
   fill: currentColor;
 }
@@ -26,8 +37,16 @@ button:hover {
   color: #444444;
 }
 
+button.active:hover {
+  background-color: #55ccff44;
+}
+
 button:focus {
   background-color: #77777733;
+}
+
+button.active:focus {
+  background-color: #55ccff66;
 }
 
 </style>
