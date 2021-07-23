@@ -16,7 +16,7 @@ func init() {
 		&processSpec.Directory,
 		"directory", "d",
 		"",
-		"Sets the working directory for the process",
+		"set the working directory for the process",
 	)
 }
 

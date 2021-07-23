@@ -8,7 +8,7 @@ func init() {
 
 var newCmd = &cobra.Command{
 	Use:   "new <type> <name> [args]",
-	Short: "Creates a new component.",
+	Short: "Creates a new component",
 	Long: `Creates a new component of a given type with a given name.  Each
 component type may define its own syntax for flags and positional arguments.
 
