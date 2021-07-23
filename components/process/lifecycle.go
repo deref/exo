@@ -40,6 +40,7 @@ func (provider *Provider) Initialize(ctx context.Context, input *core.Initialize
 
 	// Register logs.
 	// TODO: Don't do this synchronously here. Use some kind of component hierarchy mechanism.
+	// SEE NOTE: [LOG_COMPONENTS].
 	collector := log.CurrentLogCollector(ctx)
 	for _, role := range []string{"out", "err"} {
 		_, err := collector.AddLog(ctx, &logd.AddLogInput{
@@ -101,6 +102,7 @@ func (provider *Provider) Dispose(ctx context.Context, input *core.DisposeInput)
 
 	// Deregister log streams.
 	// TODO: Don't do this synchronously here. Use some kind of component hierarchy mechanism.
+	// SEE NOTE: [LOG_COMPONENTS].
 	collector := log.CurrentLogCollector(ctx)
 	for _, role := range []string{"out", "err"} {
 		_, err := collector.RemoveLog(ctx, &logd.RemoveLogInput{

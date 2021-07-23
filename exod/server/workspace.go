@@ -396,6 +396,10 @@ func (ws *Workspace) deleteComponent(ctx context.Context, id string) error {
 	return nil
 }
 
+// NOTE [LOG_COMPONENTS]: We don't yet treat logs as components of their own,
+// so we hard code an expansion from process -> stdout/stderr log pairs.
+// Multiple places in the code make brittle assumptions about this and are
+// tagged with this note accordingly.
 var processLogStreams = []string{"out", "err"}
 
 func (ws *Workspace) DescribeLogs(ctx context.Context, input *api.DescribeLogsInput) (*api.DescribeLogsOutput, error) {

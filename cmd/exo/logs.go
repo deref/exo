@@ -50,6 +50,19 @@ If refs are provided, filters for the logs of those processes.`,
 			}
 		}
 
+		descriptions, err := workspace.DescribeProcesses(ctx, &api.DescribeProcessesInput{})
+		if err != nil {
+			return fmt.Errorf("describing processes: %w", err)
+		}
+		logToComponent := make(map[string]string, len(descriptions.Processes))
+		for _, process := range descriptions.Processes {
+			// SEE NOTE: [LOG_COMPONENTS].
+			for _, role := range []string{"out", "err"} {
+				logName := fmt.Sprintf("%s:%s", process.ID, role)
+				logToComponent[logName] = process.Name
+			}
+		}
+
 		cursor := ""
 		for {
 			output, err := workspace.GetEvents(ctx, &api.GetEventsInput{
@@ -70,10 +83,13 @@ If refs are provided, filters for the logs of those processes.`,
 
 				var prefix string
 				if showName {
-					componentName := event.Log // TODO: Reverse-resolve.
-					color := colors.Color(componentName)
+					label := event.Log
+					if componentName := logToComponent[event.Log]; componentName != "" {
+						label = componentName
+					}
+					color := colors.Color(label)
 					prefix = rgbterm.FgString(
-						fmt.Sprintf("%s %s", timestamp, componentName),
+						fmt.Sprintf("%s %s", timestamp, label),
 						color.Red, color.Green, color.Blue,
 					)
 				} else {
