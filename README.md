@@ -4,9 +4,16 @@
 
 ![The Exo GUI](https://github.com/deref/exo/blob/main/doc/screenshot-light.png?raw=true)
 
-## Status
+**Features**
 
-_Alpha!_
+- [Procfile](./doc/procfiles.md) compatible process manager.
+- Terminal commands and browser-based-GUI for all functionality.
+- Multiplexed, colorizing log tailing. Toggle visibility of individual logs.
+- Dynamic process supervision: create, start, stop, restart, delete.
+
+**Coming Soon**
+
+- Docker integration with docker-compose.yml compatibility.
 
 ## Getting Started
 
