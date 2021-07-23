@@ -54,12 +54,16 @@ If refs are provided, filters for the logs of those processes.`,
 		if err != nil {
 			return fmt.Errorf("describing processes: %w", err)
 		}
+		labelWidth := 0
 		logToComponent := make(map[string]string, len(descriptions.Processes))
 		for _, process := range descriptions.Processes {
 			// SEE NOTE: [LOG_COMPONENTS].
 			for _, role := range []string{"out", "err"} {
 				logName := fmt.Sprintf("%s:%s", process.ID, role)
 				logToComponent[logName] = process.Name
+				if labelWidth < len(process.Name) {
+					labelWidth = len(process.Name)
+				}
 			}
 		}
 
@@ -86,7 +90,10 @@ If refs are provided, filters for the logs of those processes.`,
 					label := event.Log
 					if componentName := logToComponent[event.Log]; componentName != "" {
 						label = componentName
+					} else if labelWidth < len(label) {
+						labelWidth = len(label)
 					}
+					label = fmt.Sprintf("%*s", labelWidth, label)
 					color := colors.Color(label)
 					prefix = rgbterm.FgString(
 						fmt.Sprintf("%s %s", timestamp, label),
