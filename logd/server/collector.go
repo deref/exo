@@ -272,7 +272,7 @@ func (lc *LogCollector) getEvents(ctx context.Context, input *api.GetEventsInput
 		limit = *input.Prev
 		direction = store.DirectionBackward
 	} else {
-		// Use default limit, and move forward
+		// Use default limit, and move forward.
 		direction = store.DirectionForward
 	}
 	limit = mathutil.IntClamp(limit, 0, maxLimit)
