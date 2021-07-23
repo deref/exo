@@ -14,7 +14,7 @@ import Feedback from './mono/feedback.svelte';
     </div>
     <div class="logo">
     <span>Feedback?</span>
-    <IconButton tooltip="Give feedback on GitHub" on:click={() => { window.location.href = 'https://github.com/deref/exo'}}><Feedback /></IconButton>
+    <IconButton tooltip="Give feedback on GitHub" on:click={() => { window.location.href = 'https://github.com/deref/exo/discussions'}}><Feedback /></IconButton>
   </div>
   </header>
   <div>
