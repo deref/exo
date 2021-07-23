@@ -95,17 +95,17 @@ onDestroy(() => {
         {#if statusPending.has(name)}
         <button disabled><Loading /></button>
         {:else if running}
-        <IconButton on:click={() => toggleProc(id)} activeState><Stop /></IconButton>
+        <IconButton tooltip="Stop process" on:click={() => toggleProc(id)} activeState><Stop /></IconButton>
         {:else}
-        <IconButton on:click={() => toggleProc(id)}><Run /></IconButton>
+        <IconButton tooltip="Run process" on:click={() => toggleProc(id)}><Run /></IconButton>
         {/if}
 
         {#if loggedProcesses.includes(id)}
-        <IconButton on:click={() => toggleProcLogs(id)} activeState><Hide /></IconButton>
+        <IconButton tooltip="Hide logs" on:click={() => toggleProcLogs(id)} activeState><Hide /></IconButton>
         {:else}
-        <IconButton on:click={() => toggleProcLogs(id)}><Show /></IconButton>
+        <IconButton tooltip="Show logs" on:click={() => toggleProcLogs(id)}><Show /></IconButton>
         {/if}
-        <IconButton on:click={() => deleteProcess(workspace, id)}><Delete/></IconButton>
+        <IconButton tooltip="Delete process" on:click={() => deleteProcess(workspace, id)}><Delete/></IconButton>
       </div>
     </div>
     {:else}

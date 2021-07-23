@@ -1,10 +1,11 @@
 <script lang="ts">
 
 export let activeState: boolean = false;
+export let tooltip: string = '';
 
 </script>
 
-<button on:click class={activeState ? 'active' : ''}>
+<button on:click class={activeState ? 'active' : ''} title={tooltip !== '' ? tooltip : undefined}>
   <slot/>
 </button>
 

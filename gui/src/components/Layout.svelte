@@ -1,7 +1,18 @@
+<script lang="ts">
+
+import IconButton from './IconButton.svelte';
+
+import Feedback from './mono/feedback.svelte';
+
+</script>
+
 <main>
   <header>
-    <img src="/deref-rounded-icon.png" alt="Deref" height="24px" />
-    <h1>exo</h1>
+    <div class="logo">
+      <img src="/deref-rounded-icon.png" alt="Deref" height="24px" />
+      <h1>exo</h1>
+    </div>
+    <IconButton tooltip="Feedback" on:click={() => { window.location.href = 'https://github.com/deref/exo'}}><Feedback /></IconButton>
   </header>
   <div>
     <slot/>
@@ -25,9 +36,15 @@ main {
 header {
   display: flex;
   align-items: center;
-  gap: 6px;
+  justify-content: space-between;
   padding: 6px 12px;
   box-shadow: 0px 6px 9px -6px #00000022, 0px 0.25px 0px 1px #00000022;
+}
+
+header .logo {
+  display: flex;
+  align-items: center;
+  gap: 6px;
 }
 
 h1 {
