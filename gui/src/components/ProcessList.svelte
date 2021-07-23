@@ -1,8 +1,9 @@
 <script lang="ts">
 import { onDestroy, onMount } from 'svelte';
 import type { RemoteData } from '../lib/api';
-import { logsStore, setLogVisibility } from '../lib/logs/store';
+import { refreshLogs } from '../lib/logs/store';
 import { fetchProcesses, processes, startProcess, stopProcess, refreshAllProcesses, deleteProcess } from '../lib/process/store';
+import { toggleLogVisibility, visibleLogsStore } from '../lib/logs/visible-logs';
 import type { ProcessDescription } from '../lib/process/types';
 import * as router from 'svelte-spa-router';
 import IconButton from './IconButton.svelte';
@@ -21,17 +22,9 @@ export let workspaceId: string;
 
 let statusPending = new Set<string>();
 
-let loggedProcesses: string[] = [];
-const unsubscribeLoggedProcesses = logsStore.subscribe(({ logs }) => {
-  loggedProcesses = logs;
-});
-
 let processList: RemoteData<ProcessDescription[]> = { stage: 'pending' };
 const unsubscribeProcesses = processes.subscribe(processes => {
   processList = processes;
-  // TODO: Set all processes to be logged on the initial load. Subsequently,
-  // the settings for whether to log processes should be persisted to LocalStorage
-  // and should not be automatically refreshed.
 });
 
 function toggleProc(id: string) {
@@ -55,8 +48,9 @@ function toggleProc(id: string) {
   }
 }
 
-function toggleProcLogs(id: string) {
-  setLogVisibility(workspace, id, !loggedProcesses.includes(id));
+function toggleProcLogs(processId: string) {
+  toggleLogVisibility(processId);
+  refreshLogs(workspace, true);
 }
 
 onMount(() => {
@@ -70,7 +64,6 @@ onMount(() => {
 
 onDestroy(() => {
   unsubscribeProcesses();
-  unsubscribeLoggedProcesses();
 });
 </script>
 
@@ -100,7 +93,7 @@ onDestroy(() => {
         <IconButton tooltip="Run process" on:click={() => toggleProc(id)}><Run /></IconButton>
         {/if}
 
-        {#if loggedProcesses.includes(id)}
+        {#if $visibleLogsStore.has(id)}
         <IconButton tooltip="Hide logs" on:click={() => toggleProcLogs(id)} active><Hide /></IconButton>
         {:else}
         <IconButton tooltip="Show logs" on:click={() => toggleProcLogs(id)}><Show /></IconButton>
