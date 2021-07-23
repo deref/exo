@@ -3,6 +3,7 @@
   import { api, isClientError } from '../lib/api';
   import * as router from 'svelte-spa-router';
   import { parseScript, generateScript } from '../lib/process/script';
+  import { toggleLogVisibility } from '../lib/logs/visible-logs';
   import EnvironmentInput from '../components/EnvironmentInput.svelte';
   import ArgumentsInput from '../components/ArgumentsInput.svelte';
   import Textbox from '../components/Textbox.svelte';
@@ -49,12 +50,14 @@
   <form on:submit|preventDefault={async () => {
     updateFields();
     try {
-      await workspace.createProcess(name, {
+      const { id } = await workspace.createProcess(name, {
         directory,
         environment,
         program,
         arguments: args,
       });
+      toggleLogVisibility(id);
+
       router.push(`/workspaces/${encodeURIComponent(params.workspace)}`);
     } catch (ex) {
       if (!isClientError(ex)) {

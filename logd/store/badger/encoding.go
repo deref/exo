@@ -69,26 +69,6 @@ func mustIDFromKey(log string, key []byte) (id string) {
 	return id
 }
 
-// incrementBytes returns a byte slice that is incremented by 1 bit.
-// If `val` is not already only 255-valued bytes, then it is mutated and returned.
-// Otherwise, a new slice is allocated and returned.
-func incrementBytes(val []byte) []byte {
-	for idx := len(val) - 1; idx >= 0; idx-- {
-		byt := val[idx]
-		if byt == 255 {
-			val[idx] = 0
-		} else {
-			val[idx] = byt + 1
-			return val
-		}
-	}
-
-	// Still carrying from previously most significant byte, so add a new 1-valued byte.
-	newVal := make([]byte, len(val)+1)
-	newVal[0] = 1
-	return newVal
-}
-
 func validateVersion(version byte) error {
 	if version == 1 {
 		return nil
@@ -103,4 +83,13 @@ func parseID(id []byte) (string, error) {
 	}
 
 	return strings.ToLower(asULID.String()), nil
+}
+
+func decodeID(id string) ([]byte, error) {
+	asULID, err := ulid.Parse(strings.ToUpper(id))
+	if err != nil {
+		return nil, fmt.Errorf("decoding id: %d", err)
+	}
+
+	return asULID[:], nil
 }

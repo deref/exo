@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -21,7 +22,8 @@ import (
 )
 
 const (
-	defaultEventsPerRequest = 500
+	defaultNextLimit = 500
+	maxLimit         = 10000
 )
 
 type Config struct {
@@ -227,10 +229,19 @@ func (lc *LogCollector) describeLogs(ctx context.Context, input *api.DescribeLog
 	var output api.DescribeLogsOutput
 	output.Logs = []api.LogDescription{}
 	for name, description := range lc.state.Logs {
+		var lastEventAt *string
+		lastEvent, err := lc.store.GetLog(name).GetLastEvent(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("getting last event: %w", err)
+		}
+		if lastEvent != nil {
+			lastEventAt = &lastEvent.Timestamp
+		}
+
 		output.Logs = append(output.Logs, api.LogDescription{
 			Name:        name,
 			Source:      description.Source,
-			LastEventAt: lc.store.GetLog(name).GetLastEventAt(ctx),
+			LastEventAt: lastEventAt,
 		})
 	}
 	return &output, nil
@@ -252,51 +263,115 @@ func (lc *LogCollector) getEvents(ctx context.Context, input *api.GetEventsInput
 		}
 	}
 
-	// TODO: Allow override via input.
-	limit := defaultEventsPerRequest
+	limit := defaultNextLimit
+	var direction store.Direction
+	if input.Next != nil {
+		if input.Prev != nil {
+			return nil, errors.New("Only one of prev or next may be specified")
+		}
+		limit = *input.Next
+		direction = store.DirectionForward
+	} else if input.Prev != nil {
+		limit = *input.Prev
+		direction = store.DirectionBackward
+	} else {
+		// Use default limit, and move forward.
+		direction = store.DirectionForward
+	}
+	limit = mathutil.IntClamp(limit, 0, maxLimit)
+
+	var cursor *store.Cursor
+	var err error
+	if input.Cursor == nil {
+		if cursor, err = lc.getLatestCursor(ctx, input.Logs); err != nil {
+			return nil, fmt.Errorf("finding latest cursor: %w", err)
+		}
+	} else {
+		parsedCursor, err := store.ParseCursor(*input.Cursor)
+		if err != nil {
+			return nil, fmt.Errorf("parsing cursor: %w", err)
+		}
+		cursor = &parsedCursor
+	}
 
 	// TODO: Merge sort.
-	events := []api.Event{}
+	eventsWithCursors := make([]store.EventWithCursors, 0, limit)
 	for _, logName := range logs {
 		log := lc.store.GetLog(logName)
-		logEvents, err := log.GetEvents(ctx, input.After, limit)
+
+		logEventsWithCursors, err := log.GetEvents(ctx, cursor, limit, direction)
 		if err != nil {
 			return nil, fmt.Errorf("getting %q events: %w", logName, err)
 		}
-		events = append(events, logEvents...)
+		if logEventsWithCursors == nil {
+			continue
+		}
+		eventsWithCursors = append(eventsWithCursors, logEventsWithCursors...)
 	}
-	sort.Sort(&eventsSorter{events})
+	sort.Sort(&eventWithCursorsSorter{eventsWithCursors})
 
-	cursor := input.After // XXX
-	if len(events) > 0 {
-		end := mathutil.IntMin(limit, len(events))
-		events = events[:end]
+	effectiveLimit := mathutil.IntMin(limit, len(eventsWithCursors))
+	if direction == store.DirectionForward {
+		eventsWithCursors = eventsWithCursors[0:effectiveLimit]
+	} else {
+		end := len(eventsWithCursors)
+		start := end - effectiveLimit
+		eventsWithCursors = eventsWithCursors[start:end]
+	}
 
-		cursor = events[len(events)-1].ID
+	prevCursor := cursor
+	nextCursor := cursor
+	if len(eventsWithCursors) > 0 {
+		prevCursor = &eventsWithCursors[0].PrevCursor
+		nextCursor = &eventsWithCursors[len(eventsWithCursors)-1].NextCursor
+	}
+
+	events := make([]api.Event, len(eventsWithCursors))
+	for i, eventWithCursors := range eventsWithCursors {
+		events[i] = eventWithCursors.Event
 	}
 
 	return &api.GetEventsOutput{
-		Events: events,
-		Cursor: cursor,
+		Items:      events,
+		PrevCursor: prevCursor.Serialize(),
+		NextCursor: nextCursor.Serialize(),
 	}, nil
 }
 
-type eventsSorter struct {
-	events []api.Event
+func (lc *LogCollector) getLatestCursor(ctx context.Context, logs []string) (*store.Cursor, error) {
+	cursor := store.NilCursor
+
+	for _, logName := range logs {
+		log := lc.store.GetLog(logName)
+		logCursor, err := log.GetLastCursor(ctx)
+		if err != nil {
+			return nil, err
+		}
+
+		if logCursor != nil && bytes.Compare(logCursor.ID, cursor.ID) > 0 {
+			cursor = logCursor
+		}
+	}
+
+	return cursor, nil
 }
 
-func (iface *eventsSorter) Len() int {
-	return len(iface.events)
+type eventWithCursorsSorter struct {
+	items []store.EventWithCursors
 }
 
-func (iface *eventsSorter) Less(i, j int) bool {
-	iId := ulid.MustParse(iface.events[i].ID)
-	jId := ulid.MustParse(iface.events[j].ID)
+func (iface *eventWithCursorsSorter) Len() int {
+	return len(iface.items)
+}
+
+func (iface *eventWithCursorsSorter) Less(i, j int) bool {
+	iId := ulid.MustParse(iface.items[i].Event.ID)
+	jId := ulid.MustParse(iface.items[j].Event.ID)
 	return iId.Compare(jId) < 0
 }
 
-func (iface *eventsSorter) Swap(i, j int) {
-	tmp := iface.events[i]
-	iface.events[i] = iface.events[j]
-	iface.events[j] = tmp
+func (iface *eventWithCursorsSorter) Swap(i, j int) {
+	tmp := iface.items[i]
+	iface.items[i] = iface.items[j]
+	iface.items[j] = tmp
 }

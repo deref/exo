@@ -2,66 +2,107 @@ package badger
 
 import (
 	"context"
-	"encoding/binary"
 	"fmt"
-	"strings"
 
-	"github.com/deref/exo/chrono"
 	"github.com/deref/exo/logd/api"
+	"github.com/deref/exo/logd/store"
+	"github.com/deref/exo/util/binaryutil"
 	"github.com/dgraph-io/badger/v3"
-	"github.com/oklog/ulid/v2"
 )
 
-func (log *Log) GetLastEventAt(ctx context.Context) *string {
+func (log *Log) GetLastEvent(ctx context.Context) (*api.Event, error) {
+	var event *api.Event
 	prefix := append([]byte(log.name), 0)
-	var timestamp uint64
-	err := log.db.View(func(txn *badger.Txn) error {
+
+	if err := log.db.View(func(txn *badger.Txn) error {
 		opts := badger.DefaultIteratorOptions
 		opts.PrefetchSize = 1
 		opts.Reverse = true
+
 		it := txn.NewIterator(opts)
 		defer it.Close()
+
 		it.Seek(append([]byte(log.name), 255))
 		if it.ValidForPrefix(prefix) {
 			item := it.Item()
+			key := item.Key()
 			return item.Value(func(val []byte) error {
 				if err := validateVersion(val[versionOffset]); err != nil {
 					return err
 				}
-				timestamp = binary.BigEndian.Uint64(val[timestampOffset : timestampOffset+timestampLen])
+				lastEvent, err := eventFromEntry(log.name, key, val)
+				if err != nil {
+					return err
+				}
+				event = &lastEvent
 				return nil
 			})
 		}
 		return nil
-	})
-	if err != nil {
-		return nil
+	}); err != nil {
+		return nil, fmt.Errorf("scanning log: %w", err)
 	}
 
-	if timestamp != 0 {
-		s := chrono.NanoToIso(int64(timestamp))
-		return &s
-	}
-	return nil
+	return event, nil
 }
 
-func (log *Log) GetEvents(ctx context.Context, after string, limit int) ([]api.Event, error) {
-	events := make([]api.Event, 0, limit)
-	if err := log.db.View(func(txn *badger.Txn) error {
-		it := txn.NewIterator(badger.DefaultIteratorOptions)
+func (log *Log) GetLastCursor(ctx context.Context) (*store.Cursor, error) {
+	var cursor *store.Cursor
+	prefix := append([]byte(log.name), 0)
+
+	err := log.db.View(func(txn *badger.Txn) error {
+		opts := badger.DefaultIteratorOptions
+		opts.PrefetchValues = false
+		opts.Reverse = true
+
+		it := txn.NewIterator(opts)
 		defer it.Close()
-		prefix := append([]byte(log.name), 0)
-		start := prefix
-		if after != "" {
-			id, err := ulid.Parse(strings.ToUpper(after))
+
+		it.Seek(append([]byte(log.name), 255))
+		if it.ValidForPrefix(prefix) {
+			id, err := idFromKey(log.name, it.Item().Key())
 			if err != nil {
-				return fmt.Errorf("parsing cursor: %w", err)
+				return err
 			}
-			idBytes, _ := id.MarshalBinary() // Cannot fail
-			start = append(start, incrementBytes(idBytes)...)
+			cursor = new(store.Cursor)
+			// If `idFromKey` succeeded, this cannot fail.
+			cursor.ID, _ = decodeID(id)
+			cursor.ID = binaryutil.IncrementBytes(cursor.ID)
+		}
+		return nil
+	})
+
+	return cursor, err
+}
+
+func (log *Log) GetEvents(ctx context.Context, cursor *store.Cursor, limit int, direction store.Direction) ([]store.EventWithCursors, error) {
+	prefix := append([]byte(log.name), 0)
+	start := prefix
+	if cursor != nil {
+		start = append(start, cursor.ID...)
+	}
+
+	events := make([]api.Event, limit)
+	eventsProcessed := 0
+	var curIndex int
+	var indexDelta int
+	if direction == store.DirectionForward {
+		curIndex = 0
+		indexDelta = 1
+	} else {
+		curIndex = limit - 1
+		indexDelta = -1
+	}
+
+	if err := log.db.View(func(txn *badger.Txn) error {
+		opts := badger.DefaultIteratorOptions
+		if direction == store.DirectionBackward {
+			opts.Reverse = true
 		}
 
-		eventsProcessed := 0
+		it := txn.NewIterator(opts)
+		defer it.Close()
+
 		for it.Seek(start); it.ValidForPrefix(prefix) && eventsProcessed < limit; it.Next() {
 			item := it.Item()
 			key := item.Key()
@@ -71,18 +112,56 @@ func (log *Log) GetEvents(ctx context.Context, after string, limit int) ([]api.E
 					return err
 				}
 
-				events = append(events, evt)
+				events[curIndex] = evt
+				curIndex += indexDelta
+				eventsProcessed++
 				return nil
 			}); err != nil {
 				return err
 			}
-			eventsProcessed++
 		}
 		return nil
 	}); err != nil {
 		return nil, fmt.Errorf("scanning index: %w", err)
 	}
-	return events, nil
+
+	if direction == store.DirectionForward {
+		events = events[0:curIndex]
+	} else {
+		start := curIndex - indexDelta
+		events = events[start:]
+	}
+
+	eventsWithCursors := make([]store.EventWithCursors, len(events))
+	var err error
+	for i, event := range events {
+		if eventsWithCursors[i], err = getEventWithCursors(event); err != nil {
+			return nil, fmt.Errorf("creating cursors for event %q: %w", event.ID, err)
+		}
+	}
+
+	return eventsWithCursors, nil
+}
+
+func getEventWithCursors(event api.Event) (store.EventWithCursors, error) {
+	eventWithCursors := store.EventWithCursors{
+		Event: event,
+	}
+	idBytes, err := decodeID(event.ID)
+	if err != nil {
+		return store.EventWithCursors{}, err
+	}
+
+	// Copy the ID since increment/decrement operations mutate.
+	prevCursorID := make([]byte, len(idBytes))
+	copy(prevCursorID, idBytes)
+
+	// We don't care about the error if this is already a (zero-valued) NilCursor
+	_ = binaryutil.DecrementBytes(prevCursorID)
+	eventWithCursors.PrevCursor = store.Cursor{ID: prevCursorID}
+	eventWithCursors.NextCursor = store.Cursor{ID: binaryutil.IncrementBytes(idBytes)}
+
+	return eventWithCursors, nil
 }
 
 const maxEventsPerStream = 5000

@@ -67,17 +67,16 @@ If refs are provided, filters for the logs of those processes.`,
 			}
 		}
 
-		cursor := ""
+		in := &api.GetEventsInput{
+			Logs: logIDs,
+		}
 		for {
-			output, err := workspace.GetEvents(ctx, &api.GetEventsInput{
-				Logs:  logIDs,
-				After: cursor,
-			})
+			output, err := workspace.GetEvents(ctx, in)
 			if err != nil {
 				return err
 			}
 
-			for _, event := range output.Events {
+			for _, event := range output.Items {
 				t, err := time.Parse(chrono.RFC3339NanoUTC, event.Timestamp)
 				if err != nil {
 					cmdutil.Warnf("invalid event timestamp: %q", event.Timestamp)
@@ -105,8 +104,8 @@ If refs are provided, filters for the logs of those processes.`,
 
 				fmt.Printf("%s %s\n", prefix, event.Message)
 			}
-			cursor = output.Cursor
-			if len(output.Events) < 10 { // TODO: OK heuristic?
+			in.Cursor = &output.NextCursor
+			if len(output.Items) < 10 { // TODO: OK heuristic?
 				<-time.After(250 * time.Millisecond)
 			}
 		}

@@ -14,7 +14,7 @@ type LogCollector interface {
 	AddLog(context.Context, *AddLogInput) (*AddLogOutput, error)
 	RemoveLog(context.Context, *RemoveLogInput) (*RemoveLogOutput, error)
 	DescribeLogs(context.Context, *DescribeLogsInput) (*DescribeLogsOutput, error)
-	// Paginates events. Inputs before and after are mutually exclusive.
+	// Returns pages of log events for some set of logs. If `cursor` is specified, standard pagination behavior is used. Otherwise the cursor is assumed to represent the current tail of the log.
 	GetEvents(context.Context, *GetEventsInput) (*GetEventsOutput, error)
 }
 
@@ -43,13 +43,15 @@ type DescribeLogsOutput struct {
 
 type GetEventsInput struct {
 	Logs   []string `json:"logs"`
-	Before string   `json:"before"`
-	After  string   `json:"after"`
+	Cursor *string  `json:"cursor"`
+	Prev   *int     `json:"prev"`
+	Next   *int     `json:"next"`
 }
 
 type GetEventsOutput struct {
-	Events []Event `json:"events"`
-	Cursor string  `json:"cursor"`
+	Items      []Event `json:"items"`
+	PrevCursor string  `json:"prevCursor"`
+	NextCursor string  `json:"nextCursor"`
 }
 
 func BuildLogCollectorMux(b *josh.MuxBuilder, factory func(req *http.Request) LogCollector) {

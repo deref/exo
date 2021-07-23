@@ -7,6 +7,7 @@ export interface LogEvent {
 }
 
 export interface LogsResponse {
-  events: LogEvent[];
-  cursor: string | null;
+  items: LogEvent[];
+  prevCursor: string;
+  nextCursor: string;
 }

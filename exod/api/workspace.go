@@ -33,6 +33,7 @@ type Workspace interface {
 	// Disposes a component and then awaits the record to be deleted synchronously.
 	DeleteComponent(context.Context, *DeleteComponentInput) (*DeleteComponentOutput, error)
 	DescribeLogs(context.Context, *DescribeLogsInput) (*DescribeLogsOutput, error)
+	// Returns pages of log events for some set of logs. If `cursor` is specified, standard pagination behavior is used. Otherwise the cursor is assumed to represent the current tail of the log.
 	GetEvents(context.Context, *GetEventsInput) (*GetEventsOutput, error)
 	Start(context.Context, *StartInput) (*StartOutput, error)
 	Stop(context.Context, *StopInput) (*StopOutput, error)
@@ -136,13 +137,15 @@ type DescribeLogsOutput struct {
 
 type GetEventsInput struct {
 	Logs   []string `json:"logs"`
-	Before string   `json:"before"`
-	After  string   `json:"after"`
+	Cursor *string  `json:"cursor"`
+	Prev   *int     `json:"prev"`
+	Next   *int     `json:"next"`
 }
 
 type GetEventsOutput struct {
-	Events []Event `json:"events"`
-	Cursor string  `json:"cursor"`
+	Items      []Event `json:"items"`
+	PrevCursor string  `json:"prevCursor"`
+	NextCursor string  `json:"nextCursor"`
 }
 
 type StartInput struct {

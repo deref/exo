@@ -13,8 +13,8 @@ func Now(ctx context.Context) time.Time {
 	return time.Now()
 }
 
-func NowNano(ctx context.Context) uint64 {
-	return uint64(Now(ctx).UnixNano())
+func NowNano(ctx context.Context) int64 {
+	return Now(ctx).UnixNano()
 }
 
 func NowString(ctx context.Context) string {

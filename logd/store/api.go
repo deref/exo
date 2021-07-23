@@ -13,9 +13,26 @@ type Store interface {
 }
 
 type Log interface {
-	GetEvents(ctx context.Context, after string, limit int) ([]api.Event, error)
-	GetLastEventAt(context.Context) *string
-	AddEvent(ctx context.Context, timestamp uint64, message []byte) error
+	// GetEvents returns a page of events along with cursors for moving forward or backward in the result set.
+	// If `cursor` is nil, returns the most recent page of events, which is useful for the UI's default tailing behaviour.
+	GetEvents(ctx context.Context, cursor *Cursor, limit int, direction Direction) ([]EventWithCursors, error)
+
+	GetLastCursor(context.Context) (*Cursor, error)
+	GetLastEvent(context.Context) (*api.Event, error)
+	AddEvent(ctx context.Context, timestamp int64, message []byte) error
 	// Remove oldest events beyond capacity limit.
 	RemoveOldEvents(context.Context) error
+}
+
+type Direction int
+
+const (
+	DirectionForward  Direction = 1
+	DirectionBackward Direction = -1
+)
+
+type EventWithCursors struct {
+	Event      api.Event
+	PrevCursor Cursor
+	NextCursor Cursor
 }

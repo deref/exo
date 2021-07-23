@@ -493,18 +493,20 @@ func (ws *Workspace) GetEvents(ctx context.Context, input *api.GetEventsInput) (
 	collector := log.CurrentLogCollector(ctx)
 	collectorOutput, err := collector.GetEvents(ctx, &logd.GetEventsInput{
 		Logs:   logStreams,
-		Before: input.Before,
-		After:  input.After,
+		Cursor: input.Cursor,
+		Prev:   input.Prev,
+		Next:   input.Next,
 	})
 	if err != nil {
 		return nil, err
 	}
 	output := api.GetEventsOutput{
-		Events: make([]api.Event, len(collectorOutput.Events)),
-		Cursor: collectorOutput.Cursor,
+		Items:      make([]api.Event, len(collectorOutput.Items)),
+		PrevCursor: collectorOutput.PrevCursor,
+		NextCursor: collectorOutput.NextCursor,
 	}
-	for i, collectorEvent := range collectorOutput.Events {
-		output.Events[i] = api.Event{
+	for i, collectorEvent := range collectorOutput.Items {
+		output.Items[i] = api.Event{
 			ID:        collectorEvent.ID,
 			Log:       collectorEvent.Log,
 			Timestamp: collectorEvent.Timestamp,

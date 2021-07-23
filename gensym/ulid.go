@@ -25,6 +25,7 @@ func NewULIDGenerator(ctx context.Context) *ULIDGenerator {
 }
 
 func (gen *ULIDGenerator) NextID(ctx context.Context) ([]byte, error) {
+	// The math/rand generator is not thread-safe, so we have to guard access with a mutex.
 	gen.mu.Lock()
 	defer gen.mu.Unlock()
 	ts := ulid.Timestamp(chrono.Now(ctx))

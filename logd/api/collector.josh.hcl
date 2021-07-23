@@ -19,14 +19,18 @@ interface "log-collector" {
   }
 
   method "get-events" {
-    doc = "Paginates events. Inputs before and after are mutually exclusive."
+    doc = "Returns pages of log events for some set of logs. If `cursor` is specified, standard pagination behavior is used. Otherwise the cursor is assumed to represent the current tail of the log."
+
+    # TODO: Replace this with some filter expression.
     input "logs" "[]string" {}
-    // TODO: "since" and "until" for timestamp queries instead-or of
-    // in-addition-to cursor-based queries.
-    input "before" "string" {}
-    input "after" "string" {}
-    output "events" "[]Event" {}
-    output "cursor" "string" {}
+
+    input "cursor" "*string" {}
+    input "prev" "*int" {}
+    input "next" "*int" {}
+
+    output "items" "[]Event" {}
+    output "prevCursor" "string" {}
+    output "nextCursor" "string" {}
   }
 
 }

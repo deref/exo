@@ -1,8 +1,8 @@
-import { writable } from 'svelte/store';
+import { get, writable } from 'svelte/store';
 import { notRequested, pendingRequest, refetchingResponse, RemoteData, successResponse } from '../api';
 import type { LogEvent } from './types';
+import { visibleLogsStore } from './visible-logs';
 export interface LogsStore {
-  logs: string[];
   events: RemoteData<LogEvent[]>;
   logBufferSize: number;
 }
@@ -10,7 +10,6 @@ export interface LogsStore {
 let lastCursor: string | null = null;
 
 export const logsStore = writable<LogsStore>({
-  logs: [],
   events: notRequested(),
   logBufferSize: 1000,
 });
@@ -20,9 +19,7 @@ export const refreshLogs = async (workspace, fromStart = false) => {
     lastCursor = null;
   }
 
-  let matchProcs = [];
   logsStore.update((value) => {
-    matchProcs = value.logs;
     switch (value.events.stage) {
       case 'idle':
         return {
@@ -45,42 +42,22 @@ export const refreshLogs = async (workspace, fromStart = false) => {
     }
   });
 
-  const logs = matchProcs.flatMap(procId => ([ `${procId}:out`, `${procId}:err` ]));
-  const newEvents = await workspace.getEvents(logs, {
-    type: 'after-cursor',
+  const newEvents = await workspace.getEvents([...get(visibleLogsStore).values()], {
     cursor: fromStart ? null : lastCursor,
+    prev: 100,
   });
 
-  lastCursor = newEvents.cursor;
+  lastCursor = newEvents.nextCursor;
   logsStore.update(value => {
     let prevEvents: LogEvent[] = [];
     if (value.events.stage === 'success' || value.events.stage === 'refetching') {
       prevEvents = value.events.data;
     }
-    const allEvents = [...prevEvents, ...newEvents.events];
+    const allEvents = [...prevEvents, ...newEvents.items];
 
     return {
       ...value,
       events: successResponse(allEvents.slice(allEvents.length-value.logBufferSize)),
     }
   });
-};
-
-const addToList = <T>(xs: T[], x: T): T[] => {
-  if (xs.includes(x)) {
-    return xs;
-  }
-  return [...xs, x];
-};
-
-const removeFromList = <T>(xs: T[], x: T): T[] =>
-  xs.filter(elem => elem !== x);
-
-export const setLogVisibility = (workspace, processId: string, isVisible: boolean) => {
-  // XXX: This is broken because `value.log` no longer matches the process name.
-  logsStore.update(value => ({
-    ...value,
-    logs: isVisible ? addToList(value.logs, processId) : removeFromList(value.logs, processId),
-  }));
-  refreshLogs(workspace, true);
 };

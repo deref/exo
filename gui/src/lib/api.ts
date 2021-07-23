@@ -1,5 +1,5 @@
 import type { LogsResponse } from './logs/types';
-import type { ProcessDescription } from "./process/types";
+import type { CreateProcessResponse, ProcessDescription } from "./process/types";
 
 interface IdleRequest {
   stage: 'idle';
@@ -46,12 +46,10 @@ export const IsUnresolved = <T>(r: RemoteData<T>): r is IsUnresolved<T> =>
 export const IsResolved = <T>(r: RemoteData<T>): r is IsResolved<T> =>
   r.stage === 'error' || r.stage === 'success';
 
-export type PaginationParams = {
-  type: 'before-cursor';
+export interface PaginationParams {
   cursor: string | null;
-} | {
-  type: 'after-cursor';
-  cursor: string | null;
+  prev?: number;
+  next?: number;
 };
 
 const baseUrl = 'http://localhost:4000/_exo';
@@ -147,12 +145,12 @@ export const api = (() => {
         await invoke('apply', {});
       },
     
-      async createProcess(name: string, spec: ProcessSpec): Promise<void> {
-        await invoke('create-component', {
+      async createProcess(name: string, spec: ProcessSpec): Promise<CreateProcessResponse> {
+        return await invoke('create-component', {
           name,
           type: 'process',
           spec: JSON.stringify(spec),
-        });
+        }) as CreateProcessResponse;
       },
 
       async startProcess(ref: string): Promise<void> {
@@ -172,13 +170,10 @@ export const api = (() => {
       },
 
       async getEvents(logs: string[], pagination?: PaginationParams): Promise<LogsResponse> {
-        if (pagination?.type === 'before-cursor') {
-          throw new Error("Before cursor not supported.");
-        }
         return await invoke('get-events', {
           logs,
-          ...(pagination?.cursor ? { after: pagination?.cursor } : {}),
-        }) as any;
+          ...pagination,
+        }) as LogsResponse;
       },
     };
   };
