@@ -2,6 +2,8 @@
 
 **exo-** _prefix_ – external; from outside.
 
+![The Exo GUI](https://github.com/deref/exo/blob/main/doc/screenshot-light.png?raw=true)
+
 ## Status
 
 _Alpha!_
