@@ -44,7 +44,7 @@ export const refreshLogs = async (workspace, fromStart = false) => {
 
   const newEvents = await workspace.getEvents([...get(visibleLogsStore).values()], {
     cursor: fromStart ? null : lastCursor,
-    prev: 100,
+    next: 100,
   });
 
   lastCursor = newEvents.nextCursor;
