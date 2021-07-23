@@ -47,7 +47,7 @@ export const refreshLogs = async (workspace, fromStart = false) => {
     prev: 100,
   });
 
-  lastCursor = newEvents.cursor;
+  lastCursor = newEvents.nextCursor;
   logsStore.update(value => {
     let prevEvents: LogEvent[] = [];
     if (value.events.stage === 'success' || value.events.stage === 'refetching') {

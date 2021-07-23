@@ -143,8 +143,4 @@ h2 {
   background: #eee;
 }
 
-p {
-  font-weight: bold;
-}
-
 </style>
