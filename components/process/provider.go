@@ -5,14 +5,14 @@ type Provider struct {
 	VarDir       string
 }
 
-type spec struct {
+type Spec struct {
 	Directory   string            `json:"directory"`
 	Program     string            `json:"program"`
 	Arguments   []string          `json:"arguments"`
 	Environment map[string]string `json:"environment"`
 }
 
-type state struct {
+type State struct {
 	Pid int `json:"pid"`
 	// TODO: Store resolved program path & full effective environment.
 	// Program string `json:"program"`

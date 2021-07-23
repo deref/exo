@@ -22,7 +22,7 @@ import (
 
 func (provider *Provider) Start(ctx context.Context, input *core.StartInput) (*core.StartOutput, error) {
 	procDir := filepath.Join(provider.VarDir, input.ID)
-	var state state
+	var state State
 	if err := jsonutil.UnmarshalString(input.State, &state); err != nil {
 		return nil, fmt.Errorf("unmarshalling state: %w", err)
 	}
@@ -42,10 +42,10 @@ func (provider *Provider) Start(ctx context.Context, input *core.StartInput) (*c
 	return &output, nil
 }
 
-func (provider *Provider) start(ctx context.Context, procDir string, inputSpec string) (state, error) {
-	var spec spec
+func (provider *Provider) start(ctx context.Context, procDir string, inputSpec string) (State, error) {
+	var spec Spec
 	if err := jsonutil.UnmarshalString(inputSpec, &spec); err != nil {
-		return state{}, fmt.Errorf("unmarshalling spec: %w", err)
+		return State{}, fmt.Errorf("unmarshalling spec: %w", err)
 	}
 
 	// Use configured working directory or fallback to workspace directory.
@@ -63,7 +63,7 @@ func (provider *Provider) start(ctx context.Context, procDir string, inputSpec s
 	}
 	program, err := whichQ.Run()
 	if err != nil {
-		return state{}, errutil.WithHTTPStatus(http.StatusBadRequest, err)
+		return State{}, errutil.WithHTTPStatus(http.StatusBadRequest, err)
 	}
 
 	// Construct supervised command.
@@ -116,7 +116,7 @@ func (provider *Provider) start(ctx context.Context, procDir string, inputSpec s
 
 	// Start supervisor process.
 	if err := cmd.Start(); err != nil {
-		return state{}, fmt.Errorf("starting fifofum: %w", err)
+		return State{}, fmt.Errorf("starting fifofum: %w", err)
 	}
 
 	// Collect fifofum output.
@@ -156,11 +156,11 @@ func (provider *Provider) start(ctx context.Context, procDir string, inputSpec s
 	case <-time.After(300 * time.Millisecond):
 		err = errors.New("fifofum timeout")
 	}
-	return state{Pid: pid}, err
+	return State{Pid: pid}, err
 }
 
 func (provider *Provider) Stop(ctx context.Context, input *core.StopInput) (*core.StopOutput, error) {
-	var state state
+	var state State
 	if err := jsonutil.UnmarshalString(input.State, &state); err != nil {
 		return nil, fmt.Errorf("unmarshalling state: %w", err)
 	}

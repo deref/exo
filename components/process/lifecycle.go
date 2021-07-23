@@ -74,7 +74,7 @@ func (provider *Provider) Update(context.Context, *core.UpdateInput) (*core.Upda
 }
 
 func (provider *Provider) Refresh(ctx context.Context, input *core.RefreshInput) (*core.RefreshOutput, error) {
-	var state state
+	var state State
 	if err := jsonutil.UnmarshalString(input.State, &state); err != nil {
 		return nil, fmt.Errorf("unmarshalling state: %w", err)
 	}
@@ -86,14 +86,14 @@ func (provider *Provider) Refresh(ctx context.Context, input *core.RefreshInput)
 	return &output, nil
 }
 
-func (provider *Provider) refresh(state *state) {
+func (provider *Provider) refresh(state *State) {
 	if !osutil.IsValidPid(state.Pid) {
 		state.Pid = 0
 	}
 }
 
 func (provider *Provider) Dispose(ctx context.Context, input *core.DisposeInput) (*core.DisposeOutput, error) {
-	var state state
+	var state State
 	if err := jsonutil.UnmarshalString(input.State, &state); err != nil {
 		return nil, fmt.Errorf("unmarshalling state: %w", err)
 	}
