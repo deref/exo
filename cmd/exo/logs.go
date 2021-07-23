@@ -40,10 +40,13 @@ If refs are provided, filters for the logs of those processes.`,
 		if err != nil {
 			return fmt.Errorf("resolving refs: %w", err)
 		}
-		logIDs := make([]string, 0, len(logRefs))
-		for _, logID := range resolved.IDs {
-			if logID != nil {
-				logIDs = append(logIDs, *logID)
+		var logIDs []string
+		if len(logRefs) > 0 {
+			logIDs = make([]string, 0, len(logRefs))
+			for _, logID := range resolved.IDs {
+				if logID != nil {
+					logIDs = append(logIDs, *logID)
+				}
 			}
 		}
 
