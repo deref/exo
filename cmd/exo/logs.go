@@ -76,7 +76,7 @@ If refs are provided, filters for the logs of those processes.`,
 				return err
 			}
 
-			for _, event := range output.Events {
+			for _, event := range output.Items {
 				t, err := time.Parse(chrono.RFC3339NanoUTC, event.Timestamp)
 				if err != nil {
 					cmdutil.Warnf("invalid event timestamp: %q", event.Timestamp)

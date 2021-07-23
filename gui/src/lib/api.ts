@@ -46,12 +46,10 @@ export const IsUnresolved = <T>(r: RemoteData<T>): r is IsUnresolved<T> =>
 export const IsResolved = <T>(r: RemoteData<T>): r is IsResolved<T> =>
   r.stage === 'error' || r.stage === 'success';
 
-export type PaginationParams = {
-  type: 'before-cursor';
+export interface PaginationParams {
   cursor: string | null;
-} | {
-  type: 'after-cursor';
-  cursor: string | null;
+  prev?: number;
+  next?: number;
 };
 
 const baseUrl = 'http://localhost:4000/_exo';
@@ -172,12 +170,9 @@ export const api = (() => {
       },
 
       async getEvents(logs: string[], pagination?: PaginationParams): Promise<LogsResponse> {
-        if (pagination?.type === 'before-cursor') {
-          throw new Error("Before cursor not supported.");
-        }
         return await invoke('get-events', {
           logs,
-          ...(pagination?.cursor ? { after: pagination?.cursor } : {}),
+          ...pagination,
         }) as any;
       },
     };

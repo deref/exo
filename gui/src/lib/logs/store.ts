@@ -47,8 +47,8 @@ export const refreshLogs = async (workspace, fromStart = false) => {
 
   const logs = matchProcs.flatMap(procId => ([ `${procId}:out`, `${procId}:err` ]));
   const newEvents = await workspace.getEvents(logs, {
-    type: 'after-cursor',
     cursor: fromStart ? null : lastCursor,
+    next: 100,
   });
 
   lastCursor = newEvents.cursor;
@@ -57,7 +57,7 @@ export const refreshLogs = async (workspace, fromStart = false) => {
     if (value.events.stage === 'success' || value.events.stage === 'refetching') {
       prevEvents = value.events.data;
     }
-    const allEvents = [...prevEvents, ...newEvents.events];
+    const allEvents = [...prevEvents, ...newEvents.items];
 
     return {
       ...value,

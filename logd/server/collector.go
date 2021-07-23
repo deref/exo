@@ -300,7 +300,6 @@ func (lc *LogCollector) getEvents(ctx context.Context, input *api.GetEventsInput
 		log := lc.store.GetLog(logName)
 
 		logEventsWithCursors, err := log.GetEvents(ctx, cursor, limit, direction)
-		fmt.Printf("Got %d events from %q\n", len(logEventsWithCursors), logName)
 		if err != nil {
 			return nil, fmt.Errorf("getting %q events: %w", logName, err)
 		}
