@@ -25,11 +25,8 @@ Navigate to your code directory and then launch the exo gui:
 exo gui
 ```
 
-For more features, consult the builtin help:
-
-```bash
-exo help
-```
+For more, checkout the [exo guide](./doc/guide.md) or consult the
+builtin help by running `exo help`.
 
 ---
 
