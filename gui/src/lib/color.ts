@@ -35,6 +35,7 @@ export const hashString = (s: string) => s.split('').map(c => c.charCodeAt(0)).r
 
 export const hashPalette = (s: string) => palette[hashString(s) % palette.length]
 
+export const logStyleFromHash = (s: string) => `--log-color:${hashPalette(s)[0]};--log-bg-color:${hashPalette(s)[2]};--log-border-color:${hashPalette(s)[1]}`
 
 
 // $dark1: #32373c;

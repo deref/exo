@@ -1,6 +1,6 @@
 <script lang="ts">
   
-import { hashPalette } from '../lib/color';
+import { logStyleFromHash } from '../lib/color';
 import { onMount, onDestroy, afterUpdate, beforeUpdate } from 'svelte';
 import type { RemoteData } from '../lib/api';
 import { hasData, IsUnresolved, notRequested } from '../lib/api';
@@ -65,7 +65,7 @@ afterUpdate(async () => {
     <div class="log-table-container" bind:this={logViewport}>
       <table>
         {#each logEvents.data as event (event.id)}
-        <tr class="log-entry" style={`--log-color:${hashPalette(event.log)[0]};--log-bg-color:${hashPalette(event.log)[2]};--log-border-color:${hashPalette(event.log)[1]}`}>
+        <tr class="log-entry" style={logStyleFromHash(event.log)}>
             <td>{event.log}</td> <td>{shortDate(event.timestamp)}</td> <td>{event.message}</td>
         </tr>
         {/each}
