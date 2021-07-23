@@ -15,17 +15,13 @@ type Cursor struct {
 	ID []byte
 }
 
-func (c Cursor) IsValid() bool {
-	return c.ID != nil
-}
-
-func ParseCursor(in string) (*Cursor, error) {
+func ParseCursor(in string) (Cursor, error) {
 	data, err := cursorEnc.DecodeString(in)
 	if err != nil {
-		return nil, fmt.Errorf("decoding cursor: %w", err)
+		return Cursor{}, fmt.Errorf("decoding cursor: %w", err)
 	}
 
-	return &Cursor{
+	return Cursor{
 		ID: data,
 	}, nil
 }

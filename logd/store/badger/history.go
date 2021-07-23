@@ -134,7 +134,6 @@ func (log *Log) GetEvents(ctx context.Context, cursor *store.Cursor, limit int, 
 		return nil, fmt.Errorf("scanning index: %w", err)
 	}
 
-	fmt.Printf("limit: %d, curIndex: %d\n", limit, curIndex)
 	if direction == store.DirectionForward {
 		events = events[0:curIndex]
 	} else {

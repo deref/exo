@@ -284,9 +284,11 @@ func (lc *LogCollector) getEvents(ctx context.Context, input *api.GetEventsInput
 			return nil, fmt.Errorf("finding latest cursor: %w", err)
 		}
 	} else {
-		if cursor, err = store.ParseCursor(*input.Cursor); err != nil {
+		parsedCursor, err := store.ParseCursor(*input.Cursor)
+		if err != nil {
 			return nil, fmt.Errorf("parsing cursor: %w", err)
 		}
+		cursor = &parsedCursor
 	}
 
 	// TODO: Merge sort.
@@ -294,19 +296,7 @@ func (lc *LogCollector) getEvents(ctx context.Context, input *api.GetEventsInput
 	for _, logName := range logs {
 		log := lc.store.GetLog(logName)
 
-		logCursor := cursor
-		if logCursor == nil {
-			if lastEvent := log.GetLastEvent(ctx); lastEvent != nil {
-				idBytes, err := badger.DecodeID(lastEvent.ID)
-				if err != nil {
-					return nil, fmt.Errorf("decoding id: %w", err)
-				}
-				idBytes = binaryutil.IncrementBytes(idBytes)
-				logCursor = &store.Cursor{ID: idBytes}
-			}
-		}
-
-		logEvents, err := log.GetEvents(ctx, logCursor, limit, direction)
+		logEvents, err := log.GetEvents(ctx, cursor, limit, direction)
 		if err != nil {
 			return nil, fmt.Errorf("getting %q events: %w", logName, err)
 		}
