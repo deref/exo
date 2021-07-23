@@ -31,7 +31,7 @@ commands:
 
 ```bash
 # List processes.
-exp ps
+exo ps
 
 # Control process state.
 exo start myapp
