@@ -14,10 +14,23 @@ Put the binary `~/.exo/bin` and add that directory to your `PATH`.
 
 ## Uninstall
 
-Kill and supervised processes:
+Stop supervised processes and free any workspace resources:
 
 ```bash
-exo destroy
+cd /your/workspace
+exo workspace destroy
+```
+
+Have multiple workspaces? Find them all:
+
+```bash
+exo workspace ls
+```
+
+Shutdown the exo daemon:
+
+```bash
+exo exit
 ```
 
 Delete the exo home directory:
