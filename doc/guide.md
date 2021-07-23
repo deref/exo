@@ -14,7 +14,9 @@ new one with `exo workspace init` or delete the current workspace with
 
 **Components** - An abstract definition of resources managed by exo. Presently,
 the only supported type of components are _processes_. Each component has a
-unique name within a workspace.
+unique name within a workspace. Components are manipulated by editing applying
+manifests (see below), or with CRUD operations such as `exo ls`, `exo new`, and
+`exo rm`.
 
 **Manifests** - A file describing all of the components in a project.
 Presently, [procfiles](./procfiles.md) are the only supported type of
