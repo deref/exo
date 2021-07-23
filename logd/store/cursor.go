@@ -2,7 +2,6 @@ package store
 
 import (
 	"encoding/base64"
-	"fmt"
 )
 
 var cursorEnc = base64.RawURLEncoding
@@ -18,7 +17,7 @@ type Cursor struct {
 func ParseCursor(in string) (Cursor, error) {
 	data, err := cursorEnc.DecodeString(in)
 	if err != nil {
-		return Cursor{}, fmt.Errorf("decoding cursor: %w", err)
+		return Cursor{}, err
 	}
 
 	return Cursor{
