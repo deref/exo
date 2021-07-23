@@ -414,7 +414,7 @@ func (ws *Workspace) DescribeLogs(ctx context.Context, input *api.DescribeLogsIn
 	// TODO: More general handling of log groups, subcomponents, etc.
 	var logGroups []string
 	var logStreams []string
-	streamToGroup := make(map[string]int, len(logGroups))
+	streamToGroup := make(map[string]int, len(processLogStreams)*len(logGroups))
 	for _, component := range components.Components {
 		if component.Type == "process" {
 			for _, stream := range processLogStreams {
@@ -480,7 +480,7 @@ func (ws *Workspace) GetEvents(ctx context.Context, input *api.GetEventsInput) (
 			logGroups[i] = group.Name
 		}
 	}
-	var logStreams []string
+	logStreams := make([]string, 0, 2*len(logGroups))
 	// Expand log groups in to streams.
 	for _, group := range logGroups {
 		// Each process acts as a log group combining both stdout and stderr.
