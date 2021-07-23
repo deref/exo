@@ -586,6 +586,18 @@ func (ws *Workspace) Stop(ctx context.Context, input *api.StopInput) (*api.StopO
 	return &api.StopOutput{}, nil
 }
 
+func (ws *Workspace) Restart(ctx context.Context, input *api.RestartInput) (*api.RestartOutput, error) {
+	// TODO: Allow provider to customize restart behavior.
+	_, _ = ws.Stop(ctx, &api.StopInput{})
+	_, err := ws.Start(ctx, &api.StartInput{
+		Ref: input.Ref,
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &api.RestartOutput{}, nil
+}
+
 func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeProcessesInput) (*api.DescribeProcessesOutput, error) {
 	components, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
 		WorkspaceID: ws.ID,

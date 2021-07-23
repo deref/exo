@@ -99,6 +99,10 @@ interface "workspace" {
     input "ref" "string" {}
   }
 
+  method "restart" {
+    input "ref" "string" {}
+  }
+
 	// TODO: Move these to a plugin or similar.
   method "describe-processes" {
     output "processes" "[]ProcessDescription" {}

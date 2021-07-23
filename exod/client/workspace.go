@@ -96,6 +96,11 @@ func (c *Workspace) Stop(ctx context.Context, input *api.StopInput) (output *api
 	return
 }
 
+func (c *Workspace) Restart(ctx context.Context, input *api.RestartInput) (output *api.RestartOutput, err error) {
+	err = c.client.Invoke(ctx, "restart", input, &output)
+	return
+}
+
 func (c *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeProcessesInput) (output *api.DescribeProcessesOutput, err error) {
 	err = c.client.Invoke(ctx, "describe-processes", input, &output)
 	return

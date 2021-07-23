@@ -36,6 +36,7 @@ type Workspace interface {
 	GetEvents(context.Context, *GetEventsInput) (*GetEventsOutput, error)
 	Start(context.Context, *StartInput) (*StartOutput, error)
 	Stop(context.Context, *StopInput) (*StopOutput, error)
+	Restart(context.Context, *RestartInput) (*RestartOutput, error)
 	DescribeProcesses(context.Context, *DescribeProcessesInput) (*DescribeProcessesOutput, error)
 }
 
@@ -158,6 +159,13 @@ type StopInput struct {
 type StopOutput struct {
 }
 
+type RestartInput struct {
+	Ref string `json:"ref"`
+}
+
+type RestartOutput struct {
+}
+
 type DescribeProcessesInput struct {
 }
 
@@ -210,6 +218,9 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	})
 	b.AddMethod("stop", func(req *http.Request) interface{} {
 		return factory(req).Stop
+	})
+	b.AddMethod("restart", func(req *http.Request) interface{} {
+		return factory(req).Restart
 	})
 	b.AddMethod("describe-processes", func(req *http.Request) interface{} {
 		return factory(req).DescribeProcesses
