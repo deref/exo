@@ -42,7 +42,12 @@ export const refreshLogs = async (workspace, fromStart = false) => {
     }
   });
 
-  const newEvents = await workspace.getEvents([...get(visibleLogsStore).values()], {
+  // NOTE [FILTER BY LOG]:
+  // The visible logs parameter acts as a filter for log events that restricts the results
+  // to events that came from a stream belonging to only certain processes. This should be
+  // replaced with a more flexible filtering framework.
+  const visibleLogs = [...get(visibleLogsStore).values()];
+  const newEvents = await workspace.getEvents(visibleLogs, {
     cursor: fromStart ? null : lastCursor,
     next: 100,
   });
