@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"syscall"
 
 	golog "log"
 
@@ -19,6 +18,7 @@ import (
 	logd "github.com/deref/exo/logd/server"
 	"github.com/deref/exo/util/cmdutil"
 	"github.com/deref/exo/util/httputil"
+	"github.com/deref/exo/util/sysutil"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
@@ -70,7 +70,7 @@ func RunServer() {
 			if err != nil {
 				golog.Printf("creating %s dump file: %v", redirect.Name, err)
 			}
-			if err := syscall.Dup2(int(dumpFile.Fd()), redirect.FD); err != nil {
+			if err := sysutil.Dup2(int(dumpFile.Fd()), redirect.FD); err != nil {
 				golog.Printf("redirecting %s: %v", redirect.Name, err)
 			}
 		}
