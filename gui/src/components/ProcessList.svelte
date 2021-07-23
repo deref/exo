@@ -95,13 +95,13 @@ onDestroy(() => {
         {#if statusPending.has(name)}
         <button disabled><Loading /></button>
         {:else if running}
-        <IconButton on:click={() => toggleProc(id)}><Stop /></IconButton>
+        <IconButton on:click={() => toggleProc(id)} activeState><Stop /></IconButton>
         {:else}
         <IconButton on:click={() => toggleProc(id)}><Run /></IconButton>
         {/if}
 
         {#if loggedProcesses.includes(id)}
-        <IconButton on:click={() => toggleProcLogs(id)}><Hide /></IconButton>
+        <IconButton on:click={() => toggleProcLogs(id)} activeState><Hide /></IconButton>
         {:else}
         <IconButton on:click={() => toggleProcLogs(id)}><Show /></IconButton>
         {/if}
