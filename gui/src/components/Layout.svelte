@@ -12,7 +12,10 @@ import Feedback from './mono/feedback.svelte';
       <img src="/deref-rounded-icon.png" alt="Deref" height="24px" />
       <h1>exo</h1>
     </div>
-    <IconButton tooltip="Feedback" on:click={() => { window.location.href = 'https://github.com/deref/exo'}}><Feedback /></IconButton>
+    <div class="logo">
+    <span>Feedback?</span>
+    <IconButton tooltip="Give feedback on GitHub" on:click={() => { window.location.href = 'https://github.com/deref/exo'}}><Feedback /></IconButton>
+  </div>
   </header>
   <div>
     <slot/>
