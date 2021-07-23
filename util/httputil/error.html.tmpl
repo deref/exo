@@ -10,6 +10,6 @@
   }
 </style>
 <main>
-  <b>{{ .Status }}</b>
-  <span>{{ .Message }}</span>
+  <b>{{ .Status|html }}</b>
+  <span>{{ .Message|html }}</span>
 </main>
