@@ -7,6 +7,7 @@ import (
 	"path"
 	"reflect"
 
+	"github.com/deref/exo/util/httputil"
 	"github.com/deref/exo/util/jsonutil"
 )
 
@@ -52,10 +53,10 @@ func (handler *MethodHandler) ServeHTTP(w http.ResponseWriter, req *http.Request
 	errv := results[1].Interface()
 	if errv != nil {
 		err := errv.(error)
-		writeError(w, req, err)
+		httputil.WriteError(w, req, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, output)
+	httputil.WriteJSON(w, http.StatusOK, output)
 }
 
 type MuxBuilder struct {

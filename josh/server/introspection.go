@@ -1,6 +1,10 @@
 package server
 
-import "net/http"
+import (
+	"net/http"
+
+	"github.com/deref/exo/util/httputil"
+)
 
 type IntrospectionHandler struct {
 	MethodNames []string
@@ -26,5 +30,5 @@ func (h *IntrospectionHandler) ServeHTTP(w http.ResponseWriter, req *http.Reques
 			Name: methodName,
 		})
 	}
-	writeJSON(w, http.StatusOK, output)
+	httputil.WriteJSON(w, http.StatusOK, output)
 }
