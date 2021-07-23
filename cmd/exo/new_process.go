@@ -16,7 +16,7 @@ func init() {
 		&processSpec.Directory,
 		"directory", "d",
 		"",
-		"Sets the new processes' working directory",
+		"Sets the working directory for the process",
 	)
 }
 
@@ -25,8 +25,15 @@ var processSpec = process.Spec{}
 var newProcessCmd = &cobra.Command{
 	Use:   "process <name> [flags] -- [name=value ...] <program> [args ...]",
 	Short: "Creates a new process",
-	Long:  "Creates a new process.",
-	Args:  cobra.MinimumNArgs(1),
+	Long: `Creates a new process.
+	
+The double dash separator is recommended to avoid flag confusion between
+exo flags and flags for your program.
+	
+Environment variables may be specified by providing name=value pairs
+before the program name.
+`,
+	Args: cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := newContext()
 		ensureDaemon()
