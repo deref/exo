@@ -7,6 +7,7 @@ import (
 	"github.com/deref/exo/logd/api"
 	"github.com/deref/exo/logd/store"
 	"github.com/deref/exo/util/binaryutil"
+	"github.com/deref/exo/util/mathutil"
 	"github.com/dgraph-io/badger/v3"
 )
 
@@ -92,19 +93,14 @@ func (log *Log) GetEvents(ctx context.Context, cursor *store.Cursor, limit int, 
 
 	events := make([]api.Event, limit)
 	eventsProcessed := 0
-	var nextIndex func() int
+	var curIndex int
+	var indexDelta int
 	if direction == store.DirectionForward {
-		nextIndex = func() int {
-			idx := eventsProcessed
-			eventsProcessed += 1
-			return idx
-		}
+		curIndex = 0
+		indexDelta = 1
 	} else {
-		nextIndex = func() int {
-			idx := limit - eventsProcessed - 1
-			eventsProcessed += 1
-			return idx
-		}
+		curIndex = limit - 1
+		indexDelta = -1
 	}
 
 	if err := log.db.View(func(txn *badger.Txn) error {
@@ -125,7 +121,9 @@ func (log *Log) GetEvents(ctx context.Context, cursor *store.Cursor, limit int, 
 					return err
 				}
 
-				events[nextIndex()] = evt
+				events[curIndex] = evt
+				curIndex += indexDelta
+				eventsProcessed++
 				return nil
 			}); err != nil {
 				return err
@@ -136,12 +134,11 @@ func (log *Log) GetEvents(ctx context.Context, cursor *store.Cursor, limit int, 
 		return nil, fmt.Errorf("scanning index: %w", err)
 	}
 
+	fmt.Printf("limit: %d, curIndex: %d\n", limit, curIndex)
 	if direction == store.DirectionForward {
-		events = events[0:eventsProcessed]
+		events = events[0:curIndex]
 	} else {
-		end := len(events)
-		start := end - eventsProcessed
-		events = events[start:end]
+		events = events[mathutil.IntMax(curIndex, 0) : len(events)-1]
 	}
 
 	return events, nil
