@@ -17,8 +17,9 @@ type Lifecycle interface {
 }
 
 type InitializeInput struct {
-	ID   string `json:"id"`
-	Spec string `json:"spec"`
+	ID    string `json:"id"`
+	Spec  string `json:"spec"`
+	State string `json:"state"`
 }
 
 type InitializeOutput struct {
@@ -27,9 +28,9 @@ type InitializeOutput struct {
 
 type UpdateInput struct {
 	ID      string `json:"id"`
-	OldSpec string `json:"oldSpec"`
-	NewSpec string `json:"newSpec"`
+	Spec    string `json:"spec"`
 	State   string `json:"state"`
+	NewSpec string `json:"newSpec"`
 }
 
 type UpdateOutput struct {
