@@ -19,6 +19,7 @@ import (
 	"github.com/deref/exo/util/cmdutil"
 	"github.com/deref/exo/util/httputil"
 	"github.com/deref/exo/util/sysutil"
+	docker "github.com/docker/docker/client"
 	"github.com/mattn/go-isatty"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
@@ -92,10 +93,16 @@ func RunServer() {
 	statePath := filepath.Join(paths.VarDir, "state.json")
 	store := statefile.New(statePath)
 
+	dockerClient, err := docker.NewClientWithOpts()
+	if err != nil {
+		cmdutil.Fatalf("failed to create docker client: %v", err)
+	}
+
 	kernelCfg := &kernel.Config{
 		VarDir:     paths.VarDir,
 		Store:      store,
 		SyslogAddr: "localhost:4500", // XXX Configurable?
+		Docker:     dockerClient,
 	}
 
 	logd := &logd.Service{}

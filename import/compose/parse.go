@@ -1,3 +1,6 @@
+// NOTE [COMPOSE_YAML]: These definitions are spreadout a bit, since the yaml
+// formats are used for component specs.
+//
 // References:
 // https://github.com/compose-spec/compose-spec/blob/master/spec.md
 // https://docs.docker.com/compose/compose-file/compose-file-v3/
@@ -10,6 +13,9 @@ package compose
 import (
 	"io"
 
+	"github.com/deref/exo/components/docker/container"
+	"github.com/deref/exo/components/docker/network"
+	"github.com/deref/exo/components/docker/volume"
 	"github.com/goccy/go-yaml"
 )
 
@@ -23,107 +29,11 @@ type Compose struct {
 	// TODO: extensions with "x-" prefix.
 }
 
-type Service struct {
-	// XXX fill me.
-	// TODO: deploy
-	// TODO: blkio_config
-	// TODO: cpu_count
-	// TODO: cpu_percent
-	// TODO: cpu_shares
-	// TODO: cpu_period
-	// TODO: cpu_quota
-	// TODO: cpu_rt_runtime
-	// TODO: cpu_rt_period
-	// TODO: cpus
-	// TODO: cpuset
-	// TODO: build
-	// TODO: cap_add
-	// TODO: cap_drop
-	// TODO: cgroup_parent
-	// TODO: command
-	Configs []string `yaml:"configs"` // TODO: support long syntax.
-	// TODO: container_name
-	// TODO: credential_spec
-	// TODO: depends_on
-	// TODO: device_cgroup_rules
-	// TODO: devices
-	// TODO: dns
-	// TODO: dns_opt
-	// TODO: dns_search
-	// TODO: domainname
-	// TODO: entrypoint
-	// TODO: env_file
-	// TODO: environment
-	// TODO: expose
-	// TODO: extends
-	// TODO: external_links
-	// TODO: extra_hosts
-	// TODO: group_add
-	// TODO: healthcheck
-	// TODO: hostname
-	Image string `yaml:"image"`
-	// TODO: init
-	// TODO: ipc
-	// TODO: isolation
-	// TODO: labels
-	// TODO: links
-	// TODO: logging
-	// TODO: network_mode
-	Networks []string `yaml:"networks"` // TODO: support long syntax.
-	// TODO: mac_address
-	// TODO: mem_limit
-	// TODO: mem_reservation
-	// TODO: mem_swappiness
-	// TODO: memswap_limit
-	// TODO: oom_kill_disable
-	// TODO: oom_score_adj
-	// TODO: pid
-	// TODO: pids_limit
-	// TODO: platform
-	Ports []string `yaml:"ports"` // TODO: support long syntax.
-	// TODO: privileged
-	// TODO: profiles
-	// TODO: pull_policy
-	// TODO: read_only
-	// TODO: restart
-	// TODO: runtime
-	// TODO: scale
-	Secrets []string `yaml:"secrets"` // TODO: support long syntax.
-	// TODO: security_opt
-	// TODO: shm_size
-	// TODO: shm_open
-	// TODO: stop_grace_period
-	// TODO: stop_signal
-	// TODO: storage_opt
-	// TODO: sysctls
-	// TODO: tmpfs
-	// TODO: tty
-	// TODO: ulimits
-	// TODO: user
-	// TODO: userns_mode
-	Volumes []string `yaml:"volumes"` // TODO: support long syntax.
-	// TODO: volumes_from
-	// TODO: working_dir
-}
+type Service = container.Spec
 
-type Network struct {
-	Driver     string            `yaml:"driver"`
-	DriverOpts map[string]string `yaml:"driver_opts"`
-	// TODO: attachable
-	// TODO: enable_ipv6
-	// TODO: internal
-	// TODO: labels
-	External bool `yaml:"external"`
-	// TODO: name
-}
+type Network = network.Spec
 
-type Volume struct {
-	Driver     string            `yaml:"driver"`
-	DriverOpts map[string]string `yaml:"driver_opts"`
-	// TODO: external
-	// TODO: labels
-	// TODO: name
-}
+type Volume = volume.Spec
 
 type Config struct {
 	File     string `yaml:"file"`
