@@ -35,9 +35,9 @@ func main() {
 			return err
 		}
 
-		unit, err := codegen.ParseFile(path)
+		unit, err := codegen.LoadFile(path)
 		if err != nil {
-			return fmt.Errorf("parsing %q: %w", path, err)
+			return fmt.Errorf("loading %q: %w", path, err)
 		}
 
 		pkg := &codegen.Package{

@@ -15,8 +15,9 @@ type Package struct {
 }
 
 type Unit struct {
-	Interfaces []Interface `hcl:"interface,block"`
-	Structs    []Struct    `hcl:"struct,block"`
+	Interfaces  []Interface  `hcl:"interface,block"`
+	Structs     []Struct     `hcl:"struct,block"`
+	Controllers []Controller `hcl:"controller,block"`
 }
 
 type Interface struct {
@@ -26,10 +27,10 @@ type Interface struct {
 }
 
 type Method struct {
-	Name   string  `hcl:"name,label"`
-	Doc    *string `hcl:"doc"`
-	Input  []Field `hcl:"input,block"`
-	Output []Field `hcl:"output,block"`
+	Name    string  `hcl:"name,label"`
+	Doc     *string `hcl:"doc"`
+	Inputs  []Field `hcl:"input,block"`
+	Outputs []Field `hcl:"output,block"`
 }
 
 type Struct struct {
@@ -46,16 +47,78 @@ type Field struct {
 	Nullable *bool   `hcl:"nullable"`
 }
 
+type Controller struct {
+	Name    string   `hcl:"name,label"`
+	Doc     *string  `hcl:"doc"`
+	Methods []Method `hcl:"method,block"`
+}
+
+func LoadFile(filename string) (*Unit, error) {
+	unit, err := ParseFile(filename)
+	if err != nil {
+		return nil, err
+	}
+	Elaborate(unit)
+	err = Validate(unit)
+	return unit, err
+}
+
 func ParseFile(filename string) (*Unit, error) {
 	var unit Unit
 	if err := hclsimple.DecodeFile(filename, nil, &unit); err != nil {
 		return nil, err
 	}
-	err := Validate(unit)
-	return &unit, err
+	return &unit, nil
 }
 
-func Validate(unit Unit) error {
+func Elaborate(unit *Unit) {
+	for _, controller := range unit.Controllers {
+		methods := make([]Method, len(controller.Methods))
+		for methodIndex, method := range controller.Methods {
+			shiftInputs := 3
+			inputs := make([]Field, len(method.Inputs)+shiftInputs)
+			inputs[0] = Field{
+				Name: "id",
+				Type: "string",
+			}
+			inputs[1] = Field{
+				Name: "spec",
+				Type: "string",
+			}
+			inputs[2] = Field{
+				Name: "state",
+				Type: "string",
+			}
+			for inputIndex, input := range method.Inputs {
+				inputs[shiftInputs+inputIndex] = input
+			}
+
+			shiftOutputs := 1
+			outputs := make([]Field, len(method.Outputs)+shiftOutputs)
+			outputs[0] = Field{
+				Name: "state",
+				Type: "string",
+			}
+			for outputIndex, output := range method.Outputs {
+				inputs[shiftOutputs+outputIndex] = output
+			}
+
+			methods[methodIndex] = Method{
+				Name:    method.Name,
+				Doc:     method.Doc,
+				Inputs:  inputs,
+				Outputs: outputs,
+			}
+		}
+		unit.Interfaces = append(unit.Interfaces, Interface{
+			Name:    controller.Name,
+			Doc:     controller.Doc,
+			Methods: methods,
+		})
+	}
+}
+
+func Validate(unit *Unit) error {
 	// TODO: Validate no duplicate names.
 	// TODO: All type references.
 	return nil
@@ -126,11 +189,11 @@ type {{.Name|public}} interface {
 
 {{range .Methods}}
 type {{.Name|public}}Input struct {
-{{template "fields" .Input}}
+{{template "fields" .Inputs}}
 }
 
 type {{.Name|public}}Output struct {
-{{template "fields" .Output}}
+{{template "fields" .Outputs}}
 }
 {{end}}
 
