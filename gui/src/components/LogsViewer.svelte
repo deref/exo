@@ -66,7 +66,7 @@ afterUpdate(async () => {
       <table>
         {#each logEvents.data as event (event.id)}
         <tr class="log-entry" style={logStyleFromHash(event.log)}>
-            <td>{event.log}</td> <td>{shortDate(event.timestamp)}</td> <td>{event.message}</td>
+          <td>{shortDate(event.timestamp)}</td> <td>{event.log}</td> <td>{event.message}</td>
         </tr>
         {/each}
       </table>
@@ -119,14 +119,14 @@ td {
 }
 
 td:nth-child(1) {
-  background: var(--log-bg-color);
-  color: var(--log-color);
-  border-right: 1px solid var(--log-border-color);
+  background: #77777711;
+  color: #777777;
 }
 
 td:nth-child(2) {
-  background: #77777711;
-  color: #777777;
-  border-right: 1px solid #77777777;
+  background: var(--log-bg-color);
+  color: var(--log-color);
+  border-left: 1px solid var(--log-border-color);
+  border-right: 1px solid var(--log-border-color);
 }
 </style>
