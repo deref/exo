@@ -40,3 +40,8 @@ func (c *Kernel) Panic(ctx context.Context, input *api.PanicInput) (output *api.
 	err = c.client.Invoke(ctx, "panic", input, &output)
 	return
 }
+
+func (c *Kernel) GetVersion(ctx context.Context, input *api.GetVersionInput) (output *api.GetVersionOutput, err error) {
+	err = c.client.Invoke(ctx, "get-version", input, &output)
+	return
+}

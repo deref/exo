@@ -15,6 +15,8 @@ type Kernel interface {
 	FindWorkspace(context.Context, *FindWorkspaceInput) (*FindWorkspaceOutput, error)
 	// Debug method to test what happens when the service panics.
 	Panic(context.Context, *PanicInput) (*PanicOutput, error)
+	// Retrieves the installed and current version of exo.
+	GetVersion(context.Context, *GetVersionInput) (*GetVersionOutput, error)
 }
 
 type CreateWorkspaceInput struct {
@@ -47,6 +49,15 @@ type PanicInput struct {
 type PanicOutput struct {
 }
 
+type GetVersionInput struct {
+}
+
+type GetVersionOutput struct {
+	Installed string  `json:"installed"`
+	Latest    *string `json:"latest"`
+	Current   bool    `json:"current"`
+}
+
 func BuildKernelMux(b *josh.MuxBuilder, factory func(req *http.Request) Kernel) {
 	b.AddMethod("create-workspace", func(req *http.Request) interface{} {
 		return factory(req).CreateWorkspace
@@ -59,5 +70,8 @@ func BuildKernelMux(b *josh.MuxBuilder, factory func(req *http.Request) Kernel) 
 	})
 	b.AddMethod("panic", func(req *http.Request) interface{} {
 		return factory(req).Panic
+	})
+	b.AddMethod("get-version", func(req *http.Request) interface{} {
+		return factory(req).GetVersion
 	})
 }
