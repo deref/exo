@@ -10,9 +10,7 @@
 </Layout>
 
 <style>
-
-section {
-  padding: 30px;
-}
-
+  section {
+    padding: 30px;
+  }
 </style>

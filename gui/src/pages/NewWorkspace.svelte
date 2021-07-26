@@ -4,9 +4,9 @@
   import Textbox from '../components/Textbox.svelte';
   import ErrorLabel from '../components/ErrorLabel.svelte';
   import { api, isClientError } from '../lib/api';
-  import * as qs from 'qs'
-  import * as router from 'svelte-spa-router'
-  import { querystring } from 'svelte-spa-router'
+  import * as qs from 'qs';
+  import * as router from 'svelte-spa-router';
+  import { querystring } from 'svelte-spa-router';
 
   const query = qs.parse($querystring);
 
@@ -15,33 +15,35 @@
 </script>
 
 <Layout showBackButton>
-<section>
-  <form on:submit|preventDefault={async () => {
-    error = null;
-    let workspaceId;
-    try {
-      workspaceId = await api.kernel.createWorkspace(root)
-      router.push(`/workspaces/${encodeURIComponent(workspaceId)}`);
-    } catch (ex) {
-      if (!isClientError(ex)) {
-        throw ex;
-      }
-      error = ex;
-    }
-    // XXX Hack to address lack of GUI for applying procfiles, etc.
-    try {
-      await api.workspace(workspaceId).apply();
-    } catch (ex) {
-      // Swallow error.
-      console.error(ex);
-    }
-  }}>
-    <label for="root">Root:</label>
-    <Textbox bind:value={root} name="root" id="root"/>
-    <Button type="submit">Create Workspace</Button>
-  </form>
-  <ErrorLabel value={error}/>
-</section>
+  <section>
+    <form
+      on:submit|preventDefault={async () => {
+        error = null;
+        let workspaceId;
+        try {
+          workspaceId = await api.kernel.createWorkspace(root);
+          router.push(`/workspaces/${encodeURIComponent(workspaceId)}`);
+        } catch (ex) {
+          if (!isClientError(ex)) {
+            throw ex;
+          }
+          error = ex;
+        }
+        // XXX Hack to address lack of GUI for applying procfiles, etc.
+        try {
+          await api.workspace(workspaceId).apply();
+        } catch (ex) {
+          // Swallow error.
+          console.error(ex);
+        }
+      }}
+    >
+      <label for="root">Root:</label>
+      <Textbox bind:value={root} name="root" id="root" />
+      <Button type="submit">Create Workspace</Button>
+    </form>
+    <ErrorLabel value={error} />
+  </section>
 </Layout>
 
 <style>

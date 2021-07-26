@@ -1,4 +1,3 @@
-
 export interface LogEvent {
   id: string;
   timestamp: string;

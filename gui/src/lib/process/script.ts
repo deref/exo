@@ -1,25 +1,24 @@
-import type { ProcessSpec } from "src/lib/api";
+import type { ProcessSpec } from 'src/lib/api';
 import * as shell from 'shell-quote';
 
 const shellQuote = (s: string) => shell.quote([s]);
 
 export interface ParseResult {
-  spec: Partial<ProcessSpec>; 
+  spec: Partial<ProcessSpec>;
   error: Error | null;
 }
 
 export const parseScript = (script: string): ParseResult => {
-  const lines = script.split('\n').map(line => line.trim());
-  
+  const lines = script.split('\n').map((line) => line.trim());
+
   const spec: ProcessSpec = {
     program: '',
     arguments: [],
-  }
+  };
   let error: Error | null = null;
 
   let lineIndex = 0;
-lines:
-  for (const line of lines) {
+  lines: for (const line of lines) {
     lineIndex++;
 
     const setError = (message: string) => {
@@ -34,8 +33,7 @@ lines:
       continue lines;
     }
     const words: string[] = [];
-  entries:
-    for (const entry of entries) {
+    entries: for (const entry of entries) {
       if (typeof entry === 'string') {
         words.push(entry);
       } else if ('comment' in entry) {
@@ -44,7 +42,7 @@ lines:
         setError('unexpected glob');
         continue lines;
       } else {
-        setError(`unexpected operator: ${entry.op}`)
+        setError(`unexpected operator: ${entry.op}`);
       }
     }
     const [program, ...args] = words;
@@ -83,7 +81,7 @@ lines:
       }
     }
   }
-  
+
   return { spec, error };
 };
 
@@ -100,6 +98,6 @@ export const generateScript = (spec: ProcessSpec): string => {
     words.push(spec.program);
   }
   words.push(...spec.arguments);
-  script += words.map(word => shellQuote(word)).join(' ');
+  script += words.map((word) => shellQuote(word)).join(' ');
   return script.trim();
-}
+};

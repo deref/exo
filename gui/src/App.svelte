@@ -3,4 +3,4 @@
   import Router from 'svelte-spa-router';
 </script>
 
-<Router {routes}/>
+<Router {routes} />

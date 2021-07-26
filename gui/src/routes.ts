@@ -1,8 +1,8 @@
-import Home from './pages/Home.svelte'
-import Workspace from './pages/Workspace.svelte'
-import NewWorkspace from './pages/NewWorkspace.svelte'
-import NewProcess from './pages/NewProcess.svelte'
-import NotFound from './pages/NotFound.svelte'
+import Home from './pages/Home.svelte';
+import Workspace from './pages/Workspace.svelte';
+import NewWorkspace from './pages/NewWorkspace.svelte';
+import NewProcess from './pages/NewProcess.svelte';
+import NotFound from './pages/NotFound.svelte';
 
 export default {
   '/': Home,

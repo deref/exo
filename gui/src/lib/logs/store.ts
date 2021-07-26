@@ -1,6 +1,12 @@
 import { get, writable } from 'svelte/store';
 import type { PaginationParams } from '../api';
-import { notRequested, pendingRequest, refetchingResponse, RemoteData, successResponse } from '../api';
+import {
+  notRequested,
+  pendingRequest,
+  refetchingResponse,
+  RemoteData,
+  successResponse,
+} from '../api';
 import type { LogEvent } from './types';
 import { visibleLogsStore } from './visible-logs';
 export interface LogsStore {
@@ -15,7 +21,10 @@ export const logsStore = writable<LogsStore>({
   logBufferSize: 1000,
 });
 
-export const fetchLogs = async (workspace, pagination: Partial<PaginationParams>) => {
+export const fetchLogs = async (
+  workspace,
+  pagination: Partial<PaginationParams>,
+) => {
   logsStore.update((value) => {
     switch (value.events.stage) {
       case 'idle':
@@ -50,23 +59,29 @@ export const fetchLogs = async (workspace, pagination: Partial<PaginationParams>
   });
 
   lastCursor = newEvents.nextCursor;
-  logsStore.update(value => {
+  logsStore.update((value) => {
     let prevEvents: LogEvent[] = [];
-    if (value.events.stage === 'success' || value.events.stage === 'refetching') {
+    if (
+      value.events.stage === 'success' ||
+      value.events.stage === 'refetching'
+    ) {
       prevEvents = value.events.data;
     }
     const allEvents = [...prevEvents, ...newEvents.items];
 
     return {
       ...value,
-      events: successResponse(allEvents.slice(allEvents.length-value.logBufferSize)),
-    }
+      events: successResponse(
+        allEvents.slice(allEvents.length - value.logBufferSize),
+      ),
+    };
   });
 };
 
 export const refreshLogs = (workspace) => fetchLogs(workspace, { next: 100 });
 
-export const loadInitialLogs = (workspace) => fetchLogs(workspace, { prev: 100 });
+export const loadInitialLogs = (workspace) =>
+  fetchLogs(workspace, { prev: 100 });
 
 export const resetLogs = () => {
   lastCursor = null;
@@ -75,5 +90,5 @@ export const resetLogs = () => {
       ...value,
       events: successResponse([]),
     };
-  })
-}
+  });
+};

@@ -1,11 +1,18 @@
 import { writable } from 'svelte/store';
-import { errorResponse, notRequested, pendingRequest, refetchingResponse, successResponse } from '../api';
+import {
+  errorResponse,
+  notRequested,
+  pendingRequest,
+  refetchingResponse,
+  successResponse,
+} from '../api';
 import type { ProcessDescription } from './types';
 
 export const processes = writable(notRequested<ProcessDescription[]>());
 
 const refetchProcesses = (workspace) =>
-  workspace.describeProcesses()
+  workspace
+    .describeProcesses()
     .then((data) => {
       processes.set(successResponse(data));
     })
@@ -30,7 +37,7 @@ export const fetchProcesses = (workspace) => {
         return refetchingResponse(req.data);
     }
   });
-}
+};
 
 export const startProcess = async (workspace, id: string) => {
   await workspace.startProcess(id);

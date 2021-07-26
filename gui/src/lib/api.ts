@@ -1,5 +1,8 @@
 import type { LogsResponse } from './logs/types';
-import type { CreateProcessResponse, ProcessDescription } from "./process/types";
+import type {
+  CreateProcessResponse,
+  ProcessDescription,
+} from './process/types';
 
 interface IdleRequest {
   stage: 'idle';
@@ -24,13 +27,27 @@ interface RefetchingResponse<T> {
   data: T;
 }
 
-export type RemoteData<T> = IdleRequest | PendingRequest | ErrorResponse | SuccessResponse<T> | RefetchingResponse<T>;
+export type RemoteData<T> =
+  | IdleRequest
+  | PendingRequest
+  | ErrorResponse
+  | SuccessResponse<T>
+  | RefetchingResponse<T>;
 
 export const notRequested = <T>(): RemoteData<T> => ({ stage: 'idle' });
 export const pendingRequest = <T>(): RemoteData<T> => ({ stage: 'pending' });
-export const errorResponse = <T>(message: string): RemoteData<T> => ({ stage: 'error', message });
-export const successResponse = <T>(data: T): RemoteData<T> => ({ stage: 'success', data });
-export const refetchingResponse = <T>(prev: T): RemoteData<T> => ({ stage: 'refetching', data: prev });
+export const errorResponse = <T>(message: string): RemoteData<T> => ({
+  stage: 'error',
+  message,
+});
+export const successResponse = <T>(data: T): RemoteData<T> => ({
+  stage: 'success',
+  data,
+});
+export const refetchingResponse = <T>(prev: T): RemoteData<T> => ({
+  stage: 'refetching',
+  data: prev,
+});
 
 type HasData<T> = SuccessResponse<T> | RefetchingResponse<T>;
 // TODO: Should idle be considered unresolved?
@@ -50,7 +67,7 @@ export interface PaginationParams {
   cursor: string | null;
   prev?: number;
   next?: number;
-};
+}
 
 const baseUrl = 'http://localhost:4000/_exo';
 
@@ -65,7 +82,7 @@ const apiUrl = (path: string, query: Record<string, string>) => {
     qs += encodeURIComponent(value);
   }
   return baseUrl + path + qs;
-}
+};
 
 const isErrorLike = (x: any): x is { message: string } => {
   return x != null && 'message' in x && typeof x.message === 'string';
@@ -95,25 +112,31 @@ const responseToError = async (res: Response): Promise<Error | null> => {
     return new Error(`malformed error from server: ${JSON.stringify(json)}`);
   }
   return new APIError(res.status, json.message);
-}
+};
 
-const rpc = async (path: string, query: Record<string, string>, data?: unknown): Promise<unknown> => {
+const rpc = async (
+  path: string,
+  query: Record<string, string>,
+  data?: unknown,
+): Promise<unknown> => {
   const res = await fetch(apiUrl(path, query), {
     method: 'POST',
     headers: {
       accept: 'application/json',
       'content-type': 'application/json',
     },
-    ...(data ? {
-      body: JSON.stringify(data)
-    } : {}),
+    ...(data
+      ? {
+          body: JSON.stringify(data),
+        }
+      : {}),
   });
   const err = await responseToError(res);
   if (err !== null) {
     throw err;
   }
   return await res.json();
-}
+};
 
 export interface ProcessSpec {
   directory?: string;
@@ -124,33 +147,38 @@ export interface ProcessSpec {
 
 export const api = (() => {
   const kernel = (() => {
-    const invoke = (method: string, data?: unknown) => rpc(`/kernel/${method}`, {}, data);
+    const invoke = (method: string, data?: unknown) =>
+      rpc(`/kernel/${method}`, {}, data);
     return {
       async createWorkspace(root: string): Promise<string> {
-        const { id } = await invoke('create-workspace', { root }) as any;
+        const { id } = (await invoke('create-workspace', { root })) as any;
         return id;
       },
     };
-  })()
+  })();
 
   const workspace = (id: string) => {
-    const invoke = (method: string, data?: unknown) => rpc(`/workspace/${method}`, {id}, data);
+    const invoke = (method: string, data?: unknown) =>
+      rpc(`/workspace/${method}`, { id }, data);
     return {
       async describeProcesses(): Promise<ProcessDescription[]> {
-        const { processes } = await invoke('describe-processes') as any;
+        const { processes } = (await invoke('describe-processes')) as any;
         return processes;
       },
 
       async apply() {
         await invoke('apply', {});
       },
-    
-      async createProcess(name: string, spec: ProcessSpec): Promise<CreateProcessResponse> {
-        return await invoke('create-component', {
+
+      async createProcess(
+        name: string,
+        spec: ProcessSpec,
+      ): Promise<CreateProcessResponse> {
+        return (await invoke('create-component', {
           name,
           type: 'process',
           spec: JSON.stringify(spec),
-        }) as CreateProcessResponse;
+        })) as CreateProcessResponse;
       },
 
       async startProcess(ref: string): Promise<void> {
@@ -169,11 +197,14 @@ export const api = (() => {
         await invoke('refresh');
       },
 
-      async getEvents(logs: string[], pagination?: PaginationParams): Promise<LogsResponse> {
-        return await invoke('get-events', {
+      async getEvents(
+        logs: string[],
+        pagination?: PaginationParams,
+      ): Promise<LogsResponse> {
+        return (await invoke('get-events', {
           logs,
           ...pagination,
-        }) as LogsResponse;
+        })) as LogsResponse;
       },
     };
   };

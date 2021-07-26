@@ -1,22 +1,20 @@
 <script lang="ts">
+  import IconButton from './IconButton.svelte';
+  import * as router from 'svelte-spa-router';
 
-import IconButton from './IconButton.svelte';
-import * as router from 'svelte-spa-router';
+  import Feedback from './mono/feedback.svelte';
+  import GoBack from './mono/leftarrow.svelte';
 
-import Feedback from './mono/feedback.svelte';
-import GoBack from './mono/leftarrow.svelte';
+  export let showBackButton: boolean = false;
+  export let backButtonRoute: string = '#/';
 
-export let showBackButton: boolean = false;
-export let backButtonRoute: string = "#/";
+  const goHome = () => {
+    router.push('#/');
+  };
 
-const goHome = () => {
-      router.push("#/")
-    }
-
-const goBack = () => {
-      router.push(backButtonRoute)
-    }
-
+  const goBack = () => {
+    router.push(backButtonRoute);
+  };
 </script>
 
 <main>
@@ -27,59 +25,62 @@ const goBack = () => {
         <h1>exo</h1>
       </div>
       {#if showBackButton}
-      <IconButton tooltip="Go back" on:click={goBack}><GoBack /></IconButton>
-      <span>Go back</span>
+        <IconButton tooltip="Go back" on:click={goBack}><GoBack /></IconButton>
+        <span>Go back</span>
       {/if}
     </div>
     <div class="logo">
-    <span>Feedback?</span>
-    <IconButton tooltip="Give feedback on GitHub" on:click={() => { window.location.href = 'https://github.com/deref/exo/discussions'}}><Feedback /></IconButton>
-  </div>
+      <span>Feedback?</span>
+      <IconButton
+        tooltip="Give feedback on GitHub"
+        on:click={() => {
+          window.location.href = 'https://github.com/deref/exo/discussions';
+        }}><Feedback /></IconButton
+      >
+    </div>
   </header>
   <div>
-    <slot/>
+    <slot />
   </div>
 </main>
 
 <style>
+  :global(body) {
+    overscroll-behavior: none;
+  }
 
-:global(body) {
-  overscroll-behavior: none;
-}
+  main {
+    display: grid;
+    grid-auto-flow: row;
+    grid-auto-rows: 48px 1fr;
+    height: 100vh;
+    overflow: hidden;
+  }
 
-main {
-  display: grid;
-  grid-auto-flow: row;
-  grid-auto-rows: 48px 1fr;
-  height: 100vh;
-  overflow: hidden;
-}
+  header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 12px;
+    box-shadow: 0px 6px 9px -6px #00000022, 0px 0.25px 0px 1px #00000022;
+  }
 
-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 6px 12px;
-  box-shadow: 0px 6px 9px -6px #00000022, 0px 0.25px 0px 1px #00000022;
-}
+  header .logo {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+  }
 
-header .logo {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-}
+  h1 {
+    font-size: 20px;
+    font-weight: 550;
+    margin: 0;
+    margin-top: -3px;
+  }
 
-h1 {
-  font-size: 20px;
-  font-weight: 550;
-  margin: 0;
-  margin-top: -3px;
-}
-
-div {
-  position: relative;
-  overflow-y: auto;
-  overflow-x: hidden;
-}
-
+  div {
+    position: relative;
+    overflow-y: auto;
+    overflow-x: hidden;
+  }
 </style>
