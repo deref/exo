@@ -15,6 +15,7 @@
   export let params = { workspace: '' };
   
   const workspace = api.workspace(params.workspace);
+  const workspaceRoute = `/workspaces/${encodeURIComponent(params.workspace)}`
   
   let name: string = '';
 
@@ -46,7 +47,7 @@
   };
 </script>
 
-<Layout>
+<Layout showBackButton backButtonRoute={workspaceRoute}>
   <form on:submit|preventDefault={async () => {
     updateFields();
     try {
@@ -58,7 +59,7 @@
       });
       toggleLogVisibility(id);
 
-      router.push(`/workspaces/${encodeURIComponent(params.workspace)}`);
+      router.push(workspaceRoute);
     } catch (ex) {
       if (!isClientError(ex)) {
         throw ex;

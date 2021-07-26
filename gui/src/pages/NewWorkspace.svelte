@@ -14,7 +14,7 @@
   let error: Error | null = null;
 </script>
 
-<Layout>
+<Layout showBackButton>
 <section>
   <form on:submit|preventDefault={async () => {
     error = null;
