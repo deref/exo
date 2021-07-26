@@ -1,6 +1,7 @@
 <script lang="ts">
 
 import IconButton from './IconButton.svelte';
+import * as router from 'svelte-spa-router';
 
 import Feedback from './mono/feedback.svelte';
 
@@ -8,7 +9,9 @@ import Feedback from './mono/feedback.svelte';
 
 <main>
   <header>
-    <div class="logo">
+    <div class="a logo" on:click={() => {
+      router.push(`#/`)
+    }}>
       <img src="/deref-rounded-icon.png" alt="Deref" height="24px" />
       <h1>exo</h1>
     </div>
