@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/deref/exo/util/cmdutil"
@@ -17,18 +18,17 @@ var exitCmd = &cobra.Command{
 	Long:  `Stop the exo daemon process.`,
 	Args:  cobra.ExactArgs(0),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		paths := cmdutil.MustMakeDirectories()
-		loadRunState(paths.RunStateFile)
+		knownPaths = cmdutil.MustMakeDirectories()
+		loadRunState()
 		if runState.Pid == 0 {
 			return nil
 		}
 
-		killExod(paths)
-		return nil
+		return killExod()
 	},
 }
 
-func killExod(paths *cmdutil.KnownPaths) {
+func killExod() error {
 	process, err := os.FindProcess(runState.Pid)
 	if err != nil {
 		panic(err)
@@ -37,7 +37,8 @@ func killExod(paths *cmdutil.KnownPaths) {
 
 	// TODO: Wait for process to exit.
 
-	if err := os.Remove(paths.RunStateFile); err != nil {
-		cmdutil.Fatalf("removing run state file: %w", err)
+	if err := os.Remove(knownPaths.RunStateFile); err != nil {
+		return fmt.Errorf("removing run state file: %w", err)
 	}
+	return nil
 }

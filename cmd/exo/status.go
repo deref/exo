@@ -24,9 +24,9 @@ var statusCmd = &cobra.Command{
 	Long:  `Report exo daemon status.`,
 	Args:  cobra.ExactArgs(0),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		paths := cmdutil.MustMakeDirectories()
+		knownPaths = cmdutil.MustMakeDirectories()
 
-		err := loadRunState(paths.RunStateFile)
+		err := loadRunState()
 		if err != nil {
 			return fmt.Errorf("checking run state: %w", err)
 		}
