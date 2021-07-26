@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"crypto/md5"
 	"fmt"
 	"time"
@@ -29,87 +30,90 @@ If refs are provided, filters for the logs of those processes.`,
 		cl := newClient()
 		workspace := requireWorkspace(ctx, cl)
 
-		colors := NewColorCache()
-
-		logRefs := args
-		showName := len(logRefs) != 1
-
-		resolved, err := workspace.Resolve(ctx, &api.ResolveInput{
-			Refs: logRefs,
-		})
-		if err != nil {
-			return fmt.Errorf("resolving refs: %w", err)
-		}
-		var logIDs []string
-		if len(logRefs) > 0 {
-			logIDs = make([]string, 0, len(logRefs))
-			for _, logID := range resolved.IDs {
-				if logID != nil {
-					logIDs = append(logIDs, *logID)
-				}
-			}
-		}
-
-		descriptions, err := workspace.DescribeProcesses(ctx, &api.DescribeProcessesInput{})
-		if err != nil {
-			return fmt.Errorf("describing processes: %w", err)
-		}
-		labelWidth := 0
-		logToComponent := make(map[string]string, len(descriptions.Processes))
-		for _, process := range descriptions.Processes {
-			// SEE NOTE: [LOG_COMPONENTS].
-			for _, role := range []string{"out", "err"} {
-				logName := fmt.Sprintf("%s:%s", process.ID, role)
-				logToComponent[logName] = process.Name
-				if labelWidth < len(process.Name) {
-					labelWidth = len(process.Name)
-				}
-			}
-		}
-
-		in := &api.GetEventsInput{
-			Logs: logIDs,
-		}
-		for {
-			output, err := workspace.GetEvents(ctx, in)
-			if err != nil {
-				return err
-			}
-
-			for _, event := range output.Items {
-				t, err := time.Parse(chrono.RFC3339NanoUTC, event.Timestamp)
-				if err != nil {
-					cmdutil.Warnf("invalid event timestamp: %q", event.Timestamp)
-					continue
-				}
-				timestamp := t.Format("15:04:05")
-
-				var prefix string
-				if showName {
-					label := event.Log
-					if componentName := logToComponent[event.Log]; componentName != "" {
-						label = componentName
-					} else if labelWidth < len(label) {
-						labelWidth = len(label)
-					}
-					label = fmt.Sprintf("%*s", labelWidth, label)
-					color := colors.Color(label)
-					prefix = rgbterm.FgString(
-						fmt.Sprintf("%s %s", timestamp, label),
-						color.Red, color.Green, color.Blue,
-					)
-				} else {
-					prefix = timestamp
-				}
-
-				fmt.Printf("%s %s\n", prefix, event.Message)
-			}
-			in.Cursor = &output.NextCursor
-			if len(output.Items) < 10 { // TODO: OK heuristic?
-				<-time.After(250 * time.Millisecond)
-			}
-		}
+		return tailLogs(ctx, workspace, args)
 	},
+}
+
+func tailLogs(ctx context.Context, workspace api.Workspace, logRefs []string) error {
+	colors := NewColorCache()
+
+	showName := len(logRefs) != 1
+
+	resolved, err := workspace.Resolve(ctx, &api.ResolveInput{
+		Refs: logRefs,
+	})
+	if err != nil {
+		return fmt.Errorf("resolving refs: %w", err)
+	}
+	var logIDs []string
+	if len(logRefs) > 0 {
+		logIDs = make([]string, 0, len(logRefs))
+		for _, logID := range resolved.IDs {
+			if logID != nil {
+				logIDs = append(logIDs, *logID)
+			}
+		}
+	}
+
+	descriptions, err := workspace.DescribeProcesses(ctx, &api.DescribeProcessesInput{})
+	if err != nil {
+		return fmt.Errorf("describing processes: %w", err)
+	}
+	labelWidth := 0
+	logToComponent := make(map[string]string, len(descriptions.Processes))
+	for _, process := range descriptions.Processes {
+		// SEE NOTE: [LOG_COMPONENTS].
+		for _, role := range []string{"out", "err"} {
+			logName := fmt.Sprintf("%s:%s", process.ID, role)
+			logToComponent[logName] = process.Name
+			if labelWidth < len(process.Name) {
+				labelWidth = len(process.Name)
+			}
+		}
+	}
+
+	in := &api.GetEventsInput{
+		Logs: logIDs,
+	}
+	for {
+		output, err := workspace.GetEvents(ctx, in)
+		if err != nil {
+			return err
+		}
+
+		for _, event := range output.Items {
+			t, err := time.Parse(chrono.RFC3339NanoUTC, event.Timestamp)
+			if err != nil {
+				cmdutil.Warnf("invalid event timestamp: %q", event.Timestamp)
+				continue
+			}
+			timestamp := t.Format("15:04:05")
+
+			var prefix string
+			if showName {
+				label := event.Log
+				if componentName := logToComponent[event.Log]; componentName != "" {
+					label = componentName
+				} else if labelWidth < len(label) {
+					labelWidth = len(label)
+				}
+				label = fmt.Sprintf("%*s", labelWidth, label)
+				color := colors.Color(label)
+				prefix = rgbterm.FgString(
+					fmt.Sprintf("%s %s", timestamp, label),
+					color.Red, color.Green, color.Blue,
+				)
+			} else {
+				prefix = timestamp
+			}
+
+			fmt.Printf("%s %s\n", prefix, event.Message)
+		}
+		in.Cursor = &output.NextCursor
+		if len(output.Items) < 10 { // TODO: OK heuristic?
+			<-time.After(250 * time.Millisecond)
+		}
+	}
 }
 
 type ColorCache struct {

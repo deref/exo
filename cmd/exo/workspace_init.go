@@ -32,7 +32,7 @@ will be rooted at the current working directory.`,
 			Root: root,
 		})
 		if err != nil {
-			cmdutil.Fatalf("describing workspaces: %w", err)
+			cmdutil.Fatalf("creating workspace: %w", err)
 		}
 		fmt.Println(output.ID)
 		return nil
