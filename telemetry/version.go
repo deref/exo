@@ -8,13 +8,18 @@ import (
 	"github.com/deref/exo/core"
 )
 
+// TODO: Find a better place for this and the autoinstalled/managed files to live.s
+func CanSelfUpgrade() bool {
+	return !isManaged
+}
+
 // LatestVersion returns the version of the running exo process.
 func CurrentVersion() string {
 	return core.Version
 }
 
 // LatestVersion returns the latest version fetched from the web.
-// TODO: Cache response.
+// TODO: Cache response!
 func LatestVersion() (string, error) {
 	resp, err := http.Get(core.CheckVersionEndpoint)
 	if err != nil {

@@ -4,6 +4,8 @@ package telemetry
 
 import "fmt"
 
+const isManaged = true
+
 func UpgradeSelf() error {
 	fmt.Println(`This version of exo was installed via a package manager and does not support self-upgrade. Please use your package manager to update.
 

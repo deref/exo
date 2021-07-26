@@ -22,4 +22,13 @@ interface "kernel" {
     input "message" "string" {}
   }
 
+  method "get-version" {
+    doc = "Retrieves the installed and current version of exo."
+
+    output "installed" "string" {}
+    // Current may be nil if telemetry is disabled.
+    output "latest" "*string" {}
+    output "current" "bool" {}
+  }
+
 }

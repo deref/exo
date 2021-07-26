@@ -6,6 +6,7 @@ import (
 	"github.com/deref/exo/exod/api"
 	state "github.com/deref/exo/exod/state/api"
 	"github.com/deref/exo/gensym"
+	"github.com/deref/exo/telemetry"
 )
 
 type Kernel struct {
@@ -53,6 +54,26 @@ func (kern *Kernel) FindWorkspace(ctx context.Context, input *api.FindWorkspaceI
 	}
 	return &api.FindWorkspaceOutput{
 		ID: output.ID,
+	}, nil
+}
+
+func (kern *Kernel) GetVersion(ctx context.Context, input *api.GetVersionInput) (*api.GetVersionOutput, error) {
+	installed := telemetry.CurrentVersion()
+	current := true
+	var latest *string
+	if telemetry.CanSelfUpgrade() {
+		latestVersion, err := telemetry.LatestVersion()
+		if err != nil {
+			return nil, err
+		}
+		latest = &latestVersion
+		current = installed >= latestVersion
+	}
+
+	return &api.GetVersionOutput{
+		Installed: installed,
+		Latest:    latest,
+		Current:   current,
 	}, nil
 }
 

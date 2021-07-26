@@ -13,6 +13,8 @@ import (
 	"github.com/deref/exo/core"
 )
 
+const isManaged = false
+
 func UpgradeSelf() error {
 	tmpfile, err := ioutil.TempFile("", "example")
 	if err != nil {
