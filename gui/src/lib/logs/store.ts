@@ -1,4 +1,5 @@
 import { get, writable } from 'svelte/store';
+import type { PaginationParams } from '../api';
 import { notRequested, pendingRequest, refetchingResponse, RemoteData, successResponse } from '../api';
 import type { LogEvent } from './types';
 import { visibleLogsStore } from './visible-logs';
@@ -14,11 +15,7 @@ export const logsStore = writable<LogsStore>({
   logBufferSize: 1000,
 });
 
-export const refreshLogs = async (workspace, fromStart = false) => {
-  if (fromStart) {
-    lastCursor = null;
-  }
-
+export const fetchLogs = async (workspace, pagination: Partial<PaginationParams>) => {
   logsStore.update((value) => {
     switch (value.events.stage) {
       case 'idle':
@@ -37,7 +34,7 @@ export const refreshLogs = async (workspace, fromStart = false) => {
       case 'success':
         return {
           ...value,
-          events: refetchingResponse(fromStart ? [] : value.events.data),
+          events: refetchingResponse(value.events.data),
         };
     }
   });
@@ -48,8 +45,8 @@ export const refreshLogs = async (workspace, fromStart = false) => {
   // replaced with a more flexible filtering framework.
   const visibleLogs = [...get(visibleLogsStore).values()];
   const newEvents = await workspace.getEvents(visibleLogs, {
-    cursor: fromStart ? null : lastCursor,
-    next: 100,
+    cursor: lastCursor,
+    ...pagination,
   });
 
   lastCursor = newEvents.nextCursor;
@@ -66,3 +63,17 @@ export const refreshLogs = async (workspace, fromStart = false) => {
     }
   });
 };
+
+export const refreshLogs = (workspace) => fetchLogs(workspace, { next: 100 });
+
+export const loadInitialLogs = (workspace) => fetchLogs(workspace, { prev: 100 });
+
+export const resetLogs = () => {
+  lastCursor = null;
+  logsStore.update((value) => {
+    return {
+      ...value,
+      events: successResponse([]),
+    };
+  })
+}
