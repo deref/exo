@@ -10,6 +10,10 @@ export let showBackButton: boolean = false;
 export let backButtonRoute: string = "#/";
 
 const goHome = () => {
+      router.push("#/")
+    }
+
+const goBack = () => {
       router.push(backButtonRoute)
     }
 
@@ -23,7 +27,7 @@ const goHome = () => {
         <h1>exo</h1>
       </div>
       {#if showBackButton}
-      <IconButton tooltip="Go back" on:click={goHome}><GoBack /></IconButton>
+      <IconButton tooltip="Go back" on:click={goBack}><GoBack /></IconButton>
       <span>Go back</span>
       {/if}
     </div>
