@@ -1,9 +1,7 @@
 package main
 
 import (
-	"bytes"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"os/exec"
@@ -87,13 +85,7 @@ func ensureDaemon() {
 	for attempt := 0; attempt < 15; attempt++ {
 		<-time.After(delay)
 		delay = 20 * time.Millisecond
-		res, err := http.Get(runState.URL + "_exo/health")
-		if err != nil {
-			continue
-		}
-		bs, _ := ioutil.ReadAll(res.Body)
-		// See note [HEALTH_CHECK].
-		if string(bytes.TrimSpace(bs)) == "ok" {
+		if checkHealthy() {
 			ok = true
 			break
 		}
