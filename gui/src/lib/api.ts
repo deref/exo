@@ -1,3 +1,4 @@
+import type { GetVersionResponse } from './kernel/types';
 import type { LogsResponse } from './logs/types';
 import type {
   CreateProcessResponse,
@@ -154,6 +155,10 @@ export const api = (() => {
         const { id } = (await invoke('create-workspace', { root })) as any;
         return id;
       },
+
+      async getVersion(): Promise<GetVersionResponse> {
+        return await invoke('get-version', {}) as any;
+      }
     };
   })();
 
