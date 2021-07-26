@@ -4,7 +4,7 @@ import { logStyleFromHash } from '../lib/color';
 import { onMount, onDestroy, afterUpdate, beforeUpdate } from 'svelte';
 import type { RemoteData } from '../lib/api';
 import { hasData, IsUnresolved, notRequested } from '../lib/api';
-import { logsStore, refreshLogs } from '../lib/logs/store';
+import { loadInitialLogs, logsStore, refreshLogs } from '../lib/logs/store';
 import type { LogEvent } from '../lib/logs/types';
 import { shortDate } from '../lib/time';
 
@@ -25,7 +25,7 @@ const scheduleNextPoll = () => {
 };
 
 onMount(() => {
-  scheduleNextPoll();
+  loadInitialLogs(workspace).then(scheduleNextPoll);
 });
 
 onDestroy(() => {

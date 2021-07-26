@@ -1,7 +1,7 @@
 <script lang="ts">
 import { onDestroy, onMount } from 'svelte';
 import type { RemoteData } from '../lib/api';
-import { refreshLogs } from '../lib/logs/store';
+import { loadInitialLogs } from '../lib/logs/store';
 import { fetchProcesses, processes, startProcess, stopProcess, refreshAllProcesses, deleteProcess } from '../lib/process/store';
 import { toggleLogVisibility, visibleLogsStore } from '../lib/logs/visible-logs';
 import type { ProcessDescription } from '../lib/process/types';
@@ -50,7 +50,7 @@ function toggleProc(id: string) {
 
 function toggleProcLogs(processId: string) {
   toggleLogVisibility(processId);
-  refreshLogs(workspace, true);
+  loadInitialLogs(workspace);
 }
 
 onMount(() => {
