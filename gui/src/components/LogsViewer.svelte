@@ -7,13 +7,14 @@ import { hasData, IsUnresolved, notRequested } from '../lib/api';
 import { loadInitialLogs, logsStore, refreshLogs } from '../lib/logs/store';
 import type { LogEvent } from '../lib/logs/types';
 import { shortDate } from '../lib/time';
+import { processes } from '../lib/process/store';
 
 export let workspace;
 
 const logsPollInterval = 1000;
 
 let logEvents: RemoteData<LogEvent[]> = notRequested();
-const unsubscribeProcesses = logsStore.subscribe(data => {
+const unsubscribeLogStore = logsStore.subscribe(data => {
   logEvents = data.events;
 });
 
@@ -24,12 +25,29 @@ const scheduleNextPoll = () => {
   pollRefreshTimer = setTimeout(scheduleNextPoll, logsPollInterval);
 };
 
+let knownProcessNameById: Record<string, string> = {};
+const unsubscribeProcessStore = processes.subscribe((processData) => {
+  if (processData.stage === 'success' || processData.stage === 'refetching') {
+    knownProcessNameById = processData.data.reduce((acc, processDescription) => ({
+      ...acc, 
+      [processDescription.id]: processDescription.name,
+    }), {});
+  }
+});
+
+const friendlyName = (log: string): string => {
+  const [procId, stream] = log.split(':');
+  const procName = knownProcessNameById[procId];
+  return procName ? `${procName}:${stream}` : log;
+}
+
 onMount(() => {
   loadInitialLogs(workspace).then(scheduleNextPoll);
 });
 
 onDestroy(() => {
-  unsubscribeProcesses();
+  unsubscribeLogStore();
+  unsubscribeProcessStore();
   if (pollRefreshTimer !== null) {
     clearTimeout(pollRefreshTimer);
   }
@@ -66,7 +84,7 @@ afterUpdate(async () => {
       <table>
         {#each logEvents.data as event (event.id)}
         <tr class="log-entry" style={logStyleFromHash(event.log)}>
-          <td>{shortDate(event.timestamp)}</td> <td>{event.log}</td> <td>{event.message}</td>
+          <td>{shortDate(event.timestamp)}</td> <td>{friendlyName(event.log)}</td> <td>{event.message}</td>
         </tr>
         {/each}
       </table>

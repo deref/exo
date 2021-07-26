@@ -33,12 +33,12 @@ export const fetchProcesses = (workspace) => {
 }
 
 export const startProcess = async (workspace, id: string) => {
-  await workspace.startProcess(id)
+  await workspace.startProcess(id);
   fetchProcesses(workspace);
 };
 
 export const stopProcess = async (workspace, id: string) => {
-  await workspace.stopProcess(id)
+  await workspace.stopProcess(id);
   fetchProcesses(workspace);
 };
 
@@ -48,6 +48,6 @@ export const deleteProcess = async (workspace, id: string) => {
 };
 
 export const refreshAllProcesses = async (workspace) => {
-  await workspace.refreshAllProcesses()
+  await workspace.refreshAllProcesses();
   fetchProcesses(workspace);
 };
