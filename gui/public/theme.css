@@ -25,6 +25,10 @@ a, a *, .a, .a *, button, button * {
   cursor: pointer;
 }
 
+pre {
+  margin: 0;
+}
+
 html, body {
   border: none;
   margin: 0;
