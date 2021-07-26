@@ -34,22 +34,24 @@ have to invoke this themselves.`,
 	},
 }
 
+var knownPaths *cmdutil.KnownPaths
+
 var runState struct {
 	Pid int    `json:"pid"`
 	URL string `json:"url"`
 }
 
 func ensureDaemon() {
-	paths := cmdutil.MustMakeDirectories()
+	knownPaths = cmdutil.MustMakeDirectories()
 
 	// Validate exod process record.
-	err := loadRunState(paths.RunStateFile)
+	err := loadRunState()
 	running := false
 	switch {
 	case err == nil:
 		running = osutil.IsValidPid(runState.Pid)
 		if !running {
-			_ = os.Remove(paths.RunStateFile)
+			_ = os.Remove(knownPaths.RunStateFile)
 		}
 	case os.IsNotExist(err):
 		// Not running.
@@ -75,7 +77,7 @@ func ensureDaemon() {
 	// Write run state.
 	runState.Pid = cmd.Process.Pid
 	runState.URL = fmt.Sprintf("http://%s/", cmdutil.GetAddr())
-	if err := jsonutil.MarshalFile(paths.RunStateFile, runState); err != nil {
+	if err := jsonutil.MarshalFile(knownPaths.RunStateFile, runState); err != nil {
 		cmdutil.Fatalf("writing run state: %w", err)
 	}
 
@@ -94,13 +96,13 @@ func ensureDaemon() {
 	// Cleanup if unhealthy.
 	if !ok {
 		cmdutil.Warnf("daemon not healthy")
-		killExod(paths)
+		killExod()
 		os.Exit(1)
 	}
 }
 
-func loadRunState(path string) error {
-	return jsonutil.UnmarshalFile(path, &runState)
+func loadRunState() error {
+	return jsonutil.UnmarshalFile(knownPaths.RunStateFile, &runState)
 }
 
 func newClient() *client.Root {
