@@ -43,6 +43,8 @@ If the current directory is part of a workspace, navigates to it.`,
 			endpoint += "#/workspaces/" + url.PathEscape(*output.ID)
 		}
 
+		fmt.Println("Opening GUI:", endpoint)
+
 		browser.Stdout = os.Stderr
 		return browser.OpenURL(endpoint)
 	},
