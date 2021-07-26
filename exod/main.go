@@ -19,6 +19,7 @@ import (
 	"github.com/deref/exo/util/cmdutil"
 	"github.com/deref/exo/util/httputil"
 	"github.com/deref/exo/util/sysutil"
+	"github.com/mattn/go-isatty"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
@@ -43,7 +44,7 @@ func RunServer() {
 
 	paths := cmdutil.MustMakeDirectories()
 
-	if cmdutil.NonTerminalStdio() {
+	if !isatty.IsTerminal(os.Stdout.Fd()) {
 		// Replace the standard logger with a logger writes to the var directory
 		// and handles log rotation.
 		golog.SetOutput(&lumberjack.Logger{
