@@ -67,3 +67,13 @@ export const fetchLogs = async (workspace, pagination: Partial<PaginationParams>
 export const refreshLogs = (workspace) => fetchLogs(workspace, { next: 100 });
 
 export const loadInitialLogs = (workspace) => fetchLogs(workspace, { prev: 100 });
+
+export const resetLogs = () => {
+  lastCursor = null;
+  logsStore.update((value) => {
+    return {
+      ...value,
+      events: successResponse([]),
+    };
+  })
+}

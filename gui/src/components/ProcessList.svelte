@@ -1,7 +1,7 @@
 <script lang="ts">
 import { onDestroy, onMount } from 'svelte';
 import type { RemoteData } from '../lib/api';
-import { loadInitialLogs } from '../lib/logs/store';
+import { loadInitialLogs, resetLogs } from '../lib/logs/store';
 import { fetchProcesses, processes, startProcess, stopProcess, refreshAllProcesses, deleteProcess } from '../lib/process/store';
 import { toggleLogVisibility, visibleLogsStore } from '../lib/logs/visible-logs';
 import type { ProcessDescription } from '../lib/process/types';
@@ -50,6 +50,7 @@ function toggleProc(id: string) {
 
 function toggleProcLogs(processId: string) {
   toggleLogVisibility(processId);
+  resetLogs();
   loadInitialLogs(workspace);
 }
 
@@ -85,7 +86,7 @@ onDestroy(() => {
       <h2>{name}</h2>
       <div></div>
       <div class="actions">
-        {#if statusPending.has(name)}
+        {#if statusPending.has(id)}
         <button disabled><Loading /></button>
         {:else if running}
         <IconButton tooltip="Stop process" on:click={() => toggleProc(id)} active><Stop /></IconButton>
