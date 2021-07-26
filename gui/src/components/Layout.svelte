@@ -4,16 +4,32 @@ import IconButton from './IconButton.svelte';
 import * as router from 'svelte-spa-router';
 
 import Feedback from './mono/feedback.svelte';
+import GoBack from './mono/leftarrow.svelte';
+
+export let showBackButton: boolean = false;
+export let backButtonRoute: string = "#/";
+
+const goHome = () => {
+      router.push("#/")
+    }
+
+const goBack = () => {
+      router.push(backButtonRoute)
+    }
 
 </script>
 
 <main>
   <header>
-    <div class="a logo" on:click={() => {
-      router.push(`#/`)
-    }}>
-      <img src="/deref-rounded-icon.png" alt="Deref" height="24px" />
-      <h1>exo</h1>
+    <div class="logo">
+      <div class="a logo" on:click={goHome}>
+        <img src="/deref-rounded-icon.png" alt="Deref" height="24px" />
+        <h1>exo</h1>
+      </div>
+      {#if showBackButton}
+      <IconButton tooltip="Go back" on:click={goBack}><GoBack /></IconButton>
+      <span>Go back</span>
+      {/if}
     </div>
     <div class="logo">
     <span>Feedback?</span>
