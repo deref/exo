@@ -135,10 +135,10 @@ h1 {
 h2 {
   margin: 0;
   line-height: 1;
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 550;
-  padding: 6px 12px;
-  border-radius: 6px;
+  padding: 8px 12px;
+  border-radius: 4px;
   color: #555;
   background: #eee;
 }
