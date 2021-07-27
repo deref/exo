@@ -5,20 +5,17 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"os"
-	"path/filepath"
 	"sort"
-	"time"
 
+	"github.com/deref/exo/chrono"
 	"github.com/deref/exo/gensym"
 	"github.com/deref/exo/logd/api"
 	"github.com/deref/exo/logd/store"
-	"github.com/deref/exo/logd/store/badger"
-	"github.com/deref/exo/util/agent"
-	"github.com/deref/exo/util/jsonutil"
+	"github.com/deref/exo/util/errutil"
 	"github.com/deref/exo/util/mathutil"
 	"github.com/oklog/ulid/v2"
-	"golang.org/x/sync/errgroup"
 )
 
 const (
@@ -26,211 +23,74 @@ const (
 	maxLimit         = 10000
 )
 
-type Config struct {
-	VarDir string
-	Debug  bool
-}
-
-func NewLogCollector(ctx context.Context, cfg *Config) *LogCollector {
-	eg, ctx := errgroup.WithContext(ctx)
-	return &LogCollector{
-		varDir:    cfg.VarDir,
-		idGen:     gensym.NewULIDGenerator(ctx),
-		debug:     cfg.Debug,
-		statePath: filepath.Join(cfg.VarDir, "logd.json"),
-		eg:        eg,
-		agent:     agent.NewAgent(300),
-	}
-}
-
 type LogCollector struct {
-	varDir string
-	idGen  *gensym.ULIDGenerator
-	debug  bool
-
-	state
-	statePath string
-
-	store   store.Store
-	eg      *errgroup.Group
-	agent   *agent.Agent
-	workers map[string]*collectorWorker
-}
-
-type state struct {
-	Logs map[string]*logState `json:"logs"`
-}
-
-type logState struct {
-	Source string `json:"source"`
-}
-
-type collectorWorker struct {
-	Worker
-	stop func()
+	Debug bool
+	IDGen *gensym.ULIDGenerator
+	Store store.Store
 }
 
 func (lc *LogCollector) debugf(format string, v ...interface{}) {
-	if lc.debug {
+	if lc.Debug {
 		fmt.Fprintln(os.Stderr, "collector", fmt.Errorf(format, v...))
 	}
 }
 
-func (lc *LogCollector) loadState() error {
-	return jsonutil.UnmarshalFile(lc.statePath, &lc.state)
-}
-
-func (lc *LogCollector) saveState() error {
-	return jsonutil.MarshalFile(lc.statePath, &lc.state)
-}
-
-func (lc *LogCollector) Run(ctx context.Context) error {
-	lc.workers = make(map[string]*collectorWorker)
-
-	if err := lc.loadState(); err != nil {
-		return fmt.Errorf("loading state: %w", err)
+func (lc *LogCollector) AddEvent(ctx context.Context, input *api.AddEventInput) (*api.AddEventOutput, error) {
+	if input.Log == "" {
+		return nil, errutil.NewHTTPError(http.StatusBadRequest, "log is required")
 	}
-
-	logsDir := filepath.Join(lc.varDir, "logs")
-	var err error
-	lc.store, err = badger.Open(ctx, logsDir)
+	log := lc.Store.GetLog(input.Log)
+	timestamp, err := chrono.ParseIsoToNano(input.Timestamp)
 	if err != nil {
-		return fmt.Errorf("opening store: %w", err)
+		return nil, errutil.HTTPErrorf(http.StatusBadRequest, "invalid timestamp: %w", err)
 	}
-	defer lc.store.Close()
-
-	for logName, logState := range lc.state.Logs {
-		lc.startWorker(ctx, logName, logState)
+	message := []byte(input.Message)
+	if err := log.AddEvent(ctx, timestamp, message); err != nil {
+		return nil, err
 	}
-
-	go func() {
-		for {
-			select {
-			case <-ctx.Done():
-				return
-			case <-time.After(5 * time.Second):
-				go func() {
-					if err := lc.agent.Send(func() error {
-						return lc.removeOldEvents(ctx)
-					}); err != nil {
-						lc.agent.Fail(fmt.Errorf("removing old events: %w", err))
-					}
-				}()
-			}
-		}
-	}()
-
-	return lc.agent.Run(ctx)
+	return &api.AddEventOutput{}, nil
 }
 
-func (lc *LogCollector) removeOldEvents(ctx context.Context) error {
+func (lc *LogCollector) RemoveOldEvents(ctx context.Context, input *api.RemoveOldEventsInput) (*api.RemoveOldEventsOutput, error) {
 	lc.debugf("removing old events")
-	for logName := range lc.state.Logs {
-		log := lc.store.GetLog(logName)
+	var log store.Log
+	for {
+		var err error
+		log, err = lc.Store.NextLog(log)
+		if err != nil {
+			return nil, fmt.Errorf("enumerating logs: %w", err)
+		}
+		if log == nil {
+			break
+		}
 		if err := log.RemoveOldEvents(ctx); err != nil {
-			return fmt.Errorf("removing %q events: %w", logName, err)
+			return nil, fmt.Errorf("removing %q events: %w", log.Name(), err)
 		}
 	}
 	lc.debugf("removed old events")
-	return nil
+	return &api.RemoveOldEventsOutput{}, nil
 }
 
 func validLogName(s string) bool {
 	return s != "" // TODO: More validation. Cannot have internal null bytes.
 }
 
-func (lc *LogCollector) AddLog(ctx context.Context, input *api.AddLogInput) (output *api.AddLogOutput, err error) {
-	err = lc.agent.Send(func() error {
-		output, err = lc.addLog(ctx, input)
-		return err
-	})
-	return
-}
-
-func (lc *LogCollector) addLog(ctx context.Context, input *api.AddLogInput) (*api.AddLogOutput, error) {
-	if !validLogName(input.Name) {
-		return nil, fmt.Errorf("invalid log name: %q", input.Name)
-	}
-	if input.Source == "" {
-		return nil, errors.New("log source path is required")
-	}
-	if lc.state.Logs == nil {
-		lc.state.Logs = make(map[string]*logState)
-	}
-	if lc.state.Logs[input.Name] != nil {
-		return nil, fmt.Errorf("already have log %q", input.Name)
-	}
-	logState := &logState{
-		Source: input.Source,
-	}
-	lc.state.Logs[input.Name] = logState
-	if err := lc.saveState(); err != nil {
-		return nil, fmt.Errorf("saving new log source: %w", err)
-	}
-
-	lc.startWorker(ctx, input.Name, logState)
-	return &api.AddLogOutput{}, nil
-}
-
-func (lc *LogCollector) startWorker(ctx context.Context, logName string, state *logState) {
-	ctx, stop := context.WithCancel(ctx)
-	wkr := &collectorWorker{
-		Worker: Worker{
-			Source: state.Source,
-			Sink:   lc.store.GetLog(logName),
-			Debug:  lc.debug,
-		},
-		stop: stop,
-	}
-	lc.workers[logName] = wkr
-
-	lc.eg.Go(func() error {
-		if err := wkr.Run(ctx); err != nil {
-			return fmt.Errorf("worker %q run error: %w", logName, err)
+func (lc *LogCollector) ClearEvents(ctx context.Context, input *api.ClearEventsInput) (output *api.ClearEventsOutput, err error) {
+	for _, logName := range input.Logs {
+		log := lc.Store.GetLog(logName)
+		if err := log.ClearEvents(ctx); err != nil {
+			return nil, fmt.Errorf("log %q: %w", logName, err)
 		}
-		return nil
-	})
-}
-
-func (lc *LogCollector) RemoveLog(ctx context.Context, input *api.RemoveLogInput) (output *api.RemoveLogOutput, err error) {
-	err = lc.agent.Send(func() error {
-		output, err = lc.removeLog(ctx, input)
-		return err
-	})
-	return
-}
-
-func (lc *LogCollector) removeLog(ctx context.Context, input *api.RemoveLogInput) (*api.RemoveLogOutput, error) {
-	delete(lc.state.Logs, input.Name)
-	lc.stopWorker(input.Name)
-	if err := lc.saveState(); err != nil {
-		return nil, fmt.Errorf("saving log source removal: %w", err)
 	}
-	return &api.RemoveLogOutput{}, nil
+	return &api.ClearEventsOutput{}, nil
 }
 
-func (lc *LogCollector) stopWorker(logName string) {
-	wkr := lc.workers[logName]
-	if wkr == nil {
-		return
-	}
-	wkr.stop()
-}
-
-func (lc *LogCollector) DescribeLogs(ctx context.Context, input *api.DescribeLogsInput) (output *api.DescribeLogsOutput, err error) {
-	err = lc.agent.Send(func() error {
-		output, err = lc.describeLogs(ctx, input)
-		return err
-	})
-	return
-}
-
-func (lc *LogCollector) describeLogs(ctx context.Context, input *api.DescribeLogsInput) (*api.DescribeLogsOutput, error) {
+func (lc *LogCollector) DescribeLogs(ctx context.Context, input *api.DescribeLogsInput) (*api.DescribeLogsOutput, error) {
 	var output api.DescribeLogsOutput
 	output.Logs = []api.LogDescription{}
-	for name, description := range lc.state.Logs {
+	for _, name := range input.Names {
 		var lastEventAt *string
-		lastEvent, err := lc.store.GetLog(name).GetLastEvent(ctx)
+		lastEvent, err := lc.Store.GetLog(name).GetLastEvent(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("getting last event: %w", err)
 		}
@@ -240,29 +100,13 @@ func (lc *LogCollector) describeLogs(ctx context.Context, input *api.DescribeLog
 
 		output.Logs = append(output.Logs, api.LogDescription{
 			Name:        name,
-			Source:      description.Source,
 			LastEventAt: lastEventAt,
 		})
 	}
 	return &output, nil
 }
 
-func (lc *LogCollector) GetEvents(ctx context.Context, input *api.GetEventsInput) (output *api.GetEventsOutput, err error) {
-	err = lc.agent.Send(func() error {
-		output, err = lc.getEvents(ctx, input)
-		return err
-	})
-	return
-}
-
-func (lc *LogCollector) getEvents(ctx context.Context, input *api.GetEventsInput) (*api.GetEventsOutput, error) {
-	logs := input.Logs
-	if logs == nil {
-		for name := range lc.state.Logs {
-			logs = append(logs, name)
-		}
-	}
-
+func (lc *LogCollector) GetEvents(ctx context.Context, input *api.GetEventsInput) (*api.GetEventsOutput, error) {
 	limit := defaultNextLimit
 	var direction store.Direction
 	if input.Next != nil {
@@ -296,8 +140,8 @@ func (lc *LogCollector) getEvents(ctx context.Context, input *api.GetEventsInput
 
 	// TODO: Merge sort.
 	eventsWithCursors := make([]store.EventWithCursors, 0, limit)
-	for _, logName := range logs {
-		log := lc.store.GetLog(logName)
+	for _, logName := range input.Logs {
+		log := lc.Store.GetLog(logName)
 
 		logEventsWithCursors, err := log.GetEvents(ctx, cursor, limit, direction)
 		if err != nil {
@@ -342,7 +186,7 @@ func (lc *LogCollector) getLatestCursor(ctx context.Context, logs []string) (*st
 	cursor := store.NilCursor
 
 	for _, logName := range logs {
-		log := lc.store.GetLog(logName)
+		log := lc.Store.GetLog(logName)
 		logCursor, err := log.GetLastCursor(ctx)
 		if err != nil {
 			return nil, err

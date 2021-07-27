@@ -3,11 +3,11 @@ package main
 import (
 	"os"
 
-	"github.com/deref/exo/fifofum"
+	"github.com/deref/exo/logio"
 )
 
 func main() {
 	command := os.Args[0]
 	args := os.Args[1:]
-	fifofum.Main(command, args)
+	logio.Main(command, args)
 }

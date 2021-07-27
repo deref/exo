@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"path/filepath"
 	"strings"
 
 	"github.com/deref/exo/chrono"
@@ -23,9 +22,10 @@ import (
 )
 
 type Workspace struct {
-	ID     string
-	VarDir string
-	Store  state.Store
+	ID         string
+	VarDir     string
+	Store      state.Store
+	SyslogAddr string
 }
 
 func (ws *Workspace) Describe(ctx context.Context, input *api.DescribeInput) (*api.DescribeOutput, error) {
@@ -209,7 +209,7 @@ func (ws *Workspace) resolveProvider(ctx context.Context, typ string) core.Provi
 		}
 		return &process.Provider{
 			WorkspaceDir: description.Root,
-			VarDir:       filepath.Join(ws.VarDir, "proc"),
+			SyslogAddr:   ws.SyslogAddr,
 		}
 	default:
 		return &invalid.Provider{

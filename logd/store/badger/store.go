@@ -45,3 +45,42 @@ func (sto *Store) GetLog(name string) store.Log {
 		name:  name,
 	}
 }
+
+func (sto *Store) NextLog(after store.Log) (store.Log, error) {
+	prefix := []byte{}
+	if after != nil {
+		prefix = append([]byte(after.Name()), 255)
+	}
+	var nextName string
+	if err := sto.db.View(func(txn *badger.Txn) error {
+		opts := badger.DefaultIteratorOptions
+		opts.PrefetchSize = 1000
+		opts.PrefetchValues = false
+
+		it := txn.NewIterator(opts)
+		defer it.Close()
+
+		// TODO: Something better than a linear key scan.
+		it.Seek(prefix)
+		for it.Valid() {
+			it.Next()
+			if !it.ValidForPrefix(prefix) {
+				if it.Valid() {
+					nextName = string(it.Item().Key())
+				}
+				break
+			}
+		}
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+	if nextName == "" {
+		return nil, nil
+	}
+	return sto.GetLog(nextName), nil
+}
+
+func (log *Log) Name() string {
+	return log.name
+}

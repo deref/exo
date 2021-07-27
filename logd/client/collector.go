@@ -21,13 +21,8 @@ func GetLogCollector(client *josh.Client) *LogCollector {
 	}
 }
 
-func (c *LogCollector) AddLog(ctx context.Context, input *api.AddLogInput) (output *api.AddLogOutput, err error) {
-	err = c.client.Invoke(ctx, "add-log", input, &output)
-	return
-}
-
-func (c *LogCollector) RemoveLog(ctx context.Context, input *api.RemoveLogInput) (output *api.RemoveLogOutput, err error) {
-	err = c.client.Invoke(ctx, "remove-log", input, &output)
+func (c *LogCollector) ClearEvents(ctx context.Context, input *api.ClearEventsInput) (output *api.ClearEventsOutput, err error) {
+	err = c.client.Invoke(ctx, "clear-events", input, &output)
 	return
 }
 
@@ -36,7 +31,17 @@ func (c *LogCollector) DescribeLogs(ctx context.Context, input *api.DescribeLogs
 	return
 }
 
+func (c *LogCollector) AddEvent(ctx context.Context, input *api.AddEventInput) (output *api.AddEventOutput, err error) {
+	err = c.client.Invoke(ctx, "add-event", input, &output)
+	return
+}
+
 func (c *LogCollector) GetEvents(ctx context.Context, input *api.GetEventsInput) (output *api.GetEventsOutput, err error) {
 	err = c.client.Invoke(ctx, "get-events", input, &output)
+	return
+}
+
+func (c *LogCollector) RemoveOldEvents(ctx context.Context, input *api.RemoveOldEventsInput) (output *api.RemoveOldEventsOutput, err error) {
+	err = c.client.Invoke(ctx, "remove-old-events", input, &output)
 	return
 }

@@ -1,21 +1,21 @@
+// TODO: This is now a misnomer, as it receives inbound events instead of polling for them.
 interface "log-collector" {
 
   doc = "Manages a set of logs. Collects and stores events from them."
 
-  # TODO: Bulk methods.
-
-  method "add-log" {
-    input "name" "string" {}
-    input "source" "string" {}
-  }
-
-  method "remove-log" {
-    input "name" "string" {}
+  method "clear-events" {
+    input "logs" "[]string" {}
   }
 
   method "describe-logs" {
     input "names" "[]string" {}
     output "logs" "[]LogDescription" {}
+  }
+  
+  method "add-event" {
+    input "log" "string" {}
+    input "timestamp" "string" {}
+    input "message" "string" {}
   }
 
   method "get-events" {
@@ -33,11 +33,12 @@ interface "log-collector" {
     output "nextCursor" "string" {}
   }
 
+  method "remove-old-events" {}
+
 }
 
 struct "log-description" {
   field "name" "string" {}
-  field "source" "string" {}
   field "last-event-at" "*string" {}
 }
 

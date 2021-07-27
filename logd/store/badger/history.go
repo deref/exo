@@ -2,6 +2,7 @@ package badger
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/deref/exo/logd/api"
@@ -164,6 +165,9 @@ func getEventWithCursors(event api.Event) (store.EventWithCursors, error) {
 	return eventWithCursors, nil
 }
 
+// TODO: RemoveOldEvents also needs to delete events over a certain age,
+// not just a count limit. This is necessary for cleanup of no-longer-tracked
+// log streams.
 const maxEventsPerStream = 5000
 
 func (log *Log) RemoveOldEvents(ctx context.Context) error {
@@ -204,4 +208,8 @@ func (log *Log) RemoveOldEvents(ctx context.Context) error {
 		}
 		return nil
 	})
+}
+
+func (log *Log) ClearEvents(ctx context.Context) error {
+	return errors.New("not implemented: badger.Log.ClearEvents")
 }

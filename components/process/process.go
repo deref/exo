@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"sort"
 	"strconv"
 	"strings"
@@ -21,7 +20,6 @@ import (
 )
 
 func (provider *Provider) Start(ctx context.Context, input *core.StartInput) (*core.StartOutput, error) {
-	procDir := filepath.Join(provider.VarDir, input.ID)
 	var state State
 	if err := jsonutil.UnmarshalString(input.State, &state); err != nil {
 		return nil, fmt.Errorf("unmarshalling state: %w", err)
@@ -31,7 +29,7 @@ func (provider *Provider) Start(ctx context.Context, input *core.StartInput) (*c
 
 	if state.Pid == 0 {
 		var err error
-		state, err = provider.start(ctx, procDir, input.Spec)
+		state, err = provider.start(ctx, input.ID, input.Spec)
 		if err != nil {
 			return nil, err
 		}
@@ -42,7 +40,7 @@ func (provider *Provider) Start(ctx context.Context, input *core.StartInput) (*c
 	return &output, nil
 }
 
-func (provider *Provider) start(ctx context.Context, procDir string, inputSpec string) (State, error) {
+func (provider *Provider) start(ctx context.Context, componentID string, inputSpec string) (State, error) {
 	var spec Spec
 	if err := jsonutil.UnmarshalString(inputSpec, &spec); err != nil {
 		return State{}, fmt.Errorf("unmarshalling spec: %w", err)
@@ -67,16 +65,17 @@ func (provider *Provider) start(ctx context.Context, procDir string, inputSpec s
 	}
 
 	// Construct supervised command.
-	fifofumPath := os.Args[0]
-	fifofumArgs := append(
+	logioPath := os.Args[0]
+	logioArgs := append(
 		[]string{
-			"fifofum",
-			procDir,
+			"logio",
+			provider.SyslogAddr,
+			componentID,
 			program,
 		},
 		spec.Arguments...,
 	)
-	cmd := exec.Command(fifofumPath, fifofumArgs...)
+	cmd := exec.Command(logioPath, logioArgs...)
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Setsid: true, // Run in background.
 	}
@@ -116,21 +115,21 @@ func (provider *Provider) start(ctx context.Context, procDir string, inputSpec s
 
 	// Start supervisor process.
 	if err := cmd.Start(); err != nil {
-		return State{}, fmt.Errorf("starting fifofum: %w", err)
+		return State{}, fmt.Errorf("starting logio: %w", err)
 	}
 
-	// Collect fifofum output.
+	// Collect logio output.
 	pidC := make(chan int, 1)
 	errC := make(chan error, 2)
 	go func() {
 		pidStr, err := readLine(stdout)
 		if err != nil {
-			errC <- fmt.Errorf("reading fifofum stdout: %w", err)
+			errC <- fmt.Errorf("reading logio stdout: %w", err)
 			return
 		}
 		pid, err := strconv.Atoi(pidStr)
 		if err != nil {
-			errC <- fmt.Errorf("parsing fifofum output: %w", err)
+			errC <- fmt.Errorf("parsing logio output: %w", err)
 			return
 		}
 		pidC <- pid
@@ -138,7 +137,7 @@ func (provider *Provider) start(ctx context.Context, procDir string, inputSpec s
 	go func() {
 		message, err := readLine(stderr)
 		if err != nil {
-			errC <- fmt.Errorf("reading fifofum stderr: %w", err)
+			errC <- fmt.Errorf("reading logio stderr: %w", err)
 			return
 		}
 		if len(message) > 0 {
@@ -148,13 +147,13 @@ func (provider *Provider) start(ctx context.Context, procDir string, inputSpec s
 		}
 	}()
 
-	// Await fifofum result.
+	// Await logio result.
 	var pid int
 	select {
 	case pid = <-pidC:
 	case err = <-errC:
 	case <-time.After(300 * time.Millisecond):
-		err = errors.New("fifofum timeout")
+		err = errors.New("logio timeout")
 	}
 	return State{Pid: pid}, err
 }
