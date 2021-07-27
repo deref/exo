@@ -608,14 +608,40 @@ func (ws *Workspace) Restart(ctx context.Context, input *api.RestartInput) (*api
 }
 
 func (ws *Workspace) RestartComponent(ctx context.Context, input *api.RestartComponentInput) (*api.RestartComponentOutput, error) {
-	// TODO: Allow provider to customize restart behavior.
-	_, _ = ws.StopComponent(ctx, &api.StopComponentInput{})
-	_, err := ws.StartComponent(ctx, &api.StartComponentInput{
-		Ref: input.Ref,
+	id, err := ws.resolveRef(ctx, input.Ref)
+	if err != nil {
+		return nil, fmt.Errorf("resolving ref: %w", err)
+	}
+
+	components, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
+		WorkspaceID: ws.ID,
+		IDs:         []string{id},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("fetching component state: %w", err)
+	}
+	if len(components.Components) != 1 {
+		return nil, fmt.Errorf("no state for component: %s", id)
+	}
+	component := components.Components[0]
+
+	provider := ws.resolveProvider(ctx, component.Type)
+	providerOutput, err := provider.Restart(ctx, &core.RestartInput{
+		ID:    id,
+		Spec:  component.Spec,
+		State: component.State,
 	})
 	if err != nil {
 		return nil, err
 	}
+
+	if _, err := ws.Store.PatchComponent(ctx, &state.PatchComponentInput{
+		ID:    id,
+		State: providerOutput.State,
+	}); err != nil {
+		return nil, fmt.Errorf("updating component state: %w", err)
+	}
+
 	return &api.RestartComponentOutput{}, nil
 }
 
