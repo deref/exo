@@ -6,136 +6,18 @@ import (
 	"text/template"
 
 	"github.com/deref/exo/inflect"
-	"github.com/hashicorp/hcl/v2/hclsimple"
+	"github.com/deref/exo/josh/model"
 )
 
-type Package struct {
-	Path string
-	Unit
-}
-
-type Unit struct {
-	Interfaces  []Interface  `hcl:"interface,block"`
-	Structs     []Struct     `hcl:"struct,block"`
-	Controllers []Controller `hcl:"controller,block"`
-}
-
-type Interface struct {
-	Name    string   `hcl:"name,label"`
-	Doc     *string  `hcl:"doc"`
-	Extends []string `hcl:"extends,optional"`
-	Methods []Method `hcl:"method,block"`
-}
-
-type Method struct {
-	Name    string  `hcl:"name,label"`
-	Doc     *string `hcl:"doc"`
-	Inputs  []Field `hcl:"input,block"`
-	Outputs []Field `hcl:"output,block"`
-}
-
-type Struct struct {
-	Name   string  `hcl:"name,label"`
-	Doc    *string `hcl:"doc"`
-	Fields []Field `hcl:"field,block"`
-}
-
-type Field struct {
-	Name     string  `hcl:"name,label"`
-	Doc      *string `hcl:"doc"`
-	Type     string  `hcl:"type,label"`
-	Required *bool   `hcl:"required"`
-	Nullable *bool   `hcl:"nullable"`
-}
-
-type Controller struct {
-	Name    string   `hcl:"name,label"`
-	Doc     *string  `hcl:"doc"`
-	Extends []string `hcl:"extends,optional"`
-	Methods []Method `hcl:"method,block"`
-}
-
-func LoadFile(filename string) (*Unit, error) {
-	unit, err := ParseFile(filename)
-	if err != nil {
-		return nil, err
-	}
-	Elaborate(unit)
-	err = Validate(unit)
-	return unit, err
-}
-
-func ParseFile(filename string) (*Unit, error) {
-	var unit Unit
-	if err := hclsimple.DecodeFile(filename, nil, &unit); err != nil {
-		return nil, err
-	}
-	return &unit, nil
-}
-
-func Elaborate(unit *Unit) {
-	for _, controller := range unit.Controllers {
-		methods := make([]Method, len(controller.Methods))
-		for methodIndex, method := range controller.Methods {
-			shiftInputs := 3
-			inputs := make([]Field, len(method.Inputs)+shiftInputs)
-			inputs[0] = Field{
-				Name: "id",
-				Type: "string",
-			}
-			inputs[1] = Field{
-				Name: "spec",
-				Type: "string",
-			}
-			inputs[2] = Field{
-				Name: "state",
-				Type: "string",
-			}
-			for inputIndex, input := range method.Inputs {
-				inputs[shiftInputs+inputIndex] = input
-			}
-
-			shiftOutputs := 1
-			outputs := make([]Field, len(method.Outputs)+shiftOutputs)
-			outputs[0] = Field{
-				Name: "state",
-				Type: "string",
-			}
-			for outputIndex, output := range method.Outputs {
-				inputs[shiftOutputs+outputIndex] = output
-			}
-
-			methods[methodIndex] = Method{
-				Name:    method.Name,
-				Doc:     method.Doc,
-				Inputs:  inputs,
-				Outputs: outputs,
-			}
-		}
-		unit.Interfaces = append(unit.Interfaces, Interface{
-			Name:    controller.Name,
-			Doc:     controller.Doc,
-			Extends: append([]string{}, controller.Extends...),
-			Methods: methods,
-		})
-	}
-}
-
-func Validate(unit *Unit) error {
-	// TODO: Validate no duplicate names.
-	// TODO: All type references.
-	return nil
-}
-
-func GenerateAPI(pkg *Package) ([]byte, error) {
+func GenerateAPI(pkg *model.Package) ([]byte, error) {
 	return generateGo(apiTemplate, pkg)
 }
 
-func GenerateClient(pkg *Package) ([]byte, error) {
+func GenerateClient(pkg *model.Package) ([]byte, error) {
 	return generateGo(clientTemplate, pkg)
 }
 
-func generateGo(t string, pkg *Package) ([]byte, error) {
+func generateGo(t string, pkg *model.Package) ([]byte, error) {
 	tmpl := template.Must(
 		template.New("package").
 			Funcs(templateFuncs).
