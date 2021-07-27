@@ -164,11 +164,9 @@ func (provider *Provider) Stop(ctx context.Context, input *core.StopInput) (*cor
 	if err := jsonutil.UnmarshalString(input.State, &state); err != nil {
 		return nil, fmt.Errorf("unmarshalling state: %w", err)
 	}
-	if state.Pid == 0 {
-		return nil, nil
+	if state.Pid != 0 {
+		provider.stop(state.Pid)
 	}
-
-	provider.stop(state.Pid)
 	return &core.StopOutput{State: "null"}, nil
 }
 

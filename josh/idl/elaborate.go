@@ -1,5 +1,7 @@
 package idl
 
+// XXX Don't do this. Instead, generate a separate controller structure
+// that wraps an interface and handles spec and state marshalling.
 func Elaborate(unit *Unit) {
 	for _, controller := range unit.Controllers {
 		methods := make([]Method, len(controller.Methods))
