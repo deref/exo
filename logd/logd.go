@@ -91,6 +91,9 @@ func syslogToEvent(syslogMessage syslog.Message) (*api.AddEventInput, error) {
 	if rfc5425Message.Appname == nil {
 		return nil, errors.New("expected APP-NAME")
 	}
+	if rfc5425Message.Message == nil {
+		return nil, errors.New("expected MSG")
+	}
 	if rfc5425Message.MsgID == nil {
 		return nil, errors.New("expected MSGID")
 	}
