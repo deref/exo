@@ -187,11 +187,11 @@ export const api = (() => {
       },
 
       async startProcess(ref: string): Promise<void> {
-        await invoke('start', { ref });
+        await invoke('start-component', { ref });
       },
 
       async stopProcess(ref: string): Promise<void> {
-        await invoke('stop', { ref });
+        await invoke('stop-component', { ref });
       },
 
       async deleteComponent(ref: string): Promise<void> {
