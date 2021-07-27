@@ -15,7 +15,7 @@ import (
 	"github.com/deref/exo/exod/state/statefile"
 	"github.com/deref/exo/gui"
 	"github.com/deref/exo/logd"
-	"github.com/deref/exo/logio"
+	"github.com/deref/exo/supervise"
 	"github.com/deref/exo/util/cmdutil"
 	"github.com/deref/exo/util/httputil"
 	"github.com/deref/exo/util/sysutil"
@@ -27,13 +27,13 @@ func Main() {
 	if len(os.Args) > 1 {
 		subcommand := os.Args[1]
 		switch subcommand {
-		case "logio":
-			// XXX: This is broken because logio expects the syslod addr as the first argument.
+		case "supervise":
+			// XXX: This is broken because supervise expects the syslod addr as the first argument.
 			wd, err := os.Getwd()
 			if err != nil {
 				panic(err)
 			}
-			logio.Main(fmt.Sprintf("%s %s %s", os.Args[0], subcommand, wd), os.Args[2:])
+			supervise.Main(fmt.Sprintf("%s %s %s", os.Args[0], subcommand, wd), os.Args[2:])
 		case "server":
 			RunServer()
 		default:

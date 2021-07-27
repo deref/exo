@@ -82,7 +82,7 @@ func (svc *Service) Run(ctx context.Context) error {
 	}
 }
 
-// See logio implementation for details on Syslog field usage.
+// See supervise implementation for details on Syslog field usage.
 func syslogToEvent(syslogMessage syslog.Message) (*api.AddEventInput, error) {
 	rfc5425Message, ok := syslogMessage.(*rfc5424.SyslogMessage)
 	if !ok {

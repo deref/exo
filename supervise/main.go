@@ -1,4 +1,4 @@
-package logio
+package supervise
 
 import (
 	"bufio"
@@ -26,7 +26,7 @@ func Main(command string, args []string) {
 	if len(args) < 4 {
 		fatalf(`usage: %s <address> <component-id> <working-directory> <program> <args...>
 
-logio executes and supervises the given command. If successful, the child
+supervise executes and supervises the given command. If successful, the child
 pid is written to stdout. The stdout and stderr streams of the supervised process
 will be directed to the given address as syslog events.
 
