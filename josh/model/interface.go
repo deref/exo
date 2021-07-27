@@ -49,6 +49,26 @@ func (iface *Interface) Methods() []*Method {
 	return methods
 }
 
+func (iface *Interface) AllMethods() []*Method {
+	visited := make(map[*Interface]bool)
+	var methods []*Method
+	iface.collectMethods(visited, &methods)
+	return methods
+}
+
+func (iface *Interface) collectMethods(visited map[*Interface]bool, methods *[]*Method) {
+	for _, extended := range iface.extends {
+		if visited[extended] {
+			continue
+		}
+		visited[extended] = true
+		extended.collectMethods(visited, methods)
+	}
+	for _, method := range iface.methods {
+		*methods = append(*methods, method)
+	}
+}
+
 func (iface *Interface) DeclareMethod(name string) *Method {
 	method := &Method{
 		iface: iface,

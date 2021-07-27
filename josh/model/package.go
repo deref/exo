@@ -46,6 +46,20 @@ func (pkg *Package) DeclareInterface(name string) *Interface {
 	return iface
 }
 
+func (pkg *Package) ReferInterface(name string) *Interface {
+	named := pkg.names[name]
+	iface, ok := named.(*Interface)
+	if !ok {
+		if named == nil {
+			pkg.AddError(fmt.Errorf("undefined interface: %q", name))
+		} else {
+			pkg.AddError(fmt.Errorf("expected %q to be an interface", name))
+		}
+		iface = newInterface(pkg, name)
+	}
+	return iface
+}
+
 func (pkg *Package) DeclareStruct(name string) *Struct {
 	named := pkg.names[name]
 	if named == nil {
@@ -62,7 +76,7 @@ func (pkg *Package) DeclareStruct(name string) *Struct {
 }
 
 func (pkg *Package) Interfaces() []*Interface {
-	ifaces := make([]*Interface, 0, len(pkg.names))
+	ifaces := make([]*Interface, 0, len(pkg.members))
 	for _, named := range pkg.members {
 		if iface, ok := named.(*Interface); ok {
 			ifaces = append(ifaces, iface)
@@ -76,7 +90,7 @@ func (pkg *Package) AddError(err error) {
 }
 
 func (pkg *Package) Structs() []*Struct {
-	structs := make([]*Struct, 0, len(pkg.names))
+	structs := make([]*Struct, 0, len(pkg.members))
 	for _, named := range pkg.members {
 		if strct, ok := named.(*Struct); ok {
 			structs = append(structs, strct)

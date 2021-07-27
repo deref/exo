@@ -27,7 +27,7 @@ func LoadFile(pkg *model.Package, filePath string) {
 			iface.SetDoc(*ifaceNode.Doc)
 		}
 		for _, extendsName := range ifaceNode.Extends {
-			extended := pkg.DeclareInterface(extendsName)
+			extended := pkg.ReferInterface(extendsName)
 			iface.Extend(extended)
 		}
 		for _, methodNode := range ifaceNode.Methods {

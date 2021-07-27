@@ -67,7 +67,7 @@ import (
 {{template "doc" . -}}
 type {{.Name|public}} interface {
 {{- range .Extends}}
-	{{.|public}}
+	{{.Name|public}}
 {{- end}}
 {{- range .Methods}}
 {{template "doc" . -}}
@@ -86,12 +86,7 @@ type {{.Name|public}}Output struct {
 {{end}}
 
 func Build{{.Name|public}}Mux(b *josh.MuxBuilder, factory func(req *http.Request) {{.Name|public}}) {
-{{- range .Extends}}
-	Build{{.|public}}Mux(b, func(req *http.Request) {{.|public}} {
-		return factory(req)
-	})
-{{- end }}
-{{- range .Methods}}
+{{- range .AllMethods}}
 	b.AddMethod("{{.Name}}", func (req *http.Request) interface{} {
 		return factory(req).{{.Name|public}}
 	})
@@ -132,7 +127,7 @@ func Get{{.Name|public}}(client *josh.Client) *{{.Name|public}} {
 	}
 }
 
-{{range .Methods}}
+{{range .AllMethods}}
 func (c *{{$iface.Name|public}}) {{.Name|public}}(ctx context.Context, input *api.{{.Name|public}}Input) (output *api.{{.Name|public}}Output, err error) {
 	err = c.client.Invoke(ctx, "{{.Name}}", input, &output)
 	return
