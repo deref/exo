@@ -65,10 +65,10 @@ func (provider *Provider) start(ctx context.Context, componentID string, inputSp
 	}
 
 	// Construct supervised command.
-	logioPath := os.Args[0]
-	logioArgs := append(
+	supervisePath := os.Args[0]
+	superviseArgs := append(
 		[]string{
-			"logio",
+			"supervise",
 			provider.SyslogAddr,
 			componentID,
 			provider.WorkspaceDir,
@@ -76,7 +76,7 @@ func (provider *Provider) start(ctx context.Context, componentID string, inputSp
 		},
 		spec.Arguments...,
 	)
-	cmd := exec.Command(logioPath, logioArgs...)
+	cmd := exec.Command(supervisePath, superviseArgs...)
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Setsid: true, // Run in background.
 	}
@@ -116,21 +116,21 @@ func (provider *Provider) start(ctx context.Context, componentID string, inputSp
 
 	// Start supervisor process.
 	if err := cmd.Start(); err != nil {
-		return State{}, fmt.Errorf("starting logio: %w", err)
+		return State{}, fmt.Errorf("starting supervise: %w", err)
 	}
 
-	// Collect logio output.
+	// Collect supervise output.
 	pidC := make(chan int, 1)
 	errC := make(chan error, 2)
 	go func() {
 		pidStr, err := readLine(stdout)
 		if err != nil {
-			errC <- fmt.Errorf("reading logio stdout: %w", err)
+			errC <- fmt.Errorf("reading supervise stdout: %w", err)
 			return
 		}
 		pid, err := strconv.Atoi(pidStr)
 		if err != nil {
-			errC <- fmt.Errorf("parsing logio output: %w", err)
+			errC <- fmt.Errorf("parsing supervise output: %w", err)
 			return
 		}
 		pidC <- pid
@@ -138,7 +138,7 @@ func (provider *Provider) start(ctx context.Context, componentID string, inputSp
 	go func() {
 		message, err := readLine(stderr)
 		if err != nil {
-			errC <- fmt.Errorf("reading logio stderr: %w", err)
+			errC <- fmt.Errorf("reading supervise stderr: %w", err)
 			return
 		}
 		if len(message) > 0 {
@@ -148,13 +148,13 @@ func (provider *Provider) start(ctx context.Context, componentID string, inputSp
 		}
 	}()
 
-	// Await logio result.
+	// Await supervise result.
 	var pid int
 	select {
 	case pid = <-pidC:
 	case err = <-errC:
 	case <-time.After(300 * time.Millisecond):
-		err = errors.New("logio timeout")
+		err = errors.New("supervise startup timeout")
 	}
 	return State{Pid: pid}, err
 }
