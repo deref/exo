@@ -559,7 +559,7 @@ func (ws *Workspace) StartComponent(ctx context.Context, input *api.StartCompone
 	return &api.StartComponentOutput{}, nil
 }
 
-func (ws *Workspace) Stop(ctx context.Context, input *api.StartInput) (*api.StartOutput, error) {
+func (ws *Workspace) Stop(ctx context.Context, input *api.StopInput) (*api.StopOutput, error) {
 	// XXX stop all components.
 	panic("TODO")
 }

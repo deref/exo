@@ -181,3 +181,21 @@ func (provider *Provider) stop(pid int) {
 		// TODO: Report the error somehow?
 	}
 }
+
+func (provider *Provider) Restart(ctx context.Context, input *core.RestartInput) (*core.RestartOutput, error) {
+	var state State
+	if err := jsonutil.UnmarshalString(input.State, &state); err != nil {
+		return nil, fmt.Errorf("unmarshalling state: %w", err)
+	}
+	if state.Pid != 0 {
+		provider.stop(state.Pid)
+	}
+	state, err := provider.start(ctx, input.ID, input.Spec)
+	if err != nil {
+		return nil, err
+	}
+
+	var output core.RestartOutput
+	output.State = jsonutil.MustMarshalString(state)
+	return &output, nil
+}

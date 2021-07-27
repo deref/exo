@@ -26,6 +26,11 @@ func (c *Workspace) Start(ctx context.Context, input *api.StartInput) (output *a
 	return
 }
 
+func (c *Workspace) Restart(ctx context.Context, input *api.RestartInput) (output *api.RestartOutput, err error) {
+	err = c.client.Invoke(ctx, "restart", input, &output)
+	return
+}
+
 func (c *Workspace) Stop(ctx context.Context, input *api.StopInput) (output *api.StopOutput, err error) {
 	err = c.client.Invoke(ctx, "stop", input, &output)
 	return
@@ -130,6 +135,11 @@ func GetProcess(client *josh.Client) *Process {
 
 func (c *Process) Start(ctx context.Context, input *api.StartInput) (output *api.StartOutput, err error) {
 	err = c.client.Invoke(ctx, "start", input, &output)
+	return
+}
+
+func (c *Process) Restart(ctx context.Context, input *api.RestartInput) (output *api.RestartOutput, err error) {
+	err = c.client.Invoke(ctx, "restart", input, &output)
 	return
 }
 
