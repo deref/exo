@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/deref/exo/exod/api"
+	"github.com/deref/exo/core/api"
 	"github.com/spf13/cobra"
 )
 
@@ -19,7 +19,7 @@ var stopCmd = &cobra.Command{
 		ensureDaemon()
 		cl := newClient()
 		workspace := requireWorkspace(ctx, cl)
-		_, err := workspace.Stop(ctx, &api.StopInput{
+		_, err := workspace.StopComponent(ctx, &api.StopComponentInput{
 			Ref: args[0],
 		})
 		return err

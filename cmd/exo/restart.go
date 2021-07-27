@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/deref/exo/exod/api"
+	"github.com/deref/exo/core/api"
 	"github.com/spf13/cobra"
 )
 
@@ -19,7 +19,7 @@ var restartCmd = &cobra.Command{
 		ensureDaemon()
 		cl := newClient()
 		workspace := requireWorkspace(ctx, cl)
-		_, err := workspace.Restart(ctx, &api.RestartInput{
+		_, err := workspace.RestartComponent(ctx, &api.RestartComponentInput{
 			Ref: args[0],
 		})
 		return err

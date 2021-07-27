@@ -9,7 +9,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/deref/exo/exod/api"
+	"github.com/deref/exo/core/api"
 	"github.com/deref/exo/import/compose"
 	"github.com/deref/exo/import/procfile"
 	"github.com/deref/exo/manifest"

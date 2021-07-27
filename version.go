@@ -1,4 +1,4 @@
-package core
+package exo
 
 import _ "embed"
 

@@ -8,7 +8,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/deref/exo/exod/client"
+	"github.com/deref/exo/core/client"
 	"github.com/deref/exo/util/cmdutil"
 	"github.com/deref/exo/util/jsonutil"
 	"github.com/deref/exo/util/osutil"
