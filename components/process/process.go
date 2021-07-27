@@ -71,6 +71,7 @@ func (provider *Provider) start(ctx context.Context, componentID string, inputSp
 			"logio",
 			provider.SyslogAddr,
 			componentID,
+			provider.WorkspaceDir,
 			program,
 		},
 		spec.Arguments...,

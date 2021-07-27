@@ -23,8 +23,8 @@ var child *os.Process
 var varDir string
 
 func Main(command string, args []string) {
-	if len(args) < 3 {
-		fatalf(`usage: %s <address> <component-id> <program> <args...>
+	if len(args) < 4 {
+		fatalf(`usage: %s <address> <component-id> <working-directory> <program> <args...>
 
 logio executes and supervises the given command. If successful, the child
 pid is written to stdout. The stdout and stderr streams of the supervised process
@@ -44,8 +44,9 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 
 	address := args[0]
 	componentID := args[1]
-	program := args[2]
-	arguments := args[3:]
+	wd := args[2]
+	program := args[3]
+	arguments := args[4:]
 
 	udpAddr, err := net.ResolveUDPAddr("udp", address)
 	if err != nil {
@@ -53,6 +54,7 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 	}
 
 	cmd := exec.Command(program, arguments...)
+	cmd.Dir = wd
 	cmd.Env = os.Environ()
 
 	// Connect pipes.
