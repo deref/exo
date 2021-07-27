@@ -21,8 +21,17 @@ func LoadFile(pkg *model.Package, filePath string) {
 	}
 	Elaborate(unit)
 
+	// Declaration pass.
 	for _, ifaceNode := range unit.Interfaces {
-		iface := pkg.DeclareInterface(ifaceNode.Name)
+		pkg.DeclareInterface(ifaceNode.Name)
+	}
+	for _, structNode := range unit.Structs {
+		pkg.DeclareStruct(structNode.Name)
+	}
+
+	// Definition pass.
+	for _, ifaceNode := range unit.Interfaces {
+		iface := pkg.ReferInterface(ifaceNode.Name)
 		if ifaceNode.Doc != nil {
 			iface.SetDoc(*ifaceNode.Doc)
 		}
@@ -67,9 +76,8 @@ func LoadFile(pkg *model.Package, filePath string) {
 			}
 		}
 	}
-
 	for _, structNode := range unit.Structs {
-		strct := pkg.DeclareStruct(structNode.Name)
+		strct := pkg.ReferStruct(structNode.Name)
 		if structNode.Doc != nil {
 			strct.SetDoc(*structNode.Doc)
 		}

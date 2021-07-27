@@ -32,7 +32,7 @@ func (pkg *Package) Err() error {
 }
 
 func (pkg *Package) DeclareInterface(name string) *Interface {
-	named := pkg.names[name]
+	named, ok := pkg.names[name]
 	if named == nil {
 		named = newInterface(pkg, name)
 		pkg.names[name] = named
@@ -72,6 +72,20 @@ func (pkg *Package) DeclareStruct(name string) *Struct {
 		strct = newStruct(pkg, name)
 	}
 	pkg.members = append(pkg.members, strct)
+	return strct
+}
+
+func (pkg *Package) ReferStruct(name string) *Struct {
+	named := pkg.names[name]
+	strct, ok := named.(*Struct)
+	if !ok {
+		if named == nil {
+			pkg.AddError(fmt.Errorf("undefined struct: %q", name))
+		} else {
+			pkg.AddError(fmt.Errorf("expected %q to be a struct", name))
+		}
+		strct = newStruct(pkg, name)
+	}
 	return strct
 }
 
