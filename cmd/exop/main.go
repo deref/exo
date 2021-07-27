@@ -9,8 +9,8 @@ import (
 	"path/filepath"
 
 	"github.com/deref/exo/components/log"
-	"github.com/deref/exo/exod/server"
-	"github.com/deref/exo/exod/state/statefile"
+	"github.com/deref/exo/core/server"
+	"github.com/deref/exo/core/state/statefile"
 	josh "github.com/deref/exo/josh/client"
 	logd "github.com/deref/exo/logd/client"
 	"github.com/deref/exo/supervise"

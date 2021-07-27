@@ -6,8 +6,8 @@ import (
 	"os"
 	"text/tabwriter"
 
-	"github.com/deref/exo/exod/api"
-	"github.com/deref/exo/exod/client"
+	"github.com/deref/exo/core/api"
+	"github.com/deref/exo/core/client"
 	"github.com/deref/exo/util/cmdutil"
 	"github.com/spf13/cobra"
 )
