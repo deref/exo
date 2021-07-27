@@ -19,7 +19,7 @@ var startCmd = &cobra.Command{
 		ensureDaemon()
 		cl := newClient()
 		workspace := requireWorkspace(ctx, cl)
-		_, err := workspace.Start(ctx, &api.StartInput{
+		_, err := workspace.StartComponent(ctx, &api.StartComponentInput{
 			Ref: args[0],
 		})
 		return err

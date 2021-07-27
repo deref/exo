@@ -36,8 +36,8 @@ func (c *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (output *a
 	return
 }
 
-func (c *Workspace) Refresh(ctx context.Context, input *api.RefreshInput) (output *api.RefreshOutput, err error) {
-	err = c.client.Invoke(ctx, "refresh", input, &output)
+func (c *Workspace) RefreshAllComponents(ctx context.Context, input *api.RefreshAllComponentsInput) (output *api.RefreshAllComponentsOutput, err error) {
+	err = c.client.Invoke(ctx, "refresh-all-components", input, &output)
 	return
 }
 
@@ -86,18 +86,18 @@ func (c *Workspace) GetEvents(ctx context.Context, input *api.GetEventsInput) (o
 	return
 }
 
-func (c *Workspace) Start(ctx context.Context, input *api.StartInput) (output *api.StartOutput, err error) {
-	err = c.client.Invoke(ctx, "start", input, &output)
+func (c *Workspace) StartComponent(ctx context.Context, input *api.StartComponentInput) (output *api.StartComponentOutput, err error) {
+	err = c.client.Invoke(ctx, "start-component", input, &output)
 	return
 }
 
-func (c *Workspace) Stop(ctx context.Context, input *api.StopInput) (output *api.StopOutput, err error) {
-	err = c.client.Invoke(ctx, "stop", input, &output)
+func (c *Workspace) StopComponent(ctx context.Context, input *api.StopComponentInput) (output *api.StopComponentOutput, err error) {
+	err = c.client.Invoke(ctx, "stop-component", input, &output)
 	return
 }
 
-func (c *Workspace) Restart(ctx context.Context, input *api.RestartInput) (output *api.RestartOutput, err error) {
-	err = c.client.Invoke(ctx, "restart", input, &output)
+func (c *Workspace) RestartComponent(ctx context.Context, input *api.RestartComponentInput) (output *api.RestartComponentOutput, err error) {
+	err = c.client.Invoke(ctx, "restart-component", input, &output)
 	return
 }
 

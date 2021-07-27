@@ -22,7 +22,8 @@ interface "workspace" {
     }
   }
   
-  method "refresh" {
+  # TODO: Should use the standard "refresh" lifecycle method.
+  method "refresh-all-components" {
     doc = "Refreshes all components."
   }
 
@@ -97,15 +98,15 @@ interface "workspace" {
     output "nextCursor" "string" {}
   }
 
-  method "start" {
+  method "start-component" {
     input "ref" "string" {}
   }
   
-  method "stop" {
+  method "stop-component" {
     input "ref" "string" {}
   }
 
-  method "restart" {
+  method "restart-component" {
     input "ref" "string" {}
   }
 

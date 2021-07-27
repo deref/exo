@@ -140,7 +140,7 @@ func (ws *Workspace) apply(ctx context.Context, m *manifest.Manifest) error {
 	return nil
 }
 
-func (ws *Workspace) Refresh(ctx context.Context, input *api.RefreshInput) (*api.RefreshOutput, error) {
+func (ws *Workspace) RefreshAllComponents(ctx context.Context, input *api.RefreshAllComponentsInput) (*api.RefreshAllComponentsOutput, error) {
 	components, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
 		WorkspaceID: ws.ID,
 	})
@@ -154,7 +154,7 @@ func (ws *Workspace) Refresh(ctx context.Context, input *api.RefreshInput) (*api
 			return nil, fmt.Errorf("refreshing %q: %w", component.Name, err)
 		}
 	}
-	return &api.RefreshOutput{}, nil
+	return &api.RefreshAllComponentsOutput{}, nil
 }
 
 func (ws *Workspace) Resolve(ctx context.Context, input *api.ResolveInput) (*api.ResolveOutput, error) {
@@ -516,7 +516,7 @@ func (ws *Workspace) GetEvents(ctx context.Context, input *api.GetEventsInput) (
 	return &output, nil
 }
 
-func (ws *Workspace) Start(ctx context.Context, input *api.StartInput) (*api.StartOutput, error) {
+func (ws *Workspace) StartComponent(ctx context.Context, input *api.StartComponentInput) (*api.StartComponentOutput, error) {
 	id, err := ws.resolveRef(ctx, input.Ref)
 	if err != nil {
 		return nil, fmt.Errorf("resolving ref: %w", err)
@@ -551,10 +551,10 @@ func (ws *Workspace) Start(ctx context.Context, input *api.StartInput) (*api.Sta
 		return nil, fmt.Errorf("updating component state: %w", err)
 	}
 
-	return &api.StartOutput{}, nil
+	return &api.StartComponentOutput{}, nil
 }
 
-func (ws *Workspace) Stop(ctx context.Context, input *api.StopInput) (*api.StopOutput, error) {
+func (ws *Workspace) StopComponent(ctx context.Context, input *api.StopComponentInput) (*api.StopComponentOutput, error) {
 	id, err := ws.resolveRef(ctx, input.Ref)
 	if err != nil {
 		return nil, fmt.Errorf("resolving ref: %w", err)
@@ -589,19 +589,19 @@ func (ws *Workspace) Stop(ctx context.Context, input *api.StopInput) (*api.StopO
 		return nil, fmt.Errorf("updating component state: %w", err)
 	}
 
-	return &api.StopOutput{}, nil
+	return &api.StopComponentOutput{}, nil
 }
 
-func (ws *Workspace) Restart(ctx context.Context, input *api.RestartInput) (*api.RestartOutput, error) {
+func (ws *Workspace) RestartComponent(ctx context.Context, input *api.RestartComponentInput) (*api.RestartComponentOutput, error) {
 	// TODO: Allow provider to customize restart behavior.
-	_, _ = ws.Stop(ctx, &api.StopInput{})
-	_, err := ws.Start(ctx, &api.StartInput{
+	_, _ = ws.StopComponent(ctx, &api.StopComponentInput{})
+	_, err := ws.StartComponent(ctx, &api.StartComponentInput{
 		Ref: input.Ref,
 	})
 	if err != nil {
 		return nil, err
 	}
-	return &api.RestartOutput{}, nil
+	return &api.RestartComponentOutput{}, nil
 }
 
 func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeProcessesInput) (*api.DescribeProcessesOutput, error) {

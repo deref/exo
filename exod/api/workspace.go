@@ -17,7 +17,7 @@ type Workspace interface {
 	// Performs creates, updates, refreshes, disposes, as needed.
 	Apply(context.Context, *ApplyInput) (*ApplyOutput, error)
 	// Refreshes all components.
-	Refresh(context.Context, *RefreshInput) (*RefreshOutput, error)
+	RefreshAllComponents(context.Context, *RefreshAllComponentsInput) (*RefreshAllComponentsOutput, error)
 	// Resolves a reference in to an ID.
 	Resolve(context.Context, *ResolveInput) (*ResolveOutput, error)
 	// Returns component descriptions.
@@ -35,9 +35,9 @@ type Workspace interface {
 	DescribeLogs(context.Context, *DescribeLogsInput) (*DescribeLogsOutput, error)
 	// Returns pages of log events for some set of logs. If `cursor` is specified, standard pagination behavior is used. Otherwise the cursor is assumed to represent the current tail of the log.
 	GetEvents(context.Context, *GetEventsInput) (*GetEventsOutput, error)
-	Start(context.Context, *StartInput) (*StartOutput, error)
-	Stop(context.Context, *StopInput) (*StopOutput, error)
-	Restart(context.Context, *RestartInput) (*RestartOutput, error)
+	StartComponent(context.Context, *StartComponentInput) (*StartComponentOutput, error)
+	StopComponent(context.Context, *StopComponentInput) (*StopComponentOutput, error)
+	RestartComponent(context.Context, *RestartComponentInput) (*RestartComponentOutput, error)
 	DescribeProcesses(context.Context, *DescribeProcessesInput) (*DescribeProcessesOutput, error)
 }
 
@@ -67,10 +67,10 @@ type ApplyInput struct {
 type ApplyOutput struct {
 }
 
-type RefreshInput struct {
+type RefreshAllComponentsInput struct {
 }
 
-type RefreshOutput struct {
+type RefreshAllComponentsOutput struct {
 }
 
 type ResolveInput struct {
@@ -148,25 +148,25 @@ type GetEventsOutput struct {
 	NextCursor string  `json:"nextCursor"`
 }
 
-type StartInput struct {
+type StartComponentInput struct {
 	Ref string `json:"ref"`
 }
 
-type StartOutput struct {
+type StartComponentOutput struct {
 }
 
-type StopInput struct {
+type StopComponentInput struct {
 	Ref string `json:"ref"`
 }
 
-type StopOutput struct {
+type StopComponentOutput struct {
 }
 
-type RestartInput struct {
+type RestartComponentInput struct {
 	Ref string `json:"ref"`
 }
 
-type RestartOutput struct {
+type RestartComponentOutput struct {
 }
 
 type DescribeProcessesInput struct {
@@ -186,8 +186,8 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	b.AddMethod("apply", func(req *http.Request) interface{} {
 		return factory(req).Apply
 	})
-	b.AddMethod("refresh", func(req *http.Request) interface{} {
-		return factory(req).Refresh
+	b.AddMethod("refresh-all-components", func(req *http.Request) interface{} {
+		return factory(req).RefreshAllComponents
 	})
 	b.AddMethod("resolve", func(req *http.Request) interface{} {
 		return factory(req).Resolve
@@ -216,14 +216,14 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	b.AddMethod("get-events", func(req *http.Request) interface{} {
 		return factory(req).GetEvents
 	})
-	b.AddMethod("start", func(req *http.Request) interface{} {
-		return factory(req).Start
+	b.AddMethod("start-component", func(req *http.Request) interface{} {
+		return factory(req).StartComponent
 	})
-	b.AddMethod("stop", func(req *http.Request) interface{} {
-		return factory(req).Stop
+	b.AddMethod("stop-component", func(req *http.Request) interface{} {
+		return factory(req).StopComponent
 	})
-	b.AddMethod("restart", func(req *http.Request) interface{} {
-		return factory(req).Restart
+	b.AddMethod("restart-component", func(req *http.Request) interface{} {
+		return factory(req).RestartComponent
 	})
 	b.AddMethod("describe-processes", func(req *http.Request) interface{} {
 		return factory(req).DescribeProcesses
