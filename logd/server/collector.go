@@ -76,8 +76,11 @@ func validLogName(s string) bool {
 }
 
 func (lc *LogCollector) ClearEvents(ctx context.Context, input *api.ClearEventsInput) (output *api.ClearEventsOutput, err error) {
-	for _, log := range input.Logs {
-		panic(fmt.Sprintf("clear events from %q", log)) // XXX
+	for _, logName := range input.Logs {
+		log := lc.Store.GetLog(logName)
+		if err := log.ClearEvents(ctx); err != nil {
+			return nil, fmt.Errorf("log %q: %w", logName, err)
+		}
 	}
 	return &api.ClearEventsOutput{}, nil
 }

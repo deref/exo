@@ -2,6 +2,7 @@ package badger
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/deref/exo/logd/api"
@@ -207,4 +208,8 @@ func (log *Log) RemoveOldEvents(ctx context.Context) error {
 		}
 		return nil
 	})
+}
+
+func (log *Log) ClearEvents(ctx context.Context) error {
+	return errors.New("not implemented: badger.Log.ClearEvents")
 }

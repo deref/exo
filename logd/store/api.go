@@ -26,6 +26,7 @@ type Log interface {
 	AddEvent(ctx context.Context, timestamp int64, message []byte) error
 	// Remove oldest events beyond capacity limit.
 	RemoveOldEvents(context.Context) error
+	ClearEvents(context.Context) error
 }
 
 type Direction int
