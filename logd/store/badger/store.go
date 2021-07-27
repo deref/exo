@@ -54,7 +54,6 @@ func (sto *Store) NextLog(after store.Log) (store.Log, error) {
 	var nextName string
 	if err := sto.db.View(func(txn *badger.Txn) error {
 		opts := badger.DefaultIteratorOptions
-		opts.PrefetchSize = 1000
 		opts.PrefetchValues = false
 
 		it := txn.NewIterator(opts)
@@ -66,7 +65,7 @@ func (sto *Store) NextLog(after store.Log) (store.Log, error) {
 			it.Next()
 			if !it.ValidForPrefix(prefix) {
 				if it.Valid() {
-					nextName = string(it.Item().Key())
+					nextName = mustLogFromKey(it.Item().Key())
 				}
 				break
 			}
