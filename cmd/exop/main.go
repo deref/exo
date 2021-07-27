@@ -24,10 +24,15 @@ func main() {
 	// subcommand so that it always uses the latest veresion of the code rather than relying
 	// on a prebuilt version of `logio` being on the path.
 	if len(os.Args) > 1 && os.Args[1] == "logio" {
+		// XXX: This is broken because logio expects the syslod addr as the first argument.
 		selfExec := os.Args[0]
 		subCmd := os.Args[1]
+		wd, err := os.Getwd()
+		if err != nil {
+			panic(err)
+		}
 		subCmdArgs := os.Args[2:]
-		logio.Main(fmt.Sprintf("%s %s", selfExec, subCmd), subCmdArgs)
+		logio.Main(fmt.Sprintf("%s %s %s", selfExec, subCmd, wd), subCmdArgs)
 		return
 	}
 

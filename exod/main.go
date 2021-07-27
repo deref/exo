@@ -28,7 +28,12 @@ func Main() {
 		subcommand := os.Args[1]
 		switch subcommand {
 		case "logio":
-			logio.Main(fmt.Sprintf("%s %s", os.Args[0], subcommand), os.Args[2:])
+			// XXX: This is broken because logio expects the syslod addr as the first argument.
+			wd, err := os.Getwd()
+			if err != nil {
+				panic(err)
+			}
+			logio.Main(fmt.Sprintf("%s %s %s", os.Args[0], subcommand, wd), os.Args[2:])
 		case "server":
 			RunServer()
 		default:
