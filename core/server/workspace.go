@@ -516,6 +516,11 @@ func (ws *Workspace) GetEvents(ctx context.Context, input *api.GetEventsInput) (
 	return &output, nil
 }
 
+func (ws *Workspace) Start(ctx context.Context, input *api.StartInput) (*api.StartOutput, error) {
+	// XXX start all components.
+	panic("TODO")
+}
+
 func (ws *Workspace) StartComponent(ctx context.Context, input *api.StartComponentInput) (*api.StartComponentOutput, error) {
 	id, err := ws.resolveRef(ctx, input.Ref)
 	if err != nil {
@@ -554,6 +559,11 @@ func (ws *Workspace) StartComponent(ctx context.Context, input *api.StartCompone
 	return &api.StartComponentOutput{}, nil
 }
 
+func (ws *Workspace) Stop(ctx context.Context, input *api.StartInput) (*api.StartOutput, error) {
+	// XXX stop all components.
+	panic("TODO")
+}
+
 func (ws *Workspace) StopComponent(ctx context.Context, input *api.StopComponentInput) (*api.StopComponentOutput, error) {
 	id, err := ws.resolveRef(ctx, input.Ref)
 	if err != nil {
@@ -590,6 +600,11 @@ func (ws *Workspace) StopComponent(ctx context.Context, input *api.StopComponent
 	}
 
 	return &api.StopComponentOutput{}, nil
+}
+
+func (ws *Workspace) Restart(ctx context.Context, input *api.RestartInput) (*api.RestartOutput, error) {
+	// XXX restart all components.
+	panic("TODO")
 }
 
 func (ws *Workspace) RestartComponent(ctx context.Context, input *api.RestartComponentInput) (*api.RestartComponentOutput, error) {
