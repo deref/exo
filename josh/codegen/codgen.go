@@ -23,6 +23,7 @@ type Unit struct {
 type Interface struct {
 	Name    string   `hcl:"name,label"`
 	Doc     *string  `hcl:"doc"`
+	Extends []string `hcl:"extends,optional"`
 	Methods []Method `hcl:"method,block"`
 }
 
@@ -50,6 +51,7 @@ type Field struct {
 type Controller struct {
 	Name    string   `hcl:"name,label"`
 	Doc     *string  `hcl:"doc"`
+	Extends []string `hcl:"extends,optional"`
 	Methods []Method `hcl:"method,block"`
 }
 
@@ -113,6 +115,7 @@ func Elaborate(unit *Unit) {
 		unit.Interfaces = append(unit.Interfaces, Interface{
 			Name:    controller.Name,
 			Doc:     controller.Doc,
+			Extends: append([]string{}, controller.Extends...),
 			Methods: methods,
 		})
 	}
@@ -181,6 +184,9 @@ import (
 {{range .Interfaces}}
 {{template "doc" . -}}
 type {{.Name|public}} interface {
+{{- range .Extends}}
+	{{.|public}}
+{{- end}}
 {{- range .Methods}}
 {{template "doc" . -}}
 	{{.Name|public}}(context.Context, *{{.Name|public}}Input) (*{{.Name|public}}Output, error)
@@ -198,6 +204,11 @@ type {{.Name|public}}Output struct {
 {{end}}
 
 func Build{{.Name|public}}Mux(b *josh.MuxBuilder, factory func(req *http.Request) {{.Name|public}}) {
+{{- range .Extends}}
+	Build{{.|public}}Mux(b, func(req *http.Request) {{.|public}} {
+		return factory(req)
+	})
+{{- end }}
 {{- range .Methods}}
 	b.AddMethod("{{.Name}}", func (req *http.Request) interface{} {
 		return factory(req).{{.Name|public}}
