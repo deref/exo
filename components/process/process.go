@@ -177,7 +177,7 @@ func (provider *Provider) stop(pid int) {
 	if err != nil {
 		panic(err)
 	}
-	if err := proc.Kill(); err != nil {
+	if err := proc.Signal(os.Interrupt); err != nil {
 		// TODO: Report the error somehow?
 	}
 }
