@@ -60,13 +60,31 @@ func idFromKey(log string, key []byte) (id string, err error) {
 	return id, nil
 }
 
-func mustIDFromKey(log string, key []byte) (id string) {
-	var err error
-	id, err = idFromKey(log, key)
+func mustIDFromKey(log string, key []byte) string {
+	id, err := idFromKey(log, key)
 	if err != nil {
 		panic(err)
 	}
 	return id
+}
+
+func logFromKey(key []byte) (string, error) {
+	// Slice key at separator, and take the first segment as the log name.
+	for idx, b := range key {
+		if b == 255 {
+			return string(key[:idx]), nil
+		}
+	}
+
+	return "", errors.New("No separator in key")
+}
+
+func mustLogFromKey(key []byte) string {
+	log, err := logFromKey(key)
+	if err != nil {
+		panic(err)
+	}
+	return log
 }
 
 func validateVersion(version byte) error {
