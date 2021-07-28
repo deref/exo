@@ -133,9 +133,15 @@
         </div>
         <div>
           <label>Example:</label>
-          <CodeBlock>
-            # Export environment variables. export DEBUG=true # Set working
-            directory. cd / # Specify command with arguments. my-app --port 4000
+          <CodeBlock>{`# Export environment variables.
+export DEBUG=true
+
+# Set working directory.
+cd /
+
+# Specify command with arguments.
+my-app --port 4000
+`}
           </CodeBlock>
         </div>
       </div>
