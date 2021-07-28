@@ -71,24 +71,6 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 		panic(err)
 	}
 
-	// Start child process.
-	if err := cmd.Start(); err != nil {
-		fatalf("%v", err)
-	}
-	child = cmd.Process
-
-	// Reporting child pid to stdout.
-	if _, err := fmt.Println(child.Pid); err != nil {
-		fatalf("reporting pid: %v", err)
-	}
-
-	// Dial syslog.
-	conn, err := net.DialUDP("udp", nil, udpAddr)
-	if err != nil {
-		fatalf("dialing udp: %w", err)
-	}
-	defer conn.Close()
-
 	// Handle signals.
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGCHLD)
@@ -112,6 +94,24 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 			}
 		}
 	}()
+
+	// Start child process.
+	if err := cmd.Start(); err != nil {
+		fatalf("%v", err)
+	}
+	child = cmd.Process
+
+	// Reporting child pid to stdout.
+	if _, err := fmt.Println(child.Pid); err != nil {
+		fatalf("reporting pid: %v", err)
+	}
+
+	// Dial syslog.
+	conn, err := net.DialUDP("udp", nil, udpAddr)
+	if err != nil {
+		fatalf("dialing udp: %w", err)
+	}
+	defer conn.Close()
 
 	// Proxy logs.
 	syslogProcID := strconv.Itoa(child.Pid)
