@@ -29,7 +29,6 @@ func (p *Process) Start(ctx context.Context, input *core.StartInput) (*core.Star
 }
 
 func (p *Process) start(ctx context.Context) error {
-	// Use configured working directory or fallback to workspace directory.
 	whichQ := which.Query{
 		Program: p.Program,
 	}
@@ -47,6 +46,11 @@ func (p *Process) start(ctx context.Context) error {
 		return errutil.WithHTTPStatus(http.StatusBadRequest, err)
 	}
 
+	gracePeriod := 5
+	if p.ShutdownGracePeriodSeconds != nil {
+		gracePeriod = *p.ShutdownGracePeriodSeconds
+	}
+
 	// Construct supervised command.
 	supervisePath := os.Args[0]
 	superviseArgs := append(
@@ -55,6 +59,7 @@ func (p *Process) start(ctx context.Context) error {
 			p.SyslogAddr,
 			p.ComponentID,
 			p.WorkspaceDir,
+			strconv.Itoa(gracePeriod),
 			program,
 		},
 		p.Arguments...,
@@ -101,6 +106,7 @@ func (p *Process) start(ctx context.Context) error {
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("starting supervise: %w", err)
 	}
+	p.SupervisorPid = cmd.Process.Pid
 
 	// Collect supervise output.
 	pidC := make(chan int, 1)
@@ -147,10 +153,10 @@ func (p *Process) Stop(ctx context.Context, input *core.StopInput) (*core.StopOu
 }
 
 func (p *Process) stop() {
-	if p.Pid == 0 {
+	if p.SupervisorPid == 0 {
 		return
 	}
-	proc, err := os.FindProcess(p.Pid)
+	proc, err := os.FindProcess(p.SupervisorPid)
 	if err != nil {
 		panic(err)
 	}

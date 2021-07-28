@@ -1,14 +1,3 @@
-// This is a palette of colors intended to be different enough from one another
-// that distinct processes look distinct in the log viewer.
-export const palette = [
-  ['#0071f9', '#8abaf3', '#bbd7f9'],
-  ['#008606', '#7dde75', '#d6efd7'],
-  ['#ff7008', '#ffb198', '#f5dcd4'],
-  ['#8b00f9', '#bf8af3', '#eecaff'],
-  ['#d38200', '#edc620', '#fff2b3'],
-  ['#db0000', '#ff8181', '#f5d4d4'],
-];
-
 // This computes an integer hash which can be used to select a palette.
 export const hashString = (s: string) =>
   s
@@ -16,16 +5,16 @@ export const hashString = (s: string) =>
     .map((c) => c.charCodeAt(0))
     .reduce((a, c) => a + c);
 
-// This selects a color palette based on the hash of a string.
-export const hashPalette = (s: string) =>
-  palette[hashString(s) % palette.length];
+export const hashDegree = (s: string) => Math.round(hashString(s)*Math.PI*100) % 360
+
+export const textColor = (deg: number) => `hsl(${deg}, 95%, 30%)`
+export const borderColor = (deg: number) => `hsl(${deg}, 65%, 75%)`
+export const bgColor = (deg: number) => `hsl(${deg}, 65%, 90%)`
 
 // This computes a HTML style attribute string for colored logs.
 export const logStyleFromHash = (s: string) => {
-  // Format a single color variable.
-  const f = (varName, paletteIndex) => {
-    return `--${varName}:${hashPalette(s)[paletteIndex]};`;
-  };
+
+  const d = hashDegree(s)
   // Combine styles into one string.
-  return f('log-color', 0) + f('log-border-color', 1) + f('log-bg-color', 2);
+  return `--log-color:${textColor(d)};--log-border-color:${borderColor(d)};--log-bg-color:${bgColor(d)}`;
 };

@@ -10,14 +10,16 @@ type Process struct {
 }
 
 type Spec struct {
-	Directory   string            `json:"directory"`
-	Program     string            `json:"program"`
-	Arguments   []string          `json:"arguments"`
-	Environment map[string]string `json:"environment"`
+	Directory                  string            `json:"directory"`
+	Program                    string            `json:"program"`
+	Arguments                  []string          `json:"arguments"`
+	Environment                map[string]string `json:"environment"`
+	ShutdownGracePeriodSeconds *int              `json:"shutdownGracePeriodSeconds"`
 }
 
 type State struct {
-	Pid int `json:"pid"`
+	SupervisorPid int `json:"supervisorPid"`
+	Pid           int `json:"pid"`
 	// TODO: Store resolved program path & full effective environment.
 	// Program string `json:"program"`
 	// Environment map[string]string `json:"environment"`

@@ -24,7 +24,7 @@ var varDir string
 
 func Main(command string, args []string) {
 	if len(args) < 4 {
-		fatalf(`usage: %s <address> <component-id> <working-directory> <program> <args...>
+		fatalf(`usage: %s <address> <component-id> <working-directory> <timeout> <program> <args...>
 
 supervise executes and supervises the given command. If successful, the child
 pid is written to stdout. The stdout and stderr streams of the supervised process
@@ -45,8 +45,12 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 	address := args[0]
 	componentID := args[1]
 	wd := args[2]
-	program := args[3]
-	arguments := args[4:]
+	timeout, timeoutErr := strconv.Atoi(args[3])
+	if timeoutErr != nil {
+		fatalf(timeoutErr.Error())
+	}
+	program := args[4]
+	arguments := args[5:]
 
 	udpAddr, err := net.ResolveUDPAddr("udp", address)
 	if err != nil {
@@ -67,6 +71,33 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 		panic(err)
 	}
 
+	hasSignalledChildToQuit := false
+	// Handle signals.
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGCHLD)
+	go func() {
+		for sig := range c {
+			switch sig {
+			// Forward signals to child.
+			case os.Interrupt, syscall.SIGTERM:
+				hasSignalledChildToQuit = true
+				if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
+					break
+				}
+				// After some timeout send a SIGKILL and ignore any error.
+				time.Sleep(time.Second * time.Duration(timeout))
+				cmd.Process.Kill()
+
+			// Exit when child exits.
+			case syscall.SIGCHLD:
+				if hasSignalledChildToQuit {
+					os.Exit(0)
+				}
+				os.Exit(1)
+			}
+		}
+	}()
+
 	// Start child process.
 	if err := cmd.Start(); err != nil {
 		fatalf("%v", err)
@@ -77,24 +108,6 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 	if _, err := fmt.Println(child.Pid); err != nil {
 		fatalf("reporting pid: %v", err)
 	}
-
-	// Handle signals.
-	c := make(chan os.Signal)
-	signal.Notify(c, os.Interrupt, os.Kill, syscall.SIGCHLD)
-	go func() {
-		for sig := range c {
-			switch sig {
-			// Forward signals to child.
-			case os.Interrupt, os.Kill:
-				if err := cmd.Process.Signal(sig); err != nil {
-					break
-				}
-			// Exit when child exits.
-			case syscall.SIGCHLD:
-				os.Exit(1)
-			}
-		}
-	}()
 
 	// Dial syslog.
 	conn, err := net.DialUDP("udp", nil, udpAddr)

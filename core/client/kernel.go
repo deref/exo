@@ -45,3 +45,8 @@ func (c *Kernel) GetVersion(ctx context.Context, input *api.GetVersionInput) (ou
 	err = c.client.Invoke(ctx, "get-version", input, &output)
 	return
 }
+
+func (c *Kernel) Upgrade(ctx context.Context, input *api.UpgradeInput) (output *api.UpgradeOutput, err error) {
+	err = c.client.Invoke(ctx, "upgrade", input, &output)
+	return
+}
