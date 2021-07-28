@@ -6,7 +6,7 @@
 
 ROOTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." &> /dev/null && pwd )"
 
-currentversion="$(cat "${ROOTDIR}/core/VERSION")"
+currentversion="$(cat "${ROOTDIR}/VERSION")"
 version="$(date -u +'%Y.%m.%d')"
 if [[ "$currentversion" == "${version}"* ]]; then
     lastbuild="${currentversion#*_}"
@@ -17,5 +17,5 @@ if [[ "$currentversion" == "${version}"* ]]; then
     fi
 fi
 
-echo -n "$version" > "${ROOTDIR}/core/VERSION"
+echo -n "$version" > "${ROOTDIR}/VERSION"
 
