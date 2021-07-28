@@ -128,7 +128,10 @@
             {/if}
             <IconButton
               tooltip="Delete process"
-              on:click={() => deleteProcess(workspace, id)}
+              on:click={() => {
+                void deleteProcess(workspace, id);
+                setProcLogs(id, false);
+              }}
               ><Delete /></IconButton
             >
           </div>
