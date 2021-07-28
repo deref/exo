@@ -153,6 +153,9 @@ func (sto *Store) FindWorkspace(ctx context.Context, input *state.FindWorkspaceI
 	found := ""
 	for id, workspace := range root.Workspaces {
 		n := len(workspace.Root)
+		// XXX HasPrefix is deprecated because it this code is broken: as it
+		// doesn't handle path boundaries. So two directories within the same
+		// parent may incorrectly report as having the same prefix.
 		if n > maxLen && filepath.HasPrefix(input.Path, workspace.Root) {
 			found = id
 			maxLen = n
