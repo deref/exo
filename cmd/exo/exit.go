@@ -33,6 +33,7 @@ func killExod() error {
 	if err != nil {
 		panic(err)
 	}
+	// TODO: Try to stop gracefully.
 	_ = process.Kill()
 
 	// TODO: Wait for process to exit.

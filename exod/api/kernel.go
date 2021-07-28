@@ -17,6 +17,8 @@ type Kernel interface {
 	Panic(context.Context, *PanicInput) (*PanicOutput, error)
 	// Retrieves the installed and current version of exo.
 	GetVersion(context.Context, *GetVersionInput) (*GetVersionOutput, error)
+	// Upgrades exo to the latest version.
+	Upgrade(context.Context, *UpgradeInput) (*UpgradeOutput, error)
 }
 
 type CreateWorkspaceInput struct {
@@ -58,6 +60,12 @@ type GetVersionOutput struct {
 	Current   bool    `json:"current"`
 }
 
+type UpgradeInput struct {
+}
+
+type UpgradeOutput struct {
+}
+
 func BuildKernelMux(b *josh.MuxBuilder, factory func(req *http.Request) Kernel) {
 	b.AddMethod("create-workspace", func(req *http.Request) interface{} {
 		return factory(req).CreateWorkspace
@@ -73,5 +81,8 @@ func BuildKernelMux(b *josh.MuxBuilder, factory func(req *http.Request) Kernel) 
 	})
 	b.AddMethod("get-version", func(req *http.Request) interface{} {
 		return factory(req).GetVersion
+	})
+	b.AddMethod("upgrade", func(req *http.Request) interface{} {
+		return factory(req).Upgrade
 	})
 }

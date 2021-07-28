@@ -31,4 +31,7 @@ interface "kernel" {
     output "current" "bool" {}
   }
 
+  method "upgrade" {
+    doc = "Upgrades exo to the latest version."
+  }
 }

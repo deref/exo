@@ -2,11 +2,16 @@ package server
 
 import (
 	"context"
+	"fmt"
+	"os"
+	"path"
+	"syscall"
 
 	"github.com/deref/exo/exod/api"
 	state "github.com/deref/exo/exod/state/api"
 	"github.com/deref/exo/gensym"
 	"github.com/deref/exo/telemetry"
+	"github.com/deref/exo/util/osutil"
 )
 
 type Kernel struct {
@@ -77,10 +82,56 @@ func (kern *Kernel) GetVersion(ctx context.Context, input *api.GetVersionInput) 
 	}, nil
 }
 
+func (kern *Kernel) Upgrade(ctx context.Context, input *api.UpgradeInput) (*api.UpgradeOutput, error) {
+	upgraded, err := telemetry.TrySelfUpgrade()
+	if err != nil {
+		return nil, err
+	}
+	if upgraded {
+		defer restart(ctx)
+	}
+	return &api.UpgradeOutput{}, nil
+}
+
 func (kern *Kernel) Panic(ctx context.Context, input *api.PanicInput) (*api.PanicOutput, error) {
 	message := input.Message
 	if input.Message == "" {
 		message = "test error"
 	}
 	panic(message)
+}
+
+// restart replaces the current process with a new copy of itself. This is useful
+// after downloading a new binary.
+func restart(ctx context.Context) {
+	// TODO: Shutdown gracefully.
+
+	// Replace the current process with the newer version of itself.
+	exitWithError := func(err error) {
+		fmt.Printf("Fatal error restarting exo: %v\n", err)
+		os.Exit(1)
+	}
+
+	cmd, err := os.Executable()
+	if err != nil {
+		exitWithError(err)
+	}
+
+	// Since the exo process is likely a specific version that `exo` is linked to,
+	// we check to see if there is an `exo` symlink in the same directory as the
+	// current executable, and if so, we run that instead.
+	dir := path.Dir(cmd)
+	symlinkPath := path.Join(dir, "exo")
+	if isSymlink, _ := osutil.IsSymlink(symlinkPath); isSymlink {
+		dest, err := os.Readlink(symlinkPath)
+		if err != nil {
+			exitWithError(err)
+		}
+		dest = path.Join(dir, dest)
+		cmd = path.Clean(dest)
+	}
+
+	if err := syscall.Exec(cmd, append([]string{cmd}, os.Args[1:]...), os.Environ()); err != nil {
+		exitWithError(err)
+	}
 }
