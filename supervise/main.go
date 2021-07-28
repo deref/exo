@@ -93,7 +93,7 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 				if hasSignalledChildToQuit {
 					os.Exit(0)
 				}
-				os.Exit(0)
+				os.Exit(1)
 			}
 		}
 	}()
