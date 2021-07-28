@@ -9,6 +9,8 @@ import (
 	"strings"
 
 	"github.com/deref/exo/josh/codegen"
+	"github.com/deref/exo/josh/idl"
+	"github.com/deref/exo/josh/model"
 	"github.com/deref/exo/util/cmdutil"
 )
 
@@ -35,17 +37,14 @@ func main() {
 			return err
 		}
 
-		unit, err := codegen.LoadFile(path)
-		if err != nil {
+		pkgPath := filepath.Join("exo", filepath.Dir(apiDir))
+		pkg := model.NewPackage(pkgPath)
+		idl.LoadFile(pkg, path)
+		if err := pkg.Err(); err != nil {
 			return fmt.Errorf("loading %q: %w", path, err)
 		}
 
-		pkg := &codegen.Package{
-			Path: filepath.Join("exo", filepath.Dir(apiDir)),
-			Unit: *unit,
-		}
-
-		generate := func(dir string, f func(*codegen.Package) ([]byte, error)) error {
+		generate := func(dir string, f func(*model.Package) ([]byte, error)) error {
 			bs, err := f(pkg)
 			if err != nil {
 				return err

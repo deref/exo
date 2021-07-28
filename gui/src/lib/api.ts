@@ -146,11 +146,20 @@ export interface ProcessSpec {
   environment?: Record<string, string>;
 }
 
+export interface WorkspaceDescription {
+  id: string;
+  root: string;
+}
+
 export const api = (() => {
   const kernel = (() => {
     const invoke = (method: string, data?: unknown) =>
       rpc(`/kernel/${method}`, {}, data);
     return {
+      async describeWorkspaces(): Promise<WorkspaceDescription[]> {
+        const { workspaces } = (await invoke('describe-workspaces', {})) as any;
+        return workspaces;
+      },
       async createWorkspace(root: string): Promise<string> {
         const { id } = (await invoke('create-workspace', { root })) as any;
         return id;
