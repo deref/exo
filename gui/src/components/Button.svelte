@@ -1,8 +1,13 @@
 <script lang="ts">
   export let type: string | undefined = undefined;
+
+  // TODO: Something better than this.
+  export let size: 'small' | 'medium' = 'medium';
+
+  export let disabled = false;
 </script>
 
-<button on:click {type}>
+<button {disabled} class={size} on:click {type}>
   <slot />
 </button>
 
@@ -14,6 +19,10 @@
     padding: 12px 18px;
     box-shadow: 0 0.33px 0 1px hsla(0, 0%, 100%, 0.15),
       0 4px 8px -3px rgba(0, 0, 0, 0.15), 0 0.4px 0 0.8px rgba(0, 0, 0, 0.25);
+  }
+
+  .small {
+    padding: 3px 10px;
   }
 
   button:hover {

@@ -2,11 +2,14 @@
   import { onDestroy, onMount } from 'svelte';
   import { api } from '../lib/api';
   import Button from './Button.svelte';
+  import Spinner from './mono/spinner.svelte';
 
   let installedVersion: string | null = null;
-  let latestVersion: string | null = null;
+  let latestVersion: string | null = '123';
+  let upgrading = false;
 
   const doUpgrade = async () => {
+    upgrading = true;
     await api.kernel.upgrade();
   };
 
@@ -37,7 +40,14 @@
   exo {installedVersion || ''}
   {#if latestVersion !== null}
     | Update available: <strong>{latestVersion}</strong>
-    <Button on:click={doUpgrade}>Get It!</Button>
+    &nbsp;
+    <Button size="small" on:click={doUpgrade}>
+      {#if upgrading}
+        Updating &nbsp;<Spinner />
+      {:else}
+        Upgrade
+      {/if}
+    </Button>
   {/if}
 </section>
 
