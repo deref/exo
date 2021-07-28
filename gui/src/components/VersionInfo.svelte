@@ -5,7 +5,7 @@
   import Spinner from './mono/spinner.svelte';
 
   let installedVersion: string | null = null;
-  let latestVersion: string | null = '123';
+  let latestVersion: string | null = null;
   let upgrading = false;
 
   const doUpgrade = async () => {
