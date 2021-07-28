@@ -58,7 +58,7 @@ func (svc *Service) Run(ctx context.Context) error {
 			}
 			event, err := syslogToEvent(syslogMessage)
 			if err != nil {
-				log.Println("interpreting syslog message: %w", err)
+				log.Printf("interpreting syslog message: %v", err)
 				continue
 			}
 			if _, err := svc.AddEvent(ctx, event); err != nil {
