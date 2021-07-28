@@ -56,7 +56,7 @@
   main {
     display: grid;
     grid-auto-flow: row;
-    grid-auto-rows: 48px 1fr;
+    grid-auto-rows: 48px 1fr 28px;
     height: 100vh;
     overflow: hidden;
   }
@@ -86,5 +86,11 @@
     position: relative;
     overflow-y: auto;
     overflow-x: hidden;
+  }
+
+  footer {
+    display: flex;
+    flex-direction: row-reverse;
+    padding-right: 30px;
   }
 </style>

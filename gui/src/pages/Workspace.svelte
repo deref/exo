@@ -24,6 +24,6 @@
     grid-template-columns: 280px 1fr;
     gap: 30px;
     margin: 0 30px;
-    padding-bottom: 30px;
+    padding-bottom: 16px;
   }
 </style>

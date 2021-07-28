@@ -8,16 +8,16 @@
 
   const doUpgrade = async () => {
     await api.kernel.upgrade();
-  }
+  };
 
   let fetchTimeout = null;
   const refreshVersion = async () => {
     const { installed, latest, current } = await api.kernel.getVersion();
     // The server just changed version - reload.
     if (installedVersion !== null && installedVersion != latestVersion) {
-        window.location.reload();
+      window.location.reload();
     }
-    
+
     installedVersion = installed;
     if (!current) {
       latestVersion = latest;
@@ -36,6 +36,14 @@
 <section>
   exo {installedVersion || ''}
   {#if latestVersion !== null}
-    | Update available: <strong>{latestVersion}</strong> <Button on:click={doUpgrade}>Get It!</Button>
+    | Update available: <strong>{latestVersion}</strong>
+    <Button on:click={doUpgrade}>Get It!</Button>
   {/if}
 </section>
+
+<style>
+  section {
+    font-size: 12px;
+    color: #666;
+  }
+</style>
