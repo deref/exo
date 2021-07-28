@@ -103,7 +103,9 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 				// After some timeout, check if the process is still running and, if so,
 				// send a SIGKILL.
 				time.Sleep(time.Second * time.Duration(timeout))
-				cmd.Process.Kill()
+				if err := cmd.Process.Signal(syscall.Signal(0)); err == nil {
+					cmd.Process.Kill()
+				}
 			// Exit when child exits.
 			case syscall.SIGCHLD:
 				os.Exit(1)
