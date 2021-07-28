@@ -6,7 +6,6 @@
   import type { WorkspaceState } from '../lib/logs/store';
   import { shortDate } from '../lib/time';
   import { processes } from '../lib/process/store';
-  import { stringify } from 'qs';
 
   export let workspace;
   export let workspaceId;
