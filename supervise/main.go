@@ -24,7 +24,7 @@ var varDir string
 
 func Main(command string, args []string) {
 	if len(args) < 4 {
-		fatalf(`usage: %s <address> <component-id> <working-directory> <program> <args...>
+		fatalf(`usage: %s <address> <component-id> <working-directory> <timeout> <program> <args...>
 
 supervise executes and supervises the given command. If successful, the child
 pid is written to stdout. The stdout and stderr streams of the supervised process
@@ -45,8 +45,12 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 	address := args[0]
 	componentID := args[1]
 	wd := args[2]
-	program := args[3]
-	arguments := args[4:]
+	timeout, timeoutErr := strconv.Atoi(args[3])
+	if timeoutErr != nil {
+		panic(timeoutErr)
+	}
+	program := args[4]
+	arguments := args[5:]
 
 	udpAddr, err := net.ResolveUDPAddr("udp", address)
 	if err != nil {
@@ -98,7 +102,7 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 				}
 				// After some timeout, check if the process is still running and, if so,
 				// send a SIGKILL.
-				time.Sleep(time.Second * 5)
+				time.Sleep(time.Second * time.Duration(timeout))
 				cmd.Process.Kill()
 			// Exit when child exits.
 			case syscall.SIGCHLD:

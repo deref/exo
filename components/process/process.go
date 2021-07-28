@@ -41,7 +41,7 @@ func (provider *Provider) Start(ctx context.Context, input *core.StartInput) (*c
 }
 
 func (provider *Provider) start(ctx context.Context, componentID string, inputSpec string) (State, error) {
-	var spec Spec
+	spec := Spec{ShutdownGracePeriodSeconds: 5}
 	if err := jsonutil.UnmarshalString(inputSpec, &spec); err != nil {
 		return State{}, fmt.Errorf("unmarshalling spec: %w", err)
 	}
@@ -72,6 +72,7 @@ func (provider *Provider) start(ctx context.Context, componentID string, inputSp
 			provider.SyslogAddr,
 			componentID,
 			provider.WorkspaceDir,
+			fmt.Sprintf("%d", spec.ShutdownGracePeriodSeconds),
 			program,
 		},
 		spec.Arguments...,
