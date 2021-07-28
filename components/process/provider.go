@@ -13,7 +13,8 @@ type Spec struct {
 }
 
 type State struct {
-	Pid int `json:"pid"`
+	SupervisorPid int `json:"supervisorPid"`
+	Pid           int `json:"pid"`
 	// TODO: Store resolved program path & full effective environment.
 	// Program string `json:"program"`
 	// Environment map[string]string `json:"environment"`

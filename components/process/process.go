@@ -156,7 +156,7 @@ func (provider *Provider) start(ctx context.Context, componentID string, inputSp
 	case <-time.After(300 * time.Millisecond):
 		err = errors.New("supervise startup timeout")
 	}
-	return State{Pid: pid}, err
+	return State{Pid: pid, SupervisorPid: cmd.Process.Pid}, err
 }
 
 func (provider *Provider) Stop(ctx context.Context, input *core.StopInput) (*core.StopOutput, error) {
@@ -168,7 +168,7 @@ func (provider *Provider) Stop(ctx context.Context, input *core.StopInput) (*cor
 		return nil, nil
 	}
 
-	provider.stop(state.Pid)
+	provider.stop(state.SupervisorPid)
 	return &core.StopOutput{State: "null"}, nil
 }
 

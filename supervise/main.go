@@ -78,30 +78,34 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 		fatalf("reporting pid: %v", err)
 	}
 
-	// Handle signals.
-	c := make(chan os.Signal)
-	signal.Notify(c, os.Interrupt, os.Kill, syscall.SIGCHLD)
-	go func() {
-		for sig := range c {
-			switch sig {
-			// Forward signals to child.
-			case os.Interrupt, os.Kill:
-				if err := cmd.Process.Signal(sig); err != nil {
-					break
-				}
-			// Exit when child exits.
-			case syscall.SIGCHLD:
-				os.Exit(1)
-			}
-		}
-	}()
-
 	// Dial syslog.
 	conn, err := net.DialUDP("udp", nil, udpAddr)
 	if err != nil {
 		fatalf("dialing udp: %w", err)
 	}
 	defer conn.Close()
+
+	// Handle signals.
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGCHLD)
+	go func() {
+		for sig := range c {
+			switch sig {
+			// Forward signals to child.
+			case os.Interrupt, syscall.SIGTERM:
+				if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
+					break
+				}
+				// After some timeout, check if the process is still running and, if so,
+				// send a SIGKILL.
+				time.Sleep(time.Second * 5)
+				cmd.Process.Kill()
+			// Exit when child exits.
+			case syscall.SIGCHLD:
+				os.Exit(1)
+			}
+		}
+	}()
 
 	// Proxy logs.
 	syslogProcID := strconv.Itoa(child.Pid)
