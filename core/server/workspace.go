@@ -2,7 +2,6 @@ package server
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"net/http"
 	"strings"
@@ -11,9 +10,9 @@ import (
 	"github.com/deref/exo/components/invalid"
 	"github.com/deref/exo/components/log"
 	"github.com/deref/exo/components/process"
+	"github.com/deref/exo/core/api"
 	core "github.com/deref/exo/core/api"
-	"github.com/deref/exo/exod/api"
-	state "github.com/deref/exo/exod/state/api"
+	state "github.com/deref/exo/core/state/api"
 	"github.com/deref/exo/gensym"
 	logd "github.com/deref/exo/logd/api"
 	"github.com/deref/exo/manifest"
@@ -140,7 +139,7 @@ func (ws *Workspace) apply(ctx context.Context, m *manifest.Manifest) error {
 	return nil
 }
 
-func (ws *Workspace) Refresh(ctx context.Context, input *api.RefreshInput) (*api.RefreshOutput, error) {
+func (ws *Workspace) RefreshAllComponents(ctx context.Context, input *api.RefreshAllComponentsInput) (*api.RefreshAllComponentsOutput, error) {
 	components, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
 		WorkspaceID: ws.ID,
 	})
@@ -154,7 +153,7 @@ func (ws *Workspace) Refresh(ctx context.Context, input *api.RefreshInput) (*api
 			return nil, fmt.Errorf("refreshing %q: %w", component.Name, err)
 		}
 	}
-	return &api.RefreshOutput{}, nil
+	return &api.RefreshAllComponentsOutput{}, nil
 }
 
 func (ws *Workspace) Resolve(ctx context.Context, input *api.ResolveInput) (*api.ResolveOutput, error) {
@@ -349,7 +348,7 @@ func (ws *Workspace) resolveRef(ctx context.Context, ref string) (string, error)
 	}
 	id := resolveOutput.IDs[0]
 	if id == nil {
-		return "", errors.New("unresolvable")
+		return "", errutil.HTTPErrorf(http.StatusBadRequest, "unresolvable: %q", ref)
 	}
 	return *id, nil
 }
@@ -517,6 +516,23 @@ func (ws *Workspace) GetEvents(ctx context.Context, input *api.GetEventsInput) (
 }
 
 func (ws *Workspace) Start(ctx context.Context, input *api.StartInput) (*api.StartOutput, error) {
+	if err := ws.updateEachProcess(ctx, func(id, spec, oldState string, process api.Process) (newState string, err error) {
+		output, err := process.Start(ctx, &core.StartInput{
+			ID:    id,
+			Spec:  spec,
+			State: newState,
+		})
+		if err != nil {
+			return "", err
+		}
+		return output.State, nil
+	}); err != nil {
+		return nil, err
+	}
+	return &core.StartOutput{}, nil
+}
+
+func (ws *Workspace) StartComponent(ctx context.Context, input *api.StartComponentInput) (*api.StartComponentOutput, error) {
 	id, err := ws.resolveRef(ctx, input.Ref)
 	if err != nil {
 		return nil, fmt.Errorf("resolving ref: %w", err)
@@ -551,10 +567,27 @@ func (ws *Workspace) Start(ctx context.Context, input *api.StartInput) (*api.Sta
 		return nil, fmt.Errorf("updating component state: %w", err)
 	}
 
-	return &api.StartOutput{}, nil
+	return &api.StartComponentOutput{}, nil
 }
 
 func (ws *Workspace) Stop(ctx context.Context, input *api.StopInput) (*api.StopOutput, error) {
+	if err := ws.updateEachProcess(ctx, func(id, spec, oldState string, process api.Process) (newState string, err error) {
+		output, err := process.Stop(ctx, &core.StopInput{
+			ID:    id,
+			Spec:  spec,
+			State: newState,
+		})
+		if err != nil {
+			return "", err
+		}
+		return output.State, nil
+	}); err != nil {
+		return nil, err
+	}
+	return &core.StopOutput{}, nil
+}
+
+func (ws *Workspace) StopComponent(ctx context.Context, input *api.StopComponentInput) (*api.StopComponentOutput, error) {
 	id, err := ws.resolveRef(ctx, input.Ref)
 	if err != nil {
 		return nil, fmt.Errorf("resolving ref: %w", err)
@@ -589,19 +622,62 @@ func (ws *Workspace) Stop(ctx context.Context, input *api.StopInput) (*api.StopO
 		return nil, fmt.Errorf("updating component state: %w", err)
 	}
 
-	return &api.StopOutput{}, nil
+	return &api.StopComponentOutput{}, nil
 }
 
 func (ws *Workspace) Restart(ctx context.Context, input *api.RestartInput) (*api.RestartOutput, error) {
-	// TODO: Allow provider to customize restart behavior.
-	_, _ = ws.Stop(ctx, &api.StopInput{})
-	_, err := ws.Start(ctx, &api.StartInput{
-		Ref: input.Ref,
+	if err := ws.updateEachProcess(ctx, func(id, spec, oldState string, process api.Process) (newState string, err error) {
+		output, err := process.Restart(ctx, &core.RestartInput{
+			ID:    id,
+			Spec:  spec,
+			State: newState,
+		})
+		if err != nil {
+			return "", err
+		}
+		return output.State, nil
+	}); err != nil {
+		return nil, err
+	}
+	return &core.RestartOutput{}, nil
+}
+
+func (ws *Workspace) RestartComponent(ctx context.Context, input *api.RestartComponentInput) (*api.RestartComponentOutput, error) {
+	id, err := ws.resolveRef(ctx, input.Ref)
+	if err != nil {
+		return nil, fmt.Errorf("resolving ref: %w", err)
+	}
+
+	components, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
+		WorkspaceID: ws.ID,
+		IDs:         []string{id},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("fetching component state: %w", err)
+	}
+	if len(components.Components) != 1 {
+		return nil, fmt.Errorf("no state for component: %s", id)
+	}
+	component := components.Components[0]
+
+	provider := ws.resolveProvider(ctx, component.Type)
+	providerOutput, err := provider.Restart(ctx, &core.RestartInput{
+		ID:    id,
+		Spec:  component.Spec,
+		State: component.State,
 	})
 	if err != nil {
 		return nil, err
 	}
-	return &api.RestartOutput{}, nil
+
+	if _, err := ws.Store.PatchComponent(ctx, &state.PatchComponentInput{
+		ID:    id,
+		State: providerOutput.State,
+	}); err != nil {
+		return nil, fmt.Errorf("updating component state: %w", err)
+	}
+
+	return &api.RestartComponentOutput{}, nil
 }
 
 func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeProcessesInput) (*api.DescribeProcessesOutput, error) {
@@ -636,4 +712,31 @@ func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeP
 		}
 	}
 	return &output, nil
+}
+
+func (ws *Workspace) updateEachProcess(ctx context.Context, f func(id, spec, oldState string, proc api.Process) (newState string, err error)) error {
+	components, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
+		WorkspaceID: ws.ID,
+		// TODO: Filter by type.
+	})
+	if err != nil {
+		return fmt.Errorf("describing components: %w", err)
+	}
+	provider := ws.resolveProvider(ctx, "process")
+	for _, component := range components.Components {
+		if component.Type != "process" {
+			continue
+		}
+		newState, err := f(component.ID, component.Spec, component.State, provider)
+		if err != nil {
+			return fmt.Errorf("affecting component %q: %w", component.ID, err)
+		}
+		if _, err := ws.Store.PatchComponent(ctx, &state.PatchComponentInput{
+			ID:    component.ID,
+			State: newState,
+		}); err != nil {
+			return fmt.Errorf("updating component %q state: %w", component.ID, err)
+		}
+	}
+	return nil
 }

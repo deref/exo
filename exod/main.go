@@ -10,9 +10,9 @@ import (
 	golog "log"
 
 	"github.com/deref/exo/components/log"
-	"github.com/deref/exo/exod/server"
-	kernel "github.com/deref/exo/exod/server"
-	"github.com/deref/exo/exod/state/statefile"
+	"github.com/deref/exo/core/server"
+	kernel "github.com/deref/exo/core/server"
+	"github.com/deref/exo/core/state/statefile"
 	"github.com/deref/exo/gui"
 	"github.com/deref/exo/logd"
 	"github.com/deref/exo/supervise"

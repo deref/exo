@@ -5,7 +5,7 @@ package client
 import (
 	"context"
 
-	"github.com/deref/exo/exod/api"
+	"github.com/deref/exo/core/api"
 	josh "github.com/deref/exo/josh/client"
 )
 
@@ -19,6 +19,21 @@ func GetWorkspace(client *josh.Client) *Workspace {
 	return &Workspace{
 		client: client,
 	}
+}
+
+func (c *Workspace) Start(ctx context.Context, input *api.StartInput) (output *api.StartOutput, err error) {
+	err = c.client.Invoke(ctx, "start", input, &output)
+	return
+}
+
+func (c *Workspace) Restart(ctx context.Context, input *api.RestartInput) (output *api.RestartOutput, err error) {
+	err = c.client.Invoke(ctx, "restart", input, &output)
+	return
+}
+
+func (c *Workspace) Stop(ctx context.Context, input *api.StopInput) (output *api.StopOutput, err error) {
+	err = c.client.Invoke(ctx, "stop", input, &output)
+	return
 }
 
 func (c *Workspace) Describe(ctx context.Context, input *api.DescribeInput) (output *api.DescribeOutput, err error) {
@@ -36,8 +51,8 @@ func (c *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (output *a
 	return
 }
 
-func (c *Workspace) Refresh(ctx context.Context, input *api.RefreshInput) (output *api.RefreshOutput, err error) {
-	err = c.client.Invoke(ctx, "refresh", input, &output)
+func (c *Workspace) RefreshAllComponents(ctx context.Context, input *api.RefreshAllComponentsInput) (output *api.RefreshAllComponentsOutput, err error) {
+	err = c.client.Invoke(ctx, "refresh-all-components", input, &output)
 	return
 }
 
@@ -86,22 +101,49 @@ func (c *Workspace) GetEvents(ctx context.Context, input *api.GetEventsInput) (o
 	return
 }
 
-func (c *Workspace) Start(ctx context.Context, input *api.StartInput) (output *api.StartOutput, err error) {
-	err = c.client.Invoke(ctx, "start", input, &output)
+func (c *Workspace) StartComponent(ctx context.Context, input *api.StartComponentInput) (output *api.StartComponentOutput, err error) {
+	err = c.client.Invoke(ctx, "start-component", input, &output)
 	return
 }
 
-func (c *Workspace) Stop(ctx context.Context, input *api.StopInput) (output *api.StopOutput, err error) {
-	err = c.client.Invoke(ctx, "stop", input, &output)
+func (c *Workspace) StopComponent(ctx context.Context, input *api.StopComponentInput) (output *api.StopComponentOutput, err error) {
+	err = c.client.Invoke(ctx, "stop-component", input, &output)
 	return
 }
 
-func (c *Workspace) Restart(ctx context.Context, input *api.RestartInput) (output *api.RestartOutput, err error) {
-	err = c.client.Invoke(ctx, "restart", input, &output)
+func (c *Workspace) RestartComponent(ctx context.Context, input *api.RestartComponentInput) (output *api.RestartComponentOutput, err error) {
+	err = c.client.Invoke(ctx, "restart-component", input, &output)
 	return
 }
 
 func (c *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeProcessesInput) (output *api.DescribeProcessesOutput, err error) {
 	err = c.client.Invoke(ctx, "describe-processes", input, &output)
+	return
+}
+
+type Process struct {
+	client *josh.Client
+}
+
+var _ api.Process = (*Process)(nil)
+
+func GetProcess(client *josh.Client) *Process {
+	return &Process{
+		client: client,
+	}
+}
+
+func (c *Process) Start(ctx context.Context, input *api.StartInput) (output *api.StartOutput, err error) {
+	err = c.client.Invoke(ctx, "start", input, &output)
+	return
+}
+
+func (c *Process) Restart(ctx context.Context, input *api.RestartInput) (output *api.RestartOutput, err error) {
+	err = c.client.Invoke(ctx, "restart", input, &output)
+	return
+}
+
+func (c *Process) Stop(ctx context.Context, input *api.StopInput) (output *api.StopOutput, err error) {
+	err = c.client.Invoke(ctx, "stop", input, &output)
 	return
 }

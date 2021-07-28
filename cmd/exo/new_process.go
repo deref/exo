@@ -5,7 +5,7 @@ import (
 	"strings"
 
 	"github.com/deref/exo/components/process"
-	"github.com/deref/exo/exod/api"
+	"github.com/deref/exo/core/api"
 	"github.com/deref/exo/util/jsonutil"
 	"github.com/spf13/cobra"
 )

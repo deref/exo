@@ -5,7 +5,7 @@ package client
 import (
 	"context"
 
-	"github.com/deref/exo/exod/state/api"
+	"github.com/deref/exo/core/state/api"
 	josh "github.com/deref/exo/josh/client"
 )
 

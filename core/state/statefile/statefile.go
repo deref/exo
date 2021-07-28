@@ -9,8 +9,8 @@ import (
 	"sort"
 	"strings"
 
-	"github.com/deref/exo/exod/state/api"
-	state "github.com/deref/exo/exod/state/api"
+	"github.com/deref/exo/core/state/api"
+	state "github.com/deref/exo/core/state/api"
 	"github.com/deref/exo/util/atom"
 	"github.com/deref/exo/util/errutil"
 )

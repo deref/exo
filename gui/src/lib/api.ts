@@ -146,22 +146,31 @@ export interface ProcessSpec {
   environment?: Record<string, string>;
 }
 
+export interface WorkspaceDescription {
+  id: string;
+  root: string;
+}
+
 export const api = (() => {
   const kernel = (() => {
     const invoke = (method: string, data?: unknown) =>
       rpc(`/kernel/${method}`, {}, data);
     return {
+      async describeWorkspaces(): Promise<WorkspaceDescription[]> {
+        const { workspaces } = (await invoke('describe-workspaces', {})) as any;
+        return workspaces;
+      },
       async createWorkspace(root: string): Promise<string> {
         const { id } = (await invoke('create-workspace', { root })) as any;
         return id;
       },
 
       async getVersion(): Promise<GetVersionResponse> {
-        return await invoke('get-version', {}) as any;
+        return (await invoke('get-version', {})) as any;
       },
 
       async upgrade(): Promise<void> {
-        return await invoke('upgrade', {}) as any;
+        return (await invoke('upgrade', {})) as any;
       },
     };
   })();
@@ -191,11 +200,11 @@ export const api = (() => {
       },
 
       async startProcess(ref: string): Promise<void> {
-        await invoke('start', { ref });
+        await invoke('start-component', { ref });
       },
 
       async stopProcess(ref: string): Promise<void> {
-        await invoke('stop', { ref });
+        await invoke('stop-component', { ref });
       },
 
       async deleteComponent(ref: string): Promise<void> {
@@ -203,7 +212,7 @@ export const api = (() => {
       },
 
       async refreshAllProcesses(): Promise<void> {
-        await invoke('refresh');
+        await invoke('refresh-all-components');
       },
 
       async getEvents(

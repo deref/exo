@@ -7,8 +7,8 @@ import (
 	"path"
 	"syscall"
 
-	"github.com/deref/exo/exod/api"
-	state "github.com/deref/exo/exod/state/api"
+	"github.com/deref/exo/core/api"
+	state "github.com/deref/exo/core/state/api"
 	"github.com/deref/exo/gensym"
 	"github.com/deref/exo/telemetry"
 	"github.com/deref/exo/util/osutil"

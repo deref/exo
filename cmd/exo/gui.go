@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/deref/exo/exod/api"
+	"github.com/deref/exo/core/api"
 	"github.com/deref/exo/util/cmdutil"
 	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
@@ -36,11 +36,11 @@ If the current directory is part of a workspace, navigates to it.`,
 			return fmt.Errorf("finding workspace: %w", err)
 		}
 
-		endpoint := runState.URL
+		var endpoint string
 		if output.ID == nil {
-			endpoint += "#/new-workspace?root=" + url.QueryEscape(cwd)
+			endpoint = runState.URL + "#/new-workspace?root=" + url.QueryEscape(cwd)
 		} else {
-			endpoint += "#/workspaces/" + url.PathEscape(*output.ID)
+			endpoint = guiWorkspaceURL(*output.ID)
 		}
 
 		fmt.Println("Opening GUI:", endpoint)
@@ -48,4 +48,8 @@ If the current directory is part of a workspace, navigates to it.`,
 		browser.Stdout = os.Stderr
 		return browser.OpenURL(endpoint)
 	},
+}
+
+func guiWorkspaceURL(id string) string {
+	return runState.URL + "#/workspaces/" + url.PathEscape(id)
 }

@@ -1,10 +1,11 @@
 package main
 
 import (
+	"context"
 	"fmt"
 	"io/ioutil"
 
-	"github.com/deref/exo/exod/api"
+	"github.com/deref/exo/core/api"
 	"github.com/spf13/cobra"
 )
 
@@ -65,25 +66,29 @@ overidden explicitly with the --format flag.`,
 		cl := newClient()
 		workspace := requireWorkspace(ctx, cl)
 
-		input := &api.ApplyInput{}
-		if len(args) > 0 {
-			manifestPath := args[0]
-			input.ManifestPath = &manifestPath
-
-			// We're not necessarily in the workspace root here,
-			// so send the file contents too.
-			bs, err := ioutil.ReadFile(manifestPath)
-			if err != nil {
-				return fmt.Errorf("reading manifest file: %w", err)
-			}
-			s := string(bs)
-			input.Manifest = &s
-		}
-		if applyFlags.Format != "" {
-			input.Format = &applyFlags.Format
-		}
-
-		_, err := workspace.Apply(ctx, input)
-		return err
+		return apply(ctx, workspace, args)
 	},
+}
+
+func apply(ctx context.Context, workspace api.Workspace, args []string) error {
+	input := &api.ApplyInput{}
+	if len(args) > 0 {
+		manifestPath := args[0]
+		input.ManifestPath = &manifestPath
+
+		// We're not necessarily in the workspace root here,
+		// so send the file contents too.
+		bs, err := ioutil.ReadFile(manifestPath)
+		if err != nil {
+			return fmt.Errorf("reading manifest file: %w", err)
+		}
+		s := string(bs)
+		input.Manifest = &s
+	}
+	if applyFlags.Format != "" {
+		input.Format = &applyFlags.Format
+	}
+
+	_, err := workspace.Apply(ctx, input)
+	return err
 }

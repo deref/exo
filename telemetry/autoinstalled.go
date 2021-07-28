@@ -10,7 +10,7 @@ import (
 	"os"
 	"os/exec"
 
-	"github.com/deref/exo/core"
+	"github.com/deref/exo"
 )
 
 const isManaged = false
@@ -22,7 +22,7 @@ func UpgradeSelf() error {
 	}
 	defer os.Remove(tmpfile.Name())
 
-	resp, err := http.Get(core.UpdateScriptEndpoint)
+	resp, err := http.Get(exo.UpdateScriptEndpoint)
 	if err != nil {
 		return fmt.Errorf("fetching update script: %w", err)
 	}

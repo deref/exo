@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/deref/exo/exod/api"
+	"github.com/deref/exo/core/api"
 	"github.com/deref/exo/util/cmdutil"
 	"github.com/spf13/cobra"
 )
@@ -32,7 +32,7 @@ will be rooted at the current working directory.`,
 			Root: root,
 		})
 		if err != nil {
-			cmdutil.Fatalf("describing workspaces: %w", err)
+			cmdutil.Fatalf("creating workspace: %w", err)
 		}
 		fmt.Println(output.ID)
 		return nil
