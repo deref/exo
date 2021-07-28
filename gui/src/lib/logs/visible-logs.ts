@@ -1,4 +1,5 @@
-import { writable } from 'svelte/store';
+import { processes } from '../process/store';
+import { derived, writable } from 'svelte/store';
 
 const visibleLogsKey = 'exo:logs:visible';
 
@@ -6,23 +7,39 @@ const visibleLogsKey = 'exo:logs:visible';
 // XXX: This uses a global localStorage instance, but it should probably be persisted to the server
 // and scoped to the workspace. The next refactor should move this to a context-providing component
 // that is initialized whenever a workspace is loaded.
-const initialVisibleLogs = new Set(
+const initialHiddenLogs = new Set(
   JSON.parse(localStorage.getItem(visibleLogsKey) ?? '[]') as string[],
 ); // TODO: Validate w/ runtype.
-export const visibleLogsStore = writable<Set<string>>(initialVisibleLogs);
+export const hiddenLogsStore = writable<Set<string>>(initialHiddenLogs);
+
+export const visibleLogsStore = derived(
+  [processes, hiddenLogsStore],
+  ([processes, hiddenLogs]) => {
+    const set = new Set();
+    if ('data' in processes) {
+      for (const process of processes.data) {
+        set.add(process.id);
+      }
+      for (const id of hiddenLogs) {
+        set.delete(id);
+      }
+    }
+    return set;
+  },
+);
 
 export const setLogVisibility = (processId: string, visible: boolean) => {
-  visibleLogsStore.update((visibleLogs) => {
+  hiddenLogsStore.update((hiddenLogs) => {
     if (visible) {
-      visibleLogs.add(processId);
+      hiddenLogs.delete(processId);
     } else {
-      visibleLogs.delete(processId);
+      hiddenLogs.add(processId);
     }
 
     localStorage.setItem(
       visibleLogsKey,
-      JSON.stringify([...visibleLogs.values()]),
+      JSON.stringify([...hiddenLogs.values()]),
     );
-    return visibleLogs;
+    return hiddenLogs;
   });
 };
