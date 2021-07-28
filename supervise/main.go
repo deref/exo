@@ -47,7 +47,7 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 	wd := args[2]
 	timeout, timeoutErr := strconv.Atoi(args[3])
 	if timeoutErr != nil {
-		panic(timeoutErr)
+		fatalf(timeoutErr.Error())
 	}
 	program := args[4]
 	arguments := args[5:]
