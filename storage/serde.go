@@ -68,9 +68,9 @@ func (s SchematizedRowSerde) Serialize(tup *Tuple) ([]byte, error) {
 			buf.Write(n)
 
 		case TypeUint64:
-			n := make([]byte, 8)
-			binary.BigEndian.PutUint64(n, elem.(uint64))
-			buf.Write(n)
+			i := make([]byte, 8)
+			binary.BigEndian.PutUint64(i, elem.(uint64))
+			buf.Write(i)
 
 		default:
 			panic(fmt.Errorf("no serializer defined for %s@%d", elem, idx))
@@ -120,7 +120,7 @@ func (s SchematizedRowSerde) Serialize(tup *Tuple) ([]byte, error) {
 func (s SchematizedRowSerde) Deserialize(buf []byte) (*Tuple, error) {
 	t := &Tuple{
 		schema:   s.schema,
-		elements: make([]interface{}, len(s.schema.Elements)),
+		elements: make([]interface{}, 0, len(s.schema.Elements)),
 	}
 
 	var pos int

@@ -36,6 +36,13 @@ func NewTuple(elements ...interface{}) *Tuple {
 	return t
 }
 
+func NewTupleWithSchema(schema *Schema) *Tuple {
+	return &Tuple{
+		schema:   schema,
+		elements: make([]interface{}, len(schema.Elements)),
+	}
+}
+
 func (t *Tuple) Schema() *Schema {
 	return t.schema
 }
@@ -68,7 +75,7 @@ func (t *Tuple) GetUntyped(i int) (interface{}, error) {
 
 // TODO: Codegen these.
 
-func (t *Tuple) GetString(i int) (string, error) {
+func (t *Tuple) GetUnicode(i int) (string, error) {
 	if i > len(t.elements)-1 {
 		return "", ErrOutOfRange
 	}
@@ -79,6 +86,20 @@ func (t *Tuple) GetString(i int) (string, error) {
 	}
 
 	return t.elements[i].(string), nil
+}
+
+func (t *Tuple) SetUnicode(i int, val string) error {
+	if i > len(t.elements)-1 {
+		return ErrOutOfRange
+	}
+
+	elemType := t.schema.MustGet(i).Type
+	if elemType != TypeUnicode {
+		return fmt.Errorf("Expected string at %d but got %s", i, elemType)
+	}
+
+	t.elements[i] = val
+	return nil
 }
 
 func (t *Tuple) GetInt64(i int) (int64, error) {
@@ -94,7 +115,21 @@ func (t *Tuple) GetInt64(i int) (int64, error) {
 	return t.elements[i].(int64), nil
 }
 
-func (t *Tuple) GetUInt64(i int) (uint64, error) {
+func (t *Tuple) SetInt64(i int, val int64) error {
+	if i > len(t.elements)-1 {
+		return ErrOutOfRange
+	}
+
+	elemType := t.schema.MustGet(i).Type
+	if elemType != TypeInt64 {
+		return fmt.Errorf("Expected int64 at %d but got %s", i, elemType)
+	}
+
+	t.elements[i] = val
+	return nil
+}
+
+func (t *Tuple) GetUint64(i int) (uint64, error) {
 	if i > len(t.elements)-1 {
 		return 0, ErrOutOfRange
 	}
@@ -105,6 +140,20 @@ func (t *Tuple) GetUInt64(i int) (uint64, error) {
 	}
 
 	return t.elements[i].(uint64), nil
+}
+
+func (t *Tuple) SetUint64(i int, val uint64) error {
+	if i > len(t.elements)-1 {
+		return ErrOutOfRange
+	}
+
+	elemType := t.schema.MustGet(i).Type
+	if elemType != TypeUint64 {
+		return fmt.Errorf("Expected uint64 at %d but got %s", i, elemType)
+	}
+
+	t.elements[i] = val
+	return nil
 }
 
 func (t *Tuple) Serialize() []byte {
@@ -208,6 +257,8 @@ func (t *Tuple) String() string {
 		case TypeUnicode:
 			sb.WriteString(elem.(string))
 		case TypeInt64:
+			sb.WriteString(fmt.Sprintf("%d", elem))
+		case TypeUint64:
 			sb.WriteString(fmt.Sprintf("%d", elem))
 		default:
 			return "<noprint>"
