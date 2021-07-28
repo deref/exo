@@ -111,7 +111,11 @@ func tailLogs(ctx context.Context, workspace api.Workspace, logRefs []string) er
 		}
 		in.Cursor = &output.NextCursor
 		if len(output.Items) < 10 { // TODO: OK heuristic?
-			<-time.After(250 * time.Millisecond)
+			select {
+			case <-time.After(250 * time.Millisecond):
+			case <-ctx.Done():
+				return nil
+			}
 		}
 	}
 }

@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"os"
+	"os/signal"
 
 	"github.com/deref/exo/core/api"
 	"github.com/deref/exo/util/cmdutil"
@@ -57,8 +60,23 @@ If a workspace does not exist, one will be created in the current directory.
 			return fmt.Errorf("applying manifest: %w", err)
 		}
 
-		// Tail all logs.
-		var logRefs []string
-		return tailLogs(ctx, workspace, logRefs)
+		// Tail all logs until interrupt.
+		(func() {
+			ctx, stop := signal.NotifyContext(ctx, os.Interrupt)
+			defer stop()
+			var logRefs []string
+			if err := tailLogs(ctx, workspace, logRefs); err != nil {
+				log.Printf("error tailing logs: %v", err)
+			}
+		})()
+
+		// Stop workspace.
+		fmt.Println("stopping workspace...")
+		_, err := workspace.Stop(ctx, &api.StopInput{})
+		if err != nil {
+			return fmt.Errorf("stopping: %w", err)
+		}
+		fmt.Println("stopped")
+		return nil
 	},
 }
