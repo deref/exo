@@ -158,7 +158,11 @@ export const api = (() => {
 
       async getVersion(): Promise<GetVersionResponse> {
         return await invoke('get-version', {}) as any;
-      }
+      },
+
+      async upgrade(): Promise<void> {
+        return await invoke('upgrade', {}) as any;
+      },
     };
   })();
 
