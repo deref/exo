@@ -25,10 +25,9 @@ func TrySelfUpgrade() (bool, error) {
 	if err != nil {
 		return false, err
 	}
-	// if CurrentVersion() >= latest {
-	// 	return false, nil
-	// }
-	_ = latest
+	if CurrentVersion() >= latest {
+		return false, nil
+	}
 
 	if err := UpgradeSelf(); err != nil {
 		return false, err

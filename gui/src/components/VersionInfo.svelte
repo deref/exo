@@ -13,8 +13,13 @@
   let fetchTimeout = null;
   const refreshVersion = async () => {
     const { installed, latest, current } = await api.kernel.getVersion();
+    // The server just changed version - reload.
+    if (installedVersion !== null && installedVersion != latestVersion) {
+        window.location.reload();
+    }
+    
     installedVersion = installed;
-    if (!current || true) {
+    if (!current) {
       latestVersion = latest;
     }
     fetchTimeout = setTimeout(refreshVersion, 60000);
