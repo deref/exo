@@ -4,24 +4,18 @@ import (
 	"bufio"
 	"context"
 	"errors"
-	"fmt"
 	"io"
 
 	core "github.com/deref/exo/core/api"
-	"github.com/deref/exo/util/jsonutil"
 	"github.com/deref/exo/util/osutil"
 )
 
-func (provider *Provider) Initialize(ctx context.Context, input *core.InitializeInput) (*core.InitializeOutput, error) {
+func (p *Process) Initialize(ctx context.Context, input *core.InitializeInput) (*core.InitializeOutput, error) {
 	// Processes are started by default.
-	state, err := provider.start(ctx, input.ID, input.Spec)
-	if err != nil {
+	if err := p.start(ctx); err != nil {
 		return nil, err
 	}
-
-	var output core.InitializeOutput
-	output.State = jsonutil.MustMarshalString(state)
-	return &output, nil
+	return &core.InitializeOutput{}, nil
 }
 
 func readLine(r io.Reader) (string, error) {
@@ -36,36 +30,22 @@ func readLine(r io.Reader) (string, error) {
 	return string(line), nil
 }
 
-func (provider *Provider) Update(context.Context, *core.UpdateInput) (*core.UpdateOutput, error) {
+func (p *Process) Update(context.Context, *core.UpdateInput) (*core.UpdateOutput, error) {
 	panic("TODO: update")
 }
 
-func (provider *Provider) Refresh(ctx context.Context, input *core.RefreshInput) (*core.RefreshOutput, error) {
-	var state State
-	if err := jsonutil.UnmarshalString(input.State, &state); err != nil {
-		return nil, fmt.Errorf("unmarshalling state: %w", err)
-	}
-
-	provider.refresh(&state)
-
-	var output core.RefreshOutput
-	output.State = jsonutil.MustMarshalString(state)
-	return &output, nil
+func (p *Process) Refresh(ctx context.Context, input *core.RefreshInput) (*core.RefreshOutput, error) {
+	p.refresh()
+	return &core.RefreshOutput{}, nil
 }
 
-func (provider *Provider) refresh(state *State) {
-	if !osutil.IsValidPid(state.Pid) {
-		state.Pid = 0
+func (p *Process) refresh() {
+	if !osutil.IsValidPid(p.Pid) {
+		p.Pid = 0
 	}
 }
 
-func (provider *Provider) Dispose(ctx context.Context, input *core.DisposeInput) (*core.DisposeOutput, error) {
-	var state State
-	if err := jsonutil.UnmarshalString(input.State, &state); err != nil {
-		return nil, fmt.Errorf("unmarshalling state: %w", err)
-	}
-
-	provider.stop(state.Pid)
-
-	return &core.DisposeOutput{State: input.State}, nil
+func (p *Process) Dispose(ctx context.Context, input *core.DisposeInput) (*core.DisposeOutput, error) {
+	p.stop()
+	return &core.DisposeOutput{}, nil
 }

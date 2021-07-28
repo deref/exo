@@ -1,6 +1,10 @@
 package process
 
-type Provider struct {
+type Process struct {
+	ComponentID string
+	Spec
+	State
+
 	WorkspaceDir string
 	SyslogAddr   string
 }

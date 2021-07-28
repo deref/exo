@@ -17,44 +17,28 @@ type Lifecycle interface {
 }
 
 type InitializeInput struct {
-	ID    string `json:"id"`
-	Spec  string `json:"spec"`
-	State string `json:"state"`
 }
 
 type InitializeOutput struct {
-	State string `json:"state"`
 }
 
 type UpdateInput struct {
-	ID      string `json:"id"`
-	Spec    string `json:"spec"`
-	State   string `json:"state"`
 	NewSpec string `json:"newSpec"`
 }
 
 type UpdateOutput struct {
-	State string `json:"state"`
 }
 
 type RefreshInput struct {
-	ID    string `json:"id"`
-	Spec  string `json:"spec"`
-	State string `json:"state"`
 }
 
 type RefreshOutput struct {
-	State string `json:"state"`
 }
 
 type DisposeInput struct {
-	ID    string `json:"id"`
-	Spec  string `json:"spec"`
-	State string `json:"state"`
 }
 
 type DisposeOutput struct {
-	State string `json:"state"`
 }
 
 func BuildLifecycleMux(b *josh.MuxBuilder, factory func(req *http.Request) Lifecycle) {

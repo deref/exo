@@ -1,4 +1,4 @@
-controller "lifecycle" {
+interface "lifecycle" {
   
   method "initialize" {}
   

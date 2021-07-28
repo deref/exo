@@ -6,9 +6,8 @@ type Package struct {
 }
 
 type Unit struct {
-	Interfaces  []Interface  `hcl:"interface,block"`
-	Structs     []Struct     `hcl:"struct,block"`
-	Controllers []Controller `hcl:"controller,block"`
+	Interfaces []Interface `hcl:"interface,block"`
+	Structs    []Struct    `hcl:"struct,block"`
 }
 
 type Interface struct {
