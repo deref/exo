@@ -16,7 +16,7 @@ type Tuple struct {
 	serialized []byte
 }
 
-func New(elements ...interface{}) *Tuple {
+func NewTuple(elements ...interface{}) *Tuple {
 	t := &Tuple{schema: NewSchema()}
 
 	for _, elem := range elements {

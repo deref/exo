@@ -1,7 +1,6 @@
 package storage_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/deref/exo/storage"
@@ -30,9 +29,7 @@ func TestScan(t *testing.T) {
 	})
 	entries, err := storage.Collect(it)
 	assert.NoError(t, err)
-	for _, e := range entries {
-		fmt.Printf("%s = %s\n", string(e.Key), string(e.Value))
-	}
+
 	assert.Equal(t, []storage.ScanEntry{
 		{
 			Key:   []byte("hi there"),

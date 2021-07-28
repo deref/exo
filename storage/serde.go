@@ -3,7 +3,6 @@ package storage
 import (
 	"bytes"
 	"encoding/binary"
-	"encoding/json"
 	"errors"
 	"fmt"
 )
@@ -11,6 +10,12 @@ import (
 type Serde interface {
 	Serialize(*Tuple) ([]byte, error)
 	Deserialize([]byte) (*Tuple, error)
+}
+
+func NewSchematizedRowSerde(schema *Schema) *SchematizedRowSerde {
+	return &SchematizedRowSerde{
+		schema: schema,
+	}
 }
 
 type SchematizedRowSerde struct {
@@ -32,9 +37,11 @@ func (s SchematizedRowSerde) Serialize(tup *Tuple) ([]byte, error) {
 	// we need to write the offset, then after appending all of the variable-length
 	// data, we go back and write the offsets afterwards.
 
-	// Map of the the variable-length element index to the location where the offset
-	// needs to be written.
-	varlenIndexes := make(map[int]int)
+	type placeholderLocation struct {
+		elemIdx   int
+		offsetLoc int
+	}
+	placeholderLocations := make([]placeholderLocation, 0, len(tup.elements))
 
 	var buf bytes.Buffer
 	for idx, elem := range tup.elements {
@@ -42,25 +49,107 @@ func (s SchematizedRowSerde) Serialize(tup *Tuple) ([]byte, error) {
 
 		switch elemSchema.Type {
 		case TypeUnicode:
-			buf.Write(escapeNulls([]byte(elem.(string))))
-			buf.WriteByte(0)
+			placeholderLocations = append(placeholderLocations, placeholderLocation{
+				elemIdx:   idx,
+				offsetLoc: buf.Len(),
+			})
+			// Write placeholder to be replaced with 32-bit offset.
+			buf.Write([]byte{0, 0, 0, 0})
+
+			// Write 32-bit length.
+			length := make([]byte, 4)
+			strLen := len(elem.(string))
+			binary.BigEndian.PutUint32(length, uint32(strLen))
+			buf.Write(length)
 
 		case TypeInt64:
-			buf := bytes.NewBuffer(make([]byte, 0, 8))
-			_ = binary.Write(buf, binary.BigEndian, elem.(int64))
-			buf.Write(buf.Bytes())
+			n := make([]byte, 8)
+			binary.BigEndian.PutUint64(n, uint64(elem.(int64)))
+			buf.Write(n)
 
 		case TypeUint64:
-			i := make([]byte, 8)
-			binary.BigEndian.PutUint64(i, elem.(uint64))
-			buf.Write(i)
+			n := make([]byte, 8)
+			binary.BigEndian.PutUint64(n, elem.(uint64))
+			buf.Write(n)
 
 		default:
-			panic(fmt.Errorf("no serializer defined for %s@%d", elementDescriptor, i))
+			panic(fmt.Errorf("no serializer defined for %s@%d", elem, idx))
 		}
 	}
+
+	type offsetReference struct {
+		refAt  int
+		dataAt int
+	}
+	offsets := make([]offsetReference, 0, len(placeholderLocations))
+	for _, placeholderLocation := range placeholderLocations {
+		elemIdx := placeholderLocation.elemIdx
+		offsetLoc := placeholderLocation.offsetLoc
+		// TODO: handle bytes as well.
+		var varlenData []byte
+		elem := tup.elements[elemIdx]
+		elemSchema := s.schema.Elements[elemIdx]
+		switch elemSchema.Type {
+		case TypeUnicode:
+			varlenData = []byte(elem.(string))
+		default:
+			panic("unhandled variable-length type")
+		}
+		dataLoc := buf.Len()
+		offsets = append(offsets, struct {
+			refAt  int
+			dataAt int
+		}{
+			refAt:  offsetLoc,
+			dataAt: dataLoc,
+		})
+		buf.Write(varlenData)
+	}
+
+	out := buf.Bytes()
+
+	// Patch the data by writing the offsets back to the buffer.
+	for _, offset := range offsets {
+		start := offset.refAt
+		binary.BigEndian.PutUint32(out[start:start+4], uint32(offset.dataAt))
+	}
+
+	return out, nil
 }
 
-func (s SchematizedRowSerde) Deserialize(data []byte, dest interface{}) error {
-	return json.Unmarshal(data, dest)
+func (s SchematizedRowSerde) Deserialize(buf []byte) (*Tuple, error) {
+	t := &Tuple{
+		schema:   s.schema,
+		elements: make([]interface{}, len(s.schema.Elements)),
+	}
+
+	var pos int
+	for _, elemSchema := range s.schema.Elements {
+		switch elemSchema.Type {
+		case TypeInt64:
+			n := binary.BigEndian.Uint64(buf[pos : pos+8])
+			t.elements = append(t.elements, int64(n))
+			pos += 8
+
+		case TypeUint64:
+			n := binary.BigEndian.Uint64(buf[pos : pos+8])
+			t.elements = append(t.elements, n)
+			pos += 8
+
+		case TypeUnicode:
+			dataOffset := binary.BigEndian.Uint32(buf[pos : pos+4])
+			pos += 4
+
+			dataLen := binary.BigEndian.Uint32(buf[pos : pos+4])
+			pos += 4
+
+			str := string(buf[dataOffset : dataOffset+dataLen])
+			t.elements = append(t.elements, str)
+
+		default:
+			panic("Cannot handle type for deserialization")
+		}
+	}
+
+	return t, nil
 }
