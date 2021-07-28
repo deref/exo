@@ -1,6 +1,7 @@
 <script lang="ts">
   import IconButton from './IconButton.svelte';
   import * as router from 'svelte-spa-router';
+  import VersionInfo from './VersionInfo.svelte';
 
   import Feedback from './mono/feedback.svelte';
   import GoBack from './mono/leftarrow.svelte';
@@ -42,6 +43,9 @@
   <div>
     <slot />
   </div>
+  <footer>
+    <VersionInfo />
+  </footer>
 </main>
 
 <style>
