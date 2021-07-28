@@ -10,10 +10,7 @@
     refreshAllProcesses,
     deleteProcess,
   } from '../lib/process/store';
-  import {
-    setLogVisibility,
-    visibleLogsStore,
-  } from '../lib/logs/visible-logs';
+  import { setLogVisibility, visibleLogsStore } from '../lib/logs/visible-logs';
   import type { ProcessDescription } from '../lib/process/types';
   import * as router from 'svelte-spa-router';
   import IconButton from './IconButton.svelte';
@@ -60,20 +57,23 @@
 
   function setProcLogs(processId: string, visible: boolean) {
     setLogVisibility(processId, visible);
-    resetLogs();
-    loadInitialLogs(workspace);
+    resetLogs(workspaceId);
+    loadInitialLogs(workspaceId, workspace);
   }
+
+  let refreshInterval: any;
 
   onMount(() => {
     fetchProcesses(workspace);
 
     // TODO: Server-sent events or websockets!
-    setInterval(() => {
+    refreshInterval = setInterval(() => {
       refreshAllProcesses(workspace);
     }, 5000);
   });
 
   onDestroy(() => {
+    clearInterval(refreshInterval);
     unsubscribeProcesses();
   });
 </script>
@@ -109,8 +109,9 @@
                 active><Stop /></IconButton
               >
             {:else}
-              <IconButton tooltip="Run process" on:click={() => setProcRun(id, true)}
-                ><Run /></IconButton
+              <IconButton
+                tooltip="Run process"
+                on:click={() => setProcRun(id, true)}><Run /></IconButton
               >
             {/if}
 
@@ -131,8 +132,7 @@
               on:click={() => {
                 void deleteProcess(workspace, id);
                 setProcLogs(id, false);
-              }}
-              ><Delete /></IconButton
+              }}><Delete /></IconButton
             >
           </div>
         </div>

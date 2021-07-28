@@ -13,7 +13,7 @@
 <Layout>
   <section>
     <ProcessList {workspace} {workspaceId} />
-    <LogsViewer {workspace} />
+    <LogsViewer {workspace} {workspaceId} />
   </section>
 </Layout>
 

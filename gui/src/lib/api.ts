@@ -58,10 +58,10 @@ type IsResolved<T> = ErrorResponse | SuccessResponse<T>;
 export const hasData = <T>(r: RemoteData<T>): r is HasData<T> =>
   r.stage === 'success' || r.stage === 'refetching';
 
-export const IsUnresolved = <T>(r: RemoteData<T>): r is IsUnresolved<T> =>
+export const isUnresolved = <T>(r: RemoteData<T>): r is IsUnresolved<T> =>
   r.stage === 'idle' || r.stage === 'pending' || r.stage === 'refetching';
 
-export const IsResolved = <T>(r: RemoteData<T>): r is IsResolved<T> =>
+export const isResolved = <T>(r: RemoteData<T>): r is IsResolved<T> =>
   r.stage === 'error' || r.stage === 'success';
 
 export interface PaginationParams {

@@ -9,43 +9,58 @@ import {
 } from '../api';
 import type { LogEvent } from './types';
 import { visibleLogsStore } from './visible-logs';
-export interface LogsStore {
+
+const maxEvents = 1000;
+
+export type LogsStore = Record<string, WorkspaceState>; // Keyed by workspaceId.
+
+export interface WorkspaceState {
+  cursor: string | null;
   events: RemoteData<LogEvent[]>;
-  logBufferSize: number;
 }
 
-let lastCursor: string | null = null;
-
-export const logsStore = writable<LogsStore>({
-  events: notRequested(),
-  logBufferSize: 1000,
-});
+export const logsStore = writable<LogsStore>({});
 
 export const fetchLogs = async (
+  workspaceId: string,
   workspace,
   pagination: Partial<PaginationParams>,
 ) => {
-  logsStore.update((value) => {
-    switch (value.events.stage) {
+  logsStore.update((state) => {
+    let workspaceState = state[workspaceId];
+    if (workspaceState == null) {
+      workspaceState = {
+        cursor: null,
+        events: pendingRequest(),
+      };
+    }
+    switch (workspaceState.events.stage) {
       case 'idle':
-        return {
-          ...value,
+        workspaceState = {
+          ...workspaceState,
           events: pendingRequest(),
         };
+        break;
       case 'pending':
         // TODO: Prevent re-fetch of pending request.
-        return value;
+        break;
       case 'error':
-        return {
-          ...value,
+        workspaceState = {
+          ...workspaceState,
           events: pendingRequest(),
         };
+        break;
       case 'success':
-        return {
-          ...value,
-          events: refetchingResponse(value.events.data),
+        workspaceState = {
+          ...workspaceState,
+          events: refetchingResponse(workspaceState.events.data),
         };
+        break;
     }
+    return {
+      ...state,
+      [workspaceId]: workspaceState,
+    };
   });
 
   // NOTE [FILTER BY LOG]:
@@ -54,41 +69,47 @@ export const fetchLogs = async (
   // replaced with a more flexible filtering framework.
   const visibleLogs = [...get(visibleLogsStore).values()];
   const newEvents = await workspace.getEvents(visibleLogs, {
-    cursor: lastCursor,
+    cursor: get(logsStore)[workspaceId].cursor,
     ...pagination,
   });
 
-  lastCursor = newEvents.nextCursor;
-  logsStore.update((value) => {
+  logsStore.update((state) => {
+    const workspaceState = state[workspaceId]!;
     let prevEvents: LogEvent[] = [];
     if (
-      value.events.stage === 'success' ||
-      value.events.stage === 'refetching'
+      workspaceState.events.stage === 'success' ||
+      workspaceState.events.stage === 'refetching'
     ) {
-      prevEvents = value.events.data;
+      prevEvents = workspaceState.events.data;
     }
     const allEvents = [...prevEvents, ...newEvents.items];
 
     return {
-      ...value,
-      events: successResponse(
-        allEvents.slice(allEvents.length - value.logBufferSize),
-      ),
+      ...state,
+      [workspaceId]: {
+        ...workspaceState,
+        cursor: newEvents.nextCursor,
+        events: successResponse(allEvents.slice(allEvents.length - maxEvents)),
+      },
     };
   });
 };
 
-export const refreshLogs = (workspace) => fetchLogs(workspace, { next: 100 });
+export const refreshLogs = (workspaceId: string, workspace) =>
+  fetchLogs(workspaceId, workspace, { next: 100 });
 
-export const loadInitialLogs = (workspace) =>
-  fetchLogs(workspace, { prev: 100 });
+export const loadInitialLogs = (workspaceId, workspace) =>
+  fetchLogs(workspaceId, workspace, { prev: 100 });
 
-export const resetLogs = () => {
-  lastCursor = null;
-  logsStore.update((value) => {
+export const resetLogs = (workspaceId: string) => {
+  logsStore.update((state) => {
     return {
-      ...value,
-      events: successResponse([]),
+      ...state,
+      [workspaceId]: {
+        ...state[workspaceId],
+        cursor: null,
+        events: successResponse([]),
+      },
     };
   });
 };

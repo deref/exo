@@ -1,26 +1,30 @@
 <script lang="ts">
   import { logStyleFromHash } from '../lib/color';
   import { onMount, onDestroy, afterUpdate, beforeUpdate } from 'svelte';
-  import type { RemoteData } from '../lib/api';
-  import { hasData, IsUnresolved, notRequested } from '../lib/api';
+  import { hasData, isUnresolved } from '../lib/api';
   import { loadInitialLogs, logsStore, refreshLogs } from '../lib/logs/store';
-  import type { LogEvent } from '../lib/logs/types';
+  import type { WorkspaceState } from '../lib/logs/store';
   import { shortDate } from '../lib/time';
   import { processes } from '../lib/process/store';
+  import { stringify } from 'qs';
 
   export let workspace;
+  export let workspaceId;
 
   const logsPollInterval = 1000;
 
-  let logEvents: RemoteData<LogEvent[]> = notRequested();
-  const unsubscribeLogStore = logsStore.subscribe((data) => {
-    logEvents = data.events;
+  let state: WorkspaceState = {
+    cursor: null,
+    events: { stage: 'success', data: [] },
+  };
+  const unsubscribeLogStore = logsStore.subscribe((workspaces) => {
+    state = workspaces[workspaceId] ?? state;
   });
 
   // Poll server for new logs.
   let pollRefreshTimer = null;
   const scheduleNextPoll = () => {
-    refreshLogs(workspace);
+    refreshLogs(workspaceId, workspace);
     pollRefreshTimer = setTimeout(scheduleNextPoll, logsPollInterval);
   };
 
@@ -44,7 +48,7 @@
   };
 
   onMount(() => {
-    loadInitialLogs(workspace).then(scheduleNextPoll);
+    loadInitialLogs(workspaceId, workspace).then(scheduleNextPoll);
   });
 
   onDestroy(() => {
@@ -79,11 +83,11 @@
 
 <section>
   <h1>Logs</h1>
-  {#if hasData(logEvents)}
+  {#if hasData(state.events)}
     <div class="log-table-overflow-wrapper">
       <div class="log-table-container" bind:this={logViewport}>
         <table>
-          {#each logEvents.data as event (event.id)}
+          {#each state.events.data as event (event.id)}
             <tr class="log-entry" style={logStyleFromHash(event.log)}>
               <td>{shortDate(event.timestamp)}</td>
               <td>{friendlyName(event.log)}</td> <td>{event.message}</td>
@@ -92,10 +96,10 @@
         </table>
       </div>
     </div>
-  {:else if IsUnresolved(logEvents)}
+  {:else if isUnresolved(state.events)}
     <div>Loading logs...</div>
   {:else}
-    <div>Error fetching logs: {logEvents.message}</div>
+    <div>Error fetching logs: {state.events.message}</div>
   {/if}
 </section>
 
