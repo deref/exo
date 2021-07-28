@@ -21,6 +21,21 @@ func GetWorkspace(client *josh.Client) *Workspace {
 	}
 }
 
+func (c *Workspace) Start(ctx context.Context, input *api.StartInput) (output *api.StartOutput, err error) {
+	err = c.client.Invoke(ctx, "start", input, &output)
+	return
+}
+
+func (c *Workspace) Restart(ctx context.Context, input *api.RestartInput) (output *api.RestartOutput, err error) {
+	err = c.client.Invoke(ctx, "restart", input, &output)
+	return
+}
+
+func (c *Workspace) Stop(ctx context.Context, input *api.StopInput) (output *api.StopOutput, err error) {
+	err = c.client.Invoke(ctx, "stop", input, &output)
+	return
+}
+
 func (c *Workspace) Describe(ctx context.Context, input *api.DescribeInput) (output *api.DescribeOutput, err error) {
 	err = c.client.Invoke(ctx, "describe", input, &output)
 	return
@@ -103,5 +118,32 @@ func (c *Workspace) RestartComponent(ctx context.Context, input *api.RestartComp
 
 func (c *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeProcessesInput) (output *api.DescribeProcessesOutput, err error) {
 	err = c.client.Invoke(ctx, "describe-processes", input, &output)
+	return
+}
+
+type Process struct {
+	client *josh.Client
+}
+
+var _ api.Process = (*Process)(nil)
+
+func GetProcess(client *josh.Client) *Process {
+	return &Process{
+		client: client,
+	}
+}
+
+func (c *Process) Start(ctx context.Context, input *api.StartInput) (output *api.StartOutput, err error) {
+	err = c.client.Invoke(ctx, "start", input, &output)
+	return
+}
+
+func (c *Process) Restart(ctx context.Context, input *api.RestartInput) (output *api.RestartOutput, err error) {
+	err = c.client.Invoke(ctx, "restart", input, &output)
+	return
+}
+
+func (c *Process) Stop(ctx context.Context, input *api.StopInput) (output *api.StopOutput, err error) {
+	err = c.client.Invoke(ctx, "stop", input, &output)
 	return
 }
