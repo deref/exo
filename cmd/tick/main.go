@@ -4,24 +4,10 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"os/signal"
-	"syscall"
 	"time"
 )
 
 func main() {
-	c := make(chan os.Signal)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
-	go func() {
-		for sig := range c {
-			switch sig {
-			case os.Interrupt, syscall.SIGTERM:
-				fmt.Printf("Received signal %d\n", sig)
-			}
-		}
-	}()
-
 	i := 0
 	for {
 		i++
