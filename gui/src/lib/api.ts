@@ -157,8 +157,8 @@ export const api = (() => {
       },
 
       async getVersion(): Promise<GetVersionResponse> {
-        return await invoke('get-version', {}) as any;
-      }
+        return (await invoke('get-version', {})) as any;
+      },
     };
   })();
 
@@ -199,7 +199,7 @@ export const api = (() => {
       },
 
       async refreshAllProcesses(): Promise<void> {
-        await invoke('refresh');
+        await invoke('refresh-all-components');
       },
 
       async getEvents(
