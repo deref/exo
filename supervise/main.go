@@ -71,6 +71,7 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 		panic(err)
 	}
 
+	hasSignalledChildToQuit := false
 	// Handle signals.
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGCHLD)
@@ -79,6 +80,7 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 			switch sig {
 			// Forward signals to child.
 			case os.Interrupt, syscall.SIGTERM:
+				hasSignalledChildToQuit = true
 				if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
 					break
 				}
@@ -90,7 +92,10 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 				}
 			// Exit when child exits.
 			case syscall.SIGCHLD:
-				os.Exit(1)
+				if hasSignalledChildToQuit {
+					os.Exit(0)
+				}
+				os.Exit(0)
 			}
 		}
 	}()
