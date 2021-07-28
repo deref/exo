@@ -56,6 +56,7 @@ func (p *Process) start(ctx context.Context) error {
 	superviseArgs := append(
 		[]string{
 			"supervise",
+			"--",
 			p.SyslogAddr,
 			p.ComponentID,
 			p.WorkspaceDir,
