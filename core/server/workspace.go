@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"reflect"
 	"strings"
 
 	"github.com/deref/exo/chrono"
@@ -197,21 +198,21 @@ func (ws *Workspace) DescribeComponents(ctx context.Context, input *api.Describe
 	return output, nil
 }
 
-func (ws *Workspace) resolveProvider(ctx context.Context, typ string) core.Provider {
+func (ws *Workspace) newController(ctx context.Context, typ string) Controller {
 	switch typ {
 	case "process":
 		description, err := ws.describe(ctx)
 		if err != nil {
-			return &invalid.Provider{
+			return &invalid.Invalid{
 				Err: fmt.Errorf("workspace error: %w", err),
 			}
 		}
-		return &process.Provider{
+		return &process.Process{
 			WorkspaceDir: description.Root,
 			SyslogAddr:   ws.SyslogAddr,
 		}
 	default:
-		return &invalid.Provider{
+		return &invalid.Invalid{
 			Err: fmt.Errorf("unsupported component type: %q", typ),
 		}
 	}
@@ -249,28 +250,33 @@ func (ws *Workspace) createComponent(ctx context.Context, component manifest.Com
 		return "", fmt.Errorf("adding component: %w", err)
 	}
 
-	provider := ws.resolveProvider(ctx, component.Type)
-	output, err := provider.Initialize(ctx, &core.InitializeInput{
+	if err := ws.control(ctx, state.ComponentDescription{
+		// Construct a synthetic component description to avoid re-reading after
+		// the add. Only the fields needed by control are included.
+		// TODO: Store.AddComponent could return a compponent description?
 		ID:   id,
+		Type: component.Type,
 		Spec: component.Spec,
-	})
-	if err != nil {
+	}, func(lifecycle api.Lifecycle) error {
+		_, err := lifecycle.Initialize(ctx, &core.InitializeInput{})
+		return err
+	}); err != nil {
 		return "", err
 	}
 
+	// XXX this now double-patches the component to set Initialized timestamp. Optimize?
 	if _, err := ws.Store.PatchComponent(ctx, &state.PatchComponentInput{
 		ID:          id,
-		State:       output.State,
 		Initialized: chrono.NowString(ctx),
 	}); err != nil {
-		return "", fmt.Errorf("modifying component after initialization: %w", err)
+		return "", fmt.Errorf("modifying component after initialization: %w", err) // XXX this message seems incorrect.
 	}
 
 	return id, nil
 }
 
 func (ws *Workspace) UpdateComponent(ctx context.Context, input *api.UpdateComponentInput) (*api.UpdateComponentOutput, error) {
-	panic("TODO: UpdateComponent")
+	panic("TODO: UpdateComponent") // XXX can implement this now.
 }
 
 func (ws *Workspace) updateComponent(ctx context.Context, oldComponent state.ComponentDescription, newComponent manifest.Component) error {
@@ -312,24 +318,10 @@ func (ws *Workspace) RefreshComponent(ctx context.Context, input *api.RefreshCom
 }
 
 func (ws *Workspace) refreshComponent(ctx context.Context, store state.Store, component state.ComponentDescription) error {
-	provider := ws.resolveProvider(ctx, component.Type)
-	refreshed, err := provider.Refresh(ctx, &core.RefreshInput{
-		ID:    component.ID,
-		Spec:  component.Spec,
-		State: component.State,
-	})
-	if err != nil {
+	return ws.control(ctx, component, func(lifecycle api.Lifecycle) error {
+		_, err := lifecycle.Refresh(ctx, &core.RefreshInput{})
 		return err
-	}
-
-	if _, err := store.PatchComponent(ctx, &state.PatchComponentInput{
-		ID:          component.ID,
-		State:       refreshed.State,
-		Initialized: chrono.NowString(ctx),
-	}); err != nil {
-		return fmt.Errorf("modifying component after initialization: %w", err)
-	}
-	return nil
+	})
 }
 
 func (ws *Workspace) DisposeComponent(ctx context.Context, input *api.DisposeComponentInput) (*api.DisposeComponentOutput, error) {
@@ -365,12 +357,10 @@ func (ws *Workspace) disposeComponent(ctx context.Context, id string) error {
 		return fmt.Errorf("no component %q", id)
 	}
 	component := describeOutput.Components[0]
-	provider := ws.resolveProvider(ctx, component.Type)
-	_, err = provider.Dispose(ctx, &core.DisposeInput{
-		ID:    id,
-		State: component.State,
+	return ws.control(ctx, component, func(lifecycle api.Lifecycle) error {
+		_, err := lifecycle.Dispose(ctx, &core.DisposeInput{})
+		return err
 	})
-	return err
 }
 
 func (ws *Workspace) DeleteComponent(ctx context.Context, input *api.DeleteComponentInput) (*api.DeleteComponentOutput, error) {
@@ -516,16 +506,9 @@ func (ws *Workspace) GetEvents(ctx context.Context, input *api.GetEventsInput) (
 }
 
 func (ws *Workspace) Start(ctx context.Context, input *api.StartInput) (*api.StartOutput, error) {
-	if err := ws.updateEachProcess(ctx, func(id, spec, oldState string, process api.Process) (newState string, err error) {
-		output, err := process.Start(ctx, &core.StartInput{
-			ID:    id,
-			Spec:  spec,
-			State: newState,
-		})
-		if err != nil {
-			return "", err
-		}
-		return output.State, nil
+	if err := ws.controlEachProcess(ctx, func(process api.Process) error {
+		_, err := process.Start(ctx, &core.StartInput{})
+		return err
 	}); err != nil {
 		return nil, err
 	}
@@ -550,37 +533,19 @@ func (ws *Workspace) StartComponent(ctx context.Context, input *api.StartCompone
 	}
 	component := components.Components[0]
 
-	provider := ws.resolveProvider(ctx, component.Type)
-	providerOutput, err := provider.Start(ctx, &core.StartInput{
-		ID:    id,
-		Spec:  component.Spec,
-		State: component.State,
-	})
-	if err != nil {
+	if err := ws.control(ctx, component, func(process api.Process) error {
+		_, err := process.Start(ctx, &core.StartInput{})
+		return err
+	}); err != nil {
 		return nil, err
 	}
-
-	if _, err := ws.Store.PatchComponent(ctx, &state.PatchComponentInput{
-		ID:    id,
-		State: providerOutput.State,
-	}); err != nil {
-		return nil, fmt.Errorf("updating component state: %w", err)
-	}
-
 	return &api.StartComponentOutput{}, nil
 }
 
 func (ws *Workspace) Stop(ctx context.Context, input *api.StopInput) (*api.StopOutput, error) {
-	if err := ws.updateEachProcess(ctx, func(id, spec, oldState string, process api.Process) (newState string, err error) {
-		output, err := process.Stop(ctx, &core.StopInput{
-			ID:    id,
-			Spec:  spec,
-			State: newState,
-		})
-		if err != nil {
-			return "", err
-		}
-		return output.State, nil
+	if err := ws.controlEachProcess(ctx, func(process api.Process) error {
+		_, err := process.Stop(ctx, &core.StopInput{})
+		return err
 	}); err != nil {
 		return nil, err
 	}
@@ -605,37 +570,19 @@ func (ws *Workspace) StopComponent(ctx context.Context, input *api.StopComponent
 	}
 	component := components.Components[0]
 
-	provider := ws.resolveProvider(ctx, component.Type)
-	providerOutput, err := provider.Stop(ctx, &core.StopInput{
-		ID:    id,
-		Spec:  component.Spec,
-		State: component.State,
-	})
-	if err != nil {
+	if err := ws.control(ctx, component, func(process api.Process) error {
+		_, err := process.Stop(ctx, &core.StopInput{})
+		return err
+	}); err != nil {
 		return nil, err
 	}
-
-	if _, err := ws.Store.PatchComponent(ctx, &state.PatchComponentInput{
-		ID:    id,
-		State: providerOutput.State,
-	}); err != nil {
-		return nil, fmt.Errorf("updating component state: %w", err)
-	}
-
 	return &api.StopComponentOutput{}, nil
 }
 
 func (ws *Workspace) Restart(ctx context.Context, input *api.RestartInput) (*api.RestartOutput, error) {
-	if err := ws.updateEachProcess(ctx, func(id, spec, oldState string, process api.Process) (newState string, err error) {
-		output, err := process.Restart(ctx, &core.RestartInput{
-			ID:    id,
-			Spec:  spec,
-			State: newState,
-		})
-		if err != nil {
-			return "", err
-		}
-		return output.State, nil
+	if err := ws.controlEachProcess(ctx, func(process api.Process) error {
+		_, err := process.Restart(ctx, &core.RestartInput{})
+		return err
 	}); err != nil {
 		return nil, err
 	}
@@ -660,23 +607,12 @@ func (ws *Workspace) RestartComponent(ctx context.Context, input *api.RestartCom
 	}
 	component := components.Components[0]
 
-	provider := ws.resolveProvider(ctx, component.Type)
-	providerOutput, err := provider.Restart(ctx, &core.RestartInput{
-		ID:    id,
-		Spec:  component.Spec,
-		State: component.State,
-	})
-	if err != nil {
+	if err := ws.control(ctx, component, func(process api.Process) error {
+		_, err := process.Restart(ctx, &core.RestartInput{})
+		return err
+	}); err != nil {
 		return nil, err
 	}
-
-	if _, err := ws.Store.PatchComponent(ctx, &state.PatchComponentInput{
-		ID:    id,
-		State: providerOutput.State,
-	}); err != nil {
-		return nil, fmt.Errorf("updating component state: %w", err)
-	}
-
 	return &api.RestartComponentOutput{}, nil
 }
 
@@ -714,7 +650,7 @@ func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeP
 	return &output, nil
 }
 
-func (ws *Workspace) updateEachProcess(ctx context.Context, f func(id, spec, oldState string, proc api.Process) (newState string, err error)) error {
+func (ws *Workspace) controlEachProcess(ctx context.Context, f interface{}) error {
 	components, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
 		WorkspaceID: ws.ID,
 		// TODO: Filter by type.
@@ -722,21 +658,35 @@ func (ws *Workspace) updateEachProcess(ctx context.Context, f func(id, spec, old
 	if err != nil {
 		return fmt.Errorf("describing components: %w", err)
 	}
-	provider := ws.resolveProvider(ctx, "process")
 	for _, component := range components.Components {
 		if component.Type != "process" {
 			continue
 		}
-		newState, err := f(component.ID, component.Spec, component.State, provider)
-		if err != nil {
-			return fmt.Errorf("affecting component %q: %w", component.ID, err)
-		}
-		if _, err := ws.Store.PatchComponent(ctx, &state.PatchComponentInput{
-			ID:    component.ID,
-			State: newState,
-		}); err != nil {
-			return fmt.Errorf("updating component %q state: %w", component.ID, err)
+		if err := ws.control(ctx, component, f); err != nil {
+			return fmt.Errorf("controlling %q: %w", component.ID, err)
 		}
 	}
 	return nil
+}
+
+func (ws *Workspace) control(ctx context.Context, desc state.ComponentDescription, f interface{}) error {
+	ctrl := ws.newController(ctx, desc.Type)
+	if err := ctrl.InitResource(desc.ID, desc.Spec, desc.State); err != nil {
+		return err
+	}
+	// TODO: Gracefully handle when controller cannot be downcast to f's argument.
+	results := reflect.ValueOf(f).Call([]reflect.Value{reflect.ValueOf(ctrl)})
+	fErr, _ := results[0].Interface().(error)
+	// Try to save state even if f fails.
+	newState, err := ctrl.MarshalState()
+	if err == nil {
+		_, err = ws.Store.PatchComponent(ctx, &state.PatchComponentInput{
+			ID:    desc.ID,
+			State: newState,
+		})
+	}
+	if fErr != nil {
+		return fErr
+	}
+	return err
 }

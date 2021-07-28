@@ -9,6 +9,42 @@ import (
 	josh "github.com/deref/exo/josh/server"
 )
 
+type Process interface {
+	Start(context.Context, *StartInput) (*StartOutput, error)
+	Stop(context.Context, *StopInput) (*StopOutput, error)
+	Restart(context.Context, *RestartInput) (*RestartOutput, error)
+}
+
+type StartInput struct {
+}
+
+type StartOutput struct {
+}
+
+type StopInput struct {
+}
+
+type StopOutput struct {
+}
+
+type RestartInput struct {
+}
+
+type RestartOutput struct {
+}
+
+func BuildProcessMux(b *josh.MuxBuilder, factory func(req *http.Request) Process) {
+	b.AddMethod("start", func(req *http.Request) interface{} {
+		return factory(req).Start
+	})
+	b.AddMethod("stop", func(req *http.Request) interface{} {
+		return factory(req).Stop
+	})
+	b.AddMethod("restart", func(req *http.Request) interface{} {
+		return factory(req).Restart
+	})
+}
+
 type Workspace interface {
 	Process
 	// Describes this workspace.
@@ -181,11 +217,11 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	b.AddMethod("start", func(req *http.Request) interface{} {
 		return factory(req).Start
 	})
-	b.AddMethod("restart", func(req *http.Request) interface{} {
-		return factory(req).Restart
-	})
 	b.AddMethod("stop", func(req *http.Request) interface{} {
 		return factory(req).Stop
+	})
+	b.AddMethod("restart", func(req *http.Request) interface{} {
+		return factory(req).Restart
 	})
 	b.AddMethod("describe", func(req *http.Request) interface{} {
 		return factory(req).Describe
@@ -237,54 +273,6 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	})
 	b.AddMethod("describe-processes", func(req *http.Request) interface{} {
 		return factory(req).DescribeProcesses
-	})
-}
-
-type Process interface {
-	Start(context.Context, *StartInput) (*StartOutput, error)
-	Restart(context.Context, *RestartInput) (*RestartOutput, error)
-	Stop(context.Context, *StopInput) (*StopOutput, error)
-}
-
-type StartInput struct {
-	ID    string `json:"id"`
-	Spec  string `json:"spec"`
-	State string `json:"state"`
-}
-
-type StartOutput struct {
-	State string `json:"state"`
-}
-
-type RestartInput struct {
-	ID    string `json:"id"`
-	Spec  string `json:"spec"`
-	State string `json:"state"`
-}
-
-type RestartOutput struct {
-	State string `json:"state"`
-}
-
-type StopInput struct {
-	ID    string `json:"id"`
-	Spec  string `json:"spec"`
-	State string `json:"state"`
-}
-
-type StopOutput struct {
-	State string `json:"state"`
-}
-
-func BuildProcessMux(b *josh.MuxBuilder, factory func(req *http.Request) Process) {
-	b.AddMethod("start", func(req *http.Request) interface{} {
-		return factory(req).Start
-	})
-	b.AddMethod("restart", func(req *http.Request) interface{} {
-		return factory(req).Restart
-	})
-	b.AddMethod("stop", func(req *http.Request) interface{} {
-		return factory(req).Stop
 	})
 }
 

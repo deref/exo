@@ -19,7 +19,6 @@ func LoadFile(pkg *model.Package, filePath string) {
 		pkg.AddError(err)
 		return
 	}
-	Elaborate(unit)
 
 	// Declaration pass.
 	for _, ifaceNode := range unit.Interfaces {

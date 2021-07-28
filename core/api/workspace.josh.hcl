@@ -1,6 +1,6 @@
 # XXX This is only in the same file as workspace because workspace refers to
 # it and the JOSH loader does not yet properly handle multi-file packages.
-controller "process" {
+interface "process" {
   method "start" {}
   method "stop" {}
   method "restart" {} # TODO: Optional method?

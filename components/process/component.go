@@ -1,6 +1,10 @@
 package process
 
-type Provider struct {
+type Process struct {
+	ComponentID string
+	Spec
+	State
+
 	WorkspaceDir string
 	SyslogAddr   string
 }
@@ -10,7 +14,7 @@ type Spec struct {
 	Program                    string            `json:"program"`
 	Arguments                  []string          `json:"arguments"`
 	Environment                map[string]string `json:"environment"`
-	ShutdownGracePeriodSeconds int               `json:"shutdownGracePeriodSeconds"`
+	ShutdownGracePeriodSeconds *int              `json:"shutdownGracePeriodSeconds"`
 }
 
 type State struct {
