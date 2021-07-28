@@ -32,6 +32,13 @@ Navigate to your code directory and then launch the exo gui:
 exo gui
 ```
 
+To use exo as a drop-in replacement for Foreman and similar Procfile runners,
+do this instead:
+
+```bash
+exo run ./path/to/Procfile
+```
+
 For more, checkout the [exo guide](./doc/guide.md) or consult the
 builtin help by running `exo help`.
 
