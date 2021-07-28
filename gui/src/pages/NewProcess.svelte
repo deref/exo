@@ -3,7 +3,7 @@
   import { api, isClientError } from '../lib/api';
   import * as router from 'svelte-spa-router';
   import { parseScript, generateScript } from '../lib/process/script';
-  import { toggleLogVisibility } from '../lib/logs/visible-logs';
+  import { setLogVisibility } from '../lib/logs/visible-logs';
   import EnvironmentInput from '../components/EnvironmentInput.svelte';
   import ArgumentsInput from '../components/ArgumentsInput.svelte';
   import Textbox from '../components/Textbox.svelte';
@@ -58,7 +58,7 @@
           program,
           arguments: args,
         });
-        toggleLogVisibility(id);
+        setLogVisibility(id, true);
 
         router.push(workspaceRoute);
       } catch (ex) {

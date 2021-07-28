@@ -11,12 +11,12 @@ const initialVisibleLogs = new Set(
 ); // TODO: Validate w/ runtype.
 export const visibleLogsStore = writable<Set<string>>(initialVisibleLogs);
 
-export const toggleLogVisibility = (processId: string) => {
+export const setLogVisibility = (processId: string, visible: boolean) => {
   visibleLogsStore.update((visibleLogs) => {
-    if (visibleLogs.has(processId)) {
-      visibleLogs.delete(processId);
-    } else {
+    if (visible) {
       visibleLogs.add(processId);
+    } else {
+      visibleLogs.delete(processId);
     }
 
     localStorage.setItem(

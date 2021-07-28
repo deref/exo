@@ -11,7 +11,7 @@
     deleteProcess,
   } from '../lib/process/store';
   import {
-    toggleLogVisibility,
+    setLogVisibility,
     visibleLogsStore,
   } from '../lib/logs/visible-logs';
   import type { ProcessDescription } from '../lib/process/types';
@@ -37,7 +37,7 @@
     processList = processes;
   });
 
-  function toggleProc(id: string) {
+  function setProcRun(id: string, run: boolean) {
     if (processList.stage !== 'success') {
       return;
     }
@@ -47,19 +47,19 @@
       console.error(`Cannot find process: ${id}`);
       return;
     }
-    if (proc.running) {
-      stopProcess(workspace, id).then(() => {
+    if (run) {
+      startProcess(workspace, id).then(() => {
         statusPending.delete(id);
       });
     } else {
-      startProcess(workspace, id).then(() => {
+      stopProcess(workspace, id).then(() => {
         statusPending.delete(id);
       });
     }
   }
 
-  function toggleProcLogs(processId: string) {
-    toggleLogVisibility(processId);
+  function setProcLogs(processId: string, visible: boolean) {
+    setLogVisibility(processId, visible);
     resetLogs();
     loadInitialLogs(workspace);
   }
@@ -105,11 +105,11 @@
             {:else if running}
               <IconButton
                 tooltip="Stop process"
-                on:click={() => toggleProc(id)}
+                on:click={() => setProcRun(id, false)}
                 active><Stop /></IconButton
               >
             {:else}
-              <IconButton tooltip="Run process" on:click={() => toggleProc(id)}
+              <IconButton tooltip="Run process" on:click={() => setProcRun(id, true)}
                 ><Run /></IconButton
               >
             {/if}
@@ -117,13 +117,13 @@
             {#if $visibleLogsStore.has(id)}
               <IconButton
                 tooltip="Hide logs"
-                on:click={() => toggleProcLogs(id)}
+                on:click={() => setProcLogs(id, false)}
                 active><Hide /></IconButton
               >
             {:else}
               <IconButton
                 tooltip="Show logs"
-                on:click={() => toggleProcLogs(id)}><Show /></IconButton
+                on:click={() => setProcLogs(id, true)}><Show /></IconButton
               >
             {/if}
             <IconButton
