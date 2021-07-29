@@ -22,7 +22,7 @@ func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput)
 		// Tty             bool                // Attach standard streams to a tty, including stdin if it is not closed.
 		// OpenStdin       bool                // Open stdin
 		// StdinOnce       bool                // If true, close stdin after the 1 attached client disconnects.
-		Env: c.Environment,
+		// Env: c.Environment, // XXX: This has the wrong type. Commenting out for now since it is unused.
 		// Cmd             strslice.StrSlice   // Command to run when starting the container
 		// Healthcheck     *HealthConfig       `json:",omitempty"` // Healthcheck describes how to check the container is healthy
 		// ArgsEscaped     bool                `json:",omitempty"` // True if command is already escaped (meaning treat as a command line) (Windows specific).
