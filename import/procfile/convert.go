@@ -5,6 +5,7 @@ import (
 	"io"
 	"strconv"
 
+	"github.com/deref/exo/components/process"
 	"github.com/deref/exo/manifest"
 	"github.com/deref/exo/util/jsonutil"
 )
@@ -23,14 +24,14 @@ const PortStep = 100
 func Convert(procfile *Procfile) (*manifest.Manifest, error) {
 	m := manifest.NewManifest()
 	port := BasePort
-	for _, process := range procfile.Processes {
+	for _, p := range procfile.Processes {
 		component := manifest.Component{
-			Name: process.Name,
+			Name: p.Name,
 			Type: "process",
-			Spec: jsonutil.MustMarshalString(map[string]interface{}{
-				"program":   process.Program,
-				"arguments": process.Arguments,
-				"environment": map[string]interface{}{
+			Spec: jsonutil.MustMarshalString(process.Spec{
+				Program:   p.Program,
+				Arguments: p.Arguments,
+				Environment: map[string]string{
 					"PORT": strconv.Itoa(port),
 				},
 			}),
