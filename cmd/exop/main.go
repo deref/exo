@@ -15,6 +15,7 @@ import (
 	josh "github.com/deref/exo/josh/client"
 	logd "github.com/deref/exo/logd/client"
 	"github.com/deref/exo/supervise"
+	"github.com/deref/exo/telemetry"
 	"github.com/deref/exo/util/cmdutil"
 	"github.com/deref/exo/util/httputil"
 	"github.com/deref/pier"
@@ -49,6 +50,7 @@ func main() {
 	serverCfg := &server.Config{
 		VarDir:     paths.VarDir,
 		Store:      store,
+		Telemetry:  telemetry.New(&cfg.Telemetry),
 		SyslogAddr: "localhost:4500", // XXX Configurable?
 	}
 

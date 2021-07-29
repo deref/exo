@@ -1,6 +1,6 @@
 // +build managed
 
-package telemetry
+package upgrade
 
 import "fmt"
 

@@ -6,11 +6,13 @@ import (
 	"github.com/deref/exo/core/api"
 	state "github.com/deref/exo/core/state/api"
 	josh "github.com/deref/exo/josh/server"
+	"github.com/deref/exo/telemetry"
 )
 
 type Config struct {
 	VarDir     string
 	Store      state.Store
+	Telemetry  telemetry.Telemetry
 	SyslogAddr string
 }
 
@@ -20,8 +22,9 @@ func BuildRootMux(prefix string, cfg *Config) *http.ServeMux {
 	endKernel := b.Begin("kernel")
 	api.BuildKernelMux(b, func(req *http.Request) api.Kernel {
 		return &Kernel{
-			VarDir: cfg.VarDir,
-			Store:  cfg.Store,
+			VarDir:    cfg.VarDir,
+			Store:     cfg.Store,
+			Telemetry: cfg.Telemetry,
 		}
 	})
 	endKernel()

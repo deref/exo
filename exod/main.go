@@ -17,6 +17,7 @@ import (
 	"github.com/deref/exo/gui"
 	"github.com/deref/exo/logd"
 	"github.com/deref/exo/supervise"
+	"github.com/deref/exo/telemetry"
 	"github.com/deref/exo/util/cmdutil"
 	"github.com/deref/exo/util/httputil"
 	"github.com/deref/exo/util/sysutil"
@@ -51,6 +52,9 @@ func RunServer() {
 	cfg := &config.Config{}
 	config.MustLoadDefault(cfg)
 	paths := cmdutil.MustMakeDirectories(cfg)
+
+	tel := telemetry.New(&cfg.Telemetry)
+	tel.StartSession()
 
 	if !isatty.IsTerminal(os.Stdout.Fd()) {
 		// Replace the standard logger with a logger writes to the var directory
@@ -98,6 +102,7 @@ func RunServer() {
 	kernelCfg := &kernel.Config{
 		VarDir:     paths.VarDir,
 		Store:      store,
+		Telemetry:  tel,
 		SyslogAddr: "localhost:4500", // XXX Configurable?
 	}
 
