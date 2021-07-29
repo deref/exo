@@ -88,7 +88,7 @@ func (ws *Workspace) resolveManifest(rootDir string, input *api.ApplyInput) (*ma
 			if strings.HasPrefix(name, "procfile.") || strings.HasSuffix(name, ".procfile") {
 				format = "procfile"
 			} else {
-				return nil, errors.New("cannot determine manifest format from file name")
+				return nil, errutil.NewHTTPError(http.StatusBadRequest, "cannot determine manifest format from file name")
 			}
 		}
 	} else {
@@ -107,5 +107,9 @@ func (ws *Workspace) resolveManifest(rootDir string, input *api.ApplyInput) (*ma
 		return nil, fmt.Errorf("unknown manifest format: %q", format)
 	}
 
-	return load(strings.NewReader(manifestString))
+	manifest, err := load(strings.NewReader(manifestString))
+	if err != nil {
+		return nil, errutil.WithHTTPStatus(http.StatusBadRequest, err)
+	}
+	return manifest, nil
 }
