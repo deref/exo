@@ -2,8 +2,10 @@ package config
 
 import (
 	"context"
+	_ "embed"
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/BurntSushi/toml"
 )
@@ -29,19 +31,25 @@ func LoadDefault(cfg *Config) error {
 	}
 
 	// TODO: make directory if necessary.
-	configFile := getExoPath(cfg.HomeDir, "config.toml", "EXO_CONFIG")
+	configFile, isOverrideConfig := getExoPath(cfg.HomeDir, "config.toml", "EXO_CONFIG")
+	if !isOverrideConfig {
+		if err := os.MkdirAll(filepath.Dir(configFile), 0700); err != nil {
+			return err
+		}
+	}
+
 	if err := loadFromFile(configFile, cfg); err != nil {
 		return err
 	}
 
 	if cfg.BinDir == "" {
-		cfg.BinDir = getExoPath(cfg.HomeDir, "bin", "EXO_BIN")
+		cfg.BinDir, _ = getExoPath(cfg.HomeDir, "bin", "EXO_BIN")
 	}
 	if cfg.RunDir == "" {
-		cfg.RunDir = getExoPath(cfg.HomeDir, "run", "EXO_RUN")
+		cfg.RunDir, _ = getExoPath(cfg.HomeDir, "run", "EXO_RUN")
 	}
 	if cfg.VarDir == "" {
-		cfg.VarDir = getExoPath(cfg.HomeDir, "var", "EXO_VAR")
+		cfg.VarDir, _ = getExoPath(cfg.HomeDir, "var", "EXO_VAR")
 	}
 
 	return nil
@@ -53,10 +61,13 @@ func MustLoadDefault(cfg *Config) {
 	}
 }
 
+//go:embed defaultconfig.toml
+var defaultConfig []byte
+
 func loadFromFile(filePath string, cfg *Config) error {
 	_, err := toml.DecodeFile(filePath, cfg)
 	if os.IsNotExist(err) {
-		if err = os.WriteFile(filePath, []byte{'\n'}, 0644); err != nil {
+		if err = os.WriteFile(filePath, defaultConfig, 0644); err != nil {
 			return fmt.Errorf("creating initial config file: %w", err)
 		}
 	}
