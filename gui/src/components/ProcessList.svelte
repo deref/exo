@@ -96,14 +96,14 @@
     {:else if processList.stage == 'success' || processList.stage == 'refetching'}
       <table>
         <thead>
+          <th />
           <th>Process</th>
-          <th>Run</th>
           <th>Logs</th>
           <th />
         </thead>
         {#each processList.data as { id, name, running } (id)}
           <tr>
-            <td><h2>{name}</h2></td><td>
+            <td>
               {#if statusPending.has(id)}
                 <button disabled><Loading /></button>
               {:else if running}
@@ -119,6 +119,8 @@
                 >
               {/if}
             </td>
+
+            <td><h2>{name}</h2></td>
 
             <td>
               <CheckboxButton
@@ -158,8 +160,9 @@
   }
 
   table {
-    width: 100%;
+    width: calc(100% + 12px);
     border-collapse: collapse;
+    margin-left: -12px;
   }
 
   th {
@@ -168,23 +171,28 @@
 
   td,
   th {
-    text-align: left;
+    text-align: center;
     font-size: inherit;
     font-weight: inherit;
     align-items: center;
     justify-content: center;
   }
 
-  td:not(:last-child),
-  th:not(:last-child) {
-    border-right: 12px solid transparent;
+  td:nth-child(2),
+  th:nth-child(2) {
+    text-align: left;
   }
 
-  td:first-child {
+  td:not(:last-child),
+  th:not(:last-child) {
+    border-right: 16px solid transparent;
+  }
+
+  td:nth-child(2) {
     width: 99%;
   }
 
-  td:not(:first-child) {
+  td:not(:nth-child(2)) {
     white-space: nowrap;
   }
 
