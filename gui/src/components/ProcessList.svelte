@@ -183,8 +183,8 @@
     text-align: left;
   }
 
-  td:not(:last-child),
-  th:not(:last-child) {
+  td:not(:last-child):not(:first-child),
+  th:not(:last-child):not(:first-child) {
     border-right: 16px solid transparent;
   }
 
