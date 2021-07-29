@@ -5,12 +5,13 @@ import {
   pendingRequest,
   refetchingResponse,
   successResponse,
+  WorkspaceApi,
 } from '../api';
 import type { ProcessDescription } from './types';
 
 export const processes = writable(notRequested<ProcessDescription[]>());
 
-const refetchProcesses = (workspace) =>
+const refetchProcesses = (workspace: WorkspaceApi) =>
   workspace
     .describeProcesses()
     .then((data) => {
@@ -20,7 +21,7 @@ const refetchProcesses = (workspace) =>
       processes.set(errorResponse(err.message));
     });
 
-export const fetchProcesses = (workspace) => {
+export const fetchProcesses = (workspace: WorkspaceApi) => {
   processes.update((req) => {
     switch (req.stage) {
       case 'idle':
@@ -35,26 +36,29 @@ export const fetchProcesses = (workspace) => {
       case 'success':
         refetchProcesses(workspace);
         return refetchingResponse(req.data);
+      case 'refetching':
+        // I'm not sure this is right.
+        return req;
     }
   });
 };
 
-export const startProcess = async (workspace, id: string) => {
+export const startProcess = async (workspace: WorkspaceApi, id: string) => {
   await workspace.startProcess(id);
   fetchProcesses(workspace);
 };
 
-export const stopProcess = async (workspace, id: string) => {
+export const stopProcess = async (workspace: WorkspaceApi, id: string) => {
   await workspace.stopProcess(id);
   fetchProcesses(workspace);
 };
 
-export const deleteProcess = async (workspace, id: string) => {
+export const deleteProcess = async (workspace: WorkspaceApi, id: string) => {
   await workspace.deleteComponent(id);
   fetchProcesses(workspace);
 };
 
-export const refreshAllProcesses = async (workspace) => {
+export const refreshAllProcesses = async (workspace: WorkspaceApi) => {
   await workspace.refreshAllProcesses();
   fetchProcesses(workspace);
 };
