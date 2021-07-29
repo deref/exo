@@ -8,12 +8,12 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/deref/exo/components/log"
 	"github.com/deref/exo/config"
 	"github.com/deref/exo/core/server"
 	"github.com/deref/exo/core/state/statefile"
 	josh "github.com/deref/exo/josh/client"
 	logd "github.com/deref/exo/logd/client"
+	"github.com/deref/exo/providers/core/components/log"
 	"github.com/deref/exo/supervise"
 	"github.com/deref/exo/telemetry"
 	"github.com/deref/exo/util/cmdutil"

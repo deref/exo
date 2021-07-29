@@ -8,17 +8,21 @@ import (
 	"strings"
 
 	"github.com/deref/exo/chrono"
-	"github.com/deref/exo/components/invalid"
-	"github.com/deref/exo/components/log"
-	"github.com/deref/exo/components/process"
 	"github.com/deref/exo/core/api"
 	core "github.com/deref/exo/core/api"
 	state "github.com/deref/exo/core/state/api"
 	"github.com/deref/exo/gensym"
 	logd "github.com/deref/exo/logd/api"
 	"github.com/deref/exo/manifest"
+	"github.com/deref/exo/providers/core/components/invalid"
+	"github.com/deref/exo/providers/core/components/log"
+	"github.com/deref/exo/providers/docker/components/container"
+	"github.com/deref/exo/providers/docker/components/network"
+	"github.com/deref/exo/providers/docker/components/volume"
+	"github.com/deref/exo/providers/unix/components/process"
 	"github.com/deref/exo/util/errutil"
 	"github.com/deref/exo/util/jsonutil"
+	docker "github.com/docker/docker/client"
 )
 
 type Workspace struct {
@@ -26,6 +30,7 @@ type Workspace struct {
 	VarDir     string
 	Store      state.Store
 	SyslogAddr string
+	Docker     *docker.Client
 }
 
 func (ws *Workspace) Describe(ctx context.Context, input *api.DescribeInput) (*api.DescribeOutput, error) {
@@ -211,6 +216,22 @@ func (ws *Workspace) newController(ctx context.Context, typ string) Controller {
 			WorkspaceDir: description.Root,
 			SyslogAddr:   ws.SyslogAddr,
 		}
+
+	case "container":
+		return &container.Container{
+			Docker: ws.Docker,
+		}
+
+	case "network":
+		return &network.Network{
+			Docker: ws.Docker,
+		}
+
+	case "volume":
+		return &volume.Volume{
+			Docker: ws.Docker,
+		}
+
 	default:
 		return &invalid.Invalid{
 			Err: fmt.Errorf("unsupported component type: %q", typ),

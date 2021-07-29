@@ -7,6 +7,7 @@ import (
 	state "github.com/deref/exo/core/state/api"
 	josh "github.com/deref/exo/josh/server"
 	"github.com/deref/exo/telemetry"
+	docker "github.com/docker/docker/client"
 )
 
 type Config struct {
@@ -14,6 +15,7 @@ type Config struct {
 	Store      state.Store
 	Telemetry  telemetry.Telemetry
 	SyslogAddr string
+	Docker     *docker.Client
 }
 
 func BuildRootMux(prefix string, cfg *Config) *http.ServeMux {
@@ -36,6 +38,7 @@ func BuildRootMux(prefix string, cfg *Config) *http.ServeMux {
 			VarDir:     cfg.VarDir,
 			Store:      cfg.Store,
 			SyslogAddr: cfg.SyslogAddr,
+			Docker:     cfg.Docker,
 		}
 	})
 	endWorkspace()
