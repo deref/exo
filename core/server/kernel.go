@@ -114,7 +114,7 @@ func restart(ctx context.Context) {
 
 	cmd, err := os.Executable()
 	if err != nil {
-		exitWithError(err)
+		exitWithError(fmt.Errorf("getting current executable: %w", err))
 	}
 
 	// Since the exo process is likely a specific version that `exo` is linked to,
@@ -125,13 +125,16 @@ func restart(ctx context.Context) {
 	if isSymlink, _ := osutil.IsSymlink(symlinkPath); isSymlink {
 		dest, err := os.Readlink(symlinkPath)
 		if err != nil {
-			exitWithError(err)
+			exitWithError(fmt.Errorf("following exo symlink: %w", err))
 		}
-		dest = path.Join(dir, dest)
+		if !path.IsAbs(dest) {
+			dest = path.Join(dir, dest)
+		}
+
 		cmd = path.Clean(dest)
 	}
 
 	if err := syscall.Exec(cmd, append([]string{cmd}, os.Args[1:]...), os.Environ()); err != nil {
-		exitWithError(err)
+		exitWithError(fmt.Errorf("forking new exo process at %s: %w", cmd, err))
 	}
 }
