@@ -15,7 +15,7 @@ export const hiddenLogsStore = writable<Set<string>>(initialHiddenLogs);
 export const visibleLogsStore = derived(
   [processes, hiddenLogsStore],
   ([processes, hiddenLogs]) => {
-    const set = new Set();
+    const set = new Set<string>();
     if ('data' in processes) {
       for (const process of processes.data) {
         set.add(process.id);

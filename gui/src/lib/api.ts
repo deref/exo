@@ -151,6 +151,30 @@ export interface WorkspaceDescription {
   root: string;
 }
 
+export interface WorkspaceApi {
+  describeProcesses(): Promise<ProcessDescription[]>;
+
+  apply(): Promise<void>;
+
+  createProcess(
+    name: string,
+    spec: ProcessSpec,
+  ): Promise<CreateProcessResponse>;
+
+  startProcess(ref: string): Promise<void>;
+
+  stopProcess(ref: string): Promise<void>;
+
+  deleteComponent(ref: string): Promise<void>;
+
+  refreshAllProcesses(): Promise<void>;
+
+  getEvents(
+    logs: string[],
+    pagination?: PaginationParams,
+  ): Promise<LogsResponse>;
+}
+
 export const api = (() => {
   const kernel = (() => {
     const invoke = (method: string, data?: unknown) =>
@@ -175,7 +199,7 @@ export const api = (() => {
     };
   })();
 
-  const workspace = (id: string) => {
+  const workspace = (id: string): WorkspaceApi => {
     const invoke = (method: string, data?: unknown) =>
       rpc(`/workspace/${method}`, { id }, data);
     return {

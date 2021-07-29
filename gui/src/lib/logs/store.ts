@@ -1,7 +1,6 @@
 import { get, writable } from 'svelte/store';
-import type { PaginationParams } from '../api';
+import type { PaginationParams, WorkspaceApi } from '../api';
 import {
-  notRequested,
   pendingRequest,
   refetchingResponse,
   RemoteData,
@@ -23,7 +22,7 @@ export const logsStore = writable<LogsStore>({});
 
 export const fetchLogs = async (
   workspaceId: string,
-  workspace,
+  workspace: WorkspaceApi,
   pagination: Partial<PaginationParams>,
 ) => {
   logsStore.update((state) => {
@@ -95,10 +94,10 @@ export const fetchLogs = async (
   });
 };
 
-export const refreshLogs = (workspaceId: string, workspace) =>
+export const refreshLogs = (workspaceId: string, workspace: WorkspaceApi) =>
   fetchLogs(workspaceId, workspace, { next: 100 });
 
-export const loadInitialLogs = (workspaceId, workspace) =>
+export const loadInitialLogs = (workspaceId: string, workspace: WorkspaceApi) =>
   fetchLogs(workspaceId, workspace, { prev: 100 });
 
 export const resetLogs = (workspaceId: string) => {
