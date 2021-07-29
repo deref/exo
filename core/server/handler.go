@@ -6,12 +6,14 @@ import (
 	"github.com/deref/exo/core/api"
 	state "github.com/deref/exo/core/state/api"
 	josh "github.com/deref/exo/josh/server"
+	docker "github.com/docker/docker/client"
 )
 
 type Config struct {
 	VarDir     string
 	Store      state.Store
 	SyslogAddr string
+	Docker     *docker.Client
 }
 
 func BuildRootMux(prefix string, cfg *Config) *http.ServeMux {
@@ -33,6 +35,7 @@ func BuildRootMux(prefix string, cfg *Config) *http.ServeMux {
 			VarDir:     cfg.VarDir,
 			Store:      cfg.Store,
 			SyslogAddr: cfg.SyslogAddr,
+			Docker:     cfg.Docker,
 		}
 	})
 	endWorkspace()

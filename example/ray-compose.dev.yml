@@ -1,0 +1,21 @@
+version: '3'
+networks:
+  rainbow-dev-network:
+    driver: bridge
+
+services:
+  db-dev-service:
+    image: postgres
+    container_name: rainbow-db-dev
+    volumes:
+      - db-dev:/var/lib/postgresql/data/
+    ports:
+      - "5400:5432"
+    environment:
+      - POSTGRES_USER=docker
+      - POSTGRES_PASSWORD=docker
+    restart: always
+    networks:
+      - rainbow-dev-network
+volumes:
+  db-dev:
