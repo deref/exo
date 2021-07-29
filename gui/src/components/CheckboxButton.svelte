@@ -1,8 +1,8 @@
 <script lang="ts">
+  import Show from './mono/check.svelte';
+
   export let active: boolean = false;
   export let tooltip: string = '';
-
-  import Show from './mono/check.svelte';
 </script>
 
 <button
