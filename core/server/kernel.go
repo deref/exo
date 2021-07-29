@@ -63,11 +63,11 @@ func (kern *Kernel) FindWorkspace(ctx context.Context, input *api.FindWorkspaceI
 }
 
 func (kern *Kernel) GetVersion(ctx context.Context, input *api.GetVersionInput) (*api.GetVersionOutput, error) {
-	installed := telemetry.CurrentVersion()
+	installed := telemetry.CurrentVersion(ctx)
 	current := true
 	var latest *string
-	if telemetry.CanSelfUpgrade() {
-		latestVersion, err := telemetry.LatestVersion()
+	if ok, _ := telemetry.CanSelfUpgrade(ctx); !ok {
+		latestVersion, err := telemetry.LatestVersion(ctx)
 		if err != nil {
 			return nil, err
 		}
@@ -83,7 +83,7 @@ func (kern *Kernel) GetVersion(ctx context.Context, input *api.GetVersionInput) 
 }
 
 func (kern *Kernel) Upgrade(ctx context.Context, input *api.UpgradeInput) (*api.UpgradeOutput, error) {
-	upgraded, err := telemetry.TrySelfUpgrade()
+	upgraded, err := telemetry.TrySelfUpgrade(ctx)
 	if err != nil {
 		return nil, err
 	}

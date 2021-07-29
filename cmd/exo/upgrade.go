@@ -2,6 +2,7 @@ package main
 
 import (
 	"fmt"
+	"os"
 	"strings"
 
 	"github.com/deref/exo/telemetry"
@@ -18,8 +19,13 @@ var upgradeCmd = &cobra.Command{
 	Long:  `Upgrade exo to the latest version.`,
 	Args:  cobra.ExactArgs(0),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		current := telemetry.CurrentVersion()
-		latest, err := telemetry.LatestVersion()
+		ctx := newContext()
+		if ok, reason := telemetry.CanSelfUpgrade(ctx); !ok {
+			fmt.Fprintf(os.Stderr, "Self-upgrade disabled: %s\n", reason)
+			os.Exit(1)
+		}
+		current := telemetry.CurrentVersion(ctx)
+		latest, err := telemetry.LatestVersion(ctx)
 		if err != nil {
 			return err
 		}
@@ -32,7 +38,7 @@ var upgradeCmd = &cobra.Command{
 		case -1:
 			fmt.Println("Upgrade needed")
 			// TODO: Prompt for confirmation?
-			return telemetry.UpgradeSelf()
+			return telemetry.UpgradeSelf(ctx)
 		case 1:
 			fmt.Println("You are already running a prerelease version; not downgrading.")
 		default:

@@ -3,6 +3,7 @@
 package telemetry
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -15,7 +16,7 @@ import (
 
 const isManaged = false
 
-func UpgradeSelf() error {
+func UpgradeSelf(ctx context.Context) error {
 	tmpfile, err := ioutil.TempFile("", "example")
 	if err != nil {
 		return fmt.Errorf("creating temporary file: %w", err)
