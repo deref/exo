@@ -3,6 +3,7 @@ module github.com/deref/exo
 go 1.16
 
 require (
+	github.com/BurntSushi/toml v0.3.1
 	github.com/aybabtme/rgbterm v0.0.0-20170906152045-cc83f3b3ce59
 	github.com/deref/pier v0.0.0-20210620044641-0f71544154e7
 	github.com/dgraph-io/badger/v3 v3.2103.1

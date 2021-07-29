@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+
+	"github.com/deref/exo/config"
 )
 
 func Warnf(format string, v ...interface{}) {
@@ -26,14 +28,10 @@ type KnownPaths struct {
 	RunDir string // Volatile state.
 
 	RunStateFile string // Contains information about the exo daemon.
+	ConfigFile   string // Contains global configuration
 }
 
 func MustMakeDirectories() *KnownPaths {
-	homeDir, err := os.UserHomeDir()
-	if err != nil {
-		panic(fmt.Errorf("getting home directory: %w", err))
-	}
-
 	var paths KnownPaths
 	mkdir := func(out *string, path string) {
 		if err := os.Mkdir(path, 0700); err != nil && !os.IsExist(err) {
@@ -42,12 +40,13 @@ func MustMakeDirectories() *KnownPaths {
 		*out = path
 	}
 
-	mkdir(&paths.ExoDir, filepath.Join(homeDir, ".exo"))
-	mkdir(&paths.BinDir, filepath.Join(paths.ExoDir, "bin"))
-	mkdir(&paths.VarDir, filepath.Join(paths.ExoDir, "var"))
-	mkdir(&paths.RunDir, filepath.Join(paths.ExoDir, "run"))
+	mkdir(&paths.ExoDir, config.ExoHome())
+	mkdir(&paths.BinDir, config.ExoBin())
+	mkdir(&paths.VarDir, config.ExoVar())
+	mkdir(&paths.RunDir, config.ExoRun())
 
 	paths.RunStateFile = filepath.Join(paths.RunDir, "exod.json")
+	paths.ConfigFile = config.ConfigFile()
 
 	return &paths
 }
