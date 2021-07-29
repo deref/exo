@@ -2,7 +2,9 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"path"
 	"syscall"
@@ -13,6 +15,7 @@ import (
 	"github.com/deref/exo/gensym"
 	"github.com/deref/exo/telemetry"
 	"github.com/deref/exo/upgrade"
+	"github.com/deref/exo/util/errutil"
 	"github.com/deref/exo/util/osutil"
 )
 
@@ -86,6 +89,9 @@ func (kern *Kernel) GetVersion(ctx context.Context, input *api.GetVersionInput) 
 }
 
 func (kern *Kernel) Upgrade(ctx context.Context, input *api.UpgradeInput) (*api.UpgradeOutput, error) {
+	if upgrade.IsManaged {
+		return nil, errutil.WithHTTPStatus(http.StatusBadRequest, errors.New("exo installed with system package manager"))
+	}
 	err := upgrade.UpgradeSelf()
 	if err != nil {
 		return nil, err

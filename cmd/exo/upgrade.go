@@ -21,6 +21,16 @@ var upgradeCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(0),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		tel := telemetry.New(&cfg.Telemetry)
+		if !tel.IsEnabled() {
+			fmt.Println("Cannot check current version - telemetry disabled.")
+			if upgrade.IsManaged {
+				fmt.Println("Please upgrade using your system package manager.")
+			} else {
+				fmt.Println("You may upgrade with the following command.")
+				fmt.Println("\tcurl -sL https://exo.deref.io/install | sh")
+			}
+			return nil
+		}
 		current := exo.Version
 		latest, err := tel.LatestVersion()
 		if err != nil {
