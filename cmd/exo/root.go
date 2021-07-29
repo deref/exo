@@ -36,10 +36,10 @@ func exitWithError(err error) {
 }
 
 func main() {
-	knownPaths = cmdutil.MustMakeDirectories()
 	if err := config.LoadDefault(cfg); err != nil {
 		exitWithError(err)
 	}
+	knownPaths = cmdutil.MustMakeDirectories(cfg)
 	if err := rootCmd.Execute(); err != nil {
 		exitWithError(err)
 	}

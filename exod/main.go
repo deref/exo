@@ -10,6 +10,7 @@ import (
 	golog "log"
 
 	"github.com/deref/exo/components/log"
+	"github.com/deref/exo/config"
 	"github.com/deref/exo/core/server"
 	kernel "github.com/deref/exo/core/server"
 	"github.com/deref/exo/core/state/statefile"
@@ -47,7 +48,9 @@ func Main() {
 func RunServer() {
 	ctx := context.Background()
 
-	paths := cmdutil.MustMakeDirectories()
+	cfg := &config.Config{}
+	config.MustLoadDefault(cfg)
+	paths := cmdutil.MustMakeDirectories(cfg)
 
 	if !isatty.IsTerminal(os.Stdout.Fd()) {
 		// Replace the standard logger with a logger writes to the var directory

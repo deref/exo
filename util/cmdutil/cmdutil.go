@@ -28,10 +28,9 @@ type KnownPaths struct {
 	RunDir string // Volatile state.
 
 	RunStateFile string // Contains information about the exo daemon.
-	ConfigFile   string // Contains global configuration
 }
 
-func MustMakeDirectories() *KnownPaths {
+func MustMakeDirectories(cfg *config.Config) *KnownPaths {
 	var paths KnownPaths
 	mkdir := func(out *string, path string) {
 		if err := os.Mkdir(path, 0700); err != nil && !os.IsExist(err) {
@@ -40,13 +39,12 @@ func MustMakeDirectories() *KnownPaths {
 		*out = path
 	}
 
-	mkdir(&paths.ExoDir, config.ExoHome())
-	mkdir(&paths.BinDir, config.ExoBin())
-	mkdir(&paths.VarDir, config.ExoVar())
-	mkdir(&paths.RunDir, config.ExoRun())
+	mkdir(&paths.ExoDir, cfg.HomeDir)
+	mkdir(&paths.BinDir, cfg.BinDir)
+	mkdir(&paths.VarDir, cfg.VarDir)
+	mkdir(&paths.RunDir, cfg.RunDir)
 
 	paths.RunStateFile = filepath.Join(paths.RunDir, "exod.json")
-	paths.ConfigFile = config.ConfigFile()
 
 	return &paths
 }
