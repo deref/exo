@@ -13,9 +13,9 @@ package compose
 import (
 	"io"
 
-	"github.com/deref/exo/components/docker/container"
-	"github.com/deref/exo/components/docker/network"
-	"github.com/deref/exo/components/docker/volume"
+	"github.com/deref/exo/providers/docker/components/container"
+	"github.com/deref/exo/providers/docker/components/network"
+	"github.com/deref/exo/providers/docker/components/volume"
 	"github.com/goccy/go-yaml"
 )
 
