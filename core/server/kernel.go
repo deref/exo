@@ -2,21 +2,27 @@ package server
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 	"os"
 	"path"
 	"syscall"
 
+	"github.com/deref/exo"
 	"github.com/deref/exo/core/api"
 	state "github.com/deref/exo/core/state/api"
 	"github.com/deref/exo/gensym"
 	"github.com/deref/exo/telemetry"
+	"github.com/deref/exo/upgrade"
+	"github.com/deref/exo/util/errutil"
 	"github.com/deref/exo/util/osutil"
 )
 
 type Kernel struct {
-	VarDir string
-	Store  state.Store
+	VarDir    string
+	Store     state.Store
+	Telemetry telemetry.Telemetry
 }
 
 func (kern *Kernel) CreateWorkspace(ctx context.Context, input *api.CreateWorkspaceInput) (*api.CreateWorkspaceOutput, error) {
@@ -63,11 +69,11 @@ func (kern *Kernel) FindWorkspace(ctx context.Context, input *api.FindWorkspaceI
 }
 
 func (kern *Kernel) GetVersion(ctx context.Context, input *api.GetVersionInput) (*api.GetVersionOutput, error) {
-	installed := telemetry.CurrentVersion()
+	installed := exo.Version
 	current := true
 	var latest *string
-	if telemetry.CanSelfUpgrade() {
-		latestVersion, err := telemetry.LatestVersion()
+	if kern.Telemetry.IsEnabled() {
+		latestVersion, err := kern.Telemetry.LatestVersion()
 		if err != nil {
 			return nil, err
 		}
@@ -83,13 +89,15 @@ func (kern *Kernel) GetVersion(ctx context.Context, input *api.GetVersionInput) 
 }
 
 func (kern *Kernel) Upgrade(ctx context.Context, input *api.UpgradeInput) (*api.UpgradeOutput, error) {
-	upgraded, err := telemetry.TrySelfUpgrade()
+	if upgrade.IsManaged {
+		return nil, errutil.WithHTTPStatus(http.StatusBadRequest, errors.New("exo installed with system package manager"))
+	}
+	err := upgrade.UpgradeSelf()
 	if err != nil {
 		return nil, err
 	}
-	if upgraded {
-		defer restart(ctx)
-	}
+	defer restart(ctx)
+
 	return &api.UpgradeOutput{}, nil
 }
 

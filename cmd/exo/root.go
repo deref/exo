@@ -2,10 +2,15 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"os"
 
+	"github.com/deref/exo/config"
+	"github.com/deref/exo/util/cmdutil"
 	"github.com/spf13/cobra"
+)
+
+var (
+	cfg        *config.Config = &config.Config{}
+	knownPaths *cmdutil.KnownPaths
 )
 
 var rootCmd = &cobra.Command{
@@ -20,12 +25,15 @@ For more information, see https://exo.deref.io`,
 }
 
 func newContext() context.Context {
-	return context.Background()
+	return config.WithConfig(context.Background(), cfg)
 }
 
 func main() {
+	if err := config.LoadDefault(cfg); err != nil {
+		cmdutil.Fatalf("loading config: %w", err)
+	}
+	knownPaths = cmdutil.MustMakeDirectories(cfg)
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+		cmdutil.Fatalf("%w", err)
 	}
 }

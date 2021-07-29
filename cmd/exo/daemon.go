@@ -34,16 +34,12 @@ have to invoke this themselves.`,
 	},
 }
 
-var knownPaths *cmdutil.KnownPaths
-
 var runState struct {
 	Pid int    `json:"pid"`
 	URL string `json:"url"`
 }
 
 func ensureDaemon() {
-	knownPaths = cmdutil.MustMakeDirectories()
-
 	// Validate exod process record.
 	err := loadRunState()
 	running := false

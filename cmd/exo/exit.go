@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/deref/exo/util/cmdutil"
 	"github.com/spf13/cobra"
 )
 
@@ -18,7 +17,6 @@ var exitCmd = &cobra.Command{
 	Long:  `Stop the exo daemon process.`,
 	Args:  cobra.ExactArgs(0),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		knownPaths = cmdutil.MustMakeDirectories()
 		loadRunState()
 		if runState.Pid == 0 {
 			return nil

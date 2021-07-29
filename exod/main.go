@@ -9,6 +9,7 @@ import (
 
 	golog "log"
 
+	"github.com/deref/exo/config"
 	"github.com/deref/exo/core/server"
 	kernel "github.com/deref/exo/core/server"
 	"github.com/deref/exo/core/state/statefile"
@@ -16,6 +17,7 @@ import (
 	"github.com/deref/exo/logd"
 	"github.com/deref/exo/providers/core/components/log"
 	"github.com/deref/exo/supervise"
+	"github.com/deref/exo/telemetry"
 	"github.com/deref/exo/util/cmdutil"
 	"github.com/deref/exo/util/httputil"
 	"github.com/deref/exo/util/sysutil"
@@ -48,7 +50,12 @@ func Main() {
 func RunServer() {
 	ctx := context.Background()
 
-	paths := cmdutil.MustMakeDirectories()
+	cfg := &config.Config{}
+	config.MustLoadDefault(cfg)
+	paths := cmdutil.MustMakeDirectories(cfg)
+
+	tel := telemetry.New(&cfg.Telemetry)
+	tel.StartSession()
 
 	if !isatty.IsTerminal(os.Stdout.Fd()) {
 		// Replace the standard logger with a logger writes to the var directory
@@ -101,6 +108,7 @@ func RunServer() {
 	kernelCfg := &kernel.Config{
 		VarDir:     paths.VarDir,
 		Store:      store,
+		Telemetry:  tel,
 		SyslogAddr: "localhost:4500", // XXX Configurable?
 		Docker:     dockerClient,
 	}

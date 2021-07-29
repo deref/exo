@@ -1,6 +1,6 @@
 // +build !managed
 
-package telemetry
+package upgrade
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ import (
 	"github.com/deref/exo"
 )
 
-const isManaged = false
+const IsManaged = false
 
 func UpgradeSelf() error {
 	tmpfile, err := ioutil.TempFile("", "example")

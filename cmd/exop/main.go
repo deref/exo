@@ -8,12 +8,14 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/deref/exo/config"
 	"github.com/deref/exo/core/server"
 	"github.com/deref/exo/core/state/statefile"
 	josh "github.com/deref/exo/josh/client"
 	logd "github.com/deref/exo/logd/client"
 	"github.com/deref/exo/providers/core/components/log"
 	"github.com/deref/exo/supervise"
+	"github.com/deref/exo/telemetry"
 	"github.com/deref/exo/util/cmdutil"
 	"github.com/deref/exo/util/httputil"
 	"github.com/deref/pier"
@@ -38,14 +40,17 @@ func main() {
 
 	ctx := context.Background()
 
-	paths := cmdutil.MustMakeDirectories()
+	cfg := &config.Config{}
+	config.MustLoadDefault(cfg)
+	paths := cmdutil.MustMakeDirectories(cfg)
 
 	statePath := filepath.Join(paths.VarDir, "state.json")
 	store := statefile.New(statePath)
 
-	cfg := &server.Config{
+	serverCfg := &server.Config{
 		VarDir:     paths.VarDir,
 		Store:      store,
+		Telemetry:  telemetry.New(&cfg.Telemetry),
 		SyslogAddr: "localhost:4500", // XXX Configurable?
 	}
 
@@ -54,7 +59,7 @@ func main() {
 			Transport: &http.Transport{
 				DialContext: func(ctx context.Context, network string, addr string) (net.Conn, error) {
 					dialer := net.Dialer{}
-					sockPath := filepath.Join(cfg.VarDir, "logd.sock")
+					sockPath := filepath.Join(serverCfg.VarDir, "logd.sock")
 					return dialer.DialContext(ctx, "unix", sockPath)
 				},
 			},
@@ -62,6 +67,6 @@ func main() {
 		URL: "http://unix",
 	}))
 
-	mux := server.BuildRootMux("/", cfg)
+	mux := server.BuildRootMux("/", serverCfg)
 	pier.Main(httputil.HandlerWithContext(ctx, mux))
 }

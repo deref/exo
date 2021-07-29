@@ -8,6 +8,7 @@ import (
 	"os"
 	"os/signal"
 
+	"github.com/deref/exo/config"
 	josh "github.com/deref/exo/josh/server"
 	"github.com/deref/exo/logd"
 	"github.com/deref/exo/logd/api"
@@ -20,7 +21,9 @@ func main() {
 	ctx, done := signal.NotifyContext(ctx, os.Interrupt)
 	defer done()
 
-	paths := cmdutil.MustMakeDirectories()
+	cfg := &config.Config{}
+	config.MustLoadDefault(cfg)
+	paths := cmdutil.MustMakeDirectories(cfg)
 
 	logd := &logd.Service{}
 	logd.VarDir = paths.VarDir
