@@ -674,8 +674,13 @@ func (ws *Workspace) control(ctx context.Context, desc state.ComponentDescriptio
 	if err := ctrl.InitResource(desc.ID, desc.Spec, desc.State); err != nil {
 		return err
 	}
-	// TODO: Gracefully handle when controller cannot be downcast to f's argument.
-	results := reflect.ValueOf(f).Call([]reflect.Value{reflect.ValueOf(ctrl)})
+	fV := reflect.ValueOf(f)
+	ctrlV := reflect.ValueOf(ctrl)
+	argT := fV.Type().In(0)
+	if !ctrlV.Type().AssignableTo(argT) {
+		return fmt.Errorf("%q controller does not implement %s", desc.Type, argT)
+	}
+	results := fV.Call([]reflect.Value{ctrlV})
 	fErr, _ := results[0].Interface().(error)
 	// Try to save state even if f fails.
 	newState, err := ctrl.MarshalState()
