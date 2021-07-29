@@ -5,6 +5,7 @@ import (
 	"io"
 
 	"github.com/deref/exo/manifest"
+	"github.com/deref/exo/providers/docker/compose"
 	"github.com/deref/exo/util/yamlutil"
 )
 
@@ -16,7 +17,7 @@ func Import(r io.Reader) (*manifest.Manifest, error) {
 	return Convert(procfile)
 }
 
-func Convert(comp *Compose) (*manifest.Manifest, error) {
+func Convert(comp *compose.Compose) (*manifest.Manifest, error) {
 	var m manifest.Manifest
 	// TODO: Is there something like json.RawMessage so we can
 	// avoid marshalling and re-marshalling each spec?

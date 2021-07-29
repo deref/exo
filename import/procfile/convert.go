@@ -5,8 +5,8 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/deref/exo/components/process"
 	"github.com/deref/exo/manifest"
+	"github.com/deref/exo/providers/unix/components/process"
 	"github.com/deref/exo/util/jsonutil"
 )
 
