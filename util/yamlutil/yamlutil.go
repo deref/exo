@@ -9,3 +9,9 @@ func MustMarshalString(v interface{}) string {
 	}
 	return string(bs)
 }
+
+func MustUnmarshalString(s string, v interface{}) {
+	if err := yaml.Unmarshal([]byte(s), v); err != nil {
+		panic(err)
+	}
+}

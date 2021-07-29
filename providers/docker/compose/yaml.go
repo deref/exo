@@ -8,10 +8,24 @@
 package compose
 
 import (
+	"fmt"
 	"io"
+	"strings"
 
 	"github.com/goccy/go-yaml"
 )
+
+func Parse(r io.Reader) (*Compose, error) {
+	dec := yaml.NewDecoder(r,
+		yaml.DisallowDuplicateKey(),
+		yaml.DisallowUnknownField(), // TODO: Handle this more gracefully.
+	)
+	var comp Compose
+	if err := dec.Decode(&comp); err != nil {
+		return nil, err
+	}
+	return &comp, nil
+}
 
 type Compose struct {
 	Version  string             `yaml:"version"`
@@ -53,7 +67,7 @@ type Service struct {
 	// TODO: domainname
 	// TODO: entrypoint
 	// TODO: env_file
-	Environment []string `yaml:"environment"` // TODO: Support map syntax.
+	Environment Dictionary `yaml:"environment"`
 	// TODO: expose
 	// TODO: extends
 	// TODO: external_links
@@ -112,7 +126,7 @@ type Network struct {
 	Attachable bool              `yaml:"attachable"`
 	EnableIPv6 bool              `yaml:"enable_ipv6"`
 	Internal   bool              `yaml:"internal"`
-	Labels     map[string]string `yaml:"labels"` // TODO: Support array syntax.
+	Labels     Dictionary        `yaml:"labels"`
 	External   bool              `yaml:"external"`
 	// TODO: name
 }
@@ -121,8 +135,8 @@ type Volume struct {
 	Driver     string            `yaml:"driver"`
 	DriverOpts map[string]string `yaml:"driver_opts"`
 	// TODO: external
-	Labels map[string]string `yaml:"labels"` // TODO: Support array syntax.
-	Name   string            `yaml:"name"`
+	Labels Dictionary `yaml:"labels"`
+	Name   string     `yaml:"name"`
 }
 
 type Config struct {
@@ -137,14 +151,46 @@ type Secret struct {
 	Name     string `yaml:"name"`
 }
 
-func Parse(r io.Reader) (*Compose, error) {
-	dec := yaml.NewDecoder(r,
-		yaml.DisallowDuplicateKey(),
-		yaml.DisallowUnknownField(), // TODO: Handle this more gracefully.
-	)
-	var comp Compose
-	if err := dec.Decode(&comp); err != nil {
-		return nil, err
+type Dictionary map[string]string
+
+func (dict Dictionary) MarshalYAML() (interface{}, error) {
+	return map[string]string(dict), nil
+}
+
+func (dict *Dictionary) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var data interface{}
+	if err := unmarshal(&data); err != nil {
+		return err
 	}
-	return &comp, nil
+
+	res := make(map[string]string)
+	switch data := data.(type) {
+	case map[string]interface{}:
+		for k, v := range data {
+			var ok bool
+			res[k], ok = v.(string)
+			if !ok {
+				return fmt.Errorf("expected values to be string, got %v", v)
+			}
+		}
+	case []interface{}:
+		for _, elem := range data {
+			s, ok := elem.(string)
+			if !ok {
+				return fmt.Errorf("expected elements to be string, got %T", elem)
+			}
+			parts := strings.SplitN(s, "=", 2)
+			k := parts[0]
+			v := ""
+			if len(parts) == 2 {
+				v = parts[1]
+			}
+			res[k] = v
+		}
+	default:
+		return fmt.Errorf("expected map or array, got %T", data)
+	}
+
+	*dict = res
+	return nil
 }
