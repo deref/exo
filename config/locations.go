@@ -17,10 +17,3 @@ func exoHome() string {
 
 	return filepath.Join(homeDir, ".exo")
 }
-
-func getExoPath(homedir, subdir, envOverride string) (path string, isOverride bool) {
-	if dirFromEnv := os.Getenv(envOverride); dirFromEnv != "" {
-		return dirFromEnv, true
-	}
-	return filepath.Join(homedir, subdir), false
-}

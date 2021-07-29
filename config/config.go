@@ -10,15 +10,17 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
+type TelemetryConfig struct {
+	Disable bool
+}
+
 type Config struct {
 	HomeDir string
 	BinDir  string
 	VarDir  string
 	RunDir  string
 
-	Telemetry struct {
-		Disable bool
-	}
+	Telemetry TelemetryConfig
 }
 
 type contextKey string
@@ -30,9 +32,9 @@ func LoadDefault(cfg *Config) error {
 		cfg.HomeDir = exoHome()
 	}
 
-	// TODO: make directory if necessary.
-	configFile, isOverrideConfig := getExoPath(cfg.HomeDir, "config.toml", "EXO_CONFIG")
-	if !isOverrideConfig {
+	configFile := os.Getenv("EXO_CONFIG")
+	if configFile == "" {
+		configFile = filepath.Join(cfg.HomeDir, "config.toml")
 		if err := os.MkdirAll(filepath.Dir(configFile), 0700); err != nil {
 			return err
 		}
@@ -43,13 +45,13 @@ func LoadDefault(cfg *Config) error {
 	}
 
 	if cfg.BinDir == "" {
-		cfg.BinDir, _ = getExoPath(cfg.HomeDir, "bin", "EXO_BIN")
+		cfg.BinDir = filepath.Join(cfg.HomeDir, "bin")
 	}
 	if cfg.RunDir == "" {
-		cfg.RunDir, _ = getExoPath(cfg.HomeDir, "run", "EXO_RUN")
+		cfg.RunDir = filepath.Join(cfg.HomeDir, "run")
 	}
 	if cfg.VarDir == "" {
-		cfg.VarDir, _ = getExoPath(cfg.HomeDir, "var", "EXO_VAR")
+		cfg.VarDir = filepath.Join(cfg.HomeDir, "var")
 	}
 
 	return nil

@@ -2,8 +2,6 @@ package main
 
 import (
 	"context"
-	"fmt"
-	"os"
 
 	"github.com/deref/exo/config"
 	"github.com/deref/exo/util/cmdutil"
@@ -30,17 +28,12 @@ func newContext() context.Context {
 	return config.WithConfig(context.Background(), cfg)
 }
 
-func exitWithError(err error) {
-	fmt.Fprintln(os.Stderr, err)
-	os.Exit(1)
-}
-
 func main() {
 	if err := config.LoadDefault(cfg); err != nil {
-		exitWithError(err)
+		cmdutil.Fatalf("loading config: %w", err)
 	}
 	knownPaths = cmdutil.MustMakeDirectories(cfg)
 	if err := rootCmd.Execute(); err != nil {
-		exitWithError(err)
+		cmdutil.Fatalf("%w", err)
 	}
 }
