@@ -20,9 +20,8 @@
   import Run from './mono/play.svelte';
   import Loading from './mono/refresh.svelte';
   import Stop from './mono/stop.svelte';
-  import Show from './mono/eye.svelte';
-  import Hide from './mono/eye-off.svelte';
   import Delete from './mono/delete.svelte';
+  import CheckboxButton from './CheckboxButton.svelte';
 
   export let workspace;
   export let workspaceId: string;
@@ -95,50 +94,56 @@
     {#if processList.stage == 'pending' || processList.stage == 'idle'}
       Loading...
     {:else if processList.stage == 'success' || processList.stage == 'refetching'}
-      {#each processList.data as { id, name, running } (id)}
-        <div class="process-description">
-          <h2>{name}</h2>
-          <div />
-          <div class="actions">
-            {#if statusPending.has(id)}
-              <button disabled><Loading /></button>
-            {:else if running}
-              <IconButton
-                tooltip="Stop process"
-                on:click={() => setProcRun(id, false)}
-                active><Stop /></IconButton
-              >
-            {:else}
-              <IconButton
-                tooltip="Run process"
-                on:click={() => setProcRun(id, true)}><Run /></IconButton
-              >
-            {/if}
+      <table>
+        <thead>
+          <th>Process</th>
+          <th>Run</th>
+          <th>Logs</th>
+          <th />
+        </thead>
+        {#each processList.data as { id, name, running } (id)}
+          <tr>
+            <td><h2>{name}</h2></td><td>
+              {#if statusPending.has(id)}
+                <button disabled><Loading /></button>
+              {:else if running}
+                <IconButton
+                  tooltip="Stop process"
+                  on:click={() => setProcRun(id, false)}
+                  active><Stop /></IconButton
+                >
+              {:else}
+                <IconButton
+                  tooltip="Run process"
+                  on:click={() => setProcRun(id, true)}><Run /></IconButton
+                >
+              {/if}
+            </td>
 
-            {#if $visibleLogsStore.has(id)}
+            <td>
+              <CheckboxButton
+                tooltip={$visibleLogsStore.has(id) ? 'Hide logs' : 'Show logs'}
+                on:click={() => {
+                  setProcLogs(id, $visibleLogsStore.has(id) ? false : true);
+                }}
+                active={$visibleLogsStore.has(id)}
+              />
+            </td>
+
+            <td>
               <IconButton
-                tooltip="Hide logs"
-                on:click={() => setProcLogs(id, false)}
-                active><Hide /></IconButton
+                tooltip="Delete process"
+                on:click={() => {
+                  void deleteProcess(workspace, id);
+                  setProcLogs(id, false);
+                }}><Delete /></IconButton
               >
-            {:else}
-              <IconButton
-                tooltip="Show logs"
-                on:click={() => setProcLogs(id, true)}><Show /></IconButton
-              >
-            {/if}
-            <IconButton
-              tooltip="Delete process"
-              on:click={() => {
-                void deleteProcess(workspace, id);
-                setProcLogs(id, false);
-              }}><Delete /></IconButton
-            >
-          </div>
-        </div>
-      {:else}
-        <i>No processes yet.</i>
-      {/each}
+            </td>
+          </tr>
+        {:else}
+          <i>No processes yet.</i>
+        {/each}
+      </table>
     {:else if processList.stage == 'error'}
       Error fetching process list: {processList.message}
     {/if}
@@ -152,12 +157,47 @@
     grid-template-rows: max-content 1fr;
   }
 
-  .process-description {
-    display: grid;
-    grid-template-columns: max-content auto max-content;
-    gap: 12px;
-    margin-bottom: 8px;
+  table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+
+  th {
+    padding: 12px 0;
+  }
+
+  td,
+  th {
+    text-align: left;
+    font-size: inherit;
+    font-weight: inherit;
     align-items: center;
+    justify-content: center;
+  }
+
+  td:not(:last-child),
+  th:not(:last-child) {
+    border-right: 12px solid transparent;
+  }
+
+  td:first-child {
+    width: 99%;
+  }
+
+  td:not(:first-child) {
+    white-space: nowrap;
+  }
+
+  table,
+  thead,
+  th,
+  td,
+  tr {
+    border: none;
+  }
+
+  tr:not(:last-child) {
+    border-bottom: 8px solid transparent;
   }
 
   h1 {
@@ -167,6 +207,7 @@
   }
 
   h2 {
+    display: inline-block;
     margin: 0;
     line-height: 1;
     font-size: 16px;
