@@ -2,6 +2,7 @@ package container
 
 import (
 	"context"
+	"fmt"
 
 	core "github.com/deref/exo/core/api"
 	"github.com/docker/docker/api/types"
@@ -60,7 +61,7 @@ func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput)
 		//RestartPolicy   RestartPolicy // Restart policy to be used for the container
 		// TODO: Potentially inherit from deploy's restart_policy.
 		RestartPolicy: container.RestartPolicy{
-			Name: c.Restart,
+			Name: c.Spec.Restart,
 		},
 		//AutoRemove      bool          // Automatically remove container when it exits
 		//VolumeDriver    string        // Name of the volume driver used to mount volumes
@@ -137,10 +138,14 @@ func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput)
 	//}
 	createdBody, err := c.Docker.ContainerCreate(ctx, containerCfg, hostCfg, networkCfg, platform, c.ContainerName)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("creating: %w", err)
+	}
+	c.ContainerID = createdBody.ID
+
+	if err := c.start(ctx); err != nil {
+		log.Printf("starting container %q: %v", c.ContainerID, err)
 	}
 
-	c.ContainerID = createdBody.ID
 	return &core.InitializeOutput{}, nil
 }
 
@@ -149,7 +154,18 @@ func (c *Container) Update(context.Context, *core.UpdateInput) (*core.UpdateOutp
 }
 
 func (c *Container) Refresh(ctx context.Context, input *core.RefreshInput) (*core.RefreshOutput, error) {
-	panic("TODO: container refresh")
+	if c.ContainerID == "" {
+		c.Running = false
+		return &core.RefreshOutput{}, nil
+	}
+
+	inspection, err := c.Docker.ContainerInspect(ctx, c.ContainerID)
+	if err != nil {
+		return nil, fmt.Errorf("inspecting container: %w", err)
+	}
+
+	c.Running = inspection.State.Running
+	return &core.RefreshOutput{}, nil
 }
 
 func (c *Container) Dispose(ctx context.Context, input *core.DisposeInput) (*core.DisposeOutput, error) {
