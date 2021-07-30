@@ -23,12 +23,12 @@ func init() {
 var processSpec = process.Spec{}
 
 var newProcessCmd = &cobra.Command{
-	Use:   "process <name> [flags] -- [name=value ...] <program> [args ...]",
+	Use:   "process <name> [options] -- [name=value ...] <program> [args ...]",
 	Short: "Creates a new process",
 	Long: `Creates a new process.
 	
 The double dash separator is recommended to avoid flag confusion between
-exo flags and flags for your program.
+exo flags and options for your program.
 	
 Environment variables may be specified by providing name=value pairs
 before the program name.
