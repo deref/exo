@@ -19,6 +19,8 @@ type Kernel interface {
 	GetVersion(context.Context, *GetVersionInput) (*GetVersionOutput, error)
 	// Upgrades exo to the latest version.
 	Upgrade(context.Context, *UpgradeInput) (*UpgradeOutput, error)
+	// Checks whether server is up.
+	Ping(context.Context, *PingInput) (*PingOutput, error)
 }
 
 type CreateWorkspaceInput struct {
@@ -66,6 +68,12 @@ type UpgradeInput struct {
 type UpgradeOutput struct {
 }
 
+type PingInput struct {
+}
+
+type PingOutput struct {
+}
+
 func BuildKernelMux(b *josh.MuxBuilder, factory func(req *http.Request) Kernel) {
 	b.AddMethod("create-workspace", func(req *http.Request) interface{} {
 		return factory(req).CreateWorkspace
@@ -84,5 +92,8 @@ func BuildKernelMux(b *josh.MuxBuilder, factory func(req *http.Request) Kernel) 
 	})
 	b.AddMethod("upgrade", func(req *http.Request) interface{} {
 		return factory(req).Upgrade
+	})
+	b.AddMethod("ping", func(req *http.Request) interface{} {
+		return factory(req).Ping
 	})
 }
