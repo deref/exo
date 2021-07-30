@@ -5,12 +5,23 @@ import (
 
 	"github.com/deref/exo/core/api"
 	"github.com/deref/exo/providers/docker/components/container"
+	"github.com/deref/exo/providers/docker/compose"
 	"github.com/deref/exo/util/yamlutil"
 	"github.com/spf13/cobra"
 )
 
 func init() {
 	newCmd.AddCommand(newContainerCmd)
+	newContainerCmd.Flags().StringVarP(
+		&newContainerOptions.Publish,
+		"publish", "p",
+		"",
+		"Publish a container's port(s) to the host",
+	)
+}
+
+var newContainerOptions struct {
+	Publish string
 }
 
 // TODO: Support a large subset of these options from `docker run`:
@@ -91,7 +102,6 @@ func init() {
 //		--pids-limit int                 Tune container pids limit (set -1 for unlimited)
 //		--platform string                Set platform if server is multi-platform capable
 //		--privileged                     Give extended privileges to this container
-//-p, --publish list                   Publish a container's port(s) to the host
 //-P, --publish-all                    Publish all exposed ports to random ports
 //		--pull string                    Pull image before running ("always"|"missing"|"never") (default "missing")
 //		--read-only                      Mount the container's root filesystem as read only
@@ -119,13 +129,16 @@ func init() {
 var containerSpec container.Spec
 
 var newContainerCmd = &cobra.Command{
-	Use:   "container <name> -- [options] <image> [command [args...]]", // TODO: Handle most `docker run` arguments.
+	Use:   "container <name> [options] <image> [-- command [args...]]", // TODO: Handle most `docker run` arguments.
 	Short: "Creates a new container",
 	Long: `Creates a new container.
 	
 Similar in spirit to:
 
 docker run --name <name> --detatch [options] <image> [command [args...]]
+
+The double dash separator is recommended to avoid flag confusion between
+exo flags and options for your docker container command.
 `,
 	Args: cobra.MinimumNArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -138,9 +151,15 @@ docker run --name <name> --detatch [options] <image> [command [args...]]
 
 		containerSpec.Image = args[1]
 
+		var err error
+		containerSpec.Ports, err = compose.ParsePortMappings(newContainerOptions.Publish)
+		if err != nil {
+			return fmt.Errorf("invalid publish option value: %w", err)
+		}
+
 		output, err := workspace.CreateComponent(ctx, &api.CreateComponentInput{
 			Name: name,
-			Type: "process",
+			Type: "container",
 			Spec: yamlutil.MustMarshalString(containerSpec),
 		})
 		if err != nil {

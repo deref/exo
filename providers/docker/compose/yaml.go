@@ -92,7 +92,7 @@ type Service struct {
 	// TODO: pid
 	// TODO: pids_limit
 	// TODO: platform
-	Ports []string `yaml:"ports"` // TODO: support long syntax.
+	Ports PortMappings `yaml:"ports"`
 	// TODO: privileged
 	// TODO: profiles
 	// TODO: pull_policy

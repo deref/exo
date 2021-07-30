@@ -3,11 +3,14 @@ package container
 import (
 	"context"
 	"fmt"
+	"log"
 
 	core "github.com/deref/exo/core/api"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
+	docker "github.com/docker/docker/client"
+	"github.com/docker/go-connections/nat"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
@@ -19,7 +22,7 @@ func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput)
 		// AttachStdin     bool                // Attach the standard input, makes possible user interaction
 		// AttachStdout    bool                // Attach the standard output
 		// AttachStderr    bool                // Attach the standard error
-		// ExposedPorts    nat.PortSet         `json:",omitempty"` // List of exposed ports
+		ExposedPorts: make(nat.PortSet),
 		// Tty             bool                // Attach standard streams to a tty, including stdin if it is not closed.
 		// OpenStdin       bool                // Open stdin
 		// StdinOnce       bool                // If true, close stdin after the 1 attached client disconnects.
@@ -39,13 +42,17 @@ func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput)
 		// StopTimeout     *int                `json:",omitempty"` // Timeout (in seconds) to stop a container
 		// Shell           strslice.StrSlice   `json:",omitempty"` // Shell for shell-form of RUN, CMD, ENTRYPOINT
 	}
+	for _, mapping := range c.Ports {
+		target := nat.Port(mapping.Target) // TODO: Handle port ranges.
+		containerCfg.ExposedPorts[target] = struct{}{}
+	}
 	logCfg := container.LogConfig{}
 	if c.Logging.Driver == "" && (c.Logging.Options == nil || len(c.Logging.Options) == 0) {
 		// No logging configuration specified, so default to logging to exo's
 		// syslog service.
 		logCfg.Type = "syslog"
 		logCfg.Config = map[string]string{
-			"syslog-address": c.SyslogAddr,
+			"syslog-address": "udp://" + c.SyslogAddr,
 		}
 	} else {
 		logCfg.Type = c.Logging.Driver
@@ -57,7 +64,7 @@ func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput)
 		//ContainerIDFile string        // File (path) where the containerId is written
 		LogConfig: logCfg,
 		//NetworkMode     NetworkMode   // Network mode to use for the container
-		//PortBindings    nat.PortMap   // Port mapping between the exposed port (container) and the host
+		PortBindings: make(nat.PortMap),
 		//RestartPolicy   RestartPolicy // Restart policy to be used for the container
 		// TODO: Potentially inherit from deploy's restart_policy.
 		RestartPolicy: container.RestartPolicy{
@@ -111,6 +118,16 @@ func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput)
 
 		//// Run a custom init inside the container, if null, use the daemon's configured settings
 		//Init *bool `json:",omitempty"`
+	}
+	for _, mapping := range c.Ports {
+		target := nat.Port(mapping.Target) // TODO: Handle ranges.
+		bindings := hostCfg.PortBindings[target]
+		bindings = append(bindings, nat.PortBinding{
+			HostIP:   mapping.HostIP,
+			HostPort: mapping.Published,
+		})
+		// TODO: Handle mapping.Mode and mapping.Protocol.
+		hostCfg.PortBindings[target] = bindings
 	}
 	networkCfg := &network.NetworkingConfig{
 		//EndpointsConfig map[string]*EndpointSettings // Endpoint configs for each connecting network
@@ -172,11 +189,19 @@ func (c *Container) Dispose(ctx context.Context, input *core.DisposeInput) (*cor
 	if c.ContainerID == "" {
 		return &core.DisposeOutput{}, nil
 	}
-	if err := c.Docker.ContainerRemove(ctx, c.ContainerID, types.ContainerRemoveOptions{
+	if err := c.stop(ctx); err != nil {
+		log.Printf("stopping container %q: %v", c.ContainerID, err)
+	}
+	err := c.Docker.ContainerRemove(ctx, c.ContainerID, types.ContainerRemoveOptions{
 		// XXX RemoveVolumes: ???,
 		// XXX RemoveLinks: ???,
-		// XXX Force: ???,
-	}); err != nil {
+		Force: true, // OK?
+	})
+	if docker.IsErrNotFound(err) {
+		log.Printf("disposing container not found: %q", c.ContainerID)
+		err = nil
+	}
+	if err != nil {
 		return nil, err
 	}
 	c.ContainerID = ""
