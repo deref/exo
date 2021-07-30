@@ -25,15 +25,19 @@ func Convert(procfile *Procfile) (*manifest.Manifest, error) {
 	m := manifest.NewManifest()
 	port := BasePort
 	for _, p := range procfile.Processes {
+		environment := map[string]string{
+			"PORT": strconv.Itoa(port),
+		}
+		for name, value := range p.Environment {
+			environment[name] = value
+		}
 		component := manifest.Component{
 			Name: p.Name,
 			Type: "process",
 			Spec: jsonutil.MustMarshalString(process.Spec{
-				Program:   p.Program,
-				Arguments: p.Arguments,
-				Environment: map[string]string{
-					"PORT": strconv.Itoa(port),
-				},
+				Program:     p.Program,
+				Arguments:   p.Arguments,
+				Environment: environment,
 			}),
 		}
 		port += PortStep
