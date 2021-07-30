@@ -92,10 +92,7 @@
               <td>{shortDate(event.timestamp)}</td>
               <td>{friendlyName(event.log)}</td>
               <td>
-                <FormattedLogMessage
-                  message={event.message +
-                    ' https://google.com more test|https://deref.io/page#eqw|blah'}
-                />
+                <FormattedLogMessage message={event.message} />
               </td>
             </tr>
           {/each}
