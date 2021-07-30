@@ -6,6 +6,7 @@
   import type { WorkspaceState } from '../lib/logs/store';
   import { shortDate } from '../lib/time';
   import { processes } from '../lib/process/store';
+  import FormattedLogMessage from './logs/FormattedLogMessage.svelte';
 
   export let workspace;
   export let workspaceId;
@@ -89,7 +90,13 @@
           {#each state.events.data as event (event.id)}
             <tr class="log-entry" style={logStyleFromHash(event.log)}>
               <td>{shortDate(event.timestamp)}</td>
-              <td>{friendlyName(event.log)}</td> <td>{event.message}</td>
+              <td>{friendlyName(event.log)}</td>
+              <td>
+                <FormattedLogMessage
+                  message={event.message +
+                    ' https://google.com more test|https://deref.io/page#eqw|blah'}
+                />
+              </td>
             </tr>
           {/each}
         </table>
