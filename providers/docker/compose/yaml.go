@@ -10,6 +10,7 @@ package compose
 import (
 	"fmt"
 	"io"
+	"sort"
 	"strings"
 
 	"github.com/goccy/go-yaml"
@@ -193,4 +194,16 @@ func (dict *Dictionary) UnmarshalYAML(unmarshal func(interface{}) error) error {
 
 	*dict = res
 	return nil
+}
+
+func (dict Dictionary) Slice() []string {
+	m := map[string]string(dict)
+	res := make([]string, len(m))
+	i := 0
+	for k, v := range m {
+		res[i] = fmt.Sprintf("%s=%s", k, v)
+		i++
+	}
+	sort.Strings(res)
+	return res
 }
