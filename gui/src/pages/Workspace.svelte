@@ -21,7 +21,7 @@
   section {
     height: 100%;
     display: grid;
-    grid-template-columns: 400px 1fr;
+    grid-template-columns: 360px 1fr;
     gap: 30px;
     margin: 0 30px;
     padding-bottom: 16px;
