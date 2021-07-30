@@ -81,6 +81,7 @@
   <h1>
     Processes
     <IconButton
+      tooltip="Add new process"
       on:click={() => {
         router.push(
           `#/workspaces/${encodeURIComponent(workspaceId)}/new-process`,
