@@ -25,9 +25,10 @@ require (
 	github.com/stretchr/testify v1.6.1
 	github.com/timewasted/go-accept-headers v0.0.0-20130320203746-c78f304b1b09
 	github.com/zclconf/go-cty v1.8.0
-	golang.org/x/sync v0.0.0-20201207232520-09787c993a3a
+	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20210630005230-0f9fa26af87c // indirect
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
+	mvdan.cc/sh/v3 v3.3.0
 )
 
 // https://github.com/deref/httpie-go/tree/pier
