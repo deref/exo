@@ -22,8 +22,8 @@
 
   // Poll server for new logs.
   let pollRefreshTimer = null;
-  const scheduleNextPoll = () => {
-    refreshLogs(workspaceId, workspace);
+  const scheduleNextPoll = async () => {
+    await refreshLogs(workspaceId, workspace);
     pollRefreshTimer = setTimeout(scheduleNextPoll, logsPollInterval);
   };
 

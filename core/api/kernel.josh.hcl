@@ -34,4 +34,8 @@ interface "kernel" {
   method "upgrade" {
     doc = "Upgrades exo to the latest version."
   }
+
+  method "ping" {
+    doc = "Checks whether server is up."
+  }
 }

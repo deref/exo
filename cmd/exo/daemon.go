@@ -20,9 +20,8 @@ func init() {
 }
 
 var daemonCmd = &cobra.Command{
-	Hidden: true,
-	Use:    "daemon",
-	Short:  "Start the exo daemon",
+	Use:   "daemon",
+	Short: "Start the exo daemon",
 	Long: `Start the exo daemon and then do nothing else.
 
 Since most commands implicitly start the exo daemon, users generally do not
