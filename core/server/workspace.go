@@ -219,7 +219,8 @@ func (ws *Workspace) newController(ctx context.Context, typ string) Controller {
 
 	case "container":
 		return &container.Container{
-			Docker: ws.Docker,
+			Docker:     ws.Docker,
+			SyslogAddr: ws.SyslogAddr,
 		}
 
 	case "network":

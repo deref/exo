@@ -82,7 +82,7 @@ type Service struct {
 	// TODO: isolation
 	// TODO: labels
 	// TODO: links
-	// TODO: logging
+	Logging Logging `yaml:"logging"`
 	// TODO: network_mode
 	Networks []string `yaml:"networks"` // TODO: support long syntax.
 	// TODO: mac_address
@@ -119,6 +119,11 @@ type Service struct {
 	Volumes []string `yaml:"volumes"` // TODO: support long syntax.
 	// TODO: volumes_from
 	// TODO: working_dir
+}
+
+type Logging struct {
+	Driver  string            `yaml:"driver"`
+	Options map[string]string `yaml:"options"`
 }
 
 type Network struct {

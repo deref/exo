@@ -38,11 +38,23 @@ func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput)
 		// StopTimeout     *int                `json:",omitempty"` // Timeout (in seconds) to stop a container
 		// Shell           strslice.StrSlice   `json:",omitempty"` // Shell for shell-form of RUN, CMD, ENTRYPOINT
 	}
+	logCfg := container.LogConfig{}
+	if c.Logging.Driver == "" && (c.Logging.Options == nil || len(c.Logging.Options) == 0) {
+		// No logging configuration specified, so default to logging to exo's
+		// syslog service.
+		logCfg.Type = "syslog"
+		logCfg.Config = map[string]string{
+			"syslog-address": c.SyslogAddr,
+		}
+	} else {
+		logCfg.Type = c.Logging.Driver
+		logCfg.Config = c.Logging.Options
+	}
 	hostCfg := &container.HostConfig{
 		//// Applicable to all platforms
 		//Binds           []string      // List of volume bindings for this container
 		//ContainerIDFile string        // File (path) where the containerId is written
-		//LogConfig       LogConfig     // Configuration of the logs for this container
+		LogConfig: logCfg,
 		//NetworkMode     NetworkMode   // Network mode to use for the container
 		//PortBindings    nat.PortMap   // Port mapping between the exposed port (container) and the host
 		//RestartPolicy   RestartPolicy // Restart policy to be used for the container

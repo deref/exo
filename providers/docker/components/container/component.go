@@ -10,7 +10,8 @@ type Container struct {
 	Spec
 	State
 
-	Docker *docker.Client
+	Docker     *docker.Client
+	SyslogAddr string
 }
 
 type Spec compose.Service
