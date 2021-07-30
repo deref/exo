@@ -23,7 +23,7 @@ func init() {
 var processSpec = process.Spec{}
 
 var newProcessCmd = &cobra.Command{
-	Use:   "process <name> [options] -- [name=value ...] <program> [args ...]",
+	Use:   "process <name> [options] [--] [name=value ...] <program> [args ...]",
 	Short: "Creates a new process",
 	Long: `Creates a new process.
 	
