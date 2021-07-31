@@ -9,6 +9,7 @@ import (
 	"github.com/aybabtme/rgbterm"
 	"github.com/deref/exo/chrono"
 	"github.com/deref/exo/core/api"
+	"github.com/deref/exo/providers/core/components/log"
 	"github.com/deref/exo/util/cmdutil"
 	"github.com/spf13/cobra"
 )
@@ -62,9 +63,7 @@ func tailLogs(ctx context.Context, workspace api.Workspace, logRefs []string) er
 	labelWidth := 0
 	logToComponent := make(map[string]string, len(descriptions.Processes))
 	for _, process := range descriptions.Processes {
-		// SEE NOTE: [LOG_COMPONENTS].
-		for _, role := range []string{"out", "err"} {
-			logName := fmt.Sprintf("%s:%s", process.ID, role)
+		for _, logName := range log.ComponentLogNames(process.Provider, process.ID) {
 			logToComponent[logName] = process.Name
 			if labelWidth < len(process.Name) {
 				labelWidth = len(process.Name)
