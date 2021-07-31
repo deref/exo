@@ -10,11 +10,13 @@ type Container struct {
 	Spec
 	State
 
-	Docker *docker.Client
+	Docker     *docker.Client
+	SyslogAddr string
 }
 
 type Spec compose.Service
 
 type State struct {
 	ContainerID string `json:"containerId"`
+	Running     bool   `json:"running"`
 }

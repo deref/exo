@@ -219,7 +219,8 @@ func (ws *Workspace) newController(ctx context.Context, typ string) Controller {
 
 	case "container":
 		return &container.Container{
-			Docker: ws.Docker,
+			Docker:     ws.Docker,
+			SyslogAddr: ws.SyslogAddr,
 		}
 
 	case "network":
@@ -649,8 +650,9 @@ func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeP
 		Processes: make([]api.ProcessDescription, 0, len(components.Components)),
 	}
 	for _, component := range components.Components {
-		if component.Type == "process" {
-			// XXX Do not utilize internal knowledge of process state.
+		// XXX Violates component state encapsulation.
+		switch component.Type {
+		case "process":
 			var state struct {
 				Pid int `json:"pid"`
 			}
@@ -664,6 +666,21 @@ func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeP
 				ID:      component.ID,
 				Name:    component.Name,
 				Running: running,
+			}
+			output.Processes = append(output.Processes, process)
+		case "container":
+			var state struct {
+				Running bool `json:"running"`
+			}
+			if err := jsonutil.UnmarshalString(component.State, &state); err != nil {
+				// TODO: log error.
+				fmt.Printf("unmarshalling container state: %v\n", err)
+				continue
+			}
+			process := api.ProcessDescription{
+				ID:      component.ID,
+				Name:    component.Name,
+				Running: state.Running,
 			}
 			output.Processes = append(output.Processes, process)
 		}

@@ -2,11 +2,15 @@ package container
 
 import (
 	"context"
+	"fmt"
+	"log"
 
 	core "github.com/deref/exo/core/api"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
+	docker "github.com/docker/docker/client"
+	"github.com/docker/go-connections/nat"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
@@ -18,7 +22,7 @@ func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput)
 		// AttachStdin     bool                // Attach the standard input, makes possible user interaction
 		// AttachStdout    bool                // Attach the standard output
 		// AttachStderr    bool                // Attach the standard error
-		// ExposedPorts    nat.PortSet         `json:",omitempty"` // List of exposed ports
+		ExposedPorts: make(nat.PortSet),
 		// Tty             bool                // Attach standard streams to a tty, including stdin if it is not closed.
 		// OpenStdin       bool                // Open stdin
 		// StdinOnce       bool                // If true, close stdin after the 1 attached client disconnects.
@@ -38,17 +42,33 @@ func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput)
 		// StopTimeout     *int                `json:",omitempty"` // Timeout (in seconds) to stop a container
 		// Shell           strslice.StrSlice   `json:",omitempty"` // Shell for shell-form of RUN, CMD, ENTRYPOINT
 	}
+	for _, mapping := range c.Ports {
+		target := nat.Port(mapping.Target) // TODO: Handle port ranges.
+		containerCfg.ExposedPorts[target] = struct{}{}
+	}
+	logCfg := container.LogConfig{}
+	if c.Logging.Driver == "" && (c.Logging.Options == nil || len(c.Logging.Options) == 0) {
+		// No logging configuration specified, so default to logging to exo's
+		// syslog service.
+		logCfg.Type = "syslog"
+		logCfg.Config = map[string]string{
+			"syslog-address": "udp://" + c.SyslogAddr,
+		}
+	} else {
+		logCfg.Type = c.Logging.Driver
+		logCfg.Config = c.Logging.Options
+	}
 	hostCfg := &container.HostConfig{
 		//// Applicable to all platforms
 		//Binds           []string      // List of volume bindings for this container
 		//ContainerIDFile string        // File (path) where the containerId is written
-		//LogConfig       LogConfig     // Configuration of the logs for this container
+		LogConfig: logCfg,
 		//NetworkMode     NetworkMode   // Network mode to use for the container
-		//PortBindings    nat.PortMap   // Port mapping between the exposed port (container) and the host
+		PortBindings: make(nat.PortMap),
 		//RestartPolicy   RestartPolicy // Restart policy to be used for the container
 		// TODO: Potentially inherit from deploy's restart_policy.
 		RestartPolicy: container.RestartPolicy{
-			Name: c.Restart,
+			Name: c.Spec.Restart,
 		},
 		//AutoRemove      bool          // Automatically remove container when it exits
 		//VolumeDriver    string        // Name of the volume driver used to mount volumes
@@ -99,6 +119,16 @@ func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput)
 		//// Run a custom init inside the container, if null, use the daemon's configured settings
 		//Init *bool `json:",omitempty"`
 	}
+	for _, mapping := range c.Ports {
+		target := nat.Port(mapping.Target) // TODO: Handle ranges.
+		bindings := hostCfg.PortBindings[target]
+		bindings = append(bindings, nat.PortBinding{
+			HostIP:   mapping.HostIP,
+			HostPort: mapping.Published,
+		})
+		// TODO: Handle mapping.Mode and mapping.Protocol.
+		hostCfg.PortBindings[target] = bindings
+	}
 	networkCfg := &network.NetworkingConfig{
 		//EndpointsConfig map[string]*EndpointSettings // Endpoint configs for each connecting network
 	}
@@ -125,10 +155,14 @@ func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput)
 	//}
 	createdBody, err := c.Docker.ContainerCreate(ctx, containerCfg, hostCfg, networkCfg, platform, c.ContainerName)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("creating: %w", err)
+	}
+	c.ContainerID = createdBody.ID
+
+	if err := c.start(ctx); err != nil {
+		log.Printf("starting container %q: %v", c.ContainerID, err)
 	}
 
-	c.ContainerID = createdBody.ID
 	return &core.InitializeOutput{}, nil
 }
 
@@ -137,18 +171,37 @@ func (c *Container) Update(context.Context, *core.UpdateInput) (*core.UpdateOutp
 }
 
 func (c *Container) Refresh(ctx context.Context, input *core.RefreshInput) (*core.RefreshOutput, error) {
-	panic("TODO: container refresh")
+	if c.ContainerID == "" {
+		c.Running = false
+		return &core.RefreshOutput{}, nil
+	}
+
+	inspection, err := c.Docker.ContainerInspect(ctx, c.ContainerID)
+	if err != nil {
+		return nil, fmt.Errorf("inspecting container: %w", err)
+	}
+
+	c.Running = inspection.State.Running
+	return &core.RefreshOutput{}, nil
 }
 
 func (c *Container) Dispose(ctx context.Context, input *core.DisposeInput) (*core.DisposeOutput, error) {
 	if c.ContainerID == "" {
 		return &core.DisposeOutput{}, nil
 	}
-	if err := c.Docker.ContainerRemove(ctx, c.ContainerID, types.ContainerRemoveOptions{
+	if err := c.stop(ctx); err != nil {
+		log.Printf("stopping container %q: %v", c.ContainerID, err)
+	}
+	err := c.Docker.ContainerRemove(ctx, c.ContainerID, types.ContainerRemoveOptions{
 		// XXX RemoveVolumes: ???,
 		// XXX RemoveLinks: ???,
-		// XXX Force: ???,
-	}); err != nil {
+		Force: true, // OK?
+	})
+	if docker.IsErrNotFound(err) {
+		log.Printf("disposing container not found: %q", c.ContainerID)
+		err = nil
+	}
+	if err != nil {
 		return nil, err
 	}
 	c.ContainerID = ""
