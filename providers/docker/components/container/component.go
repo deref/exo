@@ -11,7 +11,7 @@ type Container struct {
 	State
 
 	Docker     *docker.Client
-	SyslogAddr string
+	SyslogPort int
 }
 
 type Spec compose.Service

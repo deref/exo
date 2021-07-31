@@ -52,7 +52,10 @@ func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput)
 		// syslog service.
 		logCfg.Type = "syslog"
 		logCfg.Config = map[string]string{
-			"syslog-address": "udp://" + c.SyslogAddr,
+			"syslog-address":  fmt.Sprintf("udp://127.0.0.1:%d", c.SyslogPort),
+			"syslog-facility": "1", // "user-level messages"
+			"tag":             c.ComponentID,
+			"syslog-format":   "rfc5424micro",
 		}
 	} else {
 		logCfg.Type = c.Logging.Driver

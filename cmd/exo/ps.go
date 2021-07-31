@@ -33,7 +33,7 @@ var psCmd = &cobra.Command{
 			if process.Running {
 				state = "running"
 			}
-			_, _ = fmt.Fprintf(w, "%s\t%s\t%s\n", process.Name, process.ID, state)
+			_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", process.Name, process.ID, state, process.Provider)
 		}
 		_ = w.Flush()
 		return nil
