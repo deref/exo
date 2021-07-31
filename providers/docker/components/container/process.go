@@ -32,7 +32,7 @@ func (c *Container) Stop(ctx context.Context, input *core.StopInput) (*core.Stop
 
 func (c *Container) stop(ctx context.Context) error {
 	var timeout *time.Duration // Use container's default stop timeout.
-	return c.Docker.ContainerStop(ctx, c.ComponentID, timeout)
+	return c.Docker.ContainerStop(ctx, c.ContainerID, timeout)
 }
 
 func (c *Container) Restart(ctx context.Context, input *core.RestartInput) (*core.RestartOutput, error) {
