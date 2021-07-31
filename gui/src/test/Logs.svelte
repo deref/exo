@@ -7,9 +7,11 @@
   <section>
     <h1>Logs</h1>
     <h3>Linkify</h3>
-    <FormattedLogMessage
-      message={'This message uses a string with a https://deref.io URL in it and formats an anchor tag with the link.'}
-    />
+    <pre>
+      <FormattedLogMessage
+        message={'This message uses a   string with a https://deref.io URL in it and formats  an anchor tag with the link.'}
+      />
+    </pre>
   </section>
 </Layout>
 
