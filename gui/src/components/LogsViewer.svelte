@@ -42,9 +42,10 @@
   });
 
   const friendlyName = (log: string): string => {
+    // SEE NOTE [LOG_COMPONENTS].
     const [procId, stream] = log.split(':');
     const procName = knownProcessNameById[procId];
-    return procName ? `${procName}:${stream}` : log;
+    return procName ? (stream ? `${procName}:${stream}` : procName) : log;
   };
 
   onMount(() => {
