@@ -29,7 +29,7 @@ func (v *Volume) Update(context.Context, *core.UpdateInput) (*core.UpdateOutput,
 }
 
 func (v *Volume) Refresh(ctx context.Context, input *core.RefreshInput) (*core.RefreshOutput, error) {
-	panic("TODO: Volume refresh")
+	return &core.RefreshOutput{}, nil
 }
 
 func (v *Volume) Dispose(ctx context.Context, input *core.DisposeInput) (*core.DisposeOutput, error) {

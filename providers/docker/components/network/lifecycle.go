@@ -42,7 +42,7 @@ func (n *Network) Update(context.Context, *core.UpdateInput) (*core.UpdateOutput
 }
 
 func (n *Network) Refresh(ctx context.Context, input *core.RefreshInput) (*core.RefreshOutput, error) {
-	panic("TODO: network refresh")
+	return &core.RefreshOutput{}, nil
 }
 
 func (n *Network) Dispose(ctx context.Context, input *core.DisposeInput) (*core.DisposeOutput, error) {
