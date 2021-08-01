@@ -135,7 +135,7 @@ const rpc = async (
           }
         : {}),
     });
-  } catch (err) {
+  } catch (err: unknown) {
     if (err instanceof TypeError) {
       isRunning.set(false);
       throw new APIError(0, 'Server not available');

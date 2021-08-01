@@ -2,13 +2,14 @@
   import { logStyleFromHash } from '../lib/color';
   import { onMount, onDestroy, afterUpdate, beforeUpdate } from 'svelte';
   import { hasData, isUnresolved } from '../lib/api';
+  import type { WorkspaceApi } from '../lib/api';
   import { loadInitialLogs, logsStore, refreshLogs } from '../lib/logs/store';
   import type { WorkspaceState } from '../lib/logs/store';
   import { shortDate } from '../lib/time';
   import { processes } from '../lib/process/store';
 
-  export let workspace;
-  export let workspaceId;
+  export let workspace: WorkspaceApi;
+  export let workspaceId: string;
 
   const logsPollInterval = 1000;
 
@@ -21,7 +22,7 @@
   });
 
   // Poll server for new logs.
-  let pollRefreshTimer = null;
+  let pollRefreshTimer: ReturnType<typeof setTimeout> | null = null;
   const scheduleNextPoll = async () => {
     await refreshLogs(workspaceId, workspace);
     pollRefreshTimer = setTimeout(scheduleNextPoll, logsPollInterval);

@@ -1,6 +1,6 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
-  import type { RemoteData } from '../lib/api';
+  import type { RemoteData, WorkspaceApi } from '../lib/api';
   import { loadInitialLogs, resetLogs } from '../lib/logs/store';
   import {
     fetchProcesses,
@@ -23,7 +23,7 @@
   import Delete from './mono/delete.svelte';
   import CheckboxButton from './CheckboxButton.svelte';
 
-  export let workspace;
+  export let workspace: WorkspaceApi;
   export let workspaceId: string;
 
   let statusPending = new Set<string>();
