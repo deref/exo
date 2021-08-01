@@ -36,10 +36,12 @@ func (svc *Service) Run(ctx context.Context) error {
 	svc.IDGen = gensym.NewULIDGenerator(ctx)
 	svc.Store = store
 
-	conn, err := net.ListenPacket("udp", fmt.Sprintf(":%d", log.SyslogPort))
+	addr := fmt.Sprintf(":%d", log.SyslogPort)
+	conn, err := net.ListenPacket("udp", addr)
 	if err != nil {
 		return fmt.Errorf("listening: %w", err)
 	}
+	golog.Printf("listening for syslog at udp %s", addr)
 
 	errC := make(chan error, 1)
 	go func() {
