@@ -77,12 +77,12 @@ type Service struct {
 	// TODO: init
 	// TODO: ipc
 	// TODO: isolation
-	// TODO: labels
+	Labels Dictionary `yaml:"labels"`
 	// TODO: links
 	Logging Logging `yaml:"logging"`
 	// TODO: network_mode
-	Networks []string `yaml:"networks"` // TODO: support long syntax.
-	// TODO: mac_address
+	Networks   []string `yaml:"networks"` // TODO: support long syntax.
+	MacAddress string   `yaml:"mac_address"`
 	// TODO: mem_limit
 	// TODO: mem_reservation
 	// TODO: mem_swappiness
@@ -105,7 +105,7 @@ type Service struct {
 	// TODO: shm_size
 	// TODO: shm_open
 	// TODO: stop_grace_period
-	// TODO: stop_signal
+	StopSignal string `yaml:"stop_signal"`
 	// TODO: storage_opt
 	// TODO: sysctls
 	// TODO: tmpfs
@@ -115,7 +115,7 @@ type Service struct {
 	// TODO: userns_mode
 	Volumes []string `yaml:"volumes"` // TODO: support long syntax.
 	// TODO: volumes_from
-	// TODO: working_dir
+	WorkingDir string `yaml:"working_dir"`
 }
 
 type Logging struct {

@@ -35,9 +35,6 @@ func (c *Container) create(ctx context.Context) error {
 		// Hostname        string              // Hostname
 		// Domainname      string              // Domainname
 		// User            string              // User that will run the command(s) inside the container, also support user:group
-		// AttachStdin     bool                // Attach the standard input, makes possible user interaction
-		// AttachStdout    bool                // Attach the standard output
-		// AttachStderr    bool                // Attach the standard error
 		ExposedPorts: make(nat.PortSet),
 		// Tty             bool                // Attach standard streams to a tty, including stdin if it is not closed.
 		// OpenStdin       bool                // Open stdin
@@ -48,13 +45,13 @@ func (c *Container) create(ctx context.Context) error {
 		// ArgsEscaped     bool                `json:",omitempty"` // True if command is already escaped (meaning treat as a command line) (Windows specific).
 		Image: c.Image,
 		// Volumes         map[string]struct{} // List of volumes (mounts) used for the container
-		// WorkingDir      string              // Current directory (PWD) in the command will be launched
+		WorkingDir: c.WorkingDir,
 		// Entrypoint      strslice.StrSlice   // Entrypoint to run when starting the container
 		// NetworkDisabled bool                `json:",omitempty"` // Is network disabled
-		// MacAddress      string              `json:",omitempty"` // Mac Address of the container
+		MacAddress: c.MacAddress,
 		// OnBuild         []string            // ONBUILD metadata that were defined on the image Dockerfile
-		// Labels          map[string]string   // List of labels set to this container
-		// StopSignal      string              `json:",omitempty"` // Signal to stop a container
+		Labels:     c.Labels.WithoutNils(),
+		StopSignal: c.StopSignal,
 		// StopTimeout     *int                `json:",omitempty"` // Timeout (in seconds) to stop a container
 		// Shell           strslice.StrSlice   `json:",omitempty"` // Shell for shell-form of RUN, CMD, ENTRYPOINT
 	}
