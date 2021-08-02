@@ -6,6 +6,10 @@ This project adhears to [CalVer](./VERSIONING.md).
 
 ## [Unreleased]
 
+### Added
+
+- Linkify URLs in log messages.
+
 ### Fixed
 
 - Shell syntax handling in Procfiles.
