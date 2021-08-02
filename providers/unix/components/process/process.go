@@ -57,7 +57,7 @@ func (p *Process) start(ctx context.Context) error {
 		[]string{
 			"supervise",
 			"--",
-			p.SyslogAddr,
+			strconv.Itoa(p.SyslogPort),
 			p.ComponentID,
 			p.WorkspaceDir,
 			strconv.Itoa(gracePeriod),

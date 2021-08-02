@@ -162,6 +162,7 @@ struct "event" {
 
 struct "process-description" {
   field "id" "string" {}
+  field "provider" "string" {}
   field "name" "string" {}
   field "running" "bool" {}
 }

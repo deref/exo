@@ -318,9 +318,10 @@ type Event struct {
 }
 
 type ProcessDescription struct {
-	ID      string `json:"id"`
-	Name    string `json:"name"`
-	Running bool   `json:"running"`
+	ID       string `json:"id"`
+	Provider string `json:"provider"`
+	Name     string `json:"name"`
+	Running  bool   `json:"running"`
 }
 
 type ComponentStatus struct {

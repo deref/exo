@@ -51,7 +51,7 @@ func main() {
 		VarDir:     paths.VarDir,
 		Store:      store,
 		Telemetry:  telemetry.New(&cfg.Telemetry),
-		SyslogAddr: "localhost:4500", // XXX Configurable?
+		SyslogPort: log.SyslogPort,
 	}
 
 	ctx = log.ContextWithLogCollector(ctx, logd.GetLogCollector(&josh.Client{

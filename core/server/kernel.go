@@ -109,6 +109,10 @@ func (kern *Kernel) Panic(ctx context.Context, input *api.PanicInput) (*api.Pani
 	panic(message)
 }
 
+func (kern *Kernel) Ping(context.Context, *api.PingInput) (*api.PingOutput, error) {
+	return &api.PingOutput{}, nil
+}
+
 // restart replaces the current process with a new copy of itself. This is useful
 // after downloading a new binary.
 func restart(ctx context.Context) {

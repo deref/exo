@@ -24,11 +24,11 @@ var varDir string
 
 func Main(command string, args []string) {
 	if len(args) < 4 {
-		fatalf(`usage: %s <address> <component-id> <working-directory> <timeout> <program> <args...>
+		fatalf(`usage: %s <syslog-port> <component-id> <working-directory> <timeout> <program> <args...>
 
 supervise executes and supervises the given command. If successful, the child
 pid is written to stdout. The stdout and stderr streams of the supervised process
-will be directed to the given address as syslog events.
+will be directed to the given port on localhost as syslog events.
 
 Syslog messages use the following fields:
 
@@ -42,7 +42,7 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 	}
 	ctx := context.Background()
 
-	address := args[0]
+	syslogPort := args[0]
 	componentID := args[1]
 	wd := args[2]
 	timeout, timeoutErr := strconv.Atoi(args[3])
@@ -52,7 +52,7 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 	program := args[4]
 	arguments := args[5:]
 
-	udpAddr, err := net.ResolveUDPAddr("udp", address)
+	udpAddr, err := net.ResolveUDPAddr("udp", "localhost:"+syslogPort)
 	if err != nil {
 		fatalf("resolving udp address: %w", err)
 	}

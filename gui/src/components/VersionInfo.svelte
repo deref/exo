@@ -18,7 +18,8 @@
     const { installed, latest, current } = await api.kernel.getVersion();
     // The server just changed installed version - reload.
     if (installedVersion !== null && installedVersion != installed) {
-      window.location.reload();
+      console.log({ installedVersion, installed })
+      // window.location.reload();
     }
 
     installedVersion = installed;

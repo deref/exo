@@ -1,7 +1,6 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
-  import type { RemoteData } from '../lib/api';
-  import type { WorkspaceApi } from '../lib/api';
+  import type { RemoteData, WorkspaceApi } from '../lib/api';
   import { loadInitialLogs, resetLogs } from '../lib/logs/store';
   import {
     fetchProcesses,
@@ -91,6 +90,7 @@
   <h1>
     Processes
     <IconButton
+      tooltip="Add new process"
       on:click={() => {
         router.push(
           `#/workspaces/${encodeURIComponent(workspaceId)}/new-process`,
@@ -174,7 +174,7 @@
                     {#each Object.entries(status.envVars ?? {}) as [name, val] (name)}
                       <tr>
                         <td>{name}</td>
-                        <td>{val}</td>
+                        <td style="max-width: 100px;">{val}</td>
                       </tr>
                     {/each}
                   </table>

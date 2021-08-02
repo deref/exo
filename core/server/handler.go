@@ -14,7 +14,7 @@ type Config struct {
 	VarDir     string
 	Store      state.Store
 	Telemetry  telemetry.Telemetry
-	SyslogAddr string
+	SyslogPort int
 	Docker     *docker.Client
 }
 
@@ -37,7 +37,7 @@ func BuildRootMux(prefix string, cfg *Config) *http.ServeMux {
 			ID:         req.URL.Query().Get("id"),
 			VarDir:     cfg.VarDir,
 			Store:      cfg.Store,
-			SyslogAddr: cfg.SyslogAddr,
+			SyslogPort: cfg.SyslogPort,
 			Docker:     cfg.Docker,
 		}
 	})

@@ -50,3 +50,8 @@ func (c *Kernel) Upgrade(ctx context.Context, input *api.UpgradeInput) (output *
 	err = c.client.Invoke(ctx, "upgrade", input, &output)
 	return
 }
+
+func (c *Kernel) Ping(ctx context.Context, input *api.PingInput) (output *api.PingOutput, err error) {
+	err = c.client.Invoke(ctx, "ping", input, &output)
+	return
+}
