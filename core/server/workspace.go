@@ -86,6 +86,9 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 		return nil, fmt.Errorf("describing workspace: %w", err)
 	}
 	res := ws.loadManifest(description.Root, input)
+	if res.Err != nil {
+		return nil, err
+	}
 	m := res.Manifest
 
 	describeOutput, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
