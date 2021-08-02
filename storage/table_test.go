@@ -1,6 +1,7 @@
 package storage_test
 
 import (
+	"fmt"
 	"testing"
 
 	"github.com/deref/exo/storage"
@@ -66,38 +67,54 @@ func TestRawOps(t *testing.T) {
 func TestTable(t *testing.T) {
 	kv := storage.NewMemoryKVEngine()
 
-	schema := storage.NewSchema(
-		storage.ElementDescriptor{
-			Name: "partition",
-			Type: storage.TypeUint64,
-		},
-		storage.ElementDescriptor{
-			Name: "id",
-			Type: storage.TypeUint64,
-		},
-		storage.ElementDescriptor{
-			Name: "name",
-			Type: storage.TypeUnicode,
-		},
-	)
-	t1 := storage.NewTable(storage.TableOptions{
-		OID:    1,
-		Name:   "my-table",
-		Schema: schema,
+	db, err := storage.NewDatabase(kv)
+	assert.NoError(t, err)
+
+	tbl := db.NewTable(storage.TableOptions{
+		Name: "my_table",
+		Schema: storage.NewSchema(
+			storage.ElementDescriptor{
+				Name: "partition",
+				Type: storage.TypeUint64,
+			},
+			storage.ElementDescriptor{
+				Name: "id",
+				Type: storage.TypeUint64,
+			},
+			storage.ElementDescriptor{
+				Name: "name",
+				Type: storage.TypeUnicode,
+			},
+		),
 		Indexes: []storage.IndexOptions{
-			storage.MultiColumnIndex("partition", "id"),
+			storage.MultiColumnIndex("partition", "id"), // TODO: Mark as primary key.
 			storage.SingleColumnIndex("name"),
 		},
 	})
+	err = tbl.Create()
+	if !assert.NoError(t, err) {
+		return
+	}
 
-	db, err := storage.NewDatabase(kv)
-	assert.NoError(t, err)
-	err = db.InstallTable(t1)
-	assert.NoError(t, err)
+	err = tbl.Insert(map[string]interface{}{
+		"partition": uint64(0),
+		"id":        uint64(80831),
+		"name":      "Javier",
+	})
+	if !assert.NoError(t, err) {
+		return
+	}
 
-	assert.True(t, false)
+	tbl, err = db.Table("my_table")
+	if !assert.NoError(t, err) {
+		return
+	}
 
-	// err = db.Table("my-table").InsertAll([]map[string]interface{}{
+	tbl.Scan(func(t *storage.Tuple) bool {
+		fmt.Println("Scanning:", t)
+		return false
+	})
+	// err = tbl.InsertAll([]map[string]interface{}{
 	// 	{
 	// 		"partition": uint64(1),
 	// 		"id":        uint64(123),

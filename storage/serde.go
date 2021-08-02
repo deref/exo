@@ -112,6 +112,8 @@ func (s SchematizedRowSerde) Serialize(tup *Tuple) ([]byte, error) {
 		elem := tup.elements[elemIdx]
 		elemSchema := s.schema.Elements[elemIdx]
 		switch elemSchema.Type {
+		case TypeBytes:
+			varlenData = elem.([]byte)
 		case TypeUnicode:
 			varlenData = []byte(elem.(string))
 		default:

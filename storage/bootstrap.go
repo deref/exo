@@ -1,19 +1,13 @@
 package storage
 
-import "fmt"
-
 var tableSchema = NewSchema(
 	ElementDescriptor{
-		Name: "oid",
-		Type: TypeUint32,
-	},
-	ElementDescriptor{
 		Name: "table_oid",
-		Type: TypeUint32,
+		Type: TypeInt32,
 	},
 	ElementDescriptor{
 		Name: "schema_oid",
-		Type: TypeUint32,
+		Type: TypeInt32,
 	},
 	ElementDescriptor{
 		Name: "table_name",
@@ -21,28 +15,70 @@ var tableSchema = NewSchema(
 	},
 )
 
-var bootstrapSchema = NewSchema(
+func tableTable(db *Database) *table {
+	return &table{
+		db:     db,
+		oid:    oidTable,
+		name:   "table",
+		schema: tableSchema,
+		serde:  NewSchematizedRowSerde(tableSchema),
+		// Indexes: []IndexOptions{
+		// 	SingleColumnIndex("table_name"),
+		// },
+	}
+}
+
+var schemaSchema = NewSchema(
 	ElementDescriptor{
-		Name: "oid",
-		Type: TypeUint32,
+		Name: "schema_oid",
+		Type: TypeInt32,
+	},
+	ElementDescriptor{
+		Name: "serialized_schema",
+		Type: TypeBytes,
 	},
 )
 
-func isBootstrapped(store KVEngine) (bool, error) {
-	t := NewTupleWithSchema(bootstrapSchema)
-	t.SetUint32(0, uint32(oidBootstrap))
+func schemaTable(db *Database) *table {
+	return &table{
+		db:     db,
+		oid:    oidSchema,
+		name:   "schema",
+		schema: schemaSchema,
+		serde:  NewSchematizedRowSerde(schemaSchema),
+	}
+}
 
-	val, err := store.Get(t.Serialize())
+var indexSchema = NewSchema(
+	ElementDescriptor{
+		Name: "index_oid",
+		Type: TypeInt32,
+	},
+	ElementDescriptor{
+		Name: "column_names",
+		Type: TypeBytes,
+	},
+)
 
+var bootstrapKey = NewTuple(int32(oidBootstrap)).Serialize()
+
+func (db *Database) isBootstrapped() (bool, error) {
+	val, err := db.store.Get(bootstrapKey)
 	return val != nil, err
 }
 
-func bootstrapStore(store KVEngine) error {
-	fmt.Println("Bootstrapping store")
+func (db *Database) bootstrap() error {
+	db.nextOID = 1 // XXX: How to initialize on subsequent runs?
 
-	// TODO: install other objects.
+	// Create table for schemas.
+	if err := schemaTable(db).Create(); err != nil {
+		return err
+	}
 
-	t := NewTupleWithSchema(bootstrapSchema)
-	t.SetUint32(0, uint32(oidBootstrap))
-	return store.Set(t.Serialize(), []byte{0})
+	// Create table for tables.
+	if err := tableTable(db).Create(); err != nil {
+		return err
+	}
+
+	return db.store.Set(bootstrapKey, []byte{0})
 }

@@ -6,6 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+
+	"github.com/deref/exo/util/cmdutil"
 )
 
 var ErrOutOfRange = errors.New("index out of range")
@@ -65,6 +67,16 @@ func (t *Tuple) Without(idx int) *Tuple {
 	}
 }
 
+func (t *Tuple) Slice(start, end int) *Tuple {
+	// TODO: validate start/end.
+	newElements := make([]interface{}, end-start)
+	copy(newElements, t.elements[start:end])
+	return &Tuple{
+		elements: newElements,
+		schema:   t.schema.Slice(start, end),
+	}
+}
+
 func (t *Tuple) Size() int {
 	return len(t.elements)
 }
@@ -77,34 +89,49 @@ func (t *Tuple) GetUntyped(i int) (interface{}, error) {
 	return t.elements[i], nil
 }
 
-// TODO: Codegen these.
-
-func (t *Tuple) GetUnicode(i int) (string, error) {
+func (t *Tuple) GetDynamic(i int) (interface{}, error) {
 	if i > len(t.elements)-1 {
-		return "", ErrOutOfRange
+		return nil, ErrOutOfRange
 	}
-
-	elemType := t.schema.MustGet(i).Type
-	if elemType != TypeUnicode {
-		return "", fmt.Errorf("Expected string at %d but got %s", i, elemType)
-	}
-
-	return t.elements[i].(string), nil
+	return t.elements[i], nil
 }
 
-func (t *Tuple) SetUnicode(i int, val string) error {
+func (t *Tuple) SetDynamic(i int, val interface{}) error {
 	if i > len(t.elements)-1 {
 		return ErrOutOfRange
 	}
 
 	elemType := t.schema.MustGet(i).Type
-	if elemType != TypeUnicode {
-		return fmt.Errorf("Expected string at %d but got %s", i, elemType)
+	switch elemType {
+	case TypeInt32:
+		return t.SetInt32(i, val.(int32))
+
+	case TypeUint32:
+		return t.SetUint32(i, val.(uint32))
+
+	case TypeInt64:
+		return t.SetInt64(i, val.(int64))
+
+	case TypeUint64:
+		return t.SetUint64(i, val.(uint64))
+
+	case TypeBoolean:
+		return t.SetBoolean(i, val.(bool))
+
+	case TypeBytes:
+		return t.SetBytes(i, val.([]byte))
+
+	case TypeUnicode:
+		return t.SetUnicode(i, val.(string))
+
+	default:
+		cmdutil.Fatalf("unhandled schema type: %s", elemType)
 	}
 
-	t.elements[i] = val
-	return nil
+	panic("unreachable")
 }
+
+// TODO: Codegen these.
 
 func (t *Tuple) GetInt32(i int) (int32, error) {
 	if i > len(t.elements)-1 {
@@ -208,6 +235,87 @@ func (t *Tuple) SetUint64(i int, val uint64) error {
 	elemType := t.schema.MustGet(i).Type
 	if elemType != TypeUint64 {
 		return fmt.Errorf("Expected uint64 at %d but got %s", i, elemType)
+	}
+
+	t.elements[i] = val
+	return nil
+}
+
+func (t *Tuple) GetBoolean(i int) (bool, error) {
+	if i > len(t.elements)-1 {
+		return false, ErrOutOfRange
+	}
+
+	elemType := t.schema.MustGet(i).Type
+	if elemType != TypeBoolean {
+		return false, fmt.Errorf("Expected boolean at %d but got %s", i, elemType)
+	}
+
+	return t.elements[i].(bool), nil
+}
+
+func (t *Tuple) SetBoolean(i int, val bool) error {
+	if i > len(t.elements)-1 {
+		return ErrOutOfRange
+	}
+
+	elemType := t.schema.MustGet(i).Type
+	if elemType != TypeBoolean {
+		return fmt.Errorf("Expected boolean at %d but got %s", i, elemType)
+	}
+
+	t.elements[i] = val
+	return nil
+}
+
+func (t *Tuple) GetBytes(i int) ([]byte, error) {
+	if i > len(t.elements)-1 {
+		return nil, ErrOutOfRange
+	}
+
+	elemType := t.schema.MustGet(i).Type
+	if elemType != TypeBytes {
+		return nil, fmt.Errorf("Expected bytes at %d but got %s", i, elemType)
+	}
+
+	return t.elements[i].([]byte), nil
+}
+
+func (t *Tuple) SetBytes(i int, val []byte) error {
+	if i > len(t.elements)-1 {
+		return ErrOutOfRange
+	}
+
+	elemType := t.schema.MustGet(i).Type
+	if elemType != TypeBytes {
+		return fmt.Errorf("Expected bytes at %d but got %s", i, elemType)
+	}
+
+	t.elements[i] = val
+	return nil
+}
+
+func (t *Tuple) GetUnicode(i int) (string, error) {
+	if i > len(t.elements)-1 {
+		return "", ErrOutOfRange
+	}
+
+	elemType := t.schema.MustGet(i).Type
+	if elemType != TypeUnicode {
+		return "", fmt.Errorf("Expected string at %d but got %s", i, elemType)
+	}
+
+	return t.elements[i].(string), nil
+}
+
+func (t *Tuple) SetUnicode(i int, val string) error {
+	if i > len(t.elements)-1 {
+		return ErrOutOfRange
+	}
+
+	elemType := t.schema.MustGet(i).Type
+	if elemType != TypeUnicode {
+		return fmt.Errorf("Expected string at %d but got %s", i, elemType)
 	}
 
 	t.elements[i] = val
