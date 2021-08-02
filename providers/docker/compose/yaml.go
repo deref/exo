@@ -62,7 +62,7 @@ type Service struct {
 	// TODO: dns
 	// TODO: dns_opt
 	// TODO: dns_search
-	// TODO: domainname
+	Domainname string `yaml:"domainname"`
 	// TODO: entrypoint
 	// TODO: env_file
 	Environment Dictionary `yaml:"environment"`
@@ -72,8 +72,8 @@ type Service struct {
 	// TODO: extra_hosts
 	// TODO: group_add
 	// TODO: healthcheck
-	// TODO: hostname
-	Image string `yaml:"image"`
+	Hostname string `yaml:"hostname"`
+	Image    string `yaml:"image"`
 	// TODO: init
 	// TODO: ipc
 	// TODO: isolation
@@ -92,26 +92,26 @@ type Service struct {
 	// TODO: pid
 	// TODO: pids_limit
 	// TODO: platform
-	Ports PortMappings `yaml:"ports"`
-	// TODO: privileged
+	Ports      PortMappings `yaml:"ports"`
+	Privileged bool         `yaml:"privileged"`
 	// TODO: profiles
 	// TODO: pull_policy
 	// TODO: read_only
 	Restart string `yaml:"restart"`
-	// TODO: runtime
+	Runtime string `yaml:"runtime"`
 	// TODO: scale
 	Secrets []string `yaml:"secrets"` // TODO: support long syntax.
 	// TODO: security_opt
-	// TODO: shm_size
-	// TODO: shm_open
+	ShmSize         Bytes     `yaml:"shm_size"`
+	StdinOpen       bool      `yaml:"stdin_open"`
 	StopGracePeriod *Duration `yaml:"stop_grace_period"`
 	StopSignal      string    `yaml:"stop_signal"`
 	// TODO: storage_opt
 	// TODO: sysctls
 	// TODO: tmpfs
-	// TODO: tty
+	TTY bool `yaml:"tty"`
 	// TODO: ulimits
-	// TODO: user
+	User string `yaml:"user"`
 	// TODO: userns_mode
 	Volumes []string `yaml:"volumes"` // TODO: support long syntax.
 	// TODO: volumes_from

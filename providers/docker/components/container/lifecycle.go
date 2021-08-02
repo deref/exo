@@ -33,12 +33,12 @@ func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput)
 
 func (c *Container) create(ctx context.Context) error {
 	containerCfg := &container.Config{
-		// Hostname        string              // Hostname
-		// Domainname      string              // Domainname
-		// User            string              // User that will run the command(s) inside the container, also support user:group
+		Hostname:     c.Hostname,
+		Domainname:   c.Domainname,
+		User:         c.User,
 		ExposedPorts: make(nat.PortSet),
-		// Tty             bool                // Attach standard streams to a tty, including stdin if it is not closed.
-		// OpenStdin       bool                // Open stdin
+		Tty:          c.TTY,
+		OpenStdin:    c.StdinOpen,
 		// StdinOnce       bool                // If true, close stdin after the 1 attached client disconnects.
 		Env: c.Environment.Slice(),
 		// Cmd             strslice.StrSlice   // Command to run when starting the container
@@ -108,7 +108,7 @@ func (c *Container) create(ctx context.Context) error {
 		//Links           []string          // List of links (in the name:alias form)
 		//OomScoreAdj     int               // Container preference for OOM-killing
 		//PidMode         PidMode           // PID namespace to use for the container
-		//Privileged      bool              // Is the container in privileged mode
+		Privileged: c.Privileged,
 		//PublishAllPorts bool              // Should docker publish all exposed port for the container
 		//ReadonlyRootfs  bool              // Is the container root filesystem in read-only
 		//SecurityOpt     []string          // List of string values to customize labels for MLS systems, such as SELinux.
@@ -116,9 +116,9 @@ func (c *Container) create(ctx context.Context) error {
 		//Tmpfs           map[string]string `json:",omitempty"` // List of tmpfs (mounts) used for the container
 		//UTSMode         UTSMode           // UTS namespace to use for the container
 		//UsernsMode      UsernsMode        // The user namespace to use for the container
-		//ShmSize         int64             // Total shm memory usage
+		ShmSize: int64(c.ShmSize),
 		//Sysctls         map[string]string `json:",omitempty"` // List of Namespaced sysctls used for the container
-		//Runtime         string            `json:",omitempty"` // Runtime to use with this container
+		Runtime: c.Runtime,
 
 		//// Applicable to Windows
 		//ConsoleSize [2]uint   // Initial console size (height,width)
