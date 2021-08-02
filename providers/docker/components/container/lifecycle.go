@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	core "github.com/deref/exo/core/api"
 	"github.com/docker/docker/api/types"
@@ -52,8 +53,11 @@ func (c *Container) create(ctx context.Context) error {
 		// OnBuild         []string            // ONBUILD metadata that were defined on the image Dockerfile
 		Labels:     c.Labels.WithoutNils(),
 		StopSignal: c.StopSignal,
-		// StopTimeout     *int                `json:",omitempty"` // Timeout (in seconds) to stop a container
 		// Shell           strslice.StrSlice   `json:",omitempty"` // Shell for shell-form of RUN, CMD, ENTRYPOINT
+	}
+	if c.StopGracePeriod != nil {
+		timeout := int(time.Duration(*c.StopGracePeriod).Round(time.Second).Seconds())
+		containerCfg.StopTimeout = &timeout
 	}
 	for _, mapping := range c.Ports {
 		target := nat.Port(mapping.Target) // TODO: Handle port ranges.

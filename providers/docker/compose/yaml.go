@@ -104,8 +104,8 @@ type Service struct {
 	// TODO: security_opt
 	// TODO: shm_size
 	// TODO: shm_open
-	// TODO: stop_grace_period
-	StopSignal string `yaml:"stop_signal"`
+	StopGracePeriod *Duration `yaml:"stop_grace_period"`
+	StopSignal      string    `yaml:"stop_signal"`
 	// TODO: storage_opt
 	// TODO: sysctls
 	// TODO: tmpfs
