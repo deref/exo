@@ -17,6 +17,7 @@ help page:
 
 exo help new process
 `,
+	DisableFlagsInUseLine: true,
 	Run: func(cmd *cobra.Command, args []string) {
 		cmd.Usage()
 	},
