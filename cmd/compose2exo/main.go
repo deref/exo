@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/deref/exo/import/compose"
@@ -9,11 +10,14 @@ import (
 )
 
 func main() {
-	cfg, err := compose.Import(os.Stdin)
-	if err != nil {
-		cmdutil.Fatal(err)
+	res := compose.Import(os.Stdin)
+	for _, warning := range res.Warnings {
+		fmt.Fprintln(os.Stderr, warning)
 	}
-	if err := manifest.Generate(os.Stdout, cfg); err != nil {
+	if res.Err != nil {
+		cmdutil.Fatal(res.Err)
+	}
+	if err := manifest.Generate(os.Stdout, res.Manifest); err != nil {
 		cmdutil.Fatal(err)
 	}
 }

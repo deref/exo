@@ -10,10 +10,10 @@ import (
 	"github.com/deref/exo/util/jsonutil"
 )
 
-func Import(r io.Reader) (*manifest.Manifest, error) {
+func Import(r io.Reader) manifest.LoadResult {
 	procfile, err := Parse(r)
 	if err != nil {
-		return nil, fmt.Errorf("parsing: %w", err)
+		return manifest.LoadResult{Err: fmt.Errorf("parsing: %w", err)}
 	}
 	return Convert(procfile)
 }
@@ -21,7 +21,7 @@ func Import(r io.Reader) (*manifest.Manifest, error) {
 const BasePort = 5000
 const PortStep = 100
 
-func Convert(procfile *Procfile) (*manifest.Manifest, error) {
+func Convert(procfile *Procfile) manifest.LoadResult {
 	m := manifest.NewManifest()
 	port := BasePort
 	for _, p := range procfile.Processes {
@@ -43,5 +43,7 @@ func Convert(procfile *Procfile) (*manifest.Manifest, error) {
 		port += PortStep
 		m.Components = append(m.Components, component)
 	}
-	return m, nil
+	return manifest.LoadResult{
+		Manifest: m,
+	}
 }

@@ -30,6 +30,8 @@ interface "workspace" {
     input "manifest" "*string" {
       doc = "Contents of the manifest file. Not required if manifest-path is provided."
     }
+    
+    output "warnings" "[]string" {}
   }
   
   # TODO: Should use the standard "refresh" lifecycle method.
