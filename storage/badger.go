@@ -25,15 +25,24 @@ type BadgerKVEngine struct {
 var _ KVEngine = (*BadgerKVEngine)(nil)
 
 func (kv *BadgerKVEngine) Get(key []byte) (val []byte, err error) {
+	found := false
 	err = kv.db.View(func(txn *badger.Txn) error {
 		item, err := txn.Get(key)
-		if err != nil {
+		switch err {
+		case badger.ErrKeyNotFound:
+			return nil
+		case nil:
+			found = true
+		default:
 			return err
 		}
 
 		val, err = item.ValueCopy(nil)
 		return err
 	})
+	if !found {
+		return nil, nil
+	}
 	return
 }
 

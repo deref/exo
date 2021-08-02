@@ -23,6 +23,10 @@ func NewTuple(elements ...interface{}) *Tuple {
 		switch elem.(type) {
 		case string:
 			t.schema.AppendUnnamed(TypeUnicode)
+		case int32:
+			t.schema.AppendUnnamed(TypeInt32)
+		case uint32:
+			t.schema.AppendUnnamed(TypeUint32)
 		case int64:
 			t.schema.AppendUnnamed(TypeInt64)
 		case uint64:
@@ -102,6 +106,60 @@ func (t *Tuple) SetUnicode(i int, val string) error {
 	return nil
 }
 
+func (t *Tuple) GetInt32(i int) (int32, error) {
+	if i > len(t.elements)-1 {
+		return 0, ErrOutOfRange
+	}
+
+	elemType := t.schema.MustGet(i).Type
+	if elemType != TypeInt32 {
+		return 0, fmt.Errorf("Expected int32 at %d but got %s", i, elemType)
+	}
+
+	return t.elements[i].(int32), nil
+}
+
+func (t *Tuple) SetInt32(i int, val int32) error {
+	if i > len(t.elements)-1 {
+		return ErrOutOfRange
+	}
+
+	elemType := t.schema.MustGet(i).Type
+	if elemType != TypeInt32 {
+		return fmt.Errorf("Expected int32 at %d but got %s", i, elemType)
+	}
+
+	t.elements[i] = val
+	return nil
+}
+
+func (t *Tuple) GetUint32(i int) (uint32, error) {
+	if i > len(t.elements)-1 {
+		return 0, ErrOutOfRange
+	}
+
+	elemType := t.schema.MustGet(i).Type
+	if elemType != TypeUint32 {
+		return 0, fmt.Errorf("Expected uint32 at %d but got %s", i, elemType)
+	}
+
+	return t.elements[i].(uint32), nil
+}
+
+func (t *Tuple) SetUint32(i int, val uint32) error {
+	if i > len(t.elements)-1 {
+		return ErrOutOfRange
+	}
+
+	elemType := t.schema.MustGet(i).Type
+	if elemType != TypeUint32 {
+		return fmt.Errorf("Expected uint32 at %d but got %s", i, elemType)
+	}
+
+	t.elements[i] = val
+	return nil
+}
+
 func (t *Tuple) GetInt64(i int) (int64, error) {
 	if i > len(t.elements)-1 {
 		return 0, ErrOutOfRange
@@ -171,19 +229,32 @@ func (t *Tuple) doSerialize() {
 		buf.WriteByte(byte(typ))
 		elem := t.elements[i]
 		switch typ {
+		case TypeInt32:
+			_ = binary.Write(buf, binary.BigEndian, elem.(int32))
+
+		case TypeUint32:
+			_ = binary.Write(buf, binary.BigEndian, elem.(uint32))
+
+		case TypeInt64:
+			_ = binary.Write(buf, binary.BigEndian, elem.(int64))
+
+		case TypeUint64:
+			_ = binary.Write(buf, binary.BigEndian, elem.(uint64))
+
+		case TypeBoolean:
+			if elem.(bool) {
+				buf.WriteByte(1)
+			} else {
+				buf.WriteByte(0)
+			}
+
+		case TypeBytes:
+			buf.Write(escapeNulls(elem.([]byte)))
+			buf.WriteByte(0)
+
 		case TypeUnicode:
 			buf.Write(escapeNulls([]byte(elem.(string))))
 			buf.WriteByte(0)
-
-		case TypeInt64:
-			buf := bytes.NewBuffer(make([]byte, 0, 8))
-			_ = binary.Write(buf, binary.BigEndian, elem.(int64))
-			buf.Write(buf.Bytes())
-
-		case TypeUint64:
-			i := make([]byte, 8)
-			binary.BigEndian.PutUint64(i, elem.(uint64))
-			buf.Write(i)
 
 		default:
 			panic(fmt.Errorf("no serializer defined for %s@%d", elementDescriptor, i))
@@ -201,42 +272,62 @@ func Deserialize(buf []byte) (*Tuple, error) {
 	t := &Tuple{schema: NewSchema()}
 
 	buflen := len(buf)
-	for byteIdx := 0; byteIdx < buflen; byteIdx++ {
+	byteIdx := 0
+	for byteIdx < buflen {
 		typeTag := ElemType(buf[byteIdx])
 		t.schema.AppendUnnamed(typeTag)
 		// Skip past type tag
 		byteIdx++
 
 		switch typeTag {
-		case TypeUnicode:
-			var s []byte
+		case TypeInt32:
+			asUint32 := binary.BigEndian.Uint32(buf[byteIdx : byteIdx+4])
+			t.elements = append(t.elements, int32(asUint32))
+			byteIdx += 4
+
+		case TypeUint32:
+			t.elements = append(t.elements, binary.BigEndian.Uint32(buf[byteIdx:byteIdx+4]))
+			byteIdx += 4
+
+		case TypeInt64:
+			asUint64 := binary.BigEndian.Uint64(buf[byteIdx : byteIdx+8])
+			t.elements = append(t.elements, int64(asUint64))
+			byteIdx += 8
+
+		case TypeUint64:
+			t.elements = append(t.elements, binary.BigEndian.Uint64(buf[byteIdx:byteIdx+8]))
+			byteIdx += 8
+
+		case TypeBoolean:
+			t.elements = append(t.elements, buf[byteIdx] == 1)
+			byteIdx += 1
+
+		case TypeBytes, TypeUnicode:
+			var bs []byte
 			for maybeEscapedBytes := 0; ; maybeEscapedBytes++ {
 				ch := buf[byteIdx+maybeEscapedBytes]
 				if ch == 0x00 {
 					if byteIdx+maybeEscapedBytes+1 < buflen && buf[byteIdx+maybeEscapedBytes+1] == 0xff {
 						// The null byte was escaped, so we allow the null byte to be emitted
-						s = append(s, ch)
+						bs = append(bs, ch)
 						maybeEscapedBytes++
 						continue
 					}
-					// Advance iterator by characters consumed.
+
+					// Advance past characters consumed.
 					byteIdx += maybeEscapedBytes
-					t.elements = append(t.elements, string(s))
+					// Advance past null terminator.
+					byteIdx += 1
+
+					if typeTag == TypeBytes {
+						t.elements = append(t.elements, bs)
+					} else {
+						t.elements = append(t.elements, string(bs))
+					}
 					break
 				}
-				s = append(s, ch)
+				bs = append(bs, ch)
 			}
-
-		case TypeInt64:
-			var x int64
-			if err := binary.Read(bytes.NewReader(buf[byteIdx:byteIdx+8]), binary.BigEndian, &x); err != nil {
-				return nil, fmt.Errorf("error decoding value as int64")
-			}
-			byteIdx += 7
-
-		case TypeUint64:
-			t.elements = append(t.elements, binary.BigEndian.Uint64(buf[byteIdx:byteIdx+8]))
-			byteIdx += 7
 
 		default:
 			return nil, fmt.Errorf("Invalid type tag at %d: %x", byteIdx, typeTag)
@@ -256,10 +347,12 @@ func (t *Tuple) String() string {
 		switch typ {
 		case TypeUnicode:
 			sb.WriteString(elem.(string))
-		case TypeInt64:
+
+		case TypeInt32, TypeUint32,
+			TypeInt64, TypeUint64:
+
 			sb.WriteString(fmt.Sprintf("%d", elem))
-		case TypeUint64:
-			sb.WriteString(fmt.Sprintf("%d", elem))
+
 		default:
 			return "<noprint>"
 		}

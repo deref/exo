@@ -10,11 +10,20 @@ import (
 func TestKVEngine(t *testing.T) {
 	kv := storage.NewMemoryKVEngine()
 
-	// Set/Get
-	assert.NoError(t, kv.Set([]byte("hello"), []byte("world")))
-	val, err := kv.Get([]byte("hello"))
-	assert.NoError(t, err)
-	assert.Equal(t, []byte("world"), val)
+	{
+		// Key not yet set.
+		val, err := kv.Get([]byte("hello"))
+		assert.NoError(t, err)
+		assert.Nil(t, val)
+	}
+
+	{
+		// Set/Get
+		assert.NoError(t, kv.Set([]byte("hello"), []byte("world")))
+		val, err := kv.Get([]byte("hello"))
+		assert.NoError(t, err)
+		assert.Equal(t, []byte("world"), val)
+	}
 }
 
 func TestScan(t *testing.T) {

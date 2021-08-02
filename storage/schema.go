@@ -5,22 +5,42 @@ import "strings"
 type ElemType int
 
 const (
-	TypeUnicode ElemType = iota
+	TypeInt32 ElemType = iota
+	TypeUint32
 	TypeInt64
 	TypeUint64
+	TypeBoolean
+	TypeBytes
+	TypeUnicode
 	TypeUnknown
 )
 
 func (t ElemType) String() string {
 	switch t {
-	case TypeUnicode:
-		return "string"
+	case TypeInt32:
+		return "32-bit int"
+
+	case TypeUint32:
+		return "32-bit unsigned int"
+
 	case TypeInt64:
-		return "int64"
+		return "64-bit int"
+
 	case TypeUint64:
-		return "uint64"
+		return "64-bit unsigned int"
+
+	case TypeUnicode:
+		return "unicode string"
+
+	case TypeBoolean:
+		return "boolean"
+
+	case TypeBytes:
+		return "byte string"
+
 	case TypeUnknown:
 		return "unknown"
+
 	default:
 		return "<invalid>"
 	}

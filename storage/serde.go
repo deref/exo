@@ -48,19 +48,15 @@ func (s SchematizedRowSerde) Serialize(tup *Tuple) ([]byte, error) {
 		elemSchema := s.schema.Elements[idx]
 
 		switch elemSchema.Type {
-		case TypeUnicode:
-			placeholderLocations = append(placeholderLocations, placeholderLocation{
-				elemIdx:   idx,
-				offsetLoc: buf.Len(),
-			})
-			// Write placeholder to be replaced with 32-bit offset.
-			buf.Write([]byte{0, 0, 0, 0})
+		case TypeInt32:
+			n := make([]byte, 4)
+			binary.BigEndian.PutUint32(n, uint32(elem.(int32)))
+			buf.Write(n)
 
-			// Write 32-bit length.
-			length := make([]byte, 4)
-			strLen := len(elem.(string))
-			binary.BigEndian.PutUint32(length, uint32(strLen))
-			buf.Write(length)
+		case TypeUint32:
+			i := make([]byte, 4)
+			binary.BigEndian.PutUint32(i, elem.(uint32))
+			buf.Write(i)
 
 		case TypeInt64:
 			n := make([]byte, 8)
@@ -71,6 +67,32 @@ func (s SchematizedRowSerde) Serialize(tup *Tuple) ([]byte, error) {
 			i := make([]byte, 8)
 			binary.BigEndian.PutUint64(i, elem.(uint64))
 			buf.Write(i)
+
+		case TypeBoolean:
+			if elem.(bool) {
+				buf.WriteByte(1)
+			} else {
+				buf.WriteByte(0)
+			}
+
+		case TypeUnicode, TypeBytes:
+			asBytes, ok := elem.([]byte)
+			if !ok {
+				asBytes = []byte(elem.(string))
+			}
+
+			placeholderLocations = append(placeholderLocations, placeholderLocation{
+				elemIdx:   idx,
+				offsetLoc: buf.Len(),
+			})
+			// Write placeholder to be replaced with 32-bit offset.
+			buf.Write([]byte{0, 0, 0, 0})
+
+			// Write 32-bit length.
+			length := make([]byte, 4)
+			byteLen := len(asBytes)
+			binary.BigEndian.PutUint32(length, uint32(byteLen))
+			buf.Write(length)
 
 		default:
 			panic(fmt.Errorf("no serializer defined for %s@%d", elem, idx))
@@ -126,6 +148,16 @@ func (s SchematizedRowSerde) Deserialize(buf []byte) (*Tuple, error) {
 	var pos int
 	for _, elemSchema := range s.schema.Elements {
 		switch elemSchema.Type {
+		case TypeInt32:
+			n := binary.BigEndian.Uint32(buf[pos : pos+4])
+			t.elements = append(t.elements, int32(n))
+			pos += 4
+
+		case TypeUint32:
+			n := binary.BigEndian.Uint32(buf[pos : pos+4])
+			t.elements = append(t.elements, n)
+			pos += 4
+
 		case TypeInt64:
 			n := binary.BigEndian.Uint64(buf[pos : pos+8])
 			t.elements = append(t.elements, int64(n))
@@ -136,15 +168,27 @@ func (s SchematizedRowSerde) Deserialize(buf []byte) (*Tuple, error) {
 			t.elements = append(t.elements, n)
 			pos += 8
 
-		case TypeUnicode:
+		case TypeBoolean:
+			var b bool
+			if buf[pos] == 1 {
+				b = true
+			}
+			t.elements = append(t.elements, b)
+			pos += 1
+
+		case TypeBytes, TypeUnicode:
 			dataOffset := binary.BigEndian.Uint32(buf[pos : pos+4])
 			pos += 4
 
 			dataLen := binary.BigEndian.Uint32(buf[pos : pos+4])
 			pos += 4
 
-			str := string(buf[dataOffset : dataOffset+dataLen])
-			t.elements = append(t.elements, str)
+			asBytes := buf[dataOffset : dataOffset+dataLen]
+			if elemSchema.Type == TypeBytes {
+				t.elements = append(t.elements, asBytes)
+			} else {
+				t.elements = append(t.elements, string(asBytes))
+			}
 
 		default:
 			panic("Cannot handle type for deserialization")
