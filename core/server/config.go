@@ -15,6 +15,7 @@ import (
 	"github.com/deref/exo/manifest"
 	"github.com/deref/exo/util/errutil"
 	"github.com/deref/exo/util/osutil"
+	"github.com/deref/exo/util/pathutil"
 )
 
 type manifestCandidate struct {
@@ -64,7 +65,7 @@ func (ws *Workspace) loadManifest(rootDir string, input *api.ApplyInput) manifes
 			}
 		}
 
-		if !filepath.HasPrefix(manifestPath, rootDir) {
+		if !pathutil.HasFilePathPrefix(manifestPath, rootDir) {
 			return manifest.LoadResult{
 				Err: errors.New("cannot read manifest outside of workspace root"),
 			}
