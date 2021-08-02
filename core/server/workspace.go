@@ -247,8 +247,8 @@ func (ws *Workspace) CreateComponent(ctx context.Context, input *api.CreateCompo
 }
 
 func (ws *Workspace) createComponent(ctx context.Context, component manifest.Component) (id string, err error) {
-	if !manifest.IsValidName(component.Name) {
-		return "", errutil.HTTPErrorf(http.StatusBadRequest, "component name must match %q", manifest.NamePattern)
+	if err := manifest.ValidateName(component.Name); err != nil {
+		return "", errutil.HTTPErrorf(http.StatusBadRequest, "component name %q invalid: %w", component.Name, err)
 	}
 
 	id = gensym.RandomBase32()

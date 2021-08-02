@@ -22,17 +22,29 @@ const BasePort = 5000
 const PortStep = 100
 
 func Convert(procfile *Procfile) manifest.LoadResult {
+	var res manifest.LoadResult
 	m := manifest.NewManifest()
 	port := BasePort
 	for _, p := range procfile.Processes {
+		// Assign default PORT, merge in specified environment.
 		environment := map[string]string{
 			"PORT": strconv.Itoa(port),
 		}
 		for name, value := range p.Environment {
 			environment[name] = value
 		}
+		port += PortStep
+
+		// Get component name.
+		name := manifest.MangleName(p.Name)
+		if name != p.Name {
+			warning := fmt.Sprintf("invalid name: %q, renamed to: %q", p.Name, name)
+			res.Warnings = append(res.Warnings, warning)
+		}
+
+		// Add component.
 		component := manifest.Component{
-			Name: p.Name,
+			Name: name,
 			Type: "process",
 			Spec: jsonutil.MustMarshalString(process.Spec{
 				Program:     p.Program,
@@ -40,10 +52,8 @@ func Convert(procfile *Procfile) manifest.LoadResult {
 				Environment: environment,
 			}),
 		}
-		port += PortStep
 		m.Components = append(m.Components, component)
 	}
-	return manifest.LoadResult{
-		Manifest: m,
-	}
+	res.Manifest = m
+	return res
 }
