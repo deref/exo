@@ -7,13 +7,13 @@ import {
   successResponse,
   WorkspaceApi,
 } from '../api';
-import type { ProcessDescription } from './types';
+import type { ComponentDetails } from './types';
 
-export const processes = writable(notRequested<ProcessDescription[]>());
+export const processes = writable(notRequested<ComponentDetails[]>());
 
 const refetchProcesses = (workspace: WorkspaceApi) =>
   workspace
-    .describeProcesses()
+    .getComponentDetails()
     .then((data) => {
       processes.set(successResponse(data));
     })

@@ -107,7 +107,8 @@ func (p *Process) start(ctx context.Context) error {
 	if err := cmd.Start(); err != nil {
 		return fmt.Errorf("starting supervise: %w", err)
 	}
-	p.SupervisorPid = cmd.Process.Pid
+	p.State.SupervisorPid = cmd.Process.Pid
+	p.State.FullEnvironment = envMap
 
 	// Collect supervise output.
 	pidC := make(chan int, 1)

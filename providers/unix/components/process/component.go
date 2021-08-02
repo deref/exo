@@ -22,5 +22,5 @@ type State struct {
 	Pid           int `json:"pid"`
 	// TODO: Store resolved program path & full effective environment.
 	// Program string `json:"program"`
-	// Environment map[string]string `json:"environment"`
+	FullEnvironment map[string]string `json:"fullEnvironment"`
 }

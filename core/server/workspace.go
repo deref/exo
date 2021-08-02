@@ -23,6 +23,7 @@ import (
 	"github.com/deref/exo/util/errutil"
 	"github.com/deref/exo/util/jsonutil"
 	docker "github.com/docker/docker/client"
+	psprocess "github.com/shirou/gopsutil/v3/process"
 )
 
 type Workspace struct {
@@ -635,6 +636,49 @@ func (ws *Workspace) RestartComponent(ctx context.Context, input *api.RestartCom
 		return nil, err
 	}
 	return &api.RestartComponentOutput{}, nil
+}
+
+func (ws *Workspace) GetComponentStatus(ctx context.Context, input *api.GetComponentStatusInput) (*api.GetComponentStatusOutput, error) {
+	id, err := ws.resolveRef(ctx, input.Ref)
+	if err != nil {
+		return nil, fmt.Errorf("resolving ref: %w", err)
+	}
+
+	describeComponentsOutput, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{})
+	if err != nil {
+		return nil, err
+	}
+
+	state := process.State{}
+	for _, component := range describeComponentsOutput.Components {
+		if component.ID == id {
+			if err := jsonutil.UnmarshalString(component.State, &state); err != nil {
+				return nil, fmt.Errorf("unmarshalling state: %w", err)
+			}
+
+			status := core.ComponentStatus{
+				ComponentID: id,
+				EnvVars:     state.FullEnvironment,
+			}
+
+			if state.Pid != 0 {
+				proc, err := psprocess.NewProcess(int32(state.Pid))
+				status.Running, err = proc.IsRunning()
+				if err != nil {
+					return nil, err
+				}
+
+				status.CPUPercent, err = proc.CPUPercent()
+				if err != nil {
+					return nil, err
+				}
+			}
+
+			return &api.GetComponentStatusOutput{Status: status}, nil
+		}
+	}
+
+	return nil, fmt.Errorf("component not found")
 }
 
 func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeProcessesInput) (*api.DescribeProcessesOutput, error) {

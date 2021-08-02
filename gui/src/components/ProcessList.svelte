@@ -1,6 +1,7 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
   import type { RemoteData } from '../lib/api';
+  import type { WorkspaceApi } from '../lib/api';
   import { loadInitialLogs, resetLogs } from '../lib/logs/store';
   import {
     fetchProcesses,
@@ -11,7 +12,7 @@
     deleteProcess,
   } from '../lib/process/store';
   import { setLogVisibility, visibleLogsStore } from '../lib/logs/visible-logs';
-  import type { ProcessDescription } from '../lib/process/types';
+  import type { ComponentDetails, } from '../lib/process/types';
   import * as router from 'svelte-spa-router';
   import IconButton from './IconButton.svelte';
 
@@ -23,15 +24,24 @@
   import Delete from './mono/delete.svelte';
   import CheckboxButton from './CheckboxButton.svelte';
 
-  export let workspace;
+  export let workspace: WorkspaceApi;
   export let workspaceId: string;
 
   let statusPending = new Set<string>();
 
-  let processList: RemoteData<ProcessDescription[]> = { stage: 'pending' };
+  let processList: RemoteData<ComponentDetails[]> = { stage: 'pending' };
   const unsubscribeProcesses = processes.subscribe((processes) => {
     processList = processes;
   });
+
+  let displayedDetails: string[] = []
+  const toggleDisplayDetails = (name: string): void => {
+    if (displayedDetails.includes(name)) {
+      displayedDetails = displayedDetails.filter(n => n !== name)
+    } else {
+      displayedDetails = displayedDetails.concat([name])
+    }
+  }
 
   function setProcRun(id: string, run: boolean) {
     if (processList.stage !== 'success') {
@@ -101,12 +111,12 @@
           <th>Logs</th>
           <th />
         </thead>
-        {#each processList.data as { id, name, running } (id)}
+        {#each processList.data as { id, name, status } (id)}
           <tr>
             <td>
               {#if statusPending.has(id)}
                 <button disabled><Loading /></button>
-              {:else if running}
+              {:else if status.running}
                 <IconButton
                   tooltip="Stop process"
                   on:click={() => setProcRun(id, false)}
@@ -120,7 +130,7 @@
               {/if}
             </td>
 
-            <td><h2>{name}</h2></td>
+            <td><h2 on:click={() => toggleDisplayDetails(name)}>{name}</h2></td>
 
             <td>
               <CheckboxButton
@@ -142,6 +152,36 @@
               >
             </td>
           </tr>
+          {#if displayedDetails.includes(name)} 
+            <tr>
+              <td colspan="999">
+                <div>
+                  <h3>Status</h3>
+                  <table>
+                    <tr>
+                      <td>Status</td>
+                      <td>{status.running ? "Running" : "Stopped"}</td>
+                    </tr>
+                    <tr>
+                      <td>CPU Percent</td>
+                      <td>{status.CPUPercent}</td>
+                    </tr>
+                  </table>
+                </div>
+                <div>
+                  <h3>Environment</h3>
+                  <table>
+                    {#each Object.entries(status.envVars ?? {}) as [name, val] (name)}
+                      <tr>
+                        <td>{name}</td>
+                        <td>{val}</td>
+                      </tr>
+                    {/each}
+                  </table>
+                </div>
+              </td>
+            </tr>
+          {/if}
         {:else}
           <i>No processes yet.</i>
         {/each}
@@ -171,7 +211,7 @@
 
   td,
   th {
-    text-align: center;
+    /*text-align: center;*/
     font-size: inherit;
     font-weight: inherit;
     align-items: center;
