@@ -34,7 +34,7 @@ func (p *Process) start(ctx context.Context) error {
 	}
 	whichQ.WorkingDirectory = p.Directory
 	if whichQ.WorkingDirectory == "" {
-		whichQ.WorkingDirectory = p.WorkspaceDir
+		whichQ.WorkingDirectory = p.WorkspaceRoot
 	}
 	whichQ.PathVariable = p.Environment["PATH"]
 	if whichQ.PathVariable == "" {
@@ -59,7 +59,7 @@ func (p *Process) start(ctx context.Context) error {
 			"--",
 			strconv.Itoa(p.SyslogPort),
 			p.ComponentID,
-			p.WorkspaceDir,
+			p.WorkspaceRoot,
 			strconv.Itoa(gracePeriod),
 			program,
 		},

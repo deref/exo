@@ -15,6 +15,22 @@ import (
 )
 
 func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput) (output *core.InitializeOutput, err error) {
+	if err := c.ensureImage(ctx); err != nil {
+		return nil, fmt.Errorf("building image: %w", err)
+	}
+
+	if err := c.create(ctx); err != nil {
+		return nil, fmt.Errorf("creating container: %w", err)
+	}
+
+	if err := c.start(ctx); err != nil {
+		log.Printf("starting container %q: %v", c.ContainerID, err)
+	}
+
+	return &core.InitializeOutput{}, nil
+}
+
+func (c *Container) create(ctx context.Context) error {
 	containerCfg := &container.Config{
 		// Hostname        string              // Hostname
 		// Domainname      string              // Domainname
@@ -158,15 +174,10 @@ func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput)
 	//}
 	createdBody, err := c.Docker.ContainerCreate(ctx, containerCfg, hostCfg, networkCfg, platform, c.ContainerName)
 	if err != nil {
-		return nil, fmt.Errorf("creating: %w", err)
+		return err
 	}
 	c.ContainerID = createdBody.ID
-
-	if err := c.start(ctx); err != nil {
-		log.Printf("starting container %q: %v", c.ContainerID, err)
-	}
-
-	return &core.InitializeOutput{}, nil
+	return nil
 }
 
 func (c *Container) Update(context.Context, *core.UpdateInput) (*core.UpdateOutput, error) {

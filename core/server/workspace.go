@@ -208,14 +208,21 @@ func (ws *Workspace) newController(ctx context.Context, typ string) Controller {
 			}
 		}
 		return &process.Process{
-			WorkspaceDir: description.Root,
-			SyslogPort:   ws.SyslogPort,
+			WorkspaceRoot: description.Root,
+			SyslogPort:    ws.SyslogPort,
 		}
 
 	case "container":
+		description, err := ws.describe(ctx)
+		if err != nil {
+			return &invalid.Invalid{
+				Err: fmt.Errorf("workspace error: %w", err),
+			}
+		}
 		return &container.Container{
-			Docker:     ws.Docker,
-			SyslogPort: ws.SyslogPort,
+			WorkspaceRoot: description.Root,
+			Docker:        ws.Docker,
+			SyslogPort:    ws.SyslogPort,
 		}
 
 	case "network":

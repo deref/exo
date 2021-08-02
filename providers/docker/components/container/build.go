@@ -1,0 +1,140 @@
+package container
+
+import (
+	"archive/tar"
+	"context"
+	"errors"
+	"fmt"
+	"io"
+	"os"
+	"path/filepath"
+
+	"github.com/deref/exo/util/pathutil"
+	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/container"
+	"golang.org/x/sync/errgroup"
+)
+
+func (c *Container) ensureImage(ctx context.Context) error {
+	if !c.canBuild() {
+		return nil
+	}
+	return c.buildImage(ctx)
+}
+
+func (c *Container) canBuild() bool {
+	return c.Build.Context != ""
+}
+
+func (c *Container) buildImage(ctx context.Context) error {
+	buildContext, buildContextWriter := io.Pipe()
+	defer buildContextWriter.Close()
+	var eg errgroup.Group
+
+	eg.Go(func() error {
+		contextPath := filepath.Join(c.WorkspaceRoot, c.Build.Context)
+		if !pathutil.HasFilePathPrefix(contextPath, c.WorkspaceRoot) {
+			return errors.New("docker container build context path must be in exo workspace root")
+		}
+		if err := tarBuildContext(buildContextWriter, contextPath); err != nil {
+			return fmt.Errorf("tarring build context: %w", err)
+		}
+		return nil
+	})
+
+	eg.Go(func() error {
+		opts := types.ImageBuildOptions{
+			//Tags           []string
+			//SuppressOutput bool
+			//RemoteContext  string
+			//NoCache        bool
+			//Remove         bool
+			//ForceRemove    bool
+			//PullParent     bool
+			Isolation: container.Isolation(c.Build.Isolation),
+			//CPUSetCPUs     string
+			//CPUSetMems     string
+			//CPUShares      int64
+			//CPUQuota       int64
+			//CPUPeriod      int64
+			//Memory         int64
+			//MemorySwap     int64
+			//CgroupParent   string
+			//NetworkMode    string
+			ShmSize:    int64(c.Build.ShmSize),
+			Dockerfile: c.Build.Dockerfile,
+			//Ulimits        []*units.Ulimit
+			//// BuildArgs needs to be a *string instead of just a string so that
+			//// we can tell the difference between "" (empty string) and no value
+			//// at all (nil). See the parsing of buildArgs in
+			//// api/server/router/build/build_routes.go for even more info.
+			BuildArgs: c.Build.Args,
+			//AuthConfigs map[string]AuthConfig
+			//Context     io.Reader
+			Labels: c.Build.Labels.WithoutNils(),
+			//// squash the resulting image's layers to the parent
+			//// preserves the original image and creates a new one from the parent with all
+			//// the changes applied to a single layer
+			//Squash bool
+			// CacheFrom specifies images that are used for matching cache. Images
+			// specified here do not need to have a valid parent chain to match cache.
+			CacheFrom: c.Build.CacheFrom,
+			//SecurityOpt []string
+			ExtraHosts: c.Build.ExtraHosts,
+			Target:     c.Build.Target,
+			//SessionID   string
+			//Platform    string
+			//// Version specifies the version of the unerlying builder to use
+			//Version BuilderVersion
+			//// BuildID is an optional identifier that can be passed together with the
+			//// build request. The same identifier can be used to gracefully cancel the
+			//// build with the cancel request.
+			//BuildID string
+			//// Outputs defines configurations for exporting build results. Only supported
+			//// in BuildKit mode
+			//Outputs []ImageBuildOutput
+		}
+		resp, err := c.Docker.ImageBuild(ctx, buildContext, opts)
+		if err != nil {
+			return err
+		}
+		_ = resp // TODO: Any useful information in here?
+		return nil
+	})
+
+	return eg.Wait()
+}
+
+func tarBuildContext(w io.Writer, root string) error {
+	tw := tar.NewWriter(w)
+
+	filepath.Walk(root, func(file string, info os.FileInfo, err error) error {
+		// Generate and write file header.
+		header, err := tar.FileInfoHeader(info, file)
+		if err != nil {
+			return err
+		}
+		// Since fs.FileInfo's Name method only returns the base name of
+		// the file it describes, it may be necessary to modify Header.Name
+		// to provide the full path name of the file.
+		// See: https://golang.org/src/archive/tar/common.go?#L626
+		header.Name = filepath.ToSlash(file)
+		if err := tw.WriteHeader(header); err != nil {
+			return err
+		}
+
+		// If not a directory, write file content.
+		if !info.IsDir() {
+			data, err := os.Open(file)
+			if err != nil {
+				return err
+			}
+			if _, err := io.Copy(tw, data); err != nil {
+				return err
+			}
+		}
+		return nil
+	})
+
+	return tw.Close()
+}

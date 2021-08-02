@@ -8,15 +8,19 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func strAddr(s string) *string {
+	return &s
+}
+
 func TestDictionaryYaml(t *testing.T) {
 	type Data struct {
 		Dict Dictionary `yaml:"dict"`
 	}
 
 	data := Data{
-		Dict: Dictionary(map[string]string{
-			"a": "1",
-			"b": "2",
+		Dict: Dictionary(map[string]*string{
+			"a": strAddr("1"),
+			"b": strAddr("2"),
 		}),
 	}
 	mapStr := `

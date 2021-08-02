@@ -11,7 +11,7 @@ func (v *Volume) Initialize(ctx context.Context, input *core.InitializeInput) (o
 	opts := volume.VolumeCreateBody{
 		Driver:     v.Driver,
 		DriverOpts: v.DriverOpts,
-		Labels:     v.Labels,
+		Labels:     v.Labels.WithoutNils(),
 		Name:       v.Name,
 	}
 	createdBody, err := v.Docker.VolumeCreate(ctx, opts)

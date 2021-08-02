@@ -48,7 +48,7 @@ type Service struct {
 	// TODO: cpu_rt_period
 	// TODO: cpus
 	// TODO: cpuset
-	// TODO: build
+	Build Build `yaml:"build"`
 	// TODO: cap_add
 	// TODO: cap_drop
 	// TODO: cgroup_parent

@@ -5,8 +5,8 @@ type Process struct {
 	Spec
 	State
 
-	WorkspaceDir string
-	SyslogPort   int
+	WorkspaceRoot string
+	SyslogPort    int
 }
 
 type Spec struct {

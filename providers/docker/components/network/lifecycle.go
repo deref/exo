@@ -25,7 +25,7 @@ func (n *Network) Initialize(ctx context.Context, input *core.InitializeInput) (
 		//ConfigOnly     bool
 		//ConfigFrom     *network.ConfigReference
 		//Options        map[string]string
-		Labels: n.Labels,
+		Labels: n.Labels.WithoutNils(),
 	}
 	createdBody, err := n.Docker.NetworkCreate(ctx, name, opts)
 	if err != nil {
