@@ -1,6 +1,7 @@
 <script lang="ts">
   import Textbox from './Textbox.svelte';
 
+  export let id: string | undefined;
   export let name: string;
   export let environment: Record<string, string> = {};
 
@@ -9,6 +10,8 @@
     name: string;
     value: string;
   }
+
+  const fields = ['name', 'value'] as const;
 
   let counter = 0;
   const nextId = () => {
@@ -51,10 +54,10 @@
   }
 </script>
 
-<div class="container">
+<div {id} class="container">
   {#each variables as variable (variable.id)}
     <div class="subcontainer">
-      {#each ['name', 'value'] as field}
+      {#each fields as field}
         <Textbox
           value={variable[field]}
           name={`${name}[${variable.id}].${field}`}
