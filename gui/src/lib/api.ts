@@ -1,3 +1,4 @@
+import { isRunning } from './global/server-status';
 import type { GetVersionResponse } from './kernel/types';
 import type { LogsResponse } from './logs/types';
 import type {
@@ -120,18 +121,30 @@ const rpc = async (
   query: Record<string, string>,
   data?: unknown,
 ): Promise<unknown> => {
-  const res = await fetch(apiUrl(path, query), {
-    method: 'POST',
-    headers: {
-      accept: 'application/json',
-      'content-type': 'application/json',
-    },
-    ...(data
-      ? {
-          body: JSON.stringify(data),
-        }
-      : {}),
-  });
+  let res: Response;
+  try {
+    res = await fetch(apiUrl(path, query), {
+      method: 'POST',
+      headers: {
+        accept: 'application/json',
+        'content-type': 'application/json',
+      },
+      ...(data
+        ? {
+            body: JSON.stringify(data),
+          }
+        : {}),
+    });
+  } catch (err: unknown) {
+    if (err instanceof TypeError) {
+      isRunning.set(false);
+      throw new APIError(0, 'Server not available');
+    }
+    throw err;
+  }
+
+  isRunning.update(() => true);
+
   const err = await responseToError(res);
   if (err !== null) {
     throw err;
@@ -195,6 +208,10 @@ export const api = (() => {
 
       async upgrade(): Promise<void> {
         return (await invoke('upgrade', {})) as any;
+      },
+
+      async ping(): Promise<void> {
+        await invoke('ping', {});
       },
     };
   })();

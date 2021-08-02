@@ -4,7 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"log"
+	golog "log"
 	"net"
 	"path/filepath"
 	"time"
@@ -14,6 +14,7 @@ import (
 	"github.com/deref/exo/logd/api"
 	"github.com/deref/exo/logd/server"
 	"github.com/deref/exo/logd/store/badger"
+	"github.com/deref/exo/providers/core/components/log"
 	"github.com/influxdata/go-syslog/v3"
 	"github.com/influxdata/go-syslog/v3/rfc5424"
 )
@@ -35,10 +36,12 @@ func (svc *Service) Run(ctx context.Context) error {
 	svc.IDGen = gensym.NewULIDGenerator(ctx)
 	svc.Store = store
 
-	conn, err := net.ListenPacket("udp", ":4500")
+	addr := fmt.Sprintf(":%d", log.SyslogPort)
+	conn, err := net.ListenPacket("udp", addr)
 	if err != nil {
 		return fmt.Errorf("listening: %w", err)
 	}
+	golog.Printf("listening for syslog at udp %s", addr)
 
 	errC := make(chan error, 1)
 	go func() {
@@ -53,12 +56,12 @@ func (svc *Service) Run(ctx context.Context) error {
 			}
 			syslogMessage, err := syslogMachine.Parse(buffer[:packetSize])
 			if err != nil {
-				log.Println("parsing syslog message: %w", err)
+				golog.Println("parsing syslog message: %w", err)
 				continue
 			}
 			event, err := syslogToEvent(syslogMessage)
 			if err != nil {
-				log.Printf("interpreting syslog message: %v", err)
+				golog.Printf("interpreting syslog message: %v", err)
 				continue
 			}
 			if _, err := svc.AddEvent(ctx, event); err != nil {
@@ -104,15 +107,22 @@ func syslogToEvent(syslogMessage syslog.Message) (*api.AddEventInput, error) {
 	appname := *rfc5425Message.Appname
 	msgID := *rfc5425Message.MsgID
 
+	var logName string
 	switch msgID {
 	case "out", "err":
-		// OK.
+		// provider=unix
+		logName = fmt.Sprintf("%s:%s", appname, msgID) // See note: [LOG_COMPONENTS].
 	default:
-		return nil, fmt.Errorf("unexpected MSGID: %q", msgID)
+		if msgID == appname {
+			// provider=docker
+			logName = appname
+		} else {
+			return nil, fmt.Errorf("unexpected MSGID: %q", msgID)
+		}
 	}
 
 	return &api.AddEventInput{
-		Log:       fmt.Sprintf("%s:%s", appname, msgID), // See note: [LOG_COMPONENTS].
+		Log:       logName,
 		Timestamp: rfc5425Message.Timestamp.Format(chrono.RFC3339MicroUTC),
 		Message:   *rfc5425Message.Message,
 	}, nil

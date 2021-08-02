@@ -7,10 +7,10 @@
   import EnvironmentInput from '../components/EnvironmentInput.svelte';
   import ArgumentsInput from '../components/ArgumentsInput.svelte';
   import Textbox from '../components/Textbox.svelte';
-  import Textarea from '../components/Textarea.svelte';
   import Button from '../components/Button.svelte';
   import CodeBlock from '../components/CodeBlock.svelte';
   import ErrorLabel from '../components/ErrorLabel.svelte';
+  import ShellEditor from '../components/ShellEditor.svelte';
 
   export let params = { workspace: '' };
 
@@ -30,10 +30,10 @@
 
   const updateFields = () => {
     const parsed = parseScript(script);
-    directory = parsed.spec.directory;
-    program = parsed.spec.program;
-    args = parsed.spec.arguments;
-    environment = parsed.spec.environment;
+    directory = parsed.spec.directory ?? '';
+    program = parsed.spec.program ?? '';
+    args = parsed.spec.arguments ?? [];
+    environment = parsed.spec.environment ?? {};
     error = parsed.error;
   };
 
@@ -114,8 +114,12 @@
         <Textbox id="directory" name="directory" bind:value={directory} />
       </div>
       <div>
-        <label>Environment:</label>
-        <EnvironmentInput name="environment" bind:environment />
+        <label for="environment">Environment:</label>
+        <EnvironmentInput
+          id="environment"
+          name="environment"
+          bind:environment
+        />
       </div>
       <div class="buttons">
         <Button type="submit">Create Process</Button>
@@ -125,7 +129,7 @@
         <div>
           <div>
             <label for="script">Script:</label>
-            <Textarea id="script" name="script" bind:value={script} />
+            <ShellEditor id="script" bind:value={script} />
           </div>
           <div class="buttons">
             <Button type="submit">Create Process</Button>
@@ -133,7 +137,8 @@
         </div>
         <div>
           <label>Example:</label>
-          <CodeBlock>{`# Export environment variables.
+          <CodeBlock
+            >{`# Export environment variables.
 export DEBUG=true
 
 # Set working directory.

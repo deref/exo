@@ -2,14 +2,15 @@
   import { logStyleFromHash } from '../lib/color';
   import { onMount, onDestroy, afterUpdate, beforeUpdate } from 'svelte';
   import { hasData, isUnresolved } from '../lib/api';
+  import type { WorkspaceApi } from '../lib/api';
   import { loadInitialLogs, logsStore, refreshLogs } from '../lib/logs/store';
   import type { WorkspaceState } from '../lib/logs/store';
   import { shortDate } from '../lib/time';
   import { processes } from '../lib/process/store';
   import FormattedLogMessage from './logs/FormattedLogMessage.svelte';
 
-  export let workspace;
-  export let workspaceId;
+  export let workspace: WorkspaceApi;
+  export let workspaceId: string;
 
   const logsPollInterval = 1000;
 
@@ -22,9 +23,9 @@
   });
 
   // Poll server for new logs.
-  let pollRefreshTimer = null;
-  const scheduleNextPoll = () => {
-    refreshLogs(workspaceId, workspace);
+  let pollRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+  const scheduleNextPoll = async () => {
+    await refreshLogs(workspaceId, workspace);
     pollRefreshTimer = setTimeout(scheduleNextPoll, logsPollInterval);
   };
 
@@ -42,9 +43,10 @@
   });
 
   const friendlyName = (log: string): string => {
+    // SEE NOTE [LOG_COMPONENTS].
     const [procId, stream] = log.split(':');
     const procName = knownProcessNameById[procId];
-    return procName ? `${procName}:${stream}` : log;
+    return procName ? (stream ? `${procName}:${stream}` : procName) : log;
   };
 
   onMount(() => {

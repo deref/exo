@@ -29,7 +29,7 @@ type Workspace struct {
 	ID         string
 	VarDir     string
 	Store      state.Store
-	SyslogAddr string
+	SyslogPort int
 	Docker     *docker.Client
 }
 
@@ -214,12 +214,13 @@ func (ws *Workspace) newController(ctx context.Context, typ string) Controller {
 		}
 		return &process.Process{
 			WorkspaceDir: description.Root,
-			SyslogAddr:   ws.SyslogAddr,
+			SyslogPort:   ws.SyslogPort,
 		}
 
 	case "container":
 		return &container.Container{
-			Docker: ws.Docker,
+			Docker:     ws.Docker,
+			SyslogPort: ws.SyslogPort,
 		}
 
 	case "network":
@@ -406,12 +407,6 @@ func (ws *Workspace) deleteComponent(ctx context.Context, id string) error {
 	return nil
 }
 
-// NOTE [LOG_COMPONENTS]: We don't yet treat logs as components of their own,
-// so we hard code an expansion from process -> stdout/stderr log pairs.
-// Multiple places in the code make brittle assumptions about this and are
-// tagged with this note accordingly.
-var processLogStreams = []string{"out", "err"}
-
 func (ws *Workspace) DescribeLogs(ctx context.Context, input *api.DescribeLogsInput) (*api.DescribeLogsOutput, error) {
 	components, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
 		WorkspaceID: ws.ID,
@@ -424,16 +419,21 @@ func (ws *Workspace) DescribeLogs(ctx context.Context, input *api.DescribeLogsIn
 	// TODO: More general handling of log groups, subcomponents, etc.
 	var logGroups []string
 	var logStreams []string
-	streamToGroup := make(map[string]int, len(processLogStreams)*len(logGroups))
+	streamToGroup := make(map[string]int)
 	for _, component := range components.Components {
-		if component.Type == "process" {
-			for _, stream := range processLogStreams {
-				streamName := fmt.Sprintf("%s:%s", component.ID, stream)
-				streamToGroup[streamName] = len(logGroups)
-				logStreams = append(logStreams, streamName)
-			}
-			logGroups = append(logGroups, component.ID)
+		// XXX Janky provider inference. See note: [LOG_COMPONENTS].
+		var provider string
+		switch component.Type {
+		case "process":
+			provider = "unix"
+		case "container":
+			provider = "docker"
 		}
+		for _, streamName := range log.ComponentLogNames(provider, component.ID) {
+			streamToGroup[streamName] = len(logGroups)
+			logStreams = append(logStreams, streamName)
+		}
+		logGroups = append(logGroups, component.ID)
 	}
 
 	// Initialize output and index by log group name.
@@ -494,9 +494,10 @@ func (ws *Workspace) GetEvents(ctx context.Context, input *api.GetEventsInput) (
 	// Expand log groups in to streams.
 	for _, group := range logGroups {
 		// Each process acts as a log group combining both stdout and stderr.
-		// TODO: Generalize handling of log groups.
-		for _, stream := range processLogStreams {
-			logStreams = append(logStreams, fmt.Sprintf("%s:%s", group, stream))
+		// XXX See note [LOG_COMPONENTS].
+		for _, suffix := range []string{"", ":out", ":err"} {
+			stream := group + suffix
+			logStreams = append(logStreams, stream)
 		}
 	}
 
@@ -649,8 +650,9 @@ func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeP
 		Processes: make([]api.ProcessDescription, 0, len(components.Components)),
 	}
 	for _, component := range components.Components {
-		if component.Type == "process" {
-			// XXX Do not utilize internal knowledge of process state.
+		// XXX Violates component state encapsulation.
+		switch component.Type {
+		case "process":
 			var state struct {
 				Pid int `json:"pid"`
 			}
@@ -661,9 +663,26 @@ func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeP
 			}
 			running := state.Pid != 0
 			process := api.ProcessDescription{
-				ID:      component.ID,
-				Name:    component.Name,
-				Running: running,
+				ID:       component.ID,
+				Name:     component.Name,
+				Provider: "unix",
+				Running:  running,
+			}
+			output.Processes = append(output.Processes, process)
+		case "container":
+			var state struct {
+				Running bool `json:"running"`
+			}
+			if err := jsonutil.UnmarshalString(component.State, &state); err != nil {
+				// TODO: log error.
+				fmt.Printf("unmarshalling container state: %v\n", err)
+				continue
+			}
+			process := api.ProcessDescription{
+				ID:       component.ID,
+				Name:     component.Name,
+				Provider: "docker",
+				Running:  state.Running,
 			}
 			output.Processes = append(output.Processes, process)
 		}

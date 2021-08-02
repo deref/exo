@@ -109,7 +109,7 @@ func RunServer() {
 		VarDir:     paths.VarDir,
 		Store:      store,
 		Telemetry:  tel,
-		SyslogAddr: "localhost:4500", // XXX Configurable?
+		SyslogPort: log.SyslogPort,
 		Docker:     dockerClient,
 	}
 
@@ -131,7 +131,7 @@ func RunServer() {
 	}
 
 	addr := cmdutil.GetAddr()
-	golog.Printf("listening at %s", addr)
+	golog.Printf("listening for API calls at %s", addr)
 
 	cmdutil.ListenAndServe(ctx, &http.Server{
 		Addr:    addr,
