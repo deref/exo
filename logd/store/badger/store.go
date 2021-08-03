@@ -2,10 +2,10 @@ package badger
 
 import (
 	"context"
-	"log"
 
 	"github.com/deref/exo/gensym"
 	"github.com/deref/exo/logd/store"
+	"github.com/deref/exo/util/logging"
 	"github.com/dgraph-io/badger/v3"
 )
 
@@ -20,10 +20,13 @@ type Log struct {
 	name  string
 }
 
-func Open(ctx context.Context, logsDir string) (*Store, error) {
+// Ambiguous notions of "logs" here.
+// logger is for Badger logging.
+// logsDir is where the logs we're capturing are being stored.
+func Open(ctx context.Context, logger logging.Logger, logsDir string) (*Store, error) {
 	db, err := badger.Open(
 		badger.DefaultOptions(logsDir).
-			WithLogger(newLogger(log.Default(), defaultLogLevel)),
+			WithLogger(newLogger(logger, defaultLogLevel)),
 	)
 	if err != nil {
 		return nil, err

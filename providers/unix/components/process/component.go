@@ -1,12 +1,13 @@
 package process
 
+import "github.com/deref/exo/providers/core"
+
 type Process struct {
-	ComponentID string
+	core.Component
 	Spec
 	State
 
-	WorkspaceRoot string
-	SyslogPort    int
+	SyslogPort int
 }
 
 type Spec struct {

@@ -30,5 +30,5 @@ func (h *IntrospectionHandler) ServeHTTP(w http.ResponseWriter, req *http.Reques
 			Name: methodName,
 		})
 	}
-	httputil.WriteJSON(w, http.StatusOK, output)
+	httputil.WriteJSON(w, req, http.StatusOK, output)
 }

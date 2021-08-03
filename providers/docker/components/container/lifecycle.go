@@ -3,7 +3,6 @@ package container
 import (
 	"context"
 	"fmt"
-	"log"
 	"time"
 
 	core "github.com/deref/exo/core/api"
@@ -26,7 +25,7 @@ func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput)
 	}
 
 	if err := c.start(ctx); err != nil {
-		log.Printf("starting container %q: %v", c.ContainerID, err)
+		c.Logger.Infof("starting container %q: %v", c.ContainerID, err)
 	}
 
 	return &core.InitializeOutput{}, nil
@@ -216,7 +215,7 @@ func (c *Container) Dispose(ctx context.Context, input *core.DisposeInput) (*cor
 		return &core.DisposeOutput{}, nil
 	}
 	if err := c.stop(ctx); err != nil {
-		log.Printf("stopping container %q: %v", c.ContainerID, err)
+		c.Logger.Infof("stopping container %q: %v", c.ContainerID, err)
 	}
 	err := c.Docker.ContainerRemove(ctx, c.ContainerID, types.ContainerRemoveOptions{
 		// XXX RemoveVolumes: ???,
@@ -224,7 +223,7 @@ func (c *Container) Dispose(ctx context.Context, input *core.DisposeInput) (*cor
 		Force: true, // OK?
 	})
 	if docker.IsErrNotFound(err) {
-		log.Printf("disposing container not found: %q", c.ContainerID)
+		c.Logger.Infof("disposing container not found: %q", c.ContainerID)
 		err = nil
 	}
 	if err != nil {

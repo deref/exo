@@ -4,11 +4,11 @@ import (
 	_ "embed"
 	"errors"
 	"fmt"
-	"log"
 	"net/http"
 	"text/template"
 
 	"github.com/deref/exo/util/errutil"
+	"github.com/deref/exo/util/logging"
 	accept "github.com/timewasted/go-accept-headers"
 )
 
@@ -20,14 +20,15 @@ func WriteError(w http.ResponseWriter, req *http.Request, err error) {
 		status = httpErr.HTTPStatus()
 		message = err.Error()
 	}
+	logger := logging.CurrentLogger(req.Context())
 	if status == http.StatusInternalServerError {
-		log.Printf("error processing request: %v", err)
+		logger.Infof("error processing request: %v", err)
 	}
 
 	contentType, _ := accept.Negotiate(req.Header.Get("accept"), "application/json", "text/html", "text/plain")
 	switch contentType {
 	case "application/json":
-		WriteJSON(w, status, map[string]interface{}{
+		WriteJSON(w, req, status, map[string]interface{}{
 			"status":  status,
 			"message": message,
 		})

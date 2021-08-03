@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	golog "log"
 	"net"
 	"path/filepath"
 	"time"
@@ -15,11 +14,13 @@ import (
 	"github.com/deref/exo/logd/server"
 	"github.com/deref/exo/logd/store/badger"
 	"github.com/deref/exo/providers/core/components/log"
+	"github.com/deref/exo/util/logging"
 	"github.com/influxdata/go-syslog/v3"
 	"github.com/influxdata/go-syslog/v3/rfc5424"
 )
 
 type Service struct {
+	Logger logging.Logger
 	VarDir string
 	server.LogCollector
 }
@@ -27,7 +28,7 @@ type Service struct {
 func (svc *Service) Run(ctx context.Context) error {
 	logsDir := filepath.Join(svc.VarDir, "logs")
 
-	store, err := badger.Open(ctx, logsDir)
+	store, err := badger.Open(ctx, svc.Logger, logsDir)
 	if err != nil {
 		return fmt.Errorf("opening store: %w", err)
 	}
@@ -41,7 +42,7 @@ func (svc *Service) Run(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("listening: %w", err)
 	}
-	golog.Printf("listening for syslog at udp %s", addr)
+	svc.Logger.Infof("listening for syslog at udp %s", addr)
 
 	errC := make(chan error, 1)
 	go func() {
@@ -56,12 +57,12 @@ func (svc *Service) Run(ctx context.Context) error {
 			}
 			syslogMessage, err := syslogMachine.Parse(buffer[:packetSize])
 			if err != nil {
-				golog.Println("parsing syslog message: %w", err)
+				svc.Logger.Infof("parsing syslog message: %v", err)
 				continue
 			}
 			event, err := syslogToEvent(syslogMessage)
 			if err != nil {
-				golog.Printf("interpreting syslog message: %v", err)
+				svc.Logger.Infof("interpreting syslog message: %v", err)
 				continue
 			}
 			if _, err := svc.AddEvent(ctx, event); err != nil {

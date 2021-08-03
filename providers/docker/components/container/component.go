@@ -1,18 +1,16 @@
 package container
 
 import (
+	"github.com/deref/exo/providers/docker"
 	"github.com/deref/exo/providers/docker/compose"
-	docker "github.com/docker/docker/client"
 )
 
 type Container struct {
-	ComponentID string
+	docker.Component
 	Spec
 	State
 
-	WorkspaceRoot string
-	Docker        *docker.Client
-	SyslogPort    int
+	SyslogPort int
 }
 
 type Spec compose.Service
