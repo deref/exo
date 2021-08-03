@@ -120,6 +120,11 @@ type ResolveOutput struct {
 }
 
 type DescribeComponentsInput struct {
+
+	// If non-empty, filters components to supplied ids.
+	IDs []string `json:"ids"`
+	// If non-empty, filters components to supplied types.
+	Types []string `json:"types"`
 }
 
 type DescribeComponentsOutput struct {

@@ -11,6 +11,11 @@ import (
 
 func init() {
 	rootCmd.AddCommand(lsCmd)
+	lsCmd.Flags().StringArrayVar(&lsFlags.Types, "type", nil, "filter by type")
+}
+
+var lsFlags struct {
+	Types []string
 }
 
 var lsCmd = &cobra.Command{
@@ -23,7 +28,9 @@ var lsCmd = &cobra.Command{
 		ensureDaemon()
 		cl := newClient()
 		workspace := requireWorkspace(ctx, cl)
-		output, err := workspace.DescribeComponents(ctx, &api.DescribeComponentsInput{})
+		output, err := workspace.DescribeComponents(ctx, &api.DescribeComponentsInput{
+			Types: lsFlags.Types,
+		})
 		if err != nil {
 			return err
 		}
