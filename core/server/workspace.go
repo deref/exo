@@ -86,24 +86,17 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 	if err != nil {
 		return nil, fmt.Errorf("describing workspace: %w", err)
 	}
-	manifest, err := ws.resolveManifest(description.Root, input)
-	if err != nil {
+	res := ws.loadManifest(description.Root, input)
+	if res.Err != nil {
 		return nil, err
 	}
-	if err := ws.apply(ctx, manifest); err != nil {
-		return nil, err
-	}
-	return &api.ApplyOutput{}, nil
-}
-
-func (ws *Workspace) apply(ctx context.Context, m *manifest.Manifest) error {
-	// TODO: Validate manifest.
+	m := res.Manifest
 
 	describeOutput, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
 		WorkspaceID: ws.ID,
 	})
 	if err != nil {
-		return fmt.Errorf("describing components: %w", err)
+		return nil, fmt.Errorf("describing components: %w", err)
 	}
 
 	// Index old components by name.
@@ -122,12 +115,12 @@ func (ws *Workspace) apply(ctx context.Context, m *manifest.Manifest) error {
 		if oldComponent, exists := oldComponents[name]; exists {
 			// Update existing component.
 			if err := ws.updateComponent(ctx, oldComponent, newComponent); err != nil {
-				return fmt.Errorf("updating %q: %w", name, err)
+				return nil, fmt.Errorf("updating %q: %w", name, err)
 			}
 		} else {
 			// Create new component.
 			if _, err := ws.createComponent(ctx, newComponent); err != nil {
-				return fmt.Errorf("adding %q: %w", name, err)
+				return nil, fmt.Errorf("adding %q: %w", name, err)
 			}
 		}
 	}
@@ -139,11 +132,13 @@ func (ws *Workspace) apply(ctx context.Context, m *manifest.Manifest) error {
 			continue
 		}
 		if err := ws.deleteComponent(ctx, oldComponent.ID); err != nil {
-			return fmt.Errorf("deleting %q: %w", name, err)
+			return nil, fmt.Errorf("deleting %q: %w", name, err)
 		}
 	}
 
-	return nil
+	return &core.ApplyOutput{
+		Warnings: res.Warnings,
+	}, nil
 }
 
 func (ws *Workspace) RefreshAllComponents(ctx context.Context, input *api.RefreshAllComponentsInput) (*api.RefreshAllComponentsOutput, error) {
@@ -214,14 +209,21 @@ func (ws *Workspace) newController(ctx context.Context, typ string) Controller {
 			}
 		}
 		return &process.Process{
-			WorkspaceDir: description.Root,
-			SyslogPort:   ws.SyslogPort,
+			WorkspaceRoot: description.Root,
+			SyslogPort:    ws.SyslogPort,
 		}
 
 	case "container":
+		description, err := ws.describe(ctx)
+		if err != nil {
+			return &invalid.Invalid{
+				Err: fmt.Errorf("workspace error: %w", err),
+			}
+		}
 		return &container.Container{
-			Docker:     ws.Docker,
-			SyslogPort: ws.SyslogPort,
+			WorkspaceRoot: description.Root,
+			Docker:        ws.Docker,
+			SyslogPort:    ws.SyslogPort,
 		}
 
 	case "network":
@@ -256,8 +258,8 @@ func (ws *Workspace) CreateComponent(ctx context.Context, input *api.CreateCompo
 }
 
 func (ws *Workspace) createComponent(ctx context.Context, component manifest.Component) (id string, err error) {
-	if !manifest.IsValidName(component.Name) {
-		return "", errutil.HTTPErrorf(http.StatusBadRequest, "component name must match %q", manifest.NamePattern)
+	if err := manifest.ValidateName(component.Name); err != nil {
+		return "", errutil.HTTPErrorf(http.StatusBadRequest, "component name %q invalid: %w", component.Name, err)
 	}
 
 	id = gensym.RandomBase32()

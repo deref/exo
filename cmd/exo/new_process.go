@@ -33,7 +33,8 @@ exo flags and options for your program.
 Environment variables may be specified by providing name=value pairs
 before the program name.
 `,
-	Args: cobra.MinimumNArgs(1),
+	DisableFlagsInUseLine: true,
+	Args:                  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := newContext()
 		ensureDaemon()

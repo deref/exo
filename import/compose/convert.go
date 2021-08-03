@@ -9,15 +9,15 @@ import (
 	"github.com/deref/exo/util/yamlutil"
 )
 
-func Import(r io.Reader) (*manifest.Manifest, error) {
+func Import(r io.Reader) manifest.LoadResult {
 	procfile, err := Parse(r)
 	if err != nil {
-		return nil, fmt.Errorf("parsing: %w", err)
+		return manifest.LoadResult{Err: fmt.Errorf("parsing: %w", err)}
 	}
 	return Convert(procfile)
 }
 
-func Convert(comp *compose.Compose) (*manifest.Manifest, error) {
+func Convert(comp *compose.Compose) manifest.LoadResult {
 	var m manifest.Manifest
 	// TODO: Is there something like json.RawMessage so we can
 	// avoid marshalling and re-marshalling each spec?
@@ -42,5 +42,7 @@ func Convert(comp *compose.Compose) (*manifest.Manifest, error) {
 			Spec: yamlutil.MustMarshalString(volume),
 		})
 	}
-	return &m, nil
+	return manifest.LoadResult{
+		Manifest: &m,
+	}
 }

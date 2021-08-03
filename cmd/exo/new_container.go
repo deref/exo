@@ -140,7 +140,8 @@ docker run --name <name> --detatch [options] <image> [command [args...]]
 The double dash separator is recommended to avoid flag confusion between
 exo flags and options for your docker container command.
 `,
-	Args: cobra.MinimumNArgs(2),
+	DisableFlagsInUseLine: true,
+	Args:                  cobra.MinimumNArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := newContext()
 		ensureDaemon()

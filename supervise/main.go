@@ -81,7 +81,7 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 			// Forward signals to child.
 			case os.Interrupt, syscall.SIGTERM:
 				hasSignalledChildToQuit = true
-				if err := cmd.Process.Signal(syscall.SIGTERM); err != nil {
+				if err := cmd.Process.Signal(sig); err != nil {
 					break
 				}
 				// After some timeout send a SIGKILL to the entire process group

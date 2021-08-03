@@ -31,15 +31,21 @@ func NewManifest() *Manifest {
 	}
 }
 
-func Read(r io.Reader) (*Manifest, error) {
+type LoadResult struct {
+	Manifest *Manifest
+	Warnings []string
+	Err      error
+}
+
+func Read(r io.Reader) LoadResult {
 	bs, err := ioutil.ReadAll(r)
 	if err != nil {
-		return nil, err
+		return LoadResult{Err: err}
 	}
 	return ReadBytes(bs)
 }
 
-func ReadBytes(bs []byte) (*Manifest, error) {
+func ReadBytes(bs []byte) LoadResult {
 	var manifest Manifest
 	evalCtx := &hcl.EvalContext{
 		Functions: map[string]function.Function{
@@ -47,9 +53,9 @@ func ReadBytes(bs []byte) (*Manifest, error) {
 		},
 	}
 	if err := hclsimple.Decode("exo.hcl", bs, evalCtx, &manifest); err != nil {
-		return nil, err
+		return LoadResult{Err: err}
 	}
-	return &manifest, nil
+	return LoadResult{Manifest: &manifest}
 }
 
 func Generate(w io.Writer, manifest *Manifest) error {

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"io/ioutil"
+	"os"
 
 	"github.com/deref/exo/core/api"
 	"github.com/spf13/cobra"
@@ -89,6 +90,11 @@ func apply(ctx context.Context, workspace api.Workspace, args []string) error {
 		input.Format = &applyFlags.Format
 	}
 
-	_, err := workspace.Apply(ctx, input)
+	output, err := workspace.Apply(ctx, input)
+	if output != nil {
+		for _, warning := range output.Warnings {
+			fmt.Fprintf(os.Stderr, "warning: %s\n", warning)
+		}
+	}
 	return err
 }

@@ -104,6 +104,7 @@ type ApplyInput struct {
 }
 
 type ApplyOutput struct {
+	Warnings []string `json:"warnings"`
 }
 
 type RefreshAllComponentsInput struct {
