@@ -36,9 +36,12 @@ func TestRawOps(t *testing.T) {
 	val, err := serde.Serialize(tup)
 	assert.NoError(t, err)
 
-	kv.Set(key, val)
+	tx := kv.WriteTransaction()
+	defer tx.Rollback()
 
-	it := kv.Scan(kv.ReadTransaction(), storage.ScanArgs{
+	kv.Set(tx, key, val)
+
+	it := kv.Scan(tx.Downgrade(), storage.ScanArgs{
 		// Only partition.
 		Prefix: tup.Without(2).Without(1).Serialize(),
 	})
@@ -91,12 +94,16 @@ func TestTable(t *testing.T) {
 			storage.SingleColumnIndex("name"),
 		},
 	})
-	err = tbl.Create()
+
+	tx := db.WriteTransaction()
+	defer tx.Rollback()
+
+	err = tbl.Create(tx)
 	if !assert.NoError(t, err) {
 		return
 	}
 
-	err = tbl.Insert(map[string]interface{}{
+	err = tbl.Insert(tx, map[string]interface{}{
 		"partition": uint64(0),
 		"id":        uint64(80831),
 		"name":      "Javier",
@@ -105,33 +112,36 @@ func TestTable(t *testing.T) {
 		return
 	}
 
-	tbl, err = db.Table("my_table")
+	tbl, err = db.Table(tx.Downgrade(), "my_table")
 	if !assert.NoError(t, err) {
 		return
 	}
 
-	tbl.Scan(func(t *storage.Tuple) bool {
+	err = tbl.InsertAll(tx, []map[string]interface{}{
+		{
+			"partition": uint64(1),
+			"id":        uint64(123),
+			"name":      "Andrew",
+		},
+		{
+			"partition": uint64(1),
+			"id":        uint64(456),
+			"name":      "Diana",
+		},
+		{
+			"partition": uint64(2),
+			"id":        uint64(111),
+			"name":      "Andrew",
+		},
+	})
+	assert.NoError(t, err)
+
+	tbl.Scan(tx.Downgrade(), func(t *storage.Tuple) bool {
 		fmt.Println("Scanning:", t)
 		return false
 	})
-	// err = tbl.InsertAll([]map[string]interface{}{
-	// 	{
-	// 		"partition": uint64(1),
-	// 		"id":        uint64(123),
-	// 		"name":      "Andrew",
-	// 	},
-	// 	{
-	// 		"partition": uint64(1),
-	// 		"id":        uint64(456),
-	// 		"name":      "Diana",
-	// 	},
-	// 	{
-	// 		"partition": uint64(2),
-	// 		"id":        uint64(111),
-	// 		"name":      "Andrew",
-	// 	},
-	// })
-	// assert.NoError(t, err)
+
+	assert.NoError(t, tx.Commit())
 
 	// rows, err := db.Table("my-table").Where(storage.EQ("name", "Andrew")).Find()
 	// assert.NoError(t, err)

@@ -63,22 +63,24 @@ var indexSchema = NewSchema(
 var bootstrapKey = NewTuple(int32(oidBootstrap)).Serialize()
 
 func (db *Database) isBootstrapped() (bool, error) {
-	val, err := db.store.Get(bootstrapKey)
+	val, err := GetAtomic(db.store, bootstrapKey)
 	return val != nil, err
 }
 
 func (db *Database) bootstrap() error {
-	db.nextOID = 1 // XXX: How to initialize on subsequent runs?
+	db.nextOID = 100 // XXX: How to initialize on subsequent runs?
 
-	// Create table for schemas.
-	if err := schemaTable(db).Create(); err != nil {
-		return err
-	}
+	return Transact(db.store, func(txn WriteTransaction) error {
+		// Create table for schemas.
+		if err := schemaTable(db).Create(txn); err != nil {
+			return err
+		}
 
-	// Create table for tables.
-	if err := tableTable(db).Create(); err != nil {
-		return err
-	}
+		// Create table for tables.
+		if err := tableTable(db).Create(txn); err != nil {
+			return err
+		}
 
-	return db.store.Set(bootstrapKey, []byte{0})
+		return db.store.Set(txn, bootstrapKey, []byte{0})
+	})
 }

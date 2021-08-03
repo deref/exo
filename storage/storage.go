@@ -3,11 +3,26 @@ package storage
 type KVEngine interface {
 	Scanner
 
-	Set(key, val []byte) error
-	Get(key []byte) ([]byte, error)
+	Set(tx WriteTransaction, key, val []byte) error
+	Get(tx ReadTransaction, key []byte) ([]byte, error)
 
 	ReadTransaction() ReadTransaction
 	WriteTransaction() WriteTransaction
+}
+
+func SetAtomic(kv KVEngine, key, val []byte) error {
+	return Transact(kv, func(txn WriteTransaction) error {
+		return kv.Set(txn, key, val)
+	})
+}
+
+func GetAtomic(kv KVEngine, key []byte) ([]byte, error) {
+	var val []byte
+	err := View(kv, func(txn ReadTransaction) (getErr error) {
+		val, getErr = kv.Get(txn, key)
+		return
+	})
+	return val, err
 }
 
 type TransactFunc = func(txn WriteTransaction) error

@@ -12,15 +12,15 @@ func TestKVEngine(t *testing.T) {
 
 	{
 		// Key not yet set.
-		val, err := kv.Get([]byte("hello"))
+		val, err := storage.GetAtomic(kv, []byte("hello"))
 		assert.NoError(t, err)
 		assert.Nil(t, val)
 	}
 
 	{
 		// Set/Get
-		assert.NoError(t, kv.Set([]byte("hello"), []byte("world")))
-		val, err := kv.Get([]byte("hello"))
+		assert.NoError(t, storage.SetAtomic(kv, []byte("hello"), []byte("world")))
+		val, err := storage.GetAtomic(kv, []byte("hello"))
 		assert.NoError(t, err)
 		assert.Equal(t, []byte("world"), val)
 	}
@@ -29,9 +29,12 @@ func TestKVEngine(t *testing.T) {
 func TestScan(t *testing.T) {
 	kv := storage.NewMemoryKVEngine()
 
-	_ = kv.Set([]byte("hi world"), []byte("1"))
-	_ = kv.Set([]byte("hello world"), []byte("2"))
-	_ = kv.Set([]byte("hi there"), []byte("3"))
+	storage.Transact(kv, func(txn storage.WriteTransaction) error {
+		_ = kv.Set(txn, []byte("hi world"), []byte("1"))
+		_ = kv.Set(txn, []byte("hello world"), []byte("2"))
+		_ = kv.Set(txn, []byte("hi there"), []byte("3"))
+		return nil
+	})
 
 	it := kv.Scan(kv.ReadTransaction(), storage.ScanArgs{
 		Prefix: []byte("hi"),

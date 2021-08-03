@@ -6,6 +6,8 @@ type ReadTransaction interface {
 }
 
 type WriteTransaction interface {
+	Downgrade() ReadTransaction
+
 	// Commit ensures that any changes made in the transaction are persisted and
 	// are made visible to any future transactions.
 	Commit() error

@@ -24,32 +24,24 @@ type BadgerKVEngine struct {
 
 var _ KVEngine = (*BadgerKVEngine)(nil)
 
-func (kv *BadgerKVEngine) Get(key []byte) (val []byte, err error) {
-	found := false
-	err = kv.db.View(func(txn *badger.Txn) error {
-		item, err := txn.Get(key)
-		switch err {
-		case badger.ErrKeyNotFound:
-			return nil
-		case nil:
-			found = true
-		default:
-			return err
-		}
-
-		val, err = item.ValueCopy(nil)
-		return err
-	})
-	if !found {
+func (kv *BadgerKVEngine) Get(txn ReadTransaction, key []byte) ([]byte, error) {
+	tx := txn.(*badgerReadTransaction).inner
+	item, err := tx.Get(key)
+	switch err {
+	case badger.ErrKeyNotFound:
 		return nil, nil
+	case nil:
+		// Do nothing.
+	default:
+		return nil, err
 	}
-	return
+
+	return item.ValueCopy(nil)
 }
 
-func (kv *BadgerKVEngine) Set(key, val []byte) error {
-	return kv.db.Update(func(txn *badger.Txn) error {
-		return txn.Set(key, val)
-	})
+func (kv *BadgerKVEngine) Set(txn WriteTransaction, key, val []byte) error {
+	tx := txn.(*badgerWriteTransaction).inner
+	return tx.Set(key, val)
 }
 
 func (kv *BadgerKVEngine) ReadTransaction() ReadTransaction {
@@ -84,6 +76,12 @@ func (txn *badgerWriteTransaction) Rollback() error {
 
 func (txn *badgerWriteTransaction) Commit() error {
 	return txn.inner.Commit()
+}
+
+func (txn *badgerWriteTransaction) Downgrade() ReadTransaction {
+	return &badgerReadTransaction{
+		inner: txn.inner,
+	}
 }
 
 func (kv *BadgerKVEngine) Scan(txn ReadTransaction, args ScanArgs) ScanIter {

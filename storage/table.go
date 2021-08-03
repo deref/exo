@@ -48,7 +48,15 @@ func (tbl *table) IsSystem() bool {
 	return tbl.oid < 0
 }
 
-func (tbl *table) Create() error {
+func (tbl *table) Schema() *Schema {
+	return tbl.schema
+}
+
+func (tbl *table) Name() string {
+	return tbl.name
+}
+
+func (tbl *table) Create(txn WriteTransaction) error {
 	if tbl.db == nil {
 		return errors.New("database not set")
 	}
@@ -57,14 +65,14 @@ func (tbl *table) Create() error {
 	}
 
 	schemaOID := tbl.db.getNextOID()
-	if err := schemaTable(tbl.db).Insert(map[string]interface{}{
+	if err := schemaTable(tbl.db).Insert(txn, map[string]interface{}{
 		"schema_oid":        int32(schemaOID),
 		"serialized_schema": MustSerializeSchema(tbl.schema),
 	}); err != nil {
 		return fmt.Errorf("inserting schema: %w", err)
 	}
 
-	if err := tableTable(tbl.db).Insert(map[string]interface{}{
+	if err := tableTable(tbl.db).Insert(txn, map[string]interface{}{
 		"table_oid":  int32(tbl.oid),
 		"schema_oid": int32(schemaOID),
 		"table_name": tbl.name,
@@ -78,47 +86,56 @@ func (tbl *table) Create() error {
 }
 
 // TODO: Return value with status, inserted primary key, etc.
-func (tbl *table) Insert(row map[string]interface{}) error {
-	remainingColumns := len(row)
+func (tbl *table) Insert(txn WriteTransaction, row map[string]interface{}) error {
+	return tbl.InsertAll(txn, []map[string]interface{}{row})
+}
 
+func (tbl *table) InsertAll(txn WriteTransaction, rows []map[string]interface{}) error {
+	// inTuple can be reused because all fields are set on every iteration.
 	inTuple := NewTupleWithSchema(tbl.schema)
-	for idx, elem := range tbl.schema.Elements {
-		col := elem.Name
-		val, ok := row[col]
-		if ok {
-			remainingColumns--
-		} else {
-			// TODO: Enforce null constraints.
-			// TODO: Allow a schema element to have a default value.
-			val = elem.Type.DefaultValue() // XXX: This is a hack to get some value serialized.
+
+	for _, row := range rows {
+		remainingColumns := len(row)
+
+		for idx, elem := range tbl.schema.Elements {
+			col := elem.Name
+			val, ok := row[col]
+			if ok {
+				remainingColumns--
+			} else {
+				// TODO: Enforce null constraints.
+				// TODO: Allow a schema element to have a default value.
+				val = elem.Type.DefaultValue() // XXX: This is a hack to get some value serialized.
+			}
+			if err := inTuple.SetDynamic(idx, val); err != nil {
+				return err
+			}
 		}
-		if err := inTuple.SetDynamic(idx, val); err != nil {
+
+		if remainingColumns > 0 {
+			return errors.New("field found in input that are not present in schema")
+		}
+
+		// Key is the primary key prefixed by the table's oid.
+		// XXX: This assumes that the 0th element of the tuple is the primary key. This should be
+		// configured in schema.
+		key := NewTuple(int32(tbl.oid)).Concat(inTuple.Slice(0, 1)).Serialize()
+		val, err := tbl.serde.Serialize(inTuple)
+		if err != nil {
+			return fmt.Errorf("serializing value: %w", err)
+		}
+
+		if err := tbl.db.store.Set(txn, key, val); err != nil {
 			return err
 		}
 	}
 
-	if remainingColumns > 0 {
-		return errors.New("field found in input that are not present in schema")
-	}
-
-	// Key is the primary key prefixed by the table's oid.
-	// XXX: This assumes that the 0th element of the tuple is the primary key. This should be
-	// configured in schema.
-	key := NewTuple(int32(tbl.oid)).Concat(inTuple.Slice(0, 1)).Serialize()
-	val, err := tbl.serde.Serialize(inTuple)
-	if err != nil {
-		return fmt.Errorf("serializing value: %w", err)
-	}
-
-	return tbl.db.store.Set(key, val)
+	return nil
 }
 
 type scanFunc = func(t *Tuple) bool
 
-func (tbl *table) Scan(fn scanFunc) error {
-	tx := tbl.db.store.ReadTransaction()
-	defer tx.End()
-
+func (tbl *table) Scan(tx ReadTransaction, fn scanFunc) error {
 	prefix := NewTuple(int32(tbl.oid)).Serialize()
 	it := tbl.db.store.Scan(tx, ScanArgs{
 		Prefix: prefix,

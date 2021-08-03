@@ -37,17 +37,34 @@ func (db *Database) getNextOID() OID {
 	return oid
 }
 
-func (db *Database) Table(name string) (tbl *table, err error) {
-	tbl = &table{
+func (db *Database) ReadTransaction() ReadTransaction {
+	return db.store.ReadTransaction()
+}
+
+func (db *Database) WriteTransaction() WriteTransaction {
+	return db.store.WriteTransaction()
+}
+
+func (db *Database) Tables() *table {
+	return tableTable(db)
+}
+
+func (db *Database) Scemas() *table {
+	return schemaTable(db)
+}
+
+func (db *Database) Table(txn ReadTransaction, name string) (*table, error) {
+	tbl := &table{
 		db: db,
 	}
 
 	tt := tableTable(db)
 	var tblTup *Tuple
-	if tblTup, err = SelectOne(tt, ColumnByNameEquals(tt.schema, "table_name", name)); err != nil {
+	tblTup, err := SelectOne(txn, tt, ColumnByNameEquals(tt.schema, "table_name", name))
+	if err != nil {
 		return nil, err
 	} else if tblTup == nil {
-		return
+		return nil, nil
 	}
 
 	oid, _ := tblTup.GetInt32(0) // TODO: Use a GetXXXByName method.
@@ -60,10 +77,10 @@ func (db *Database) Table(name string) (tbl *table, err error) {
 
 	st := schemaTable(db)
 	var schemaTup *Tuple
-	if schemaTup, err = SelectOne(st, ColumnByNameEquals(st.schema, "schema_oid", schemaOID)); err != nil {
+	if schemaTup, err = SelectOne(txn, st, ColumnByNameEquals(st.schema, "schema_oid", schemaOID)); err != nil {
 		return nil, err
 	} else if schemaTup == nil {
-		return
+		return nil, nil
 	}
 	schemaData, err := schemaTup.GetBytes(1)
 	if err != nil {
@@ -72,5 +89,5 @@ func (db *Database) Table(name string) (tbl *table, err error) {
 	tbl.schema = MustDeserializeSchema(schemaData)
 	tbl.serde = NewSchematizedRowSerde(tbl.schema)
 
-	return tbl, nil
+	return tbl, err
 }
