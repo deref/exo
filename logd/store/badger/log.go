@@ -5,19 +5,18 @@
 package badger
 
 import (
-	"log"
-
+	"github.com/deref/exo/util/logging"
 	"github.com/dgraph-io/badger/v3"
 )
 
 type logger struct {
-	underlying *log.Logger
+	underlying logging.Logger
 	level      int
 }
 
 const defaultLogLevel = int(badger.INFO)
 
-func newLogger(underlying *log.Logger, level int) badger.Logger {
+func newLogger(underlying logging.Logger, level int) badger.Logger {
 	return &logger{
 		underlying: underlying,
 		level:      level,
@@ -25,7 +24,7 @@ func newLogger(underlying *log.Logger, level int) badger.Logger {
 }
 
 func (l *logger) Printf(f string, v ...interface{}) {
-	l.underlying.Printf("badger "+f, v...)
+	l.underlying.Infof("badger "+f, v...)
 }
 
 func (l *logger) Errorf(f string, v ...interface{}) {

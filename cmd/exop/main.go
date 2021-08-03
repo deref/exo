@@ -18,6 +18,7 @@ import (
 	"github.com/deref/exo/telemetry"
 	"github.com/deref/exo/util/cmdutil"
 	"github.com/deref/exo/util/httputil"
+	"github.com/deref/exo/util/logging"
 	"github.com/deref/pier"
 )
 
@@ -40,6 +41,8 @@ func main() {
 
 	ctx := context.Background()
 
+	logger := logging.Default()
+
 	cfg := &config.Config{}
 	config.MustLoadDefault(cfg)
 	paths := cmdutil.MustMakeDirectories(cfg)
@@ -52,6 +55,7 @@ func main() {
 		Store:      store,
 		Telemetry:  telemetry.New(&cfg.Telemetry),
 		SyslogPort: log.SyslogPort,
+		Logger:     logger,
 	}
 
 	ctx = log.ContextWithLogCollector(ctx, logd.GetLogCollector(&josh.Client{

@@ -22,6 +22,7 @@ import (
 	"github.com/deref/exo/providers/unix/components/process"
 	"github.com/deref/exo/util/errutil"
 	"github.com/deref/exo/util/jsonutil"
+	"github.com/deref/exo/util/logging"
 	docker "github.com/docker/docker/client"
 )
 
@@ -30,6 +31,7 @@ type Workspace struct {
 	VarDir     string
 	Store      state.Store
 	SyslogPort int
+	Logger     logging.Logger
 	Docker     *docker.Client
 }
 
@@ -220,6 +222,7 @@ func (ws *Workspace) newController(ctx context.Context, typ string) Controller {
 			}
 		}
 		return &container.Container{
+			Logger:        ws.Logger,
 			WorkspaceRoot: description.Root,
 			Docker:        ws.Docker,
 			SyslogPort:    ws.SyslogPort,

@@ -7,6 +7,7 @@ import (
 	state "github.com/deref/exo/core/state/api"
 	josh "github.com/deref/exo/josh/server"
 	"github.com/deref/exo/telemetry"
+	"github.com/deref/exo/util/logging"
 	docker "github.com/docker/docker/client"
 )
 
@@ -16,6 +17,7 @@ type Config struct {
 	Telemetry  telemetry.Telemetry
 	SyslogPort int
 	Docker     *docker.Client
+	Logger     logging.Logger
 }
 
 func BuildRootMux(prefix string, cfg *Config) *http.ServeMux {
@@ -36,6 +38,7 @@ func BuildRootMux(prefix string, cfg *Config) *http.ServeMux {
 		return &Workspace{
 			ID:         req.URL.Query().Get("id"),
 			VarDir:     cfg.VarDir,
+			Logger:     cfg.Logger,
 			Store:      cfg.Store,
 			SyslogPort: cfg.SyslogPort,
 			Docker:     cfg.Docker,

@@ -5,6 +5,7 @@ import (
 
 	"github.com/deref/exo/config"
 	"github.com/deref/exo/util/cmdutil"
+	"github.com/deref/exo/util/logging"
 	"github.com/spf13/cobra"
 )
 
@@ -25,7 +26,14 @@ For more information, see https://exo.deref.io`,
 }
 
 func newContext() context.Context {
-	return config.WithConfig(context.Background(), cfg)
+	ctx := context.Background()
+
+	ctx = config.WithConfig(ctx, cfg)
+
+	logger := logging.Default()
+	ctx = logging.ContextWithLogger(ctx, logger)
+
+	return ctx
 }
 
 func main() {
