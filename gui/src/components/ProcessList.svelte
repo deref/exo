@@ -130,7 +130,7 @@
               {/if}
             </td>
 
-            <td><h2 on:click={() => toggleDisplayDetails(name)}>{name}</h2></td>
+            <td><button on:click={() => void router.push(`#/workspaces/${encodeURIComponent(workspaceId)}/processes/${encodeURIComponent(id)}`)}>{name}</button></td>
 
             <td>
               <CheckboxButton
@@ -164,7 +164,7 @@
                     </tr>
                     <tr>
                       <td>CPU Percent</td>
-                      <td>{status.CPUPercent}</td>
+                      <td>{status.CPUPercent.toFixed(2)}%</td>
                     </tr>
                   </table>
                 </div>
@@ -254,7 +254,7 @@
     justify-content: space-between;
   }
 
-  h2 {
+  button {
     display: inline-block;
     margin: 0;
     line-height: 1;

@@ -664,8 +664,8 @@ func (ws *Workspace) GetComponentStatus(ctx context.Context, input *api.GetCompo
 				EnvVars:     state.FullEnvironment,
 			}
 
-			if state.Pid != 0 {
-				proc, err := psprocess.NewProcess(int32(state.Pid))
+			proc, err := psprocess.NewProcess(int32(state.Pid))
+			if err == nil {
 				status.Running, err = proc.IsRunning()
 				if err != nil {
 					return nil, err
