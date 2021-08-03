@@ -1,7 +1,6 @@
 package storage_test
 
 import (
-	"fmt"
 	"testing"
 
 	"github.com/deref/exo/storage"
@@ -123,6 +122,9 @@ func TestTable(t *testing.T) {
 			"id":        uint64(123),
 			"name":      "Andrew",
 		},
+		// TODO: Fixme. This overwrites the previous record because only `partition` is assumed to
+		// be the primary key, so this record overwrites the previous one. Also, an insert should
+		// not overwrite a prior record by default.
 		{
 			"partition": uint64(1),
 			"id":        uint64(456),
@@ -136,25 +138,25 @@ func TestTable(t *testing.T) {
 	})
 	assert.NoError(t, err)
 
-	tbl.Scan(tx.Downgrade(), func(t *storage.Tuple) bool {
-		fmt.Println("Scanning:", t)
-		return false
-	})
+	// tbl.Scan(tx.Downgrade(), func(t *storage.Tuple) bool {
+	// 	fmt.Println("Scanning:", t)
+	// 	return true
+	// })
 
 	assert.NoError(t, tx.Commit())
 
-	// rows, err := db.Table("my-table").Where(storage.EQ("name", "Andrew")).Find()
-	// assert.NoError(t, err)
-	// assert.Equal(t, []map[string]interface{}{
-	// 	{
-	// 		"partition": uint64(1),
-	// 		"id":        uint64(123),
-	// 		"name":      "Andrew",
-	// 	},
-	// 	{
-	// 		"partition": uint64(2),
-	// 		"id":        uint64(111),
-	// 		"name":      "Andrew",
-	// 	},
-	// }, rows)
+	rows, err := tbl.Where(storage.EQ("name", "Andrew")).Find()
+	assert.NoError(t, err)
+	assert.Equal(t, []map[string]interface{}{
+		{
+			"partition": uint64(1),
+			"id":        uint64(123),
+			"name":      "Andrew",
+		},
+		{
+			"partition": uint64(2),
+			"id":        uint64(111),
+			"name":      "Andrew",
+		},
+	}, rows)
 }
