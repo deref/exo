@@ -695,6 +695,46 @@ func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeP
 	return &output, nil
 }
 
+func (ws *Workspace) DescribeVolumes(ctx context.Context, input *api.DescribeVolumesInput) (*api.DescribeVolumesOutput, error) {
+	components, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{
+		Types: []string{"volume"},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("describing components: %w", err)
+	}
+	output := api.DescribeVolumesOutput{
+		Volumes: make([]api.VolumeDescription, 0, len(components.Components)),
+	}
+	for _, component := range components.Components {
+		volume := api.VolumeDescription{
+			ID:   component.ID,
+			Name: component.Name,
+		}
+		output.Volumes = append(output.Volumes, volume)
+	}
+	return &output, nil
+}
+
+func (ws *Workspace) DescribeNetworks(ctx context.Context, input *api.DescribeNetworksInput) (*api.DescribeNetworksOutput, error) {
+	components, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{
+		Types: []string{"network"},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("describing components: %w", err)
+	}
+	output := api.DescribeNetworksOutput{
+		Networks: make([]api.NetworkDescription, 0, len(components.Components)),
+	}
+	for _, component := range components.Components {
+		network := api.NetworkDescription{
+			ID:   component.ID,
+			Name: component.Name,
+		}
+		output.Networks = append(output.Networks, network)
+	}
+	return &output, nil
+}
+
 func (ws *Workspace) controlEachProcess(ctx context.Context, f interface{}) error {
 	components, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{
 		Types: processTypes,

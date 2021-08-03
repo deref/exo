@@ -133,6 +133,14 @@ interface "workspace" {
   method "describe-processes" {
     output "processes" "[]ProcessDescription" {}
   }
+  
+  method "describe-volumes" {
+    output "volumes" "[]VolumeDescription" {}
+  }
+
+  method "describe-networks" {
+    output "networks" "[]NetworkDescription" {}
+  }
 }
 
 struct "workspace-description" {
@@ -168,4 +176,14 @@ struct "process-description" {
   field "provider" "string" {}
 	field "name" "string" {}
 	field "running" "bool" {}
+}
+
+struct "volume-description" {
+	field "id" "string" {}
+	field "name" "string" {}
+}
+
+struct "network-description" {
+	field "id" "string" {}
+	field "name" "string" {}
 }
