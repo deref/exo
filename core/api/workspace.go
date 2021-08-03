@@ -330,4 +330,5 @@ type ComponentStatus struct {
 	Running     bool              `json:"running"`
 	EnvVars     map[string]string `json:"envVars"`
 	CPUPercent  float64           `json:"CPUPercent"`
+	CreateTime  int64             `json:"createTime"`
 }

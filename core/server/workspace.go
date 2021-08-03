@@ -671,6 +671,11 @@ func (ws *Workspace) GetComponentStatus(ctx context.Context, input *api.GetCompo
 					return nil, err
 				}
 
+				status.CreateTime, err = proc.CreateTime()
+				if err != nil {
+					return nil, err
+				}
+
 				status.CPUPercent, err = proc.CPUPercent()
 				if err != nil {
 					return nil, err

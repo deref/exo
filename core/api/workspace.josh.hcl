@@ -174,4 +174,5 @@ struct "component-status" {
 	field "running" "bool" {}
   field "envVars" "map[string]string" {}
 	field "CPUPercent" "float64" {}
+	field "createTime" "int64" {}
 }

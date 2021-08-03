@@ -13,6 +13,7 @@ export interface ComponentStatus {
   running: boolean;
   envVars: null | Record<string, string>;
   CPUPercent: number;
+  createTime: number;
 }
 
 export interface ComponentDetails {

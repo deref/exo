@@ -22,7 +22,7 @@
   let refreshInterval: any;
   let process: ComponentDetails | null = null
 
-  const cpuPercentages: number[] = []
+  const cpuPercentages: number[] = [0]
 
   onMount(() => {
     fetchProcesses(workspace);
@@ -33,7 +33,7 @@
       if (processList.stage === "success") {
         process = processList.data.filter(p => p.id === processId)[0];
       }
-      if(process && process.status.running) {
+      if (process && process.status.running) {
         cpuPercentages.push(process.status.CPUPercent)
         if (cpuPercentages.length > 100) {
           cpuPercentages.shift()
@@ -76,13 +76,18 @@
             <td>{process.status.CPUPercent.toFixed(2)}%</td>
             <td><svg class="sparkline" width="100" height="30" stroke-width="3"></svg></td>
           </tr>
+          <tr>
+            <td>Started at</td>
+            <td>{new Date(process.status.createTime).toLocaleTimeString()}</td>
+            <td><svg class="sparkline" width="100" height="30" stroke-width="3"></svg></td>
+          </tr>
         </table>
         <h3>Environment</h3>
         <table>
           {#each Object.entries(process.status.envVars ?? {}) as [name, val] (name)}
             <tr>
               <td>{name}</td>
-              <td>{val}</td>
+              <td><code><pre>{val}</pre></code></td>
             </tr>
           {/each}
         </table>
@@ -96,9 +101,6 @@
 <style>
   section {
     height: 100%;
-    display: grid;
-    grid-template-columns: 360px 1fr;
-    gap: 30px;
     margin: 0 30px;
     padding-bottom: 16px;
   }
@@ -119,8 +121,18 @@
     fill: none;
   }
 
+  code {
+    width: 100%;
+    max-width: 500px;
+    display: inline-block;
+    overflow-x: auto;
+    padding: 0.6em;
+    border-radius: 0.5em;
+    background-color: rgba(0, 0, 0, 0.05)
+  }
+
   td {
-    padding-right: 1em;
+    padding-right: 2em;
   }
 
   /* line with highlight area */
