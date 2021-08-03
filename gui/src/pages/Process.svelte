@@ -124,6 +124,10 @@ function humanFileSize(bytes: number, si=false, dp=1): string {
               <td>Local Ports</td>
               <td>{process.status.ports?.join(', ') ?? "None"}</td>
             </tr>
+            <tr>
+              <td>Children</td>
+              <td>{process.status.childrenExecutables?.join(', ') ?? "None"}</td>
+            </tr>
           {/if}
         </table>
         <h3>Environment</h3>

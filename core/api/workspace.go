@@ -326,11 +326,12 @@ type ProcessDescription struct {
 }
 
 type ComponentStatus struct {
-	ComponentID    string            `json:"componentId"`
-	Running        bool              `json:"running"`
-	EnvVars        map[string]string `json:"envVars"`
-	CPUPercent     float64           `json:"CPUPercent"`
-	CreateTime     int64             `json:"createTime"`
-	ResidentMemory uint64            `json:"residentMemory"`
-	Ports          []uint32          `json:"ports"`
+	ComponentID         string            `json:"componentId"`
+	Running             bool              `json:"running"`
+	EnvVars             map[string]string `json:"envVars"`
+	CPUPercent          float64           `json:"CPUPercent"`
+	CreateTime          int64             `json:"createTime"`
+	ResidentMemory      uint64            `json:"residentMemory"`
+	Ports               []uint32          `json:"ports"`
+	ChildrenExecutables []string          `json:"childrenExecutables"`
 }

@@ -177,4 +177,5 @@ struct "component-status" {
 	field "createTime" "int64" {}
 	field "residentMemory" "uint64" {}
   field "ports" "[]uint32" {}
+  field "childrenExecutables" "[]string" {}
 }

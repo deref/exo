@@ -706,6 +706,19 @@ func (ws *Workspace) GetComponentStatus(ctx context.Context, input *api.GetCompo
 					return nil, err
 				}
 
+				children, err := proc.Children()
+				if err == nil {
+					var childrenExecutables []string
+					for _, child := range children {
+						exe, err := child.Exe()
+						if err != nil {
+							return nil, err
+						}
+						childrenExecutables = append(childrenExecutables, exe)
+					}
+					status.ChildrenExecutables = childrenExecutables
+				}
+
 				status.CPUPercent, err = proc.CPUPercent()
 				if err != nil {
 					return nil, err

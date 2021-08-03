@@ -16,6 +16,7 @@ export interface ComponentStatus {
   createTime: number;
   residentMemory: number;
   ports: number[];
+  childrenExecutables: string[];
 }
 
 export interface ComponentDetails {
