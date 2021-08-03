@@ -172,7 +172,6 @@
 
   td,
   th {
-    /*text-align: center;*/
     font-size: inherit;
     font-weight: inherit;
     align-items: center;
