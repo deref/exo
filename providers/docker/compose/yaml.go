@@ -71,9 +71,9 @@ type Service struct {
 	// TODO: external_links
 	// TODO: extra_hosts
 	// TODO: group_add
-	// TODO: healthcheck
-	Hostname string `yaml:"hostname"`
-	Image    string `yaml:"image"`
+	Healthcheck *Healthcheck `yaml:"healthcheck"`
+	Hostname    string       `yaml:"hostname"`
+	Image       string       `yaml:"image"`
 	// TODO: init
 	// TODO: ipc
 	// TODO: isolation
@@ -116,6 +116,14 @@ type Service struct {
 	Volumes []string `yaml:"volumes"` // TODO: support long syntax.
 	// TODO: volumes_from
 	WorkingDir string `yaml:"working_dir"`
+}
+
+type Healthcheck struct {
+	Test        Command  `yaml:"test"`
+	Interval    Duration `yaml:"interval"`
+	Timeout     Duration `yaml:"timeout"`
+	Retries     int      `yaml:"retries"`
+	StartPeriod Duration `yaml:"start_period"`
 }
 
 type Logging struct {

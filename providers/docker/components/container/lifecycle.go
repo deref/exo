@@ -33,6 +33,16 @@ func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput)
 }
 
 func (c *Container) create(ctx context.Context) error {
+	var healthCfg *container.HealthConfig
+	if c.Healthcheck != nil {
+		healthCfg = &container.HealthConfig{
+			Test:        c.Healthcheck.Test,
+			Interval:    time.Duration(c.Healthcheck.Interval),
+			Timeout:     time.Duration(c.Healthcheck.Timeout),
+			Retries:     c.Healthcheck.Retries,
+			StartPeriod: time.Duration(c.Healthcheck.StartPeriod),
+		}
+	}
 	containerCfg := &container.Config{
 		Hostname:     c.Hostname,
 		Domainname:   c.Domainname,
@@ -41,9 +51,9 @@ func (c *Container) create(ctx context.Context) error {
 		Tty:          c.TTY,
 		OpenStdin:    c.StdinOpen,
 		// StdinOnce       bool                // If true, close stdin after the 1 attached client disconnects.
-		Env: c.Environment.Slice(),
-		Cmd: strslice.StrSlice(c.Command),
-		// Healthcheck     *HealthConfig       `json:",omitempty"` // Healthcheck describes how to check the container is healthy
+		Env:         c.Environment.Slice(),
+		Cmd:         strslice.StrSlice(c.Command),
+		Healthcheck: healthCfg,
 		// ArgsEscaped     bool                `json:",omitempty"` // True if command is already escaped (meaning treat as a command line) (Windows specific).
 		Image: c.Image,
 		// Volumes         map[string]struct{} // List of volumes (mounts) used for the container
