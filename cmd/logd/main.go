@@ -31,10 +31,12 @@ func main() {
 	config.MustLoadDefault(cfg)
 	paths := cmdutil.MustMakeDirectories(cfg)
 
-	logd := &logd.Service{}
-	logd.Logger = logging.Default()
+	logd := &logd.Service{
+		VarDir:     paths.VarDir,
+		SyslogPort: cfg.Log.SyslogPort,
+		Logger:     logging.Default(),
+	}
 	logd.Debug = true
-	logd.VarDir = paths.VarDir
 
 	{
 		ctx, shutdown := context.WithCancel(ctx)

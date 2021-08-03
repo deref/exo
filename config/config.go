@@ -1,7 +1,6 @@
 package config
 
 import (
-	"context"
 	_ "embed"
 	"fmt"
 	"os"
@@ -14,6 +13,10 @@ type TelemetryConfig struct {
 	Disable bool
 }
 
+type LogConfig struct {
+	SyslogPort int
+}
+
 type Config struct {
 	HomeDir string
 	BinDir  string
@@ -21,11 +24,8 @@ type Config struct {
 	RunDir  string
 
 	Telemetry TelemetryConfig
+	Log       LogConfig
 }
-
-type contextKey string
-
-var configContextKey = contextKey("config")
 
 func LoadDefault(cfg *Config) error {
 	if cfg.HomeDir == "" {
@@ -44,15 +44,7 @@ func LoadDefault(cfg *Config) error {
 		return err
 	}
 
-	if cfg.BinDir == "" {
-		cfg.BinDir = filepath.Join(cfg.HomeDir, "bin")
-	}
-	if cfg.RunDir == "" {
-		cfg.RunDir = filepath.Join(cfg.HomeDir, "run")
-	}
-	if cfg.VarDir == "" {
-		cfg.VarDir = filepath.Join(cfg.HomeDir, "var")
-	}
+	setDefaults(cfg)
 
 	return nil
 }
@@ -76,11 +68,20 @@ func loadFromFile(filePath string, cfg *Config) error {
 	return err
 }
 
-func WithConfig(ctx context.Context, cfg *Config) context.Context {
-	return context.WithValue(ctx, configContextKey, cfg)
-}
+func setDefaults(cfg *Config) {
+	// Paths
+	if cfg.BinDir == "" {
+		cfg.BinDir = filepath.Join(cfg.HomeDir, "bin")
+	}
+	if cfg.RunDir == "" {
+		cfg.RunDir = filepath.Join(cfg.HomeDir, "run")
+	}
+	if cfg.VarDir == "" {
+		cfg.VarDir = filepath.Join(cfg.HomeDir, "var")
+	}
 
-func GetConfig(ctx context.Context) (*Config, bool) {
-	cfg, ok := ctx.Value(configContextKey).(*Config)
-	return cfg, ok
+	// Log
+	if cfg.Log.SyslogPort < 1 {
+		cfg.Log.SyslogPort = 4500
+	}
 }

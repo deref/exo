@@ -110,14 +110,16 @@ func RunServer(ctx context.Context) {
 		VarDir:     paths.VarDir,
 		Store:      store,
 		Telemetry:  tel,
-		SyslogPort: log.SyslogPort,
+		SyslogPort: cfg.Log.SyslogPort,
 		Docker:     dockerClient,
 		Logger:     logger,
 	}
 
-	logd := &logd.Service{}
-	logd.Logger = logger
-	logd.VarDir = kernelCfg.VarDir
+	logd := &logd.Service{
+		VarDir:     kernelCfg.VarDir,
+		SyslogPort: kernelCfg.SyslogPort,
+		Logger:     logger,
+	}
 	ctx = log.ContextWithLogCollector(ctx, &logd.LogCollector)
 
 	mux := server.BuildRootMux("/_exo/", kernelCfg)

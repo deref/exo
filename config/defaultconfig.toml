@@ -11,6 +11,12 @@
 ## Run directory for ephemeral data. This defaults to <home-dir>/run.
 # runDir = "/path/to/exo-home/run"
 
-## Telemetry is enabled by default. To disable, ensure that disable = true is set
+## Logging subsystem that collects logs from running services.
+# [log]
+## Port that the internal log collection service binds to.
+# syslogPort = 5140
+
+## Telemetry subsystem that collects and reports statistics back to Deref.
 # [telemetry]
+## Telemetry is enabled by default. To disable, ensure that disable = true is set
 # disable = true
