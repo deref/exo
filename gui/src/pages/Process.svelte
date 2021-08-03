@@ -22,7 +22,7 @@
   let refreshInterval: any;
   let process: ComponentDetails | null = null
 
-  const cpuPercentages: number[] = [0]
+  const cpuPercentages: number[] = []
 
   onMount(() => {
     fetchProcesses(workspace);
@@ -38,11 +38,14 @@
         if (cpuPercentages.length > 100) {
           cpuPercentages.shift()
         }
-        sparkline(
-          document.querySelector(".sparkline")!,
-          cpuPercentages,
-          {interactive: true}
-        );
+        const sparklineSvg = document.querySelector(".sparkline");
+        if (cpuPercentages.some(p => p !== 0) && sparklineSvg && sparklineSvg instanceof SVGSVGElement) {
+          sparkline(
+            sparklineSvg,
+            cpuPercentages,
+            {interactive: true}
+          );
+        }
       }
     }, 1000);
   });
@@ -61,7 +64,7 @@
       <div>
         <div id="heading">
           <button class="back-button" on:click={() => void router.push(`#/workspaces/${encodeURIComponent(workspaceId)}/`)}>
-           🠔 Back
+            🠔 Back
           </button>
           <h1>{process.name}</h1>
         </div>
@@ -71,16 +74,18 @@
             <td>Status</td>
             <td>{process.status.running ? "Running" : "Stopped"}</td>
           </tr>
-          <tr>
-            <td>CPU</td>
-            <td>{process.status.CPUPercent.toFixed(2)}%</td>
-            <td><svg class="sparkline" width="100" height="30" stroke-width="3"></svg></td>
-          </tr>
-          <tr>
-            <td>Started at</td>
-            <td>{new Date(process.status.createTime).toLocaleTimeString()}</td>
-            <td><svg class="sparkline" width="100" height="30" stroke-width="3"></svg></td>
-          </tr>
+          {#if process.status.running}
+            <tr>
+              <td>CPU</td>
+              <td>{process.status.CPUPercent.toFixed(2)}%</td>
+              <td><svg class="sparkline" width="100" height="30" stroke-width="3"></svg></td>
+            </tr>
+            <tr>
+              <td>Started at</td>
+              <td><span title={new Date(process.status.createTime).toISOString()}>{new Date(process.status.createTime).toLocaleTimeString()}</span></td>
+              <td><svg class="sparkline" width="100" height="30" stroke-width="3"></svg></td>
+            </tr>
+          {/if}
         </table>
         <h3>Environment</h3>
         <table>
