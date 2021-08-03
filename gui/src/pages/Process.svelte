@@ -100,45 +100,47 @@ function humanFileSize(bytes: number, si=false, dp=1): string {
           <h1>{process.name}</h1>
         </div>
         <h3>Status</h3>
-        <table>
-          <tr>
-            <td>Status</td>
-            <td>{process.status.running ? "Running" : "Stopped"}</td>
-          </tr>
           {#if process.status.running}
-            <tr>
-              <td>CPU</td>
-              <td>{process.status.CPUPercent.toFixed(2)}%</td>
-              <td><svg class="sparkline" width="100" height="30" stroke-width="3"></svg></td>
-            </tr>
-            <tr>
-              <td>Resident Memory</td>
-              <td>{humanFileSize(process.status.residentMemory)}</td>
-            </tr>
-            <tr>
-              <td>Started at</td>
-              <td><span title={new Date(process.status.createTime).toISOString()}>{new Date(process.status.createTime).toLocaleTimeString()}</span></td>
-              <td><svg class="sparkline" width="100" height="30" stroke-width="3"></svg></td>
-            </tr>
-            <tr>
-              <td>Local Ports</td>
-              <td>{process.status.ports?.join(', ') ?? "None"}</td>
-            </tr>
-            <tr>
-              <td>Children</td>
-              <td>{process.status.childrenExecutables?.join(', ') ?? "None"}</td>
-            </tr>
+            <table>
+              <tr>
+                <td>Status</td>
+                <td>{process.status.running ? "Running" : "Stopped"}</td>
+              </tr>
+              <tr>
+                <td>CPU</td>
+                <td>{process.status.CPUPercent.toFixed(2)}%</td>
+                <td><svg class="sparkline" width="100" height="30" stroke-width="3"></svg></td>
+              </tr>
+              <tr>
+                <td>Resident Memory</td>
+                <td>{humanFileSize(process.status.residentMemory)}</td>
+              </tr>
+              <tr>
+                <td>Started at</td>
+                <td><span title={new Date(process.status.createTime).toISOString()}>{new Date(process.status.createTime).toLocaleTimeString()}</span></td>
+                <td><svg class="sparkline" width="100" height="30" stroke-width="3"></svg></td>
+              </tr>
+              <tr>
+                <td>Local Ports</td>
+                <td>{process.status.ports?.join(', ') ?? "None"}</td>
+              </tr>
+              <tr>
+                <td>Children</td>
+                <td>{process.status.childrenExecutables?.join(', ') ?? "None"}</td>
+              </tr>
+            </table>
+            <h3>Environment</h3>
+            <table>
+              {#each Object.entries(process.status.envVars ?? {}) as [name, val] (name)}
+                <tr>
+                  <td>{name}</td>
+                  <td><code><pre>{val}</pre></code></td>
+                </tr>
+              {/each}
+            </table>
+          {:else}
+            <p>Process is not running</p>
           {/if}
-        </table>
-        <h3>Environment</h3>
-        <table>
-          {#each Object.entries(process.status.envVars ?? {}) as [name, val] (name)}
-            <tr>
-              <td>{name}</td>
-              <td><code><pre>{val}</pre></code></td>
-            </tr>
-          {/each}
-        </table>
       </div>
     {:else}
       Loading...
