@@ -48,11 +48,11 @@ type Service struct {
 	// TODO: cpu_rt_period
 	// TODO: cpus
 	// TODO: cpuset
-	// TODO: build
+	Build Build `yaml:"build"`
 	// TODO: cap_add
 	// TODO: cap_drop
 	// TODO: cgroup_parent
-	// TODO: command
+	Command       Command  `yaml:"command"`
 	Configs       []string `yaml:"configs"` // TODO: support long syntax.
 	ContainerName string   `yaml:"container_name"`
 	// TODO: credential_spec
@@ -62,8 +62,8 @@ type Service struct {
 	// TODO: dns
 	// TODO: dns_opt
 	// TODO: dns_search
-	// TODO: domainname
-	// TODO: entrypoint
+	Domainname string  `yaml:"domainname"`
+	Entrypoint Command `yaml:"entrypoint"`
 	// TODO: env_file
 	Environment Dictionary `yaml:"environment"`
 	// TODO: expose
@@ -71,18 +71,18 @@ type Service struct {
 	// TODO: external_links
 	// TODO: extra_hosts
 	// TODO: group_add
-	// TODO: healthcheck
-	// TODO: hostname
-	Image string `yaml:"image"`
+	Healthcheck *Healthcheck `yaml:"healthcheck"`
+	Hostname    string       `yaml:"hostname"`
+	Image       string       `yaml:"image"`
 	// TODO: init
 	// TODO: ipc
 	// TODO: isolation
-	// TODO: labels
+	Labels Dictionary `yaml:"labels"`
 	// TODO: links
 	Logging Logging `yaml:"logging"`
 	// TODO: network_mode
-	Networks []string `yaml:"networks"` // TODO: support long syntax.
-	// TODO: mac_address
+	Networks   []string `yaml:"networks"` // TODO: support long syntax.
+	MacAddress string   `yaml:"mac_address"`
 	// TODO: mem_limit
 	// TODO: mem_reservation
 	// TODO: mem_swappiness
@@ -92,30 +92,38 @@ type Service struct {
 	// TODO: pid
 	// TODO: pids_limit
 	// TODO: platform
-	Ports PortMappings `yaml:"ports"`
-	// TODO: privileged
+	Ports      PortMappings `yaml:"ports"`
+	Privileged bool         `yaml:"privileged"`
 	// TODO: profiles
 	// TODO: pull_policy
 	// TODO: read_only
 	Restart string `yaml:"restart"`
-	// TODO: runtime
+	Runtime string `yaml:"runtime"`
 	// TODO: scale
 	Secrets []string `yaml:"secrets"` // TODO: support long syntax.
 	// TODO: security_opt
-	// TODO: shm_size
-	// TODO: shm_open
-	// TODO: stop_grace_period
-	// TODO: stop_signal
+	ShmSize         Bytes     `yaml:"shm_size"`
+	StdinOpen       bool      `yaml:"stdin_open"`
+	StopGracePeriod *Duration `yaml:"stop_grace_period"`
+	StopSignal      string    `yaml:"stop_signal"`
 	// TODO: storage_opt
 	// TODO: sysctls
 	// TODO: tmpfs
-	// TODO: tty
+	TTY bool `yaml:"tty"`
 	// TODO: ulimits
-	// TODO: user
+	User string `yaml:"user"`
 	// TODO: userns_mode
 	Volumes []string `yaml:"volumes"` // TODO: support long syntax.
 	// TODO: volumes_from
-	// TODO: working_dir
+	WorkingDir string `yaml:"working_dir"`
+}
+
+type Healthcheck struct {
+	Test        Command  `yaml:"test"`
+	Interval    Duration `yaml:"interval"`
+	Timeout     Duration `yaml:"timeout"`
+	Retries     int      `yaml:"retries"`
+	StartPeriod Duration `yaml:"start_period"`
 }
 
 type Logging struct {

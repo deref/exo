@@ -10,13 +10,15 @@ type Container struct {
 	Spec
 	State
 
-	Docker     *docker.Client
-	SyslogPort int
+	WorkspaceRoot string
+	Docker        *docker.Client
+	SyslogPort    int
 }
 
 type Spec compose.Service
 
 type State struct {
+	ImageID     string `json:"imageId"`
 	ContainerID string `json:"containerId"`
 	Running     bool   `json:"running"`
 }

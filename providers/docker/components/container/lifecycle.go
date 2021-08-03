@@ -4,43 +4,71 @@ import (
 	"context"
 	"fmt"
 	"log"
+	"time"
 
 	core "github.com/deref/exo/core/api"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
+	"github.com/docker/docker/api/types/strslice"
 	docker "github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
 func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput) (output *core.InitializeOutput, err error) {
+	if err := c.ensureImage(ctx); err != nil {
+		return nil, fmt.Errorf("ensuring image: %w", err)
+	}
+
+	if err := c.create(ctx); err != nil {
+		return nil, fmt.Errorf("creating container: %w", err)
+	}
+
+	if err := c.start(ctx); err != nil {
+		log.Printf("starting container %q: %v", c.ContainerID, err)
+	}
+
+	return &core.InitializeOutput{}, nil
+}
+
+func (c *Container) create(ctx context.Context) error {
+	var healthCfg *container.HealthConfig
+	if c.Healthcheck != nil {
+		healthCfg = &container.HealthConfig{
+			Test:        c.Healthcheck.Test,
+			Interval:    time.Duration(c.Healthcheck.Interval),
+			Timeout:     time.Duration(c.Healthcheck.Timeout),
+			Retries:     c.Healthcheck.Retries,
+			StartPeriod: time.Duration(c.Healthcheck.StartPeriod),
+		}
+	}
 	containerCfg := &container.Config{
-		// Hostname        string              // Hostname
-		// Domainname      string              // Domainname
-		// User            string              // User that will run the command(s) inside the container, also support user:group
-		// AttachStdin     bool                // Attach the standard input, makes possible user interaction
-		// AttachStdout    bool                // Attach the standard output
-		// AttachStderr    bool                // Attach the standard error
+		Hostname:     c.Hostname,
+		Domainname:   c.Domainname,
+		User:         c.User,
 		ExposedPorts: make(nat.PortSet),
-		// Tty             bool                // Attach standard streams to a tty, including stdin if it is not closed.
-		// OpenStdin       bool                // Open stdin
+		Tty:          c.TTY,
+		OpenStdin:    c.StdinOpen,
 		// StdinOnce       bool                // If true, close stdin after the 1 attached client disconnects.
-		Env: c.Environment.Slice(),
-		// Cmd             strslice.StrSlice   // Command to run when starting the container
-		// Healthcheck     *HealthConfig       `json:",omitempty"` // Healthcheck describes how to check the container is healthy
+		Env:         c.Environment.Slice(),
+		Cmd:         strslice.StrSlice(c.Command),
+		Healthcheck: healthCfg,
 		// ArgsEscaped     bool                `json:",omitempty"` // True if command is already escaped (meaning treat as a command line) (Windows specific).
 		Image: c.Image,
 		// Volumes         map[string]struct{} // List of volumes (mounts) used for the container
-		// WorkingDir      string              // Current directory (PWD) in the command will be launched
-		// Entrypoint      strslice.StrSlice   // Entrypoint to run when starting the container
+		WorkingDir: c.WorkingDir,
+		Entrypoint: strslice.StrSlice(c.Entrypoint),
 		// NetworkDisabled bool                `json:",omitempty"` // Is network disabled
-		// MacAddress      string              `json:",omitempty"` // Mac Address of the container
+		MacAddress: c.MacAddress,
 		// OnBuild         []string            // ONBUILD metadata that were defined on the image Dockerfile
-		// Labels          map[string]string   // List of labels set to this container
-		// StopSignal      string              `json:",omitempty"` // Signal to stop a container
-		// StopTimeout     *int                `json:",omitempty"` // Timeout (in seconds) to stop a container
+		Labels:     c.Labels.WithoutNils(),
+		StopSignal: c.StopSignal,
 		// Shell           strslice.StrSlice   `json:",omitempty"` // Shell for shell-form of RUN, CMD, ENTRYPOINT
+	}
+	if c.StopGracePeriod != nil {
+		timeout := int(time.Duration(*c.StopGracePeriod).Round(time.Second).Seconds())
+		containerCfg.StopTimeout = &timeout
 	}
 	for _, mapping := range c.Ports {
 		target := nat.Port(mapping.Target) // TODO: Handle port ranges.
@@ -91,7 +119,7 @@ func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput)
 		//Links           []string          // List of links (in the name:alias form)
 		//OomScoreAdj     int               // Container preference for OOM-killing
 		//PidMode         PidMode           // PID namespace to use for the container
-		//Privileged      bool              // Is the container in privileged mode
+		Privileged: c.Privileged,
 		//PublishAllPorts bool              // Should docker publish all exposed port for the container
 		//ReadonlyRootfs  bool              // Is the container root filesystem in read-only
 		//SecurityOpt     []string          // List of string values to customize labels for MLS systems, such as SELinux.
@@ -99,9 +127,9 @@ func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput)
 		//Tmpfs           map[string]string `json:",omitempty"` // List of tmpfs (mounts) used for the container
 		//UTSMode         UTSMode           // UTS namespace to use for the container
 		//UsernsMode      UsernsMode        // The user namespace to use for the container
-		//ShmSize         int64             // Total shm memory usage
+		ShmSize: int64(c.ShmSize),
 		//Sysctls         map[string]string `json:",omitempty"` // List of Namespaced sysctls used for the container
-		//Runtime         string            `json:",omitempty"` // Runtime to use with this container
+		Runtime: c.Runtime,
 
 		//// Applicable to Windows
 		//ConsoleSize [2]uint   // Initial console size (height,width)
@@ -158,15 +186,10 @@ func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput)
 	//}
 	createdBody, err := c.Docker.ContainerCreate(ctx, containerCfg, hostCfg, networkCfg, platform, c.ContainerName)
 	if err != nil {
-		return nil, fmt.Errorf("creating: %w", err)
+		return err
 	}
 	c.ContainerID = createdBody.ID
-
-	if err := c.start(ctx); err != nil {
-		log.Printf("starting container %q: %v", c.ContainerID, err)
-	}
-
-	return &core.InitializeOutput{}, nil
+	return nil
 }
 
 func (c *Container) Update(context.Context, *core.UpdateInput) (*core.UpdateOutput, error) {
