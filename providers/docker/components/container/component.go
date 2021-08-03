@@ -18,6 +18,7 @@ type Container struct {
 type Spec compose.Service
 
 type State struct {
+	ImageID     string `json:"imageId"`
 	ContainerID string `json:"containerId"`
 	Running     bool   `json:"running"`
 }

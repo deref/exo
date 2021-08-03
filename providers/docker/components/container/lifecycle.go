@@ -18,7 +18,7 @@ import (
 
 func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput) (output *core.InitializeOutput, err error) {
 	if err := c.ensureImage(ctx); err != nil {
-		return nil, fmt.Errorf("building image: %w", err)
+		return nil, fmt.Errorf("ensuring image: %w", err)
 	}
 
 	if err := c.create(ctx); err != nil {

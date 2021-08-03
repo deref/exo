@@ -15,13 +15,6 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func (c *Container) ensureImage(ctx context.Context) error {
-	if !c.canBuild() {
-		return nil
-	}
-	return c.buildImage(ctx)
-}
-
 func (c *Container) canBuild() bool {
 	return c.Build.Context != ""
 }
@@ -94,31 +87,45 @@ func (c *Container) buildImage(ctx context.Context) error {
 			//// in BuildKit mode
 			//Outputs []ImageBuildOutput
 		}
+		fmt.Println("before build")
 		resp, err := c.Docker.ImageBuild(ctx, buildContext, opts)
+		fmt.Println("after build")
+		if resp.Body != nil {
+			// TODO [DOCKER_PROGRESS]: Capture progress.
+			_, _ = io.Copy(os.Stdout, resp.Body)
+			_ = resp.Body.Close()
+		}
 		if err != nil {
 			return err
 		}
-		_ = resp // TODO: Any useful information in here?
 		return nil
 	})
 
 	return eg.Wait()
 }
 
-func tarBuildContext(w io.Writer, root string) error {
+func tarBuildContext(w io.WriteCloser, root string) (err error) {
+	defer func() {
+		err2 := w.Close()
+		if err == nil {
+			err = err2
+		}
+	}()
+
 	tw := tar.NewWriter(w)
 
 	filepath.Walk(root, func(file string, info os.FileInfo, err error) error {
+		fmt.Println("taring", file)
 		// Generate and write file header.
 		header, err := tar.FileInfoHeader(info, file)
 		if err != nil {
 			return err
 		}
-		// Since fs.FileInfo's Name method only returns the base name of
-		// the file it describes, it may be necessary to modify Header.Name
-		// to provide the full path name of the file.
-		// See: https://golang.org/src/archive/tar/common.go?#L626
-		header.Name = filepath.ToSlash(file)
+		header.Name, err = filepath.Rel(root, filepath.ToSlash(file))
+		if err != nil {
+			return err
+		}
+		fmt.Println(">>", header.Name)
 		if err := tw.WriteHeader(header); err != nil {
 			return err
 		}
@@ -136,5 +143,9 @@ func tarBuildContext(w io.Writer, root string) error {
 		return nil
 	})
 
-	return tw.Close()
+	fmt.Println("tarred")
+	if err := tw.Close(); err != nil {
+		return err
+	}
+	return nil
 }
