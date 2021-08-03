@@ -33,6 +33,7 @@ interface "store" {
   method "describe-components" {
     input "workspace-id" "string" {}
     input "ids" "[]string" {}
+    input "types" "[]string" {}
 
     output "components" "[]ComponentDescription" {}
   }

@@ -78,6 +78,8 @@ type Workspace interface {
 	StopComponent(context.Context, *StopComponentInput) (*StopComponentOutput, error)
 	RestartComponent(context.Context, *RestartComponentInput) (*RestartComponentOutput, error)
 	DescribeProcesses(context.Context, *DescribeProcessesInput) (*DescribeProcessesOutput, error)
+	DescribeVolumes(context.Context, *DescribeVolumesInput) (*DescribeVolumesOutput, error)
+	DescribeNetworks(context.Context, *DescribeNetworksInput) (*DescribeNetworksOutput, error)
 }
 
 type DescribeInput struct {
@@ -122,6 +124,11 @@ type ResolveOutput struct {
 }
 
 type DescribeComponentsInput struct {
+
+	// If non-empty, filters components to supplied ids.
+	IDs []string `json:"ids"`
+	// If non-empty, filters components to supplied types.
+	Types []string `json:"types"`
 }
 
 type DescribeComponentsOutput struct {
@@ -224,6 +231,20 @@ type DescribeProcessesOutput struct {
 	Processes []ProcessDescription `json:"processes"`
 }
 
+type DescribeVolumesInput struct {
+}
+
+type DescribeVolumesOutput struct {
+	Volumes []VolumeDescription `json:"volumes"`
+}
+
+type DescribeNetworksInput struct {
+}
+
+type DescribeNetworksOutput struct {
+	Networks []NetworkDescription `json:"networks"`
+}
+
 func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Workspace) {
 	b.AddMethod("start", func(req *http.Request) interface{} {
 		return factory(req).Start
@@ -288,6 +309,12 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	b.AddMethod("describe-processes", func(req *http.Request) interface{} {
 		return factory(req).DescribeProcesses
 	})
+	b.AddMethod("describe-volumes", func(req *http.Request) interface{} {
+		return factory(req).DescribeVolumes
+	})
+	b.AddMethod("describe-networks", func(req *http.Request) interface{} {
+		return factory(req).DescribeNetworks
+	})
 }
 
 type WorkspaceDescription struct {
@@ -334,4 +361,14 @@ type ComponentStatus struct {
 	ResidentMemory      uint64            `json:"residentMemory"`
 	Ports               []uint32          `json:"ports"`
 	ChildrenExecutables []string          `json:"childrenExecutables"`
+}
+
+type VolumeDescription struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
+type NetworkDescription struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
 }
