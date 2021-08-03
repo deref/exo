@@ -87,7 +87,12 @@ const apiUrl = (path: string, query: Record<string, string>) => {
 };
 
 const isErrorLike = (x: any): x is { message: string } => {
-  return x != null && 'message' in x && typeof x.message === 'string';
+  return (
+    x != null &&
+    typeof x === 'object' &&
+    'message' in x &&
+    typeof x.message === 'string'
+  );
 };
 
 export class APIError extends Error {
