@@ -14,6 +14,7 @@ export interface ComponentStatus {
   envVars: null | Record<string, string>;
   CPUPercent: number;
   createTime: number;
+  residentMemory: number;
 }
 
 export interface ComponentDetails {

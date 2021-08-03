@@ -681,6 +681,13 @@ func (ws *Workspace) GetComponentStatus(ctx context.Context, input *api.GetCompo
 					return nil, err
 				}
 
+				memoryInfo, err := proc.MemoryInfo()
+				if err != nil {
+					return nil, err
+				}
+
+				status.ResidentMemory = memoryInfo.RSS
+
 				status.CreateTime, err = proc.CreateTime()
 				if err != nil {
 					return nil, err
