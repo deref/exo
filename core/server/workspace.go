@@ -688,6 +688,19 @@ func (ws *Workspace) GetComponentStatus(ctx context.Context, input *api.GetCompo
 
 				status.ResidentMemory = memoryInfo.RSS
 
+				connections, err := proc.Connections()
+				if err != nil {
+					return nil, err
+				}
+
+				var ports []uint32
+				for _, conn := range connections {
+					if conn.Laddr.Port != 0 {
+						ports = append(ports, conn.Laddr.Port)
+					}
+				}
+				status.Ports = ports
+
 				status.CreateTime, err = proc.CreateTime()
 				if err != nil {
 					return nil, err

@@ -15,6 +15,7 @@ export interface ComponentStatus {
   CPUPercent: number;
   createTime: number;
   residentMemory: number;
+  ports: number[];
 }
 
 export interface ComponentDetails {

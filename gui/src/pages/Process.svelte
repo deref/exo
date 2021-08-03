@@ -114,12 +114,15 @@ function humanFileSize(bytes: number, si=false, dp=1): string {
             <tr>
               <td>Resident Memory</td>
               <td>{humanFileSize(process.status.residentMemory)}</td>
-              <td><svg class="sparkline" width="100" height="30" stroke-width="3"></svg></td>
             </tr>
             <tr>
               <td>Started at</td>
               <td><span title={new Date(process.status.createTime).toISOString()}>{new Date(process.status.createTime).toLocaleTimeString()}</span></td>
               <td><svg class="sparkline" width="100" height="30" stroke-width="3"></svg></td>
+            </tr>
+            <tr>
+              <td>Local Ports</td>
+              <td>{process.status.ports?.join(', ') ?? "None"}</td>
             </tr>
           {/if}
         </table>

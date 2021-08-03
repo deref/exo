@@ -176,4 +176,5 @@ struct "component-status" {
 	field "CPUPercent" "float64" {}
 	field "createTime" "int64" {}
 	field "residentMemory" "uint64" {}
+  field "ports" "[]uint32" {}
 }

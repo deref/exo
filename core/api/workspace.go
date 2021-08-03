@@ -332,4 +332,5 @@ type ComponentStatus struct {
 	CPUPercent     float64           `json:"CPUPercent"`
 	CreateTime     int64             `json:"createTime"`
 	ResidentMemory uint64            `json:"residentMemory"`
+	Ports          []uint32          `json:"ports"`
 }
