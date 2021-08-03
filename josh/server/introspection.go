@@ -3,6 +3,7 @@ package server
 import (
 	"net/http"
 
+	"github.com/deref/exo/util/errutil"
 	"github.com/deref/exo/util/httputil"
 )
 
@@ -15,7 +16,8 @@ func (h *IntrospectionHandler) ServeHTTP(w http.ResponseWriter, req *http.Reques
 		return
 	}
 	if req.Method != "GET" {
-		w.WriteHeader(http.StatusMethodNotAllowed)
+		err := errutil.HTTPErrorf(http.StatusMethodNotAllowed, "method not allowed: %q", req.Method)
+		httputil.WriteError(w, req, err)
 		return
 	}
 
