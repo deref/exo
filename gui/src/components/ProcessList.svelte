@@ -33,15 +33,6 @@
     processList = processes;
   });
 
-  let displayedDetails: string[] = []
-  const toggleDisplayDetails = (name: string): void => {
-    if (displayedDetails.includes(name)) {
-      displayedDetails = displayedDetails.filter(n => n !== name)
-    } else {
-      displayedDetails = displayedDetails.concat([name])
-    }
-  }
-
   function setProcRun(id: string, run: boolean) {
     if (processList.stage !== 'success') {
       return;
@@ -152,36 +143,6 @@
               >
             </td>
           </tr>
-          {#if displayedDetails.includes(name)} 
-            <tr>
-              <td colspan="999">
-                <div>
-                  <h3>Status</h3>
-                  <table>
-                    <tr>
-                      <td>Status</td>
-                      <td>{status.running ? "Running" : "Stopped"}</td>
-                    </tr>
-                    <tr>
-                      <td>CPU Percent</td>
-                      <td>{status.CPUPercent.toFixed(2)}%</td>
-                    </tr>
-                  </table>
-                </div>
-                <div>
-                  <h3>Environment</h3>
-                  <table>
-                    {#each Object.entries(status.envVars ?? {}) as [name, val] (name)}
-                      <tr>
-                        <td>{name}</td>
-                        <td style="max-width: 100px;">{val}</td>
-                      </tr>
-                    {/each}
-                  </table>
-                </div>
-              </td>
-            </tr>
-          {/if}
         {:else}
           <i>No processes yet.</i>
         {/each}
