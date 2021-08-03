@@ -7,7 +7,8 @@ import (
 )
 
 // string->string mapping that may be encoded as either a map or an array of
-// pairs each encoded as "name=value". If the equal
+// pairs each encoded as "name=value". If the equal sign is not supplied,
+// the value is treated as nil.
 type Dictionary map[string]*string
 
 func (dict Dictionary) MarshalYAML() (interface{}, error) {
