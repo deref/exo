@@ -13,6 +13,7 @@ import (
 	"github.com/deref/exo/logd"
 	"github.com/deref/exo/logd/api"
 	"github.com/deref/exo/util/cmdutil"
+	"github.com/deref/exo/util/logging"
 	"github.com/deref/pier"
 )
 
@@ -26,6 +27,7 @@ func main() {
 	paths := cmdutil.MustMakeDirectories(cfg)
 
 	logd := &logd.Service{}
+	logd.Logger = logging.Default()
 	logd.VarDir = paths.VarDir
 
 	{

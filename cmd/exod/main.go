@@ -4,9 +4,14 @@
 package main
 
 import (
+	"context"
+
 	"github.com/deref/exo/exod"
+	"github.com/deref/exo/util/logging"
 )
 
 func main() {
-	exod.Main()
+	ctx := context.Background()
+	ctx = logging.ContextWithLogger(ctx, logging.Default())
+	exod.Main(ctx)
 }

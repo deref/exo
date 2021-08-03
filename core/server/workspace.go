@@ -9,20 +9,22 @@ import (
 
 	"github.com/deref/exo/chrono"
 	"github.com/deref/exo/core/api"
-	core "github.com/deref/exo/core/api"
 	state "github.com/deref/exo/core/state/api"
 	"github.com/deref/exo/gensym"
 	logd "github.com/deref/exo/logd/api"
 	"github.com/deref/exo/manifest"
+	"github.com/deref/exo/providers/core"
 	"github.com/deref/exo/providers/core/components/invalid"
 	"github.com/deref/exo/providers/core/components/log"
+	"github.com/deref/exo/providers/docker"
 	"github.com/deref/exo/providers/docker/components/container"
 	"github.com/deref/exo/providers/docker/components/network"
 	"github.com/deref/exo/providers/docker/components/volume"
 	"github.com/deref/exo/providers/unix/components/process"
 	"github.com/deref/exo/util/errutil"
 	"github.com/deref/exo/util/jsonutil"
-	docker "github.com/docker/docker/client"
+	"github.com/deref/exo/util/logging"
+	dockerclient "github.com/docker/docker/client"
 	psprocess "github.com/shirou/gopsutil/v3/process"
 )
 
@@ -31,7 +33,8 @@ type Workspace struct {
 	VarDir     string
 	Store      state.Store
 	SyslogPort int
-	Docker     *docker.Client
+	Logger     logging.Logger
+	Docker     *dockerclient.Client
 }
 
 func (ws *Workspace) Describe(ctx context.Context, input *api.DescribeInput) (*api.DescribeOutput, error) {
@@ -136,7 +139,7 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 		}
 	}
 
-	return &core.ApplyOutput{
+	return &api.ApplyOutput{
 		Warnings: res.Warnings,
 	}, nil
 }
@@ -200,40 +203,47 @@ func (ws *Workspace) DescribeComponents(ctx context.Context, input *api.Describe
 }
 
 func (ws *Workspace) newController(ctx context.Context, typ string) Controller {
+	description, err := ws.describe(ctx)
+	if err != nil {
+		return &invalid.Invalid{
+			Err: fmt.Errorf("workspace error: %w", err),
+		}
+	}
+	component := core.Component{
+		ComponentID:   description.ID,
+		WorkspaceRoot: description.Root,
+		Logger:        ws.Logger,
+	}
 	switch typ {
 	case "process":
-		description, err := ws.describe(ctx)
-		if err != nil {
-			return &invalid.Invalid{
-				Err: fmt.Errorf("workspace error: %w", err),
-			}
-		}
 		return &process.Process{
-			WorkspaceRoot: description.Root,
-			SyslogPort:    ws.SyslogPort,
+			Component:  component,
+			SyslogPort: ws.SyslogPort,
 		}
 
 	case "container":
-		description, err := ws.describe(ctx)
-		if err != nil {
-			return &invalid.Invalid{
-				Err: fmt.Errorf("workspace error: %w", err),
-			}
-		}
 		return &container.Container{
-			WorkspaceRoot: description.Root,
-			Docker:        ws.Docker,
-			SyslogPort:    ws.SyslogPort,
+			Component: docker.Component{
+				Component: component,
+				Docker:    ws.Docker,
+			},
+			SyslogPort: ws.SyslogPort,
 		}
 
 	case "network":
 		return &network.Network{
-			Docker: ws.Docker,
+			Component: docker.Component{
+				Component: component,
+				Docker:    ws.Docker,
+			},
 		}
 
 	case "volume":
 		return &volume.Volume{
-			Docker: ws.Docker,
+			Component: docker.Component{
+				Component: component,
+				Docker:    ws.Docker,
+			},
 		}
 
 	default:
@@ -283,7 +293,7 @@ func (ws *Workspace) createComponent(ctx context.Context, component manifest.Com
 		Type: component.Type,
 		Spec: component.Spec,
 	}, func(lifecycle api.Lifecycle) error {
-		_, err := lifecycle.Initialize(ctx, &core.InitializeInput{})
+		_, err := lifecycle.Initialize(ctx, &api.InitializeInput{})
 		return err
 	}); err != nil {
 		return "", err
@@ -344,7 +354,7 @@ func (ws *Workspace) RefreshComponent(ctx context.Context, input *api.RefreshCom
 
 func (ws *Workspace) refreshComponent(ctx context.Context, store state.Store, component state.ComponentDescription) error {
 	return ws.control(ctx, component, func(lifecycle api.Lifecycle) error {
-		_, err := lifecycle.Refresh(ctx, &core.RefreshInput{})
+		_, err := lifecycle.Refresh(ctx, &api.RefreshInput{})
 		return err
 	})
 }
@@ -383,7 +393,7 @@ func (ws *Workspace) disposeComponent(ctx context.Context, id string) error {
 	}
 	component := describeOutput.Components[0]
 	return ws.control(ctx, component, func(lifecycle api.Lifecycle) error {
-		_, err := lifecycle.Dispose(ctx, &core.DisposeInput{})
+		_, err := lifecycle.Dispose(ctx, &api.DisposeInput{})
 		return err
 	})
 }
@@ -532,12 +542,12 @@ func (ws *Workspace) GetEvents(ctx context.Context, input *api.GetEventsInput) (
 
 func (ws *Workspace) Start(ctx context.Context, input *api.StartInput) (*api.StartOutput, error) {
 	if err := ws.controlEachProcess(ctx, func(process api.Process) error {
-		_, err := process.Start(ctx, &core.StartInput{})
+		_, err := process.Start(ctx, &api.StartInput{})
 		return err
 	}); err != nil {
 		return nil, err
 	}
-	return &core.StartOutput{}, nil
+	return &api.StartOutput{}, nil
 }
 
 func (ws *Workspace) StartComponent(ctx context.Context, input *api.StartComponentInput) (*api.StartComponentOutput, error) {
@@ -559,7 +569,7 @@ func (ws *Workspace) StartComponent(ctx context.Context, input *api.StartCompone
 	component := components.Components[0]
 
 	if err := ws.control(ctx, component, func(process api.Process) error {
-		_, err := process.Start(ctx, &core.StartInput{})
+		_, err := process.Start(ctx, &api.StartInput{})
 		return err
 	}); err != nil {
 		return nil, err
@@ -569,12 +579,12 @@ func (ws *Workspace) StartComponent(ctx context.Context, input *api.StartCompone
 
 func (ws *Workspace) Stop(ctx context.Context, input *api.StopInput) (*api.StopOutput, error) {
 	if err := ws.controlEachProcess(ctx, func(process api.Process) error {
-		_, err := process.Stop(ctx, &core.StopInput{})
+		_, err := process.Stop(ctx, &api.StopInput{})
 		return err
 	}); err != nil {
 		return nil, err
 	}
-	return &core.StopOutput{}, nil
+	return &api.StopOutput{}, nil
 }
 
 func (ws *Workspace) StopComponent(ctx context.Context, input *api.StopComponentInput) (*api.StopComponentOutput, error) {
@@ -596,7 +606,7 @@ func (ws *Workspace) StopComponent(ctx context.Context, input *api.StopComponent
 	component := components.Components[0]
 
 	if err := ws.control(ctx, component, func(process api.Process) error {
-		_, err := process.Stop(ctx, &core.StopInput{})
+		_, err := process.Stop(ctx, &api.StopInput{})
 		return err
 	}); err != nil {
 		return nil, err
@@ -606,12 +616,12 @@ func (ws *Workspace) StopComponent(ctx context.Context, input *api.StopComponent
 
 func (ws *Workspace) Restart(ctx context.Context, input *api.RestartInput) (*api.RestartOutput, error) {
 	if err := ws.controlEachProcess(ctx, func(process api.Process) error {
-		_, err := process.Restart(ctx, &core.RestartInput{})
+		_, err := process.Restart(ctx, &api.RestartInput{})
 		return err
 	}); err != nil {
 		return nil, err
 	}
-	return &core.RestartOutput{}, nil
+	return &api.RestartOutput{}, nil
 }
 
 func (ws *Workspace) RestartComponent(ctx context.Context, input *api.RestartComponentInput) (*api.RestartComponentOutput, error) {
@@ -633,7 +643,7 @@ func (ws *Workspace) RestartComponent(ctx context.Context, input *api.RestartCom
 	component := components.Components[0]
 
 	if err := ws.control(ctx, component, func(process api.Process) error {
-		_, err := process.Restart(ctx, &core.RestartInput{})
+		_, err := process.Restart(ctx, &api.RestartInput{})
 		return err
 	}); err != nil {
 		return nil, err
@@ -659,7 +669,7 @@ func (ws *Workspace) GetComponentStatus(ctx context.Context, input *api.GetCompo
 				return nil, fmt.Errorf("unmarshalling state: %w", err)
 			}
 
-			status := core.ComponentStatus{
+			status := api.ComponentStatus{
 				ComponentID: id,
 				EnvVars:     state.FullEnvironment,
 			}

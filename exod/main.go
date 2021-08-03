@@ -20,13 +20,14 @@ import (
 	"github.com/deref/exo/telemetry"
 	"github.com/deref/exo/util/cmdutil"
 	"github.com/deref/exo/util/httputil"
+	"github.com/deref/exo/util/logging"
 	"github.com/deref/exo/util/sysutil"
 	docker "github.com/docker/docker/client"
 	"github.com/mattn/go-isatty"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-func Main() {
+func Main(ctx context.Context) {
 	if len(os.Args) > 1 {
 		subcommand := os.Args[1]
 		switch subcommand {
@@ -38,17 +39,17 @@ func Main() {
 			}
 			supervise.Main(fmt.Sprintf("%s %s %s", os.Args[0], subcommand, wd), os.Args[2:])
 		case "server":
-			RunServer()
+			RunServer(ctx)
 		default:
 			cmdutil.Fatalf("unknown subcommand: %q", subcommand)
 		}
 	} else {
-		RunServer()
+		RunServer(ctx)
 	}
 }
 
-func RunServer() {
-	ctx := context.Background()
+func RunServer(ctx context.Context) {
+	logger := logging.CurrentLogger(ctx)
 
 	cfg := &config.Config{}
 	config.MustLoadDefault(cfg)
@@ -82,10 +83,10 @@ func RunServer() {
 			dumpPath := filepath.Join(paths.VarDir, "exod."+redirect.Name)
 			dumpFile, err := os.OpenFile(dumpPath, os.O_WRONLY|os.O_CREATE|os.O_SYNC|os.O_TRUNC, 0600)
 			if err != nil {
-				golog.Printf("creating %s dump file: %v", redirect.Name, err)
+				logger.Infof("creating %s dump file: %v", redirect.Name, err)
 			}
 			if err := sysutil.Dup2(int(dumpFile.Fd()), redirect.FD); err != nil {
-				golog.Printf("redirecting %s: %v", redirect.Name, err)
+				logger.Infof("redirecting %s: %v", redirect.Name, err)
 			}
 		}
 	}
@@ -111,9 +112,11 @@ func RunServer() {
 		Telemetry:  tel,
 		SyslogPort: log.SyslogPort,
 		Docker:     dockerClient,
+		Logger:     logger,
 	}
 
 	logd := &logd.Service{}
+	logd.Logger = logger
 	logd.VarDir = kernelCfg.VarDir
 	ctx = log.ContextWithLogCollector(ctx, &logd.LogCollector)
 
@@ -131,7 +134,7 @@ func RunServer() {
 	}
 
 	addr := cmdutil.GetAddr()
-	golog.Printf("listening for API calls at %s", addr)
+	logger.Infof("listening for API calls at %s", addr)
 
 	cmdutil.ListenAndServe(ctx, &http.Server{
 		Addr:    addr,

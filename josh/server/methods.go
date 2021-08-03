@@ -2,13 +2,13 @@ package server
 
 import (
 	"context"
-	"log" // TODO: Use a request scoped logger.
 	"net/http"
 	"path"
 	"reflect"
 
 	"github.com/deref/exo/util/httputil"
 	"github.com/deref/exo/util/jsonutil"
+	"github.com/deref/exo/util/logging"
 )
 
 type MethodHandler struct {
@@ -30,6 +30,8 @@ func (handler *MethodHandler) ServeHTTP(w http.ResponseWriter, req *http.Request
 		return
 	}
 
+	logger := logging.CurrentLogger(req.Context())
+
 	method := reflect.ValueOf(handler.Factory(req))
 	inputType := method.Type().In(1).Elem()
 
@@ -40,7 +42,7 @@ func (handler *MethodHandler) ServeHTTP(w http.ResponseWriter, req *http.Request
 	if req.Body != nil {
 		if err := jsonutil.UnmarshalReader(req.Body, input.Interface()); err != nil {
 			w.WriteHeader(http.StatusBadRequest)
-			log.Printf("error parsing request: %v", err)
+			logger.Infof("error parsing request: %v", err)
 			w.Write([]byte("error parsing json\n"))
 			return
 		}
@@ -56,7 +58,7 @@ func (handler *MethodHandler) ServeHTTP(w http.ResponseWriter, req *http.Request
 		httputil.WriteError(w, req, err)
 		return
 	}
-	httputil.WriteJSON(w, http.StatusOK, output)
+	httputil.WriteJSON(w, req, http.StatusOK, output)
 }
 
 type MuxBuilder struct {

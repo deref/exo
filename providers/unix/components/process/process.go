@@ -164,7 +164,7 @@ func (p *Process) stop() {
 	}
 	p.Pid = 0
 	if err := proc.Signal(os.Interrupt); err != nil {
-		// TODO: Report the error somehow?
+		p.Logger.Infof("interrupt failed: %w", err)
 	}
 }
 

@@ -1,16 +1,14 @@
 package network
 
 import (
+	"github.com/deref/exo/providers/docker"
 	"github.com/deref/exo/providers/docker/compose"
-	docker "github.com/docker/docker/client"
 )
 
 type Network struct {
-	ComponentID string
+	docker.Component
 	Spec
 	State
-
-	Docker *docker.Client
 }
 
 type Spec compose.Network
