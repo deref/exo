@@ -2,12 +2,12 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"os"
 	"os/signal"
 
 	"github.com/deref/exo/core/api"
 	"github.com/deref/exo/util/cmdutil"
+	"github.com/deref/exo/util/logging"
 	"github.com/spf13/cobra"
 )
 
@@ -33,6 +33,7 @@ If a workspace does not exist, one will be created in the current directory.
 		ctx := newContext()
 		ensureDaemon()
 		cl := newClient()
+		logger := logging.CurrentLogger(ctx)
 
 		// Ensure workspace.
 		workspace := mustFindWorkspace(ctx, cl)
@@ -66,7 +67,7 @@ If a workspace does not exist, one will be created in the current directory.
 			defer stop()
 			var logRefs []string
 			if err := tailLogs(ctx, workspace, logRefs); err != nil {
-				log.Printf("error tailing logs: %v", err)
+				logger.Infof("error tailing logs: %v", err)
 			}
 		})()
 
