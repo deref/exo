@@ -4,7 +4,7 @@
 
 ## TODO: Disallow when there are staged changes
 
-source source "$( dirname "${BASH_SOURCE[0]}" )/.include"
+source "$( dirname "${BASH_SOURCE[0]}" )/.include"
 
 currentversion="$(cat "${ROOT_DIR}/VERSION")"
 version="$(date -u +'%Y.%m.%d')"
