@@ -4,9 +4,9 @@
 
 ## TODO: Disallow when there are staged changes
 
-ROOTDIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." &> /dev/null && pwd )"
+source source "$( dirname "${BASH_SOURCE[0]}" )/.include"
 
-currentversion="$(cat "${ROOTDIR}/VERSION")"
+currentversion="$(cat "${ROOT_DIR}/VERSION")"
 version="$(date -u +'%Y.%m.%d')"
 if [[ "$currentversion" == "${version}"* ]]; then
     lastbuild="${currentversion#*_}"
@@ -17,5 +17,5 @@ if [[ "$currentversion" == "${version}"* ]]; then
     fi
 fi
 
-echo -n "$version" > "${ROOTDIR}/VERSION"
+echo -n "$version" > "${ROOT_DIR}/VERSION"
 

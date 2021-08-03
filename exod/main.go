@@ -123,7 +123,7 @@ func RunServer(ctx context.Context) {
 	ctx = log.ContextWithLogCollector(ctx, &logd.LogCollector)
 
 	mux := server.BuildRootMux("/_exo/", kernelCfg)
-	mux.Handle("/", gui.NewHandler(ctx))
+	mux.Handle("/", gui.NewHandler(ctx, cfg.GUI))
 
 	{
 		ctx, shutdown := context.WithCancel(ctx)
@@ -135,7 +135,7 @@ func RunServer(ctx context.Context) {
 		}()
 	}
 
-	addr := cmdutil.GetAddr()
+	addr := cmdutil.GetAddr(cfg)
 	logger.Infof("listening for API calls at %s", addr)
 
 	cmdutil.ListenAndServe(ctx, &http.Server{

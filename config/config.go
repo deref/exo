@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
+	"strconv"
 
 	"github.com/BurntSushi/toml"
 )
@@ -17,14 +18,21 @@ type LogConfig struct {
 	SyslogPort int
 }
 
+type GUIConfig struct {
+	Port int
+}
+
 type Config struct {
 	HomeDir string
 	BinDir  string
 	VarDir  string
 	RunDir  string
 
-	Telemetry TelemetryConfig
+	HTTPPort int `toml:"httpPort"`
+
+	GUI       GUIConfig `toml:"gui"`
 	Log       LogConfig
+	Telemetry TelemetryConfig
 }
 
 func LoadDefault(cfg *Config) error {
@@ -80,8 +88,25 @@ func setDefaults(cfg *Config) {
 		cfg.VarDir = filepath.Join(cfg.HomeDir, "var")
 	}
 
+	if overridePort := os.Getenv("PORT"); overridePort != "" {
+		var err error
+		if cfg.HTTPPort, err = strconv.Atoi(overridePort); err != nil {
+			// Cannot use cmdutil.Fatalf() because `cmdutil` depends on `config`.
+			fmt.Fprintf(os.Stderr, "Cannot parse PORT environment variable: %q", overridePort)
+			os.Exit(1)
+		}
+	}
+	if cfg.HTTPPort < 1 {
+		cfg.HTTPPort = 4000
+	}
+
 	// Log
 	if cfg.Log.SyslogPort < 1 {
 		cfg.Log.SyslogPort = 4500
+	}
+
+	// GUI
+	if cfg.GUI.Port < 1 {
+		cfg.GUI.Port = 3000
 	}
 }

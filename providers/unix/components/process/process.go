@@ -2,14 +2,13 @@ package process
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
 	"os"
 	"os/exec"
-	"sort"
 	"strconv"
-	"strings"
 	"syscall"
 	"time"
 
@@ -51,6 +50,11 @@ func (p *Process) start(ctx context.Context) error {
 		gracePeriod = *p.ShutdownGracePeriodSeconds
 	}
 
+	childEnv, err := json.Marshal(p.Environment)
+	if err != nil {
+		return fmt.Errorf("encoding child environment")
+	}
+
 	// Construct supervised command.
 	supervisePath := os.Args[0]
 	superviseArgs := append(
@@ -61,6 +65,7 @@ func (p *Process) start(ctx context.Context) error {
 			p.ComponentID,
 			p.WorkspaceRoot,
 			strconv.Itoa(gracePeriod),
+			string(childEnv),
 			program,
 		},
 		p.Arguments...,
@@ -69,29 +74,6 @@ func (p *Process) start(ctx context.Context) error {
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Setsid: true, // Run in background.
 	}
-
-	// Forward environment.
-	envv := os.Environ()
-	envMap := make(map[string]string, len(envv)+len(p.Environment))
-	addEnv := func(key, val string) {
-		key = strings.TrimSpace(key)
-		val = strings.TrimSpace(val)
-		envMap[key] = val
-	}
-	for _, kvp := range envv {
-		parts := strings.SplitN(kvp, "=", 2)
-		if len(parts) < 2 {
-			parts = append(parts, "")
-		}
-		addEnv(parts[0], parts[1])
-	}
-	for key, val := range p.Environment {
-		addEnv(key, val)
-	}
-	for key, val := range envMap {
-		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", key, val))
-	}
-	sort.Strings(cmd.Env)
 
 	// Connect pipes.
 	stdout, err := cmd.StdoutPipe()

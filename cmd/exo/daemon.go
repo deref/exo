@@ -71,7 +71,7 @@ func ensureDaemon() {
 
 	// Write run state.
 	runState.Pid = cmd.Process.Pid
-	runState.URL = fmt.Sprintf("http://%s/", cmdutil.GetAddr())
+	runState.URL = fmt.Sprintf("http://%s/", cmdutil.GetAddr(cfg))
 	if err := jsonutil.MarshalFile(knownPaths.RunStateFile, runState); err != nil {
 		cmdutil.Fatalf("writing run state: %w", err)
 	}

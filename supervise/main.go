@@ -3,6 +3,7 @@ package supervise
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"fmt"
 	"io"
 	"net"
@@ -24,7 +25,7 @@ var varDir string
 
 func Main(command string, args []string) {
 	if len(args) < 4 {
-		fatalf(`usage: %s <syslog-port> <component-id> <working-directory> <timeout> <program> <args...>
+		fatalf(`usage: %s <syslog-port> <component-id> <working-directory> <timeout> <env> <program> <args...>
 
 supervise executes and supervises the given command. If successful, the child
 pid is written to stdout. The stdout and stderr streams of the supervised process
@@ -45,21 +46,32 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 	syslogPort := args[0]
 	componentID := args[1]
 	wd := args[2]
-	timeout, timeoutErr := strconv.Atoi(args[3])
-	if timeoutErr != nil {
-		fatalf(timeoutErr.Error())
-	}
-	program := args[4]
-	arguments := args[5:]
+	timeout := args[3]
+	envString := args[4]
+	program := args[5]
+	arguments := args[6:]
 
 	udpAddr, err := net.ResolveUDPAddr("udp", "localhost:"+syslogPort)
 	if err != nil {
 		fatalf("resolving udp address: %w", err)
 	}
 
+	timeoutSeconds, timeoutErr := strconv.Atoi(timeout)
+	if timeoutErr != nil {
+		fatalf(timeoutErr.Error())
+	}
+
+	childEnv := make(map[string]string)
+	if err := json.Unmarshal([]byte(envString), &childEnv); err != nil {
+		cmdutil.Fatalf("decoding environment variables from %q: %w", envString, err)
+	}
+
 	cmd := exec.Command(program, arguments...)
 	cmd.Dir = wd
 	cmd.Env = os.Environ()
+	for key, val := range childEnv {
+		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", key, val))
+	}
 
 	// Connect pipes.
 	stdout, err := cmd.StdoutPipe()
@@ -86,7 +98,7 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 				}
 				// After some timeout send a SIGKILL to the entire process group
 				// (passed to kill as a negative value) and ignore any error.
-				time.Sleep(time.Second * time.Duration(timeout))
+				time.Sleep(time.Second * time.Duration(timeoutSeconds))
 				pgrp := syscall.Getpgrp()
 				_ = syscall.Kill(-pgrp, syscall.SIGKILL)
 

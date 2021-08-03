@@ -16,6 +16,11 @@
 ## Port that the internal log collection service binds to.
 # syslogPort = 5140
 
+## Web UI.
+# [gui]
+## (DEV only) Port that the Vite server binds to.
+# port = 5140
+
 ## Telemetry subsystem that collects and reports statistics back to Deref.
 # [telemetry]
 ## Telemetry is enabled by default. To disable, ensure that disable = true is set
