@@ -10,6 +10,7 @@ import (
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
+	"github.com/docker/docker/api/types/strslice"
 	docker "github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
@@ -41,13 +42,13 @@ func (c *Container) create(ctx context.Context) error {
 		OpenStdin:    c.StdinOpen,
 		// StdinOnce       bool                // If true, close stdin after the 1 attached client disconnects.
 		Env: c.Environment.Slice(),
-		// Cmd             strslice.StrSlice   // Command to run when starting the container
+		Cmd: strslice.StrSlice(c.Command),
 		// Healthcheck     *HealthConfig       `json:",omitempty"` // Healthcheck describes how to check the container is healthy
 		// ArgsEscaped     bool                `json:",omitempty"` // True if command is already escaped (meaning treat as a command line) (Windows specific).
 		Image: c.Image,
 		// Volumes         map[string]struct{} // List of volumes (mounts) used for the container
 		WorkingDir: c.WorkingDir,
-		// Entrypoint      strslice.StrSlice   // Entrypoint to run when starting the container
+		Entrypoint: strslice.StrSlice(c.Entrypoint),
 		// NetworkDisabled bool                `json:",omitempty"` // Is network disabled
 		MacAddress: c.MacAddress,
 		// OnBuild         []string            // ONBUILD metadata that were defined on the image Dockerfile

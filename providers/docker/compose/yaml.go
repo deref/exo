@@ -52,7 +52,7 @@ type Service struct {
 	// TODO: cap_add
 	// TODO: cap_drop
 	// TODO: cgroup_parent
-	// TODO: command
+	Command       Command  `yaml:"command"`
 	Configs       []string `yaml:"configs"` // TODO: support long syntax.
 	ContainerName string   `yaml:"container_name"`
 	// TODO: credential_spec
@@ -62,8 +62,8 @@ type Service struct {
 	// TODO: dns
 	// TODO: dns_opt
 	// TODO: dns_search
-	Domainname string `yaml:"domainname"`
-	// TODO: entrypoint
+	Domainname string  `yaml:"domainname"`
+	Entrypoint Command `yaml:"entrypoint"`
 	// TODO: env_file
 	Environment Dictionary `yaml:"environment"`
 	// TODO: expose
