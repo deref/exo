@@ -48,15 +48,14 @@ func main() {
 		}()
 	}
 
-	port := os.Getenv("PORT")
 	var network, addr string
-	if port == "" {
+	if cfg.HTTPPort == 0 {
 		network = "unix"
 		addr = filepath.Join(paths.VarDir, "logd.sock")
 		_ = os.Remove(addr)
 	} else {
 		network = "tcp"
-		addr = ":" + port
+		addr = fmt.Sprintf(":%d", cfg.HTTPPort)
 	}
 	listener, err := net.Listen(network, addr)
 	if err != nil {

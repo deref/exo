@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"os"
 	"path/filepath"
-	"strconv"
 
 	"github.com/BurntSushi/toml"
 )
@@ -88,14 +87,6 @@ func setDefaults(cfg *Config) {
 		cfg.VarDir = filepath.Join(cfg.HomeDir, "var")
 	}
 
-	if overridePort := os.Getenv("PORT"); overridePort != "" {
-		var err error
-		if cfg.HTTPPort, err = strconv.Atoi(overridePort); err != nil {
-			// Cannot use cmdutil.Fatalf() because `cmdutil` depends on `config`.
-			fmt.Fprintf(os.Stderr, "Cannot parse PORT environment variable: %q", overridePort)
-			os.Exit(1)
-		}
-	}
 	if cfg.HTTPPort < 1 {
 		cfg.HTTPPort = 4000
 	}
