@@ -71,7 +71,7 @@ func ensureDaemon() {
 
 	// Write run state.
 	runState.Pid = cmd.Process.Pid
-	runState.URL = fmt.Sprintf("http://%s/", cmdutil.GetAddr(cfg))
+	runState.URL = fmt.Sprintf("http://%s", cmdutil.GetAddr(cfg))
 	if err := jsonutil.MarshalFile(knownPaths.RunStateFile, runState); err != nil {
 		cmdutil.Fatalf("writing run state: %w", err)
 	}
@@ -101,8 +101,14 @@ func loadRunState() error {
 }
 
 func newClient() *client.Root {
+	url := cfg.Client.URL
+	if url == "" {
+		url = runState.URL
+	}
+	url += "/_exo/"
+
 	return &client.Root{
 		HTTP: http.DefaultClient,
-		URL:  runState.URL + "_exo/",
+		URL:  url,
 	}
 }

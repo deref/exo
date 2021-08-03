@@ -9,16 +9,20 @@ import (
 	"github.com/BurntSushi/toml"
 )
 
-type TelemetryConfig struct {
-	Disable bool
+type ClientConfig struct {
+	URL string `toml:"url"`
+}
+
+type GUIConfig struct {
+	Port int
 }
 
 type LogConfig struct {
 	SyslogPort int
 }
 
-type GUIConfig struct {
-	Port int
+type TelemetryConfig struct {
+	Disable bool
 }
 
 type Config struct {
@@ -29,6 +33,7 @@ type Config struct {
 
 	HTTPPort int `toml:"httpPort"`
 
+	Client    ClientConfig
 	GUI       GUIConfig `toml:"gui"`
 	Log       LogConfig
 	Telemetry TelemetryConfig
