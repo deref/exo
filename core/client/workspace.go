@@ -147,3 +147,13 @@ func (c *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribePr
 	err = c.client.Invoke(ctx, "describe-processes", input, &output)
 	return
 }
+
+func (c *Workspace) DescribeVolumes(ctx context.Context, input *api.DescribeVolumesInput) (output *api.DescribeVolumesOutput, err error) {
+	err = c.client.Invoke(ctx, "describe-volumes", input, &output)
+	return
+}
+
+func (c *Workspace) DescribeNetworks(ctx context.Context, input *api.DescribeNetworksInput) (output *api.DescribeNetworksOutput, err error) {
+	err = c.client.Invoke(ctx, "describe-networks", input, &output)
+	return
+}

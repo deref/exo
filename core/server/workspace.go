@@ -63,9 +63,7 @@ func (ws *Workspace) describe(ctx context.Context) (*api.WorkspaceDescription, e
 }
 
 func (ws *Workspace) Destroy(ctx context.Context, input *api.DestroyInput) (*api.DestroyOutput, error) {
-	describeOutput, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
-		WorkspaceID: ws.ID,
-	})
+	describeOutput, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{})
 	if err != nil {
 		return nil, fmt.Errorf("describing components: %w", err)
 	}
@@ -94,15 +92,13 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 	}
 	m := res.Manifest
 
-	describeOutput, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
-		WorkspaceID: ws.ID,
-	})
+	describeOutput, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{})
 	if err != nil {
 		return nil, fmt.Errorf("describing components: %w", err)
 	}
 
 	// Index old components by name.
-	oldComponents := make(map[string]state.ComponentDescription, len(describeOutput.Components))
+	oldComponents := make(map[string]api.ComponentDescription, len(describeOutput.Components))
 	for _, component := range describeOutput.Components {
 		oldComponents[component.Name] = component
 	}
@@ -144,9 +140,7 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 }
 
 func (ws *Workspace) RefreshAllComponents(ctx context.Context, input *api.RefreshAllComponentsInput) (*api.RefreshAllComponentsOutput, error) {
-	components, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
-		WorkspaceID: ws.ID,
-	})
+	components, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{})
 	if err != nil {
 		return nil, err
 	}
@@ -179,6 +173,8 @@ func (ws *Workspace) Resolve(ctx context.Context, input *api.ResolveInput) (*api
 func (ws *Workspace) DescribeComponents(ctx context.Context, input *api.DescribeComponentsInput) (*api.DescribeComponentsOutput, error) {
 	stateOutput, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
 		WorkspaceID: ws.ID,
+		IDs:         input.IDs,
+		Types:       input.Types,
 	})
 	if err != nil {
 		return nil, err
@@ -284,7 +280,7 @@ func (ws *Workspace) createComponent(ctx context.Context, component manifest.Com
 		return "", fmt.Errorf("adding component: %w", err)
 	}
 
-	if err := ws.control(ctx, state.ComponentDescription{
+	if err := ws.control(ctx, api.ComponentDescription{
 		// Construct a synthetic component description to avoid re-reading after
 		// the add. Only the fields needed by control are included.
 		// TODO: Store.AddComponent could return a compponent description?
@@ -313,7 +309,7 @@ func (ws *Workspace) UpdateComponent(ctx context.Context, input *api.UpdateCompo
 	panic("TODO: UpdateComponent") // XXX can implement this now.
 }
 
-func (ws *Workspace) updateComponent(ctx context.Context, oldComponent state.ComponentDescription, newComponent manifest.Component) error {
+func (ws *Workspace) updateComponent(ctx context.Context, oldComponent api.ComponentDescription, newComponent manifest.Component) error {
 	// TODO: Smart updating, using update lifecycle method.
 	name := oldComponent.Name
 	id := oldComponent.ID
@@ -332,9 +328,8 @@ func (ws *Workspace) RefreshComponent(ctx context.Context, input *api.RefreshCom
 		return nil, fmt.Errorf("resolving ref: %w", err)
 	}
 
-	describeOutput, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
-		WorkspaceID: ws.ID,
-		IDs:         []string{id},
+	describeOutput, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{
+		IDs: []string{id},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("describing components: %w", err)
@@ -351,7 +346,7 @@ func (ws *Workspace) RefreshComponent(ctx context.Context, input *api.RefreshCom
 	return &api.RefreshComponentOutput{}, err
 }
 
-func (ws *Workspace) refreshComponent(ctx context.Context, store state.Store, component state.ComponentDescription) error {
+func (ws *Workspace) refreshComponent(ctx context.Context, store state.Store, component api.ComponentDescription) error {
 	return ws.control(ctx, component, func(lifecycle api.Lifecycle) error {
 		_, err := lifecycle.Refresh(ctx, &api.RefreshInput{})
 		return err
@@ -380,9 +375,8 @@ func (ws *Workspace) resolveRef(ctx context.Context, ref string) (string, error)
 }
 
 func (ws *Workspace) disposeComponent(ctx context.Context, id string) error {
-	describeOutput, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
-		WorkspaceID: ws.ID,
-		IDs:         []string{id},
+	describeOutput, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{
+		IDs: []string{id},
 	})
 	if err != nil {
 		return fmt.Errorf("describing components: %w", err)
@@ -420,8 +414,8 @@ func (ws *Workspace) deleteComponent(ctx context.Context, id string) error {
 }
 
 func (ws *Workspace) DescribeLogs(ctx context.Context, input *api.DescribeLogsInput) (*api.DescribeLogsOutput, error) {
-	components, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
-		WorkspaceID: ws.ID,
+	components, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{
+		Types: processTypes,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("describing components: %w", err)
@@ -555,9 +549,8 @@ func (ws *Workspace) StartComponent(ctx context.Context, input *api.StartCompone
 		return nil, fmt.Errorf("resolving ref: %w", err)
 	}
 
-	components, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
-		WorkspaceID: ws.ID,
-		IDs:         []string{id},
+	components, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{
+		IDs: []string{id},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("fetching component state: %w", err)
@@ -592,9 +585,8 @@ func (ws *Workspace) StopComponent(ctx context.Context, input *api.StopComponent
 		return nil, fmt.Errorf("resolving ref: %w", err)
 	}
 
-	components, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
-		WorkspaceID: ws.ID,
-		IDs:         []string{id},
+	components, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{
+		IDs: []string{id},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("fetching component state: %w", err)
@@ -629,9 +621,8 @@ func (ws *Workspace) RestartComponent(ctx context.Context, input *api.RestartCom
 		return nil, fmt.Errorf("resolving ref: %w", err)
 	}
 
-	components, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
-		WorkspaceID: ws.ID,
-		IDs:         []string{id},
+	components, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{
+		IDs: []string{id},
 	})
 	if err != nil {
 		return nil, fmt.Errorf("fetching component state: %w", err)
@@ -650,10 +641,12 @@ func (ws *Workspace) RestartComponent(ctx context.Context, input *api.RestartCom
 	return &api.RestartComponentOutput{}, nil
 }
 
+// TODO: Filter by interface, not concrete type.
+var processTypes = []string{"process", "container"}
+
 func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeProcessesInput) (*api.DescribeProcessesOutput, error) {
-	components, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
-		WorkspaceID: ws.ID,
-		// TODO: Filter by type.
+	components, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{
+		Types: processTypes,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("describing components: %w", err)
@@ -702,18 +695,54 @@ func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeP
 	return &output, nil
 }
 
+func (ws *Workspace) DescribeVolumes(ctx context.Context, input *api.DescribeVolumesInput) (*api.DescribeVolumesOutput, error) {
+	components, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{
+		Types: []string{"volume"},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("describing components: %w", err)
+	}
+	output := api.DescribeVolumesOutput{
+		Volumes: make([]api.VolumeDescription, 0, len(components.Components)),
+	}
+	for _, component := range components.Components {
+		volume := api.VolumeDescription{
+			ID:   component.ID,
+			Name: component.Name,
+		}
+		output.Volumes = append(output.Volumes, volume)
+	}
+	return &output, nil
+}
+
+func (ws *Workspace) DescribeNetworks(ctx context.Context, input *api.DescribeNetworksInput) (*api.DescribeNetworksOutput, error) {
+	components, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{
+		Types: []string{"network"},
+	})
+	if err != nil {
+		return nil, fmt.Errorf("describing components: %w", err)
+	}
+	output := api.DescribeNetworksOutput{
+		Networks: make([]api.NetworkDescription, 0, len(components.Components)),
+	}
+	for _, component := range components.Components {
+		network := api.NetworkDescription{
+			ID:   component.ID,
+			Name: component.Name,
+		}
+		output.Networks = append(output.Networks, network)
+	}
+	return &output, nil
+}
+
 func (ws *Workspace) controlEachProcess(ctx context.Context, f interface{}) error {
-	components, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
-		WorkspaceID: ws.ID,
-		// TODO: Filter by type.
+	components, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{
+		Types: processTypes,
 	})
 	if err != nil {
 		return fmt.Errorf("describing components: %w", err)
 	}
 	for _, component := range components.Components {
-		if component.Type != "process" {
-			continue
-		}
 		if err := ws.control(ctx, component, f); err != nil {
 			return fmt.Errorf("controlling %q: %w", component.ID, err)
 		}
@@ -721,7 +750,7 @@ func (ws *Workspace) controlEachProcess(ctx context.Context, f interface{}) erro
 	return nil
 }
 
-func (ws *Workspace) control(ctx context.Context, desc state.ComponentDescription, f interface{}) error {
+func (ws *Workspace) control(ctx context.Context, desc api.ComponentDescription, f interface{}) error {
 	ctrl := ws.newController(ctx, desc.Type)
 	if err := ctrl.InitResource(desc.ID, desc.Spec, desc.State); err != nil {
 		return err

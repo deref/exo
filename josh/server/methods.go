@@ -6,6 +6,7 @@ import (
 	"path"
 	"reflect"
 
+	"github.com/deref/exo/util/errutil"
 	"github.com/deref/exo/util/httputil"
 	"github.com/deref/exo/util/jsonutil"
 	"github.com/deref/exo/util/logging"
@@ -26,7 +27,8 @@ func (handler *MethodHandler) ServeHTTP(w http.ResponseWriter, req *http.Request
 		return
 	}
 	if req.Method != "POST" {
-		w.WriteHeader(http.StatusMethodNotAllowed)
+		err := errutil.HTTPErrorf(http.StatusMethodNotAllowed, "method not allowed: %q", req.Method)
+		httputil.WriteError(w, req, err)
 		return
 	}
 

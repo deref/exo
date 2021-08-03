@@ -50,6 +50,14 @@ interface "workspace" {
   method "describe-components" {
 	  doc = "Returns component descriptions."
 
+    input "ids" "[]string" {
+      doc = "If non-empty, filters components to supplied ids."
+    }
+
+    input "types" "[]string" {
+      doc = "If non-empty, filters components to supplied types."
+    }
+
     output "components" "[]ComponentDescription" {}
   }
   
@@ -122,9 +130,16 @@ interface "workspace" {
     input "ref" "string" {}
   }
 
-	// TODO: Move these to a plugin or similar.
   method "describe-processes" {
     output "processes" "[]ProcessDescription" {}
+  }
+  
+  method "describe-volumes" {
+    output "volumes" "[]VolumeDescription" {}
+  }
+
+  method "describe-networks" {
+    output "networks" "[]NetworkDescription" {}
   }
 }
 
@@ -161,4 +176,14 @@ struct "process-description" {
   field "provider" "string" {}
 	field "name" "string" {}
 	field "running" "bool" {}
+}
+
+struct "volume-description" {
+	field "id" "string" {}
+	field "name" "string" {}
+}
+
+struct "network-description" {
+	field "id" "string" {}
+	field "name" "string" {}
 }

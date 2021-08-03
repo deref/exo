@@ -5,6 +5,7 @@ import type {
   CreateProcessResponse,
   ProcessDescription,
 } from './process/types';
+import type { VolumeDescription, NetworkDescription } from './docker/types';
 
 interface IdleRequest {
   stage: 'idle';
@@ -87,7 +88,12 @@ const apiUrl = (path: string, query: Record<string, string>) => {
 };
 
 const isErrorLike = (x: any): x is { message: string } => {
-  return x != null && 'message' in x && typeof x.message === 'string';
+  return (
+    x != null &&
+    typeof x === 'object' &&
+    'message' in x &&
+    typeof x.message === 'string'
+  );
 };
 
 export class APIError extends Error {
@@ -164,8 +170,20 @@ export interface WorkspaceDescription {
   root: string;
 }
 
+export interface ComponentDescription {
+  id: string;
+  name: string;
+  type: string;
+}
+
 export interface WorkspaceApi {
+  describeComponents(): Promise<ComponentDescription[]>;
+
   describeProcesses(): Promise<ProcessDescription[]>;
+
+  describeVolumes(): Promise<VolumeDescription[]>;
+
+  describeNetworks(): Promise<NetworkDescription[]>;
 
   apply(): Promise<void>;
 
@@ -220,9 +238,24 @@ export const api = (() => {
     const invoke = (method: string, data?: unknown) =>
       rpc(`/workspace/${method}`, { id }, data);
     return {
+      async describeComponents(): Promise<ComponentDescription[]> {
+        const { components } = (await invoke('describe-components')) as any;
+        return components;
+      },
+
       async describeProcesses(): Promise<ProcessDescription[]> {
         const { processes } = (await invoke('describe-processes')) as any;
         return processes;
+      },
+
+      async describeVolumes(): Promise<VolumeDescription[]> {
+        const { volumes } = (await invoke('describe-volumes')) as any;
+        return volumes;
+      },
+
+      async describeNetworks(): Promise<NetworkDescription[]> {
+        const { networks } = (await invoke('describe-networks')) as any;
+        return networks;
       },
 
       async apply() {
