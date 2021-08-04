@@ -10,8 +10,8 @@
     processes,
   } from '../lib/process/store';
   import type { RemoteData } from '../lib/api';
-  import type { ComponentDetails } from '../lib/process/types';
   import BytesLabel from '../components/BytesLabel.svelte';
+  import type { ProcessDescription } from 'src/lib/process/types';
   export let params = { workspace: '', process: '' };
 
   const workspaceId = params.workspace;
@@ -19,13 +19,13 @@
 
   const processId = params.process;
 
-  let processList: RemoteData<ComponentDetails[]> = { stage: 'pending' };
+  let processList: RemoteData<ProcessDescription[]> = { stage: 'pending' };
   const unsubscribeProcesses = processes.subscribe((processes) => {
     processList = processes;
   });
 
   let refreshInterval: any;
-  let process: ComponentDetails | null = null;
+  let process: ProcessDescription | null = null;
 
   let sparklineSvg: SVGSVGElement;
 
@@ -40,8 +40,8 @@
       if (processList.stage === 'success') {
         process = processList.data.filter((p) => p.id === processId)[0];
       }
-      if (process && process.status.running) {
-        cpuPercentages.push(process.status.cpuPercent);
+      if (process && process.running) {
+        cpuPercentages.push(process.cpuPercent);
         if (cpuPercentages.length > 100) {
           cpuPercentages.shift();
         }
@@ -79,15 +79,15 @@
           <h1>{process.name}</h1>
         </div>
         <h3>Status</h3>
-        {#if process.status.running}
+        {#if process.running}
           <table>
             <tr>
               <td>Status</td>
-              <td>{process.status.running ? 'Running' : 'Stopped'}</td>
+              <td>{process.running ? 'Running' : 'Stopped'}</td>
             </tr>
             <tr>
               <td>CPU</td>
-              <td>{process.status.cpuPercent.toFixed(2)}%</td>
+              <td>{process.cpuPercent.toFixed(2)}%</td>
               <td
                 ><svg
                   bind:this={sparklineSvg}
@@ -100,15 +100,13 @@
             </tr>
             <tr>
               <td>Resident Memory</td>
-              <td><BytesLabel value={process.status.residentMemory} /></td>
+              <td><BytesLabel value={process.residentMemory} /></td>
             </tr>
             <tr>
               <td>Started at</td>
               <td
-                ><span title={new Date(process.status.createTime).toISOString()}
-                  >{new Date(
-                    process.status.createTime,
-                  ).toLocaleTimeString()}</span
+                ><span title={new Date(process.createTime).toISOString()}
+                  >{new Date(process.createTime).toLocaleTimeString()}</span
                 ></td
               >
               <td
@@ -122,17 +120,16 @@
             </tr>
             <tr>
               <td>Local Ports</td>
-              <td>{process.status.ports?.join(', ') ?? 'None'}</td>
+              <td>{process.ports?.join(', ') ?? 'None'}</td>
             </tr>
             <tr>
               <td>Children</td>
-              <td>{process.status.childrenExecutables?.join(', ') ?? 'None'}</td
-              >
+              <td>{process.childrenExecutables?.join(', ') ?? 'None'}</td>
             </tr>
           </table>
           <h3>Environment</h3>
           <table>
-            {#each Object.entries(process.status.envVars ?? {}) as [name, val] (name)}
+            {#each Object.entries(process.envVars ?? {}) as [name, val] (name)}
               <tr>
                 <td>{name}</td>
                 <td><code><pre>{val}</pre></code></td>

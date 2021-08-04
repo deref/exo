@@ -2,7 +2,6 @@ import { isRunning } from './global/server-status';
 import type { GetVersionResponse } from './kernel/types';
 import type { LogsResponse } from './logs/types';
 import type {
-  ComponentDetails,
   CreateProcessResponse,
   ProcessDescription,
 } from './process/types';
@@ -205,8 +204,6 @@ export interface WorkspaceApi {
     logs: string[],
     pagination?: PaginationParams,
   ): Promise<LogsResponse>;
-
-  getComponentDetails(): Promise<ComponentDetails[]>;
 }
 
 export const api = (() => {
@@ -290,18 +287,6 @@ export const api = (() => {
 
       async refreshAllProcesses(): Promise<void> {
         await invoke('refresh-all-components');
-      },
-
-      async getComponentDetails(): Promise<ComponentDetails[]> {
-        const processes = await this.describeProcesses();
-        return await Promise.all(
-          processes.map(async (p): Promise<ComponentDetails> => {
-            const { status } = (await invoke('get-process-status', {
-              ref: p.id,
-            })) as any;
-            return { id: p.id, name: p.name, status };
-          }),
-        );
       },
 
       async getEvents(

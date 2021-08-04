@@ -93,11 +93,6 @@ func (c *Workspace) DescribeComponents(ctx context.Context, input *api.DescribeC
 	return
 }
 
-func (c *Workspace) GetProcessStatus(ctx context.Context, input *api.GetProcessStatusInput) (output *api.GetProcessStatusOutput, err error) {
-	err = c.client.Invoke(ctx, "get-process-status", input, &output)
-	return
-}
-
 func (c *Workspace) CreateComponent(ctx context.Context, input *api.CreateComponentInput) (output *api.CreateComponentOutput, err error) {
 	err = c.client.Invoke(ctx, "create-component", input, &output)
 	return

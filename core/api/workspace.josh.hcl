@@ -61,12 +61,6 @@ interface "workspace" {
     output "components" "[]ComponentDescription" {}
   }
 
-  method "get-process-status" {
-    doc = "Returns the status of a process"
-    input "ref" "string" {}
-    output "status" "ComponentStatus" {}
-  }
-
   method "create-component" {
     doc = "Creates a component and triggers an initialize lifecycle event."
 
@@ -181,11 +175,6 @@ struct "process-description" {
   field "id" "string" {}
   field "provider" "string" {}
   field "name" "string" {}
-  field "running" "bool" {}
-}
-
-struct "process-status" {
-  field "component-id" "string" {}
   field "running" "bool" {}
   field "env-vars" "map[string]string" {}
   field "cpu-percent" "float64" {}

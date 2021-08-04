@@ -12,7 +12,6 @@
     deleteProcess,
   } from '../lib/process/store';
   import { setLogVisibility, visibleLogsStore } from '../lib/logs/visible-logs';
-  import type { ComponentDetails } from '../lib/process/types';
   import * as router from 'svelte-spa-router';
   import IconButton from './IconButton.svelte';
 
@@ -23,13 +22,14 @@
   import Stop from './mono/stop.svelte';
   import Delete from './mono/delete.svelte';
   import CheckboxButton from './CheckboxButton.svelte';
+  import type { ProcessDescription } from 'src/lib/process/types';
 
   export let workspace: WorkspaceApi;
   export let workspaceId: string;
 
   let statusPending = new Set<string>();
 
-  let processList: RemoteData<ComponentDetails[]> = { stage: 'pending' };
+  let processList: RemoteData<ProcessDescription[]> = { stage: 'pending' };
   const unsubscribeProcesses = processes.subscribe((processes) => {
     processList = processes;
   });
@@ -103,12 +103,12 @@
           <th>Logs</th>
           <th />
         </thead>
-        {#each processList.data as { id, name, status } (id)}
+        {#each processList.data as { id, name, running } (id)}
           <tr>
             <td>
               {#if statusPending.has(id)}
                 <button disabled><Loading /></button>
-              {:else if status.running}
+              {:else if running}
                 <IconButton
                   tooltip="Stop process"
                   on:click={() => setProcRun(id, false)}
