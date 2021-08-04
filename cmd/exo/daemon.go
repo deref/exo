@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strings"
 	"syscall"
 	"time"
 
@@ -105,7 +106,8 @@ func newClient() *client.Root {
 	if url == "" {
 		url = runState.URL
 	}
-	url += "/_exo/"
+	// Old state files may contain a url ending in "/".
+	url = strings.TrimSuffix(url, "/") + "/_exo/"
 
 	return &client.Root{
 		HTTP: http.DefaultClient,
