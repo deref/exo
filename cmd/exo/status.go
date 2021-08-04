@@ -8,7 +8,6 @@ import (
 	"os"
 	"strconv"
 	"text/tabwriter"
-	"time"
 
 	"github.com/deref/exo/util/osutil"
 	"github.com/spf13/cobra"
@@ -16,11 +15,6 @@ import (
 
 func init() {
 	rootCmd.AddCommand(statusCmd)
-}
-
-type ProcessDetails struct {
-	Command    string `json:"command"`
-	CreateTime time.Time
 }
 
 var statusCmd = &cobra.Command{
