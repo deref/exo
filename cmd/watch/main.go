@@ -7,6 +7,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 
@@ -158,8 +159,20 @@ func main() {
 	}
 
 	if _, ok := cmd.Flags["r"]; ok {
+		var ignores []string
+		if ignoreStr, ok := cmd.Flags["ignore"]; ok {
+			ignores = strings.Split(ignoreStr, ",")
+		}
+
 		if err := filepath.Walk(dir, func(path string, info fs.FileInfo, err error) error {
 			if info.Mode().IsDir() {
+				// TODO: implement something a little more robust than substring match for ignore.
+				for _, ignore := range ignores {
+					if strings.Contains(path, ignore) {
+						return nil
+					}
+				}
+
 				return watcher.Add(path)
 			}
 
