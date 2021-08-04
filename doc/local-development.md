@@ -22,4 +22,4 @@ The `exo` CLI runs against the installed instance by default, but you can change
 url = "http://localhost:4001"
 ```
 
-Now all `exo` commands will run against the development instance.
+Now all `exo` commands will run against the development instance. To run against the installed instance again, remove or comment out these lines from your `config.toml`.
