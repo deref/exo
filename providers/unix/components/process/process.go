@@ -61,7 +61,7 @@ func (p *Process) start(ctx context.Context) error {
 		[]string{
 			"supervise",
 			"--",
-			strconv.Itoa(p.SyslogPort),
+			strconv.Itoa(int(p.SyslogPort)),
 			p.ComponentID,
 			p.WorkspaceRoot,
 			strconv.Itoa(gracePeriod),
@@ -90,7 +90,8 @@ func (p *Process) start(ctx context.Context) error {
 		return fmt.Errorf("starting supervise: %w", err)
 	}
 	p.State.SupervisorPid = cmd.Process.Pid
-	p.State.FullEnvironment = envMap
+	// XXX: Fix me
+	// p.State.FullEnvironment = envMap
 
 	// Collect supervise output.
 	pidC := make(chan int, 1)

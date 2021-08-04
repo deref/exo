@@ -21,7 +21,7 @@ import (
 type Service struct {
 	Logger     logging.Logger
 	VarDir     string
-	SyslogPort int
+	SyslogPort uint
 	server.LogCollector
 }
 

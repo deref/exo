@@ -10,7 +10,7 @@ type Container struct {
 	Spec
 	State
 
-	SyslogPort int
+	SyslogPort uint
 }
 
 type Spec compose.Service

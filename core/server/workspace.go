@@ -32,7 +32,7 @@ type Workspace struct {
 	ID         string
 	VarDir     string
 	Store      state.Store
-	SyslogPort int
+	SyslogPort uint
 	Logger     logging.Logger
 	Docker     *dockerclient.Client
 }

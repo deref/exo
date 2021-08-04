@@ -27,9 +27,6 @@ For more information, see https://exo.deref.io`,
 
 func newContext() context.Context {
 	ctx := context.Background()
-
-	ctx = config.WithConfig(ctx, cfg)
-
 	logger := logging.Default()
 	ctx = logging.ContextWithLogger(ctx, logger)
 
