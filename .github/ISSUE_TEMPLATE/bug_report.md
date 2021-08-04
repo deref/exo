@@ -2,7 +2,7 @@
 name: Bug report
 about: Create a report to help us improve
 title: "[BUG]"
-labels: bug
+labels: ["bug", "needs triage"]
 assignees: kendru
 
 ---
@@ -24,7 +24,7 @@ A clear and concise description of what you expected to happen.
 If applicable, add screenshots to help explain your problem.
 
 **System Info (please complete the following information):**
- - OS: [e.g. iOS]
+ - OS: [e.g. macOS]
  - Component [e.g. gui, cli]
  - Version [e.g. 2021.08.04_1]
 
