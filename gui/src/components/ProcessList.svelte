@@ -1,5 +1,6 @@
 <script lang="ts">
   import { onDestroy, onMount } from 'svelte';
+  import { link } from 'svelte-spa-router';
   import type { RemoteData, WorkspaceApi } from '../lib/api';
   import { loadInitialLogs, resetLogs } from '../lib/logs/store';
   import {
@@ -11,7 +12,7 @@
     deleteProcess,
   } from '../lib/process/store';
   import { setLogVisibility, visibleLogsStore } from '../lib/logs/visible-logs';
-  import type { ComponentDetails, } from '../lib/process/types';
+  import type { ComponentDetails } from '../lib/process/types';
   import * as router from 'svelte-spa-router';
   import IconButton from './IconButton.svelte';
 
@@ -121,7 +122,15 @@
               {/if}
             </td>
 
-            <td><button on:click={() => void router.push(`#/workspaces/${encodeURIComponent(workspaceId)}/processes/${encodeURIComponent(id)}`)}>{name}</button></td>
+            <td
+              ><a
+                class="process-name"
+                use:link
+                href={`/workspaces/${encodeURIComponent(
+                  workspaceId,
+                )}/processes/${encodeURIComponent(id)}`}>{name}</a
+              ></td
+            >
 
             <td>
               <CheckboxButton
@@ -214,7 +223,7 @@
     justify-content: space-between;
   }
 
-  button {
+  .process-name {
     display: inline-block;
     margin: 0;
     line-height: 1;
