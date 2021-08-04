@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
+	"strings"
 	"syscall"
 	"time"
 
@@ -90,8 +91,18 @@ func (p *Process) start(ctx context.Context) error {
 		return fmt.Errorf("starting supervise: %w", err)
 	}
 	p.State.SupervisorPid = cmd.Process.Pid
-	// XXX: Fix me
-	// p.State.FullEnvironment = envMap
+
+	envMap := make(map[string]string)
+	for _, assign := range os.Environ() {
+		parts := strings.SplitN(assign, "=", 2)
+		key := parts[0]
+		val := parts[1]
+		envMap[key] = val
+	}
+	for key, val := range p.Environment {
+		envMap[key] = val
+	}
+	p.State.FullEnvironment = envMap
 
 	// Collect supervise output.
 	pidC := make(chan int, 1)
