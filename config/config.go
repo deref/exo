@@ -14,11 +14,11 @@ type ClientConfig struct {
 }
 
 type GUIConfig struct {
-	Port int
+	Port uint
 }
 
 type LogConfig struct {
-	SyslogPort int
+	SyslogPort uint
 }
 
 type TelemetryConfig struct {
@@ -31,7 +31,7 @@ type Config struct {
 	VarDir  string
 	RunDir  string
 
-	HTTPPort int `toml:"httpPort"`
+	HTTPPort uint `toml:"httpPort"`
 
 	Client    ClientConfig
 	GUI       GUIConfig `toml:"gui"`
@@ -92,17 +92,17 @@ func setDefaults(cfg *Config) {
 		cfg.VarDir = filepath.Join(cfg.HomeDir, "var")
 	}
 
-	if cfg.HTTPPort < 1 {
+	if cfg.HTTPPort == 0 {
 		cfg.HTTPPort = 4000
 	}
 
 	// Log
-	if cfg.Log.SyslogPort < 1 {
+	if cfg.Log.SyslogPort == 0 {
 		cfg.Log.SyslogPort = 4500
 	}
 
 	// GUI
-	if cfg.GUI.Port < 1 {
+	if cfg.GUI.Port == 0 {
 		cfg.GUI.Port = 3000
 	}
 }
