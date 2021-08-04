@@ -27,7 +27,9 @@
   let refreshInterval: any;
   let process: ComponentDetails | null = null;
 
-  const cpuPercentages: number[] = [];
+  let sparklineSvg: SVGSVGElement;
+
+  const cpuPercentages: number[] = [1];
 
   onMount(() => {
     fetchProcesses(workspace);
@@ -43,7 +45,6 @@
         if (cpuPercentages.length > 100) {
           cpuPercentages.shift();
         }
-        const sparklineSvg = document.querySelector('.sparkline');
         if (
           cpuPercentages.some((p) => p !== 0) &&
           sparklineSvg &&
@@ -89,6 +90,7 @@
               <td>{process.status.cpuPercent.toFixed(2)}%</td>
               <td
                 ><svg
+                  bind:this={sparklineSvg}
                   class="sparkline"
                   width="100"
                   height="30"
