@@ -21,6 +21,7 @@ import (
 	"github.com/deref/exo/providers/docker/components/network"
 	"github.com/deref/exo/providers/docker/components/volume"
 	"github.com/deref/exo/providers/unix/components/process"
+	"github.com/deref/exo/task"
 	"github.com/deref/exo/util/errutil"
 	"github.com/deref/exo/util/jsonutil"
 	"github.com/deref/exo/util/logging"
@@ -29,12 +30,13 @@ import (
 )
 
 type Workspace struct {
-	ID         string
-	VarDir     string
-	Store      state.Store
-	SyslogPort uint
-	Logger     logging.Logger
-	Docker     *dockerclient.Client
+	ID          string
+	VarDir      string
+	Store       state.Store
+	SyslogPort  uint
+	Logger      logging.Logger
+	Docker      *dockerclient.Client
+	TaskTracker *task.TaskTracker
 }
 
 func (ws *Workspace) Describe(ctx context.Context, input *api.DescribeInput) (*api.DescribeOutput, error) {
@@ -145,12 +147,18 @@ func (ws *Workspace) RefreshAllComponents(ctx context.Context, input *api.Refres
 	if err != nil {
 		return nil, err
 	}
-	// TODO: Parallelism.
-	for _, component := range components.Components {
-		if err := ws.refreshComponent(ctx, ws.Store, component); err != nil {
-			// TODO: Error recovery.
-			return nil, fmt.Errorf("refreshing %q: %w", component.Name, err)
+	if err := ws.TaskTracker.RunFunc(ctx, "refresh", func(refreshTask *task.Task) error {
+		for _, component := range components.Components {
+			refreshTask.GoFunc(component.Name, func(*task.Task) error {
+				if err := ws.refreshComponent(ctx, ws.Store, component); err != nil {
+					return fmt.Errorf("refreshing %q: %w", component.Name, err)
+				}
+				return nil
+			})
 		}
+		return nil
+	}); err != nil {
+		return nil, err
 	}
 	return &api.RefreshAllComponentsOutput{}, nil
 }

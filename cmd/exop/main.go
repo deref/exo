@@ -15,11 +15,14 @@ import (
 	logd "github.com/deref/exo/logd/client"
 	"github.com/deref/exo/providers/core/components/log"
 	"github.com/deref/exo/supervise"
+	"github.com/deref/exo/task"
+	taskserver "github.com/deref/exo/task/server"
 	"github.com/deref/exo/telemetry"
 	"github.com/deref/exo/util/cmdutil"
 	"github.com/deref/exo/util/httputil"
 	"github.com/deref/exo/util/logging"
 	"github.com/deref/pier"
+	docker "github.com/docker/docker/client"
 )
 
 func main() {
@@ -42,6 +45,7 @@ func main() {
 	ctx := context.Background()
 
 	logger := logging.Default()
+	ctx = logging.ContextWithLogger(ctx, logger)
 
 	cfg := &config.Config{}
 	config.MustLoadDefault(cfg)
@@ -50,12 +54,23 @@ func main() {
 	statePath := filepath.Join(paths.VarDir, "state.json")
 	store := statefile.New(statePath)
 
+	dockerClient, err := docker.NewClientWithOpts()
+	if err != nil {
+		cmdutil.Fatalf("failed to create docker client: %v", err)
+	}
+
+	taskTracker := &task.TaskTracker{
+		Store: taskserver.NewTaskStore(),
+	}
+
 	serverCfg := &server.Config{
-		VarDir:     paths.VarDir,
-		Store:      store,
-		Telemetry:  telemetry.New(&cfg.Telemetry),
-		Logger:     logger,
-		SyslogPort: cfg.Log.SyslogPort,
+		VarDir:      paths.VarDir,
+		Store:       store,
+		Telemetry:   telemetry.New(&cfg.Telemetry),
+		Logger:      logger,
+		SyslogPort:  cfg.Log.SyslogPort,
+		Docker:      dockerClient,
+		TaskTracker: taskTracker,
 	}
 
 	ctx = log.ContextWithLogCollector(ctx, logd.GetLogCollector(&josh.Client{

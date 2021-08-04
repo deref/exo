@@ -21,6 +21,7 @@ type Kernel interface {
 	Upgrade(context.Context, *UpgradeInput) (*UpgradeOutput, error)
 	// Checks whether server is up.
 	Ping(context.Context, *PingInput) (*PingOutput, error)
+	DescribeTasks(context.Context, *DescribeTasksInput) (*DescribeTasksOutput, error)
 }
 
 type CreateWorkspaceInput struct {
@@ -74,6 +75,13 @@ type PingInput struct {
 type PingOutput struct {
 }
 
+type DescribeTasksInput struct {
+}
+
+type DescribeTasksOutput struct {
+	Tasks []TaskDescription `json:"tasks"`
+}
+
 func BuildKernelMux(b *josh.MuxBuilder, factory func(req *http.Request) Kernel) {
 	b.AddMethod("create-workspace", func(req *http.Request) interface{} {
 		return factory(req).CreateWorkspace
@@ -96,4 +104,21 @@ func BuildKernelMux(b *josh.MuxBuilder, factory func(req *http.Request) Kernel) 
 	b.AddMethod("ping", func(req *http.Request) interface{} {
 		return factory(req).Ping
 	})
+	b.AddMethod("describe-tasks", func(req *http.Request) interface{} {
+		return factory(req).DescribeTasks
+	})
+}
+
+type TaskDescription struct {
+	ID string `json:"id"`
+	// ID of root task in this tree.
+	JobID    string  `json:"jobId"`
+	ParentID *string `json:"parentId"`
+	Name     string  `json:"name"`
+	Status   string  `json:"status"`
+	Message  string  `json:"message"`
+	Created  string  `json:"created"`
+	Updated  string  `json:"updated"`
+	Started  *string `json:"started"`
+	Finished *string `json:"finished"`
 }

@@ -13,6 +13,8 @@ import (
 	"github.com/deref/exo/core/api"
 	state "github.com/deref/exo/core/state/api"
 	"github.com/deref/exo/gensym"
+	"github.com/deref/exo/task"
+	taskapi "github.com/deref/exo/task/api"
 	"github.com/deref/exo/telemetry"
 	"github.com/deref/exo/upgrade"
 	"github.com/deref/exo/util/errutil"
@@ -20,9 +22,10 @@ import (
 )
 
 type Kernel struct {
-	VarDir    string
-	Store     state.Store
-	Telemetry telemetry.Telemetry
+	VarDir      string
+	Store       state.Store
+	Telemetry   telemetry.Telemetry
+	TaskTracker *task.TaskTracker
 }
 
 func (kern *Kernel) CreateWorkspace(ctx context.Context, input *api.CreateWorkspaceInput) (*api.CreateWorkspaceOutput, error) {
@@ -149,4 +152,28 @@ func restart(ctx context.Context) {
 	if err := syscall.Exec(cmd, append([]string{cmd}, os.Args[1:]...), os.Environ()); err != nil {
 		exitWithError(fmt.Errorf("forking new exo process at %s: %w", cmd, err))
 	}
+}
+
+func (kern *Kernel) DescribeTasks(ctx context.Context, input *api.DescribeTasksInput) (*api.DescribeTasksOutput, error) {
+	underlying, err := kern.TaskTracker.Store.DescribeTasks(ctx, &taskapi.DescribeTasksInput{})
+	if err != nil {
+		return nil, err
+	}
+	var output api.DescribeTasksOutput
+	output.Tasks = make([]api.TaskDescription, len(underlying.Tasks))
+	for i, t := range underlying.Tasks {
+		output.Tasks[i] = api.TaskDescription{
+			ID:       t.ID,
+			JobID:    t.JobID,
+			ParentID: t.ParentID,
+			Name:     t.Name,
+			Status:   t.Status,
+			Message:  t.Message,
+			Created:  t.Created,
+			Updated:  t.Updated,
+			Started:  t.Started,
+			Finished: t.Finished,
+		}
+	}
+	return &output, nil
 }

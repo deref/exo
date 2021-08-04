@@ -26,8 +26,12 @@ func NanoToIso(nano int64) string {
 	return IsoNano(time.Unix(0, nano))
 }
 
+func ParseIsoNano(iso string) (time.Time, error) {
+	return time.Parse(RFC3339NanoUTC, iso)
+}
+
 func ParseIsoToNano(iso string) (int64, error) {
-	t, err := time.Parse(RFC3339NanoUTC, iso)
+	t, err := ParseIsoNano(iso)
 	if err != nil {
 		return 0, err
 	}
