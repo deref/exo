@@ -9,8 +9,8 @@
 
 <Layout>
   <section>
-    Use <Code>exo gui</Code> in your terminal.
-    <!-- TODO: Use this data below: !-->
+    Use <Code>exo gui</Code> in your terminal to launch into the current directory's
+    workspace.
     <h2>Workspaces</h2>
     <div>
       {#await workspaces}
