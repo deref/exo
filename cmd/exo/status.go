@@ -27,7 +27,7 @@ var statusCmd = &cobra.Command{
 	Use:   "status",
 	Short: "Report exo status",
 	Long:  `Report exo daemon status.`,
-	Args:  cobra.MaximumNArgs(1),
+	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 
 		err := loadRunState()
