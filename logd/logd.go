@@ -13,15 +13,15 @@ import (
 	"github.com/deref/exo/logd/api"
 	"github.com/deref/exo/logd/server"
 	"github.com/deref/exo/logd/store/badger"
-	"github.com/deref/exo/providers/core/components/log"
 	"github.com/deref/exo/util/logging"
 	"github.com/influxdata/go-syslog/v3"
 	"github.com/influxdata/go-syslog/v3/rfc5424"
 )
 
 type Service struct {
-	Logger logging.Logger
-	VarDir string
+	Logger     logging.Logger
+	VarDir     string
+	SyslogPort uint
 	server.LogCollector
 }
 
@@ -37,7 +37,7 @@ func (svc *Service) Run(ctx context.Context) error {
 	svc.IDGen = gensym.NewULIDGenerator(ctx)
 	svc.Store = store
 
-	addr := fmt.Sprintf(":%d", log.SyslogPort)
+	addr := fmt.Sprintf(":%d", svc.SyslogPort)
 	conn, err := net.ListenPacket("udp", addr)
 	if err != nil {
 		return fmt.Errorf("listening: %w", err)

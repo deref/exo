@@ -15,7 +15,7 @@ type Config struct {
 	VarDir     string
 	Store      state.Store
 	Telemetry  telemetry.Telemetry
-	SyslogPort int
+	SyslogPort uint
 	Docker     *docker.Client
 	Logger     logging.Logger
 }

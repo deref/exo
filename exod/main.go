@@ -28,27 +28,35 @@ import (
 )
 
 func Main(ctx context.Context) {
-	if len(os.Args) > 1 {
-		subcommand := os.Args[1]
-		switch subcommand {
-		case "supervise":
-			// XXX: This is broken because supervise expects the syslod addr as the first argument.
-			wd, err := os.Getwd()
-			if err != nil {
-				panic(err)
-			}
-			supervise.Main(fmt.Sprintf("%s %s %s", os.Args[0], subcommand, wd), os.Args[2:])
-		case "server":
-			RunServer(ctx)
-		default:
-			cmdutil.Fatalf("unknown subcommand: %q", subcommand)
+	cmd, err := cmdutil.ParseArgs(os.Args)
+	if err != nil {
+		cmdutil.Fatalf("parsing arguments: %w", err)
+	}
+
+	subcommand := "server"
+	if len(cmd.Args) > 0 {
+		subcommand = cmd.Args[0]
+		cmd.Args = cmd.Args[1:]
+	}
+
+	switch subcommand {
+	case "supervise":
+		// XXX: This is broken because supervise expects the syslod addr as the first argument.
+		wd, err := os.Getwd()
+		if err != nil {
+			panic(err)
 		}
-	} else {
-		RunServer(ctx)
+		supervise.Main(fmt.Sprintf("%s %s %s", cmd.Command, subcommand, wd), cmd.Args)
+
+	case "server":
+		RunServer(ctx, cmd.Flags)
+
+	default:
+		cmdutil.Fatalf("unknown subcommand: %q", subcommand)
 	}
 }
 
-func RunServer(ctx context.Context) {
+func RunServer(ctx context.Context, flags map[string]string) {
 	logger := logging.CurrentLogger(ctx)
 
 	cfg := &config.Config{}
@@ -58,7 +66,8 @@ func RunServer(ctx context.Context) {
 	tel := telemetry.New(&cfg.Telemetry)
 	tel.StartSession()
 
-	if !isatty.IsTerminal(os.Stdout.Fd()) {
+	_, forceStdLog := flags["force-std-log"]
+	if !(forceStdLog || isatty.IsTerminal(os.Stdout.Fd())) {
 		// Replace the standard logger with a logger writes to the var directory
 		// and handles log rotation.
 		golog.SetOutput(&lumberjack.Logger{
@@ -110,18 +119,20 @@ func RunServer(ctx context.Context) {
 		VarDir:     paths.VarDir,
 		Store:      store,
 		Telemetry:  tel,
-		SyslogPort: log.SyslogPort,
+		SyslogPort: cfg.Log.SyslogPort,
 		Docker:     dockerClient,
 		Logger:     logger,
 	}
 
-	logd := &logd.Service{}
-	logd.Logger = logger
-	logd.VarDir = kernelCfg.VarDir
+	logd := &logd.Service{
+		VarDir:     kernelCfg.VarDir,
+		SyslogPort: kernelCfg.SyslogPort,
+		Logger:     logger,
+	}
 	ctx = log.ContextWithLogCollector(ctx, &logd.LogCollector)
 
 	mux := server.BuildRootMux("/_exo/", kernelCfg)
-	mux.Handle("/", gui.NewHandler(ctx))
+	mux.Handle("/", gui.NewHandler(ctx, cfg.GUI))
 
 	{
 		ctx, shutdown := context.WithCancel(ctx)
@@ -133,7 +144,7 @@ func RunServer(ctx context.Context) {
 		}()
 	}
 
-	addr := cmdutil.GetAddr()
+	addr := cmdutil.GetAddr(cfg)
 	logger.Infof("listening for API calls at %s", addr)
 
 	cmdutil.ListenAndServe(ctx, &http.Server{

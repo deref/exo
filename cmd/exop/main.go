@@ -54,8 +54,8 @@ func main() {
 		VarDir:     paths.VarDir,
 		Store:      store,
 		Telemetry:  telemetry.New(&cfg.Telemetry),
-		SyslogPort: log.SyslogPort,
 		Logger:     logger,
+		SyslogPort: cfg.Log.SyslogPort,
 	}
 
 	ctx = log.ContextWithLogCollector(ctx, logd.GetLogCollector(&josh.Client{

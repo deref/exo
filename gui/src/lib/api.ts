@@ -72,7 +72,8 @@ export interface PaginationParams {
   next?: number;
 }
 
-const baseUrl = 'http://localhost:4000/_exo';
+const apiPort = parseInt(import.meta.env.VITE_API_PORT as string);
+const baseUrl = `http://localhost:${apiPort}/_exo`;
 
 const apiUrl = (path: string, query: Record<string, string>) => {
   let qs = '';

@@ -7,7 +7,7 @@ type Process struct {
 	Spec
 	State
 
-	SyslogPort int
+	SyslogPort uint
 }
 
 type Spec struct {

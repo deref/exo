@@ -1,0 +1,7 @@
+##
+## This file can be sourced in bash scripts within this directory to provide common
+## environment variables, functions, etc.
+##
+
+export ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." &> /dev/null && pwd )"
+export EXO_DEV_HOME="${ROOT_DIR}/.dev"

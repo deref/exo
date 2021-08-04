@@ -38,7 +38,7 @@ If the current directory is part of a workspace, navigates to it.`,
 
 		var endpoint string
 		if output.ID == nil {
-			endpoint = runState.URL + "#/new-workspace?root=" + url.QueryEscape(cwd)
+			endpoint = runState.URL + "/#/new-workspace?root=" + url.QueryEscape(cwd)
 		} else {
 			endpoint = guiWorkspaceURL(*output.ID)
 		}
@@ -51,5 +51,5 @@ If the current directory is part of a workspace, navigates to it.`,
 }
 
 func guiWorkspaceURL(id string) string {
-	return runState.URL + "#/workspaces/" + url.PathEscape(id)
+	return runState.URL + "/#/workspaces/" + url.PathEscape(id)
 }

@@ -49,12 +49,8 @@ func MustMakeDirectories(cfg *config.Config) *KnownPaths {
 	return &paths
 }
 
-func GetAddr() string {
-	port := os.Getenv("PORT")
-	if port == "" {
-		port = "4000"
-	}
-	return "localhost:" + port
+func GetAddr(cfg *config.Config) string {
+	return fmt.Sprintf("localhost:%d", cfg.HTTPPort)
 }
 
 func MustGetwd() string {

@@ -38,18 +38,26 @@ var statusCmd = &cobra.Command{
 		w := tabwriter.NewWriter(os.Stdout, 4, 8, 3, ' ', 0)
 		_, _ = fmt.Fprintf(w, "healthy:\t%t\n", healthy)
 		_, _ = fmt.Fprintf(w, "pid:\t%s\n", pid)
-		_, _ = fmt.Fprintf(w, "gui:\t%s\n", runState.URL)
+		_, _ = fmt.Fprintf(w, "gui:\t%s\n", effectiveServerURL())
 		_ = w.Flush()
 		return nil
 	},
 }
 
 func checkHealthy() bool {
-	res, err := http.Get(runState.URL + "_exo/health")
+	res, err := http.Get(effectiveServerURL() + "/_exo/health")
 	if err != nil {
 		return false
 	}
 	bs, _ := ioutil.ReadAll(res.Body)
 	// See note [HEALTH_CHECK].
 	return string(bytes.TrimSpace(bs)) == "ok"
+}
+
+func effectiveServerURL() string {
+	url := cfg.Client.URL
+	if url == "" {
+		url = runState.URL
+	}
+	return url
 }
