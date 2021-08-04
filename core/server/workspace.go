@@ -25,6 +25,7 @@ import (
 	"github.com/deref/exo/util/jsonutil"
 	"github.com/deref/exo/util/logging"
 	dockerclient "github.com/docker/docker/client"
+	psprocess "github.com/shirou/gopsutil/v3/process"
 )
 
 type Workspace struct {
@@ -658,20 +659,68 @@ func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeP
 		// XXX Violates component state encapsulation.
 		switch component.Type {
 		case "process":
-			var state struct {
-				Pid int `json:"pid"`
-			}
+			var state process.State
 			if err := jsonutil.UnmarshalString(component.State, &state); err != nil {
 				// TODO: log error.
 				fmt.Printf("unmarshalling process state: %v\n", err)
 				continue
 			}
-			running := state.Pid != 0
 			process := api.ProcessDescription{
 				ID:       component.ID,
 				Name:     component.Name,
 				Provider: "unix",
-				Running:  running,
+				EnvVars:  state.FullEnvironment,
+			}
+
+			proc, err := psprocess.NewProcess(int32(state.Pid))
+			if err == nil {
+				process.Running, err = proc.IsRunning()
+				if err != nil {
+					return nil, err
+				}
+
+				memoryInfo, err := proc.MemoryInfo()
+				if err != nil {
+					return nil, err
+				}
+
+				process.ResidentMemory = memoryInfo.RSS
+
+				connections, err := proc.Connections()
+				if err != nil {
+					return nil, err
+				}
+
+				var ports []uint32
+				for _, conn := range connections {
+					if conn.Laddr.Port != 0 {
+						ports = append(ports, conn.Laddr.Port)
+					}
+				}
+				process.Ports = ports
+
+				process.CreateTime, err = proc.CreateTime()
+				if err != nil {
+					return nil, err
+				}
+
+				children, err := proc.Children()
+				if err == nil {
+					var childrenExecutables []string
+					for _, child := range children {
+						exe, err := child.Exe()
+						if err != nil {
+							return nil, err
+						}
+						childrenExecutables = append(childrenExecutables, exe)
+					}
+					process.ChildrenExecutables = childrenExecutables
+				}
+
+				process.CPUPercent, err = proc.CPUPercent()
+				if err != nil {
+					return nil, err
+				}
 			}
 			output.Processes = append(output.Processes, process)
 		case "container":

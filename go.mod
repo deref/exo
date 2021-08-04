@@ -20,6 +20,7 @@ require (
 	github.com/oklog/ulid/v2 v2.0.2
 	github.com/opencontainers/image-spec v1.0.1
 	github.com/pkg/browser v0.0.0-20210706143420-7d21f8c997e2
+	github.com/shirou/gopsutil/v3 v3.21.6
 	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spf13/cobra v1.0.0
 	github.com/stretchr/testify v1.6.1

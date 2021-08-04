@@ -1,2 +1,3 @@
 echo: socat TCP4-LISTEN:2000,fork EXEC:cat
 tick: ./bin/tick
+spawn: npx sleep infinity

@@ -17,7 +17,7 @@ interface "workspace" {
   method "destroy" {
     doc = "Deletes all of the components in the workspace, then deletes the workspace itself."
   }
-  
+
   method "apply" {
     doc = "Performs creates, updates, refreshes, disposes, as needed."
 
@@ -33,7 +33,7 @@ interface "workspace" {
     
     output "warnings" "[]string" {}
   }
-  
+
   # TODO: Should use the standard "refresh" lifecycle method.
   method "refresh-all-components" {
     doc = "Refreshes all components."
@@ -48,7 +48,7 @@ interface "workspace" {
   }
 
   method "describe-components" {
-	  doc = "Returns component descriptions."
+    doc = "Returns component descriptions."
 
     input "ids" "[]string" {
       doc = "If non-empty, filters components to supplied ids."
@@ -60,49 +60,49 @@ interface "workspace" {
 
     output "components" "[]ComponentDescription" {}
   }
-  
+
   method "create-component" {
     doc = "Creates a component and triggers an initialize lifecycle event."
 
-	  input "name" "string" {}
-	  input "type" "string" {}
-	  input "spec" "string" {}
+    input "name" "string" {}
+    input "type" "string" {}
+    input "spec" "string" {}
 
     output "id" "string" {}
   }
-  
+
   method "update-component" {
-	  doc = "Replaces the spec on a component and triggers an update lifecycle event."
+    doc = "Replaces the spec on a component and triggers an update lifecycle event."
 
     input "ref" "string" {}
     input "spec" "string" {}
   }
-  
+
   method "refresh-component" {
-	  doc = "Triggers a refresh lifecycle event to update the component's state."
-      
+    doc = "Triggers a refresh lifecycle event to update the component's state."
+
     input "ref" "string" {}
   }
-  
+
   method "dispose-component" {
     # TODO: Line breaks in doc strings.
     doc = "Marks a component as disposed and triggers the dispose lifecycle event. After being disposed, the component record will be deleted asynchronously."
-      
+
     input "ref" "string" {}
   }
-  
+
   method "delete-component" {
-	  doc = "Disposes a component and then awaits the record to be deleted synchronously."
-     
+    doc = "Disposes a component and then awaits the record to be deleted synchronously."
+
     input "ref" "string" {}
   }
 
   method "describe-logs" {
     input "refs" "[]string" {}
-    
+
     output "logs" "[]LogDescription" {}
   }
-  
+
   method "get-events" {
     doc = "Returns pages of log events for some set of logs. If `cursor` is specified, standard pagination behavior is used. Otherwise the cursor is assumed to represent the current tail of the log."
 
@@ -121,7 +121,7 @@ interface "workspace" {
   method "start-component" {
     input "ref" "string" {}
   }
-  
+
   method "stop-component" {
     input "ref" "string" {}
   }
@@ -149,14 +149,14 @@ struct "workspace-description" {
 }
 
 struct "component-description" {
-	field "id" "string" {}
-	field "name" "string" {}
-	field "type" "string" {}
-	field "spec" "string" {}
-	field "state" "string" {}
-	field "created" "string" {}
-	field "initialized" "*string" {}
-	field "disposed" "*string" {}
+  field "id" "string" {}
+  field "name" "string" {}
+  field "type" "string" {}
+  field "spec" "string" {}
+  field "state" "string" {}
+  field "created" "string" {}
+  field "initialized" "*string" {}
+  field "disposed" "*string" {}
 }
 
 struct "log-description" {
@@ -165,25 +165,31 @@ struct "log-description" {
 }
 
 struct "event" {
-	field "id" "string" {}
-	field "log" "string" {}
-	field "timestamp" "string" {}
-	field "message" "string" {}
+  field "id" "string" {}
+  field "log" "string" {}
+  field "timestamp" "string" {}
+  field "message" "string" {}
 }
 
 struct "process-description" {
-	field "id" "string" {}
+  field "id" "string" {}
   field "provider" "string" {}
-	field "name" "string" {}
-	field "running" "bool" {}
+  field "name" "string" {}
+  field "running" "bool" {}
+  field "env-vars" "map[string]string" {}
+  field "cpu-percent" "float64" {}
+  field "create-time" "int64" {}
+  field "resident-memory" "uint64" {}
+  field "ports" "[]uint32" {}
+  field "children-executables" "[]string" {}
 }
 
 struct "volume-description" {
-	field "id" "string" {}
-	field "name" "string" {}
+  field "id" "string" {}
+  field "name" "string" {}
 }
 
 struct "network-description" {
-	field "id" "string" {}
-	field "name" "string" {}
+  field "id" "string" {}
+  field "name" "string" {}
 }

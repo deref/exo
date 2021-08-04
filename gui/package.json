@@ -19,6 +19,7 @@
     "@storybook/svelte": "^6.3.6",
     "@sveltejs/vite-plugin-svelte": "^1.0.0-next.11",
     "@tsconfig/svelte": "^2.0.1",
+    "@types/fnando__sparkline": "^0.3.4",
     "@types/jest": "^26.0.24",
     "@types/qs": "^6.9.7",
     "@types/shell-quote": "^1.7.1",
@@ -36,6 +37,7 @@
     "vite": "^2.4.2"
   },
   "dependencies": {
+    "@fnando/sparkline": "^0.3.10",
     "express": "^4.17.1",
     "monaco-editor": "^0.26.1",
     "qs": "^6.10.1",

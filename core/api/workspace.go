@@ -333,10 +333,16 @@ type Event struct {
 }
 
 type ProcessDescription struct {
-	ID       string `json:"id"`
-	Provider string `json:"provider"`
-	Name     string `json:"name"`
-	Running  bool   `json:"running"`
+	ID                  string            `json:"id"`
+	Provider            string            `json:"provider"`
+	Name                string            `json:"name"`
+	Running             bool              `json:"running"`
+	EnvVars             map[string]string `json:"envVars"`
+	CPUPercent          float64           `json:"cpuPercent"`
+	CreateTime          int64             `json:"createTime"`
+	ResidentMemory      uint64            `json:"residentMemory"`
+	Ports               []uint32          `json:"ports"`
+	ChildrenExecutables []string          `json:"childrenExecutables"`
 }
 
 type VolumeDescription struct {
