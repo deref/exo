@@ -61,8 +61,8 @@ interface "workspace" {
     output "components" "[]ComponentDescription" {}
   }
 
-  method "get-component-status" {
-    doc = "Returns the status of a component"
+  method "get-process-status" {
+    doc = "Returns the status of a process"
     input "ref" "string" {}
     output "status" "ComponentStatus" {}
   }

@@ -59,8 +59,8 @@ type Workspace interface {
 	Resolve(context.Context, *ResolveInput) (*ResolveOutput, error)
 	// Returns component descriptions.
 	DescribeComponents(context.Context, *DescribeComponentsInput) (*DescribeComponentsOutput, error)
-	// Returns the status of a component
-	GetComponentStatus(context.Context, *GetComponentStatusInput) (*GetComponentStatusOutput, error)
+	// Returns the status of a process
+	GetProcessStatus(context.Context, *GetProcessStatusInput) (*GetProcessStatusOutput, error)
 	// Creates a component and triggers an initialize lifecycle event.
 	CreateComponent(context.Context, *CreateComponentInput) (*CreateComponentOutput, error)
 	// Replaces the spec on a component and triggers an update lifecycle event.
@@ -135,11 +135,11 @@ type DescribeComponentsOutput struct {
 	Components []ComponentDescription `json:"components"`
 }
 
-type GetComponentStatusInput struct {
+type GetProcessStatusInput struct {
 	Ref string `json:"ref"`
 }
 
-type GetComponentStatusOutput struct {
+type GetProcessStatusOutput struct {
 	Status ComponentStatus `json:"status"`
 }
 
@@ -273,8 +273,8 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	b.AddMethod("describe-components", func(req *http.Request) interface{} {
 		return factory(req).DescribeComponents
 	})
-	b.AddMethod("get-component-status", func(req *http.Request) interface{} {
-		return factory(req).GetComponentStatus
+	b.AddMethod("get-process-status", func(req *http.Request) interface{} {
+		return factory(req).GetProcessStatus
 	})
 	b.AddMethod("create-component", func(req *http.Request) interface{} {
 		return factory(req).CreateComponent

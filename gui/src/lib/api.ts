@@ -296,7 +296,7 @@ export const api = (() => {
         const processes = await this.describeProcesses();
         return await Promise.all(
           processes.map(async (p): Promise<ComponentDetails> => {
-            const { status } = (await invoke('get-component-status', {
+            const { status } = (await invoke('get-process-status', {
               ref: p.id,
             })) as any;
             return { id: p.id, name: p.name, status };

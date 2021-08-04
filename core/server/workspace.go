@@ -642,7 +642,7 @@ func (ws *Workspace) RestartComponent(ctx context.Context, input *api.RestartCom
 	return &api.RestartComponentOutput{}, nil
 }
 
-func (ws *Workspace) GetComponentStatus(ctx context.Context, input *api.GetComponentStatusInput) (*api.GetComponentStatusOutput, error) {
+func (ws *Workspace) GetProcessStatus(ctx context.Context, input *api.GetProcessStatusInput) (*api.GetProcessStatusOutput, error) {
 	id, err := ws.resolveRef(ctx, input.Ref)
 	if err != nil {
 		return nil, fmt.Errorf("resolving ref: %w", err)
@@ -716,7 +716,7 @@ func (ws *Workspace) GetComponentStatus(ctx context.Context, input *api.GetCompo
 				}
 			}
 
-			return &api.GetComponentStatusOutput{Status: status}, nil
+			return &api.GetProcessStatusOutput{Status: status}, nil
 		}
 	}
 
