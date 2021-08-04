@@ -8,7 +8,7 @@ export interface CreateProcessResponse {
   id: string;
 }
 
-export interface ComponentStatus {
+export interface ProcessStatus {
   componentId: string;
   running: boolean;
   envVars: null | Record<string, string>;
@@ -22,5 +22,5 @@ export interface ComponentStatus {
 export interface ComponentDetails {
   id: string;
   name: string;
-  status: ComponentStatus;
+  status: ProcessStatus;
 }

@@ -140,7 +140,7 @@ type GetProcessStatusInput struct {
 }
 
 type GetProcessStatusOutput struct {
-	Status ComponentStatus `json:"status"`
+	Status ProcessStatus `json:"status"`
 }
 
 type CreateComponentInput struct {
@@ -352,7 +352,7 @@ type ProcessDescription struct {
 	Running  bool   `json:"running"`
 }
 
-type ComponentStatus struct {
+type ProcessStatus struct {
 	ComponentID         string            `json:"componentId"`
 	Running             bool              `json:"running"`
 	EnvVars             map[string]string `json:"envVars"`

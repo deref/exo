@@ -184,7 +184,7 @@ struct "process-description" {
   field "running" "bool" {}
 }
 
-struct "component-status" {
+struct "process-status" {
   field "component-id" "string" {}
   field "running" "bool" {}
   field "env-vars" "map[string]string" {}

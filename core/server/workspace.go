@@ -660,7 +660,7 @@ func (ws *Workspace) GetProcessStatus(ctx context.Context, input *api.GetProcess
 				return nil, fmt.Errorf("unmarshalling state: %w", err)
 			}
 
-			status := api.ComponentStatus{
+			status := api.ProcessStatus{
 				ComponentID: id,
 				EnvVars:     state.FullEnvironment,
 			}
