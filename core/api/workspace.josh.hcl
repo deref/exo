@@ -187,12 +187,12 @@ struct "process-description" {
 struct "component-status" {
   field "component-id" "string" {}
   field "running" "bool" {}
-  field "envVars" "map[string]string" {}
-  field "CPUPercent" "float64" {}
-  field "createTime" "int64" {}
-  field "residentMemory" "uint64" {}
+  field "env-vars" "map[string]string" {}
+  field "cpu-percent" "float64" {}
+  field "create-time" "int64" {}
+  field "resident-memory" "uint64" {}
   field "ports" "[]uint32" {}
-  field "childrenExecutables" "[]string" {}
+  field "children-executables" "[]string" {}
 }
 
 struct "volume-description" {

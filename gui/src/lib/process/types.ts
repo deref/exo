@@ -12,7 +12,7 @@ export interface ComponentStatus {
   componentId: string;
   running: boolean;
   envVars: null | Record<string, string>;
-  CPUPercent: number;
+  cpuPercent: number;
   createTime: number;
   residentMemory: number;
   ports: number[];
