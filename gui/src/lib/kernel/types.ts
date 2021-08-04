@@ -1,5 +1,5 @@
 export interface GetVersionResponse {
-    installed: string;
-    latest?: string;
-    current: string;
+  installed: string;
+  latest?: string;
+  current: string;
 }

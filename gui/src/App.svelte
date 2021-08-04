@@ -5,7 +5,6 @@
   import { isRunning } from './lib/global/server-status';
 </script>
 
-
 {#if $isRunning}
   <Router {routes} />
 {:else}
