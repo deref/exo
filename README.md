@@ -20,7 +20,7 @@
 Install exo:
 
 ```bash
-curl -sL https://exo.deref.io/install | sh
+curl -sL https://exo.deref.io/install | bash
 ```
 
 If you prefer manual installation, see [./doc/install.md](./doc/install.md) for
