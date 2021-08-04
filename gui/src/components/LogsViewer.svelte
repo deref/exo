@@ -145,7 +145,7 @@
 
   td {
     padding: 0 0.4em;
-    white-space: nowrap;
+    white-space: pre;
   }
 
   td:nth-child(1) {
