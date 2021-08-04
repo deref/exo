@@ -185,22 +185,22 @@ struct "process-description" {
 }
 
 struct "component-status" {
-	field "component-id" "string" {}
-	field "running" "bool" {}
+  field "component-id" "string" {}
+  field "running" "bool" {}
   field "envVars" "map[string]string" {}
-	field "CPUPercent" "float64" {}
-	field "createTime" "int64" {}
-	field "residentMemory" "uint64" {}
+  field "CPUPercent" "float64" {}
+  field "createTime" "int64" {}
+  field "residentMemory" "uint64" {}
   field "ports" "[]uint32" {}
   field "childrenExecutables" "[]string" {}
 }
 
 struct "volume-description" {
-	field "id" "string" {}
-	field "name" "string" {}
+  field "id" "string" {}
+  field "name" "string" {}
 }
 
 struct "network-description" {
-	field "id" "string" {}
-	field "name" "string" {}
+  field "id" "string" {}
+  field "name" "string" {}
 }
