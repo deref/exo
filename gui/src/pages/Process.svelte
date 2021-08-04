@@ -29,7 +29,7 @@
 
   let sparklineSvg: SVGSVGElement;
 
-  const cpuPercentages: number[] = [1];
+  const cpuPercentages: number[] = [];
 
   onMount(() => {
     fetchProcesses(workspace);
