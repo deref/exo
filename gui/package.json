@@ -8,7 +8,8 @@
     "check": "svelte-check --tsconfig ./tsconfig.json",
     "test": "jest",
     "storybook": "start-storybook -p 6006",
-    "build-storybook": "build-storybook"
+    "build-storybook": "build-storybook",
+    "lint": "prettier ."
   },
   "devDependencies": {
     "@babel/core": "^7.14.8",
