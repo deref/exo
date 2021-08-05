@@ -127,7 +127,8 @@ func (p *Process) start(ctx context.Context) error {
 			errC <- fmt.Errorf("reading supervise stderr: %w", err)
 			return
 		}
-		if len(message) > 0 {
+		// SEE NOTE: [SUPERVISE_STDERR].
+		if len(message) > 0 && message != "started ok" {
 			// TODO: Do not treat as a bad request. Record the error somewhere,
 			// mark the component as being in an error state.
 			errC <- errutil.NewHTTPError(http.StatusBadRequest, message)

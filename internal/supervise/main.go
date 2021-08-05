@@ -6,6 +6,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"io"
+	"io/ioutil"
+	"log"
 	"net"
 	"os"
 	"os/exec"
@@ -18,6 +20,7 @@ import (
 	"github.com/deref/exo/internal/logd/api"
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/deref/exo/internal/util/osutil"
+	"github.com/deref/exo/internal/util/sysutil"
 	"github.com/influxdata/go-syslog/v3/rfc5424"
 )
 
@@ -51,6 +54,14 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 	envString := args[4]
 	program := args[5]
 	arguments := args[6:]
+
+	var crashFile *os.File
+	cleanExit := func(statusCode int) {
+		if crashFile != nil {
+			_ = os.Remove(crashFile.Name())
+		}
+		os.Exit(statusCode)
+	}
 
 	udpAddr, err := net.ResolveUDPAddr("udp", "localhost:"+syslogPort)
 	if err != nil {
@@ -106,9 +117,9 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 			// Exit when child exits.
 			case syscall.SIGCHLD:
 				if hasSignalledChildToQuit {
-					os.Exit(0)
+					cleanExit(0)
 				}
-				os.Exit(1)
+				cleanExit(1)
 			}
 		}
 	}()
@@ -119,17 +130,28 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 	}
 	child = cmd.Process
 
-	// Reporting child pid to stdout.
-	if _, err := fmt.Println(child.Pid); err != nil {
-		fatalf("reporting pid: %v", err)
-	}
-
 	// Dial syslog.
 	conn, err := net.DialUDP("udp", nil, udpAddr)
 	if err != nil {
 		fatalf("dialing udp: %w", err)
 	}
 	defer conn.Close()
+
+	// Reporting child pid to stdout.
+	if _, err := fmt.Println(child.Pid); err != nil {
+		fatalf("reporting pid: %v", err)
+	}
+
+	// NOTE [SUPERVISE_STDERR]: The "started ok" message will release and readers
+	// who are waiting for a message on stderr. Then we redirect stderr to a temp
+	// file so that if any supervision failures happen, we have a crash log we
+	// can inspect.
+	_, _ = fmt.Fprintf(os.Stderr, "started ok\n")
+	crashFile, _ = ioutil.TempFile("", "supervise.*.stderr")
+	if crashFile != nil {
+		_ = sysutil.Dup2(int(crashFile.Fd()), 2)
+		fmt.Fprintf(os.Stderr, "supervisor pid: %d\n", os.Getpid())
+	}
 
 	// Proxy logs.
 	syslogProcID := strconv.Itoa(child.Pid)
@@ -139,7 +161,7 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 	// Wait for child process to exit.
 	err = cmd.Wait()
 	if exitErr, ok := err.(*exec.ExitError); ok {
-		os.Exit(exitErr.ExitCode())
+		cleanExit(exitErr.ExitCode())
 	}
 	if err != nil {
 		fatalf("wait error: %v", err)
@@ -182,7 +204,7 @@ func pipeToSyslog(ctx context.Context, conn net.Conn, componentID string, name s
 			fatalf("building syslog message: %w", err)
 		}
 		if _, err := io.WriteString(conn, packet); err != nil {
-			fatalf("sending syslog message: %w", err)
+			log.Printf("sending syslog message: %v", err)
 		}
 	}
 }
