@@ -2,7 +2,7 @@
 
 All notable changes to this project will be documented in this file.
 
-This project adhears to [CalVer](./VERSIONING.md).
+This project adhears to [CalVer](./doc/versioning.md).
 
 ## [Unreleased]
 

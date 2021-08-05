@@ -3,9 +3,9 @@ package main
 import (
 	"context"
 
-	"github.com/deref/exo/config"
-	"github.com/deref/exo/util/cmdutil"
-	"github.com/deref/exo/util/logging"
+	"github.com/deref/exo/internal/config"
+	"github.com/deref/exo/internal/util/cmdutil"
+	"github.com/deref/exo/internal/util/logging"
 	"github.com/spf13/cobra"
 )
 
@@ -27,9 +27,6 @@ For more information, see https://exo.deref.io`,
 
 func newContext() context.Context {
 	ctx := context.Background()
-
-	ctx = config.WithConfig(ctx, cfg)
-
 	logger := logging.Default()
 	ctx = logging.ContextWithLogger(ctx, logger)
 

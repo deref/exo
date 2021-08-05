@@ -44,6 +44,12 @@ builtin help by running `exo help`.
 
 ---
 
+## Support
+
+Feel free to [open an issue](https://github.com/deref/exo/issues),
+[start a discussion](https://github.com/deref/exo/discussions), or pop-in to our
+[#exo Slack channel](https://join.slack.com/t/deref-community/shared_invite/zt-tu8arun7-qqpVcTe3IDHjpSG_TrSaBQ).
+
 ## Telemetry
 
 **exo** collects limited and anonymous telemetry data by default. This behavior

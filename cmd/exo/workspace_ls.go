@@ -5,8 +5,8 @@ import (
 	"os"
 	"text/tabwriter"
 
-	"github.com/deref/exo/core/api"
-	"github.com/deref/exo/util/cmdutil"
+	"github.com/deref/exo/internal/core/api"
+	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/spf13/cobra"
 )
 
@@ -18,7 +18,7 @@ var workspaceLSCmd = &cobra.Command{
 	Use:   "ls",
 	Short: "Lists workspaces",
 	Long:  `Lists workspaces.`,
-	Args:  cobra.ExactArgs(0),
+	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := newContext()
 		ensureDaemon()

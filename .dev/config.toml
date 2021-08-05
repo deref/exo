@@ -1,0 +1,10 @@
+httpPort = 4001
+
+[gui]
+port = 3001
+
+[log]
+syslogPort = 5401
+
+[telemetry]
+disable = true

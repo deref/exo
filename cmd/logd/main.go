@@ -14,12 +14,12 @@ import (
 	"os/signal"
 	"path/filepath"
 
-	"github.com/deref/exo/config"
-	josh "github.com/deref/exo/josh/server"
-	"github.com/deref/exo/logd"
-	"github.com/deref/exo/logd/api"
-	"github.com/deref/exo/util/cmdutil"
-	"github.com/deref/exo/util/logging"
+	"github.com/deref/exo/internal/config"
+	josh "github.com/deref/exo/internal/josh/server"
+	"github.com/deref/exo/internal/logd"
+	"github.com/deref/exo/internal/logd/api"
+	"github.com/deref/exo/internal/util/cmdutil"
+	"github.com/deref/exo/internal/util/logging"
 )
 
 func main() {
@@ -31,10 +31,12 @@ func main() {
 	config.MustLoadDefault(cfg)
 	paths := cmdutil.MustMakeDirectories(cfg)
 
-	logd := &logd.Service{}
-	logd.Logger = logging.Default()
+	logd := &logd.Service{
+		VarDir:     paths.VarDir,
+		SyslogPort: cfg.Log.SyslogPort,
+		Logger:     logging.Default(),
+	}
 	logd.Debug = true
-	logd.VarDir = paths.VarDir
 
 	{
 		ctx, shutdown := context.WithCancel(ctx)
@@ -46,15 +48,14 @@ func main() {
 		}()
 	}
 
-	port := os.Getenv("PORT")
 	var network, addr string
-	if port == "" {
+	if cfg.HTTPPort == 0 {
 		network = "unix"
 		addr = filepath.Join(paths.VarDir, "logd.sock")
 		_ = os.Remove(addr)
 	} else {
 		network = "tcp"
-		addr = ":" + port
+		addr = fmt.Sprintf(":%d", cfg.HTTPPort)
 	}
 	listener, err := net.Listen(network, addr)
 	if err != nil {

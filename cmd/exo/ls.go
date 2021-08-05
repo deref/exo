@@ -5,7 +5,7 @@ import (
 	"os"
 	"text/tabwriter"
 
-	"github.com/deref/exo/core/api"
+	"github.com/deref/exo/internal/core/api"
 	"github.com/spf13/cobra"
 )
 
@@ -22,7 +22,7 @@ var lsCmd = &cobra.Command{
 	Use:   "ls",
 	Short: "Lists components",
 	Long:  `Lists components.`,
-	Args:  cobra.ExactArgs(0),
+	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := newContext()
 		ensureDaemon()

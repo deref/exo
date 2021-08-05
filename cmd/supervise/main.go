@@ -3,7 +3,7 @@ package main
 import (
 	"os"
 
-	"github.com/deref/exo/supervise"
+	"github.com/deref/exo/internal/supervise"
 )
 
 func main() {

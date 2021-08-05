@@ -43,7 +43,7 @@
   <div>
     <slot />
   </div>
-  <footer>
+  <footer class:devmode="{import.meta.env.MODE === 'development'}">
     <VersionInfo />
   </footer>
 </main>
@@ -100,5 +100,10 @@
     height: 20px;
     align-items: center;
     background: #eeeeee;
+  }
+
+  footer.devmode {
+    background: rgb(21,3,33);
+    background: linear-gradient(158deg, rgba(21,3,33,0.8403069846102503) 5%, rgba(127,85,183,1) 43%, rgba(144,218,245,1) 100%);
   }
 </style>

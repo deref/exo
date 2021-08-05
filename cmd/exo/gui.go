@@ -6,8 +6,8 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/deref/exo/core/api"
-	"github.com/deref/exo/util/cmdutil"
+	"github.com/deref/exo/internal/core/api"
+	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
 )
@@ -22,7 +22,7 @@ var guiCmd = &cobra.Command{
 	Long: `Opens the exo gui in a web browser.
 
 If the current directory is part of a workspace, navigates to it.`,
-	Args: cobra.ExactArgs(0),
+	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := context.Background()
 		ensureDaemon()
@@ -38,7 +38,7 @@ If the current directory is part of a workspace, navigates to it.`,
 
 		var endpoint string
 		if output.ID == nil {
-			endpoint = runState.URL + "#/new-workspace?root=" + url.QueryEscape(cwd)
+			endpoint = runState.URL + "/#/new-workspace?root=" + url.QueryEscape(cwd)
 		} else {
 			endpoint = guiWorkspaceURL(*output.ID)
 		}
@@ -51,5 +51,5 @@ If the current directory is part of a workspace, navigates to it.`,
 }
 
 func guiWorkspaceURL(id string) string {
-	return runState.URL + "#/workspaces/" + url.PathEscape(id)
+	return runState.URL + "/#/workspaces/" + url.PathEscape(id)
 }

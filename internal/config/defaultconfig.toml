@@ -1,0 +1,27 @@
+## Exo keeps all of its files under an EXO_HOME directory.
+## This directory defaults to ~/.exo, but another directory may be configured.
+# homeDir = "/path/to/exo-home"
+
+## Binary directory. This defaults to <home-dir>/bin.
+# binDir = "/path/to/exo-home/bin"
+
+## Var directory for durable data. This defaults to <home-dir>/var.
+# varDir = "/path/to/exo-home/var"
+
+## Run directory for ephemeral data. This defaults to <home-dir>/run.
+# runDir = "/path/to/exo-home/run"
+
+## Logging subsystem that collects logs from running services.
+# [log]
+## Port that the internal log collection service binds to.
+# syslogPort = 5140
+
+## Web UI.
+# [gui]
+## (DEV only) Port that the Vite server binds to.
+# port = 5140
+
+## Telemetry subsystem that collects and reports statistics back to Deref.
+# [telemetry]
+## Telemetry is enabled by default. To disable, ensure that disable = true is set
+# disable = true

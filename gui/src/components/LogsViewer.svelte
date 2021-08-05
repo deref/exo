@@ -145,7 +145,7 @@
 
   td {
     padding: 0 0.3em;
-    white-space: nowrap;
+    white-space: pre;
     color: #333333;
   }
 

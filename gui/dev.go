@@ -4,16 +4,18 @@ package gui
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	goutil "net/http/httputil"
 	"net/url"
 
-	"github.com/deref/exo/util/errutil"
-	exoutil "github.com/deref/exo/util/httputil"
+	"github.com/deref/exo/internal/config"
+	"github.com/deref/exo/internal/util/errutil"
+	exoutil "github.com/deref/exo/internal/util/httputil"
 )
 
-func NewHandler(ctx context.Context) http.Handler {
-	guiURL, err := url.Parse("http://localhost:3000/")
+func NewHandler(ctx context.Context, cfg config.GUIConfig) http.Handler {
+	guiURL, err := url.Parse(fmt.Sprintf("http://localhost:%d/", cfg.Port))
 	if err != nil {
 		panic(err)
 	}

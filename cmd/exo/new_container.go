@@ -3,10 +3,10 @@ package main
 import (
 	"fmt"
 
-	"github.com/deref/exo/core/api"
-	"github.com/deref/exo/providers/docker/components/container"
-	"github.com/deref/exo/providers/docker/compose"
-	"github.com/deref/exo/util/yamlutil"
+	"github.com/deref/exo/internal/core/api"
+	"github.com/deref/exo/internal/providers/docker/components/container"
+	"github.com/deref/exo/internal/providers/docker/compose"
+	"github.com/deref/exo/internal/util/yamlutil"
 	"github.com/spf13/cobra"
 )
 

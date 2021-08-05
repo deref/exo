@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/deref/exo/core/api"
+	"github.com/deref/exo/internal/core/api"
 	"github.com/spf13/cobra"
 )
 
@@ -21,21 +21,20 @@ If no components are specified, refreshes all components in the current workspac
 		ctx := newContext()
 		ensureDaemon()
 		cl := newClient()
+		kernel := cl.Kernel()
 		workspace := requireWorkspace(ctx, cl)
 
-		if len(args) == 0 {
-			_, err := workspace.RefreshAllComponents(ctx, &api.RefreshAllComponentsInput{})
-			return err
-		} else {
-			// TODO: RefreshComponent should be a bulk operation.
-			for _, ref := range args {
-				if _, err := workspace.RefreshComponent(ctx, &api.RefreshComponentInput{
-					Ref: ref,
-				}); err != nil {
-					return fmt.Errorf("refreshing %q: %w", ref, err)
-				}
-			}
-			return nil
+		var input api.RefreshComponentsInput
+		if len(args) > 0 {
+			input.Refs = args
 		}
+
+		output, err := workspace.RefreshComponents(ctx, &input)
+		if err != nil {
+			return fmt.Errorf("refreshing: %w", err)
+		}
+
+		showProgress(ctx, kernel, output.JobID)
+		return nil
 	},
 }

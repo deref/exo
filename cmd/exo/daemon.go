@@ -5,13 +5,14 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"strings"
 	"syscall"
 	"time"
 
-	"github.com/deref/exo/core/client"
-	"github.com/deref/exo/util/cmdutil"
-	"github.com/deref/exo/util/jsonutil"
-	"github.com/deref/exo/util/osutil"
+	"github.com/deref/exo/internal/core/client"
+	"github.com/deref/exo/internal/util/cmdutil"
+	"github.com/deref/exo/internal/util/jsonutil"
+	"github.com/deref/exo/internal/util/osutil"
 	"github.com/spf13/cobra"
 )
 
@@ -26,7 +27,7 @@ var daemonCmd = &cobra.Command{
 
 Since most commands implicitly start the exo daemon, users generally do not
 have to invoke this themselves.`,
-	Args: cobra.ExactArgs(0),
+	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ensureDaemon()
 		return nil
@@ -71,7 +72,7 @@ func ensureDaemon() {
 
 	// Write run state.
 	runState.Pid = cmd.Process.Pid
-	runState.URL = fmt.Sprintf("http://%s/", cmdutil.GetAddr())
+	runState.URL = fmt.Sprintf("http://%s", cmdutil.GetAddr(cfg))
 	if err := jsonutil.MarshalFile(knownPaths.RunStateFile, runState); err != nil {
 		cmdutil.Fatalf("writing run state: %w", err)
 	}
@@ -101,8 +102,15 @@ func loadRunState() error {
 }
 
 func newClient() *client.Root {
+	url := cfg.Client.URL
+	if url == "" {
+		url = runState.URL
+	}
+	// Old state files may contain a url ending in "/".
+	url = strings.TrimSuffix(url, "/") + "/_exo/"
+
 	return &client.Root{
 		HTTP: http.DefaultClient,
-		URL:  runState.URL + "_exo/",
+		URL:  url,
 	}
 }
