@@ -34,7 +34,6 @@ If no components are specified, refreshes all components in the current workspac
 			return fmt.Errorf("refreshing: %w", err)
 		}
 
-		showProgress(ctx, kernel, output.JobID)
-		return nil
+		return watchJob(ctx, kernel, output.JobID)
 	},
 }
