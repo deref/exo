@@ -60,7 +60,8 @@ func main() {
 	}
 
 	taskTracker := &task.TaskTracker{
-		Store: taskserver.NewTaskStore(),
+		Store:  taskserver.NewTaskStore(),
+		Logger: logger,
 	}
 
 	serverCfg := &server.Config{

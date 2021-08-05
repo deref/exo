@@ -120,7 +120,8 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	}
 
 	taskTracker := &task.TaskTracker{
-		Store: taskserver.NewTaskStore(),
+		Store:  taskserver.NewTaskStore(),
+		Logger: logger,
 	}
 
 	kernelCfg := &kernel.Config{

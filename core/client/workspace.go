@@ -78,11 +78,6 @@ func (c *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (output *a
 	return
 }
 
-func (c *Workspace) RefreshAllComponents(ctx context.Context, input *api.RefreshAllComponentsInput) (output *api.RefreshAllComponentsOutput, err error) {
-	err = c.client.Invoke(ctx, "refresh-all-components", input, &output)
-	return
-}
-
 func (c *Workspace) Resolve(ctx context.Context, input *api.ResolveInput) (output *api.ResolveOutput, err error) {
 	err = c.client.Invoke(ctx, "resolve", input, &output)
 	return
@@ -103,8 +98,8 @@ func (c *Workspace) UpdateComponent(ctx context.Context, input *api.UpdateCompon
 	return
 }
 
-func (c *Workspace) RefreshComponent(ctx context.Context, input *api.RefreshComponentInput) (output *api.RefreshComponentOutput, err error) {
-	err = c.client.Invoke(ctx, "refresh-component", input, &output)
+func (c *Workspace) RefreshComponents(ctx context.Context, input *api.RefreshComponentsInput) (output *api.RefreshComponentsOutput, err error) {
+	err = c.client.Invoke(ctx, "refresh-components", input, &output)
 	return
 }
 

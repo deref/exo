@@ -29,9 +29,19 @@ func (sto *TaskStore) DescribeTasks(ctx context.Context, input *api.DescribeTask
 	sto.mx.Lock()
 	defer sto.mx.Unlock()
 
-	descriptions := make([]api.TaskDescription, 0, len(sto.tasks))
+	var jobIDs map[string]bool
+	if input.JobIDs != nil {
+		jobIDs = make(map[string]bool, len(input.JobIDs))
+		for _, jobID := range input.JobIDs {
+			jobIDs[jobID] = true
+		}
+	}
+
+	var descriptions []api.TaskDescription
 	for _, task := range sto.tasks {
-		descriptions = append(descriptions, *task)
+		if jobIDs == nil || jobIDs[task.JobID] {
+			descriptions = append(descriptions, *task)
+		}
 	}
 	sort.Slice(descriptions, func(i, j int) bool {
 		return strings.Compare(descriptions[i].ID, descriptions[j].ID) < 0
@@ -47,7 +57,7 @@ func (sto *TaskStore) CreateTask(ctx context.Context, input *api.CreateTaskInput
 	defer sto.mx.Unlock()
 
 	id := gensym.RandomBase32()
-	desc := api.TaskDescription{
+	desc := &api.TaskDescription{
 		ID:       id,
 		ParentID: input.ParentID,
 		Name:     input.Name,
@@ -64,9 +74,11 @@ func (sto *TaskStore) CreateTask(ctx context.Context, input *api.CreateTaskInput
 		}
 		desc.JobID = parent.JobID
 	}
+	sto.tasks[id] = desc
 
 	return &api.CreateTaskOutput{
-		ID: id,
+		ID:    id,
+		JobID: desc.JobID,
 	}, nil
 }
 

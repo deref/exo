@@ -142,27 +142,6 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 	}, nil
 }
 
-func (ws *Workspace) RefreshAllComponents(ctx context.Context, input *api.RefreshAllComponentsInput) (*api.RefreshAllComponentsOutput, error) {
-	components, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{})
-	if err != nil {
-		return nil, err
-	}
-	if err := ws.TaskTracker.RunFunc(ctx, "refresh", func(refreshTask *task.Task) error {
-		for _, component := range components.Components {
-			refreshTask.GoFunc(component.Name, func(*task.Task) error {
-				if err := ws.refreshComponent(ctx, ws.Store, component); err != nil {
-					return fmt.Errorf("refreshing %q: %w", component.Name, err)
-				}
-				return nil
-			})
-		}
-		return nil
-	}); err != nil {
-		return nil, err
-	}
-	return &api.RefreshAllComponentsOutput{}, nil
-}
-
 func (ws *Workspace) Resolve(ctx context.Context, input *api.ResolveInput) (*api.ResolveOutput, error) {
 	storeOutput, err := ws.Store.Resolve(ctx, &state.ResolveInput{
 		WorkspaceID: ws.ID,
@@ -331,28 +310,36 @@ func (ws *Workspace) updateComponent(ctx context.Context, oldComponent api.Compo
 	return nil
 }
 
-func (ws *Workspace) RefreshComponent(ctx context.Context, input *api.RefreshComponentInput) (*api.RefreshComponentOutput, error) {
-	id, err := ws.resolveRef(ctx, input.Ref)
-	if err != nil {
-		return nil, fmt.Errorf("resolving ref: %w", err)
+func (ws *Workspace) RefreshComponents(ctx context.Context, input *api.RefreshComponentsInput) (*api.RefreshComponentsOutput, error) {
+	var ids []string
+	if input.Refs != nil {
+		var err error
+		ids, err = ws.resolveRefs(ctx, input.Refs)
+		if err != nil {
+			return nil, fmt.Errorf("resolving refs: %w", err)
+		}
 	}
 
 	describeOutput, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{
-		IDs: []string{id},
+		IDs: ids,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("describing components: %w", err)
 	}
-	if len(describeOutput.Components) < 1 {
-		return nil, fmt.Errorf("no component %q", id)
-	}
-	component := describeOutput.Components[0]
 
-	if err := ws.refreshComponent(ctx, ws.Store, component); err != nil {
-		return nil, err
-	}
+	refreshTask := ws.TaskTracker.StartTask(ctx, "refresh")
+	go func() {
+		defer refreshTask.Finish()
+		for _, component := range describeOutput.Components {
+			refreshTask.Go(component.Name, func(*task.Task) error {
+				return ws.refreshComponent(ctx, ws.Store, component)
+			})
+		}
+	}()
 
-	return &api.RefreshComponentOutput{}, err
+	return &api.RefreshComponentsOutput{
+		JobID: refreshTask.JobID(),
+	}, err
 }
 
 func (ws *Workspace) refreshComponent(ctx context.Context, store state.Store, component api.ComponentDescription) error {
@@ -372,15 +359,26 @@ func (ws *Workspace) DisposeComponent(ctx context.Context, input *api.DisposeCom
 }
 
 func (ws *Workspace) resolveRef(ctx context.Context, ref string) (string, error) {
-	resolveOutput, err := ws.Resolve(ctx, &api.ResolveInput{Refs: []string{ref}})
+	resolved, err := ws.resolveRefs(ctx, []string{ref})
 	if err != nil {
 		return "", err
 	}
-	id := resolveOutput.IDs[0]
-	if id == nil {
-		return "", errutil.HTTPErrorf(http.StatusBadRequest, "unresolvable: %q", ref)
+	return resolved[0], nil
+}
+
+func (ws *Workspace) resolveRefs(ctx context.Context, refs []string) ([]string, error) {
+	resolveOutput, err := ws.Resolve(ctx, &api.ResolveInput{Refs: refs})
+	if err != nil {
+		return nil, err
 	}
-	return *id, nil
+	results := make([]string, len(refs))
+	for i, id := range resolveOutput.IDs {
+		if id == nil {
+			return nil, errutil.HTTPErrorf(http.StatusBadRequest, "unresolvable: %q", refs[i])
+		}
+		results[i] = *id
+	}
+	return results, nil
 }
 
 func (ws *Workspace) disposeComponent(ctx context.Context, id string) error {

@@ -17,6 +17,9 @@ type TaskStore interface {
 }
 
 type DescribeTasksInput struct {
+
+	// If supplied, filters tasks by job.
+	JobIDs []string `json:"jobIds"`
 }
 
 type DescribeTasksOutput struct {
@@ -29,7 +32,8 @@ type CreateTaskInput struct {
 }
 
 type CreateTaskOutput struct {
-	ID string `json:"id"`
+	ID    string `json:"id"`
+	JobID string `json:"jobId"`
 }
 
 type UpdateTaskInput struct {

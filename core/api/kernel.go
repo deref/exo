@@ -76,6 +76,9 @@ type PingOutput struct {
 }
 
 type DescribeTasksInput struct {
+
+	// If supplied, filters tasks by job.
+	JobIDs []string `json:"jobIds"`
 }
 
 type DescribeTasksOutput struct {

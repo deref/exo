@@ -40,6 +40,10 @@ interface "kernel" {
   }
 
   method "describe-tasks" {
+    input "job-ids" "[]string" {
+      doc = "If supplied, filters tasks by job."
+    }
+
     output "tasks" "[]TaskDescription" {}
   }
 }

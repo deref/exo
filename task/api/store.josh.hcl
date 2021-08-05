@@ -1,6 +1,9 @@
 interface "task-store" {
 
   method "describe-tasks" {
+    input "job-ids" "[]string" {
+      doc = "If supplied, filters tasks by job."
+    }
     output "tasks" "[]TaskDescription" {}
   }
 
@@ -9,6 +12,7 @@ interface "task-store" {
     input "name" "string" {}
 
     output "id" "string" {}
+    output "job-id" "string" {}
   }
 
   method "update-task" {

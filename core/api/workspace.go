@@ -53,8 +53,6 @@ type Workspace interface {
 	Destroy(context.Context, *DestroyInput) (*DestroyOutput, error)
 	// Performs creates, updates, refreshes, disposes, as needed.
 	Apply(context.Context, *ApplyInput) (*ApplyOutput, error)
-	// Refreshes all components.
-	RefreshAllComponents(context.Context, *RefreshAllComponentsInput) (*RefreshAllComponentsOutput, error)
 	// Resolves a reference in to an ID.
 	Resolve(context.Context, *ResolveInput) (*ResolveOutput, error)
 	// Returns component descriptions.
@@ -63,8 +61,8 @@ type Workspace interface {
 	CreateComponent(context.Context, *CreateComponentInput) (*CreateComponentOutput, error)
 	// Replaces the spec on a component and triggers an update lifecycle event.
 	UpdateComponent(context.Context, *UpdateComponentInput) (*UpdateComponentOutput, error)
-	// Triggers a refresh lifecycle event to update the component's state.
-	RefreshComponent(context.Context, *RefreshComponentInput) (*RefreshComponentOutput, error)
+	// Asycnhronously refreshes component state.
+	RefreshComponents(context.Context, *RefreshComponentsInput) (*RefreshComponentsOutput, error)
 	// Marks a component as disposed and triggers the dispose lifecycle event. After being disposed, the component record will be deleted asynchronously.
 	DisposeComponent(context.Context, *DisposeComponentInput) (*DisposeComponentOutput, error)
 	// Disposes a component and then awaits the record to be deleted synchronously.
@@ -107,12 +105,6 @@ type ApplyOutput struct {
 	Warnings []string `json:"warnings"`
 }
 
-type RefreshAllComponentsInput struct {
-}
-
-type RefreshAllComponentsOutput struct {
-}
-
 type ResolveInput struct {
 	Refs []string `json:"refs"`
 }
@@ -151,11 +143,14 @@ type UpdateComponentInput struct {
 type UpdateComponentOutput struct {
 }
 
-type RefreshComponentInput struct {
-	Ref string `json:"ref"`
+type RefreshComponentsInput struct {
+
+	// If omitted, refreshes all components.
+	Refs []string `json:"refs"`
 }
 
-type RefreshComponentOutput struct {
+type RefreshComponentsOutput struct {
+	JobID string `json:"jobId"`
 }
 
 type DisposeComponentInput struct {
@@ -254,9 +249,6 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	b.AddMethod("apply", func(req *http.Request) interface{} {
 		return factory(req).Apply
 	})
-	b.AddMethod("refresh-all-components", func(req *http.Request) interface{} {
-		return factory(req).RefreshAllComponents
-	})
 	b.AddMethod("resolve", func(req *http.Request) interface{} {
 		return factory(req).Resolve
 	})
@@ -269,8 +261,8 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	b.AddMethod("update-component", func(req *http.Request) interface{} {
 		return factory(req).UpdateComponent
 	})
-	b.AddMethod("refresh-component", func(req *http.Request) interface{} {
-		return factory(req).RefreshComponent
+	b.AddMethod("refresh-components", func(req *http.Request) interface{} {
+		return factory(req).RefreshComponents
 	})
 	b.AddMethod("dispose-component", func(req *http.Request) interface{} {
 		return factory(req).DisposeComponent

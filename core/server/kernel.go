@@ -155,7 +155,9 @@ func restart(ctx context.Context) {
 }
 
 func (kern *Kernel) DescribeTasks(ctx context.Context, input *api.DescribeTasksInput) (*api.DescribeTasksOutput, error) {
-	underlying, err := kern.TaskTracker.Store.DescribeTasks(ctx, &taskapi.DescribeTasksInput{})
+	underlying, err := kern.TaskTracker.Store.DescribeTasks(ctx, &taskapi.DescribeTasksInput{
+		JobIDs: input.JobIDs,
+	})
 	if err != nil {
 		return nil, err
 	}
