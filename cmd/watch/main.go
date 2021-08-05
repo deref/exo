@@ -176,7 +176,10 @@ func main() {
 					}
 				}
 
-				return watcher.Add(path)
+				if err := watcher.Add(path); err != nil {
+					return fmt.Errorf("watching %q: %w", path, err)
+				}
+				return nil
 			}
 
 			return nil
