@@ -15,6 +15,7 @@ import (
 
 	core "github.com/deref/exo/internal/core/api"
 	"github.com/deref/exo/internal/util/errutil"
+	"github.com/deref/exo/internal/util/osutil"
 	"github.com/deref/exo/internal/util/which"
 )
 
@@ -148,18 +149,24 @@ func (p *Process) Stop(ctx context.Context, input *core.StopInput) (*core.StopOu
 	return &core.StopOutput{}, nil
 }
 
+const DefaultShutdownGracePeriod = 5 * time.Second
+
 func (p *Process) stop() {
 	if p.SupervisorPid == 0 {
 		return
 	}
-	proc, err := os.FindProcess(p.SupervisorPid)
-	if err != nil {
-		panic(err)
+
+	timeout := DefaultShutdownGracePeriod
+	if p.ShutdownGracePeriodSeconds != nil {
+		timeout = time.Duration(*p.ShutdownGracePeriodSeconds) * time.Second
 	}
+
+	if err := osutil.TerminateProcessGroupWithTimeout(p.SupervisorPid, timeout); err != nil {
+		p.Logger.Infof("terminating process: %w", err)
+	}
+
 	p.Pid = 0
-	if err := proc.Signal(os.Interrupt); err != nil {
-		p.Logger.Infof("interrupt failed: %w", err)
-	}
+	p.SupervisorPid = 0
 }
 
 func (p *Process) Restart(ctx context.Context, input *core.RestartInput) (*core.RestartOutput, error) {
