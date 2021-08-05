@@ -48,7 +48,7 @@ func main() {
 		cmdutil.Fatalf("expected command to execute")
 	}
 
-	reload := make(chan struct{}, 1)
+	changed := make(chan string, 1)
 	childStarted := make(chan struct{}, 1)
 	childStopped := make(chan struct{}, 1)
 	stopSignals := make(chan os.Signal)
@@ -77,11 +77,16 @@ func main() {
 				// Did not receive a stop signal since last iteration - continue.
 			}
 
-			select {
-			case <-reload:
-				// Got additional reload notifications - ignore.
-			default:
-				// No additional notifications.
+		delay:
+			for {
+				timeout := time.After(50 * time.Millisecond)
+				select {
+				case <-changed:
+					// Got additional change notifications - ignore.
+				case <-timeout:
+					// No additional notifications.
+					break delay
+				}
 			}
 
 			switch state {
@@ -91,8 +96,8 @@ func main() {
 
 			case runStateRunning:
 				select {
-				case <-reload:
-					fmt.Println("Files changed. Restarting process.")
+				case name := <-changed:
+					fmt.Printf("%q changed. Restarting process.\n", name)
 					gracefullyShutdown(child, syscall.SIGTERM)
 					state = runStateRestarting
 
@@ -143,8 +148,8 @@ func main() {
 		for {
 			select {
 			// Watch for file change events.
-			case <-watcher.Events:
-				reload <- struct{}{}
+			case event := <-watcher.Events:
+				changed <- event.Name
 
 			// Exit on error.
 			case err := <-watcher.Errors:
