@@ -108,8 +108,7 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 				if err := cmd.Process.Signal(sig); err != nil {
 					break
 				}
-				// After some timeout send a SIGKILL to the entire process group
-				// (passed to kill as a negative value) and ignore any error.
+				// After some timeout kill the entire process group and ignore errors.
 				time.Sleep(time.Second * time.Duration(timeoutSeconds))
 				pgrp := syscall.Getpgrp()
 				_ = osutil.KillProcessGroup(pgrp)
