@@ -2,7 +2,6 @@
   import * as router from 'svelte-spa-router';
   import IconButton from './IconButton.svelte';
   import VersionInfo from './VersionInfo.svelte';
-  import LeftNav from './LeftNav.svelte';
 
   import Feedback from './mono/feedback.svelte';
   import GoBack from './mono/leftarrow.svelte';
@@ -42,10 +41,7 @@
     </div>
   </header>
   <div>
-    <LeftNav workspaceId="xbe1fc9j61kkk3d46dtjmkepnc" active="Dashboard" />
-    <section>
-      <slot />
-    </section>
+    <slot />
   </div>
   <footer>
     <VersionInfo />
@@ -95,16 +91,6 @@
     position: relative;
     z-index: 2;
     overflow: hidden;
-    display: grid;
-    grid-template-columns: max-content auto;
-    gap: 1px;
-  }
-
-  div > section {
-    position: relative;
-    overflow-y: auto;
-    overflow-x: hidden;
-    background: #ffffff;
   }
 
   footer {
