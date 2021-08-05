@@ -1,0 +1,18 @@
+/* Avoid awful default scrollbars in most OS/Browsers, especially in horizontally scrolling text displays. */
+
+::-webkit-scrollbar {
+  width: 8px;
+  height: 4px;
+  background: rgba(96, 96, 96, 0.1);
+  margin: 4px;
+  position: relative;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(96, 96, 96, 0.33);
+  border-radius: 1px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(96, 96, 96, 0.67);
+}

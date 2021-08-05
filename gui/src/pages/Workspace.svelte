@@ -2,6 +2,7 @@
   import Layout from '../components/Layout.svelte';
   import ProcessList from '../components/ProcessList.svelte';
   import LogsViewer from '../components/LogsViewer.svelte';
+  import WithLeftWorkspaceNav from '../components/WithLeftWorkspaceNav.svelte';
   import { api } from '../lib/api';
 
   export let params = { workspace: '' };
@@ -11,10 +12,12 @@
 </script>
 
 <Layout>
-  <section>
-    <ProcessList {workspace} {workspaceId} />
-    <LogsViewer {workspace} {workspaceId} />
-  </section>
+  <WithLeftWorkspaceNav {workspaceId} active="Dashboard">
+    <section>
+      <ProcessList {workspace} {workspaceId} />
+      <LogsViewer {workspace} {workspaceId} />
+    </section>
+  </WithLeftWorkspaceNav>
 </Layout>
 
 <style>

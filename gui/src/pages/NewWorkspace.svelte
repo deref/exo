@@ -50,6 +50,8 @@
   section {
     display: flex;
     flex-direction: column;
+    background: #ffffff;
+    padding-bottom: 60px;
     height: 100%;
     width: 100%;
     align-items: center;

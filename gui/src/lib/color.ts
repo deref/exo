@@ -9,14 +9,14 @@ export const hashDegree = (s: string) =>
   Math.round(hashString(s) * Math.PI * 100) % 360;
 
 export const textColor = (deg: number) => `hsl(${deg}, 95%, 30%)`;
-export const borderColor = (deg: number) => `hsl(${deg}, 65%, 75%)`;
-export const bgColor = (deg: number) => `hsl(${deg}, 65%, 90%)`;
+export const bgColor = (deg: number) => `hsl(${deg}, 65%, 92%)`;
+export const bgHoverColor = (deg: number) => `hsl(${deg}, 65%, 87%)`;
 
 // This computes a HTML style attribute string for colored logs.
 export const logStyleFromHash = (s: string) => {
   const d = hashDegree(s);
   // Combine styles into one string.
-  return `--log-color:${textColor(d)};--log-border-color:${borderColor(
+  return `--log-color:${textColor(d)};--log-bg-color:${bgColor(
     d,
-  )};--log-bg-color:${bgColor(d)}`;
+  )};--log-bg-hover-color:${bgHoverColor(d)}`;
 };

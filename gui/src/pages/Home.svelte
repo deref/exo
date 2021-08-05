@@ -38,7 +38,9 @@
 
 <style>
   section {
+    background: #ffffff;
     padding: 30px;
+    min-height: 100%;
   }
 
   h2 {

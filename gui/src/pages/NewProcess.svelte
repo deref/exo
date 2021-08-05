@@ -11,11 +11,13 @@
   import CodeBlock from '../components/CodeBlock.svelte';
   import ErrorLabel from '../components/ErrorLabel.svelte';
   import ShellEditor from '../components/ShellEditor.svelte';
+  import WithLeftWorkspaceNav from '../components/WithLeftWorkspaceNav.svelte';
 
   export let params = { workspace: '' };
 
-  const workspace = api.workspace(params.workspace);
-  const workspaceRoute = `/workspaces/${encodeURIComponent(params.workspace)}`;
+  const workspaceId = params.workspace;
+  const workspace = api.workspace(workspaceId);
+  const workspaceRoute = `/workspaces/${encodeURIComponent(workspaceId)}`;
 
   let name: string = '';
 
@@ -48,97 +50,98 @@
 </script>
 
 <Layout showBackButton backButtonRoute={workspaceRoute}>
-  <form
-    on:submit|preventDefault={async () => {
-      updateFields();
-      try {
-        const { id } = await workspace.createProcess(name, {
-          directory,
-          environment,
-          program,
-          arguments: args,
-        });
-        setLogVisibility(id, true);
+  <WithLeftWorkspaceNav {workspaceId} active="Dashboard">
+    <form
+      on:submit|preventDefault={async () => {
+        updateFields();
+        try {
+          const { id } = await workspace.createProcess(name, {
+            directory,
+            environment,
+            program,
+            arguments: args,
+          });
+          setLogVisibility(id, true);
 
-        router.push(workspaceRoute);
-      } catch (ex) {
-        if (!isClientError(ex)) {
-          throw ex;
+          router.push(workspaceRoute);
+        } catch (ex) {
+          if (!isClientError(ex)) {
+            throw ex;
+          }
+          error = ex;
         }
-        error = ex;
-      }
-    }}
-  >
-    <div>
-      <label for="name">Name:</label>
-      <Textbox id="name" name="name" bind:value={name} />
-    </div>
-    <div class="edit-as">
-      <span>Edit as:</span>
-      <button
-        class:selected={!structured}
-        on:click|preventDefault={(e) => {
-          if (!structured) {
-            return;
-          }
-          structured = false;
-          updateScript();
-        }}
-      >
-        script
-      </button>
-      <button
-        class:selected={structured}
-        on:click|preventDefault={() => {
-          if (structured) {
-            return;
-          }
-          structured = true;
-          updateFields();
-        }}
-      >
-        fields
-      </button>
-    </div>
-    {#if structured}
+      }}
+    >
       <div>
-        <label for="program">Program:</label>
-        <Textbox id="program" name="program" bind:value={program} />
+        <label for="name">Name:</label>
+        <Textbox id="name" name="name" bind:value={name} />
       </div>
-      <div>
-        <label for="args">Arguments: (one per line)</label>
-        <ArgumentsInput id="args" name="args" bind:value={args} />
+      <div class="edit-as">
+        <span>Edit as:</span>
+        <button
+          class:selected={!structured}
+          on:click|preventDefault={(e) => {
+            if (!structured) {
+              return;
+            }
+            structured = false;
+            updateScript();
+          }}
+        >
+          script
+        </button>
+        <button
+          class:selected={structured}
+          on:click|preventDefault={() => {
+            if (structured) {
+              return;
+            }
+            structured = true;
+            updateFields();
+          }}
+        >
+          fields
+        </button>
       </div>
-      <div>
-        <label for="directory">Working Directory:</label>
-        <Textbox id="directory" name="directory" bind:value={directory} />
-      </div>
-      <div>
-        <label for="environment">Environment:</label>
-        <EnvironmentInput
-          id="environment"
-          name="environment"
-          bind:environment
-        />
-      </div>
-      <div class="buttons">
-        <Button type="submit">Create Process</Button>
-      </div>
-    {:else}
-      <div class="columns">
+      {#if structured}
         <div>
-          <div>
-            <label for="script">Script:</label>
-            <ShellEditor id="script" bind:value={script} />
-          </div>
-          <div class="buttons">
-            <Button type="submit">Create Process</Button>
-          </div>
+          <label for="program">Program:</label>
+          <Textbox id="program" name="program" bind:value={program} />
         </div>
         <div>
-          <label>Example:</label>
-          <CodeBlock
-            >{`# Export environment variables.
+          <label for="args">Arguments: (one per line)</label>
+          <ArgumentsInput id="args" name="args" bind:value={args} />
+        </div>
+        <div>
+          <label for="directory">Working Directory:</label>
+          <Textbox id="directory" name="directory" bind:value={directory} />
+        </div>
+        <div>
+          <label for="environment">Environment:</label>
+          <EnvironmentInput
+            id="environment"
+            name="environment"
+            bind:environment
+          />
+        </div>
+        <div class="buttons">
+          <Button type="submit">Create Process</Button>
+        </div>
+      {:else}
+        <div class="columns">
+          <div>
+            <div>
+              <label for="script">Script:</label>
+              <ShellEditor id="script" bind:value={script} />
+            </div>
+            <div class="buttons">
+              <Button type="submit">Create Process</Button>
+            </div>
+          </div>
+          <div>
+            <label>Example:</label>
+            <CodeBlock
+              >{`# Export environment variables.
 export DEBUG=true
 
 # Set working directory.
@@ -147,12 +150,13 @@ cd /
 # Specify command with arguments.
 my-app --port 4000
 `}
-          </CodeBlock>
+            </CodeBlock>
+          </div>
         </div>
-      </div>
-    {/if}
-    <ErrorLabel value={error} />
-  </form>
+      {/if}
+      <ErrorLabel value={error} />
+    </form>
+  </WithLeftWorkspaceNav>
 </Layout>
 
 <style>

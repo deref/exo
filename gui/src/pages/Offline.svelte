@@ -1,7 +1,7 @@
 <script>
   import { api } from '../lib/api';
   import { onDestroy, onMount } from 'svelte';
-
+  import Layout from '../components/Layout.svelte';
   import Code from '../components/Code.svelte';
 
   let pingInterval = null;
@@ -13,16 +13,18 @@
   });
 </script>
 
-<main>
-  <div>
-    <h3>
-      <code>exo</code> server is offline
-    </h3>
-    <p class="hint">
-      Run <Code>exo daemon</Code> in your terminal to start.
-    </p>
-  </div>
-</main>
+<Layout>
+  <main>
+    <div>
+      <h3>
+        <code>exo</code> server is offline
+      </h3>
+      <p class="hint">
+        Run <Code>exo daemon</Code> in your terminal to start.
+      </p>
+    </div>
+  </main>
+</Layout>
 
 <style>
   main {
@@ -34,6 +36,8 @@
     position: absolute;
     height: 100%;
     width: 100%;
+    background: #ffffff;
+    padding-bottom: 60px;
   }
   p,
   h3 {

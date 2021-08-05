@@ -11,11 +11,13 @@
   } from '../lib/process/store';
   import type { RemoteData } from '../lib/api';
   import BytesLabel from '../components/BytesLabel.svelte';
+  import WithLeftWorkspaceNav from '../components/WithLeftWorkspaceNav.svelte';
   import type { ProcessDescription } from 'src/lib/process/types';
   export let params = { workspace: '', process: '' };
 
   const workspaceId = params.workspace;
   const workspace = api.workspace(workspaceId);
+  const workspaceRoute = `/workspaces/${encodeURIComponent(workspaceId)}`;
 
   const processId = params.process;
 
@@ -62,88 +64,81 @@
   });
 </script>
 
-<Layout>
-  <section>
-    {#if process}
-      <div>
-        <div id="heading">
-          <button
-            class="back-button"
-            on:click={() =>
-              void router.push(
-                `#/workspaces/${encodeURIComponent(workspaceId)}/`,
-              )}
-          >
-            🠔 Back
-          </button>
-          <h1>{process.name}</h1>
-        </div>
-        <h3>Status</h3>
-        {#if process.running}
-          <table>
-            <tr>
-              <td>Status</td>
-              <td>{process.running ? 'Running' : 'Stopped'}</td>
-            </tr>
-            <tr>
-              <td>CPU</td>
-              <td>{process.cpuPercent.toFixed(2)}%</td>
-              <td
-                ><svg
-                  bind:this={sparklineSvg}
-                  class="sparkline"
-                  width="100"
-                  height="30"
-                  stroke-width="3"
-                /></td
-              >
-            </tr>
-            <tr>
-              <td>Resident Memory</td>
-              <td><BytesLabel value={process.residentMemory} /></td>
-            </tr>
-            <tr>
-              <td>Started at</td>
-              <td
-                ><span title={new Date(process.createTime).toISOString()}
-                  >{new Date(process.createTime).toLocaleTimeString()}</span
-                ></td
-              >
-              <td
-                ><svg
-                  class="sparkline"
-                  width="100"
-                  height="30"
-                  stroke-width="3"
-                /></td
-              >
-            </tr>
-            <tr>
-              <td>Local Ports</td>
-              <td>{process.ports?.join(', ') ?? 'None'}</td>
-            </tr>
-            <tr>
-              <td>Children</td>
-              <td>{process.childrenExecutables?.join(', ') ?? 'None'}</td>
-            </tr>
-          </table>
-          <h3>Environment</h3>
-          <table>
-            {#each Object.entries(process.envVars ?? {}) as [name, val] (name)}
+<Layout showBackButton backButtonRoute={workspaceRoute}>
+  <WithLeftWorkspaceNav {workspaceId} active="Dashboard">
+    <section>
+      {#if process}
+        <div>
+          <div id="heading">
+            <h1>{process.name}</h1>
+          </div>
+          <h3>Status</h3>
+          {#if process.running}
+            <table>
               <tr>
-                <td>{name}</td>
-                <td><code><pre>{val}</pre></code></td>
+                <td>Status</td>
+                <td>{process.running ? 'Running' : 'Stopped'}</td>
               </tr>
-            {/each}
-          </table>
-        {:else}
-          <p>Process is not running</p>
-        {/if}
-      </div>
-    {:else}
-      Loading...
-    {/if}
-  </section>
+              <tr>
+                <td>CPU</td>
+                <td>{process.cpuPercent.toFixed(2)}%</td>
+                <td
+                  ><svg
+                    bind:this={sparklineSvg}
+                    class="sparkline"
+                    width="100"
+                    height="30"
+                    stroke-width="3"
+                  /></td
+                >
+              </tr>
+              <tr>
+                <td>Resident Memory</td>
+                <td><BytesLabel value={process.residentMemory} /></td>
+              </tr>
+              <tr>
+                <td>Started at</td>
+                <td
+                  ><span title={new Date(process.createTime).toISOString()}
+                    >{new Date(process.createTime).toLocaleTimeString()}</span
+                  ></td
+                >
+                <td
+                  ><svg
+                    class="sparkline"
+                    width="100"
+                    height="30"
+                    stroke-width="3"
+                  /></td
+                >
+              </tr>
+              <tr>
+                <td>Local Ports</td>
+                <td>{process.ports?.join(', ') ?? 'None'}</td>
+              </tr>
+              <tr>
+                <td>Children</td>
+                <td>{process.childrenExecutables?.join(', ') ?? 'None'}</td>
+              </tr>
+            </table>
+            <h3>Environment</h3>
+            <table>
+              {#each Object.entries(process.envVars ?? {}) as [name, val] (name)}
+                <tr>
+                  <td>{name}</td>
+                  <td><code><pre>{val}</pre></code></td>
+                </tr>
+              {/each}
+            </table>
+          {:else}
+            <p>Process is not running</p>
+          {/if}
+        </div>
+      {:else}
+        Loading...
+      {/if}
+    </section>
+  </WithLeftWorkspaceNav>
 </Layout>
 
 <style>
@@ -156,12 +151,6 @@
   #heading {
     display: flex;
     align-items: center;
-  }
-
-  .back-button {
-    padding: 0.5em;
-    padding-bottom: 0.3em;
-    margin-right: 1em;
   }
 
   .sparkline {
