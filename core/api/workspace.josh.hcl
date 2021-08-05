@@ -34,11 +34,6 @@ interface "workspace" {
     output "warnings" "[]string" {}
   }
 
-  # TODO: Should use the standard "refresh" lifecycle method.
-  method "refresh-all-components" {
-    doc = "Refreshes all components."
-  }
-
   method "resolve" {
     doc = "Resolves a reference in to an ID."
 
@@ -78,10 +73,14 @@ interface "workspace" {
     input "spec" "string" {}
   }
 
-  method "refresh-component" {
-    doc = "Triggers a refresh lifecycle event to update the component's state."
+  method "refresh-components" {
+    doc = "Asycnhronously refreshes component state."
 
-    input "ref" "string" {}
+    input "refs" "[]string" {
+      doc = "If omitted, refreshes all components."
+    }
+    
+    output "job-id" "string" {}
   }
 
   method "dispose-component" {

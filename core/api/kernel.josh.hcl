@@ -38,4 +38,27 @@ interface "kernel" {
   method "ping" {
     doc = "Checks whether server is up."
   }
+
+  method "describe-tasks" {
+    input "job-ids" "[]string" {
+      doc = "If supplied, filters tasks by job."
+    }
+
+    output "tasks" "[]TaskDescription" {}
+  }
+}
+
+struct "task-description" {
+  field "id" "string" {}
+  field "job-id" "string" {
+    doc = "ID of root task in this tree."
+  }
+  field "parent-id" "*string" {}
+  field "name" "string" {}
+  field "status" "string" {}
+  field "message" "string" {}
+  field "created" "string" {}
+  field "updated" "string" {}
+  field "started" "*string" {}
+  field "finished" "*string" {}
 }

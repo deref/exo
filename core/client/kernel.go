@@ -55,3 +55,8 @@ func (c *Kernel) Ping(ctx context.Context, input *api.PingInput) (output *api.Pi
 	err = c.client.Invoke(ctx, "ping", input, &output)
 	return
 }
+
+func (c *Kernel) DescribeTasks(ctx context.Context, input *api.DescribeTasksInput) (output *api.DescribeTasksOutput, err error) {
+	err = c.client.Invoke(ctx, "describe-tasks", input, &output)
+	return
+}

@@ -287,7 +287,7 @@ export const api = (() => {
       },
 
       async refreshAllProcesses(): Promise<void> {
-        await invoke('refresh-all-components');
+        await invoke('refresh-components');
       },
 
       async getEvents(

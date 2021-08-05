@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"time"
 
 	golog "log"
 
@@ -17,6 +18,9 @@ import (
 	"github.com/deref/exo/logd"
 	"github.com/deref/exo/providers/core/components/log"
 	"github.com/deref/exo/supervise"
+	"github.com/deref/exo/task"
+	"github.com/deref/exo/task/api"
+	taskserver "github.com/deref/exo/task/server"
 	"github.com/deref/exo/telemetry"
 	"github.com/deref/exo/util/cmdutil"
 	"github.com/deref/exo/util/httputil"
@@ -115,13 +119,19 @@ func RunServer(ctx context.Context, flags map[string]string) {
 		cmdutil.Fatalf("failed to create docker client: %v", err)
 	}
 
+	taskTracker := &task.TaskTracker{
+		Store:  taskserver.NewTaskStore(),
+		Logger: logger,
+	}
+
 	kernelCfg := &kernel.Config{
-		VarDir:     paths.VarDir,
-		Store:      store,
-		Telemetry:  tel,
-		SyslogPort: cfg.Log.SyslogPort,
-		Docker:     dockerClient,
-		Logger:     logger,
+		VarDir:      paths.VarDir,
+		Store:       store,
+		Telemetry:   tel,
+		SyslogPort:  cfg.Log.SyslogPort,
+		Docker:      dockerClient,
+		Logger:      logger,
+		TaskTracker: taskTracker,
 	}
 
 	logd := &logd.Service{
@@ -137,9 +147,22 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	{
 		ctx, shutdown := context.WithCancel(ctx)
 		defer shutdown()
+
 		go func() {
 			if err := logd.Run(ctx); err != nil {
 				cmdutil.Fatalf("log collector error: %w", err)
+			}
+		}()
+
+		go func() {
+			for {
+				select {
+				case <-ctx.Done():
+				case <-time.After(10 * time.Second):
+					if _, err := taskTracker.Store.EvictTasks(ctx, &api.EvictTasksInput{}); err != nil {
+						logger.Infof("task eviction error: %w", err)
+					}
+				}
 			}
 		}()
 	}
