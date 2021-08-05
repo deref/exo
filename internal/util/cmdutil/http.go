@@ -6,8 +6,10 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"syscall"
 	"time"
 
+	"github.com/deref/exo/internal/util/logging"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -29,13 +31,20 @@ func Serve(ctx context.Context, l net.Listener, svr *http.Server) {
 }
 
 func ShutdownOnInterrupt(ctx context.Context, svr *http.Server) {
-	ctx, stop := signal.NotifyContext(ctx, os.Interrupt)
+	logger := logging.CurrentLogger(ctx)
+
+	ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
 	<-ctx.Done()
 	stop()
 
-	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
+	timeout := 5 * time.Second
+	logger.Infof("server shutting down (timeout: %v)", timeout)
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer func() {
+		logger.Infof("server shutdown")
+		cancel()
+	}()
 	_ = svr.Shutdown(ctx)
 }

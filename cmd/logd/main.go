@@ -24,6 +24,10 @@ import (
 
 func main() {
 	ctx := context.Background()
+
+	logger := logging.Default()
+	ctx = logging.ContextWithLogger(ctx, logger)
+
 	ctx, done := signal.NotifyContext(ctx, os.Interrupt)
 	defer done()
 
@@ -34,7 +38,7 @@ func main() {
 	logd := &logd.Service{
 		VarDir:     paths.VarDir,
 		SyslogPort: cfg.Log.SyslogPort,
-		Logger:     logging.Default(),
+		Logger:     logger,
 	}
 	logd.Debug = true
 
