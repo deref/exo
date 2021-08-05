@@ -8,12 +8,12 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/deref/exo/config"
-	josh "github.com/deref/exo/josh/server"
-	"github.com/deref/exo/logd"
-	"github.com/deref/exo/logd/api"
-	"github.com/deref/exo/util/cmdutil"
-	"github.com/deref/exo/util/logging"
+	"github.com/deref/exo/internal/config"
+	josh "github.com/deref/exo/internal/josh/server"
+	"github.com/deref/exo/internal/logd"
+	"github.com/deref/exo/internal/logd/api"
+	"github.com/deref/exo/internal/util/cmdutil"
+	"github.com/deref/exo/internal/util/logging"
 	"github.com/deref/pier"
 )
 

@@ -6,8 +6,8 @@ package main
 import (
 	"context"
 
-	"github.com/deref/exo/exod"
-	"github.com/deref/exo/util/logging"
+	"github.com/deref/exo/internal/exod"
+	"github.com/deref/exo/internal/util/logging"
 )
 
 func main() {

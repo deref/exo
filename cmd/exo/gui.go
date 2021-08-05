@@ -6,8 +6,8 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/deref/exo/core/api"
-	"github.com/deref/exo/util/cmdutil"
+	"github.com/deref/exo/internal/core/api"
+	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
 )

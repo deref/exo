@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/deref/exo/exod"
+	"github.com/deref/exo/internal/exod"
 	"github.com/spf13/cobra"
 )
 

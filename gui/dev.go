@@ -9,9 +9,9 @@ import (
 	goutil "net/http/httputil"
 	"net/url"
 
-	"github.com/deref/exo/config"
-	"github.com/deref/exo/util/errutil"
-	exoutil "github.com/deref/exo/util/httputil"
+	"github.com/deref/exo/internal/config"
+	"github.com/deref/exo/internal/util/errutil"
+	exoutil "github.com/deref/exo/internal/util/httputil"
 )
 
 func NewHandler(ctx context.Context, cfg config.GUIConfig) http.Handler {

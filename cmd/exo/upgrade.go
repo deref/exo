@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/deref/exo"
-	"github.com/deref/exo/telemetry"
-	"github.com/deref/exo/upgrade"
+	"github.com/deref/exo/internal/telemetry"
+	"github.com/deref/exo/internal/upgrade"
 	"github.com/spf13/cobra"
 )
 

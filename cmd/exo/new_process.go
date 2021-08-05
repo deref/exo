@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/deref/exo/core/api"
-	"github.com/deref/exo/providers/unix/components/process"
-	"github.com/deref/exo/util/jsonutil"
+	"github.com/deref/exo/internal/core/api"
+	"github.com/deref/exo/internal/providers/unix/components/process"
+	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/spf13/cobra"
 )
 

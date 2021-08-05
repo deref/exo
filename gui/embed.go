@@ -8,7 +8,7 @@ import (
 	"io/fs"
 	"net/http"
 
-	"github.com/deref/exo/config"
+	"github.com/deref/exo/internal/config"
 )
 
 //go:embed dist/*

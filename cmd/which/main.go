@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/deref/exo/util/cmdutil"
-	"github.com/deref/exo/util/which"
+	"github.com/deref/exo/internal/util/cmdutil"
+	"github.com/deref/exo/internal/util/which"
 )
 
 func main() {

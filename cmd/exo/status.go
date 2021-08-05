@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"text/tabwriter"
 
-	"github.com/deref/exo/util/osutil"
+	"github.com/deref/exo/internal/util/osutil"
 	"github.com/spf13/cobra"
 )
 

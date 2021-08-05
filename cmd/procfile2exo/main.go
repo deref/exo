@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/deref/exo/import/procfile"
-	"github.com/deref/exo/manifest"
-	"github.com/deref/exo/util/cmdutil"
+	"github.com/deref/exo/internal/import/procfile"
+	"github.com/deref/exo/internal/manifest"
+	"github.com/deref/exo/internal/util/cmdutil"
 )
 
 func main() {

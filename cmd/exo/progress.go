@@ -9,9 +9,9 @@ import (
 	"time"
 	"unsafe"
 
-	"github.com/deref/exo/core/api"
-	taskapi "github.com/deref/exo/task/api"
-	"github.com/deref/exo/util/cmdutil"
+	"github.com/deref/exo/internal/core/api"
+	taskapi "github.com/deref/exo/internal/task/api"
+	"github.com/deref/exo/internal/util/cmdutil"
 )
 
 type taskNode struct {

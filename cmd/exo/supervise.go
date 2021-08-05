@@ -1,7 +1,7 @@
 package main
 
 import (
-	"github.com/deref/exo/supervise"
+	"github.com/deref/exo/internal/supervise"
 	"github.com/spf13/cobra"
 )
 

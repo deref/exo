@@ -11,7 +11,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/deref/exo/util/cmdutil"
+	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/fsnotify/fsnotify"
 )
 

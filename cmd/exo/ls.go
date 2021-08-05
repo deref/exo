@@ -5,7 +5,7 @@ import (
 	"os"
 	"text/tabwriter"
 
-	"github.com/deref/exo/core/api"
+	"github.com/deref/exo/internal/core/api"
 	"github.com/spf13/cobra"
 )
 

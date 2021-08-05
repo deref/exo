@@ -9,10 +9,10 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/deref/exo/core/client"
-	"github.com/deref/exo/util/cmdutil"
-	"github.com/deref/exo/util/jsonutil"
-	"github.com/deref/exo/util/osutil"
+	"github.com/deref/exo/internal/core/client"
+	"github.com/deref/exo/internal/util/cmdutil"
+	"github.com/deref/exo/internal/util/jsonutil"
+	"github.com/deref/exo/internal/util/osutil"
 	"github.com/spf13/cobra"
 )
 
