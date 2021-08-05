@@ -7,6 +7,8 @@
 
 set -e
 
+which exo && exo exit || true
+
 function build_ui {
   (
     cd gui
