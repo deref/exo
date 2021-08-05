@@ -27,7 +27,7 @@ var daemonCmd = &cobra.Command{
 
 Since most commands implicitly start the exo daemon, users generally do not
 have to invoke this themselves.`,
-	Args: cobra.ExactArgs(0),
+	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ensureDaemon()
 		return nil

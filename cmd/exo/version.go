@@ -21,7 +21,7 @@ var versionCmd = &cobra.Command{
 	Use:   "version",
 	Short: "Print the version of exo",
 	Long:  "Print the version of exo.",
-	Args:  cobra.ExactArgs(0),
+	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		buildInfo, ok := debug.ReadBuildInfo()
 		if !ok {

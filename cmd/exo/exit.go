@@ -15,7 +15,7 @@ var exitCmd = &cobra.Command{
 	Use:   "exit",
 	Short: "Stop the exo daemon",
 	Long:  `Stop the exo daemon process.`,
-	Args:  cobra.ExactArgs(0),
+	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		loadRunState()
 		if runState.Pid == 0 {

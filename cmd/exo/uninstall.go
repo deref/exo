@@ -26,7 +26,7 @@ Performs the following steps:
 
 If this command fails, see <https://github.com/deref/exo/tree/main/doc/uninstall.md>
 for manual uninstall instructions.`,
-	Args: cobra.ExactArgs(0),
+	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := newContext()
 		ensureDaemon()

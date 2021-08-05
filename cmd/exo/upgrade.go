@@ -18,7 +18,7 @@ var upgradeCmd = &cobra.Command{
 	Use:   "upgrade",
 	Short: "Upgrade exo",
 	Long:  `Upgrade exo to the latest version.`,
-	Args:  cobra.ExactArgs(0),
+	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		tel := telemetry.New(&cfg.Telemetry)
 		if !tel.IsEnabled() {

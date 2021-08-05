@@ -22,7 +22,7 @@ var guiCmd = &cobra.Command{
 	Long: `Opens the exo gui in a web browser.
 
 If the current directory is part of a workspace, navigates to it.`,
-	Args: cobra.ExactArgs(0),
+	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := context.Background()
 		ensureDaemon()

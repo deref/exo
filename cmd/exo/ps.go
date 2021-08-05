@@ -17,7 +17,7 @@ var psCmd = &cobra.Command{
 	Use:   "ps",
 	Short: "Lists defined processes",
 	Long:  `Describes defined processes and their statuses.`,
-	Args:  cobra.ExactArgs(0),
+	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := newContext()
 		ensureDaemon()
