@@ -1,7 +1,8 @@
 <script lang="ts">
-  import IconButton from './IconButton.svelte';
   import * as router from 'svelte-spa-router';
+  import IconButton from './IconButton.svelte';
   import VersionInfo from './VersionInfo.svelte';
+  import LeftNav from './LeftNav.svelte';
 
   import Feedback from './mono/feedback.svelte';
   import GoBack from './mono/leftarrow.svelte';
@@ -41,7 +42,10 @@
     </div>
   </header>
   <div>
-    <slot />
+    <LeftNav workspaceId="xbe1fc9j61kkk3d46dtjmkepnc" active="Dashboard" />
+    <section>
+      <slot />
+    </section>
   </div>
   <footer>
     <VersionInfo />
@@ -56,17 +60,22 @@
   main {
     display: grid;
     grid-auto-flow: row;
-    grid-auto-rows: 48px 1fr 28px;
+    grid-auto-rows: max-content 1fr max-content;
+    gap: 1px;
     height: 100vh;
     overflow: hidden;
+    background: #cccccc;
   }
 
   header {
+    position: relative;
+    height: 40px;
+    z-index: 3;
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 6px 12px;
-    box-shadow: 0px 6px 9px -6px #00000022, 0px 0.25px 0px 1px #00000022;
+    padding: 6px 13px;
+    background: #dddddd;
   }
 
   header .logo {
@@ -84,13 +93,26 @@
 
   div {
     position: relative;
+    z-index: 2;
+    overflow: hidden;
+    display: grid;
+    grid-template-columns: max-content auto;
+    gap: 1px;
+  }
+
+  div > section {
+    position: relative;
     overflow-y: auto;
     overflow-x: hidden;
+    background: #ffffff;
   }
 
   footer {
     display: flex;
     flex-direction: row-reverse;
-    padding-right: 30px;
+    padding: 4px 6px;
+    height: 20px;
+    align-items: center;
+    background: #eeeeee;
   }
 </style>
