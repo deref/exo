@@ -44,7 +44,10 @@ func (sto *TaskStore) DescribeTasks(ctx context.Context, input *api.DescribeTask
 		}
 	}
 	sort.Slice(descriptions, func(i, j int) bool {
-		return strings.Compare(descriptions[i].ID, descriptions[j].ID) < 0
+		return strings.Compare(
+			descriptions[i].Created+":"+descriptions[i].ID,
+			descriptions[j].Created+":"+descriptions[j].ID,
+		) < 0
 	})
 
 	return &api.DescribeTasksOutput{
