@@ -78,7 +78,7 @@ func main() {
 			}
 
 			select {
-			case _ = <-reload:
+			case <-reload:
 				// Got additional reload notifications - ignore.
 			default:
 				// No additional notifications.
@@ -91,7 +91,7 @@ func main() {
 
 			case runStateRunning:
 				select {
-				case _ = <-reload:
+				case <-reload:
 					fmt.Println("Files changed. Restarting process.")
 					gracefullyShutdown(child, syscall.SIGTERM)
 					state = runStateRestarting
@@ -100,7 +100,7 @@ func main() {
 					gracefullyShutdown(child, sig)
 					state = runStateWaitingChildExit
 
-				case _ = <-childStopped:
+				case <-childStopped:
 					// Child stopped when we were not expecting a restart, so exit.
 					done <- struct{}{}
 				}
@@ -108,10 +108,10 @@ func main() {
 			case runStateRestarting:
 				gracefulShutdownTimer := time.NewTimer(time.Second * time.Duration(10))
 				select {
-				case _ = <-childStopped:
+				case <-childStopped:
 					gracefulShutdownTimer.Stop()
 
-				case _ = <-gracefulShutdownTimer.C:
+				case <-gracefulShutdownTimer.C:
 					child.Process.Kill()
 					// TODO: try to clean up other processes in the process group.
 				}
@@ -121,10 +121,10 @@ func main() {
 			case runStateWaitingChildExit:
 				gracefulShutdownTimer := time.NewTimer(time.Second * time.Duration(10))
 				select {
-				case _ = <-childStopped:
+				case <-childStopped:
 					gracefulShutdownTimer.Stop()
 
-				case _ = <-gracefulShutdownTimer.C:
+				case <-gracefulShutdownTimer.C:
 					child.Process.Kill()
 					// TODO: try to clean up other processes in the process group.
 				}
@@ -142,13 +142,16 @@ func main() {
 	go func() {
 		for {
 			select {
-			// watch for events
-			case _ = <-watcher.Events:
+			// Watch for file change events.
+			case <-watcher.Events:
 				reload <- struct{}{}
 
-				// watch for errors
+			// Exit on error.
 			case err := <-watcher.Errors:
-				fmt.Println("ERROR", err)
+				if child != nil {
+					gracefullyShutdown(child, syscall.SIGTERM)
+				}
+				cmdutil.Fatalf("watching files: %w", err)
 			}
 		}
 	}()
