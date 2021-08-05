@@ -7,6 +7,7 @@ Thank you for your interest in giving back to exo! exo is primarily developed an
 - [Contribute Documentation](https://github.com/deref/exo/new/main/doc)
 - [Fix a Bug](#fixing-bugs)
 - [Contributing a Feature](#contributing-features)
+- [Engaging in the Slack community](https://join.slack.com/t/deref-community/shared_invite/zt-tu8arun7-qqpVcTe3IDHjpSG_TrSaBQ)
 
 We expect that all contributors follow the project's [Code of Conduct](https://github.com/deref/exo/blob/main/CODE_OF_CONDUCT.md), which is designed to encourage a safe, diverse, professional, and inclusive community.
 
