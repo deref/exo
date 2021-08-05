@@ -11,6 +11,7 @@ import (
 	"github.com/deref/exo/internal/config"
 	"github.com/deref/exo/internal/core/server"
 	"github.com/deref/exo/internal/core/state/statefile"
+	"github.com/deref/exo/internal/featureflag"
 	josh "github.com/deref/exo/internal/josh/client"
 	logd "github.com/deref/exo/internal/logd/client"
 	"github.com/deref/exo/internal/providers/core/components/log"
@@ -72,6 +73,7 @@ func main() {
 		SyslogPort:  cfg.Log.SyslogPort,
 		Docker:      dockerClient,
 		TaskTracker: taskTracker,
+		Features:    featureflag.NewStaticFeatureFlags(cfg.Flags),
 	}
 
 	ctx = log.ContextWithLogCollector(ctx, logd.GetLogCollector(&josh.Client{

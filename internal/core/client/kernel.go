@@ -60,3 +60,8 @@ func (c *Kernel) DescribeTasks(ctx context.Context, input *api.DescribeTasksInpu
 	err = c.client.Invoke(ctx, "describe-tasks", input, &output)
 	return
 }
+
+func (c *Kernel) IsEnabled(ctx context.Context, input *api.IsEnabledInput) (output *api.IsEnabledOutput, err error) {
+	err = c.client.Invoke(ctx, "is-enabled", input, &output)
+	return
+}

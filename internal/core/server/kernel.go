@@ -12,6 +12,7 @@ import (
 	"github.com/deref/exo"
 	"github.com/deref/exo/internal/core/api"
 	state "github.com/deref/exo/internal/core/state/api"
+	"github.com/deref/exo/internal/featureflag"
 	"github.com/deref/exo/internal/gensym"
 	"github.com/deref/exo/internal/task"
 	taskapi "github.com/deref/exo/internal/task/api"
@@ -25,6 +26,7 @@ type Kernel struct {
 	VarDir      string
 	Store       state.Store
 	Telemetry   telemetry.Telemetry
+	Features    featureflag.FeatureFlags
 	TaskTracker *task.TaskTracker
 }
 
@@ -178,4 +180,11 @@ func (kern *Kernel) DescribeTasks(ctx context.Context, input *api.DescribeTasksI
 		}
 	}
 	return &output, nil
+}
+
+func (kern *Kernel) IsEnabled(ctx context.Context, input *api.IsEnabledInput) (*api.IsEnabledOutput, error) {
+	enabled := featureflag.IsEnabled(ctx, kern.Features, input.Feature)
+	return &api.IsEnabledOutput{
+		Enabled: enabled,
+	}, nil
 }

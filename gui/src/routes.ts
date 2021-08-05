@@ -7,6 +7,7 @@ import Process from './pages/Process.svelte';
 import WorkspaceComponents from './pages/WorkspaceComponents.svelte';
 import WorkspaceStorage from './pages/WorkspaceStorage.svelte';
 import WorkspaceNetworking from './pages/WorkspaceNetworking.svelte';
+import Sandbox from './pages/Sandbox.svelte';
 
 export default {
   '/': Home,
@@ -17,5 +18,8 @@ export default {
   '/workspaces/:workspace/networking': WorkspaceNetworking,
   '/workspaces/:workspace/new-process': NewProcess,
   '/workspaces/:workspace/processes/:process': Process,
+  
+  '/sandbox': Sandbox,
+  
   '*': NotFound,
 };

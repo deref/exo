@@ -232,6 +232,11 @@ export const api = (() => {
       async ping(): Promise<void> {
         await invoke('ping', {});
       },
+
+      async isEnabled(feature: string): Promise<boolean> {
+        const { enabled } = (await invoke('is-enabled', { feature })) as any;
+        return enabled;
+      },
     };
   })();
 

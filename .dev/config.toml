@@ -1,5 +1,8 @@
 httpPort = 4001
 
+[flags]
+"sandbox test" = true
+
 [gui]
 port = 3001
 

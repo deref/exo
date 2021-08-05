@@ -5,6 +5,7 @@ import (
 
 	"github.com/deref/exo/internal/core/api"
 	state "github.com/deref/exo/internal/core/state/api"
+	"github.com/deref/exo/internal/featureflag"
 	josh "github.com/deref/exo/internal/josh/server"
 	"github.com/deref/exo/internal/task"
 	taskapi "github.com/deref/exo/internal/task/api"
@@ -21,6 +22,7 @@ type Config struct {
 	Docker      *docker.Client
 	Logger      logging.Logger
 	TaskTracker *task.TaskTracker
+	Features    featureflag.FeatureFlags
 }
 
 func BuildRootMux(prefix string, cfg *Config) *http.ServeMux {
@@ -33,6 +35,7 @@ func BuildRootMux(prefix string, cfg *Config) *http.ServeMux {
 			Store:       cfg.Store,
 			Telemetry:   cfg.Telemetry,
 			TaskTracker: cfg.TaskTracker,
+			Features:    cfg.Features,
 		}
 	})
 	endKernel()
