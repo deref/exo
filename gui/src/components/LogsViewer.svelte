@@ -144,19 +144,31 @@
   }
 
   td {
-    padding: 0 0.4em;
+    padding: 0 0.3em;
     white-space: nowrap;
+    color: #333333;
+  }
+
+  tr:hover td {
+    background: #f3f3f3;
+    color: #111111;
   }
 
   td:nth-child(1) {
-    background: #77777711;
-    color: #777777;
+    color: #999999;
+  }
+
+  tr:hover td:nth-child(1) {
+    background: #eeeeee;
+    color: #555555;
   }
 
   td:nth-child(2) {
     background: var(--log-bg-color);
     color: var(--log-color);
-    border-left: 1px solid var(--log-border-color);
-    border-right: 1px solid var(--log-border-color);
+  }
+
+  tr:hover td:nth-child(2) {
+    background: var(--log-bg-hover-color);
   }
 </style>
