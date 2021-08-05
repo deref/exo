@@ -134,9 +134,12 @@ func (p *argParser) isEnd() bool {
 
 func tokenizeArgs(args []string) []parseToken {
 	tokens := make([]parseToken, 0, len(args))
+	parsingFlags := true
 	for idx, arg := range args {
 		switch {
-		case strings.HasPrefix(arg, "--"):
+		case arg == "--":
+			parsingFlags = false
+		case parsingFlags && strings.HasPrefix(arg, "--"):
 			flag := arg[2:]
 			parts := strings.Split(flag, "=")
 			switch len(parts) {
@@ -161,7 +164,7 @@ func tokenizeArgs(args []string) []parseToken {
 				})
 			}
 
-		case strings.HasPrefix(arg, "-"):
+		case parsingFlags && strings.HasPrefix(arg, "-"):
 			tokens = append(tokens, parseToken{
 				str: arg,
 				idx: idx,
