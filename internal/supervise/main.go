@@ -17,6 +17,7 @@ import (
 	"github.com/deref/exo/internal/chrono"
 	"github.com/deref/exo/internal/logd/api"
 	"github.com/deref/exo/internal/util/cmdutil"
+	"github.com/deref/exo/internal/util/osutil"
 	"github.com/influxdata/go-syslog/v3/rfc5424"
 )
 
@@ -100,7 +101,7 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 				// (passed to kill as a negative value) and ignore any error.
 				time.Sleep(time.Second * time.Duration(timeoutSeconds))
 				pgrp := syscall.Getpgrp()
-				_ = syscall.Kill(-pgrp, syscall.SIGKILL)
+				_ = osutil.KillProcessGroup(pgrp)
 
 			// Exit when child exits.
 			case syscall.SIGCHLD:

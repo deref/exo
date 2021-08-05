@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/deref/exo/internal/util/cmdutil"
+	"github.com/deref/exo/internal/util/osutil"
 	"github.com/fsnotify/fsnotify"
 )
 
@@ -117,8 +118,7 @@ func main() {
 					gracefulShutdownTimer.Stop()
 
 				case <-gracefulShutdownTimer.C:
-					child.Process.Kill()
-					// TODO: try to clean up other processes in the process group.
+					osutil.KillProcessGroup(child.Process.Pid)
 				}
 				startNewChild()
 				state = runStateInitial
@@ -130,8 +130,7 @@ func main() {
 					gracefulShutdownTimer.Stop()
 
 				case <-gracefulShutdownTimer.C:
-					child.Process.Kill()
-					// TODO: try to clean up other processes in the process group.
+					osutil.KillProcessGroup(child.Process.Pid)
 				}
 				done <- struct{}{}
 			}
@@ -226,7 +225,7 @@ func startCommand(invocation []string, started, stopped chan struct{}) (*exec.Cm
 
 func gracefullyShutdown(cmd *exec.Cmd, sig os.Signal) {
 	sysSig := sig.(syscall.Signal)
-	if err := syscall.Kill(-cmd.Process.Pid, sysSig); err != nil && err != os.ErrProcessDone {
+	if err := osutil.SignalProcessGroup(cmd.Process.Pid, sysSig); err != nil && err != os.ErrProcessDone {
 		cmdutil.Fatalf("signaling child: %w", err)
 	}
 }
