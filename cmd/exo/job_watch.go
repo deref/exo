@@ -23,7 +23,7 @@ func init() {
 var jobWatchCmd = &cobra.Command{
 	Use:   "watch <job-id>",
 	Short: "Lists a job's tasks until completion",
-	Long:  `Lists a job's tasks as a tree. Rerenders until the job has finished running. `,
+	Long:  `Lists a job's tasks as a tree. Rerenders until the job has finished running.`,
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := newContext()
