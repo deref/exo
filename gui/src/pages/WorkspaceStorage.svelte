@@ -13,21 +13,35 @@
 
 <Layout>
   <WithLeftWorkspaceNav {workspaceId} active="Storage">
-    <section>Volumes</section>
-    <ComponentTable
-      load={workspace.describeVolumes}
-      columns={[
-        {
-          title: 'id',
-          component: StringLabel,
-          getValue: (volume) => volume.id,
-        },
-        {
-          title: 'name',
-          component: StringLabel,
-          getValue: (volume) => volume.name,
-        },
-      ]}
-    />
+    <section>
+      <h1>Volumes</h1>
+      <ComponentTable
+        load={workspace.describeVolumes}
+        columns={[
+          {
+            title: 'id',
+            component: StringLabel,
+            getValue: (volume) => volume.id,
+          },
+          {
+            title: 'name',
+            component: StringLabel,
+            getValue: (volume) => volume.name,
+          },
+        ]}
+      />
+    </section>
   </WithLeftWorkspaceNav>
 </Layout>
+
+<style>
+  section {
+    padding: 30px;
+  }
+
+  h1 {
+    padding: 0;
+    margin: 0;
+    margin-bottom: 30px;
+  }
+</style>

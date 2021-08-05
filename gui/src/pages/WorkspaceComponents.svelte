@@ -13,26 +13,40 @@
 
 <Layout>
   <WithLeftWorkspaceNav {workspaceId} active="Components">
-    <section>Components</section>
-    <ComponentTable
-      load={workspace.describeComponents}
-      columns={[
-        {
-          title: 'id',
-          component: StringLabel,
-          getValue: (component) => component.id,
-        },
-        {
-          title: 'name',
-          component: StringLabel,
-          getValue: (component) => component.name,
-        },
-        {
-          title: 'type',
-          component: StringLabel,
-          getValue: (component) => component.type,
-        },
-      ]}
-    />
+    <section>
+      <h1>Components</h1>
+      <ComponentTable
+        load={workspace.describeComponents}
+        columns={[
+          {
+            title: 'id',
+            component: StringLabel,
+            getValue: (component) => component.id,
+          },
+          {
+            title: 'name',
+            component: StringLabel,
+            getValue: (component) => component.name,
+          },
+          {
+            title: 'type',
+            component: StringLabel,
+            getValue: (component) => component.type,
+          },
+        ]}
+      />
+    </section>
   </WithLeftWorkspaceNav>
 </Layout>
+
+<style>
+  section {
+    padding: 30px;
+  }
+
+  h1 {
+    padding: 0;
+    margin: 0;
+    margin-bottom: 30px;
+  }
+</style>
