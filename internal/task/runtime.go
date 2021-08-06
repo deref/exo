@@ -159,8 +159,7 @@ func (t *Task) RunChild(name string, f func(task *Task) error) error {
 	if err := f(task); err != nil {
 		task.Fail(err)
 	}
-	defer task.Finish()
-	return task.Err()
+	return task.Finish()
 }
 
 func (t *Task) Go(name string, f func(task *Task) error) {
