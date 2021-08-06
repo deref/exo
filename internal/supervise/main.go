@@ -18,7 +18,6 @@ import (
 
 	"github.com/deref/exo/internal/chrono"
 	"github.com/deref/exo/internal/logd/api"
-	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/deref/exo/internal/util/osutil"
 	"github.com/deref/exo/internal/util/sysutil"
 	"github.com/influxdata/go-syslog/v3/rfc5424"
@@ -75,7 +74,7 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 
 	childEnv := make(map[string]string)
 	if err := json.Unmarshal([]byte(envString), &childEnv); err != nil {
-		cmdutil.Fatalf("decoding environment variables from %q: %w", envString, err)
+		fatalf("decoding environment variables from %q: %v", envString, err)
 	}
 
 	cmd := exec.Command(program, arguments...)
@@ -108,10 +107,9 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 				if err := cmd.Process.Signal(sig); err != nil {
 					break
 				}
-				// After some timeout kill the entire process group and ignore errors.
+				// After some timeout kill the entire process group.
 				time.Sleep(time.Second * time.Duration(timeoutSeconds))
-				pgrp := syscall.Getpgrp()
-				_ = osutil.KillProcessGroup(pgrp)
+				die()
 
 			// Exit when child exits.
 			case syscall.SIGCHLD:
@@ -132,7 +130,7 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 	// Dial syslog.
 	conn, err := net.DialUDP("udp", nil, udpAddr)
 	if err != nil {
-		fatalf("dialing udp: %w", err)
+		fatalf("dialing udp: %v", err)
 	}
 	defer conn.Close()
 
@@ -213,8 +211,11 @@ const syslogSeverity = 6 // "information messages".
 const syslogPriority = (syslogFacility * 8) + syslogSeverity
 
 func fatalf(format string, v ...interface{}) {
-	if child != nil {
-		_ = child.Kill()
-	}
-	cmdutil.Fatalf(format, v...)
+	fmt.Fprintf(os.Stderr, format+"\n", v...)
+	die()
+}
+
+func die() {
+	pgrp := syscall.Getpgrp()
+	_ = osutil.KillProcessGroup(pgrp)
 }
