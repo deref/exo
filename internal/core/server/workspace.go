@@ -311,42 +311,19 @@ func (ws *Workspace) updateComponent(ctx context.Context, oldComponent api.Compo
 }
 
 func (ws *Workspace) RefreshComponents(ctx context.Context, input *api.RefreshComponentsInput) (*api.RefreshComponentsOutput, error) {
-	var ids []string
-	if input.Refs != nil {
-		var err error
-		ids, err = ws.resolveRefs(ctx, input.Refs)
-		if err != nil {
-			return nil, fmt.Errorf("resolving refs: %w", err)
-		}
+	filter := componentFilter{
+		Refs: input.Refs,
 	}
-
-	describeOutput, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{
-		IDs: ids,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("describing components: %w", err)
-	}
-
-	refreshTask := ws.TaskTracker.StartTask(ctx, "refreshing")
-	go func() {
-		defer refreshTask.Finish()
-		for _, component := range describeOutput.Components {
-			refreshTask.Go(component.Name, func(*task.Task) error {
-				return ws.refreshComponent(ctx, ws.Store, component)
-			})
-		}
-	}()
-
-	return &api.RefreshComponentsOutput{
-		JobID: refreshTask.JobID(),
-	}, err
-}
-
-func (ws *Workspace) refreshComponent(ctx context.Context, store state.Store, component api.ComponentDescription) error {
-	return ws.control(ctx, component, func(lifecycle api.Lifecycle) error {
+	jobID, err := ws.controlEachComponent(ctx, "refreshing", filter, func(lifecycle api.Lifecycle) error {
 		_, err := lifecycle.Refresh(ctx, &api.RefreshInput{})
 		return err
 	})
+	if err != nil {
+		return nil, err
+	}
+	return &api.RefreshComponentsOutput{
+		JobID: jobID,
+	}, nil
 }
 
 func (ws *Workspace) DisposeComponent(ctx context.Context, input *api.DisposeComponentInput) (*api.DisposeComponentOutput, error) {
@@ -617,7 +594,7 @@ func (ws *Workspace) RestartComponents(ctx context.Context, input *api.RestartCo
 		Refs: input.Refs,
 	}
 	jobID, err := ws.controlEachComponent(ctx, "restart", filter, func(process api.Process) error {
-		_, err := process.Start(ctx, &api.StartInput{})
+		_, err := process.Restart(ctx, &api.RestartInput{})
 		return err
 	})
 	if err != nil {
