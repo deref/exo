@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"strings"
 
 	"github.com/deref/exo/internal/logd/api"
 	"github.com/deref/exo/internal/logd/store"
@@ -76,7 +77,7 @@ func (log *Log) GetLastCursor(ctx context.Context) (*store.Cursor, error) {
 	return cursor, err
 }
 
-func (log *Log) GetEvents(ctx context.Context, cursor *store.Cursor, limit int, direction store.Direction) ([]store.EventWithCursors, error) {
+func (log *Log) GetEvents(ctx context.Context, cursor *store.Cursor, limit int, direction store.Direction, filterStr *string) ([]store.EventWithCursors, error) {
 	prefix := append([]byte(log.name), 0)
 	start := prefix
 	if cursor != nil {
@@ -95,6 +96,11 @@ func (log *Log) GetEvents(ctx context.Context, cursor *store.Cursor, limit int, 
 		indexDelta = -1
 	}
 
+	filterStrNorm := ""
+	if filterStr != nil {
+		filterStrNorm = strings.ToLower(*filterStr)
+	}
+
 	if err := log.db.View(func(txn *badger.Txn) error {
 		opts := badger.DefaultIteratorOptions
 		if direction == store.DirectionBackward {
@@ -111,6 +117,11 @@ func (log *Log) GetEvents(ctx context.Context, cursor *store.Cursor, limit int, 
 				evt, err := eventFromEntry(log.name, key, val)
 				if err != nil {
 					return err
+				}
+
+				// Skip messages that do not match the filter.
+				if filterStrNorm != "" && !strings.Contains(strings.ToLower(evt.Message), filterStrNorm) {
+					return nil
 				}
 
 				events[curIndex] = evt

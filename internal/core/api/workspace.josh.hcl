@@ -109,6 +109,7 @@ interface "workspace" {
     input "logs" "[]string" {}
 
     input "cursor" "*string" {}
+    input "filterStr" "*string" {}
     input "prev" "*int" {}
     input "next" "*int" {}
 

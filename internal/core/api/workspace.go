@@ -176,10 +176,11 @@ type DescribeLogsOutput struct {
 }
 
 type GetEventsInput struct {
-	Logs   []string `json:"logs"`
-	Cursor *string  `json:"cursor"`
-	Prev   *int     `json:"prev"`
-	Next   *int     `json:"next"`
+	Logs      []string `json:"logs"`
+	Cursor    *string  `json:"cursor"`
+	FilterStr *string  `json:"filterStr"`
+	Prev      *int     `json:"prev"`
+	Next      *int     `json:"next"`
 }
 
 type GetEventsOutput struct {

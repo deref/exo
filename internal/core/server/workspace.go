@@ -516,10 +516,11 @@ func (ws *Workspace) GetEvents(ctx context.Context, input *api.GetEventsInput) (
 
 	collector := log.CurrentLogCollector(ctx)
 	collectorOutput, err := collector.GetEvents(ctx, &logd.GetEventsInput{
-		Logs:   logStreams,
-		Cursor: input.Cursor,
-		Prev:   input.Prev,
-		Next:   input.Next,
+		Logs:      logStreams,
+		Cursor:    input.Cursor,
+		FilterStr: input.FilterStr,
+		Prev:      input.Prev,
+		Next:      input.Next,
 	})
 	if err != nil {
 		return nil, err

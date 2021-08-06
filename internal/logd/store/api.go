@@ -19,7 +19,9 @@ type Log interface {
 
 	// GetEvents returns a page of events along with cursors for moving forward or backward in the result set.
 	// If `cursor` is nil, returns the most recent page of events, which is useful for the UI's default tailing behaviour.
-	GetEvents(ctx context.Context, cursor *Cursor, limit int, direction Direction) ([]EventWithCursors, error)
+	// `filterStr` is an optional string that will cause only those messages which contain it as a substring to be
+	// returned. This is a hack until we can add a more robust storage engine.
+	GetEvents(ctx context.Context, cursor *Cursor, limit int, direction Direction, filterStr *string) ([]EventWithCursors, error)
 
 	GetLastCursor(context.Context) (*Cursor, error)
 	GetLastEvent(context.Context) (*api.Event, error)

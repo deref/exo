@@ -143,7 +143,7 @@ func (lc *LogCollector) GetEvents(ctx context.Context, input *api.GetEventsInput
 	for _, logName := range input.Logs {
 		log := lc.Store.GetLog(logName)
 
-		logEventsWithCursors, err := log.GetEvents(ctx, cursor, limit, direction)
+		logEventsWithCursors, err := log.GetEvents(ctx, cursor, limit, direction, input.FilterStr)
 		if err != nil {
 			return nil, fmt.Errorf("getting %q events: %w", logName, err)
 		}

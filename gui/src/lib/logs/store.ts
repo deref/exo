@@ -15,6 +15,7 @@ export type LogsStore = Record<string, WorkspaceState>; // Keyed by workspaceId.
 
 export interface WorkspaceState {
   cursor: string | null;
+  filterStr: string | null;
   events: RemoteData<LogEvent[]>;
 }
 
@@ -24,12 +25,14 @@ export const fetchLogs = async (
   workspaceId: string,
   workspace: WorkspaceApi,
   pagination: Partial<PaginationParams>,
+  filterStr: string | null,
 ) => {
   logsStore.update((state) => {
     let workspaceState = state[workspaceId];
     if (workspaceState == null) {
       workspaceState = {
         cursor: null,
+        filterStr: null,
         events: pendingRequest(),
       };
     }
@@ -67,7 +70,7 @@ export const fetchLogs = async (
   // to events that came from a stream belonging to only certain processes. This should be
   // replaced with a more flexible filtering framework.
   const visibleLogs = [...get(visibleLogsStore).values()];
-  const newEvents = await workspace.getEvents(visibleLogs, {
+  const newEvents = await workspace.getEvents(visibleLogs, filterStr, {
     cursor: get(logsStore)[workspaceId].cursor,
     ...pagination,
   });
@@ -94,29 +97,40 @@ export const fetchLogs = async (
   });
 };
 
-export const refreshLogs = (workspaceId: string, workspace: WorkspaceApi) =>
-  fetchLogs(workspaceId, workspace, { next: 100 });
+export const refreshLogs = (workspaceId: string, workspace: WorkspaceApi) => {
+  const state = get(logsStore);
+  const { filterStr } = state[workspaceId];
+  return fetchLogs(workspaceId, workspace, { next: 100 }, filterStr);
+};
 
-export const loadInitialLogs = (workspaceId: string, workspace: WorkspaceApi) => {
+export const resetLogs = (workspaceId: string) =>
   logsStore.update((state) => ({
     ...state,
     [workspaceId]: {
+      ...state[workspaceId],
       cursor: null,
-      events: pendingRequest(),
-    }
+      filterStr: '',
+      events: successResponse([]),
+    },
   }));
-  return fetchLogs(workspaceId, workspace, { prev: 100 });
-}
 
-export const resetLogs = (workspaceId: string) => {
-  logsStore.update((state) => {
-    return {
-      ...state,
-      [workspaceId]: {
-        ...state[workspaceId],
-        cursor: null,
-        events: successResponse([]),
-      },
-    };
-  });
+export const loadInitialLogs = (
+  workspaceId: string,
+  workspace: WorkspaceApi,
+) => {
+  resetLogs(workspaceId);
+  return fetchLogs(workspaceId, workspace, { prev: 100 }, '');
 };
+
+export const setFilterStr = (workspaceId: string, workspace: WorkspaceApi, filterStr: string) => {
+  logsStore.update((state) => ({
+    ...state,
+    [workspaceId]: {
+      ...state[workspaceId],
+      cursor: null,
+      filterStr,
+      events: successResponse([]),
+    },
+  }));
+  return fetchLogs(workspaceId, workspace, { prev: 100 }, filterStr);
+}

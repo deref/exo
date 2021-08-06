@@ -3,11 +3,17 @@
   import { onMount, onDestroy, afterUpdate, beforeUpdate } from 'svelte';
   import { hasData, isUnresolved } from '../lib/api';
   import type { WorkspaceApi } from '../lib/api';
-  import { loadInitialLogs, logsStore, refreshLogs } from '../lib/logs/store';
+  import {
+    loadInitialLogs,
+    logsStore,
+    refreshLogs,
+    setFilterStr,
+  } from '../lib/logs/store';
   import type { WorkspaceState } from '../lib/logs/store';
   import { shortDate } from '../lib/time';
   import { processes } from '../lib/process/store';
   import FormattedLogMessage from './logs/FormattedLogMessage.svelte';
+  import debounce from '../lib/debounce';
 
   export let workspace: WorkspaceApi;
   export let workspaceId: string;
@@ -16,6 +22,7 @@
 
   let state: WorkspaceState = {
     cursor: null,
+    filterStr: null,
     events: { stage: 'success', data: [] },
   };
   const unsubscribeLogStore = logsStore.subscribe((workspaces) => {
@@ -81,6 +88,10 @@
       logViewport.scrollTop = logViewport.scrollHeight;
     }
   });
+
+  const setFilterStrDebounced = debounce((fitlerStr: string) => {
+    setFilterStr(workspaceId, workspace, fitlerStr);
+  }, 250);
 </script>
 
 <section>
@@ -99,6 +110,14 @@
         {/each}
       </div>
     </div>
+    <input
+      placeholder="Filter..."
+      value={state.filterStr || ''}
+      on:input={(e) => {
+        const text = e.currentTarget.value.trim();
+        setFilterStrDebounced(text);
+      }}
+    />
   {:else if isUnresolved(state.events)}
     <div>Loading logs...</div>
   {:else}
