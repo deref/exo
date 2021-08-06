@@ -11,18 +11,23 @@ import (
 )
 
 func HandlerWithContext(ctx context.Context, handler http.Handler) http.Handler {
+	debugHTTP := false // TODO: Configurable.
 	logger := logging.CurrentLogger(ctx)
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		requestID := gensym.RandomBase32()
 		sl := logger.Sublogger("http " + requestID)
-		sl.Infof("%s %s", req.Method, req.URL)
+		if debugHTTP {
+			sl.Infof("%s %s", req.Method, req.URL)
+		}
 		ctx := logging.ContextWithLogger(ctx, sl)
 		start := chrono.Now(ctx)
 		logw := &responseLogger{rw: w}
 		handler.ServeHTTP(logw, req.WithContext(ctx))
 		end := chrono.Now(ctx)
 		duration := end.Sub(start).Truncate(time.Millisecond)
-		sl.Infof("status %d - %s", logw.status, duration)
+		if debugHTTP {
+			sl.Infof("status %d - %s", logw.status, duration)
+		}
 	})
 }
 
