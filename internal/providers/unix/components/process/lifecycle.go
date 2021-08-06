@@ -40,8 +40,8 @@ func (p *Process) Refresh(ctx context.Context, input *core.RefreshInput) (*core.
 }
 
 func (p *Process) refresh() {
-	if !osutil.IsValidPid(p.Pid) {
-		p.Pid = 0
+	if !osutil.IsValidPid(p.SupervisorPid) {
+		p.State.clear()
 	}
 }
 
