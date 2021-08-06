@@ -46,12 +46,6 @@ interface "kernel" {
 
     output "tasks" "[]TaskDescription" {}
   }
-
-  method "is-enabled" {
-    doc = "Checks whether a given feature flag is enabled."
-    input "feature" "string" {}
-    output "enabled" "bool" {}
-  }
 }
 
 struct "task-description" {

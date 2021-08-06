@@ -16,6 +16,6 @@ export default {
   '/workspaces/:workspace/storage': WorkspaceStorage,
   '/workspaces/:workspace/networking': WorkspaceNetworking,
   '/workspaces/:workspace/new-process': NewProcess,
-  '/workspaces/:workspace/processes/:process': Process,  
+  '/workspaces/:workspace/processes/:process': Process,
   '*': NotFound,
 };

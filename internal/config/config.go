@@ -37,7 +37,6 @@ type Config struct {
 	GUI       GUIConfig `toml:"gui"`
 	Log       LogConfig
 	Telemetry TelemetryConfig
-	Flags     map[string]bool
 }
 
 func LoadDefault(cfg *Config) error {
@@ -105,9 +104,5 @@ func setDefaults(cfg *Config) {
 	// GUI
 	if cfg.GUI.Port == 0 {
 		cfg.GUI.Port = 3000
-	}
-
-	if cfg.Flags == nil {
-		cfg.Flags = make(map[string]bool)
 	}
 }

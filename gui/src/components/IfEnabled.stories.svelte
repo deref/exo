@@ -14,8 +14,8 @@
 <Story
   name="Enabled"
   args={{
-    feature: 'sandbox test',
-    content: 'Enabled feature: sandbox test',
+    feature: 'storybook feature',
+    content: 'Enabled feature: storybook feature',
   }}
 />
 

@@ -15,7 +15,6 @@ import (
 	"github.com/deref/exo/internal/core/server"
 	kernel "github.com/deref/exo/internal/core/server"
 	"github.com/deref/exo/internal/core/state/statefile"
-	"github.com/deref/exo/internal/featureflag"
 	"github.com/deref/exo/internal/logd"
 	"github.com/deref/exo/internal/providers/core/components/log"
 	"github.com/deref/exo/internal/supervise"
@@ -133,7 +132,6 @@ func RunServer(ctx context.Context, flags map[string]string) {
 		Docker:      dockerClient,
 		Logger:      logger,
 		TaskTracker: taskTracker,
-		Features:    featureflag.NewStaticFeatureFlags(cfg.Flags),
 	}
 
 	logd := &logd.Service{

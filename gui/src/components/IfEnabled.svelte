@@ -1,15 +1,9 @@
 <script lang="ts">
-  import { api } from '../lib/api';
-  import { onMount } from 'svelte';
+  const features = new Set(['storybook feature']);
 
   export let feature: string;
-
-  let enabled: boolean;
-  onMount(async () => {
-    enabled = await api.kernel.isEnabled(feature);
-  });
 </script>
 
-{#if enabled}
+{#if features.has(feature)}
   <slot />
 {/if}

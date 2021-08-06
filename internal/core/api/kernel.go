@@ -22,8 +22,6 @@ type Kernel interface {
 	// Checks whether server is up.
 	Ping(context.Context, *PingInput) (*PingOutput, error)
 	DescribeTasks(context.Context, *DescribeTasksInput) (*DescribeTasksOutput, error)
-	// Checks whether a given feature flag is enabled.
-	IsEnabled(context.Context, *IsEnabledInput) (*IsEnabledOutput, error)
 }
 
 type CreateWorkspaceInput struct {
@@ -87,14 +85,6 @@ type DescribeTasksOutput struct {
 	Tasks []TaskDescription `json:"tasks"`
 }
 
-type IsEnabledInput struct {
-	Feature string `json:"feature"`
-}
-
-type IsEnabledOutput struct {
-	Enabled bool `json:"enabled"`
-}
-
 func BuildKernelMux(b *josh.MuxBuilder, factory func(req *http.Request) Kernel) {
 	b.AddMethod("create-workspace", func(req *http.Request) interface{} {
 		return factory(req).CreateWorkspace
@@ -119,9 +109,6 @@ func BuildKernelMux(b *josh.MuxBuilder, factory func(req *http.Request) Kernel) 
 	})
 	b.AddMethod("describe-tasks", func(req *http.Request) interface{} {
 		return factory(req).DescribeTasks
-	})
-	b.AddMethod("is-enabled", func(req *http.Request) interface{} {
-		return factory(req).IsEnabled
 	})
 }
 
