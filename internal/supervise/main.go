@@ -169,7 +169,7 @@ func pipeToSyslog(ctx context.Context, conn net.Conn, componentID string, name s
 	b := bufio.NewReaderSize(r, api.MaxMessageSize)
 	for {
 		message, isPrefix, err := b.ReadLine()
-		if err == io.EOF {
+		if err == io.EOF || err == os.ErrClosed {
 			return
 		}
 		if err != nil {
