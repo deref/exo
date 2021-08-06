@@ -11,4 +11,10 @@ module.exports = {
   svelteOptions: {
     preprocess: require('svelte-preprocess')(),
   },
+  babel: (options) => {
+    return {
+      ...options,
+      plugins: [...(options.plugins || []), "babel-plugin-transform-vite-meta-env"],
+    };
+  },
 };
