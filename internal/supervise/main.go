@@ -24,7 +24,6 @@ import (
 	"github.com/influxdata/go-syslog/v3/rfc5424"
 )
 
-var child *os.Process
 var varDir string
 
 func Main(command string, args []string) {
@@ -95,10 +94,21 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 		panic(err)
 	}
 
-	hasSignalledChildToQuit := false
-	// Handle signals.
+	// Register for signal handlers.  Do this before starting the child so that
+	// the default TERM handler is not in effect. If it runs, it will exit,
+	// preventing us from terminating the spawned child.
 	c := make(chan os.Signal)
 	signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGCHLD)
+
+	// Start child process.
+	if err := cmd.Start(); err != nil {
+		fatalf("%v", err)
+	}
+	child := cmd.Process
+
+	// Asynchronously handle signals. We do this after starting the child, so
+	// that we don't have to coordinate concurrent access to the child variable.
+	hasSignalledChildToQuit := false
 	go func() {
 		for sig := range c {
 			switch sig {
@@ -107,7 +117,7 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 				hasSignalledChildToQuit = true
 				// Forward signal, allow some time for graceful shutdown, then kill the
 				// entire process group.
-				_ = cmd.Process.Signal(sig)
+				_ = child.Signal(sig)
 				time.Sleep(time.Second * time.Duration(timeoutSeconds))
 				die()
 
@@ -120,12 +130,6 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 			}
 		}
 	}()
-
-	// Start child process.
-	if err := cmd.Start(); err != nil {
-		fatalf("%v", err)
-	}
-	child = cmd.Process
 
 	// Dial syslog.
 	conn, err := net.DialUDP("udp", nil, udpAddr)
