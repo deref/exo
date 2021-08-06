@@ -97,8 +97,16 @@ export const fetchLogs = async (
 export const refreshLogs = (workspaceId: string, workspace: WorkspaceApi) =>
   fetchLogs(workspaceId, workspace, { next: 100 });
 
-export const loadInitialLogs = (workspaceId: string, workspace: WorkspaceApi) =>
-  fetchLogs(workspaceId, workspace, { prev: 100 });
+export const loadInitialLogs = (workspaceId: string, workspace: WorkspaceApi) => {
+  logsStore.update((state) => ({
+    ...state,
+    [workspaceId]: {
+      cursor: null,
+      events: pendingRequest(),
+    }
+  }));
+  return fetchLogs(workspaceId, workspace, { prev: 100 });
+}
 
 export const resetLogs = (workspaceId: string) => {
   logsStore.update((state) => {
