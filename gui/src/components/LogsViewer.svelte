@@ -97,17 +97,19 @@
 <section>
   <h1>Logs</h1>
   {#if hasData(state.events)}
-    <div class="log-overflow-wrapper">
-      <div class="log-container" bind:this={logViewport}>
-        {#each state.events.data as event (event.id)}
-          <div class="log-entry" style={logStyleFromHash(event.log)}>
-            <div class="timestamp">{shortDate(event.timestamp)}</div>
-            <div class="log">{friendlyName(event.log)}</div>
-            <div class="message">
-              <FormattedLogMessage message={event.message} />
-            </div>
-          </div>
-        {/each}
+    <div class="log-table-overflow-wrapper">
+      <div class="log-table-container" bind:this={logViewport}>
+        <table>
+          {#each state.events.data as event (event.id)}
+            <tr class="log-entry" style={logStyleFromHash(event.log)}>
+              <td>{shortDate(event.timestamp)}</td>
+              <td>{friendlyName(event.log)}</td>
+              <td>
+                <FormattedLogMessage message={event.message} />
+              </td>
+            </tr>
+          {/each}
+        </table>
       </div>
     </div>
     <input
@@ -134,50 +136,58 @@
     grid-template-rows: max-content 1fr;
   }
 
-  .log-overflow-wrapper {
+  .log-table-overflow-wrapper {
     overflow: hidden;
     border-radius: 4px;
     box-shadow: 0px 12px 16px -8px #00000033, 0px 0.25px 0px 1px #00000033;
   }
 
-  .log-container {
+  .log-table-container {
     width: 100%;
     height: 100%;
-    font-family: 'Fira Code', monospace;
-    font-weight: 450;
-    font-size: 15px;
+    overflow-x: auto;
     overflow-y: scroll;
   }
 
-  .log-entry {
-    display: flex;
+  table {
+    font-family: 'Fira Code', monospace;
+    font-weight: 450;
+    font-size: 15px;
   }
 
-  .log-entry > div {
+  table,
+  tr,
+  td {
+    border: none;
+    border-collapse: collapse;
+  }
+
+  td {
     padding: 0 0.3em;
+    white-space: pre;
     color: #333333;
   }
 
-  .log-entry:hover {
+  tr:hover td {
     background: #f3f3f3;
     color: #111111;
   }
 
-  .timestamp {
+  td:nth-child(1) {
     color: #999999;
   }
 
-  .log-entry:hover .timestamp {
+  tr:hover td:nth-child(1) {
     background: #eeeeee;
     color: #555555;
   }
 
-  .log {
+  td:nth-child(2) {
     background: var(--log-bg-color);
     color: var(--log-color);
   }
 
-  .log-entry:hover .log {
+  tr:hover td:nth-child(2) {
     background: var(--log-bg-hover-color);
   }
 </style>
