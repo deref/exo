@@ -164,7 +164,7 @@
 
   td {
     padding: 0 0.3em;
-    white-space: pre;
+    vertical-align: text-top;
     color: #333333;
   }
 
