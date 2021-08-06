@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"syscall"
 
 	"github.com/deref/exo/internal/config"
 	josh "github.com/deref/exo/internal/josh/server"
@@ -19,7 +20,7 @@ import (
 
 func main() {
 	ctx := context.Background()
-	ctx, done := signal.NotifyContext(ctx, os.Interrupt)
+	ctx, done := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	defer done()
 
 	cfg := &config.Config{}

@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"syscall"
 
 	"github.com/deref/exo/internal/core/api"
 	"github.com/deref/exo/internal/util/cmdutil"
@@ -63,7 +64,7 @@ If a workspace does not exist, one will be created in the current directory.
 
 		// Tail all logs until interrupt.
 		(func() {
-			ctx, stop := signal.NotifyContext(ctx, os.Interrupt)
+			ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 			defer stop()
 			var logRefs []string
 			if err := tailLogs(ctx, workspace, logRefs); err != nil {
