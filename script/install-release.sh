@@ -1,15 +1,25 @@
 #!/usr/bin/env bash
 
 ##
-## Builds the current development server and UI in release mode and
+## Builds the current development server and GUI in release mode and
 ## installs it to ~/.exo/bin/exo.
 ##
 
 set -e
 
+while [[ $# -gt 0 ]]; do
+  flag=$1
+  shift
+  case $flag in
+    --skip-build-gui)
+      skip_build_gui=1
+      ;;
+  esac
+done
+
 which exo && exo exit || true
 
-function build_ui {
+function build_gui {
   (
     cd gui
     npm i
@@ -20,7 +30,9 @@ function build_ui {
 BIN_DIR="${HOME}/.exo/bin"
 DEV_BIN="${BIN_DIR}/exo_dev"
 EXO_LINK="${BIN_DIR}/exo"
-build_ui
+if [[ ! $skip_build_gui ]]; then
+  build_gui
+fi
 go build -tags bundle -o "$DEV_BIN" ./cmd/exo
 ln -sf "$DEV_BIN" "$EXO_LINK"
 
