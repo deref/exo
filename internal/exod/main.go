@@ -2,7 +2,6 @@ package exod
 
 import (
 	"context"
-	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -50,7 +49,20 @@ func Main(ctx context.Context) {
 		if err != nil {
 			panic(err)
 		}
-		supervise.Main(fmt.Sprintf("%s %s %s", cmd.Command, subcommand, wd), cmd.Args)
+		program := cmd.Args[0]
+		var arguments []string
+		if len(cmd.Args) > 1 {
+			arguments = cmd.Args[1:]
+		}
+
+		supervise.Main(&supervise.Config{
+			ComponentID:      "<exod>",
+			WorkingDirectory: wd,
+			Environment:      map[string]string{},
+			SyslogPort:       4500,
+			Program:          program,
+			Arguments:        arguments,
+		})
 
 	case "server":
 		RunServer(ctx, cmd.Flags)

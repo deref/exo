@@ -1,8 +1,8 @@
 package process
 
 import (
+	"bytes"
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -14,6 +14,7 @@ import (
 	"time"
 
 	core "github.com/deref/exo/internal/core/api"
+	"github.com/deref/exo/internal/supervise"
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/osutil"
 	"github.com/deref/exo/internal/util/which"
@@ -53,29 +54,23 @@ func (p *Process) start(ctx context.Context) error {
 		return errutil.WithHTTPStatus(http.StatusBadRequest, err)
 	}
 
-	childEnv, err := json.Marshal(p.Environment)
-	if err != nil {
-		return fmt.Errorf("encoding child environment")
-	}
-
 	// Construct supervised command.
 	supervisePath := os.Args[0]
-	superviseArgs := append(
-		[]string{
-			"supervise",
-			"--",
-			strconv.Itoa(int(p.SyslogPort)),
-			p.ComponentID,
-			p.WorkspaceRoot,
-			string(childEnv),
-			program,
-		},
-		p.Arguments...,
-	)
-	cmd := exec.Command(supervisePath, superviseArgs...)
+	cmd := exec.Command(supervisePath, "supervise")
 	cmd.SysProcAttr = &syscall.SysProcAttr{
 		Setsid: true, // Run in background.
 	}
+
+	// Pipe JSON config to supervise on stdin.
+	configJSON := supervise.MustEncodeConfig(&supervise.Config{
+		ComponentID:      p.ComponentID,
+		WorkingDirectory: p.WorkspaceRoot,
+		SyslogPort:       p.SyslogPort,
+		Environment:      p.Environment,
+		Program:          program,
+		Arguments:        p.Arguments,
+	})
+	cmd.Stdin = bytes.NewBuffer(configJSON)
 
 	// Connect pipes.
 	stdout, err := cmd.StdoutPipe()
