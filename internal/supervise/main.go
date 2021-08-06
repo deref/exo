@@ -139,6 +139,8 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 				// SIGCHLD. However, we must ignore these signals so that we don't stop
 				// processing logs before the child stops sending them!
 			case syscall.SIGCHLD:
+				// Allow a little extra time to gather shutdown logs from the child.
+				<-time.After(1 * time.Second)
 				cleanExit()
 			}
 		}
