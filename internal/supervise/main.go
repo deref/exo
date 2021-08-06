@@ -113,6 +113,22 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 	}
 	child := cmd.Process
 
+	// Reporting child pid to stdout.
+	if _, err := fmt.Println(child.Pid); err != nil {
+		fatalf("reporting pid: %v", err)
+	}
+
+	// NOTE [SUPERVISE_STDERR]: The "started ok" message will release any readers
+	// who are waiting for a message on stderr. Then we redirect stderr to a temp
+	// file so that if any supervision failures happen, we have a crash log we
+	// can inspect.
+	_, _ = fmt.Fprintf(os.Stderr, "started ok\n")
+	crashFile, _ = ioutil.TempFile("", "supervise.*.stderr")
+	if crashFile != nil {
+		_ = sysutil.Dup2(int(crashFile.Fd()), 2)
+		fmt.Fprintf(os.Stderr, "supervisor pid: %d\n", os.Getpid())
+	}
+
 	// Asynchronously handle signals. We do this after starting the child, so
 	// that we don't have to coordinate concurrent access to the child variable.
 	hasSignalledChildToQuit := false
@@ -140,22 +156,6 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 			}
 		}
 	}()
-
-	// Reporting child pid to stdout.
-	if _, err := fmt.Println(child.Pid); err != nil {
-		fatalf("reporting pid: %v", err)
-	}
-
-	// NOTE [SUPERVISE_STDERR]: The "started ok" message will release any readers
-	// who are waiting for a message on stderr. Then we redirect stderr to a temp
-	// file so that if any supervision failures happen, we have a crash log we
-	// can inspect.
-	_, _ = fmt.Fprintf(os.Stderr, "started ok\n")
-	crashFile, _ = ioutil.TempFile("", "supervise.*.stderr")
-	if crashFile != nil {
-		_ = sysutil.Dup2(int(crashFile.Fd()), 2)
-		fmt.Fprintf(os.Stderr, "supervisor pid: %d\n", os.Getpid())
-	}
 
 	// Proxy logs.
 	syslogProcID := strconv.Itoa(child.Pid)
