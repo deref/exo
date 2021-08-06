@@ -1,0 +1,23 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# dexo stands for "development exo". It's just a script meant to replace "go
+# run ./cmd/exo" in development. It builds the version of exo on HEAD and
+# configures the client to talk to the development instance of exo and can be
+# run from any working directory.
+
+script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
+
+pushd "$script_dir/.." > /dev/null
+
+tmp_dir=$(mktemp -d)
+go build -o "$tmp_dir" ./cmd/exo
+
+config_file="$tmp_dir/config.toml"
+
+echo '[client]
+url = "http://localhost:4001"
+' > "$config_file"
+
+popd > /dev/null
+EXO_CONFIG="$config_file" "$tmp_dir/exo" "$@"
