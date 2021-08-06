@@ -10,6 +10,7 @@ The exo repository contains a Procfile that will start the exo server and the ex
 
 ```bash
 cd path/to/exo
+./script/deps.sh
 exo run
 ```
 
