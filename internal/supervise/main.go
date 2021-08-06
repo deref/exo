@@ -115,11 +115,14 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 			// Forward signals to child.
 			case os.Interrupt, syscall.SIGTERM:
 				hasSignalledChildToQuit = true
-				// Forward signal, allow some time for graceful shutdown, then kill the
-				// entire process group.
 				_ = child.Signal(sig)
-				time.Sleep(time.Second * time.Duration(timeoutSeconds))
-				die()
+				// Wait for some grace period, then kill the entire process group.  We
+				// do this asynchronously, so that we don't block the SIGCHLD handling
+				// on a clean shutdown.
+				go func() {
+					time.Sleep(time.Second * time.Duration(timeoutSeconds))
+					die()
+				}()
 
 			// Exit when child exits.
 			case syscall.SIGCHLD:
