@@ -4,6 +4,7 @@ import (
 	"bufio"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -104,10 +105,9 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 			// Forward signals to child.
 			case os.Interrupt, syscall.SIGTERM:
 				hasSignalledChildToQuit = true
-				if err := cmd.Process.Signal(sig); err != nil {
-					break
-				}
-				// After some timeout kill the entire process group.
+				// Forward signal, allow some time for graceful shutdown, then kill the
+				// entire process group.
+				_ = cmd.Process.Signal(sig)
 				time.Sleep(time.Second * time.Duration(timeoutSeconds))
 				die()
 
@@ -169,7 +169,7 @@ func pipeToSyslog(ctx context.Context, conn net.Conn, componentID string, name s
 	b := bufio.NewReaderSize(r, api.MaxMessageSize)
 	for {
 		message, isPrefix, err := b.ReadLine()
-		if err == io.EOF || err == os.ErrClosed {
+		if errors.Is(err, io.EOF) || errors.Is(err, os.ErrClosed) {
 			return
 		}
 		if err != nil {
