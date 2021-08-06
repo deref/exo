@@ -126,19 +126,24 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 	crashFile, _ = ioutil.TempFile("", "supervise.*.stderr")
 	if crashFile != nil {
 		_ = sysutil.Dup2(int(crashFile.Fd()), 2)
-		fmt.Fprintf(os.Stderr, "supervisor pid: %d\n", os.Getpid())
 	}
+
+	log.Println("supervisor pid:", os.Getpid())
+	log.Println("child pid:", child.Pid)
 
 	// Asynchronously handle signals. We do this after starting the child, so
 	// that we don't have to coordinate concurrent access to the child variable.
 	hasSignalledChildToQuit := false
 	go func() {
 		for sig := range c {
+			log.Println("got signal:", sig)
 			switch sig {
 			// Forward signals to child.
 			case os.Interrupt, syscall.SIGTERM:
 				hasSignalledChildToQuit = true
-				_ = child.Signal(sig)
+				if err := child.Signal(sig); err != nil {
+					log.Println("error signalling child:", err)
+				}
 				// Wait for some grace period, then kill the entire process group.  We
 				// do this asynchronously, so that we don't block the SIGCHLD handling
 				// on a clean shutdown.
@@ -155,6 +160,7 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 				cleanExit(1)
 			}
 		}
+		log.Println("no more signals") // Unreachable?
 	}()
 
 	// Proxy logs.
@@ -224,5 +230,5 @@ func fatalf(format string, v ...interface{}) {
 
 func die() {
 	pgrp := syscall.Getpgrp()
-	_ = osutil.KillProcessGroup(pgrp)
+	_ = osutil.KillGroup(pgrp)
 }

@@ -56,10 +56,16 @@ func main() {
 	done := make(chan struct{})
 
 	var child *exec.Cmd
+	var childGPID int
 	startNewChild := func() {
 		var err error
 		if child, err = startCommand(cmd.Args, childStarted, childStopped); err != nil {
 			cmdutil.Fatalf("starting child process: %w", err)
+		}
+		var err2 error
+		childGPID, err2 = syscall.Getpgid(child.Process.Pid)
+		if err2 != nil {
+			cmdutil.Fatalf("getting child group: %w", err2)
 		}
 	}
 
@@ -118,7 +124,7 @@ func main() {
 					gracefulShutdownTimer.Stop()
 
 				case <-gracefulShutdownTimer.C:
-					osutil.KillProcessGroup(child.Process.Pid)
+					osutil.KillGroup(childGPID)
 				}
 				startNewChild()
 				state = runStateInitial
@@ -130,7 +136,7 @@ func main() {
 					gracefulShutdownTimer.Stop()
 
 				case <-gracefulShutdownTimer.C:
-					osutil.KillProcessGroup(child.Process.Pid)
+					osutil.KillGroup(childGPID)
 				}
 				done <- struct{}{}
 			}
@@ -223,9 +229,9 @@ func startCommand(invocation []string, started, stopped chan struct{}) (*exec.Cm
 	return cmd, nil
 }
 
-func gracefullyShutdown(cmd *exec.Cmd, sig os.Signal) {
+func gracefullyShutdown(pgid int, sig os.Signal) {
 	sysSig := sig.(syscall.Signal)
-	if err := osutil.SignalProcessGroup(cmd.Process.Pid, sysSig); err != nil && err != os.ErrProcessDone {
-		cmdutil.Fatalf("signaling child: %w", err)
+	if err := osutil.SignalGroup(pgid, sysSig); err != nil && err != os.ErrProcessDone {
+		cmdutil.Fatalf("signaling child group: %w", err)
 	}
 }

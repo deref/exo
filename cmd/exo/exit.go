@@ -3,7 +3,9 @@ package main
 import (
 	"fmt"
 	"os"
+	"time"
 
+	"github.com/deref/exo/internal/util/osutil"
 	"github.com/spf13/cobra"
 )
 
@@ -27,14 +29,7 @@ var exitCmd = &cobra.Command{
 }
 
 func killExod() error {
-	process, err := os.FindProcess(runState.Pid)
-	if err != nil {
-		panic(err)
-	}
-	// TODO: Try to stop gracefully.
-	_ = process.Kill()
-
-	// TODO: Wait for process to exit.
+	_ = osutil.TerminateProcessWithTimeout(runState.Pid, 5*time.Second)
 
 	if err := os.Remove(knownPaths.RunStateFile); err != nil {
 		return fmt.Errorf("removing run state file: %w", err)
