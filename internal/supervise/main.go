@@ -146,7 +146,7 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 		fatalf("reporting pid: %v", err)
 	}
 
-	// NOTE [SUPERVISE_STDERR]: The "started ok" message will release and readers
+	// NOTE [SUPERVISE_STDERR]: The "started ok" message will release any readers
 	// who are waiting for a message on stderr. Then we redirect stderr to a temp
 	// file so that if any supervision failures happen, we have a crash log we
 	// can inspect.
