@@ -203,6 +203,7 @@ export interface WorkspaceApi {
 
   getEvents(
     logs: string[],
+    filterStr: string | null,
     pagination?: PaginationParams,
   ): Promise<LogsResponse>;
 }
@@ -292,10 +293,12 @@ export const api = (() => {
 
       async getEvents(
         logs: string[],
+        filterStr: string | null,
         pagination?: PaginationParams,
       ): Promise<LogsResponse> {
         return (await invoke('get-events', {
           logs,
+          filterStr,
           ...pagination,
         })) as LogsResponse;
       },
