@@ -89,8 +89,8 @@
     }
   });
 
-  const setFilterStrDebounced = debounce((fitlerStr: string) => {
-    setFilterStr(workspaceId, workspace, fitlerStr);
+  const setFilterStrDebounced = debounce((filterStr: string) => {
+    setFilterStr(workspaceId, workspace, filterStr);
   }, 250);
 </script>
 

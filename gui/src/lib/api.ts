@@ -203,7 +203,7 @@ export interface WorkspaceApi {
 
   getEvents(
     logs: string[],
-    fitlerStr: string | null,
+    filterStr: string | null,
     pagination?: PaginationParams,
   ): Promise<LogsResponse>;
 }
