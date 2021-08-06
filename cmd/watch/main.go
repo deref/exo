@@ -56,14 +56,14 @@ func main() {
 	done := make(chan struct{})
 
 	var child *exec.Cmd
-	var childGPID int
+	var childGpid int
 	startNewChild := func() {
 		var err error
 		if child, err = startCommand(cmd.Args, childStarted, childStopped); err != nil {
 			cmdutil.Fatalf("starting child process: %w", err)
 		}
 		var err2 error
-		childGPID, err2 = syscall.Getpgid(child.Process.Pid)
+		childGpid, err2 = syscall.Getpgid(child.Process.Pid)
 		if err2 != nil {
 			cmdutil.Fatalf("getting child group: %w", err2)
 		}
@@ -77,7 +77,7 @@ func main() {
 		for {
 			select {
 			case sig := <-stopSignals:
-				gracefullyShutdown(child, sig)
+				gracefullyShutdown(childGpid, sig)
 				state = runStateWaitingChildExit
 
 			default:
@@ -105,11 +105,11 @@ func main() {
 				select {
 				case name := <-changed:
 					fmt.Printf("%q changed. Restarting process.\n", name)
-					gracefullyShutdown(child, syscall.SIGTERM)
+					gracefullyShutdown(childGpid, syscall.SIGTERM)
 					state = runStateRestarting
 
 				case sig := <-stopSignals:
-					gracefullyShutdown(child, sig)
+					gracefullyShutdown(childGpid, sig)
 					state = runStateWaitingChildExit
 
 				case <-childStopped:
@@ -124,7 +124,7 @@ func main() {
 					gracefulShutdownTimer.Stop()
 
 				case <-gracefulShutdownTimer.C:
-					osutil.KillGroup(childGPID)
+					osutil.KillGroup(childGpid)
 				}
 				startNewChild()
 				state = runStateInitial
@@ -136,7 +136,7 @@ func main() {
 					gracefulShutdownTimer.Stop()
 
 				case <-gracefulShutdownTimer.C:
-					osutil.KillGroup(childGPID)
+					osutil.KillGroup(childGpid)
 				}
 				done <- struct{}{}
 			}
@@ -159,7 +159,7 @@ func main() {
 			// Exit on error.
 			case err := <-watcher.Errors:
 				if child != nil {
-					gracefullyShutdown(child, syscall.SIGTERM)
+					gracefullyShutdown(childGpid, syscall.SIGTERM)
 				}
 				cmdutil.Fatalf("watching files: %w", err)
 			}

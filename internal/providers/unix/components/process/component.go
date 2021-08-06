@@ -19,6 +19,7 @@ type Spec struct {
 }
 
 type State struct {
+	Pgid          int `json:"pgid"`
 	SupervisorPid int `json:"supervisorPid"`
 	Pid           int `json:"pid"`
 	// Program string `json:"program"`

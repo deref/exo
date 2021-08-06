@@ -47,11 +47,6 @@ func (p *Process) start(ctx context.Context) error {
 		return errutil.WithHTTPStatus(http.StatusBadRequest, err)
 	}
 
-	gracePeriod := 5
-	if p.ShutdownGracePeriodSeconds != nil {
-		gracePeriod = *p.ShutdownGracePeriodSeconds
-	}
-
 	childEnv, err := json.Marshal(p.Environment)
 	if err != nil {
 		return fmt.Errorf("encoding child environment")
@@ -66,7 +61,6 @@ func (p *Process) start(ctx context.Context) error {
 			strconv.Itoa(int(p.SyslogPort)),
 			p.ComponentID,
 			p.WorkspaceRoot,
-			strconv.Itoa(gracePeriod),
 			string(childEnv),
 			program,
 		},
@@ -92,6 +86,8 @@ func (p *Process) start(ctx context.Context) error {
 		return fmt.Errorf("starting supervise: %w", err)
 	}
 	p.State.SupervisorPid = cmd.Process.Pid
+	p.State.Pgid, _ = syscall.Getpgid(p.State.SupervisorPid)
+	p.State.Pid = 0 // Overriden below.
 
 	envMap := make(map[string]string)
 	for _, assign := range os.Environ() {
@@ -153,7 +149,7 @@ func (p *Process) Stop(ctx context.Context, input *core.StopInput) (*core.StopOu
 const DefaultShutdownGracePeriod = 5 * time.Second
 
 func (p *Process) stop() {
-	if p.SupervisorPid == 0 {
+	if p.Pgid == 0 {
 		return
 	}
 
@@ -162,11 +158,12 @@ func (p *Process) stop() {
 		timeout = time.Duration(*p.ShutdownGracePeriodSeconds) * time.Second
 	}
 
-	if err := osutil.TerminateProcessGroupWithTimeout(p.SupervisorPid, timeout); err != nil {
+	if err := osutil.TerminateGroupWithTimeout(p.Pgid, timeout); err != nil {
 		p.Logger.Infof("terminating process: %w", err)
 	}
 
 	p.Pid = 0
+	p.Pgid = 0
 	p.SupervisorPid = 0
 }
 

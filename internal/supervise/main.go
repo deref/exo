@@ -25,10 +25,13 @@ import (
 )
 
 var varDir string
+var pgrp int
 
 func Main(command string, args []string) {
+	pgrp = syscall.Getpgrp()
+
 	if len(args) < 4 {
-		fatalf(`usage: %s <syslog-port> <component-id> <working-directory> <timeout> <env> <program> <args...>
+		fatalf(`usage: %s <syslog-port> <component-id> <working-directory> <env> <program> <args...>
 
 supervise executes and supervises the given command. If successful, the child
 pid is written to stdout. The stdout and stderr streams of the supervised process
@@ -49,27 +52,21 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 	syslogPort := args[0]
 	componentID := args[1]
 	wd := args[2]
-	timeout := args[3]
-	envString := args[4]
-	program := args[5]
-	arguments := args[6:]
+	envString := args[3]
+	program := args[4]
+	arguments := args[5:]
 
 	var crashFile *os.File
-	cleanExit := func(statusCode int) {
+	cleanExit := func() {
 		if crashFile != nil {
 			_ = os.Remove(crashFile.Name())
 		}
-		os.Exit(statusCode)
+		os.Exit(0)
 	}
 
 	udpAddr, err := net.ResolveUDPAddr("udp", "localhost:"+syslogPort)
 	if err != nil {
 		fatalf("resolving udp address: %w", err)
-	}
-
-	timeoutSeconds, timeoutErr := strconv.Atoi(timeout)
-	if timeoutErr != nil {
-		fatalf(timeoutErr.Error())
 	}
 
 	childEnv := make(map[string]string)
@@ -101,11 +98,10 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 	}
 	defer conn.Close()
 
-	// Register for signal handlers.  Do this before starting the child so that
-	// the default TERM handler is not in effect. If it runs, it will exit,
-	// preventing us from terminating the spawned child.
+	// Register for signals.  Do this before starting the child to
+	// guarantee we see any exist of a child process.
 	c := make(chan os.Signal)
-	signal.Notify(c, os.Interrupt, syscall.SIGTERM, syscall.SIGCHLD)
+	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM, syscall.SIGCHLD)
 
 	// Start child process.
 	if err := cmd.Start(); err != nil {
@@ -131,36 +127,21 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 	log.Println("supervisor pid:", os.Getpid())
 	log.Println("child pid:", child.Pid)
 
-	// Asynchronously handle signals. We do this after starting the child, so
-	// that we don't have to coordinate concurrent access to the child variable.
-	hasSignalledChildToQuit := false
+	// Asynchronously handle SIGCHILD. We spawn this goroutine after starting the
+	// child, so that we don't have to coordinate concurrent access to the child
+	// variable.
 	go func() {
 		for sig := range c {
-			log.Println("got signal:", sig)
 			switch sig {
-			// Forward signals to child.
-			case os.Interrupt, syscall.SIGTERM:
-				hasSignalledChildToQuit = true
-				if err := child.Signal(sig); err != nil {
-					log.Println("error signalling child:", err)
-				}
-				// Wait for some grace period, then kill the entire process group.  We
-				// do this asynchronously, so that we don't block the SIGCHLD handling
-				// on a clean shutdown.
-				go func() {
-					time.Sleep(time.Second * time.Duration(timeoutSeconds))
-					die()
-				}()
-
-			// Exit when child exits.
+			case syscall.SIGINT, syscall.SIGTERM:
+				// We expect exo to send these to the whole group. This means that a
+				// well behaved child will handle SIGTERM, leading to us receiving
+				// SIGCHLD. However, we must ignore these signals so that we don't stop
+				// processing logs before the child stops sending them!
 			case syscall.SIGCHLD:
-				if hasSignalledChildToQuit {
-					cleanExit(0)
-				}
-				cleanExit(1)
+				cleanExit()
 			}
 		}
-		log.Println("no more signals") // Unreachable?
 	}()
 
 	// Proxy logs.
@@ -170,8 +151,8 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 
 	// Wait for child process to exit.
 	err = cmd.Wait()
-	if exitErr, ok := err.(*exec.ExitError); ok {
-		cleanExit(exitErr.ExitCode())
+	if _, ok := err.(*exec.ExitError); ok {
+		cleanExit()
 	}
 	if err != nil {
 		fatalf("wait error: %v", err)
@@ -229,6 +210,5 @@ func fatalf(format string, v ...interface{}) {
 }
 
 func die() {
-	pgrp := syscall.Getpgrp()
 	_ = osutil.KillGroup(pgrp)
 }
