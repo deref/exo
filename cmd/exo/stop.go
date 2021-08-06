@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+
 	"github.com/deref/exo/internal/core/api"
 	"github.com/spf13/cobra"
 )
@@ -10,28 +12,28 @@ func init() {
 }
 
 var stopCmd = &cobra.Command{
-	Use:   "stop [ref]",
-	Short: "Stop a process",
-	Long: `Stop a process.
+	Use:   "stop [ref...]",
+	Short: "Stop processes",
+	Long: `Stop processes.
 
-If a ref is not provided, stops the entire workspace.`,
-	Args: cobra.MaximumNArgs(1),
+If no refs are provided, stops the entire workspace.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		ctx := newContext()
-		ensureDaemon()
-		cl := newClient()
-		workspace := requireWorkspace(ctx, cl)
-		switch len(args) {
-		case 0:
-			_, err := workspace.Stop(ctx, &api.StopInput{})
-			return err
-		case 1:
-			_, err := workspace.StopComponent(ctx, &api.StopComponentInput{
-				Ref: args[0],
-			})
-			return err
-		default:
-			panic("unreachable")
-		}
+		return controlComponents(args, func(ctx context.Context, ws api.Workspace, refs []string) (jobID string, err error) {
+			if refs == nil {
+				output, err := ws.Stop(ctx, &api.StopInput{})
+				if output != nil {
+					jobID = output.JobID
+				}
+				return jobID, err
+			} else {
+				output, err := ws.StopComponents(ctx, &api.StopComponentsInput{
+					Refs: refs,
+				})
+				if output != nil {
+					jobID = output.JobID
+				}
+				return jobID, err
+			}
+		})
 	},
 }

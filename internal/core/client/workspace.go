@@ -123,18 +123,18 @@ func (c *Workspace) GetEvents(ctx context.Context, input *api.GetEventsInput) (o
 	return
 }
 
-func (c *Workspace) StartComponent(ctx context.Context, input *api.StartComponentInput) (output *api.StartComponentOutput, err error) {
-	err = c.client.Invoke(ctx, "start-component", input, &output)
+func (c *Workspace) StartComponents(ctx context.Context, input *api.StartComponentsInput) (output *api.StartComponentsOutput, err error) {
+	err = c.client.Invoke(ctx, "start-components", input, &output)
 	return
 }
 
-func (c *Workspace) StopComponent(ctx context.Context, input *api.StopComponentInput) (output *api.StopComponentOutput, err error) {
-	err = c.client.Invoke(ctx, "stop-component", input, &output)
+func (c *Workspace) StopComponents(ctx context.Context, input *api.StopComponentsInput) (output *api.StopComponentsOutput, err error) {
+	err = c.client.Invoke(ctx, "stop-components", input, &output)
 	return
 }
 
-func (c *Workspace) RestartComponent(ctx context.Context, input *api.RestartComponentInput) (output *api.RestartComponentOutput, err error) {
-	err = c.client.Invoke(ctx, "restart-component", input, &output)
+func (c *Workspace) RestartComponents(ctx context.Context, input *api.RestartComponentsInput) (output *api.RestartComponentsOutput, err error) {
+	err = c.client.Invoke(ctx, "restart-components", input, &output)
 	return
 }
 

@@ -1,9 +1,16 @@
 # XXX This is only in the same file as workspace because workspace refers to
 # it and the JOSH loader does not yet properly handle multi-file packages.
 interface "process" {
-  method "start" {}
-  method "stop" {}
-  method "restart" {} # TODO: Optional method?
+  method "start" {
+    output "job-id" "string" {}
+  }
+  method "stop" {
+    output "job-id" "string" {}
+  }
+  # TODO: Optional method?
+  method "restart" {
+    output "job-id" "string" {}
+  }
 }
 
 interface "workspace" {
@@ -118,16 +125,19 @@ interface "workspace" {
     output "nextCursor" "string" {}
   }
 
-  method "start-component" {
-    input "ref" "string" {}
+  method "start-components" {
+    input "refs" "[]string" {}
+    output "job-id" "string" {}
   }
 
-  method "stop-component" {
-    input "ref" "string" {}
+  method "stop-components" {
+    input "refs" "[]string" {}
+    output "job-id" "string" {}
   }
 
-  method "restart-component" {
-    input "ref" "string" {}
+  method "restart-components" {
+    input "refs" "[]string" {}
+    output "job-id" "string" {}
   }
 
   method "describe-processes" {

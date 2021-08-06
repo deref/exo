@@ -19,18 +19,21 @@ type StartInput struct {
 }
 
 type StartOutput struct {
+	JobID string `json:"jobId"`
 }
 
 type StopInput struct {
 }
 
 type StopOutput struct {
+	JobID string `json:"jobId"`
 }
 
 type RestartInput struct {
 }
 
 type RestartOutput struct {
+	JobID string `json:"jobId"`
 }
 
 func BuildProcessMux(b *josh.MuxBuilder, factory func(req *http.Request) Process) {
@@ -70,9 +73,9 @@ type Workspace interface {
 	DescribeLogs(context.Context, *DescribeLogsInput) (*DescribeLogsOutput, error)
 	// Returns pages of log events for some set of logs. If `cursor` is specified, standard pagination behavior is used. Otherwise the cursor is assumed to represent the current tail of the log.
 	GetEvents(context.Context, *GetEventsInput) (*GetEventsOutput, error)
-	StartComponent(context.Context, *StartComponentInput) (*StartComponentOutput, error)
-	StopComponent(context.Context, *StopComponentInput) (*StopComponentOutput, error)
-	RestartComponent(context.Context, *RestartComponentInput) (*RestartComponentOutput, error)
+	StartComponents(context.Context, *StartComponentsInput) (*StartComponentsOutput, error)
+	StopComponents(context.Context, *StopComponentsInput) (*StopComponentsOutput, error)
+	RestartComponents(context.Context, *RestartComponentsInput) (*RestartComponentsOutput, error)
 	DescribeProcesses(context.Context, *DescribeProcessesInput) (*DescribeProcessesOutput, error)
 	DescribeVolumes(context.Context, *DescribeVolumesInput) (*DescribeVolumesOutput, error)
 	DescribeNetworks(context.Context, *DescribeNetworksInput) (*DescribeNetworksOutput, error)
@@ -189,25 +192,28 @@ type GetEventsOutput struct {
 	NextCursor string  `json:"nextCursor"`
 }
 
-type StartComponentInput struct {
-	Ref string `json:"ref"`
+type StartComponentsInput struct {
+	Refs []string `json:"refs"`
 }
 
-type StartComponentOutput struct {
+type StartComponentsOutput struct {
+	JobID string `json:"jobId"`
 }
 
-type StopComponentInput struct {
-	Ref string `json:"ref"`
+type StopComponentsInput struct {
+	Refs []string `json:"refs"`
 }
 
-type StopComponentOutput struct {
+type StopComponentsOutput struct {
+	JobID string `json:"jobId"`
 }
 
-type RestartComponentInput struct {
-	Ref string `json:"ref"`
+type RestartComponentsInput struct {
+	Refs []string `json:"refs"`
 }
 
-type RestartComponentOutput struct {
+type RestartComponentsOutput struct {
+	JobID string `json:"jobId"`
 }
 
 type DescribeProcessesInput struct {
@@ -277,14 +283,14 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	b.AddMethod("get-events", func(req *http.Request) interface{} {
 		return factory(req).GetEvents
 	})
-	b.AddMethod("start-component", func(req *http.Request) interface{} {
-		return factory(req).StartComponent
+	b.AddMethod("start-components", func(req *http.Request) interface{} {
+		return factory(req).StartComponents
 	})
-	b.AddMethod("stop-component", func(req *http.Request) interface{} {
-		return factory(req).StopComponent
+	b.AddMethod("stop-components", func(req *http.Request) interface{} {
+		return factory(req).StopComponents
 	})
-	b.AddMethod("restart-component", func(req *http.Request) interface{} {
-		return factory(req).RestartComponent
+	b.AddMethod("restart-components", func(req *http.Request) interface{} {
+		return factory(req).RestartComponents
 	})
 	b.AddMethod("describe-processes", func(req *http.Request) interface{} {
 		return factory(req).DescribeProcesses

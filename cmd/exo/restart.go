@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+
 	"github.com/deref/exo/internal/core/api"
 	"github.com/spf13/cobra"
 )
@@ -10,28 +12,28 @@ func init() {
 }
 
 var restartCmd = &cobra.Command{
-	Use:   "restart [ref]",
-	Short: "Restart a process",
-	Long: `Restart a process. If it's not already running, will start it.
+	Use:   "restart [ref...]",
+	Short: "Restart processes",
+	Long: `Restart processes. If not already running, will start them.
 
-If a ref is not providered, restarts the entire workspace.`,
-	Args: cobra.MaximumNArgs(1),
+If no refs are provided, restarts the entire workspace.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		ctx := newContext()
-		ensureDaemon()
-		cl := newClient()
-		workspace := requireWorkspace(ctx, cl)
-		switch len(args) {
-		case 0:
-			_, err := workspace.Restart(ctx, &api.RestartInput{})
-			return err
-		case 1:
-			_, err := workspace.RestartComponent(ctx, &api.RestartComponentInput{
-				Ref: args[0],
-			})
-			return err
-		default:
-			panic("unreachable")
-		}
+		return controlComponents(args, func(ctx context.Context, ws api.Workspace, refs []string) (jobID string, err error) {
+			if refs == nil {
+				output, err := ws.Restart(ctx, &api.RestartInput{})
+				if output != nil {
+					jobID = output.JobID
+				}
+				return jobID, err
+			} else {
+				output, err := ws.RestartComponents(ctx, &api.RestartComponentsInput{
+					Refs: refs,
+				})
+				if output != nil {
+					jobID = output.JobID
+				}
+				return jobID, err
+			}
+		})
 	},
 }
