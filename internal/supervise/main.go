@@ -38,10 +38,10 @@ Syslog messages use the following fields:
 
 APPNAME = Component ID for the Exo process that is being logged.
 PROCID = PID of the supervised process. As per RFC5425, this field has "no
-				 interoperable meaning, except that a change in the value indicates
-				 there has been a discontinuity in syslog reporting".
+         interoperable meaning, except that a change in the value indicates
+         there has been a discontinuity in syslog reporting".
 MSGID = The message "type". Set to "out" or "err" to specify which stdio
-				stream the message came from.
+        stream the message came from.
 `, command)
 	}
 	ctx := context.Background()
