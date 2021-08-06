@@ -63,7 +63,7 @@ func main() {
 		}
 	}
 
-	signal.Notify(stopSignals, os.Interrupt, syscall.SIGTERM, syscall.SIGQUIT)
+	signal.Notify(stopSignals, os.Interrupt, syscall.SIGTERM)
 
 	// Main loop
 	go func() {
