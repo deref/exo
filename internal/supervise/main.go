@@ -94,6 +94,13 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 		panic(err)
 	}
 
+	// Dial syslog.
+	conn, err := net.DialUDP("udp", nil, udpAddr)
+	if err != nil {
+		fatalf("dialing udp: %v", err)
+	}
+	defer conn.Close()
+
 	// Register for signal handlers.  Do this before starting the child so that
 	// the default TERM handler is not in effect. If it runs, it will exit,
 	// preventing us from terminating the spawned child.
@@ -133,13 +140,6 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 			}
 		}
 	}()
-
-	// Dial syslog.
-	conn, err := net.DialUDP("udp", nil, udpAddr)
-	if err != nil {
-		fatalf("dialing udp: %v", err)
-	}
-	defer conn.Close()
 
 	// Reporting child pid to stdout.
 	if _, err := fmt.Println(child.Pid); err != nil {
