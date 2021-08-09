@@ -25,7 +25,7 @@
               }}
             >
               <b>{workspace.id}</b>
-              <span>{workspace.root}</span>
+              <span title={workspace.root}>{workspace.root}</span>
             </li>
           {/each}
         </ul>
