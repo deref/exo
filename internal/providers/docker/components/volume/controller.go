@@ -7,7 +7,8 @@ import (
 	"github.com/goccy/go-yaml"
 )
 
-func (v *Volume) InitResource(spec, state string) error {
+func (v *Volume) InitResource(componentID, spec, state string) error {
+	v.ComponentID = componentID
 	if err := yaml.Unmarshal([]byte(spec), &v.Spec); err != nil {
 		return fmt.Errorf("unmarshalling spec: %w", err)
 	}

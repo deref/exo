@@ -791,7 +791,7 @@ func (ws *Workspace) controlEachProcess(ctx context.Context, label string, f int
 
 func (ws *Workspace) control(ctx context.Context, desc api.ComponentDescription, f interface{}) error {
 	ctrl := ws.newController(ctx, desc.Type)
-	if err := ctrl.InitResource(desc.Spec, desc.State); err != nil {
+	if err := ctrl.InitResource(desc.ID, desc.Spec, desc.State); err != nil {
 		return err
 	}
 	fV := reflect.ValueOf(f)

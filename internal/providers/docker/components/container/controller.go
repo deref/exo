@@ -7,7 +7,8 @@ import (
 	"github.com/goccy/go-yaml"
 )
 
-func (c *Container) InitResource(spec, state string) error {
+func (c *Container) InitResource(componentID, spec, state string) error {
+	c.ComponentID = componentID
 	if err := yaml.Unmarshal([]byte(spec), &c.Spec); err != nil {
 		return fmt.Errorf("unmarshalling spec: %w", err)
 	}
