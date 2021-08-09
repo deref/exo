@@ -8,8 +8,7 @@ import (
 	"github.com/deref/exo/internal/util/jsonutil"
 )
 
-func (p *Process) InitResource(componentID, spec, state string) error {
-	p.ComponentID = componentID
+func (p *Process) InitResource(spec, state string) error {
 	if err := jsonutil.UnmarshalString(spec, &p.Spec); err != nil {
 		return fmt.Errorf("unmarshalling spec: %w", err)
 	}
