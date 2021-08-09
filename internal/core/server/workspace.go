@@ -192,7 +192,7 @@ func (ws *Workspace) newController(ctx context.Context, typ string) Controller {
 			Err: fmt.Errorf("workspace error: %w", err),
 		}
 	}
-	component := core.Component{
+	base := core.ComponentBase{
 		ComponentID:   description.ID,
 		WorkspaceRoot: description.Root,
 		Logger:        ws.Logger,
@@ -200,32 +200,32 @@ func (ws *Workspace) newController(ctx context.Context, typ string) Controller {
 	switch typ {
 	case "process":
 		return &process.Process{
-			Component:  component,
-			SyslogPort: ws.SyslogPort,
+			ComponentBase: base,
+			SyslogPort:    ws.SyslogPort,
 		}
 
 	case "container":
 		return &container.Container{
-			Component: docker.Component{
-				Component: component,
-				Docker:    ws.Docker,
+			ComponentBase: docker.ComponentBase{
+				ComponentBase: base,
+				Docker:        ws.Docker,
 			},
 			SyslogPort: ws.SyslogPort,
 		}
 
 	case "network":
 		return &network.Network{
-			Component: docker.Component{
-				Component: component,
-				Docker:    ws.Docker,
+			ComponentBase: docker.ComponentBase{
+				ComponentBase: base,
+				Docker:        ws.Docker,
 			},
 		}
 
 	case "volume":
 		return &volume.Volume{
-			Component: docker.Component{
-				Component: component,
-				Docker:    ws.Docker,
+			ComponentBase: docker.ComponentBase{
+				ComponentBase: base,
+				Docker:        ws.Docker,
 			},
 		}
 

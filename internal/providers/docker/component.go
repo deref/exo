@@ -5,7 +5,7 @@ import (
 	dockerclient "github.com/docker/docker/client"
 )
 
-type Component struct {
-	core.Component
+type ComponentBase struct {
+	core.ComponentBase
 	Docker *dockerclient.Client
 }

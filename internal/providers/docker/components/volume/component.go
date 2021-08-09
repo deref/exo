@@ -6,7 +6,7 @@ import (
 )
 
 type Volume struct {
-	docker.Component
+	docker.ComponentBase
 	Spec
 	State
 }
