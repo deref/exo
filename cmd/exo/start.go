@@ -1,6 +1,8 @@
 package main
 
 import (
+	"context"
+
 	"github.com/deref/exo/internal/core/api"
 	"github.com/spf13/cobra"
 )
@@ -10,28 +12,28 @@ func init() {
 }
 
 var startCmd = &cobra.Command{
-	Use:   "start [ref]",
-	Short: "Start a process",
-	Long: `Start a process.
+	Use:   "start [ref...]",
+	Short: "Start processes",
+	Long: `Start processes.
 
-If a ref is not provided, starts the entire workspace.`,
-	Args: cobra.MaximumNArgs(1),
+If no refs are provided, starts the entire workspace.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		ctx := newContext()
-		ensureDaemon()
-		cl := newClient()
-		workspace := requireWorkspace(ctx, cl)
-		switch len(args) {
-		case 0:
-			_, err := workspace.Start(ctx, &api.StartInput{})
-			return err
-		case 1:
-			_, err := workspace.StartComponent(ctx, &api.StartComponentInput{
-				Ref: args[0],
-			})
-			return err
-		default:
-			panic("unreachable")
-		}
+		return controlComponents(args, func(ctx context.Context, ws api.Workspace, refs []string) (jobID string, err error) {
+			if refs == nil {
+				output, err := ws.Start(ctx, &api.StartInput{})
+				if output != nil {
+					jobID = output.JobID
+				}
+				return jobID, err
+			} else {
+				output, err := ws.StartComponents(ctx, &api.StartComponentsInput{
+					Refs: refs,
+				})
+				if output != nil {
+					jobID = output.JobID
+				}
+				return jobID, err
+			}
+		})
 	},
 }
