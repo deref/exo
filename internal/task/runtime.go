@@ -74,11 +74,11 @@ func (tt *TaskTracker) createTask(ctx context.Context, parent *Task, name string
 // Creates and starts a task. See `Task.Start()` for usage instructions.
 func (tt *TaskTracker) StartTask(ctx context.Context, name string) *Task {
 	var parent *Task
-	return tt.startTask(parent, name)
+	return tt.startTask(ctx, parent, name)
 }
 
-func (tt *TaskTracker) startTask(parent *Task, name string) *Task {
-	task := tt.createTask(parent, parent, name)
+func (tt *TaskTracker) startTask(ctx context.Context, parent *Task, name string) *Task {
+	task := tt.createTask(ctx, parent, name)
 	task.Start()
 	return task
 }
@@ -155,7 +155,7 @@ func (t *Task) Wait() error {
 }
 
 func (t *Task) RunChild(name string, f func(task *Task) error) error {
-	task := t.tt.startTask(t, name)
+	task := t.tt.startTask(t, t, name)
 	if err := f(task); err != nil {
 		task.Fail(err)
 	}
