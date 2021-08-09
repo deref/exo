@@ -10,3 +10,7 @@ export interface LogsResponse {
   prevCursor: string;
   nextCursor: string;
 }
+
+export interface ExportProcfileResponse {
+  procfile: string;
+}

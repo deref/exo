@@ -92,6 +92,7 @@
       <Add />
     </IconButton>
   </h1>
+  <button on:click={() => workspace.exportProcfile().then(p => window.alert(p))}>Test</button>
   <div>
     {#if processList.stage == 'pending' || processList.stage == 'idle'}
       Loading...

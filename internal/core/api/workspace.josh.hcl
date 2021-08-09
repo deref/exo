@@ -37,7 +37,7 @@ interface "workspace" {
     input "manifest" "*string" {
       doc = "Contents of the manifest file. Not required if manifest-path is provided."
     }
-    
+
     output "warnings" "[]string" {}
   }
 
@@ -86,7 +86,7 @@ interface "workspace" {
     input "refs" "[]string" {
       doc = "If omitted, refreshes all components."
     }
-    
+
     output "job-id" "string" {}
   }
 
@@ -143,13 +143,17 @@ interface "workspace" {
   method "describe-processes" {
     output "processes" "[]ProcessDescription" {}
   }
-  
+
   method "describe-volumes" {
     output "volumes" "[]VolumeDescription" {}
   }
 
   method "describe-networks" {
     output "networks" "[]NetworkDescription" {}
+  }
+
+  method "export-procfile" {
+    output "procfile" "string" {}
   }
 }
 
@@ -185,6 +189,8 @@ struct "process-description" {
   field "id" "string" {}
   field "provider" "string" {}
   field "name" "string" {}
+  // TODO: Since process-description is polymorphic, can we do better than map[string]interface{} for the spec?
+  field "spec" "map[string]interface{}" {}
   field "running" "bool" {}
   field "env-vars" "map[string]string" {}
   field "cpu-percent" "float64" {}

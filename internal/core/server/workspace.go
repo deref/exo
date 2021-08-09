@@ -11,6 +11,7 @@ import (
 	"github.com/deref/exo/internal/core/api"
 	state "github.com/deref/exo/internal/core/state/api"
 	"github.com/deref/exo/internal/gensym"
+	"github.com/deref/exo/internal/import/procfile"
 	logd "github.com/deref/exo/internal/logd/api"
 	"github.com/deref/exo/internal/manifest"
 	"github.com/deref/exo/internal/providers/core"
@@ -615,6 +616,8 @@ func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeP
 	if err != nil {
 		return nil, fmt.Errorf("describing components: %w", err)
 	}
+	logger := logging.CurrentLogger(ctx)
+
 	output := api.DescribeProcessesOutput{
 		Processes: make([]api.ProcessDescription, 0, len(components.Components)),
 	}
@@ -624,15 +627,22 @@ func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeP
 		case "process":
 			var state process.State
 			if err := jsonutil.UnmarshalString(component.State, &state); err != nil {
-				// TODO: log error.
-				fmt.Printf("unmarshalling process state: %v\n", err)
+				logger.Infof("unmarshalling process state: %v\n", err)
 				continue
 			}
+
+			var spec process.Spec
+			if err := jsonutil.UnmarshalString(component.Spec, &spec); err != nil {
+				logger.Infof("unmarshalling process spec: %v\n", err)
+				continue
+			}
+
 			process := api.ProcessDescription{
 				ID:       component.ID,
 				Name:     component.Name,
 				Provider: "unix",
 				EnvVars:  state.FullEnvironment,
+				Spec:     spec,
 			}
 
 			proc, err := psprocess.NewProcess(int32(state.Pid))
@@ -745,6 +755,36 @@ func (ws *Workspace) DescribeNetworks(ctx context.Context, input *api.DescribeNe
 		output.Networks = append(output.Networks, network)
 	}
 	return &output, nil
+}
+
+func (ws *Workspace) ExportProcfile(ctx context.Context, input *api.ExportProcfileInput) (*api.ExportProcfileOutput, error) {
+	procs, err := ws.DescribeProcesses(ctx, &api.DescribeProcessesInput{})
+	if err != nil {
+		return nil, fmt.Errorf("describing processes: %w", err)
+	}
+
+	unixProcs := make([]procfile.Process, 0, len(procs.Processes))
+	for _, proc := range procs.Processes {
+		if proc.Provider == "unix" {
+			spec := proc.Spec.(process.Spec)
+
+			unixProcs = append(unixProcs, procfile.Process{
+				Name:        proc.Name,
+				Program:     spec.Program,
+				Arguments:   spec.Arguments,
+				Environment: spec.Environment,
+			})
+		}
+	}
+
+	export, err := procfile.Generate(unixProcs)
+	if err != nil {
+		return nil, fmt.Errorf("generating procfile: %w", err)
+	}
+
+	return &api.ExportProcfileOutput{
+		Procfile: export,
+	}, nil
 }
 
 type componentFilter struct {

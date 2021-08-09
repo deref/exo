@@ -79,6 +79,7 @@ type Workspace interface {
 	DescribeProcesses(context.Context, *DescribeProcessesInput) (*DescribeProcessesOutput, error)
 	DescribeVolumes(context.Context, *DescribeVolumesInput) (*DescribeVolumesOutput, error)
 	DescribeNetworks(context.Context, *DescribeNetworksInput) (*DescribeNetworksOutput, error)
+	ExportProcfile(context.Context, *ExportProcfileInput) (*ExportProcfileOutput, error)
 }
 
 type DescribeInput struct {
@@ -237,6 +238,13 @@ type DescribeNetworksOutput struct {
 	Networks []NetworkDescription `json:"networks"`
 }
 
+type ExportProcfileInput struct {
+}
+
+type ExportProcfileOutput struct {
+	Procfile string `json:"procfile"`
+}
+
 func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Workspace) {
 	b.AddMethod("start", func(req *http.Request) interface{} {
 		return factory(req).Start
@@ -301,6 +309,9 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	b.AddMethod("describe-networks", func(req *http.Request) interface{} {
 		return factory(req).DescribeNetworks
 	})
+	b.AddMethod("export-procfile", func(req *http.Request) interface{} {
+		return factory(req).ExportProcfile
+	})
 }
 
 type WorkspaceDescription struct {
@@ -335,6 +346,7 @@ type ProcessDescription struct {
 	ID                  string            `json:"id"`
 	Provider            string            `json:"provider"`
 	Name                string            `json:"name"`
+	Spec                interface{}       `json:"spec"`
 	Running             bool              `json:"running"`
 	EnvVars             map[string]string `json:"envVars"`
 	CPUPercent          float64           `json:"cpuPercent"`
