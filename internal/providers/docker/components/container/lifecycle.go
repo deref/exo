@@ -79,7 +79,7 @@ func (c *Container) create(ctx context.Context) error {
 		// syslog service.
 		logCfg.Type = "syslog"
 		logCfg.Config = map[string]string{
-			"syslog-address":  fmt.Sprintf("udp://host.docker.internal:%d", c.SyslogPort),
+			"syslog-address":  fmt.Sprintf("udp://localhost:%d", c.SyslogPort),
 			"syslog-facility": "1", // "user-level messages"
 			"tag":             c.ComponentID,
 			"syslog-format":   "rfc5424micro",
