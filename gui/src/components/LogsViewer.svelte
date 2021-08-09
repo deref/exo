@@ -13,6 +13,7 @@
   import { shortDate } from '../lib/time';
   import { processes } from '../lib/process/store';
   import FormattedLogMessage from './logs/FormattedLogMessage.svelte';
+  import Textbox from './Textbox.svelte';
   import debounce from '../lib/debounce';
 
   export let workspace: WorkspaceApi;
@@ -112,13 +113,14 @@
         </table>
       </div>
     </div>
-    <input
+    <Textbox
       placeholder="Filter..."
       value={state.filterStr || ''}
       on:input={(e) => {
-        const text = e.currentTarget.value.trim();
+        const text = e.currentTarget?.value.trim();
         setFilterStrDebounced(text);
       }}
+      --input-width="100%"
     />
   {:else if isUnresolved(state.events)}
     <div>Loading logs...</div>
@@ -128,16 +130,6 @@
 </section>
 
 <style>
-  input {
-    border: none;
-    border-radius: 6px;
-    padding: 12px 18px;
-    margin-top: 18px;
-    box-shadow: 0 0.33px 0 1px hsla(0, 0%, 100%, 0.15),
-      0 6px 9px -4px rgba(0, 0, 0, 0.1) inset,
-      0 0.4px 0 0.8px rgba(0, 0, 0, 0.1) inset;
-  }
-
   section {
     overflow: hidden;
     padding: 1px;
@@ -150,6 +142,7 @@
     overflow: hidden;
     border-radius: 4px;
     box-shadow: 0px 12px 16px -8px #00000033, 0px 0.25px 0px 1px #00000033;
+    margin-bottom: 18px;
   }
 
   .log-table-container {

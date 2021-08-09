@@ -1,3 +1,11 @@
+/* Default global styles for component properties that can be overridden with `style-props` */
+
+:root {
+  --input-width: 300px;
+}
+
+/* Theme color variables */
+
 :root {
   --text-color: #061a29;
   --bg-color: #fff;
