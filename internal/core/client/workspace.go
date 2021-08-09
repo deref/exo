@@ -103,13 +103,13 @@ func (c *Workspace) RefreshComponents(ctx context.Context, input *api.RefreshCom
 	return
 }
 
-func (c *Workspace) DisposeComponent(ctx context.Context, input *api.DisposeComponentInput) (output *api.DisposeComponentOutput, err error) {
-	err = c.client.Invoke(ctx, "dispose-component", input, &output)
+func (c *Workspace) DisposeComponents(ctx context.Context, input *api.DisposeComponentsInput) (output *api.DisposeComponentsOutput, err error) {
+	err = c.client.Invoke(ctx, "dispose-components", input, &output)
 	return
 }
 
-func (c *Workspace) DeleteComponent(ctx context.Context, input *api.DeleteComponentInput) (output *api.DeleteComponentOutput, err error) {
-	err = c.client.Invoke(ctx, "delete-component", input, &output)
+func (c *Workspace) DeleteComponents(ctx context.Context, input *api.DeleteComponentsInput) (output *api.DeleteComponentsOutput, err error) {
+	err = c.client.Invoke(ctx, "delete-components", input, &output)
 	return
 }
 
