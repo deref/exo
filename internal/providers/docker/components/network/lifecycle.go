@@ -37,10 +37,6 @@ func (n *Network) Initialize(ctx context.Context, input *core.InitializeInput) (
 	return &core.InitializeOutput{}, nil
 }
 
-func (n *Network) Update(context.Context, *core.UpdateInput) (*core.UpdateOutput, error) {
-	panic("TODO: network update")
-}
-
 func (n *Network) Refresh(ctx context.Context, input *core.RefreshInput) (*core.RefreshOutput, error) {
 	return &core.RefreshOutput{}, nil
 }

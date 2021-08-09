@@ -191,10 +191,6 @@ func (c *Container) create(ctx context.Context) error {
 	return nil
 }
 
-func (c *Container) Update(context.Context, *core.UpdateInput) (*core.UpdateOutput, error) {
-	panic("TODO: container update")
-}
-
 func (c *Container) Refresh(ctx context.Context, input *core.RefreshInput) (*core.RefreshOutput, error) {
 	if c.ContainerID == "" {
 		c.Running = false

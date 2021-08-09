@@ -30,10 +30,6 @@ func readLine(r io.Reader) (string, error) {
 	return string(line), nil
 }
 
-func (p *Process) Update(context.Context, *core.UpdateInput) (*core.UpdateOutput, error) {
-	panic("TODO: update")
-}
-
 func (p *Process) Refresh(ctx context.Context, input *core.RefreshInput) (*core.RefreshOutput, error) {
 	p.refresh()
 	return &core.RefreshOutput{}, nil
