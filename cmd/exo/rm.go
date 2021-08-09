@@ -16,6 +16,9 @@ var rmCmd = &cobra.Command{
 	Short: "Remove components",
 	Long:  "Remove components.",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) == 0 {
+			return nil
+		}
 		ctx := newContext()
 		ensureDaemon()
 		cl := newClient()
