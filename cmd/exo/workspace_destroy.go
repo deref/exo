@@ -21,13 +21,17 @@ Deleting a workspace also deletes all resources in that workspace.`,
 		ctx := newContext()
 		ensureDaemon()
 		cl := newClient()
+		kernel := cl.Kernel()
 		var workspace api.Workspace
 		if len(args) < 1 {
 			workspace = requireWorkspace(ctx, cl)
 		} else {
 			workspace = cl.GetWorkspace(args[0])
 		}
-		_, err := workspace.Destroy(ctx, &api.DestroyInput{})
-		return err
+		output, err := workspace.Destroy(ctx, &api.DestroyInput{})
+		if err != nil {
+			return err
+		}
+		return watchJob(ctx, kernel, output.JobID)
 	},
 }

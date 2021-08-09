@@ -52,7 +52,7 @@ type Workspace interface {
 	Process
 	// Describes this workspace.
 	Describe(context.Context, *DescribeInput) (*DescribeOutput, error)
-	// Deletes all of the components in the workspace, then deletes the workspace itself.
+	// Asynchronously deletes all components in the workspace, then deletes the workspace itself.
 	Destroy(context.Context, *DestroyInput) (*DestroyOutput, error)
 	// Performs creates, updates, refreshes, disposes, as needed.
 	Apply(context.Context, *ApplyInput) (*ApplyOutput, error)
@@ -66,9 +66,9 @@ type Workspace interface {
 	UpdateComponent(context.Context, *UpdateComponentInput) (*UpdateComponentOutput, error)
 	// Asycnhronously refreshes component state.
 	RefreshComponents(context.Context, *RefreshComponentsInput) (*RefreshComponentsOutput, error)
-	// Disposes the resource associated with a components.
+	// Asynchronously runs dispose lifecycle methods on each component.
 	DisposeComponents(context.Context, *DisposeComponentsInput) (*DisposeComponentsOutput, error)
-	// Disposes components, then removes their manifest entries.
+	// Asynchronously disposes components, then removes them from the manifest.
 	DeleteComponents(context.Context, *DeleteComponentsInput) (*DeleteComponentsOutput, error)
 	DescribeLogs(context.Context, *DescribeLogsInput) (*DescribeLogsOutput, error)
 	// Returns pages of log events for some set of logs. If `cursor` is specified, standard pagination behavior is used. Otherwise the cursor is assumed to represent the current tail of the log.
@@ -92,6 +92,7 @@ type DestroyInput struct {
 }
 
 type DestroyOutput struct {
+	JobID string `json:"jobId"`
 }
 
 type ApplyInput struct {
@@ -161,6 +162,7 @@ type DisposeComponentsInput struct {
 }
 
 type DisposeComponentsOutput struct {
+	JobID string `json:"jobId"`
 }
 
 type DeleteComponentsInput struct {
@@ -168,6 +170,7 @@ type DeleteComponentsInput struct {
 }
 
 type DeleteComponentsOutput struct {
+	JobID string `json:"jobId"`
 }
 
 type DescribeLogsInput struct {
