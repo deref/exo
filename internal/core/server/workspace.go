@@ -34,7 +34,7 @@ type Workspace struct {
 	VarDir      string
 	Store       state.Store
 	SyslogPort  uint
-	Logger      logging.Logger
+	Logger      logging.Logger // TODO: Embed in context, so it can be annotated with request info.
 	Docker      *dockerclient.Client
 	TaskTracker *task.TaskTracker
 }
@@ -66,22 +66,26 @@ func (ws *Workspace) describe(ctx context.Context) (*api.WorkspaceDescription, e
 }
 
 func (ws *Workspace) Destroy(ctx context.Context, input *api.DestroyInput) (*api.DestroyOutput, error) {
-	describeOutput, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{})
-	if err != nil {
-		return nil, fmt.Errorf("describing components: %w", err)
-	}
-	// TODO: Parallelism / bulk delete.
-	for _, component := range describeOutput.Components {
-		if err := ws.deleteComponent(ctx, component.ID); err != nil {
-			return nil, fmt.Errorf("deleting %s: %w", component.Name, err)
+	job := ws.TaskTracker.StartTask(ctx, "destroying")
+	go func() {
+		defer job.Finish()
+		filter := componentFilter{}
+		ws.goControlComponents(job, filter, func(lifecycle api.Lifecycle) error {
+			return ws.deleteComponent(ctx, lifecycle)
+		})
+		if err := job.Wait(); err != nil {
+			return
 		}
-	}
-	if _, err := ws.Store.RemoveWorkspace(ctx, &state.RemoveWorkspaceInput{
-		ID: ws.ID,
-	}); err != nil {
-		return nil, fmt.Errorf("removing workspace from store: %w", err)
-	}
-	return &api.DestroyOutput{}, nil
+		if _, err := ws.Store.RemoveWorkspace(ctx, &state.RemoveWorkspaceInput{
+			ID: ws.ID,
+		}); err != nil {
+			job.Fail(fmt.Errorf("removing workspace from store: %w", err))
+			return
+		}
+	}()
+	return &api.DestroyOutput{
+		JobID: job.JobID(),
+	}, nil
 }
 
 func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.ApplyOutput, error) {
@@ -107,6 +111,7 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 	}
 
 	// TODO: Handle partial failures.
+	// TODO: Build a plan. Probably want to delete before apply when port binding is involved.
 
 	// Apply component upserts.
 	newComponents := make(map[string]manifest.Component, len(m.Components))
@@ -132,7 +137,9 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 		if _, keep := newComponents[name]; keep {
 			continue
 		}
-		if err := ws.deleteComponent(ctx, oldComponent.ID); err != nil {
+		if err := ws.control(ctx, oldComponent, func(lifecycle api.Lifecycle) error {
+			return ws.deleteComponent(ctx, lifecycle)
+		}); err != nil {
 			return nil, fmt.Errorf("deleting %q: %w", name, err)
 		}
 	}
@@ -193,7 +200,6 @@ func (ws *Workspace) newController(ctx context.Context, typ string) Controller {
 		}
 	}
 	base := core.ComponentBase{
-		ComponentID:   description.ID,
 		WorkspaceRoot: description.Root,
 		Logger:        ws.Logger,
 	}
@@ -298,45 +304,43 @@ func (ws *Workspace) UpdateComponent(ctx context.Context, input *api.UpdateCompo
 }
 
 func (ws *Workspace) updateComponent(ctx context.Context, oldComponent api.ComponentDescription, newComponent manifest.Component) error {
-	// TODO: Smart updating, using update lifecycle method.
-	name := oldComponent.Name
-	id := oldComponent.ID
-	if err := ws.deleteComponent(ctx, id); err != nil {
-		return fmt.Errorf("delete %q for replacement: %w", name, err)
-	}
-	if _, err := ws.createComponent(ctx, newComponent); err != nil {
-		return fmt.Errorf("adding replacement %q: %w", name, err)
-	}
-	return nil
+	// TODO: Most updates should be accomplished without a full replacement; especially when there are no spec changes!
+	return ws.control(ctx, oldComponent, func(lifecycle api.Lifecycle) error {
+		name := oldComponent.Name
+		if err := ws.deleteComponent(ctx, lifecycle); err != nil {
+			return fmt.Errorf("delete %q for replacement: %w", name, err)
+		}
+		if _, err := ws.createComponent(ctx, newComponent); err != nil {
+			return fmt.Errorf("adding replacement %q: %w", name, err)
+		}
+		return nil
+	})
 }
 
 func (ws *Workspace) RefreshComponents(ctx context.Context, input *api.RefreshComponentsInput) (*api.RefreshComponentsOutput, error) {
 	filter := componentFilter{
 		Refs: input.Refs,
 	}
-	jobID, err := ws.controlEachComponent(ctx, "refreshing", filter, func(lifecycle api.Lifecycle) error {
+	jobID := ws.controlEachComponent(ctx, "refreshing", filter, func(lifecycle api.Lifecycle) error {
 		_, err := lifecycle.Refresh(ctx, &api.RefreshInput{})
 		return err
 	})
-	if err != nil {
-		return nil, err
-	}
 	return &api.RefreshComponentsOutput{
 		JobID: jobID,
 	}, nil
 }
 
 func (ws *Workspace) DisposeComponents(ctx context.Context, input *api.DisposeComponentsInput) (*api.DisposeComponentsOutput, error) {
-	ids, err := ws.resolveRefs(ctx, input.Refs)
-	if err != nil {
-		return nil, fmt.Errorf("resolving ref: %w", err)
+	filter := componentFilter{
+		Refs: input.Refs,
 	}
-	for _, id := range ids {
-		if err := ws.disposeComponent(ctx, id); err != nil {
-			return nil, fmt.Errorf("disposing %q: %w", id, err)
-		}
-	}
-	return &api.DisposeComponentsOutput{}, err
+	jobID := ws.controlEachComponent(ctx, "disposing", filter, func(lifecycle api.Lifecycle) error {
+		_, err := lifecycle.Dispose(ctx, &api.DisposeInput{})
+		return err
+	})
+	return &api.DisposeComponentsOutput{
+		JobID: jobID,
+	}, nil
 }
 
 func (ws *Workspace) resolveRef(ctx context.Context, ref string) (string, error) {
@@ -362,43 +366,24 @@ func (ws *Workspace) resolveRefs(ctx context.Context, refs []string) ([]string, 
 	return results, nil
 }
 
-func (ws *Workspace) disposeComponent(ctx context.Context, id string) error {
-	describeOutput, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{
-		IDs: []string{id},
-	})
-	if err != nil {
-		return fmt.Errorf("describing components: %w", err)
-	}
-	if len(describeOutput.Components) < 1 {
-		return fmt.Errorf("no component %q", id)
-	}
-	component := describeOutput.Components[0]
-	return ws.control(ctx, component, func(lifecycle api.Lifecycle) error {
-		_, err := lifecycle.Dispose(ctx, &api.DisposeInput{})
-		return err
-	})
-}
-
 func (ws *Workspace) DeleteComponents(ctx context.Context, input *api.DeleteComponentsInput) (*api.DeleteComponentsOutput, error) {
-	ids, err := ws.resolveRefs(ctx, input.Refs)
-	if err != nil {
-		return nil, fmt.Errorf("resolving refs: %w", err)
+	filter := componentFilter{
+		Refs: input.Refs,
 	}
-	for _, id := range ids {
-		if err := ws.deleteComponent(ctx, id); err != nil {
-			return nil, fmt.Errorf("deleting %q: %w", id, err)
-		}
-	}
-	return &api.DeleteComponentsOutput{}, nil
+	jobID := ws.controlEachComponent(ctx, "deleting", filter, func(lifecycle api.Lifecycle) error {
+		return ws.deleteComponent(ctx, lifecycle)
+	})
+	return &api.DeleteComponentsOutput{
+		JobID: jobID,
+	}, nil
 }
 
-func (ws *Workspace) deleteComponent(ctx context.Context, id string) error {
-	if err := ws.disposeComponent(ctx, id); err != nil {
-		return fmt.Errorf("disposing: %w", err)
+func (ws *Workspace) deleteComponent(ctx context.Context, lifecycle api.Lifecycle) error {
+	_, err := lifecycle.Dispose(ctx, &api.DisposeInput{})
+	if err != nil {
+		return err
 	}
-	if _, err := ws.Store.RemoveComponent(ctx, &state.RemoveComponentInput{ID: id}); err != nil {
-		return fmt.Errorf("removing from state store: %w", err)
-	}
+	lifecycle.(core.Component).MarkDeleted()
 	return nil
 }
 
@@ -524,13 +509,10 @@ func (ws *Workspace) GetEvents(ctx context.Context, input *api.GetEventsInput) (
 }
 
 func (ws *Workspace) Start(ctx context.Context, input *api.StartInput) (*api.StartOutput, error) {
-	jobID, err := ws.controlEachProcess(ctx, "starting", func(process api.Process) error {
+	jobID := ws.controlEachProcess(ctx, "starting", func(process api.Process) error {
 		_, err := process.Start(ctx, &api.StartInput{})
 		return err
 	})
-	if err != nil {
-		return nil, err
-	}
 	return &api.StartOutput{
 		JobID: jobID,
 	}, nil
@@ -540,26 +522,20 @@ func (ws *Workspace) StartComponents(ctx context.Context, input *api.StartCompon
 	filter := componentFilter{
 		Refs: input.Refs,
 	}
-	jobID, err := ws.controlEachComponent(ctx, "starting", filter, func(process api.Process) error {
+	jobID := ws.controlEachComponent(ctx, "starting", filter, func(process api.Process) error {
 		_, err := process.Start(ctx, &api.StartInput{})
 		return err
 	})
-	if err != nil {
-		return nil, err
-	}
 	return &api.StartComponentsOutput{
 		JobID: jobID,
 	}, nil
 }
 
 func (ws *Workspace) Stop(ctx context.Context, input *api.StopInput) (*api.StopOutput, error) {
-	jobID, err := ws.controlEachProcess(ctx, "stopping", func(process api.Process) error {
+	jobID := ws.controlEachProcess(ctx, "stopping", func(process api.Process) error {
 		_, err := process.Stop(ctx, &api.StopInput{})
 		return err
 	})
-	if err != nil {
-		return nil, err
-	}
 	return &api.StopOutput{
 		JobID: jobID,
 	}, nil
@@ -569,26 +545,20 @@ func (ws *Workspace) StopComponents(ctx context.Context, input *api.StopComponen
 	filter := componentFilter{
 		Refs: input.Refs,
 	}
-	jobID, err := ws.controlEachComponent(ctx, "stopping", filter, func(process api.Process) error {
+	jobID := ws.controlEachComponent(ctx, "stopping", filter, func(process api.Process) error {
 		_, err := process.Stop(ctx, &api.StopInput{})
 		return err
 	})
-	if err != nil {
-		return nil, err
-	}
 	return &api.StopComponentsOutput{
 		JobID: jobID,
 	}, nil
 }
 
 func (ws *Workspace) Restart(ctx context.Context, input *api.RestartInput) (*api.RestartOutput, error) {
-	jobID, err := ws.controlEachProcess(ctx, "restarting", func(process api.Process) error {
+	jobID := ws.controlEachProcess(ctx, "restarting", func(process api.Process) error {
 		_, err := process.Restart(ctx, &api.RestartInput{})
 		return err
 	})
-	if err != nil {
-		return nil, err
-	}
 	return &api.RestartOutput{
 		JobID: jobID,
 	}, nil
@@ -598,13 +568,10 @@ func (ws *Workspace) RestartComponents(ctx context.Context, input *api.RestartCo
 	filter := componentFilter{
 		Refs: input.Refs,
 	}
-	jobID, err := ws.controlEachComponent(ctx, "restart", filter, func(process api.Process) error {
+	jobID := ws.controlEachComponent(ctx, "restart", filter, func(process api.Process) error {
 		_, err := process.Restart(ctx, &api.RestartInput{})
 		return err
 	})
-	if err != nil {
-		return nil, err
-	}
 	return &api.RestartComponentsOutput{
 		JobID: jobID,
 	}, nil
@@ -757,37 +724,44 @@ type componentFilter struct {
 	Types []string
 }
 
-func (ws *Workspace) controlEachComponent(ctx context.Context, label string, filter componentFilter, f interface{}) (jobID string, err error) {
+func (ws *Workspace) controlEachComponent(ctx context.Context, label string, filter componentFilter, f interface{}) (jobID string) {
+	job := ws.TaskTracker.StartTask(ctx, label)
+	go func() {
+		defer job.Finish()
+		ws.goControlComponents(job, filter, f)
+	}()
+	return job.ID()
+}
+
+func (ws *Workspace) goControlComponents(t *task.Task, filter componentFilter, f interface{}) {
 	describe := &api.DescribeComponentsInput{
 		Types: filter.Types,
 	}
 
 	if filter.Refs != nil {
-		ids, err := ws.resolveRefs(ctx, filter.Refs)
+		ids, err := ws.resolveRefs(t, filter.Refs)
 		if err != nil {
-			return "", fmt.Errorf("resolving refs: %w", err)
+			t.Fail(fmt.Errorf("resolving refs: %w", err))
+			return
 		}
 		describe.IDs = ids
 	}
 
-	components, err := ws.DescribeComponents(ctx, describe)
+	components, err := ws.DescribeComponents(t, describe)
 	if err != nil {
-		return "", fmt.Errorf("describing components: %w", err)
+		t.Fail(fmt.Errorf("describing components: %w", err))
+		return
 	}
 
-	job := ws.TaskTracker.StartTask(ctx, label)
-	go func() {
-		defer job.Finish()
-		for _, component := range components.Components {
-			job.Go(component.Name, func(*task.Task) error {
-				return ws.control(ctx, component, f)
-			})
-		}
-	}()
-	return job.JobID(), nil
+	for _, component := range components.Components {
+		component := component
+		t.Go(component.Name, func(*task.Task) error {
+			return ws.control(t, component, f)
+		})
+	}
 }
 
-func (ws *Workspace) controlEachProcess(ctx context.Context, label string, f interface{}) (jobID string, err error) {
+func (ws *Workspace) controlEachProcess(ctx context.Context, label string, f interface{}) (jobID string) {
 	filter := componentFilter{
 		Types: processTypes,
 	}
@@ -810,10 +784,18 @@ func (ws *Workspace) control(ctx context.Context, desc api.ComponentDescription,
 	// Try to save state even if f fails.
 	newState, err := ctrl.MarshalState()
 	if err == nil {
-		_, err = ws.Store.PatchComponent(ctx, &state.PatchComponentInput{
-			ID:    desc.ID,
-			State: newState,
-		})
+		if ctrl.IsDeleted() {
+			// TODO: Do this asynchronously as a garbage collection pass, so
+			// that we can inspect deleted components and debug them.
+			_, err = ws.Store.RemoveComponent(ctx, &state.RemoveComponentInput{
+				ID: desc.ID,
+			})
+		} else {
+			_, err = ws.Store.PatchComponent(ctx, &state.PatchComponentInput{
+				ID:    desc.ID,
+				State: newState,
+			})
+		}
 	}
 	if fErr != nil {
 		return fErr
