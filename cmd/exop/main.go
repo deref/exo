@@ -48,7 +48,7 @@ func main() {
 	serverCfg := &server.Config{
 		VarDir:      paths.VarDir,
 		Store:       store,
-		Telemetry:   telemetry.New(&cfg.Telemetry),
+		Telemetry:   telemetry.New(ctx, &cfg.Telemetry),
 		Logger:      logger,
 		SyslogPort:  cfg.Log.SyslogPort,
 		Docker:      dockerClient,

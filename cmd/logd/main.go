@@ -18,6 +18,7 @@ import (
 	josh "github.com/deref/exo/internal/josh/server"
 	"github.com/deref/exo/internal/logd"
 	"github.com/deref/exo/internal/logd/api"
+	"github.com/deref/exo/internal/telemetry"
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/deref/exo/internal/util/logging"
 )
@@ -67,7 +68,11 @@ func main() {
 	}
 	fmt.Println("listening at", addr)
 
-	muxb := josh.NewMuxBuilder("/")
+	tel := telemetry.New(ctx, &config.TelemetryConfig{
+		Disable: true,
+	})
+
+	muxb := josh.NewMuxBuilder(tel, "/")
 	api.BuildLogCollectorMux(muxb, func(req *http.Request) api.LogCollector {
 		return &logd.LogCollector
 	})

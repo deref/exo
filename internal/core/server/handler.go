@@ -24,7 +24,7 @@ type Config struct {
 }
 
 func BuildRootMux(prefix string, cfg *Config) *http.ServeMux {
-	b := josh.NewMuxBuilder(prefix)
+	b := josh.NewMuxBuilder(cfg.Telemetry, prefix)
 
 	endKernel := b.Begin("kernel")
 	api.BuildKernelMux(b, func(req *http.Request) api.Kernel {

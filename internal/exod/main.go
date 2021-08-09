@@ -45,8 +45,8 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	config.MustLoadDefault(cfg)
 	paths := cmdutil.MustMakeDirectories(cfg)
 
-	tel := telemetry.New(&cfg.Telemetry)
-	tel.StartSession()
+	tel := telemetry.New(ctx, &cfg.Telemetry)
+	tel.StartSession(ctx)
 
 	_, forceStdLog := flags["force-std-log"]
 	if !(forceStdLog || isatty.IsTerminal(os.Stdout.Fd())) {

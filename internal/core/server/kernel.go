@@ -76,7 +76,7 @@ func (kern *Kernel) GetVersion(ctx context.Context, input *api.GetVersionInput) 
 	current := true
 	var latest *string
 	if kern.Telemetry.IsEnabled() {
-		latestVersion, err := kern.Telemetry.LatestVersion()
+		latestVersion, err := kern.Telemetry.LatestVersion(ctx)
 		if err != nil {
 			return nil, err
 		}
