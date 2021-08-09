@@ -90,17 +90,16 @@ interface "workspace" {
     output "job-id" "string" {}
   }
 
-  method "dispose-component" {
-    # TODO: Line breaks in doc strings.
-    doc = "Marks a component as disposed and triggers the dispose lifecycle event. After being disposed, the component record will be deleted asynchronously."
+  method "dispose-components" {
+    doc = "Disposes the resource associated with a components."
 
-    input "ref" "string" {}
+    input "refs" "[]string" {}
   }
 
-  method "delete-component" {
-    doc = "Disposes a component and then awaits the record to be deleted synchronously."
+  method "delete-components" {
+    doc = "Disposes components, then removes their manifest entries."
 
-    input "ref" "string" {}
+    input "refs" "[]string" {}
   }
 
   method "describe-logs" {

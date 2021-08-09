@@ -66,10 +66,10 @@ type Workspace interface {
 	UpdateComponent(context.Context, *UpdateComponentInput) (*UpdateComponentOutput, error)
 	// Asycnhronously refreshes component state.
 	RefreshComponents(context.Context, *RefreshComponentsInput) (*RefreshComponentsOutput, error)
-	// Marks a component as disposed and triggers the dispose lifecycle event. After being disposed, the component record will be deleted asynchronously.
-	DisposeComponent(context.Context, *DisposeComponentInput) (*DisposeComponentOutput, error)
-	// Disposes a component and then awaits the record to be deleted synchronously.
-	DeleteComponent(context.Context, *DeleteComponentInput) (*DeleteComponentOutput, error)
+	// Disposes the resource associated with a components.
+	DisposeComponents(context.Context, *DisposeComponentsInput) (*DisposeComponentsOutput, error)
+	// Disposes components, then removes their manifest entries.
+	DeleteComponents(context.Context, *DeleteComponentsInput) (*DeleteComponentsOutput, error)
 	DescribeLogs(context.Context, *DescribeLogsInput) (*DescribeLogsOutput, error)
 	// Returns pages of log events for some set of logs. If `cursor` is specified, standard pagination behavior is used. Otherwise the cursor is assumed to represent the current tail of the log.
 	GetEvents(context.Context, *GetEventsInput) (*GetEventsOutput, error)
@@ -156,18 +156,18 @@ type RefreshComponentsOutput struct {
 	JobID string `json:"jobId"`
 }
 
-type DisposeComponentInput struct {
-	Ref string `json:"ref"`
+type DisposeComponentsInput struct {
+	Refs []string `json:"refs"`
 }
 
-type DisposeComponentOutput struct {
+type DisposeComponentsOutput struct {
 }
 
-type DeleteComponentInput struct {
-	Ref string `json:"ref"`
+type DeleteComponentsInput struct {
+	Refs []string `json:"refs"`
 }
 
-type DeleteComponentOutput struct {
+type DeleteComponentsOutput struct {
 }
 
 type DescribeLogsInput struct {
@@ -271,11 +271,11 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	b.AddMethod("refresh-components", func(req *http.Request) interface{} {
 		return factory(req).RefreshComponents
 	})
-	b.AddMethod("dispose-component", func(req *http.Request) interface{} {
-		return factory(req).DisposeComponent
+	b.AddMethod("dispose-components", func(req *http.Request) interface{} {
+		return factory(req).DisposeComponents
 	})
-	b.AddMethod("delete-component", func(req *http.Request) interface{} {
-		return factory(req).DeleteComponent
+	b.AddMethod("delete-components", func(req *http.Request) interface{} {
+		return factory(req).DeleteComponents
 	})
 	b.AddMethod("describe-logs", func(req *http.Request) interface{} {
 		return factory(req).DescribeLogs

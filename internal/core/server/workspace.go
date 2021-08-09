@@ -326,13 +326,17 @@ func (ws *Workspace) RefreshComponents(ctx context.Context, input *api.RefreshCo
 	}, nil
 }
 
-func (ws *Workspace) DisposeComponent(ctx context.Context, input *api.DisposeComponentInput) (*api.DisposeComponentOutput, error) {
-	id, err := ws.resolveRef(ctx, input.Ref)
+func (ws *Workspace) DisposeComponents(ctx context.Context, input *api.DisposeComponentsInput) (*api.DisposeComponentsOutput, error) {
+	ids, err := ws.resolveRefs(ctx, input.Refs)
 	if err != nil {
 		return nil, fmt.Errorf("resolving ref: %w", err)
 	}
-	err = ws.disposeComponent(ctx, id)
-	return &api.DisposeComponentOutput{}, err
+	for _, id := range ids {
+		if err := ws.disposeComponent(ctx, id); err != nil {
+			return nil, fmt.Errorf("disposing %q: %w", id, err)
+		}
+	}
+	return &api.DisposeComponentsOutput{}, err
 }
 
 func (ws *Workspace) resolveRef(ctx context.Context, ref string) (string, error) {
@@ -375,22 +379,23 @@ func (ws *Workspace) disposeComponent(ctx context.Context, id string) error {
 	})
 }
 
-func (ws *Workspace) DeleteComponent(ctx context.Context, input *api.DeleteComponentInput) (*api.DeleteComponentOutput, error) {
-	id, err := ws.resolveRef(ctx, input.Ref)
+func (ws *Workspace) DeleteComponents(ctx context.Context, input *api.DeleteComponentsInput) (*api.DeleteComponentsOutput, error) {
+	ids, err := ws.resolveRefs(ctx, input.Refs)
 	if err != nil {
-		return nil, fmt.Errorf("resolving ref: %w", err)
+		return nil, fmt.Errorf("resolving refs: %w", err)
 	}
-	if err := ws.deleteComponent(ctx, id); err != nil {
-		return nil, err
+	for _, id := range ids {
+		if err := ws.deleteComponent(ctx, id); err != nil {
+			return nil, fmt.Errorf("deleting %q: %w", id, err)
+		}
 	}
-	return &api.DeleteComponentOutput{}, nil
+	return &api.DeleteComponentsOutput{}, nil
 }
 
 func (ws *Workspace) deleteComponent(ctx context.Context, id string) error {
 	if err := ws.disposeComponent(ctx, id); err != nil {
 		return fmt.Errorf("disposing: %w", err)
 	}
-	// TODO: Await disposal.
 	if _, err := ws.Store.RemoveComponent(ctx, &state.RemoveComponentInput{ID: id}); err != nil {
 		return fmt.Errorf("removing from state store: %w", err)
 	}
