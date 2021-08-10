@@ -1,3 +1,17 @@
+<!-- 
+  This component styles any <table> within the <slot /> with a checkered row-and-column tiger stripe
+    as well as some shadowing and general style improvements for enhanced legibility.
+
+  Please ensure your table has the structure:
+  * table
+    * thead (optional)
+    * ...tr...
+      * ...th...
+    * tbody
+    * ...tr...
+      * ...td...
+-->
+
 <div>
   <slot />
 </div>
