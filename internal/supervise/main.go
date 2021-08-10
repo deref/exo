@@ -27,35 +27,7 @@ import (
 var varDir string
 var pgrp int
 
-func Main(command string, args []string) {
-	pgrp = syscall.Getpgrp()
-
-	if len(args) < 4 {
-		fatalf(`usage: %s <syslog-port> <component-id> <working-directory> <env> <program> <args...>
-
-supervise executes and supervises the given command. If successful, the child
-pid is written to stdout. The stdout and stderr streams of the supervised process
-will be directed to the given port on localhost as syslog events.
-
-Syslog messages use the following fields:
-
-APPNAME = Component ID for the Exo process that is being logged.
-PROCID = PID of the supervised process. As per RFC5425, this field has "no
-         interoperable meaning, except that a change in the value indicates
-         there has been a discontinuity in syslog reporting".
-MSGID = The message "type". Set to "out" or "err" to specify which stdio
-        stream the message came from.
-`, command)
-	}
-	ctx := context.Background()
-
-	syslogPort := args[0]
-	componentID := args[1]
-	wd := args[2]
-	envString := args[3]
-	program := args[4]
-	arguments := args[5:]
-
+func Main() {
 	var crashFile *os.File
 	cleanExit := func() {
 		if crashFile != nil {
@@ -64,20 +36,26 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 		os.Exit(0)
 	}
 
-	udpAddr, err := net.ResolveUDPAddr("udp", "localhost:"+syslogPort)
+	pgrp = syscall.Getpgrp()
+	ctx := context.Background()
+
+	cfg := &Config{}
+	if err := json.NewDecoder(os.Stdin).Decode(cfg); err != nil {
+		fatalf("reading config from stdin: %v", err)
+	}
+	if err := cfg.Validate(); err != nil {
+		fatalf("validating config: %v", err)
+	}
+
+	udpAddr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("localhost:%d", cfg.SyslogPort))
 	if err != nil {
-		fatalf("resolving udp address: %w", err)
+		fatalf("resolving udp address: %v", err)
 	}
 
-	childEnv := make(map[string]string)
-	if err := json.Unmarshal([]byte(envString), &childEnv); err != nil {
-		fatalf("decoding environment variables from %q: %v", envString, err)
-	}
-
-	cmd := exec.Command(program, arguments...)
-	cmd.Dir = wd
+	cmd := exec.Command(cfg.Program, cfg.Arguments...)
+	cmd.Dir = cfg.WorkingDirectory
 	cmd.Env = os.Environ()
-	for key, val := range childEnv {
+	for key, val := range cfg.Environment {
 		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", key, val))
 	}
 
@@ -148,8 +126,8 @@ MSGID = The message "type". Set to "out" or "err" to specify which stdio
 
 	// Proxy logs.
 	syslogProcID := strconv.Itoa(child.Pid)
-	go pipeToSyslog(ctx, conn, componentID, "out", syslogProcID, stdout)
-	go pipeToSyslog(ctx, conn, componentID, "err", syslogProcID, stderr)
+	go pipeToSyslog(ctx, conn, cfg.ComponentID, "out", syslogProcID, stdout)
+	go pipeToSyslog(ctx, conn, cfg.ComponentID, "err", syslogProcID, stderr)
 
 	// Wait for child process to exit.
 	err = cmd.Wait()
