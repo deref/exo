@@ -51,9 +51,3 @@
     <NetworkingSVG />
   </NavbarButton>
 </aside>
-
-<style>
-  aside {
-    flex-grow: 1;
-  }
-</style>

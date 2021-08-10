@@ -16,7 +16,9 @@
         <img src="/deref-rounded-icon.png" alt="Deref" height="24px" />
       </NavbarButton>
     </header>
-    <slot name="navbar" />
+    <div class="navbar-wrapper">
+      <slot name="navbar" />
+    </div>
     <footer>
       <NavbarButton
         title="Give feedback on GitHub"
@@ -55,12 +57,21 @@
     width: 48px;
     height: 100vh;
     z-index: 3;
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: space-between;
+    display: grid;
+    grid-template-rows: auto 1fr max-content;
+    grid-auto-flow: column;
     gap: 1px;
     background: var(--nav-bg-color);
+  }
+
+  .navbar-wrapper {
+    width: 48px;
+    overflow-y: auto;
+    direction: rtl;
+  }
+
+  .navbar-wrapper :global(*) {
+    direction: ltr;
   }
 
   div {
@@ -76,8 +87,8 @@
     font-size: 12px;
     width: 100%;
     color: var(--grey-5-text-color);
-    border-top: 1px solid var(--layout-bg-color);
     overflow: hidden;
+    border-top: 1px solid var(--layout-bg-color);
   }
 
   div.devmode {
