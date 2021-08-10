@@ -14,3 +14,7 @@ export interface LogsResponse {
 export interface ExportProcfileResponse {
   procfile: string;
 }
+
+export interface ReadFileResponse {
+  content: string;
+}

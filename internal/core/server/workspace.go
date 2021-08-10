@@ -4,6 +4,8 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"os"
+	"path"
 	"reflect"
 	"strings"
 
@@ -26,6 +28,7 @@ import (
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/deref/exo/internal/util/logging"
+	"github.com/deref/exo/internal/util/pathutil"
 	dockerclient "github.com/docker/docker/client"
 	psprocess "github.com/shirou/gopsutil/v3/process"
 )
@@ -785,6 +788,54 @@ func (ws *Workspace) ExportProcfile(ctx context.Context, input *api.ExportProcfi
 	return &api.ExportProcfileOutput{
 		Procfile: export,
 	}, nil
+}
+
+func (ws *Workspace) ReadFile(ctx context.Context, input *api.ReadFileInput) (*api.ReadFileOutput, error) {
+	resolvedPath, err := ws.resolveWorkspacePath(ctx, input.Path)
+	if err != nil {
+		return nil, err
+	}
+
+	content, err := os.ReadFile(resolvedPath)
+	if err != nil {
+		return nil, fmt.Errorf("reading file: %w", err)
+	}
+
+	return &api.ReadFileOutput{
+		Content: string(content),
+	}, nil
+}
+
+func (ws *Workspace) WriteFile(ctx context.Context, input *api.WriteFileInput) (*api.WriteFileOutput, error) {
+	resolvedPath, err := ws.resolveWorkspacePath(ctx, input.Path)
+	if err != nil {
+		return nil, err
+	}
+
+	mode := os.FileMode(0644)
+	if input.Mode != nil {
+		mode = os.FileMode(*input.Mode)
+	}
+
+	if err := os.WriteFile(resolvedPath, []byte(input.Content), mode); err != nil {
+		return nil, fmt.Errorf("writing file: %w", err)
+	}
+
+	return &api.WriteFileOutput{}, nil
+}
+
+func (ws *Workspace) resolveWorkspacePath(ctx context.Context, relativePath string) (string, error) {
+	description, err := ws.describe(ctx)
+	if err != nil {
+		return "", fmt.Errorf("describing workspace: %w", err)
+	}
+
+	resolvedPath := path.Join(description.Root, relativePath)
+	if !pathutil.HasPathPrefix(resolvedPath, description.Root) {
+		return "", fmt.Errorf("directory is outside workspace: %q", relativePath)
+	}
+
+	return resolvedPath, nil
 }
 
 type componentFilter struct {

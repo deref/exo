@@ -80,6 +80,10 @@ type Workspace interface {
 	DescribeVolumes(context.Context, *DescribeVolumesInput) (*DescribeVolumesOutput, error)
 	DescribeNetworks(context.Context, *DescribeNetworksInput) (*DescribeNetworksOutput, error)
 	ExportProcfile(context.Context, *ExportProcfileInput) (*ExportProcfileOutput, error)
+	// Read a file from disk. Path must be relative to the workspace directory and may not traverse higher in the filesystem
+	ReadFile(context.Context, *ReadFileInput) (*ReadFileOutput, error)
+	// Writes a file to disk. Path must be relative to the workspace directory and may not traverse higher in the filesystem
+	WriteFile(context.Context, *WriteFileInput) (*WriteFileOutput, error)
 }
 
 type DescribeInput struct {
@@ -245,6 +249,23 @@ type ExportProcfileOutput struct {
 	Procfile string `json:"procfile"`
 }
 
+type ReadFileInput struct {
+	Path string `json:"path"`
+}
+
+type ReadFileOutput struct {
+	Content string `json:"content"`
+}
+
+type WriteFileInput struct {
+	Path    string `json:"path"`
+	Mode    *int   `json:"mode"`
+	Content string `json:"content"`
+}
+
+type WriteFileOutput struct {
+}
+
 func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Workspace) {
 	b.AddMethod("start", func(req *http.Request) interface{} {
 		return factory(req).Start
@@ -311,6 +332,12 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	})
 	b.AddMethod("export-procfile", func(req *http.Request) interface{} {
 		return factory(req).ExportProcfile
+	})
+	b.AddMethod("read-file", func(req *http.Request) interface{} {
+		return factory(req).ReadFile
+	})
+	b.AddMethod("write-file", func(req *http.Request) interface{} {
+		return factory(req).WriteFile
 	})
 }
 

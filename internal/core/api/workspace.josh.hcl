@@ -155,6 +155,21 @@ interface "workspace" {
   method "export-procfile" {
     output "procfile" "string" {}
   }
+
+  method "read-file" {
+    doc = "Read a file from disk. Path must be relative to the workspace directory and may not traverse higher in the filesystem"
+
+    input "path" "string" {}
+    output "content" "string" {}
+  }
+
+  method "write-file" {
+    doc = "Writes a file to disk. Path must be relative to the workspace directory and may not traverse higher in the filesystem"
+
+    input "path" "string" {}
+    input "mode" "*int" {}
+    input "content" "string" {}
+  }
 }
 
 struct "workspace-description" {
@@ -189,8 +204,7 @@ struct "process-description" {
   field "id" "string" {}
   field "provider" "string" {}
   field "name" "string" {}
-  // TODO: Since process-description is polymorphic, can we do better than map[string]interface{} for the spec?
-  field "spec" "map[string]interface{}" {}
+  field "spec" "interface{}" {}
   field "running" "bool" {}
   field "env-vars" "map[string]string" {}
   field "cpu-percent" "float64" {}

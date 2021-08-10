@@ -92,7 +92,11 @@
       <Add />
     </IconButton>
   </h1>
-  <button on:click={() => workspace.exportProcfile().then(p => window.alert(p))}>Test</button>
+  <div>
+    <button on:click={() => workspace.readFile('Procfile').then(p => window.alert(p))}>Read</button>
+    <button on:click={() => workspace.writeFile('foo.txt', "Hello, World!\n", 0o755).then(() => window.alert('Ok'))}>Write</button>
+    <button on:click={() => workspace.exportProcfile().then(p => window.alert(p))}>Procfile</button>
+  </div>
   <div>
     {#if processList.stage == 'pending' || processList.stage == 'idle'}
       Loading...
