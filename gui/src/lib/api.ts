@@ -276,7 +276,7 @@ export const api = (() => {
       },
 
       async startProcess(ref: string): Promise<void> {
-        await invoke('start-component', { ref });
+        await invoke('start-components', { ref });
       },
 
       async stopProcess(ref: string): Promise<void> {
