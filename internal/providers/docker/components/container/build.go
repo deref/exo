@@ -108,9 +108,8 @@ func (c *Container) buildImage(ctx context.Context) error {
 						ID string `json:"ID"`
 					} `json:"aux"`
 				}
-				err := json.Unmarshal(scanner.Bytes(), &d)
-				if err != nil {
-					return err
+				if err := json.Unmarshal(scanner.Bytes(), &d); err != nil {
+					return fmt.Errorf("failed to unmarshal docker build log: %w", err)
 				}
 				if d.ErrorDetail.Message != "" {
 					return fmt.Errorf("docker build error: " + d.ErrorDetail.Message)
