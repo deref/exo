@@ -7,7 +7,7 @@
     position: relative;
     overflow-y: auto;
     overflow-x: hidden;
-    background: #ffffff;
+    background: var(--primary-bg-color);
     height: 100vh;
   }
 </style>
