@@ -12,6 +12,7 @@
   import type { RemoteData } from '../lib/api';
   import BytesLabel from '../components/BytesLabel.svelte';
   import WithLeftWorkspaceNav from '../components/WithLeftWorkspaceNav.svelte';
+  import CheckeredTableWrapper from '../components/CheckeredTableWrapper.svelte';
   import type { ProcessDescription } from 'src/lib/process/types';
   export let params = { workspace: '', process: '' };
 
@@ -73,67 +74,77 @@
             <h1>{process.name}</h1>
           </div>
           {#if process.running}
-            <table>
-              <tr>
-                <td class="label">Status</td>
-                <td>{process.running ? 'Running' : 'Stopped'}</td>
-                <td />
-              </tr>
-              <tr>
-                <td class="label">CPU</td>
-                <td>{process.cpuPercent.toFixed(2)}%</td>
-                <td
-                  ><svg
-                    bind:this={sparklineSvg}
-                    class="sparkline"
-                    width="100"
-                    height="30"
-                    stroke-width="3"
-                  /></td
-                >
-              </tr>
-              <tr>
-                <td class="label">Resident Memory</td>
-                <td><BytesLabel value={process.residentMemory} /></td>
-                <td />
-              </tr>
-              <tr>
-                <td class="label">Started at</td>
-                <td
-                  ><span title={new Date(process.createTime).toISOString()}
-                    >{new Date(process.createTime).toLocaleTimeString()}</span
-                  ></td
-                >
-                <td
-                  ><svg
-                    class="sparkline"
-                    width="100"
-                    height="30"
-                    stroke-width="3"
-                  /></td
-                >
-              </tr>
-              <tr>
-                <td class="label">Local Ports</td>
-                <td>{process.ports?.join(', ') ?? 'None'}</td>
-                <td />
-              </tr>
-              <tr>
-                <td class="label">Children</td>
-                <td>{process.childrenExecutables?.join(', ') ?? 'None'}</td>
-                <td />
-              </tr>
-            </table>
+            <CheckeredTableWrapper>
+              <table>
+                <tbody>
+                  <tr>
+                    <td class="label">Status</td>
+                    <td>{process.running ? 'Running' : 'Stopped'}</td>
+                    <td />
+                  </tr>
+                  <tr>
+                    <td class="label">CPU</td>
+                    <td>{process.cpuPercent.toFixed(2)}%</td>
+                    <td
+                      ><svg
+                        bind:this={sparklineSvg}
+                        class="sparkline"
+                        width="100"
+                        height="30"
+                        stroke-width="3"
+                      /></td
+                    >
+                  </tr>
+                  <tr>
+                    <td class="label">Resident Memory</td>
+                    <td><BytesLabel value={process.residentMemory} /></td>
+                    <td />
+                  </tr>
+                  <tr>
+                    <td class="label">Started at</td>
+                    <td
+                      ><span title={new Date(process.createTime).toISOString()}
+                        >{new Date(
+                          process.createTime,
+                        ).toLocaleTimeString()}</span
+                      ></td
+                    >
+                    <td
+                      ><svg
+                        class="sparkline"
+                        width="100"
+                        height="30"
+                        stroke-width="3"
+                      /></td
+                    >
+                  </tr>
+                  <tr>
+                    <td class="label">Local Ports</td>
+                    <td>{process.ports?.join(', ') ?? 'None'}</td>
+                    <td />
+                  </tr>
+                  <tr>
+                    <td class="label">Children</td>
+                    <td>{process.childrenExecutables?.join(', ') ?? 'None'}</td>
+                    <td />
+                  </tr>
+                </tbody>
+              </table>
+            </CheckeredTableWrapper>
             <br />
             <h3>Environment</h3>
-            <table>
-              {#each Object.entries(process.envVars ?? {}) as [name, val] (name)}
-                <tr>
-                  <td class="label">{name}</td>
-                  <td><code><pre>{val}</pre></code></td>
-                </tr>
-              {/each}
-            </table>
+            <CheckeredTableWrapper>
+              <tbody>
+                <table>
+                  {#each Object.entries(process.envVars ?? {}) as [name, val] (name)}
+                    <tr>
+                      <td class="label">{name}</td>
+                      <td><code><pre>{val}</pre></code></td>
+                    </tr>
+                  {/each}
+                </table>
+              </tbody>
+            </CheckeredTableWrapper>
             <br />
           {:else}
             <p>Process is not running</p>
@@ -161,20 +172,7 @@
   .sparkline {
     stroke: red;
     fill: none;
-    margin: -8px -16px;
-  }
-
-  table {
-    border-collapse: collapse;
-    border-radius: 0.25em;
-    box-shadow: 0 0.33px 0 1px hsla(0, 0%, 100%, 0.15),
-      0 6px 9px -4px rgba(0, 0, 0, 0.2), 0 0.4px 0 0.8px rgba(0, 0, 0, 0.1);
-    overflow: hidden;
-  }
-
-  td {
-    text-align: left;
-    padding: 8px 16px;
+    margin: -6px -15px;
   }
 
   code {
@@ -183,24 +181,8 @@
     display: inline-block;
     overflow-x: auto;
     font-size: 1.05em;
-    padding: 6px;
-    margin: -8px;
-  }
-
-  table tr:nth-child(2n + 1) {
-    background: #eeeeee;
-  }
-
-  table tr:nth-child(2n) {
-    background: #ffffff;
-  }
-
-  table tr:nth-child(2n + 1) td:nth-child(2n) {
-    background: #e7e7e7;
-  }
-
-  table tr:nth-child(2n) td:nth-child(2n) {
-    background: #f9f9f9;
+    padding: 8px;
+    margin: -10px;
   }
 
   .label {
