@@ -54,7 +54,7 @@ func (c *Container) create(ctx context.Context) error {
 		Cmd:         strslice.StrSlice(c.Command),
 		Healthcheck: healthCfg,
 		// ArgsEscaped     bool                `json:",omitempty"` // True if command is already escaped (meaning treat as a command line) (Windows specific).
-		Image: c.Image,
+		Image: c.State.ImageID,
 		// Volumes         map[string]struct{} // List of volumes (mounts) used for the container
 		WorkingDir: c.WorkingDir,
 		Entrypoint: strslice.StrSlice(c.Entrypoint),
