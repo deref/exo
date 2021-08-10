@@ -17,7 +17,9 @@
       </NavbarButton>
     </header>
     <div class="navbar-wrapper">
-      <slot name="navbar" />
+      <div>
+        <slot name="navbar" />
+      </div>
     </div>
     <footer>
       <NavbarButton
@@ -66,8 +68,12 @@
 
   .navbar-wrapper {
     width: 48px;
-    overflow-y: auto;
+    overflow-y: scroll;
     direction: rtl;
+  }
+
+  .navbar-wrapper > div {
+    margin-left: calc(-1 * var(--scrollbar-width));
   }
 
   .navbar-wrapper :global(*) {
@@ -84,11 +90,10 @@
     display: flex;
     flex-direction: column;
     align-items: center;
-    font-size: 12px;
+    font-size: 11px;
     width: 100%;
     color: var(--grey-5-text-color);
     overflow: hidden;
-    border-top: 1px solid var(--layout-bg-color);
   }
 
   div.devmode {

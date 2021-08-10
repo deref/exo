@@ -2,6 +2,9 @@
 
 :root {
   --input-width: 300px;
+  --scrollbar-width: 8px;
+  --scrollbar-height: 4px;
+  --scrollbar-thumb-radius: 1px;
 }
 
 /* Theme color variables */
