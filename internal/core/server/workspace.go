@@ -849,6 +849,12 @@ func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeP
 				process.CPUPercent = float64(containerStats.CPUStats.CPUUsage.TotalUsage) / 1e9
 			}
 
+			process.EnvVars = map[string]string{}
+			for _, env := range containerInfo.Config.Env {
+				decomposedEnv := strings.SplitN(env, "=", 2)
+				process.EnvVars[decomposedEnv[0]] = decomposedEnv[1]
+			}
+
 			output.Processes = append(output.Processes, process)
 		}
 	}
