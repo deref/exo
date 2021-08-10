@@ -19,7 +19,7 @@
 ## Web UI.
 # [gui]
 ## (DEV only) Port that the Vite server binds to.
-# port = 5140
+# port = 3001
 
 ## Telemetry subsystem that collects and reports statistics back to Deref.
 # [telemetry]
