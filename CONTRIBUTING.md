@@ -2,8 +2,8 @@
 
 Thank you for your interest in giving back to exo! exo is primarily developed and maintained by the team at [Deref](https://deref.io), but we welcome community contributions. There are a number of ways to get involved:
 
-- [Request a Feature](https://github.com/deref/exo/issues/new?assignees=kendru&labels=feature-request&template=feature_request.md&title=%5BFEATURE%5D)
-- [File a Bug Report](https://github.com/deref/exo/issues/new?assignees=kendru&labels=bug&template=bug_report.md&title=%5BBUG%5D)
+- [Request a Feature](https://github.com/deref/exo/issues/new?labels=feature-request&template=feature_request.md&title=%5BFEATURE%5D)
+- [File a Bug Report](https://github.com/deref/exo/issues/new?labels=bug&template=bug_report.md&title=%5BBUG%5D)
 - [Contribute Documentation](https://github.com/deref/exo/new/main/doc)
 - [Fix a Bug](#fixing-bugs)
 - [Contributing a Feature](#contributing-features)
@@ -21,6 +21,6 @@ For a smooth development experience, please take a look at the [local developmen
 
 ## Contributing Features
 
-If you would like to contribute a new feature, please use the [Feature Request template](https://github.com/deref/exo/issues/new?assignees=kendru&labels=feature-request&template=feature_request.md&title=%5BFEATURE%5D) to propose the feature you would like to add. Before opening your request, please take a moment to familiarize yourself with the [project philosophy](https://github.com/deref/exo/blob/main/doc/project-philosophy.md) to maximize the likelihood that your feature is accepted. In the feature request, please indicate that you would like to implement the feature yourself. We will ensure that we respond in a timely manner.
+If you would like to contribute a new feature, please use the [Feature Request template](https://github.com/deref/exo/issues/new?labels=feature-request&template=feature_request.md&title=%5BFEATURE%5D) to propose the feature you would like to add. Before opening your request, please take a moment to familiarize yourself with the [project philosophy](https://github.com/deref/exo/blob/main/doc/project-philosophy.md) to maximize the likelihood that your feature is accepted. In the feature request, please indicate that you would like to implement the feature yourself. We will ensure that we respond in a timely manner.
 
 For a smooth development experience, please take a look at the [local development guide](https://github.com/deref/exo/blob/main/doc/local-development.md).
