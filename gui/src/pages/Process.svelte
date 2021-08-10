@@ -78,6 +78,7 @@
               <tr>
                 <td>Status</td>
                 <td>{process.running ? 'Running' : 'Stopped'}</td>
+                <td />
               </tr>
               <tr>
                 <td>CPU</td>
@@ -95,6 +96,7 @@
               <tr>
                 <td>Resident Memory</td>
                 <td><BytesLabel value={process.residentMemory} /></td>
+                <td />
               </tr>
               <tr>
                 <td>Started at</td>
@@ -115,21 +117,25 @@
               <tr>
                 <td>Local Ports</td>
                 <td>{process.ports?.join(', ') ?? 'None'}</td>
+                <td />
               </tr>
               <tr>
                 <td>Children</td>
                 <td>{process.childrenExecutables?.join(', ') ?? 'None'}</td>
+                <td />
               </tr>
             </table>
+            <br />
             <h3>Environment</h3>
             <table>
               {#each Object.entries(process.envVars ?? {}) as [name, val] (name)}
                 <tr>
-                  <td>{name}</td>
+                  <td class="label">{name}</td>
                   <td><code><pre>{val}</pre></code></td>
                 </tr>
               {/each}
             </table>
+            <br />
           {:else}
             <p>Process is not running</p>
           {/if}
@@ -158,43 +164,54 @@
     fill: none;
   }
 
+  table {
+    border-collapse: collapse;
+    border-radius: 0.25em;
+    box-shadow: 0 0.33px 0 1px hsla(0, 0%, 100%, 0.15),
+      0 6px 9px -4px rgba(0, 0, 0, 0.2), 0 0.4px 0 0.8px rgba(0, 0, 0, 0.1);
+    overflow: hidden;
+  }
+
+  td {
+    text-align: left;
+    padding: 8px 16px;
+  }
+
   code {
     width: 100%;
     max-width: 500px;
     display: inline-block;
     overflow-x: auto;
-    padding: 0.6em;
-    border-radius: 0.5em;
-    background-color: rgba(0, 0, 0, 0.05);
+  }
+
+  table tr:nth-child(2n + 1) {
+    background: #eeeeee;
+  }
+
+  table tr:nth-child(2n) {
+    background: #ffffff;
+  }
+
+  table tr:nth-child(2n + 1) td:nth-child(2n) {
+    background: #e7e7e7;
+  }
+
+  table tr:nth-child(2n) td:nth-child(2n) {
+    background: #f9f9f9;
   }
 
   td {
     padding-right: 2em;
   }
 
+  .label {
+    font-size: 0.8em;
+    font-weight: 450;
+  }
+
   /* line with highlight area */
   .sparkline {
     stroke: red;
     fill: rgba(255, 0, 0, 0.3);
-  }
-
-  /* change the spot color */
-  .sparkline--spot {
-    stroke: blue;
-    fill: blue;
-  }
-
-  /* change the cursor color */
-  .sparkline--cursor {
-    stroke: orange;
-  }
-
-  /* style fill area and line colors using specific class name */
-  .sparkline--fill {
-    fill: rgba(255, 0, 0, 0.3);
-  }
-
-  .sparkline--line {
-    stroke: red;
   }
 </style>
