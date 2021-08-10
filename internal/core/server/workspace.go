@@ -707,67 +707,67 @@ func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeP
 				Provider: "docker",
 			}
 
-			statRequest, err := ws.Docker.ContainerStats(ctx, state.ContainerID, false)
-			if err != nil {
-				return nil, fmt.Errorf("could not get container stats: %w", err)
-			}
-			defer statRequest.Body.Close()
-
-			scanner := bufio.NewScanner(statRequest.Body)
-			didScan := scanner.Scan()
-			if err = scanner.Err(); err != nil {
-				return nil, fmt.Errorf("error scanning container stats: %w", err)
-			}
-
-			if !didScan {
-				return nil, fmt.Errorf("could not read container stats")
-			}
-
-			var containerStats DockerStats
-			err = json.Unmarshal(scanner.Bytes(), &containerStats)
-			if err != nil {
-				return nil, fmt.Errorf("could not unmarshal container stats: %w", err)
-			}
-
-			process.ResidentMemory = containerStats.MemoryStats.Usage
-
 			containerInfo, err := ws.Docker.ContainerInspect(ctx, state.ContainerID)
-			if err != nil {
-				return nil, fmt.Errorf("could not get container info: %w", err)
-			}
-			process.Running = containerInfo.State.Running
+			if err == nil {
+				process.Running = containerInfo.State.Running
+				if process.Running {
+					statRequest, err := ws.Docker.ContainerStats(ctx, state.ContainerID, false)
+					if err != nil {
+						return nil, fmt.Errorf("could not get container stats: %w", err)
+					}
+					defer statRequest.Body.Close()
 
-			layout := "2006-01-02T15:04:05.000000000Z"
-			startTime, err := time.Parse(layout, containerInfo.State.StartedAt)
-			if err != nil {
-				return nil, fmt.Errorf("could not parse start time: %w", err)
-			}
+					scanner := bufio.NewScanner(statRequest.Body)
+					didScan := scanner.Scan()
+					if err = scanner.Err(); err != nil {
+						return nil, fmt.Errorf("error scanning container stats: %w", err)
+					}
 
-			process.CreateTime = startTime.UnixNano() / 1e6
+					if !didScan {
+						return nil, fmt.Errorf("could not read container stats")
+					}
 
-			if containerStats.CPUStats.SystemCPUUsage != 0 {
-				process.CPUPercent = float64(containerStats.CPUStats.CPUUsage.TotalUsage) / 1e9
-			}
+					var containerStats DockerStats
+					err = json.Unmarshal(scanner.Bytes(), &containerStats)
+					if err != nil {
+						return nil, fmt.Errorf("could not unmarshal container stats: %w", err)
+					}
 
-			process.EnvVars = map[string]string{}
-			for _, env := range containerInfo.Config.Env {
-				decomposedEnv := strings.SplitN(env, "=", 2)
-				process.EnvVars[decomposedEnv[0]] = decomposedEnv[1]
-			}
+					process.ResidentMemory = containerStats.MemoryStats.Usage
+					layout := "2006-01-02T15:04:05.000000000Z"
+					startTime, err := time.Parse(layout, containerInfo.State.StartedAt)
+					if err != nil {
+						return nil, fmt.Errorf("could not parse start time: %w", err)
+					}
 
-			process.Ports = []uint32{}
-			for p := range containerInfo.NetworkSettings.Ports {
-				process.Ports = append(process.Ports, uint32(p.Int()))
-			}
+					process.CreateTime = startTime.UnixNano() / 1e6
 
-			topBody, err := ws.Docker.ContainerTop(ctx, state.ContainerID, []string{})
-			if err != nil {
-				return nil, fmt.Errorf("could not top container: %w", err)
-			}
+					if containerStats.CPUStats.SystemCPUUsage != 0 {
+						process.CPUPercent = float64(containerStats.CPUStats.CPUUsage.TotalUsage) / 1e9
+					}
 
-			process.ChildrenExecutables = []string{}
-			for _, proc := range topBody.Processes {
-				process.ChildrenExecutables = append(process.ChildrenExecutables, proc[len(proc)-1])
+					process.EnvVars = map[string]string{}
+					for _, env := range containerInfo.Config.Env {
+						decomposedEnv := strings.SplitN(env, "=", 2)
+						process.EnvVars[decomposedEnv[0]] = decomposedEnv[1]
+					}
+
+					process.Ports = []uint32{}
+					for p := range containerInfo.NetworkSettings.Ports {
+						process.Ports = append(process.Ports, uint32(p.Int()))
+					}
+
+					topBody, err := ws.Docker.ContainerTop(ctx, state.ContainerID, []string{})
+					if err != nil {
+						return nil, fmt.Errorf("could not top container: %w", err)
+					}
+
+					process.ChildrenExecutables = []string{}
+					for _, proc := range topBody.Processes {
+						process.ChildrenExecutables = append(process.ChildrenExecutables, proc[len(proc)-1])
+					}
+
+				}
 			}
 
 			output.Processes = append(output.Processes, process)
