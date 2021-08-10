@@ -1,5 +1,4 @@
 <script lang="ts">
-  import * as router from 'svelte-spa-router';
   import sparkline from '@fnando/sparkline';
   import Layout from '../components/Layout.svelte';
   import { api } from '../lib/api';
