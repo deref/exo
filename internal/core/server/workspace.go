@@ -860,6 +860,16 @@ func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeP
 				process.Ports = append(process.Ports, uint32(p.Int()))
 			}
 
+			topBody, err := ws.Docker.ContainerTop(ctx, state.ContainerID, []string{})
+			if err != nil {
+				return nil, fmt.Errorf("could not top container: %w", err)
+			}
+
+			process.ChildrenExecutables = []string{}
+			for _, proc := range topBody.Processes {
+				process.ChildrenExecutables = append(process.ChildrenExecutables, proc[len(proc)-1])
+			}
+
 			output.Processes = append(output.Processes, process)
 		}
 	}
