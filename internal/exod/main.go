@@ -35,10 +35,6 @@ func Main(ctx context.Context) {
 		cmdutil.Fatalf("parsing arguments: %w", err)
 	}
 
-	if len(cmd.Args) > 0 {
-		cmdutil.Fatalf("unexpected arguments")
-	}
-
 	RunServer(ctx, cmd.Flags)
 }
 
