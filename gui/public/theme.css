@@ -8,12 +8,21 @@
 
 :root {
   --text-color: #061a29;
-  --bg-color: #fff;
+  --grey-1-text-color: #333333;
+  --grey-2-text-color: #555555;
+  --grey-3-text-color: #777777;
+  --grey-4-text-color: #999999;
+  --layout-bg-color: #cccccc;
+  --nav-bg-color: #e7e7e7;
+  --secondary-bg-color: #f5f5f5;
+  --primary-bg-color: #ffffff;
+  --dev-mode-bg-color: #007bd4;
+  --dev-mode-text-color: #ffffff;
 }
 
 /* @media (prefers-color-scheme: dark) {
   :root {
     --text-color: #fff;
-    --bg-color: #061a29;
+    --primary-bg-color: #061a29;
   }
 } */

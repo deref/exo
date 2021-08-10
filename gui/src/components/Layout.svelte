@@ -46,7 +46,7 @@
     gap: 1px;
     height: 100vh;
     overflow: hidden;
-    background: #cccccc;
+    background: var(--layout-bg-color);
   }
 
   nav {
@@ -59,7 +59,7 @@
     align-items: center;
     justify-content: space-between;
     gap: 1px;
-    background: #e9e9e9;
+    background: var(--nav-bg-color);
   }
 
   div {
@@ -87,14 +87,14 @@
     align-items: center;
     font-size: 12px;
     width: 100%;
-    color: #555555;
+    color: var(--grey-2-text-color);
     overflow: hidden;
     padding-top: 8px;
     gap: 8px;
   }
 
   div.devmode {
-    background: #007bd4;
-    color: #ffffff;
+    background: var(--dev-mode-bg-color);
+    color: var(--dev-mode-text-color);
   }
 </style>
