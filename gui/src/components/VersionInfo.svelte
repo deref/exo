@@ -1,8 +1,7 @@
 <script lang="ts">
-  import { onDestroy, onMount } from 'svelte';
+  import { onDestroy } from 'svelte';
   import { api } from '../lib/api';
   import Button from './Button.svelte';
-import ErrorLabel from './ErrorLabel.svelte';
   import Spinner from './mono/spinner.svelte';
 
   let installedVersion: string | null = null;
@@ -52,22 +51,7 @@ import ErrorLabel from './ErrorLabel.svelte';
     </Button>
   {/if}
   {#if import.meta.env.MODE === 'development'}
-    <span class="callout">DEV MODE</span>
+    &nbsp;
+    <strong>DEV MODE</strong>
   {/if}
 </section>
-
-<style>
-  section {
-    font-size: 12px;
-    color: #666;
-  }
-
-  .callout {
-    background-color: red;
-    color: white;
-    padding: 4px;
-    display: inline-block;
-    border-radius: 5px;
-    font-weight: 700;
-  }
-</style>
