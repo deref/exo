@@ -11,6 +11,7 @@
   import type { RemoteData } from '../lib/api';
   import BytesLabel from '../components/BytesLabel.svelte';
   import WithLeftWorkspaceNav from '../components/WithLeftWorkspaceNav.svelte';
+  import CheckeredTableWrapper from '../components/CheckeredTableWrapper.svelte';
   import type { ProcessDescription } from 'src/lib/process/types';
   export let params = { workspace: '', process: '' };
 
@@ -71,64 +72,79 @@
           <div id="heading">
             <h1>{process.name}</h1>
           </div>
-          <h3>Status</h3>
           {#if process.running}
-            <table>
-              <tr>
-                <td>Status</td>
-                <td>{process.running ? 'Running' : 'Stopped'}</td>
-              </tr>
-              <tr>
-                <td>CPU</td>
-                <td>{process.cpuPercent.toFixed(2)}%</td>
-                <td
-                  ><svg
-                    bind:this={sparklineSvg}
-                    class="sparkline"
-                    width="100"
-                    height="30"
-                    stroke-width="3"
-                  /></td
-                >
-              </tr>
-              <tr>
-                <td>Resident Memory</td>
-                <td><BytesLabel value={process.residentMemory} /></td>
-              </tr>
-              <tr>
-                <td>Started at</td>
-                <td
-                  ><span title={new Date(process.createTime).toISOString()}
-                    >{new Date(process.createTime).toLocaleTimeString()}</span
-                  ></td
-                >
-                <td
-                  ><svg
-                    class="sparkline"
-                    width="100"
-                    height="30"
-                    stroke-width="3"
-                  /></td
-                >
-              </tr>
-              <tr>
-                <td>Local Ports</td>
-                <td>{process.ports?.join(', ') ?? 'None'}</td>
-              </tr>
-              <tr>
-                <td>Children</td>
-                <td>{process.childrenExecutables?.join(', ') ?? 'None'}</td>
-              </tr>
-            </table>
+            <CheckeredTableWrapper>
+              <table>
+                <tbody>
+                  <tr>
+                    <td class="label">Status</td>
+                    <td>{process.running ? 'Running' : 'Stopped'}</td>
+                    <td />
+                  </tr>
+                  <tr>
+                    <td class="label">CPU</td>
+                    <td>{process.cpuPercent.toFixed(2)}%</td>
+                    <td
+                      ><svg
+                        bind:this={sparklineSvg}
+                        class="sparkline"
+                        width="100"
+                        height="30"
+                        stroke-width="3"
+                      /></td
+                    >
+                  </tr>
+                  <tr>
+                    <td class="label">Resident Memory</td>
+                    <td><BytesLabel value={process.residentMemory} /></td>
+                    <td />
+                  </tr>
+                  <tr>
+                    <td class="label">Started at</td>
+                    <td
+                      ><span title={new Date(process.createTime).toISOString()}
+                        >{new Date(
+                          process.createTime,
+                        ).toLocaleTimeString()}</span
+                      ></td
+                    >
+                    <td
+                      ><svg
+                        class="sparkline"
+                        width="100"
+                        height="30"
+                        stroke-width="3"
+                      /></td
+                    >
+                  </tr>
+                  <tr>
+                    <td class="label">Local Ports</td>
+                    <td>{process.ports?.join(', ') ?? 'None'}</td>
+                    <td />
+                  </tr>
+                  <tr>
+                    <td class="label">Children</td>
+                    <td>{process.childrenExecutables?.join(', ') ?? 'None'}</td>
+                    <td />
+                  </tr>
+                </tbody>
+              </table>
+            </CheckeredTableWrapper>
+            <br />
             <h3>Environment</h3>
-            <table>
-              {#each Object.entries(process.envVars ?? {}) as [name, val] (name)}
-                <tr>
-                  <td>{name}</td>
-                  <td><code><pre>{val}</pre></code></td>
-                </tr>
-              {/each}
-            </table>
+            <CheckeredTableWrapper>
+              <tbody>
+                <table>
+                  {#each Object.entries(process.envVars ?? {}) as [name, val] (name)}
+                    <tr>
+                      <td class="label">{name}</td>
+                      <td><code><pre>{val}</pre></code></td>
+                    </tr>
+                  {/each}
+                </table>
+              </tbody>
+            </CheckeredTableWrapper>
+            <br />
           {:else}
             <p>Process is not running</p>
           {/if}
@@ -155,45 +171,28 @@
   .sparkline {
     stroke: red;
     fill: none;
+    margin: -6px -15px;
   }
 
   code {
     width: 100%;
-    max-width: 500px;
+    max-width: 600px;
     display: inline-block;
     overflow-x: auto;
-    padding: 0.6em;
-    border-radius: 0.5em;
-    background-color: rgba(0, 0, 0, 0.05);
+    font-size: 1.05em;
+    padding: 8px;
+    margin: -10px;
   }
 
-  td {
-    padding-right: 2em;
+  .label {
+    font-size: 0.8em;
+    font-weight: 450;
+    color: #555555;
   }
 
   /* line with highlight area */
   .sparkline {
     stroke: red;
     fill: rgba(255, 0, 0, 0.3);
-  }
-
-  /* change the spot color */
-  .sparkline--spot {
-    stroke: blue;
-    fill: blue;
-  }
-
-  /* change the cursor color */
-  .sparkline--cursor {
-    stroke: orange;
-  }
-
-  /* style fill area and line colors using specific class name */
-  .sparkline--fill {
-    fill: rgba(255, 0, 0, 0.3);
-  }
-
-  .sparkline--line {
-    stroke: red;
   }
 </style>
