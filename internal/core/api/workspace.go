@@ -107,6 +107,7 @@ type ApplyInput struct {
 
 type ApplyOutput struct {
 	Warnings []string `json:"warnings"`
+	JobID    string   `json:"jobId"`
 }
 
 type ResolveInput struct {

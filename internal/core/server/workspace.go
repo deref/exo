@@ -111,41 +111,50 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 	}
 
 	// TODO: Handle partial failures.
-	// TODO: Build a plan. Probably want to delete before apply when port binding is involved.
 
-	// Apply component upserts.
-	newComponents := make(map[string]manifest.Component, len(m.Components))
-	for _, newComponent := range m.Components {
-		name := newComponent.Name
-		newComponents[name] = newComponent
-		if oldComponent, exists := oldComponents[name]; exists {
-			// Update existing component.
-			if err := ws.updateComponent(ctx, oldComponent, newComponent); err != nil {
-				return nil, fmt.Errorf("updating %q: %w", name, err)
-			}
-		} else {
-			// Create new component.
-			if _, err := ws.createComponent(ctx, newComponent); err != nil {
-				return nil, fmt.Errorf("adding %q: %w", name, err)
-			}
-		}
-	}
+	job := ws.TaskTracker.StartTask(ctx, "applying")
+	go func() {
+		defer job.Finish()
 
-	// Apply component deletions.
-	// TODO: Dispose in parallel. Optionally await deletion.
-	for name, oldComponent := range oldComponents {
-		if _, keep := newComponents[name]; keep {
-			continue
+		// Apply component upserts.
+		newComponents := make(map[string]manifest.Component, len(m.Components))
+		for _, newComponent := range m.Components {
+			newComponent := newComponent
+			name := newComponent.Name
+			newComponents[name] = newComponent
+			if oldComponent, exists := oldComponents[name]; exists {
+				// Update existing component.
+				job.Go("updating "+name, func(*task.Task) error {
+					return ws.updateComponent(ctx, oldComponent, newComponent)
+				})
+			} else {
+				// Create new component.
+				job.Go("adding "+name, func(*task.Task) error {
+					_, err := ws.createComponent(ctx, newComponent)
+					return err
+				})
+			}
 		}
-		if err := ws.control(ctx, oldComponent, func(lifecycle api.Lifecycle) error {
-			return ws.deleteComponent(ctx, lifecycle)
-		}); err != nil {
-			return nil, fmt.Errorf("deleting %q: %w", name, err)
+
+		// Apply component deletions.
+		for name, oldComponent := range oldComponents {
+			name := name
+			oldComponent := oldComponent
+			if _, keep := newComponents[name]; keep {
+				continue
+			}
+			job.Go("deleting "+name, func(*task.Task) error {
+				return ws.control(ctx, oldComponent, func(lifecycle api.Lifecycle) error {
+					return ws.deleteComponent(ctx, lifecycle)
+				})
+			})
 		}
-	}
+
+	}()
 
 	return &api.ApplyOutput{
 		Warnings: res.Warnings,
+		JobID:    job.ID(),
 	}, nil
 }
 
@@ -305,16 +314,15 @@ func (ws *Workspace) UpdateComponent(ctx context.Context, input *api.UpdateCompo
 
 func (ws *Workspace) updateComponent(ctx context.Context, oldComponent api.ComponentDescription, newComponent manifest.Component) error {
 	// TODO: Most updates should be accomplished without a full replacement; especially when there are no spec changes!
-	return ws.control(ctx, oldComponent, func(lifecycle api.Lifecycle) error {
-		name := oldComponent.Name
-		if err := ws.deleteComponent(ctx, lifecycle); err != nil {
-			return fmt.Errorf("delete %q for replacement: %w", name, err)
-		}
-		if _, err := ws.createComponent(ctx, newComponent); err != nil {
-			return fmt.Errorf("adding replacement %q: %w", name, err)
-		}
-		return nil
-	})
+	if err := ws.control(ctx, oldComponent, func(lifecycle api.Lifecycle) error {
+		return ws.deleteComponent(ctx, lifecycle)
+	}); err != nil {
+		return fmt.Errorf("delete %q for replacement: %w", oldComponent.Name, err)
+	}
+	if _, err := ws.createComponent(ctx, newComponent); err != nil {
+		return fmt.Errorf("adding replacement %q: %w", newComponent.Name, err)
+	}
+	return nil
 }
 
 func (ws *Workspace) RefreshComponents(ctx context.Context, input *api.RefreshComponentsInput) (*api.RefreshComponentsOutput, error) {

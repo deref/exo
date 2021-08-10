@@ -34,6 +34,7 @@ If a workspace does not exist, one will be created in the current directory.
 		ctx := newContext()
 		ensureDaemon()
 		cl := newClient()
+		kernel := cl.Kernel()
 		logger := logging.CurrentLogger(ctx)
 
 		// Ensure workspace.
@@ -58,7 +59,7 @@ If a workspace does not exist, one will be created in the current directory.
 		}
 
 		// Apply manifest.
-		if err := apply(ctx, workspace, args); err != nil {
+		if err := apply(ctx, kernel, workspace, args); err != nil {
 			return fmt.Errorf("applying manifest: %w", err)
 		}
 

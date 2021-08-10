@@ -41,6 +41,7 @@ interface "workspace" {
     }
     
     output "warnings" "[]string" {}
+    output "job-id" "string" {}
   }
 
   method "resolve" {
