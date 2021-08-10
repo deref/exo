@@ -72,16 +72,15 @@
           <div id="heading">
             <h1>{process.name}</h1>
           </div>
-          <h3>Status</h3>
           {#if process.running}
             <table>
               <tr>
-                <td>Status</td>
+                <td class="label">Status</td>
                 <td>{process.running ? 'Running' : 'Stopped'}</td>
                 <td />
               </tr>
               <tr>
-                <td>CPU</td>
+                <td class="label">CPU</td>
                 <td>{process.cpuPercent.toFixed(2)}%</td>
                 <td
                   ><svg
@@ -94,12 +93,12 @@
                 >
               </tr>
               <tr>
-                <td>Resident Memory</td>
+                <td class="label">Resident Memory</td>
                 <td><BytesLabel value={process.residentMemory} /></td>
                 <td />
               </tr>
               <tr>
-                <td>Started at</td>
+                <td class="label">Started at</td>
                 <td
                   ><span title={new Date(process.createTime).toISOString()}
                     >{new Date(process.createTime).toLocaleTimeString()}</span
@@ -115,12 +114,12 @@
                 >
               </tr>
               <tr>
-                <td>Local Ports</td>
+                <td class="label">Local Ports</td>
                 <td>{process.ports?.join(', ') ?? 'None'}</td>
                 <td />
               </tr>
               <tr>
-                <td>Children</td>
+                <td class="label">Children</td>
                 <td>{process.childrenExecutables?.join(', ') ?? 'None'}</td>
                 <td />
               </tr>
@@ -162,6 +161,7 @@
   .sparkline {
     stroke: red;
     fill: none;
+    margin: -8px -16px;
   }
 
   table {
@@ -200,13 +200,10 @@
     background: #f9f9f9;
   }
 
-  td {
-    padding-right: 2em;
-  }
-
   .label {
     font-size: 0.8em;
     font-weight: 450;
+    color: #555555;
   }
 
   /* line with highlight area */
