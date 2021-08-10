@@ -3,6 +3,7 @@ package supervise
 import (
 	"bufio"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
@@ -26,7 +27,7 @@ import (
 var varDir string
 var pgrp int
 
-func Main(cfg *Config) {
+func Main() {
 	var crashFile *os.File
 	cleanExit := func() {
 		if crashFile != nil {
@@ -37,6 +38,14 @@ func Main(cfg *Config) {
 
 	pgrp = syscall.Getpgrp()
 	ctx := context.Background()
+
+	cfg := &Config{}
+	if err := json.NewDecoder(os.Stdin).Decode(cfg); err != nil {
+		fatalf("reading config from stdin: %v", err)
+	}
+	if err := cfg.Validate(); err != nil {
+		fatalf("validating config: %v", err)
+	}
 
 	udpAddr, err := net.ResolveUDPAddr("udp", fmt.Sprintf("localhost:%d", cfg.SyslogPort))
 	if err != nil {

@@ -16,7 +16,6 @@ import (
 	"github.com/deref/exo/internal/core/state/statefile"
 	"github.com/deref/exo/internal/logd"
 	"github.com/deref/exo/internal/providers/core/components/log"
-	"github.com/deref/exo/internal/supervise"
 	"github.com/deref/exo/internal/task"
 	"github.com/deref/exo/internal/task/api"
 	taskserver "github.com/deref/exo/internal/task/server"
@@ -36,40 +35,11 @@ func Main(ctx context.Context) {
 		cmdutil.Fatalf("parsing arguments: %w", err)
 	}
 
-	subcommand := "server"
 	if len(cmd.Args) > 0 {
-		subcommand = cmd.Args[0]
-		cmd.Args = cmd.Args[1:]
+		cmdutil.Fatalf("unexpected arguments")
 	}
 
-	switch subcommand {
-	case "supervise":
-		// XXX: This is broken because supervise expects the syslod addr as the first argument.
-		wd, err := os.Getwd()
-		if err != nil {
-			panic(err)
-		}
-		program := cmd.Args[0]
-		var arguments []string
-		if len(cmd.Args) > 1 {
-			arguments = cmd.Args[1:]
-		}
-
-		supervise.Main(&supervise.Config{
-			ComponentID:      "<exod>",
-			WorkingDirectory: wd,
-			Environment:      map[string]string{},
-			SyslogPort:       4500,
-			Program:          program,
-			Arguments:        arguments,
-		})
-
-	case "server":
-		RunServer(ctx, cmd.Flags)
-
-	default:
-		cmdutil.Fatalf("unknown subcommand: %q", subcommand)
-	}
+	RunServer(ctx, cmd.Flags)
 }
 
 func RunServer(ctx context.Context, flags map[string]string) {
