@@ -61,12 +61,12 @@
     loadInitialLogs(workspaceId, workspace);
   }
 
-  let procfileExport: string | null = null;
+  let procfileExport: string;
   async function checkProcfile() {
     const current = await workspace.readFile('Procfile');
     const computed = await workspace.exportProcfile();
 
-    procfileExport = (current === computed) ? null : computed;
+    procfileExport = (current === computed) ? (undefined as any) : computed;
   }
 
   let refreshInterval: any;
@@ -171,10 +171,10 @@
     {/if}
   </div>
   <div>
-    {#if procfileExport !== null}
+    {#if procfileExport}
       <p>
         Your Procfile is not up to date.
-        <button on:click={() => workspace.writeFile('Procfile', procfileExport ?? '').then(checkProcfile)}>Export?</button>
+        <button on:click={() => workspace.writeFile('Procfile', procfileExport).then(checkProcfile)}>Export?</button>
       </p>
     {/if}
   </div>
