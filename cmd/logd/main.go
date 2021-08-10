@@ -1,7 +1,6 @@
 // Separate logd service for testing in isolation. Unused for production
 // deployments.  By default, binds a unix domain socket for easy discovery from
-// exop.  If PORT environment variable is set, listens there instead for easy
-// testing via curl or httpie.
+// exop.
 
 package main
 
