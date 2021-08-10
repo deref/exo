@@ -5,78 +5,56 @@
   import Layers from './mono/layers.svelte';
   import Storage from './mono/database.svelte';
   import Networking from './mono/networking.svelte';
+  import NavbarButton from './nav/NavbarButton.svelte';
 
   export let workspaceId: string;
   export let active: string;
 </script>
 
 <aside>
-  <button
+  <NavbarButton
+    title="Dashboard"
     on:click={() => {
       router.push(`#/workspaces/${workspaceId}`);
     }}
-    class={active === 'Dashboard' ? 'active' : ''}
-    title="Dashboard"><Home /></button
+    {active}
   >
-  <button
+    <Home />
+  </NavbarButton>
+
+  <NavbarButton
+    title="Components"
     on:click={() => {
       router.push(`#/workspaces/${workspaceId}/components`);
     }}
-    class={active === 'Components' ? 'active' : ''}
-    title="Components"><Layers /></button
+    {active}
   >
-  <button
+    <Layers />
+  </NavbarButton>
+
+  <NavbarButton
+    title="Storage"
     on:click={() => {
       router.push(`#/workspaces/${workspaceId}/storage`);
     }}
-    class={active === 'Storage' ? 'active' : ''}
-    title="Storage"><Storage /></button
+    {active}
   >
-  <button
+    <Storage />
+  </NavbarButton>
+
+  <NavbarButton
+    title="Networking"
     on:click={() => {
       router.push(`#/workspaces/${workspaceId}/networking`);
     }}
-    class={active === 'Networking' ? 'active' : ''}
-    title="Networking"><Networking /></button
+    {active}
   >
+    <Networking />
+  </NavbarButton>
 </aside>
 
 <style>
   aside {
-    width: 48px;
-    background: #e9e9e9;
     flex-grow: 1;
-  }
-
-  button {
-    position: relative;
-    border: none;
-    background: #e9e9e9;
-    color: #999999;
-    height: 48px;
-    width: 48px;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-  }
-
-  button > :global(svg),
-  button > :global(svg *) {
-    fill: currentColor;
-  }
-
-  button.active {
-    background: #d5d5d5;
-    color: #333333;
-  }
-
-  button:hover {
-    background: #dddddd;
-    color: #666666;
-  }
-
-  button.active:hover {
-    background: #d0d0d0;
-    color: #222222;
   }
 </style>

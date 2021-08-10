@@ -87,7 +87,7 @@
     align-items: center;
     font-size: 12px;
     width: 100%;
-    color: var(--grey-2-text-color);
+    color: var(--grey-5-text-color);
     overflow: hidden;
     padding-top: 8px;
     gap: 8px;
