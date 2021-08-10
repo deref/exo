@@ -1,14 +1,16 @@
-<script lang="ts">
-  type Status = 'pending' | 'running' | 'success' | 'failure';
+<script lang="ts" context="module">
+  export type Status = 'pending' | 'running' | 'success' | 'failure';
 
-  interface Task {
+  export interface TaskNode {
     id: string;
     name: string;
     status: Status;
-    children: Task[];
+    children: TaskNode[];
   }
+</script>
 
-  export let value: Task;
+<script lang="ts">
+  export let value: TaskNode;
 </script>
 
 <div class="container">
