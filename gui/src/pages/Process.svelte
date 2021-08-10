@@ -65,7 +65,7 @@
   });
 </script>
 
-<Layout showBackButton backButtonRoute={workspaceRoute}>
+<Layout>
   <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
   <MonoPanel>
     <section>

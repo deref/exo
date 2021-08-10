@@ -4,17 +4,9 @@
   import VersionInfo from './VersionInfo.svelte';
 
   import Feedback from './mono/feedback.svelte';
-  import GoBack from './mono/leftarrow.svelte';
-
-  export let showBackButton: boolean = false;
-  export let backButtonRoute: string = '#/';
 
   const goHome = () => {
     router.push('#/');
-  };
-
-  const goBack = () => {
-    router.push(backButtonRoute);
   };
 </script>
 
@@ -24,9 +16,6 @@
       <div class="a logo" on:click={goHome}>
         <img src="/deref-rounded-icon.png" alt="Deref" height="24px" />
       </div>
-      {#if showBackButton}
-        <IconButton tooltip="Go back" on:click={goBack}><GoBack /></IconButton>
-      {/if}
     </header>
     <slot name="navbar" />
     <footer>
