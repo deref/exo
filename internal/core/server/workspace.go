@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"reflect"
 	"strings"
+	"time"
 
 	"github.com/deref/exo/internal/chrono"
 	"github.com/deref/exo/internal/core/api"
@@ -828,14 +829,24 @@ func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeP
 				return nil, fmt.Errorf("could not unmarshal container stats: %w", err)
 			}
 
-			if containerStats.MemoryStats.Usage == 0 {
-				process.Running = false
-			}
-
 			process.ResidentMemory = containerStats.MemoryStats.Usage
 
+			containerInfo, err := ws.Docker.ContainerInspect(ctx, state.ContainerID)
+			if err != nil {
+				return nil, fmt.Errorf("could not get container info: %w", err)
+			}
+			process.Running = containerInfo.State.Running
+
+			layout := "2006-01-02T15:04:05.000000000Z"
+			startTime, err := time.Parse(layout, containerInfo.State.StartedAt)
+			if err != nil {
+				return nil, fmt.Errorf("could not parse start time: %w", err)
+			}
+
+			process.CreateTime = startTime.UnixNano() / 1e6
+
 			if containerStats.CPUStats.SystemCPUUsage != 0 {
-				process.CPUPercent = float64(containerStats.CPUStats.CPUUsage.TotalUsage) / float64(containerStats.CPUStats.SystemCPUUsage)
+				process.CPUPercent = float64(containerStats.CPUStats.CPUUsage.TotalUsage) / 1e9
 			}
 
 			output.Processes = append(output.Processes, process)
