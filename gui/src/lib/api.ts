@@ -276,15 +276,15 @@ export const api = (() => {
       },
 
       async startProcess(ref: string): Promise<void> {
-        await invoke('start-components', { ref });
+        await invoke('start-components', { refs: [ref] });
       },
 
       async stopProcess(ref: string): Promise<void> {
-        await invoke('stop-components', { ref });
+        await invoke('stop-components', { refs: [ref] });
       },
 
       async deleteComponent(ref: string): Promise<void> {
-        await invoke('delete-component', { ref });
+        await invoke('delete-components', { refs: [ref] });
       },
 
       async refreshAllProcesses(): Promise<void> {
