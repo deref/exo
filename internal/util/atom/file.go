@@ -2,11 +2,14 @@ package atom
 
 import (
 	"bytes"
+	"context"
 	"fmt"
 	"io/ioutil"
 	"os"
 	"reflect"
+	"time"
 
+	"github.com/gofrs/flock"
 	"github.com/natefinch/atomic"
 )
 
@@ -54,16 +57,31 @@ func (a *FileAtom) Reset(v interface{}) error {
 }
 
 func (a *FileAtom) Swap(v interface{}, f func() error) error {
-	for {
-		if err := a.Deref(v); err != nil {
-			return err
-		}
+	// Establish timeout.
+	ctx := context.Background()
+	ctx, cancel := context.WithTimeout(ctx, 1*time.Second)
+	defer cancel()
 
-		if err := f(); err != nil {
-			return err
-		}
-
-		// XXX Do a compare-and-set instead of just clobbering.
-		return a.Reset(v)
+	// Acquire lock.
+	// TODO: Actual compare-and-set semantics, rather than mutual exclusion.
+	lockPath := a.filename + ".lock"
+	lock := flock.New(lockPath)
+	retryDelay := 5 * time.Millisecond
+	locked, err := lock.TryLockContext(ctx, retryDelay)
+	if err != nil {
+		return fmt.Errorf("locking %q: %w", lockPath, err)
 	}
+	if !locked {
+		return fmt.Errorf("locking %q timed out", lockPath)
+	}
+	defer lock.Unlock()
+
+	// Read, update-in-memory, Write.
+	if err := a.Deref(v); err != nil {
+		return err
+	}
+	if err := f(); err != nil {
+		return err
+	}
+	return a.Reset(v)
 }

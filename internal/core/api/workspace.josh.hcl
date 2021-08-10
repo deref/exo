@@ -1,9 +1,16 @@
 # XXX This is only in the same file as workspace because workspace refers to
 # it and the JOSH loader does not yet properly handle multi-file packages.
 interface "process" {
-  method "start" {}
-  method "stop" {}
-  method "restart" {} # TODO: Optional method?
+  method "start" {
+    output "job-id" "string" {}
+  }
+  method "stop" {
+    output "job-id" "string" {}
+  }
+  # TODO: Optional method?
+  method "restart" {
+    output "job-id" "string" {}
+  }
 }
 
 interface "workspace" {
@@ -83,17 +90,16 @@ interface "workspace" {
     output "job-id" "string" {}
   }
 
-  method "dispose-component" {
-    # TODO: Line breaks in doc strings.
-    doc = "Marks a component as disposed and triggers the dispose lifecycle event. After being disposed, the component record will be deleted asynchronously."
+  method "dispose-components" {
+    doc = "Disposes the resource associated with a components."
 
-    input "ref" "string" {}
+    input "refs" "[]string" {}
   }
 
-  method "delete-component" {
-    doc = "Disposes a component and then awaits the record to be deleted synchronously."
+  method "delete-components" {
+    doc = "Disposes components, then removes their manifest entries."
 
-    input "ref" "string" {}
+    input "refs" "[]string" {}
   }
 
   method "describe-logs" {
@@ -118,16 +124,19 @@ interface "workspace" {
     output "nextCursor" "string" {}
   }
 
-  method "start-component" {
-    input "ref" "string" {}
+  method "start-components" {
+    input "refs" "[]string" {}
+    output "job-id" "string" {}
   }
 
-  method "stop-component" {
-    input "ref" "string" {}
+  method "stop-components" {
+    input "refs" "[]string" {}
+    output "job-id" "string" {}
   }
 
-  method "restart-component" {
-    input "ref" "string" {}
+  method "restart-components" {
+    input "refs" "[]string" {}
+    output "job-id" "string" {}
   }
 
   method "describe-processes" {

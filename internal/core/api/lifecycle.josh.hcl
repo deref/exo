@@ -2,10 +2,6 @@ interface "lifecycle" {
   
   method "initialize" {}
   
-  method "update" {
-    input "new-spec" "string" {}
-  }
-  
   method "refresh" {}
   
   method "dispose" {

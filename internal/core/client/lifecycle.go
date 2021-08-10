@@ -26,11 +26,6 @@ func (c *Lifecycle) Initialize(ctx context.Context, input *api.InitializeInput) 
 	return
 }
 
-func (c *Lifecycle) Update(ctx context.Context, input *api.UpdateInput) (output *api.UpdateOutput, err error) {
-	err = c.client.Invoke(ctx, "update", input, &output)
-	return
-}
-
 func (c *Lifecycle) Refresh(ctx context.Context, input *api.RefreshInput) (output *api.RefreshOutput, err error) {
 	err = c.client.Invoke(ctx, "refresh", input, &output)
 	return

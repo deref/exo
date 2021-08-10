@@ -24,10 +24,6 @@ func (v *Volume) Initialize(ctx context.Context, input *core.InitializeInput) (o
 	return &core.InitializeOutput{}, nil
 }
 
-func (v *Volume) Update(context.Context, *core.UpdateInput) (*core.UpdateOutput, error) {
-	panic("TODO: Volume update")
-}
-
 func (v *Volume) Refresh(ctx context.Context, input *core.RefreshInput) (*core.RefreshOutput, error) {
 	return &core.RefreshOutput{}, nil
 }

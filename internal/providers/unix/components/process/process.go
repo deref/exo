@@ -19,9 +19,13 @@ import (
 	"github.com/deref/exo/internal/util/which"
 )
 
+func (p *Process) zeroPids() bool {
+	return p.Pgid == 0 && p.SupervisorPid == 0 && p.Pid == 0
+}
+
 func (p *Process) Start(ctx context.Context, input *core.StartInput) (*core.StartOutput, error) {
 	p.refresh()
-	if p.Pid == 0 {
+	if p.zeroPids() {
 		if err := p.start(ctx); err != nil {
 			return nil, err
 		}
@@ -30,6 +34,8 @@ func (p *Process) Start(ctx context.Context, input *core.StartInput) (*core.Star
 }
 
 func (p *Process) start(ctx context.Context) error {
+	p.State.clear()
+
 	whichQ := which.Query{
 		Program: p.Program,
 	}
@@ -149,7 +155,7 @@ func (p *Process) Stop(ctx context.Context, input *core.StopInput) (*core.StopOu
 const DefaultShutdownGracePeriod = 5 * time.Second
 
 func (p *Process) stop() {
-	if p.Pgid == 0 {
+	if p.zeroPids() {
 		return
 	}
 
@@ -162,9 +168,7 @@ func (p *Process) stop() {
 		p.Logger.Infof("terminating process: %w", err)
 	}
 
-	p.Pid = 0
-	p.Pgid = 0
-	p.SupervisorPid = 0
+	p.State.clear()
 }
 
 func (p *Process) Restart(ctx context.Context, input *core.RestartInput) (*core.RestartOutput, error) {

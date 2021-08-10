@@ -79,7 +79,7 @@ func (c *Container) create(ctx context.Context) error {
 		// syslog service.
 		logCfg.Type = "syslog"
 		logCfg.Config = map[string]string{
-			"syslog-address":  fmt.Sprintf("udp://host.docker.internal:%d", c.SyslogPort),
+			"syslog-address":  fmt.Sprintf("udp://localhost:%d", c.SyslogPort),
 			"syslog-facility": "1", // "user-level messages"
 			"tag":             c.ComponentID,
 			"syslog-format":   "rfc5424micro",
@@ -189,10 +189,6 @@ func (c *Container) create(ctx context.Context) error {
 	}
 	c.ContainerID = createdBody.ID
 	return nil
-}
-
-func (c *Container) Update(context.Context, *core.UpdateInput) (*core.UpdateOutput, error) {
-	panic("TODO: container update")
 }
 
 func (c *Container) Refresh(ctx context.Context, input *core.RefreshInput) (*core.RefreshOutput, error) {

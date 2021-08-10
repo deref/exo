@@ -1,7 +1,7 @@
 package main
 
 import (
-	"fmt"
+	"context"
 
 	"github.com/deref/exo/internal/core/api"
 	"github.com/spf13/cobra"
@@ -18,22 +18,16 @@ var refreshCmd = &cobra.Command{
 	
 If no components are specified, refreshes all components in the current workspace.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		ctx := newContext()
-		ensureDaemon()
-		cl := newClient()
-		kernel := cl.Kernel()
-		workspace := requireWorkspace(ctx, cl)
-
-		var input api.RefreshComponentsInput
-		if len(args) > 0 {
-			input.Refs = args
-		}
-
-		output, err := workspace.RefreshComponents(ctx, &input)
-		if err != nil {
-			return fmt.Errorf("refreshing: %w", err)
-		}
-
-		return watchJob(ctx, kernel, output.JobID)
+		return controlComponents(args, func(ctx context.Context, ws api.Workspace, refs []string) (jobID string, err error) {
+			var input api.RefreshComponentsInput
+			if len(args) > 0 {
+				input.Refs = args
+			}
+			output, err := ws.RefreshComponents(ctx, &input)
+			if err != nil {
+				return "", err
+			}
+			return output.JobID, nil
+		})
 	},
 }

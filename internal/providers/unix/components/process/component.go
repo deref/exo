@@ -25,3 +25,7 @@ type State struct {
 	// Program string `json:"program"`
 	FullEnvironment map[string]string `json:"fullEnvironment"`
 }
+
+func (state *State) clear() {
+	*state = State{}
+}

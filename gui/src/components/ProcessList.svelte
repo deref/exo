@@ -225,6 +225,7 @@
 
   .process-name {
     display: inline-block;
+    text-decoration: none;
     margin: 0;
     line-height: 1;
     font-size: 16px;
@@ -233,5 +234,10 @@
     border-radius: 4px;
     color: #555;
     background: #eee;
+  }
+
+  .process-name:hover {
+    color: #000;
+    background: #e0e0e0;
   }
 </style>

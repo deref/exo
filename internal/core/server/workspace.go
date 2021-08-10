@@ -311,51 +311,32 @@ func (ws *Workspace) updateComponent(ctx context.Context, oldComponent api.Compo
 }
 
 func (ws *Workspace) RefreshComponents(ctx context.Context, input *api.RefreshComponentsInput) (*api.RefreshComponentsOutput, error) {
-	var ids []string
-	if input.Refs != nil {
-		var err error
-		ids, err = ws.resolveRefs(ctx, input.Refs)
-		if err != nil {
-			return nil, fmt.Errorf("resolving refs: %w", err)
-		}
+	filter := componentFilter{
+		Refs: input.Refs,
 	}
-
-	describeOutput, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{
-		IDs: ids,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("describing components: %w", err)
-	}
-
-	refreshTask := ws.TaskTracker.StartTask(ctx, "refresh")
-	go func() {
-		defer refreshTask.Finish()
-		for _, component := range describeOutput.Components {
-			refreshTask.Go(component.Name, func(*task.Task) error {
-				return ws.refreshComponent(ctx, ws.Store, component)
-			})
-		}
-	}()
-
-	return &api.RefreshComponentsOutput{
-		JobID: refreshTask.JobID(),
-	}, err
-}
-
-func (ws *Workspace) refreshComponent(ctx context.Context, store state.Store, component api.ComponentDescription) error {
-	return ws.control(ctx, component, func(lifecycle api.Lifecycle) error {
+	jobID, err := ws.controlEachComponent(ctx, "refreshing", filter, func(lifecycle api.Lifecycle) error {
 		_, err := lifecycle.Refresh(ctx, &api.RefreshInput{})
 		return err
 	})
+	if err != nil {
+		return nil, err
+	}
+	return &api.RefreshComponentsOutput{
+		JobID: jobID,
+	}, nil
 }
 
-func (ws *Workspace) DisposeComponent(ctx context.Context, input *api.DisposeComponentInput) (*api.DisposeComponentOutput, error) {
-	id, err := ws.resolveRef(ctx, input.Ref)
+func (ws *Workspace) DisposeComponents(ctx context.Context, input *api.DisposeComponentsInput) (*api.DisposeComponentsOutput, error) {
+	ids, err := ws.resolveRefs(ctx, input.Refs)
 	if err != nil {
 		return nil, fmt.Errorf("resolving ref: %w", err)
 	}
-	err = ws.disposeComponent(ctx, id)
-	return &api.DisposeComponentOutput{}, err
+	for _, id := range ids {
+		if err := ws.disposeComponent(ctx, id); err != nil {
+			return nil, fmt.Errorf("disposing %q: %w", id, err)
+		}
+	}
+	return &api.DisposeComponentsOutput{}, err
 }
 
 func (ws *Workspace) resolveRef(ctx context.Context, ref string) (string, error) {
@@ -398,22 +379,23 @@ func (ws *Workspace) disposeComponent(ctx context.Context, id string) error {
 	})
 }
 
-func (ws *Workspace) DeleteComponent(ctx context.Context, input *api.DeleteComponentInput) (*api.DeleteComponentOutput, error) {
-	id, err := ws.resolveRef(ctx, input.Ref)
+func (ws *Workspace) DeleteComponents(ctx context.Context, input *api.DeleteComponentsInput) (*api.DeleteComponentsOutput, error) {
+	ids, err := ws.resolveRefs(ctx, input.Refs)
 	if err != nil {
-		return nil, fmt.Errorf("resolving ref: %w", err)
+		return nil, fmt.Errorf("resolving refs: %w", err)
 	}
-	if err := ws.deleteComponent(ctx, id); err != nil {
-		return nil, err
+	for _, id := range ids {
+		if err := ws.deleteComponent(ctx, id); err != nil {
+			return nil, fmt.Errorf("deleting %q: %w", id, err)
+		}
 	}
-	return &api.DeleteComponentOutput{}, nil
+	return &api.DeleteComponentsOutput{}, nil
 }
 
 func (ws *Workspace) deleteComponent(ctx context.Context, id string) error {
 	if err := ws.disposeComponent(ctx, id); err != nil {
 		return fmt.Errorf("disposing: %w", err)
 	}
-	// TODO: Await disposal.
 	if _, err := ws.Store.RemoveComponent(ctx, &state.RemoveComponentInput{ID: id}); err != nil {
 		return fmt.Errorf("removing from state store: %w", err)
 	}
@@ -542,111 +524,90 @@ func (ws *Workspace) GetEvents(ctx context.Context, input *api.GetEventsInput) (
 }
 
 func (ws *Workspace) Start(ctx context.Context, input *api.StartInput) (*api.StartOutput, error) {
-	if err := ws.controlEachProcess(ctx, func(process api.Process) error {
+	jobID, err := ws.controlEachProcess(ctx, "starting", func(process api.Process) error {
 		_, err := process.Start(ctx, &api.StartInput{})
 		return err
-	}); err != nil {
-		return nil, err
-	}
-	return &api.StartOutput{}, nil
-}
-
-func (ws *Workspace) StartComponent(ctx context.Context, input *api.StartComponentInput) (*api.StartComponentOutput, error) {
-	id, err := ws.resolveRef(ctx, input.Ref)
-	if err != nil {
-		return nil, fmt.Errorf("resolving ref: %w", err)
-	}
-
-	components, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{
-		IDs: []string{id},
 	})
 	if err != nil {
-		return nil, fmt.Errorf("fetching component state: %w", err)
-	}
-	if len(components.Components) != 1 {
-		return nil, fmt.Errorf("no state for component: %s", id)
-	}
-	component := components.Components[0]
-
-	if err := ws.control(ctx, component, func(process api.Process) error {
-		_, err := process.Start(ctx, &api.StartInput{})
-		return err
-	}); err != nil {
 		return nil, err
 	}
-	return &api.StartComponentOutput{}, nil
+	return &api.StartOutput{
+		JobID: jobID,
+	}, nil
+}
+
+func (ws *Workspace) StartComponents(ctx context.Context, input *api.StartComponentsInput) (*api.StartComponentsOutput, error) {
+	filter := componentFilter{
+		Refs: input.Refs,
+	}
+	jobID, err := ws.controlEachComponent(ctx, "starting", filter, func(process api.Process) error {
+		_, err := process.Start(ctx, &api.StartInput{})
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &api.StartComponentsOutput{
+		JobID: jobID,
+	}, nil
 }
 
 func (ws *Workspace) Stop(ctx context.Context, input *api.StopInput) (*api.StopOutput, error) {
-	if err := ws.controlEachProcess(ctx, func(process api.Process) error {
+	jobID, err := ws.controlEachProcess(ctx, "stopping", func(process api.Process) error {
 		_, err := process.Stop(ctx, &api.StopInput{})
 		return err
-	}); err != nil {
-		return nil, err
-	}
-	return &api.StopOutput{}, nil
-}
-
-func (ws *Workspace) StopComponent(ctx context.Context, input *api.StopComponentInput) (*api.StopComponentOutput, error) {
-	id, err := ws.resolveRef(ctx, input.Ref)
-	if err != nil {
-		return nil, fmt.Errorf("resolving ref: %w", err)
-	}
-
-	components, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{
-		IDs: []string{id},
 	})
 	if err != nil {
-		return nil, fmt.Errorf("fetching component state: %w", err)
-	}
-	if len(components.Components) != 1 {
-		return nil, fmt.Errorf("no state for component: %s", id)
-	}
-	component := components.Components[0]
-
-	if err := ws.control(ctx, component, func(process api.Process) error {
-		_, err := process.Stop(ctx, &api.StopInput{})
-		return err
-	}); err != nil {
 		return nil, err
 	}
-	return &api.StopComponentOutput{}, nil
+	return &api.StopOutput{
+		JobID: jobID,
+	}, nil
+}
+
+func (ws *Workspace) StopComponents(ctx context.Context, input *api.StopComponentsInput) (*api.StopComponentsOutput, error) {
+	filter := componentFilter{
+		Refs: input.Refs,
+	}
+	jobID, err := ws.controlEachComponent(ctx, "stopping", filter, func(process api.Process) error {
+		_, err := process.Stop(ctx, &api.StopInput{})
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &api.StopComponentsOutput{
+		JobID: jobID,
+	}, nil
 }
 
 func (ws *Workspace) Restart(ctx context.Context, input *api.RestartInput) (*api.RestartOutput, error) {
-	if err := ws.controlEachProcess(ctx, func(process api.Process) error {
+	jobID, err := ws.controlEachProcess(ctx, "restarting", func(process api.Process) error {
 		_, err := process.Restart(ctx, &api.RestartInput{})
 		return err
-	}); err != nil {
-		return nil, err
-	}
-	return &api.RestartOutput{}, nil
-}
-
-func (ws *Workspace) RestartComponent(ctx context.Context, input *api.RestartComponentInput) (*api.RestartComponentOutput, error) {
-	id, err := ws.resolveRef(ctx, input.Ref)
-	if err != nil {
-		return nil, fmt.Errorf("resolving ref: %w", err)
-	}
-
-	components, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{
-		IDs: []string{id},
 	})
 	if err != nil {
-		return nil, fmt.Errorf("fetching component state: %w", err)
-	}
-	if len(components.Components) != 1 {
-		return nil, fmt.Errorf("no state for component: %s", id)
-	}
-	component := components.Components[0]
-
-	if err := ws.control(ctx, component, func(process api.Process) error {
-		_, err := process.Restart(ctx, &api.RestartInput{})
-		return err
-	}); err != nil {
 		return nil, err
 	}
-	return &api.RestartComponentOutput{}, nil
+	return &api.RestartOutput{
+		JobID: jobID,
+	}, nil
+}
+
+func (ws *Workspace) RestartComponents(ctx context.Context, input *api.RestartComponentsInput) (*api.RestartComponentsOutput, error) {
+	filter := componentFilter{
+		Refs: input.Refs,
+	}
+	jobID, err := ws.controlEachComponent(ctx, "restart", filter, func(process api.Process) error {
+		_, err := process.Restart(ctx, &api.RestartInput{})
+		return err
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &api.RestartComponentsOutput{
+		JobID: jobID,
+	}, nil
 }
 
 // TODO: Filter by interface, not concrete type.
@@ -791,19 +752,46 @@ func (ws *Workspace) DescribeNetworks(ctx context.Context, input *api.DescribeNe
 	return &output, nil
 }
 
-func (ws *Workspace) controlEachProcess(ctx context.Context, f interface{}) error {
-	components, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{
-		Types: processTypes,
-	})
-	if err != nil {
-		return fmt.Errorf("describing components: %w", err)
+type componentFilter struct {
+	Refs  []string
+	Types []string
+}
+
+func (ws *Workspace) controlEachComponent(ctx context.Context, label string, filter componentFilter, f interface{}) (jobID string, err error) {
+	describe := &api.DescribeComponentsInput{
+		Types: filter.Types,
 	}
-	for _, component := range components.Components {
-		if err := ws.control(ctx, component, f); err != nil {
-			return fmt.Errorf("controlling %q: %w", component.ID, err)
+
+	if filter.Refs != nil {
+		ids, err := ws.resolveRefs(ctx, filter.Refs)
+		if err != nil {
+			return "", fmt.Errorf("resolving refs: %w", err)
 		}
+		describe.IDs = ids
 	}
-	return nil
+
+	components, err := ws.DescribeComponents(ctx, describe)
+	if err != nil {
+		return "", fmt.Errorf("describing components: %w", err)
+	}
+
+	job := ws.TaskTracker.StartTask(ctx, label)
+	go func() {
+		defer job.Finish()
+		for _, component := range components.Components {
+			job.Go(component.Name, func(*task.Task) error {
+				return ws.control(ctx, component, f)
+			})
+		}
+	}()
+	return job.JobID(), nil
+}
+
+func (ws *Workspace) controlEachProcess(ctx context.Context, label string, f interface{}) (jobID string, err error) {
+	filter := componentFilter{
+		Types: processTypes,
+	}
+	return ws.controlEachComponent(ctx, label, filter, f)
 }
 
 func (ws *Workspace) control(ctx context.Context, desc api.ComponentDescription, f interface{}) error {

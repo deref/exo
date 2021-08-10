@@ -1,6 +1,10 @@
 {
   "version": "0.0.0",
   "type": "module",
+  "engines": {
+    "node": ">=14.0.0",
+    "npm": ">=7.0.0"
+  },
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -9,7 +13,9 @@
     "test": "jest",
     "storybook": "start-storybook -p 6006",
     "build-storybook": "build-storybook",
-    "lint": "prettier ."
+    "lint": "prettier .",
+    "predev": "check-engines",
+    "prebuild": "check-engines"
   },
   "devDependencies": {
     "@babel/core": "^7.14.8",
@@ -26,6 +32,7 @@
     "@types/shell-quote": "^1.7.1",
     "babel-loader": "^8.2.2",
     "babel-plugin-transform-vite-meta-env": "^1.0.3",
+    "check-engines": "^1.5.0",
     "jest": "^27.0.6",
     "prettier": "^2.3.2",
     "prettier-plugin-svelte": "^2.3.1",

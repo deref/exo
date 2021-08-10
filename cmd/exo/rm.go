@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/deref/exo/internal/core/api"
 	"github.com/spf13/cobra"
 )
@@ -16,20 +14,17 @@ var rmCmd = &cobra.Command{
 	Short: "Remove components",
 	Long:  "Remove components.",
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if len(args) == 0 {
+			return nil
+		}
 		ctx := newContext()
 		ensureDaemon()
 		cl := newClient()
 		workspace := requireWorkspace(ctx, cl)
 
-		// TODO: Bulk delete operation.
-		for _, ref := range args {
-			_, err := workspace.DeleteComponent(ctx, &api.DeleteComponentInput{
-				Ref: ref,
-			})
-			if err != nil {
-				return fmt.Errorf("deleting %q: %w", ref, err)
-			}
-		}
-		return nil
+		_, err := workspace.DeleteComponents(ctx, &api.DeleteComponentsInput{
+			Refs: args,
+		})
+		return err
 	},
 }

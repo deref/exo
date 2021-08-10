@@ -15,7 +15,7 @@ type TaskTracker struct {
 }
 
 type Task struct {
-	ctx          context.Context
+	context.Context
 	cancel       func()
 	tt           *TaskTracker
 	jobID        string
@@ -56,11 +56,11 @@ func (tt *TaskTracker) createTask(ctx context.Context, parent *Task, name string
 		input.ParentID = &parent.id
 	}
 	t := &Task{
-		ctx:    ctx,
 		cancel: cancel,
 		tt:     tt,
 		status: api.StatusPending,
 	}
+	t.Context = ContextWithTask(ctx, t)
 	output, err := tt.Store.CreateTask(ctx, input)
 	if err != nil {
 		t.reportingErr = err
@@ -121,16 +121,12 @@ func (t *Task) Finish() error {
 		status = api.StatusFailure
 		message = err.Error()
 	}
-	finished := chrono.NowString(t.ctx)
+	finished := chrono.NowString(t)
 	t.updateTask(status, message, finished)
 	if t.reportingErr != nil {
 		t.tt.Logger.Infof("error reporting task progress: %v", t.reportingErr)
 	}
 	return err
-}
-
-func (t *Task) Context() context.Context {
-	return t.ctx
 }
 
 func (t *Task) updateTask(status string, message string, finished string) {
@@ -147,7 +143,7 @@ func (t *Task) updateTask(status string, message string, finished string) {
 	if finished != "" {
 		input.Finished = &finished
 	}
-	if _, err := t.tt.Store.UpdateTask(t.ctx, &input); err != nil {
+	if _, err := t.tt.Store.UpdateTask(t, &input); err != nil {
 		if t.reportingErr == nil {
 			t.reportingErr = err
 		}
@@ -159,12 +155,11 @@ func (t *Task) Wait() error {
 }
 
 func (t *Task) RunChild(name string, f func(task *Task) error) error {
-	task := t.tt.startTask(t.ctx, t, name)
+	task := t.tt.startTask(t, t, name)
 	if err := f(task); err != nil {
 		task.Fail(err)
 	}
-	defer task.Finish()
-	return task.Err()
+	return task.Finish()
 }
 
 func (t *Task) Go(name string, f func(task *Task) error) {

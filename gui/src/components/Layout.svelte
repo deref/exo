@@ -99,16 +99,13 @@
     padding: 4px 6px;
     height: 20px;
     align-items: center;
+    font-size: 12px;
     background: #eeeeee;
+    color: #555555;
   }
 
   footer.devmode {
-    background: rgb(21, 3, 33);
-    background: linear-gradient(
-      158deg,
-      rgba(21, 3, 33, 0.8403069846102503) 5%,
-      rgba(127, 85, 183, 1) 43%,
-      rgba(144, 218, 245, 1) 100%
-    );
+    background: #007bd4;
+    color: #ffffff;
   }
 </style>
