@@ -714,12 +714,12 @@ func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeP
 			defer statRequest.Body.Close()
 
 			scanner := bufio.NewScanner(statRequest.Body)
-			didScan := !scanner.Scan()
+			didScan := scanner.Scan()
 			if err = scanner.Err(); err != nil {
 				return nil, fmt.Errorf("error scanning container stats: %w", err)
 			}
 
-			if didScan {
+			if !didScan {
 				return nil, fmt.Errorf("could not read container stats")
 			}
 
