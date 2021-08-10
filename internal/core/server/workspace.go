@@ -855,6 +855,11 @@ func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeP
 				process.EnvVars[decomposedEnv[0]] = decomposedEnv[1]
 			}
 
+			process.Ports = []uint32{}
+			for p := range containerInfo.NetworkSettings.Ports {
+				process.Ports = append(process.Ports, uint32(p.Int()))
+			}
+
 			output.Processes = append(output.Processes, process)
 		}
 	}
