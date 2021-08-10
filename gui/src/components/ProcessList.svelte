@@ -61,14 +61,24 @@
     loadInitialLogs(workspaceId, workspace);
   }
 
+  let procfileExport: string | null = null;
+  async function checkProcfile() {
+    const current = await workspace.readFile('Procfile');
+    const computed = await workspace.exportProcfile();
+
+    procfileExport = (current === computed) ? null : computed;
+  }
+
   let refreshInterval: any;
 
   onMount(() => {
     fetchProcesses(workspace);
+    checkProcfile();
 
     // TODO: Server-sent events or websockets!
     refreshInterval = setInterval(() => {
       refreshAllProcesses(workspace);
+      checkProcfile();
     }, 5000);
   });
 
@@ -92,11 +102,6 @@
       <Add />
     </IconButton>
   </h1>
-  <div>
-    <button on:click={() => workspace.readFile('Procfile').then(p => window.alert(p))}>Read</button>
-    <button on:click={() => workspace.writeFile('foo.txt', "Hello, World!\n", 0o755).then(() => window.alert('Ok'))}>Write</button>
-    <button on:click={() => workspace.exportProcfile().then(p => window.alert(p))}>Procfile</button>
-  </div>
   <div>
     {#if processList.stage == 'pending' || processList.stage == 'idle'}
       Loading...
@@ -163,6 +168,11 @@
       </table>
     {:else if processList.stage == 'error'}
       Error fetching process list: {processList.message}
+    {/if}
+  </div>
+  <div>
+    {#if procfileExport !== null}
+      <button on:click={() => workspace.writeFile('Procfile', procfileExport ?? '').then(checkProcfile)}>Export Procfile</button>
     {/if}
   </div>
 </section>
