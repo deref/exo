@@ -23,3 +23,10 @@
       'This message uses a   string with a https://deref.io URL in it and formats  an anchor tag with the link.',
   }}
 />
+
+<Story
+  name="Rainbow"
+  args={{
+    message: `[30mX[31mX[32mX[33mX[34mX[35mX[36mX[37mX[0m`,
+  }}
+/>

@@ -1,17 +1,6 @@
-export type Span = Plain | Link;
-
-export interface SpanBase {
-  type: string;
+export interface Span {
+  href?: string;
   text: string;
-}
-
-export interface Plain extends SpanBase {
-  type: 'plain';
-}
-
-export interface Link extends SpanBase {
-  type: 'link';
-  href: string;
 }
 
 export const parseSpans = (input: string): Span[] => {
@@ -25,7 +14,6 @@ export const parseSpans = (input: string): Span[] => {
     // If the search skipped some plain text or reached end, capture it.
     if (left < right) {
       spans.push({
-        type: 'plain',
         text: input.substring(left, right),
       });
       left = right;
@@ -33,7 +21,6 @@ export const parseSpans = (input: string): Span[] => {
     if (match) {
       const text = match[0];
       spans.push({
-        type: 'link',
         href: text,
         text,
       });

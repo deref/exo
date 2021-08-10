@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { parseSpans } from './parseSpans';
+  import { parseSpans, Span } from './parseSpans';
 
   export let message: string = '';
 
@@ -8,7 +8,7 @@
 
 <span>
   {#each spans as span}
-    {#if span.type === 'link'}
+    {#if span.href != null}
       <a href={span.href}>{span.text}</a>
     {:else}
       <span>{span.text}</span>
