@@ -172,7 +172,10 @@
   </div>
   <div>
     {#if procfileExport !== null}
-      <button on:click={() => workspace.writeFile('Procfile', procfileExport ?? '').then(checkProcfile)}>Export Procfile</button>
+      <p>
+        Your Procfile is not up to date.
+        <button on:click={() => workspace.writeFile('Procfile', procfileExport ?? '').then(checkProcfile)}>Export?</button>
+      </p>
     {/if}
   </div>
 </section>
