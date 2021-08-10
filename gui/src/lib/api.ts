@@ -280,7 +280,7 @@ export const api = (() => {
       },
 
       async stopProcess(ref: string): Promise<void> {
-        await invoke('stop-component', { ref });
+        await invoke('stop-components', { ref });
       },
 
       async deleteComponent(ref: string): Promise<void> {
