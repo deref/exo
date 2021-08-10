@@ -55,3 +55,14 @@
     <strong>DEV MODE</strong>
   {/if}
 </section>
+
+<style>
+  section {
+    width: 48px;
+    display: flex;
+    align-items: center;
+    padding: 12px 0;
+    writing-mode: vertical-rl;
+    text-orientation: mixed;
+  }
+</style>

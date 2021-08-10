@@ -11,7 +11,8 @@
   import CodeBlock from '../components/CodeBlock.svelte';
   import ErrorLabel from '../components/ErrorLabel.svelte';
   import ShellEditor from '../components/ShellEditor.svelte';
-  import WithLeftWorkspaceNav from '../components/WithLeftWorkspaceNav.svelte';
+  import WorkspaceNav from '../components/WorkspaceNav.svelte';
+  import MonoPanel from '../components/MonoPanel.svelte';
 
   export let params = { workspace: '' };
 
@@ -50,7 +51,8 @@
 </script>
 
 <Layout showBackButton backButtonRoute={workspaceRoute}>
-  <WithLeftWorkspaceNav {workspaceId} active="Dashboard">
+  <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
+  <MonoPanel>
     <form
       on:submit|preventDefault={async () => {
         updateFields();
@@ -156,7 +158,7 @@ my-app --port 4000
       {/if}
       <ErrorLabel value={error} />
     </form>
-  </WithLeftWorkspaceNav>
+  </MonoPanel>
 </Layout>
 
 <style>

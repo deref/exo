@@ -19,33 +19,31 @@
 </script>
 
 <main>
-  <header>
-    <div class="logo">
+  <nav>
+    <header>
       <div class="a logo" on:click={goHome}>
         <img src="/deref-rounded-icon.png" alt="Deref" height="24px" />
-        <h1>exo</h1>
       </div>
       {#if showBackButton}
         <IconButton tooltip="Go back" on:click={goBack}><GoBack /></IconButton>
-        <span>Go back</span>
       {/if}
-    </div>
-    <div class="logo">
-      <span>Feedback?</span>
+    </header>
+    <slot name="navbar" />
+    <footer>
       <IconButton
         tooltip="Give feedback on GitHub"
         on:click={() => {
           window.location.href = 'https://github.com/deref/exo/discussions';
         }}><Feedback /></IconButton
       >
-    </div>
-  </header>
+      <div class:devmode={import.meta.env.MODE === 'development'}>
+        <VersionInfo />
+      </div>
+    </footer>
+  </nav>
   <div>
     <slot />
   </div>
-  <footer class:devmode={import.meta.env.MODE === 'development'}>
-    <VersionInfo />
-  </footer>
 </main>
 
 <style>
@@ -55,36 +53,24 @@
 
   main {
     display: grid;
-    grid-auto-flow: row;
-    grid-auto-rows: max-content 1fr max-content;
+    grid-template-columns: max-content 1fr;
     gap: 1px;
     height: 100vh;
     overflow: hidden;
     background: #cccccc;
   }
 
-  header {
+  nav {
     position: relative;
-    height: 40px;
+    width: 48px;
+    height: 100vh;
     z-index: 3;
     display: flex;
+    flex-direction: column;
     align-items: center;
     justify-content: space-between;
-    padding: 6px 13px;
     background: #dddddd;
-  }
-
-  header .logo {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-  }
-
-  h1 {
-    font-size: 20px;
-    font-weight: 550;
-    margin: 0;
-    margin-top: -3px;
+    gap: 1px;
   }
 
   div {
@@ -93,18 +79,35 @@
     overflow: hidden;
   }
 
-  footer {
-    display: flex;
-    flex-direction: row-reverse;
-    padding: 4px 6px;
-    height: 20px;
-    align-items: center;
-    font-size: 12px;
-    background: #eeeeee;
-    color: #555555;
+  header {
+    padding: 8px 0;
+    padding-top: 12px;
+    width: 100%;
+    background: #e9e9e9;
   }
 
-  footer.devmode {
+  header,
+  .logo {
+    display: flex;
+    align-items: center;
+    flex-direction: column;
+    gap: 8px;
+  }
+
+  footer {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    font-size: 12px;
+    width: 100%;
+    color: #555555;
+    background: #e9e9e9;
+    overflow: hidden;
+    padding-top: 8px;
+    gap: 8px;
+  }
+
+  div.devmode {
     background: #007bd4;
     color: #ffffff;
   }
