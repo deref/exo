@@ -1,11 +1,10 @@
 <script lang="ts">
   import * as router from 'svelte-spa-router';
-
-  import Home from './mono/home.svelte';
-  import Layers from './mono/layers.svelte';
-  import Storage from './mono/database.svelte';
-  import Networking from './mono/networking.svelte';
   import NavbarButton from './nav/NavbarButton.svelte';
+  import HomeSVG from './mono/home.svelte';
+  import LayersSVG from './mono/layers.svelte';
+  import StorageSVG from './mono/database.svelte';
+  import NetworkingSVG from './mono/networking.svelte';
 
   export let workspaceId: string;
   export let active: string;
@@ -19,7 +18,7 @@
     }}
     {active}
   >
-    <Home />
+    <HomeSVG />
   </NavbarButton>
 
   <NavbarButton
@@ -29,7 +28,7 @@
     }}
     {active}
   >
-    <Layers />
+    <LayersSVG />
   </NavbarButton>
 
   <NavbarButton
@@ -39,7 +38,7 @@
     }}
     {active}
   >
-    <Storage />
+    <StorageSVG />
   </NavbarButton>
 
   <NavbarButton
@@ -49,7 +48,7 @@
     }}
     {active}
   >
-    <Networking />
+    <NetworkingSVG />
   </NavbarButton>
 </aside>
 

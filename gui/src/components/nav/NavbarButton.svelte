@@ -1,6 +1,6 @@
 <script lang="ts">
   export let title: string;
-  export let active: string;
+  export let active: string | undefined = undefined;
 </script>
 
 <button on:click class:active={active === title} {title}><slot /></button>
