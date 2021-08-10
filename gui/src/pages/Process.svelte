@@ -179,9 +179,12 @@
 
   code {
     width: 100%;
-    max-width: 500px;
+    max-width: 600px;
     display: inline-block;
     overflow-x: auto;
+    font-size: 1.05em;
+    padding: 6px;
+    margin: -8px;
   }
 
   table tr:nth-child(2n + 1) {
