@@ -186,6 +186,7 @@
   }
 
   td:nth-child(2) {
+    text-align: right;
     background: var(--log-bg-color);
     color: var(--log-color);
   }
