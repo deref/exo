@@ -48,8 +48,26 @@ func BuildProcessMux(b *josh.MuxBuilder, factory func(req *http.Request) Process
 	})
 }
 
+type Builder interface {
+	Build(context.Context, *BuildInput) (*BuildOutput, error)
+}
+
+type BuildInput struct {
+}
+
+type BuildOutput struct {
+	JobID string `json:"jobId"`
+}
+
+func BuildBuilderMux(b *josh.MuxBuilder, factory func(req *http.Request) Builder) {
+	b.AddMethod("build", func(req *http.Request) interface{} {
+		return factory(req).Build
+	})
+}
+
 type Workspace interface {
 	Process
+	Builder
 	// Describes this workspace.
 	Describe(context.Context, *DescribeInput) (*DescribeOutput, error)
 	// Asynchronously deletes all components in the workspace, then deletes the workspace itself.
@@ -84,6 +102,7 @@ type Workspace interface {
 	ReadFile(context.Context, *ReadFileInput) (*ReadFileOutput, error)
 	// Writes a file to disk.
 	WriteFile(context.Context, *WriteFileInput) (*WriteFileOutput, error)
+	BuildComponents(context.Context, *BuildComponentsInput) (*BuildComponentsOutput, error)
 }
 
 type DescribeInput struct {
@@ -274,6 +293,14 @@ type WriteFileInput struct {
 type WriteFileOutput struct {
 }
 
+type BuildComponentsInput struct {
+	Refs []string `json:"refs"`
+}
+
+type BuildComponentsOutput struct {
+	JobID string `json:"jobId"`
+}
+
 func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Workspace) {
 	b.AddMethod("start", func(req *http.Request) interface{} {
 		return factory(req).Start
@@ -283,6 +310,9 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	})
 	b.AddMethod("restart", func(req *http.Request) interface{} {
 		return factory(req).Restart
+	})
+	b.AddMethod("build", func(req *http.Request) interface{} {
+		return factory(req).Build
 	})
 	b.AddMethod("describe", func(req *http.Request) interface{} {
 		return factory(req).Describe
@@ -346,6 +376,9 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	})
 	b.AddMethod("write-file", func(req *http.Request) interface{} {
 		return factory(req).WriteFile
+	})
+	b.AddMethod("build-components", func(req *http.Request) interface{} {
+		return factory(req).BuildComponents
 	})
 }
 

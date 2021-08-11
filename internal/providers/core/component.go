@@ -1,6 +1,9 @@
 package core
 
 import (
+	"context"
+
+	"github.com/deref/exo/internal/core/api"
 	"github.com/deref/exo/internal/util/logging"
 )
 
@@ -29,4 +32,9 @@ func (c *ComponentBase) IsDeleted() bool {
 
 func (c *ComponentBase) MarkDeleted() {
 	c.isDeleted = true
+}
+
+func (c *ComponentBase) Build(ctx context.Context, input *api.BuildInput) (*api.BuildOutput, error) {
+	// Default no-op implemention.
+	return &api.BuildOutput{}, nil
 }

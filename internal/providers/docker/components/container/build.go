@@ -90,9 +90,7 @@ func (c *Container) buildImage(ctx context.Context) error {
 			//// in BuildKit mode
 			//Outputs []ImageBuildOutput
 		}
-		fmt.Println("before build")
 		resp, err := c.Docker.ImageBuild(ctx, buildContext, opts)
-		fmt.Println("after build")
 		if resp.Body != nil {
 			defer resp.Body.Close()
 			// TODO [DOCKER_PROGRESS]: Capture progress.

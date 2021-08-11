@@ -13,8 +13,15 @@ interface "process" {
   }
 }
 
+# XXX Same story as above "process" interface.
+interface "builder" {
+  method "build" {
+    output "job-id" "string" {}
+  }
+}
+
 interface "workspace" {
-  extends = ["process"]
+  extends = ["process", "builder"]
 
   method "describe" {
     doc = "Describes this workspace."
@@ -180,6 +187,12 @@ interface "workspace" {
     input "mode" "*int" {}
     input "content" "string" {}
   }
+
+  method "build-components" {
+    input "refs" "[]string" {}
+    output "job-id" "string" {}
+  }
+
 }
 
 struct "workspace-description" {
