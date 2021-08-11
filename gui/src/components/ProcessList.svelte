@@ -107,8 +107,8 @@
                 {#if statusPending.has(id)}
                   <div class="spinner" />
                 {:else if running}
-                  <div class="spinner running unhover-only" />
-                  <div class="hover-only">
+                  <div class="spinner running" />
+                  <div class="control hover-only">
                     <IconButton
                       tooltip="Stop process"
                       on:click={() => setProcRun(id, false)}
@@ -118,7 +118,7 @@
                   </div>
                 {:else}
                   <div class="stopped unhover-only" />
-                  <div class="hover-only">
+                  <div class="control hover-only">
                     <IconButton
                       tooltip="Run process"
                       on:click={() => setProcRun(id, true)}
@@ -151,15 +151,17 @@
             </td>
 
             <td>
-              <IconButton
-                tooltip="Delete process"
-                on:click={() => {
-                  void deleteProcess(workspace, id);
-                  setProcLogs(id, false);
-                }}
-              >
-                <DeleteSVG />
-              </IconButton>
+              <div class="hover-only-visibility">
+                <IconButton
+                  tooltip="Delete process"
+                  on:click={() => {
+                    void deleteProcess(workspace, id);
+                    setProcLogs(id, false);
+                  }}
+                >
+                  <DeleteSVG />
+                </IconButton>
+              </div>
             </td>
           </tr>
         {:else}
@@ -243,11 +245,16 @@
     margin-right: 8px;
   }
 
-  tr:not(:hover) .hover-only {
+  tr:not(:hover):not(:focus-within) .hover-only {
     display: none;
   }
 
-  tr:hover .unhover-only {
+  tr:not(:hover):not(:focus-within) .hover-only-visibility {
+    visibility: hidden;
+  }
+
+  tr:hover .unhover-only,
+  tr:focus-within .unhover-only {
     display: none;
   }
 
@@ -258,7 +265,16 @@
     background: var(--grey-c-color);
   }
 
+  .control {
+    position: absolute;
+    z-index: 4;
+  }
+
   .spinner {
+    position: absolute;
+    z-index: 3;
+    top: 6px;
+    left: 6px;
     width: 20px;
     height: 20px;
     border-radius: 100%;
@@ -277,6 +293,14 @@
     border-left-color: var(--spinner-blue-l);
   }
 
+  tr:hover .spinner.running,
+  tr:focus-within .spinner.running {
+    top: 2px;
+    left: 2px;
+    width: 28px;
+    height: 28px;
+  }
+
   .process-name {
     display: inline-block;
     text-decoration: none;
@@ -284,15 +308,20 @@
     line-height: 1;
     font-size: 16px;
     font-weight: 550;
-    padding: 8px 12px;
+    padding: 6px 9px;
     border-radius: 4px;
     color: var(--grey-5-color);
     background: var(--grey-e-color);
+    outline: none;
   }
 
   .process-name:hover {
     color: var(--strong-color);
     background: var(--grey-d-color);
+  }
+
+  .process-name:focus {
+    background: var(--grey-c-color);
   }
 
   @keyframes spin {
