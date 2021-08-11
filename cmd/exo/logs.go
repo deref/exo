@@ -63,6 +63,9 @@ func tailLogs(ctx context.Context, workspace api.Workspace, logRefs []string) er
 	labelWidth := 0
 	logToComponent := make(map[string]string, len(descriptions.Processes))
 	for _, process := range descriptions.Processes {
+		if len(logRefs) == 0 {
+			logIDs = append(logIDs, process.ID)
+		}
 		for _, logName := range log.ComponentLogNames(process.Provider, process.ID) {
 			logToComponent[logName] = process.Name
 			if labelWidth < len(process.Name) {
