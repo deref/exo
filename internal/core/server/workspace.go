@@ -891,3 +891,26 @@ func (ws *Workspace) control(ctx context.Context, desc api.ComponentDescription,
 	}
 	return err
 }
+
+func (ws *Workspace) Build(ctx context.Context, input *api.BuildInput) (*api.BuildOutput, error) {
+	jobID := ws.controlEachProcess(ctx, "building", func(builder api.Builder) error {
+		_, err := builder.Build(ctx, &api.BuildInput{})
+		return err
+	})
+	return &api.BuildOutput{
+		JobID: jobID,
+	}, nil
+}
+
+func (ws *Workspace) BuildComponents(ctx context.Context, input *api.BuildComponentsInput) (*api.BuildComponentsOutput, error) {
+	filter := componentFilter{
+		Refs: input.Refs,
+	}
+	jobID := ws.controlEachComponent(ctx, "building", filter, func(builder api.Builder) error {
+		_, err := builder.Build(ctx, &api.BuildInput{})
+		return err
+	})
+	return &api.BuildComponentsOutput{
+		JobID: jobID,
+	}, nil
+}

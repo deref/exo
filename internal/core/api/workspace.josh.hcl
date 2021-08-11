@@ -13,8 +13,18 @@ interface "process" {
   }
 }
 
+# XXX Same story as above "process" interface.
+interface "builder" {
+  method "build" {
+    output "job-id" "string" {}
+  }
+}
+
 interface "workspace" {
-  extends = ["process"]
+  # XXX This isn't quite right, since these interfaces return job-ids, but
+  # the underlying controller methods are expected to be synchronous.
+  # Should inline the methods and append a `-workspace` suffix to each.
+  extends = ["process", "builder"]
 
   method "describe" {
     doc = "Describes this workspace."
@@ -180,6 +190,12 @@ interface "workspace" {
     input "mode" "*int" {}
     input "content" "string" {}
   }
+
+  method "build-components" {
+    input "refs" "[]string" {}
+    output "job-id" "string" {}
+  }
+
 }
 
 struct "workspace-description" {
