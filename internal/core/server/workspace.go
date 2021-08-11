@@ -100,7 +100,7 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 	}
 	res := ws.loadManifest(description.Root, input)
 	if res.Err != nil {
-		return nil, err
+		return nil, res.Err
 	}
 	m := res.Manifest
 
