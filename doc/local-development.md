@@ -24,3 +24,15 @@ url = "http://localhost:4001"
 ```
 
 Now all `exo` commands will run against the development instance. To run against the installed instance again, remove or comment out these lines from your `config.toml`.
+
+### Troubleshooting
+
+#### The GUI won't start. I see an "Error: esbuild: Failed to install correctly" error in the log.
+
+Manually install esbuild with the following command:
+
+```bash
+node node_modules/esbuild/install.js
+```
+
+Then restart the GUI.
