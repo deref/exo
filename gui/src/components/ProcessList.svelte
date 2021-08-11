@@ -59,14 +59,24 @@
     loadInitialLogs(workspaceId, workspace);
   }
 
+  let procfileExport: string | null = null;
+  async function checkProcfile() {
+    const current = await workspace.readFile('Procfile');
+    const computed = await workspace.exportProcfile();
+
+    procfileExport = (current === computed) ? null : computed;
+  }
+
   let refreshInterval: any;
 
   onMount(() => {
     fetchProcesses(workspace);
+    checkProcfile();
 
     // TODO: Server-sent events or websockets!
     refreshInterval = setInterval(() => {
       refreshAllProcesses(workspace);
+      checkProcfile();
     }, 5000);
   });
 
@@ -156,6 +166,20 @@
       </table>
     {:else if processList.stage == 'error'}
       Error fetching process list: {processList.message}
+    {/if}
+  </div>
+  <div>
+    {#if procfileExport}
+      <p>
+        Your Procfile is not up to date.
+        <button on:click={async () => {
+          if (procfileExport == null) {
+            return;
+          }
+          await workspace.writeFile('Procfile', procfileExport);
+          checkProcfile();
+        }}>Export?</button>
+      </p>
     {/if}
   </div>
 </section>

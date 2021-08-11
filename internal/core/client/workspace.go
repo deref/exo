@@ -152,3 +152,18 @@ func (c *Workspace) DescribeNetworks(ctx context.Context, input *api.DescribeNet
 	err = c.client.Invoke(ctx, "describe-networks", input, &output)
 	return
 }
+
+func (c *Workspace) ExportProcfile(ctx context.Context, input *api.ExportProcfileInput) (output *api.ExportProcfileOutput, err error) {
+	err = c.client.Invoke(ctx, "export-procfile", input, &output)
+	return
+}
+
+func (c *Workspace) ReadFile(ctx context.Context, input *api.ReadFileInput) (output *api.ReadFileOutput, err error) {
+	err = c.client.Invoke(ctx, "read-file", input, &output)
+	return
+}
+
+func (c *Workspace) WriteFile(ctx context.Context, input *api.WriteFileInput) (output *api.WriteFileOutput, err error) {
+	err = c.client.Invoke(ctx, "write-file", input, &output)
+	return
+}

@@ -39,7 +39,7 @@ interface "workspace" {
     input "manifest" "*string" {
       doc = "Contents of the manifest file. Not required if manifest-path is provided."
     }
-    
+
     output "warnings" "[]string" {}
     output "job-id" "string" {}
   }
@@ -89,7 +89,7 @@ interface "workspace" {
     input "refs" "[]string" {
       doc = "If omitted, refreshes all components."
     }
-    
+
     output "job-id" "string" {}
   }
 
@@ -149,13 +149,36 @@ interface "workspace" {
   method "describe-processes" {
     output "processes" "[]ProcessDescription" {}
   }
-  
+
   method "describe-volumes" {
     output "volumes" "[]VolumeDescription" {}
   }
 
   method "describe-networks" {
     output "networks" "[]NetworkDescription" {}
+  }
+
+  method "export-procfile" {
+    output "procfile" "string" {}
+  }
+
+  method "read-file" {
+    doc = "Read a file from disk."
+
+    input "path" "string" {
+      doc = "Relative to the workspace directory. May not traverse higher in the filesystem."
+    }
+    output "content" "string" {}
+  }
+
+  method "write-file" {
+    doc = "Writes a file to disk."
+
+    input "path" "string" {
+      doc = "Relative to the workspace directory. May not traverse higher in the filesystem."
+    }
+    input "mode" "*int" {}
+    input "content" "string" {}
   }
 }
 
@@ -191,6 +214,7 @@ struct "process-description" {
   field "id" "string" {}
   field "provider" "string" {}
   field "name" "string" {}
+  field "spec" "interface{}" {}
   field "running" "bool" {}
   field "env-vars" "map[string]string" {}
   field "cpu-percent" "float64" {}

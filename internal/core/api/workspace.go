@@ -79,6 +79,11 @@ type Workspace interface {
 	DescribeProcesses(context.Context, *DescribeProcessesInput) (*DescribeProcessesOutput, error)
 	DescribeVolumes(context.Context, *DescribeVolumesInput) (*DescribeVolumesOutput, error)
 	DescribeNetworks(context.Context, *DescribeNetworksInput) (*DescribeNetworksOutput, error)
+	ExportProcfile(context.Context, *ExportProcfileInput) (*ExportProcfileOutput, error)
+	// Read a file from disk.
+	ReadFile(context.Context, *ReadFileInput) (*ReadFileOutput, error)
+	// Writes a file to disk.
+	WriteFile(context.Context, *WriteFileInput) (*WriteFileOutput, error)
 }
 
 type DescribeInput struct {
@@ -241,6 +246,34 @@ type DescribeNetworksOutput struct {
 	Networks []NetworkDescription `json:"networks"`
 }
 
+type ExportProcfileInput struct {
+}
+
+type ExportProcfileOutput struct {
+	Procfile string `json:"procfile"`
+}
+
+type ReadFileInput struct {
+
+	// Relative to the workspace directory. May not traverse higher in the filesystem.
+	Path string `json:"path"`
+}
+
+type ReadFileOutput struct {
+	Content string `json:"content"`
+}
+
+type WriteFileInput struct {
+
+	// Relative to the workspace directory. May not traverse higher in the filesystem.
+	Path    string `json:"path"`
+	Mode    *int   `json:"mode"`
+	Content string `json:"content"`
+}
+
+type WriteFileOutput struct {
+}
+
 func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Workspace) {
 	b.AddMethod("start", func(req *http.Request) interface{} {
 		return factory(req).Start
@@ -305,6 +338,15 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	b.AddMethod("describe-networks", func(req *http.Request) interface{} {
 		return factory(req).DescribeNetworks
 	})
+	b.AddMethod("export-procfile", func(req *http.Request) interface{} {
+		return factory(req).ExportProcfile
+	})
+	b.AddMethod("read-file", func(req *http.Request) interface{} {
+		return factory(req).ReadFile
+	})
+	b.AddMethod("write-file", func(req *http.Request) interface{} {
+		return factory(req).WriteFile
+	})
 }
 
 type WorkspaceDescription struct {
@@ -339,6 +381,7 @@ type ProcessDescription struct {
 	ID                  string            `json:"id"`
 	Provider            string            `json:"provider"`
 	Name                string            `json:"name"`
+	Spec                interface{}       `json:"spec"`
 	Running             bool              `json:"running"`
 	EnvVars             map[string]string `json:"envVars"`
 	CPUPercent          float64           `json:"cpuPercent"`

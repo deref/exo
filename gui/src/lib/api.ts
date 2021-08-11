@@ -1,6 +1,6 @@
 import { isRunning } from './global/server-status';
 import type { GetVersionResponse } from './kernel/types';
-import type { LogsResponse } from './logs/types';
+import type { ExportProcfileResponse, LogsResponse, ReadFileResponse } from './logs/types';
 import type {
   CreateProcessResponse,
   ProcessDescription,
@@ -220,6 +220,11 @@ export interface WorkspaceApi {
     filterStr: string | null,
     pagination?: PaginationParams,
   ): Promise<LogsResponse>;
+
+  exportProcfile(): Promise<string>;
+
+  readFile(filePath: string): Promise<string>;
+  writeFile(filePath: string, content: string, mode?: number): Promise<void>;
 }
 
 export const api = (() => {
@@ -323,6 +328,21 @@ export const api = (() => {
           ...pagination,
         })) as LogsResponse;
       },
+
+      async exportProcfile(): Promise<string> {
+        const res = await invoke('export-procfile') as ExportProcfileResponse;
+        return res.procfile;
+      },
+
+      async readFile(path: string): Promise<string> {
+        const res = await invoke('read-file', { path }) as ReadFileResponse;
+        return res.content;
+      },
+
+      async writeFile(path: string, content: string, mode?: number): Promise<void> {
+        await invoke('write-file', { path, content, mode });
+      },
+
     };
   };
 
