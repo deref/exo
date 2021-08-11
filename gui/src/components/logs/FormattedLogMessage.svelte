@@ -1,5 +1,6 @@
 <script lang="ts">
-  import { parseSpans, Span } from './parseSpans';
+  import { parseSpans } from './parseSpans';
+  import type { Span } from './parseSpans';
 
   export let message: string = '';
 
