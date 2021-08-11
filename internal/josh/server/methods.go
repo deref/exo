@@ -15,9 +15,8 @@ import (
 )
 
 type MethodHandler struct {
-	Factory   func(req *http.Request) interface{}
-	Name      string
-	Telemetry telemetry.Telemetry
+	Factory func(req *http.Request) interface{}
+	Name    string
 }
 
 const expectedSignature = "expected signature: func (ctx context.Context, input *YourInput) (*YourOutput, error)"
@@ -35,16 +34,17 @@ func (handler *MethodHandler) ServeHTTP(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	logger := logging.CurrentLogger(req.Context())
+	ctx := req.Context()
+	logger := logging.CurrentLogger(ctx)
+	tel := telemetry.FromContext(ctx)
 
 	start := time.Now()
 	telOp := telemetry.OperationInvocation{
 		Operation: handler.Name,
-		Success:   true,
 	}
 	defer func() {
 		telOp.DurationMicros = int(time.Since(start).Microseconds())
-		handler.Telemetry.RecordOperation(telOp)
+		tel.RecordOperation(telOp)
 	}()
 
 	method := reflect.ValueOf(handler.Factory(req))
@@ -59,7 +59,6 @@ func (handler *MethodHandler) ServeHTTP(w http.ResponseWriter, req *http.Request
 			w.WriteHeader(http.StatusBadRequest)
 			logger.Infof("error parsing request: %v", err)
 			w.Write([]byte("error parsing json\n"))
-			telOp.Success = false
 			return
 		}
 	}
@@ -72,24 +71,23 @@ func (handler *MethodHandler) ServeHTTP(w http.ResponseWriter, req *http.Request
 	if errv != nil {
 		err := errv.(error)
 		httputil.WriteError(w, req, err)
-		telOp.Success = false
 		return
 	}
+
+	telOp.Success = true
 	httputil.WriteJSON(w, req, http.StatusOK, output)
 }
 
 type MuxBuilder struct {
-	prefix    string
-	mux       *http.ServeMux
-	methods   []string
-	telemetry telemetry.Telemetry
+	prefix  string
+	mux     *http.ServeMux
+	methods []string
 }
 
-func NewMuxBuilder(tel telemetry.Telemetry, prefix string) *MuxBuilder {
+func NewMuxBuilder(prefix string) *MuxBuilder {
 	return &MuxBuilder{
-		prefix:    prefix,
-		mux:       http.NewServeMux(),
-		telemetry: tel,
+		prefix: prefix,
+		mux:    http.NewServeMux(),
 	}
 }
 
@@ -102,9 +100,8 @@ func (b *MuxBuilder) Build() *http.ServeMux {
 
 func (b *MuxBuilder) AddMethod(name string, factory func(req *http.Request) interface{}) {
 	b.mux.Handle(path.Join(b.prefix, name), &MethodHandler{
-		Factory:   factory,
-		Name:      name,
-		Telemetry: b.telemetry,
+		Factory: factory,
+		Name:    name,
 	})
 	b.methods = append(b.methods, name)
 }

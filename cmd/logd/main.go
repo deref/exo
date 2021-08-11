@@ -29,6 +29,11 @@ func main() {
 	logger := logging.Default()
 	ctx = logging.ContextWithLogger(ctx, logger)
 
+	tel := telemetry.New(ctx, &config.TelemetryConfig{
+		Disable: true,
+	})
+	ctx = telemetry.ContextWithTelemetry(ctx, tel)
+
 	ctx, done := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	defer done()
 
@@ -68,11 +73,7 @@ func main() {
 	}
 	fmt.Println("listening at", addr)
 
-	tel := telemetry.New(ctx, &config.TelemetryConfig{
-		Disable: true,
-	})
-
-	muxb := josh.NewMuxBuilder(tel, "/")
+	muxb := josh.NewMuxBuilder("/")
 	api.BuildLogCollectorMux(muxb, func(req *http.Request) api.LogCollector {
 		return &logd.LogCollector
 	})

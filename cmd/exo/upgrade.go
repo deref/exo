@@ -21,7 +21,7 @@ var upgradeCmd = &cobra.Command{
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := newContext()
-		tel := telemetry.New(ctx, &cfg.Telemetry)
+		tel := telemetry.FromContext(ctx)
 		if !tel.IsEnabled() {
 			fmt.Println("Cannot check current version - telemetry disabled.")
 			if upgrade.IsManaged {

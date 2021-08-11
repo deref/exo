@@ -28,6 +28,10 @@ func main() {
 	config.MustLoadDefault(cfg)
 	paths := cmdutil.MustMakeDirectories(cfg)
 
+	ctx = telemetry.ContextWithTelemetry(ctx, telemetry.New(ctx, &config.TelemetryConfig{
+		Disable: true,
+	}))
+
 	logd := &logd.Service{
 		VarDir:     paths.VarDir,
 		SyslogPort: cfg.Log.SyslogPort,
@@ -44,11 +48,7 @@ func main() {
 		}()
 	}
 
-	tel := telemetry.New(ctx, &config.TelemetryConfig{
-		Disable: true,
-	})
-
-	muxb := josh.NewMuxBuilder(tel, "/")
+	muxb := josh.NewMuxBuilder("/")
 	api.BuildLogCollectorMux(muxb, func(req *http.Request) api.LogCollector {
 		return &logd.LogCollector
 	})
