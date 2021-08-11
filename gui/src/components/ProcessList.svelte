@@ -259,10 +259,10 @@
   }
 
   .stopped {
-    width: 16px;
-    height: 16px;
-    border-radius: 3px;
-    background: var(--grey-c-color);
+    width: 14px;
+    height: 14px;
+    border-radius: 2px;
+    background: var(--grey-d-color);
   }
 
   .control {
