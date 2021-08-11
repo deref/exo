@@ -24,3 +24,15 @@ url = "http://localhost:4001"
 ```
 
 Now all `exo` commands will run against the development instance. To run against the installed instance again, remove or comment out these lines from your `config.toml`.
+
+## envrc
+
+The project root directory contains an `.envrc` script. You can use
+[https://direnv.net/](direnv) to automatically source this script when
+working on the project.
+
+## dexo
+
+To test CLI changes against the auto-restarting watched development server, use
+`./script/dexo`. If you're using direnv (see above), then `dexo` will be on
+your `PATH`.
