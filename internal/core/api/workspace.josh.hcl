@@ -21,6 +21,9 @@ interface "builder" {
 }
 
 interface "workspace" {
+  # XXX This isn't quite right, since these interfaces return job-ids, but
+  # the underlying controller methods are expected to be synchronous.
+  # Should inline the methods and append a `-workspace` suffix to each.
   extends = ["process", "builder"]
 
   method "describe" {

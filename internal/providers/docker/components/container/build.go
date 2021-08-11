@@ -12,14 +12,24 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/deref/exo/internal/core/api"
 	"github.com/deref/exo/internal/util/pathutil"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"golang.org/x/sync/errgroup"
 )
 
+func (c *Container) Build(ctx context.Context, input *api.BuildInput) (*api.BuildOutput, error) {
+	if c.canBuild() {
+		if err := c.buildImage(ctx); err != nil {
+			return nil, err
+		}
+	}
+	return &api.BuildOutput{}, nil
+}
+
 func (c *Container) canBuild() bool {
-	return c.Build.Context != ""
+	return c.Spec.Build.Context != ""
 }
 
 func (c *Container) buildImage(ctx context.Context) error {
@@ -27,8 +37,10 @@ func (c *Container) buildImage(ctx context.Context) error {
 	defer buildContextWriter.Close()
 	var eg errgroup.Group
 
+	spec := c.Spec
+
 	eg.Go(func() error {
-		contextPath := filepath.Join(c.WorkspaceRoot, c.Build.Context)
+		contextPath := filepath.Join(c.WorkspaceRoot, spec.Build.Context)
 		if !pathutil.HasFilePathPrefix(contextPath, c.WorkspaceRoot) {
 			return errors.New("docker container build context path must be in exo workspace root")
 		}
@@ -47,7 +59,7 @@ func (c *Container) buildImage(ctx context.Context) error {
 			//Remove         bool
 			//ForceRemove    bool
 			//PullParent     bool
-			Isolation: container.Isolation(c.Build.Isolation),
+			Isolation: container.Isolation(spec.Build.Isolation),
 			//CPUSetCPUs     string
 			//CPUSetMems     string
 			//CPUShares      int64
@@ -57,27 +69,27 @@ func (c *Container) buildImage(ctx context.Context) error {
 			//MemorySwap     int64
 			//CgroupParent   string
 			//NetworkMode    string
-			ShmSize:    int64(c.Build.ShmSize),
-			Dockerfile: c.Build.Dockerfile,
+			ShmSize:    int64(spec.Build.ShmSize),
+			Dockerfile: spec.Build.Dockerfile,
 			//Ulimits        []*units.Ulimit
 			//// BuildArgs needs to be a *string instead of just a string so that
 			//// we can tell the difference between "" (empty string) and no value
 			//// at all (nil). See the parsing of buildArgs in
 			//// api/server/router/build/build_routes.go for even more info.
-			BuildArgs: c.Build.Args,
+			BuildArgs: spec.Build.Args,
 			//AuthConfigs map[string]AuthConfig
 			//Context     io.Reader
-			Labels: c.Build.Labels.WithoutNils(),
+			Labels: spec.Build.Labels.WithoutNils(),
 			//// squash the resulting image's layers to the parent
 			//// preserves the original image and creates a new one from the parent with all
 			//// the changes applied to a single layer
 			//Squash bool
 			// CacheFrom specifies images that are used for matching cache. Images
 			// specified here do not need to have a valid parent chain to match cache.
-			CacheFrom: c.Build.CacheFrom,
+			CacheFrom: spec.Build.CacheFrom,
 			//SecurityOpt []string
-			ExtraHosts: c.Build.ExtraHosts,
-			Target:     c.Build.Target,
+			ExtraHosts: spec.Build.ExtraHosts,
+			Target:     spec.Build.Target,
 			//SessionID   string
 			//Platform    string
 			//// Version specifies the version of the unerlying builder to use
