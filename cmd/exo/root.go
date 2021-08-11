@@ -4,7 +4,6 @@ import (
 	"context"
 
 	"github.com/deref/exo/internal/config"
-	"github.com/deref/exo/internal/telemetry"
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/deref/exo/internal/util/logging"
 	"github.com/spf13/cobra"
@@ -28,12 +27,8 @@ For more information, see https://exo.deref.io`,
 
 func newContext() context.Context {
 	ctx := context.Background()
-
 	logger := logging.Default()
 	ctx = logging.ContextWithLogger(ctx, logger)
-
-	tel := telemetry.New(ctx, &cfg.Telemetry)
-	ctx = telemetry.ContextWithTelemetry(ctx, tel)
 
 	return ctx
 }

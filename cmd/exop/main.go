@@ -25,15 +25,12 @@ import (
 func main() {
 	ctx := context.Background()
 
-	cfg := &config.Config{}
-	config.MustLoadDefault(cfg)
-	paths := cmdutil.MustMakeDirectories(cfg)
-
 	logger := logging.Default()
 	ctx = logging.ContextWithLogger(ctx, logger)
 
-	tel := telemetry.New(ctx, &cfg.Telemetry)
-	ctx = telemetry.ContextWithTelemetry(ctx, tel)
+	cfg := &config.Config{}
+	config.MustLoadDefault(cfg)
+	paths := cmdutil.MustMakeDirectories(cfg)
 
 	statePath := filepath.Join(paths.VarDir, "state.json")
 	store := statefile.New(statePath)
@@ -51,6 +48,7 @@ func main() {
 	serverCfg := &server.Config{
 		VarDir:      paths.VarDir,
 		Store:       store,
+		Telemetry:   telemetry.New(&cfg.Telemetry),
 		Logger:      logger,
 		SyslogPort:  cfg.Log.SyslogPort,
 		Docker:      dockerClient,

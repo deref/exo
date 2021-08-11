@@ -1,7 +1,6 @@
 package cacheutil
 
 import (
-	"context"
 	"time"
 )
 
@@ -24,7 +23,7 @@ func NewTTLVal(getVal valFunc, ttl time.Duration) *TTLVal {
 	}
 }
 
-func (v *TTLVal) Get(ctx context.Context) (interface{}, error) {
+func (v *TTLVal) Get() (interface{}, error) {
 	if time.Now().Sub(v.runAt) > v.ttl {
 		val, err := v.getVal()
 		if err != nil {
