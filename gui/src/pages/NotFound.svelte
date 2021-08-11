@@ -2,7 +2,7 @@
   import Layout from '../components/Layout.svelte';
 </script>
 
-<Layout showBackButton>
+<Layout>
   <section>
     <h1>404 page not found</h1>
   </section>

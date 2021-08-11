@@ -193,5 +193,6 @@
 
   tr:hover td:nth-child(2) {
     background: var(--log-bg-hover-color);
+    color: var(--log-hover-color);
   }
 </style>

@@ -10,7 +10,8 @@
   } from '../lib/process/store';
   import type { RemoteData } from '../lib/api';
   import BytesLabel from '../components/BytesLabel.svelte';
-  import WithLeftWorkspaceNav from '../components/WithLeftWorkspaceNav.svelte';
+  import WorkspaceNav from '../components/WorkspaceNav.svelte';
+  import MonoPanel from '../components/MonoPanel.svelte';
   import CheckeredTableWrapper from '../components/CheckeredTableWrapper.svelte';
   import type { ProcessDescription } from 'src/lib/process/types';
   export let params = { workspace: '', process: '' };
@@ -64,8 +65,9 @@
   });
 </script>
 
-<Layout showBackButton backButtonRoute={workspaceRoute}>
-  <WithLeftWorkspaceNav {workspaceId} active="Dashboard">
+<Layout>
+  <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
+  <MonoPanel>
     <section>
       {#if process}
         <div>
@@ -153,7 +155,7 @@
         Loading...
       {/if}
     </section>
-  </WithLeftWorkspaceNav>
+  </MonoPanel>
 </Layout>
 
 <style>
