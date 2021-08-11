@@ -1,8 +1,8 @@
 <script lang="ts">
-  export let tooltip: string = '';
+  export let tooltip: string | undefined = undefined;
 </script>
 
-<button on:click title={tooltip !== '' ? tooltip : undefined}>
+<button on:click title={tooltip}>
   <slot />
 </button>
 
