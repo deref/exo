@@ -13,7 +13,6 @@ import (
 	josh "github.com/deref/exo/internal/josh/server"
 	"github.com/deref/exo/internal/logd"
 	"github.com/deref/exo/internal/logd/api"
-	"github.com/deref/exo/internal/telemetry"
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/deref/exo/internal/util/logging"
 	"github.com/deref/pier"
@@ -27,10 +26,6 @@ func main() {
 	cfg := &config.Config{}
 	config.MustLoadDefault(cfg)
 	paths := cmdutil.MustMakeDirectories(cfg)
-
-	ctx = telemetry.ContextWithTelemetry(ctx, telemetry.New(ctx, &config.TelemetryConfig{
-		Disable: true,
-	}))
 
 	logd := &logd.Service{
 		VarDir:     paths.VarDir,

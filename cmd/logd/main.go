@@ -18,7 +18,6 @@ import (
 	josh "github.com/deref/exo/internal/josh/server"
 	"github.com/deref/exo/internal/logd"
 	"github.com/deref/exo/internal/logd/api"
-	"github.com/deref/exo/internal/telemetry"
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/deref/exo/internal/util/logging"
 )
@@ -28,11 +27,6 @@ func main() {
 
 	logger := logging.Default()
 	ctx = logging.ContextWithLogger(ctx, logger)
-
-	tel := telemetry.New(ctx, &config.TelemetryConfig{
-		Disable: true,
-	})
-	ctx = telemetry.ContextWithTelemetry(ctx, tel)
 
 	ctx, done := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 	defer done()

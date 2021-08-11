@@ -8,6 +8,7 @@ import (
 	josh "github.com/deref/exo/internal/josh/server"
 	"github.com/deref/exo/internal/task"
 	taskapi "github.com/deref/exo/internal/task/api"
+	"github.com/deref/exo/internal/telemetry"
 	"github.com/deref/exo/internal/util/logging"
 	docker "github.com/docker/docker/client"
 )
@@ -15,6 +16,7 @@ import (
 type Config struct {
 	VarDir      string
 	Store       state.Store
+	Telemetry   telemetry.Telemetry
 	SyslogPort  uint
 	Docker      *docker.Client
 	Logger      logging.Logger
@@ -29,6 +31,7 @@ func BuildRootMux(prefix string, cfg *Config) *http.ServeMux {
 		return &Kernel{
 			VarDir:      cfg.VarDir,
 			Store:       cfg.Store,
+			Telemetry:   cfg.Telemetry,
 			TaskTracker: cfg.TaskTracker,
 		}
 	})

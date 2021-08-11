@@ -5,9 +5,7 @@ import (
 	"net/http"
 	"path"
 	"reflect"
-	"time"
 
-	"github.com/deref/exo/internal/telemetry"
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/httputil"
 	"github.com/deref/exo/internal/util/jsonutil"
@@ -34,18 +32,7 @@ func (handler *MethodHandler) ServeHTTP(w http.ResponseWriter, req *http.Request
 		return
 	}
 
-	ctx := req.Context()
-	logger := logging.CurrentLogger(ctx)
-	tel := telemetry.FromContext(ctx)
-
-	start := time.Now()
-	telOp := telemetry.OperationInvocation{
-		Operation: handler.Name,
-	}
-	defer func() {
-		telOp.DurationMicros = int(time.Since(start).Microseconds())
-		tel.RecordOperation(telOp)
-	}()
+	logger := logging.CurrentLogger(req.Context())
 
 	method := reflect.ValueOf(handler.Factory(req))
 	inputType := method.Type().In(1).Elem()
@@ -73,8 +60,6 @@ func (handler *MethodHandler) ServeHTTP(w http.ResponseWriter, req *http.Request
 		httputil.WriteError(w, req, err)
 		return
 	}
-
-	telOp.Success = true
 	httputil.WriteJSON(w, req, http.StatusOK, output)
 }
 
