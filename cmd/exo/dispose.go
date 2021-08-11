@@ -18,10 +18,14 @@ var disposeCmd = &cobra.Command{
 		ctx := newContext()
 		ensureDaemon()
 		cl := newClient()
+		kernel := cl.Kernel()
 		workspace := requireWorkspace(ctx, cl)
-		_, err := workspace.DisposeComponents(ctx, &api.DisposeComponentsInput{
+		output, err := workspace.DisposeComponents(ctx, &api.DisposeComponentsInput{
 			Refs: args,
 		})
-		return err
+		if err != nil {
+			return err
+		}
+		return watchJob(ctx, kernel, output.JobID)
 	},
 }

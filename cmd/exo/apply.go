@@ -65,13 +65,14 @@ overidden explicitly with the --format flag.`,
 		ensureDaemon()
 
 		cl := newClient()
+		kernel := cl.Kernel()
 		workspace := requireWorkspace(ctx, cl)
 
-		return apply(ctx, workspace, args)
+		return apply(ctx, kernel, workspace, args)
 	},
 }
 
-func apply(ctx context.Context, workspace api.Workspace, args []string) error {
+func apply(ctx context.Context, kernel api.Kernel, workspace api.Workspace, args []string) error {
 	input := &api.ApplyInput{}
 	if len(args) > 0 {
 		manifestPath := args[0]
@@ -96,5 +97,8 @@ func apply(ctx context.Context, workspace api.Workspace, args []string) error {
 			fmt.Fprintf(os.Stderr, "warning: %s\n", warning)
 		}
 	}
-	return err
+	if err != nil {
+		return err
+	}
+	return watchJob(ctx, kernel, output.JobID)
 }

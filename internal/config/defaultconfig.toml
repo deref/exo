@@ -12,16 +12,16 @@
 # runDir = "/path/to/exo-home/run"
 
 ## Logging subsystem that collects logs from running services.
-# [log]
+[log]
 ## Port that the internal log collection service binds to.
 # syslogPort = 5140
 
 ## Web UI.
-# [gui]
+[gui]
 ## (DEV only) Port that the Vite server binds to.
-# port = 5140
+# port = 3001
 
 ## Telemetry subsystem that collects and reports statistics back to Deref.
-# [telemetry]
+[telemetry]
 ## Telemetry is enabled by default. To disable, ensure that disable = true is set
 # disable = true

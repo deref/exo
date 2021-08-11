@@ -9,6 +9,7 @@ import (
 	"strconv"
 	"text/tabwriter"
 
+	"github.com/deref/exo/internal/gui"
 	"github.com/deref/exo/internal/util/osutil"
 	"github.com/spf13/cobra"
 )
@@ -60,4 +61,10 @@ func effectiveServerURL() string {
 		url = runState.URL
 	}
 	return url
+}
+
+func newGUIRoutes() *gui.Routes {
+	return &gui.Routes{
+		URL: effectiveServerURL(),
+	}
 }

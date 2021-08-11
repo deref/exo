@@ -3,7 +3,7 @@ package process
 import "github.com/deref/exo/internal/providers/core"
 
 type Process struct {
-	core.Component
+	core.ComponentBase
 	Spec
 	State
 

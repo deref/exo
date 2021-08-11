@@ -6,6 +6,7 @@ import type {
   ProcessDescription,
 } from './process/types';
 import type { VolumeDescription, NetworkDescription } from './docker/types';
+import type { TaskDescription } from './tasks/types';
 
 interface IdleRequest {
   stage: 'idle';
@@ -177,6 +178,19 @@ export interface ComponentDescription {
   type: string;
 }
 
+export interface DescribeTasksInput {
+  jobIds?: string[];
+}
+
+export interface KernelApi {
+  describeWorkspaces(): Promise<WorkspaceDescription[]>;
+  createWorkspace(root: string): Promise<string>;
+  getVersion(): Promise<GetVersionResponse>;
+  upgrade(): Promise<void>;
+  ping(): Promise<void>;
+  describeTasks(input?: DescribeTasksInput): Promise<TaskDescription[]>;
+}
+
 export interface WorkspaceApi {
   describeComponents(): Promise<ComponentDescription[]>;
 
@@ -209,7 +223,7 @@ export interface WorkspaceApi {
 }
 
 export const api = (() => {
-  const kernel = (() => {
+  const kernel: KernelApi = (() => {
     const invoke = (method: string, data?: unknown) =>
       rpc(`/kernel/${method}`, {}, data);
     return {
@@ -232,6 +246,13 @@ export const api = (() => {
 
       async ping(): Promise<void> {
         await invoke('ping', {});
+      },
+
+      async describeTasks(
+        input: DescribeTasksInput = {},
+      ): Promise<TaskDescription[]> {
+        const { tasks } = (await invoke('describe-tasks', {})) as any;
+        return tasks as TaskDescription[];
       },
     };
   })();
