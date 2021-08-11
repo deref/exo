@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net/http"
@@ -780,13 +781,13 @@ func (ws *Workspace) ExportProcfile(ctx context.Context, input *api.ExportProcfi
 		}
 	}
 
-	export, err := procfile.Generate(unixProcs)
-	if err != nil {
+	var export bytes.Buffer
+	if err := procfile.Generate(&export, unixProcs); err != nil {
 		return nil, fmt.Errorf("generating procfile: %w", err)
 	}
 
 	return &api.ExportProcfileOutput{
-		Procfile: export,
+		Procfile: export.String(),
 	}, nil
 }
 
@@ -798,7 +799,7 @@ func (ws *Workspace) ReadFile(ctx context.Context, input *api.ReadFileInput) (*a
 
 	content, err := os.ReadFile(resolvedPath)
 	if err != nil {
-		return nil, fmt.Errorf("reading file: %w", err)
+		return nil, err
 	}
 
 	return &api.ReadFileOutput{
@@ -818,7 +819,7 @@ func (ws *Workspace) WriteFile(ctx context.Context, input *api.WriteFileInput) (
 	}
 
 	if err := os.WriteFile(resolvedPath, []byte(input.Content), mode); err != nil {
-		return nil, fmt.Errorf("writing file: %w", err)
+		return nil, err
 	}
 
 	return &api.WriteFileOutput{}, nil

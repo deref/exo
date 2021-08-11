@@ -157,16 +157,20 @@ interface "workspace" {
   }
 
   method "read-file" {
-    doc = "Read a file from disk. Path must be relative to the workspace directory and may not traverse higher in the filesystem"
+    doc = "Read a file from disk."
 
-    input "path" "string" {}
+    input "path" "string" {
+      doc = "Relative to the workspace directory. May not traverse higher in the filesystem."
+    }
     output "content" "string" {}
   }
 
   method "write-file" {
-    doc = "Writes a file to disk. Path must be relative to the workspace directory and may not traverse higher in the filesystem"
+    doc = "Writes a file to disk."
 
-    input "path" "string" {}
+    input "path" "string" {
+      doc = "Relative to the workspace directory. May not traverse higher in the filesystem."
+    }
     input "mode" "*int" {}
     input "content" "string" {}
   }

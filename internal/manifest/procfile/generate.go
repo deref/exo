@@ -1,18 +1,16 @@
 package procfile
 
 import (
-	"bytes"
+	"fmt"
+	"io"
 
 	"gopkg.in/alessio/shellescape.v1"
 	"mvdan.cc/sh/v3/syntax"
 )
 
-func Generate(procs []Process) (string, error) {
-	var out bytes.Buffer
-
+func Generate(w io.Writer, procs []Process) error {
 	for _, proc := range procs {
-		out.WriteString(proc.Name)
-		out.WriteString(": ")
+		fmt.Fprintf(w, "%s: ", proc.Name)
 
 		cmd := &syntax.CallExpr{
 			Args: []*syntax.Word{
@@ -30,13 +28,13 @@ func Generate(procs []Process) (string, error) {
 			})
 		}
 
-		syntax.NewPrinter().Print(&out, &syntax.Stmt{
+		syntax.NewPrinter().Print(w, &syntax.Stmt{
 			Cmd: cmd,
 		})
-		out.WriteByte('\n')
+		fmt.Fprint(w, "\n")
 	}
 
-	return out.String(), nil
+	return nil
 }
 
 func literalWord(val string) *syntax.Word {

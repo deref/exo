@@ -80,9 +80,9 @@ type Workspace interface {
 	DescribeVolumes(context.Context, *DescribeVolumesInput) (*DescribeVolumesOutput, error)
 	DescribeNetworks(context.Context, *DescribeNetworksInput) (*DescribeNetworksOutput, error)
 	ExportProcfile(context.Context, *ExportProcfileInput) (*ExportProcfileOutput, error)
-	// Read a file from disk. Path must be relative to the workspace directory and may not traverse higher in the filesystem
+	// Read a file from disk.
 	ReadFile(context.Context, *ReadFileInput) (*ReadFileOutput, error)
-	// Writes a file to disk. Path must be relative to the workspace directory and may not traverse higher in the filesystem
+	// Writes a file to disk.
 	WriteFile(context.Context, *WriteFileInput) (*WriteFileOutput, error)
 }
 
@@ -250,6 +250,8 @@ type ExportProcfileOutput struct {
 }
 
 type ReadFileInput struct {
+
+	// Relative to the workspace directory. May not traverse higher in the filesystem.
 	Path string `json:"path"`
 }
 
@@ -258,6 +260,8 @@ type ReadFileOutput struct {
 }
 
 type WriteFileInput struct {
+
+	// Relative to the workspace directory. May not traverse higher in the filesystem.
 	Path    string `json:"path"`
 	Mode    *int   `json:"mode"`
 	Content string `json:"content"`

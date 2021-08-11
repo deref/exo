@@ -1,6 +1,7 @@
 package procfile_test
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/deref/exo/internal/manifest/procfile"
@@ -76,11 +77,12 @@ World' '"quotes"' ''"'"'other quotes'"'"''
 		t.Run(testCase.name, func(t *testing.T) {
 
 		})
-		pf, err := procfile.Generate(in)
+		var buf bytes.Buffer
+		err := procfile.Generate(&buf, in)
 		if !assert.NoError(t, err) {
 			break
 		}
 
-		assert.Equal(t, expected, pf)
+		assert.Equal(t, expected, buf.String())
 	}
 }
