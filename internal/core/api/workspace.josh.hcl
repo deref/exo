@@ -214,7 +214,7 @@ struct "process-description" {
   field "id" "string" {}
   field "provider" "string" {}
   field "name" "string" {}
-  field "spec" "interface{}" {}
+  field "spec" "string" {}
   field "running" "bool" {}
   field "env-vars" "map[string]string" {}
   field "cpu-percent" "float64" {}

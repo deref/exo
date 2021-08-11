@@ -381,7 +381,7 @@ type ProcessDescription struct {
 	ID                  string            `json:"id"`
 	Provider            string            `json:"provider"`
 	Name                string            `json:"name"`
-	Spec                interface{}       `json:"spec"`
+	Spec                string            `json:"spec"`
 	Running             bool              `json:"running"`
 	EnvVars             map[string]string `json:"envVars"`
 	CPUPercent          float64           `json:"cpuPercent"`

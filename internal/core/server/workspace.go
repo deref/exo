@@ -615,18 +615,12 @@ func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeP
 				continue
 			}
 
-			var spec process.Spec
-			if err := jsonutil.UnmarshalString(component.Spec, &spec); err != nil {
-				logger.Infof("unmarshalling process spec: %v\n", err)
-				continue
-			}
-
 			process := api.ProcessDescription{
 				ID:       component.ID,
 				Name:     component.Name,
 				Provider: "unix",
 				EnvVars:  state.FullEnvironment,
-				Spec:     spec,
+				Spec:     component.Spec,
 			}
 
 			proc, err := psprocess.NewProcess(int32(state.Pid))
@@ -732,6 +726,7 @@ func (ws *Workspace) DescribeNetworks(ctx context.Context, input *api.DescribeNe
 }
 
 func (ws *Workspace) ExportProcfile(ctx context.Context, input *api.ExportProcfileInput) (*api.ExportProcfileOutput, error) {
+	logger := logging.CurrentLogger(ctx)
 	procs, err := ws.DescribeProcesses(ctx, &api.DescribeProcessesInput{})
 	if err != nil {
 		return nil, fmt.Errorf("describing processes: %w", err)
@@ -740,7 +735,11 @@ func (ws *Workspace) ExportProcfile(ctx context.Context, input *api.ExportProcfi
 	unixProcs := make([]procfile.Process, 0, len(procs.Processes))
 	for _, proc := range procs.Processes {
 		if proc.Provider == "unix" {
-			spec := proc.Spec.(process.Spec)
+			var spec process.Spec
+			if err := jsonutil.UnmarshalString(proc.Spec, &spec); err != nil {
+				logger.Infof("unmarshalling process spec: %v\n", err)
+				continue
+			}
 
 			unixProcs = append(unixProcs, procfile.Process{
 				Name:        proc.Name,
