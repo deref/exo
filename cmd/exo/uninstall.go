@@ -40,6 +40,7 @@ for manual uninstall instructions.`,
 		}
 		for _, workspace := range workspaces.Workspaces {
 			fmt.Printf("destroying workspace: %s\n", workspace.ID)
+			// TODO: watchJob on workspace destroy output.
 			if _, err := cl.GetWorkspace(workspace.ID).Destroy(ctx, &api.DestroyInput{}); err != nil {
 				return fmt.Errorf("destroying workspace %q: %w", workspace.ID, err)
 			}

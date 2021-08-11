@@ -3,7 +3,6 @@ package main
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"os"
 
 	"github.com/deref/exo/internal/core/api"
@@ -36,11 +35,12 @@ If the current directory is part of a workspace, navigates to it.`,
 			return fmt.Errorf("finding workspace: %w", err)
 		}
 
+		routes := newGUIRoutes()
 		var endpoint string
 		if output.ID == nil {
-			endpoint = runState.URL + "/#/new-workspace?root=" + url.QueryEscape(cwd)
+			endpoint = routes.NewWorkspaceURL(cwd)
 		} else {
-			endpoint = guiWorkspaceURL(*output.ID)
+			endpoint = routes.WorkspaceURL(*output.ID)
 		}
 
 		fmt.Println("Opening GUI:", endpoint)
@@ -48,8 +48,4 @@ If the current directory is part of a workspace, navigates to it.`,
 		browser.Stdout = os.Stderr
 		return browser.OpenURL(endpoint)
 	},
-}
-
-func guiWorkspaceURL(id string) string {
-	return runState.URL + "/#/workspaces/" + url.PathEscape(id)
 }
