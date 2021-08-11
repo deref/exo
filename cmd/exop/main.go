@@ -2,10 +2,8 @@ package main
 
 import (
 	"context"
-	"fmt"
 	"net"
 	"net/http"
-	"os"
 	"path/filepath"
 
 	"github.com/deref/exo/internal/config"
@@ -14,7 +12,6 @@ import (
 	josh "github.com/deref/exo/internal/josh/client"
 	logd "github.com/deref/exo/internal/logd/client"
 	"github.com/deref/exo/internal/providers/core/components/log"
-	"github.com/deref/exo/internal/supervise"
 	"github.com/deref/exo/internal/task"
 	taskserver "github.com/deref/exo/internal/task/server"
 	"github.com/deref/exo/internal/telemetry"
@@ -26,22 +23,6 @@ import (
 )
 
 func main() {
-	// In development, exop starts a process by exec-ing a copy of itself with the "supervise"
-	// subcommand so that it always uses the latest veresion of the code rather than relying
-	// on a prebuilt version of `supervise` being on the path.
-	if len(os.Args) > 1 && os.Args[1] == "supervise" {
-		// XXX: This is broken because supervise expects the syslod addr as the first argument.
-		selfExec := os.Args[0]
-		subCmd := os.Args[1]
-		wd, err := os.Getwd()
-		if err != nil {
-			panic(err)
-		}
-		subCmdArgs := os.Args[2:]
-		supervise.Main(fmt.Sprintf("%s %s %s", selfExec, subCmd, wd), subCmdArgs)
-		return
-	}
-
 	ctx := context.Background()
 
 	logger := logging.Default()

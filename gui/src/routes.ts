@@ -7,6 +7,8 @@ import Process from './pages/Process.svelte';
 import WorkspaceComponents from './pages/WorkspaceComponents.svelte';
 import WorkspaceStorage from './pages/WorkspaceStorage.svelte';
 import WorkspaceNetworking from './pages/WorkspaceNetworking.svelte';
+import Jobs from './pages/Jobs.svelte';
+import Job from './pages/Job.svelte';
 
 export default {
   '/': Home,
@@ -17,5 +19,7 @@ export default {
   '/workspaces/:workspace/networking': WorkspaceNetworking,
   '/workspaces/:workspace/new-process': NewProcess,
   '/workspaces/:workspace/processes/:process': Process,
+  '/jobs': Jobs,
+  '/jobs/:job': Job,
   '*': NotFound,
 };

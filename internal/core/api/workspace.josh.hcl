@@ -22,7 +22,9 @@ interface "workspace" {
   }
 
   method "destroy" {
-    doc = "Deletes all of the components in the workspace, then deletes the workspace itself."
+    doc = "Asynchronously deletes all components in the workspace, then deletes the workspace itself."
+
+    output "job-id" "string" {}
   }
 
   method "apply" {
@@ -39,6 +41,7 @@ interface "workspace" {
     }
 
     output "warnings" "[]string" {}
+    output "job-id" "string" {}
   }
 
   method "resolve" {
@@ -90,17 +93,20 @@ interface "workspace" {
     output "job-id" "string" {}
   }
 
-  method "dispose-component" {
-    # TODO: Line breaks in doc strings.
-    doc = "Marks a component as disposed and triggers the dispose lifecycle event. After being disposed, the component record will be deleted asynchronously."
+  method "dispose-components" {
+    doc = "Asynchronously runs dispose lifecycle methods on each component."
 
-    input "ref" "string" {}
+    input "refs" "[]string" {}
+
+    output "job-id" "string" {}
   }
 
-  method "delete-component" {
-    doc = "Disposes a component and then awaits the record to be deleted synchronously."
+  method "delete-components" {
+    doc = "Asynchronously disposes components, then removes them from the manifest."
 
-    input "ref" "string" {}
+    input "refs" "[]string" {}
+
+    output "job-id" "string" {}
   }
 
   method "describe-logs" {

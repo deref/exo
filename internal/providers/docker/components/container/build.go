@@ -2,12 +2,15 @@ package container
 
 import (
 	"archive/tar"
+	"bufio"
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/deref/exo/internal/util/pathutil"
 	"github.com/docker/docker/api/types"
@@ -91,12 +94,36 @@ func (c *Container) buildImage(ctx context.Context) error {
 		resp, err := c.Docker.ImageBuild(ctx, buildContext, opts)
 		fmt.Println("after build")
 		if resp.Body != nil {
+			defer resp.Body.Close()
 			// TODO [DOCKER_PROGRESS]: Capture progress.
-			_, _ = io.Copy(os.Stdout, resp.Body)
-			_ = resp.Body.Close()
+			//_, _ = io.Copy(os.Stdout, resp.Body)
+			scanner := bufio.NewScanner(resp.Body)
+			for scanner.Scan() {
+				var d struct {
+					ErrorDetail struct {
+						Code    int    `json:"code"`
+						Message string `json:"message"`
+					} `json:"errorDetail"`
+					Aux struct {
+						ID string `json:"ID"`
+					} `json:"aux"`
+				}
+				if err := json.Unmarshal(scanner.Bytes(), &d); err != nil {
+					return fmt.Errorf("failed to unmarshal docker build log: %w", err)
+				}
+				if d.ErrorDetail.Message != "" {
+					return fmt.Errorf("docker build error: " + d.ErrorDetail.Message)
+				}
+				if strings.HasPrefix(d.Aux.ID, "sha256:") {
+					c.State.ImageID = d.Aux.ID
+				}
+			}
 		}
 		if err != nil {
 			return err
+		}
+		if c.State.ImageID == "" {
+			return fmt.Errorf("did not build an image")
 		}
 		return nil
 	})

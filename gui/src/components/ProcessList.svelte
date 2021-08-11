@@ -2,6 +2,7 @@
   import { onDestroy, onMount } from 'svelte';
   import { link } from 'svelte-spa-router';
   import type { RemoteData, WorkspaceApi } from '../lib/api';
+  import type { ProcessDescription } from '../lib/process/types';
   import { loadInitialLogs, resetLogs } from '../lib/logs/store';
   import {
     fetchProcesses,
@@ -14,15 +15,12 @@
   import { setLogVisibility, visibleLogsStore } from '../lib/logs/visible-logs';
   import * as router from 'svelte-spa-router';
   import IconButton from './IconButton.svelte';
-
-  //Icons
-  import Add from './mono/add.svelte';
-  import Run from './mono/play.svelte';
-  import Loading from './mono/refresh.svelte';
-  import Stop from './mono/stop.svelte';
-  import Delete from './mono/delete.svelte';
   import CheckboxButton from './CheckboxButton.svelte';
-  import type { ProcessDescription } from 'src/lib/process/types';
+  import AddSVG from './mono/add.svelte';
+  import RunSVG from './mono/play.svelte';
+  import LoadingSVG from './mono/refresh.svelte';
+  import StopSVG from './mono/stop.svelte';
+  import DeleteSVG from './mono/delete.svelte';
 
   export let workspace: WorkspaceApi;
   export let workspaceId: string;
@@ -99,7 +97,7 @@
         );
       }}
     >
-      <Add />
+      <AddSVG />
     </IconButton>
   </h1>
   <div>
@@ -117,17 +115,17 @@
           <tr>
             <td>
               {#if statusPending.has(id)}
-                <button disabled><Loading /></button>
+                <button disabled><LoadingSVG /></button>
               {:else if running}
                 <IconButton
                   tooltip="Stop process"
                   on:click={() => setProcRun(id, false)}
-                  active><Stop /></IconButton
+                  active><StopSVG /></IconButton
                 >
               {:else}
                 <IconButton
                   tooltip="Run process"
-                  on:click={() => setProcRun(id, true)}><Run /></IconButton
+                  on:click={() => setProcRun(id, true)}><RunSVG /></IconButton
                 >
               {/if}
             </td>
@@ -158,7 +156,7 @@
                 on:click={() => {
                   void deleteProcess(workspace, id);
                   setProcLogs(id, false);
-                }}><Delete /></IconButton
+                }}><DeleteSVG /></IconButton
               >
             </td>
           </tr>
@@ -249,6 +247,7 @@
 
   .process-name {
     display: inline-block;
+    text-decoration: none;
     margin: 0;
     line-height: 1;
     font-size: 16px;
@@ -257,5 +256,10 @@
     border-radius: 4px;
     color: #555;
     background: #eee;
+  }
+
+  .process-name:hover {
+    color: #000;
+    background: #e0e0e0;
   }
 </style>

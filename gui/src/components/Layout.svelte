@@ -1,51 +1,43 @@
 <script lang="ts">
   import * as router from 'svelte-spa-router';
-  import IconButton from './IconButton.svelte';
   import VersionInfo from './VersionInfo.svelte';
-
-  import Feedback from './mono/feedback.svelte';
-  import GoBack from './mono/leftarrow.svelte';
-
-  export let showBackButton: boolean = false;
-  export let backButtonRoute: string = '#/';
+  import NavbarButton from './nav/NavbarButton.svelte';
+  import FeedbackSVG from './mono/feedback.svelte';
 
   const goHome = () => {
     router.push('#/');
   };
-
-  const goBack = () => {
-    router.push(backButtonRoute);
-  };
 </script>
 
 <main>
-  <header>
-    <div class="logo">
-      <div class="a logo" on:click={goHome}>
+  <nav>
+    <header>
+      <NavbarButton title="Home" on:click={goHome}>
         <img src="/deref-rounded-icon.png" alt="Deref" height="24px" />
-        <h1>exo</h1>
+      </NavbarButton>
+    </header>
+    <div class="navbar-wrapper">
+      <div>
+        <slot name="navbar" />
       </div>
-      {#if showBackButton}
-        <IconButton tooltip="Go back" on:click={goBack}><GoBack /></IconButton>
-        <span>Go back</span>
-      {/if}
     </div>
-    <div class="logo">
-      <span>Feedback?</span>
-      <IconButton
-        tooltip="Give feedback on GitHub"
+    <footer>
+      <NavbarButton
+        title="Give feedback on GitHub"
         on:click={() => {
           window.location.href = 'https://github.com/deref/exo/discussions';
-        }}><Feedback /></IconButton
+        }}
       >
-    </div>
-  </header>
+        <FeedbackSVG />
+      </NavbarButton>
+      <div class:devmode={import.meta.env.MODE === 'development'}>
+        <VersionInfo />
+      </div>
+    </footer>
+  </nav>
   <div>
     <slot />
   </div>
-  <footer class:devmode={import.meta.env.MODE === 'development'}>
-    <VersionInfo />
-  </footer>
 </main>
 
 <style>
@@ -55,36 +47,37 @@
 
   main {
     display: grid;
-    grid-auto-flow: row;
-    grid-auto-rows: max-content 1fr max-content;
+    grid-template-columns: max-content 1fr;
     gap: 1px;
     height: 100vh;
     overflow: hidden;
-    background: #cccccc;
+    background: var(--layout-bg-color);
   }
 
-  header {
+  nav {
     position: relative;
-    height: 40px;
+    width: 48px;
+    height: 100vh;
     z-index: 3;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    padding: 6px 13px;
-    background: #dddddd;
+    display: grid;
+    grid-template-rows: auto 1fr max-content;
+    grid-auto-flow: column;
+    gap: 1px;
+    background: var(--nav-bg-color);
   }
 
-  header .logo {
-    display: flex;
-    align-items: center;
-    gap: 6px;
+  .navbar-wrapper {
+    width: 48px;
+    overflow-y: scroll;
+    direction: rtl;
   }
 
-  h1 {
-    font-size: 20px;
-    font-weight: 550;
-    margin: 0;
-    margin-top: -3px;
+  .navbar-wrapper > div {
+    margin-left: calc(-1 * var(--scrollbar-width));
+  }
+
+  .navbar-wrapper :global(*) {
+    direction: ltr;
   }
 
   div {
@@ -95,20 +88,16 @@
 
   footer {
     display: flex;
-    flex-direction: row-reverse;
-    padding: 4px 6px;
-    height: 20px;
+    flex-direction: column;
     align-items: center;
-    background: #eeeeee;
+    font-size: 11px;
+    width: 100%;
+    color: var(--grey-5-text-color);
+    overflow: hidden;
   }
 
-  footer.devmode {
-    background: rgb(21, 3, 33);
-    background: linear-gradient(
-      158deg,
-      rgba(21, 3, 33, 0.8403069846102503) 5%,
-      rgba(127, 85, 183, 1) 43%,
-      rgba(144, 218, 245, 1) 100%
-    );
+  div.devmode {
+    background: var(--dev-mode-bg-color);
+    color: var(--dev-mode-text-color);
   }
 </style>

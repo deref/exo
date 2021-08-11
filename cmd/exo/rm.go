@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/deref/exo/internal/core/api"
 	"github.com/spf13/cobra"
 )
@@ -22,17 +20,14 @@ var rmCmd = &cobra.Command{
 		ctx := newContext()
 		ensureDaemon()
 		cl := newClient()
+		kernel := cl.Kernel()
 		workspace := requireWorkspace(ctx, cl)
-
-		// TODO: Bulk delete operation.
-		for _, ref := range args {
-			_, err := workspace.DeleteComponent(ctx, &api.DeleteComponentInput{
-				Ref: ref,
-			})
-			if err != nil {
-				return fmt.Errorf("deleting %q: %w", ref, err)
-			}
+		output, err := workspace.DeleteComponents(ctx, &api.DeleteComponentsInput{
+			Refs: args,
+		})
+		if err != nil {
+			return err
 		}
-		return nil
+		return watchJob(ctx, kernel, output.JobID)
 	},
 }

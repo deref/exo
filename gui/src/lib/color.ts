@@ -9,6 +9,7 @@ export const hashDegree = (s: string) =>
   Math.round(hashString(s) * Math.PI * 100) % 360;
 
 export const textColor = (deg: number) => `hsl(${deg}, 95%, 30%)`;
+export const textHoverColor = (deg: number) => `hsl(${deg}, 95%, 20%)`;
 export const bgColor = (deg: number) => `hsl(${deg}, 65%, 92%)`;
 export const bgHoverColor = (deg: number) => `hsl(${deg}, 65%, 87%)`;
 
@@ -18,5 +19,7 @@ export const logStyleFromHash = (s: string) => {
   // Combine styles into one string.
   return `--log-color:${textColor(d)};--log-bg-color:${bgColor(
     d,
-  )};--log-bg-hover-color:${bgHoverColor(d)}`;
+  )};--log-hover-color:${textHoverColor(d)};--log-bg-hover-color:${bgHoverColor(
+    d,
+  )}`;
 };

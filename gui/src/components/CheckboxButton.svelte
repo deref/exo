@@ -1,5 +1,5 @@
 <script lang="ts">
-  import Show from './mono/check.svelte';
+  import CheckSVG from './mono/check.svelte';
 
   export let active: boolean = false;
   export let tooltip: string = '';
@@ -12,7 +12,7 @@
 >
   {#if active}
     <div>
-      <Show />
+      <CheckSVG />
     </div>
   {/if}
 </button>

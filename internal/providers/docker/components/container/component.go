@@ -6,7 +6,7 @@ import (
 )
 
 type Container struct {
-	docker.Component
+	docker.ComponentBase
 	Spec
 	State
 

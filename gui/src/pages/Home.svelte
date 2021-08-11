@@ -4,7 +4,11 @@
   import * as router from 'svelte-spa-router';
   import { api } from '../lib/api';
 
-  const workspaces = api.kernel.describeWorkspaces();
+  const workspaces = api.kernel
+    .describeWorkspaces()
+    .then((workspaces) =>
+      workspaces.sort((w1, w2) => w1.root.localeCompare(w2.root)),
+    );
 </script>
 
 <Layout>

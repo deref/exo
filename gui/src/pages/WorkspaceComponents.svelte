@@ -2,7 +2,8 @@
   import Layout from '../components/Layout.svelte';
   import StringLabel from '../components/StringLabel.svelte';
   import ComponentTable from '../components/ComponentTable.svelte';
-  import WithLeftWorkspaceNav from '../components/WithLeftWorkspaceNav.svelte';
+  import WorkspaceNav from '../components/WorkspaceNav.svelte';
+  import MonoPanel from '../components/MonoPanel.svelte';
   import { api } from '../lib/api';
 
   export let params = { workspace: '' };
@@ -12,7 +13,8 @@
 </script>
 
 <Layout>
-  <WithLeftWorkspaceNav {workspaceId} active="Components">
+  <WorkspaceNav {workspaceId} active="Components" slot="navbar" />
+  <MonoPanel>
     <section>
       <h1>Components</h1>
       <ComponentTable
@@ -36,7 +38,7 @@
         ]}
       />
     </section>
-  </WithLeftWorkspaceNav>
+  </MonoPanel>
 </Layout>
 
 <style>

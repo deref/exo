@@ -17,6 +17,6 @@ var superviseCmd = &cobra.Command{
 
 This is an internal use command. See the supervise package implementation for usage details.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		supervise.Main("exo supervise", args)
+		supervise.Main()
 	},
 }

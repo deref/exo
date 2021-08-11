@@ -36,12 +36,18 @@ var jobWatchCmd = &cobra.Command{
 }
 
 func watchJob(ctx context.Context, kernel api.Kernel, jobID string) error {
+	out := os.Stdout
+
+	// Print link to job in GUI.
+	routes := newGUIRoutes()
+	fmt.Fprintln(out, "Job URL:", routes.JobURL(jobID))
+
 	// Refresh rate starts fast, in case the job completes fast, but will
 	// slow over time to minimize overhead and UI flicker.
 	delay := 10.0
 
 	w := &lineCountingWriter{
-		Underlying: os.Stdout,
+		Underlying: out,
 	}
 
 	jp := &jobPrinter{}

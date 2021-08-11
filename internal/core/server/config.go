@@ -25,11 +25,10 @@ type manifestCandidate struct {
 
 var manifestCandidates = []manifestCandidate{
 	{"exo", "exo.hcl"},
-	// TODO: Uncomment when we have docker-compose support.
-	//{"compose", "compose.yaml"},
-	//{"compose", "compose.yml"},
-	//{"compose", "docker-compose.yaml"},
-	//{"compose", "docker-compose.yml"},
+	{"compose", "compose.yaml"},
+	{"compose", "compose.yml"},
+	{"compose", "docker-compose.yaml"},
+	{"compose", "docker-compose.yml"},
 	{"procfile", "Procfile"},
 }
 

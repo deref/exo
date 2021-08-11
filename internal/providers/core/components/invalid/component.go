@@ -11,3 +11,9 @@ func (invalid *Invalid) InitResource(componentID, spec, state string) error {
 func (invalid *Invalid) MarshalState() (state string, err error) {
 	return "", invalid.Err
 }
+
+func (invalid *Invalid) IsDeleted() bool {
+	return true
+}
+
+func (invalid *Invalid) MarkDeleted() {}
