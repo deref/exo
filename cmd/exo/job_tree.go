@@ -51,6 +51,7 @@ type taskNode struct {
 	Status   string
 	Name     string
 	Message  string
+	Progress *api.TaskProgress
 	Children []*taskNode
 }
 
@@ -79,6 +80,7 @@ func (jp *jobPrinter) printTree(w io.Writer, tasks []api.TaskDescription) {
 		child.Name = task.Name
 		child.Status = task.Status
 		child.Message = task.Message
+		child.Progress = task.Progress
 
 		var parent *taskNode
 		if task.ParentID == nil {
@@ -113,7 +115,7 @@ func (jp *jobPrinter) printTree(w io.Writer, tasks []api.TaskDescription) {
 			}
 
 			depth := depthOf(node)
-			prefix += strings.Repeat("   ", depth-2)
+			prefix += strings.Repeat("│  ", depth-2)
 			last := idx == len(node.Parent.Children)-1
 			if last {
 				prefix += "└─ "
@@ -125,6 +127,10 @@ func (jp *jobPrinter) printTree(w io.Writer, tasks []api.TaskDescription) {
 		label := node.Name
 		if jp.ShowJobID {
 			label += " " + node.ID
+		}
+		if node.Progress != nil {
+			progress := float64(node.Progress.Current) / float64(node.Progress.Total)
+			label += fmt.Sprintf(" %-2d%%", int(progress*100.0))
 		}
 
 		fmt.Fprintf(w, "%s%s %s %s\n", prefix, label, node.Message, node.Status)

@@ -844,7 +844,7 @@ func (ws *Workspace) goControlComponents(t *task.Task, filter componentFilter, f
 
 	for _, component := range components.Components {
 		component := component
-		t.Go(component.Name, func(*task.Task) error {
+		t.Go(component.Name, func(t *task.Task) error {
 			return ws.control(t, component, f)
 		})
 	}

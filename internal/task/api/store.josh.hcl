@@ -21,6 +21,7 @@ interface "task-store" {
     input "message" "*string" {}
     input "started" "*string" {}
     input "finished" "*string" {}
+    input "progress" "*TaskProgress" {}
   }
 
   method "evict-tasks" {}
@@ -40,4 +41,10 @@ struct "task-description" {
   field "updated" "string" {}
   field "started" "*string" {}
   field "finished" "*string" {}
+  field "progress" "*TaskProgress" {}
+}
+
+struct "task-progress" {
+  field "current" "int" {}
+  field "total" "int" {}
 }

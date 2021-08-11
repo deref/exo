@@ -163,19 +163,26 @@ func (kern *Kernel) DescribeTasks(ctx context.Context, input *api.DescribeTasksI
 	}
 	var output api.DescribeTasksOutput
 	output.Tasks = make([]api.TaskDescription, len(underlying.Tasks))
-	for i, t := range underlying.Tasks {
-		output.Tasks[i] = api.TaskDescription{
-			ID:       t.ID,
-			JobID:    t.JobID,
-			ParentID: t.ParentID,
-			Name:     t.Name,
-			Status:   t.Status,
-			Message:  t.Message,
-			Created:  t.Created,
-			Updated:  t.Updated,
-			Started:  t.Started,
-			Finished: t.Finished,
+	for i, t1 := range underlying.Tasks {
+		t2 := api.TaskDescription{
+			ID:       t1.ID,
+			JobID:    t1.JobID,
+			ParentID: t1.ParentID,
+			Name:     t1.Name,
+			Status:   t1.Status,
+			Message:  t1.Message,
+			Created:  t1.Created,
+			Updated:  t1.Updated,
+			Started:  t1.Started,
+			Finished: t1.Finished,
 		}
+		if t1.Progress != nil {
+			t2.Progress = &api.TaskProgress{
+				Current: t1.Progress.Current,
+				Total:   t1.Progress.Total,
+			}
+		}
+		output.Tasks[i] = t2
 	}
 	return &output, nil
 }

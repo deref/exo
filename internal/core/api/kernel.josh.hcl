@@ -61,4 +61,10 @@ struct "task-description" {
   field "updated" "string" {}
   field "started" "*string" {}
   field "finished" "*string" {}
+  field "progress" "*TaskProgress" {}
+}
+
+struct "task-progress" {
+  field "current" "int" {}
+  field "total" "int" {}
 }
