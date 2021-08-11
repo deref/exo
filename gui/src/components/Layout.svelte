@@ -92,12 +92,12 @@
     align-items: center;
     font-size: 11px;
     width: 100%;
-    color: var(--grey-5-text-color);
+    color: var(--grey-5-color);
     overflow: hidden;
   }
 
   div.devmode {
     background: var(--dev-mode-bg-color);
-    color: var(--dev-mode-text-color);
+    color: var(--dev-mode-color);
   }
 </style>

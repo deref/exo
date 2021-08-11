@@ -10,16 +10,21 @@
 /* Theme color variables */
 
 :root {
-  --strong-text-color: #000000;
-  --grey-1-text-color: #111111;
-  --grey-2-text-color: #222222;
-  --grey-3-text-color: #333333;
-  --grey-4-text-color: #444444;
-  --grey-5-text-color: #555555;
-  --grey-6-text-color: #666666;
-  --grey-7-text-color: #777777;
-  --grey-8-text-color: #888888;
-  --grey-9-text-color: #999999;
+  --strong-color: #000000;
+  --grey-1-color: #111111;
+  --grey-2-color: #222222;
+  --grey-3-color: #333333;
+  --grey-4-color: #444444;
+  --grey-5-color: #555555;
+  --grey-6-color: #666666;
+  --grey-7-color: #777777;
+  --grey-8-color: #888888;
+  --grey-9-color: #999999;
+  --grey-a-color: #aaaaaa;
+  --grey-b-color: #bbbbbb;
+  --grey-c-color: #cccccc;
+  --grey-d-color: #dddddd;
+  --grey-e-color: #eeeeee;
   --layout-bg-color: #cccccc;
   --nav-bg-color: #e7e7e7;
   --nav-button-active-bg-color: #d5d5d5;
@@ -27,12 +32,23 @@
   --secondary-bg-color: #f5f5f5;
   --primary-bg-color: #ffffff;
   --dev-mode-bg-color: #007bd4;
-  --dev-mode-text-color: #ffffff;
+  --dev-mode-color: #ffffff;
+  --icon-button-bg-color: #77777700;
+  --icon-button-hover-bg-color: #77777711;
+  --icon-button-focus-bg-color: #77777733;
+  --spinner-grey-t: #66666633;
+  --spinner-grey-r: #66666677;
+  --spinner-grey-b: #666666bb;
+  --spinner-grey-l: #666666ff;
+  --spinner-blue-t: #007bd433;
+  --spinner-blue-r: #007bd477;
+  --spinner-blue-b: #007bd4bb;
+  --spinner-blue-l: #007bd4ff;
 }
 
 /* @media (prefers-color-scheme: dark) {
   :root {
-    --text-color: #fff;
+    --color: #fff;
     --primary-bg-color: #061a29;
   }
 } */
