@@ -1,7 +1,6 @@
 package container
 
 import (
-	"bufio"
 	"context"
 	"encoding/json"
 	"fmt"
@@ -42,19 +41,9 @@ func GetProcessDescription(ctx context.Context, dockerClient *dockerclient.Clien
 		}
 		defer statRequest.Body.Close()
 
-		scanner := bufio.NewScanner(statRequest.Body)
-		didScan := scanner.Scan()
-		if err = scanner.Err(); err != nil {
-			return api.ProcessDescription{}, fmt.Errorf("error scanning container stats: %w", err)
-		}
-
-		if !didScan {
-			return api.ProcessDescription{}, fmt.Errorf("could not read container stats")
-		}
-
 		var containerStats docker.ContainerStats
-		err = json.Unmarshal(scanner.Bytes(), &containerStats)
-		if err != nil {
+		decoder := json.NewDecoder(statRequest.Body)
+		if err := decoder.Decode(&containerStats); err != nil {
 			return api.ProcessDescription{}, fmt.Errorf("could not unmarshal container stats: %w", err)
 		}
 
@@ -87,9 +76,9 @@ func GetProcessDescription(ctx context.Context, dockerClient *dockerclient.Clien
 			return api.ProcessDescription{}, fmt.Errorf("could not top container: %w", err)
 		}
 
-		process.ChildrenExecutables = []string{}
-		for _, proc := range topBody.Processes {
-			process.ChildrenExecutables = append(process.ChildrenExecutables, proc[len(proc)-1])
+		process.ChildrenExecutables = make([]string, len(topBody.Processes))
+		for i, proc := range topBody.Processes {
+			process.ChildrenExecutables[i] = proc[len(proc)-1]
 		}
 
 	}
