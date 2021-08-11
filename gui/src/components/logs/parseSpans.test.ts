@@ -9,45 +9,52 @@ test('parseSpans', () => {
   check('', []);
   check('asdf', [
     {
-      type: 'plain',
       text: 'asdf',
     },
   ]);
   check('https://foo.com', [
     {
-      type: 'link',
       href: 'https://foo.com',
       text: 'https://foo.com',
     },
   ]);
   check('foo https://foo.com bar', [
     {
-      type: 'plain',
       text: 'foo ',
     },
     {
-      type: 'link',
       href: 'https://foo.com',
       text: 'https://foo.com',
     },
     {
-      type: 'plain',
       text: ' bar',
     },
   ]);
   check('foo <https://foo.com> bar', [
     {
-      type: 'plain',
       text: 'foo <',
     },
     {
-      type: 'link',
       href: 'https://foo.com',
       text: 'https://foo.com',
     },
     {
-      type: 'plain',
       text: '> bar',
+    },
+  ]);
+
+  check('\u001b[31mRed\u001b[32mGreen\u001b34mBlue', [
+    {
+      foreground: '#ff0000',
+      text: 'Red',
+    },
+    {
+      foreground: '#00ff00',
+      text: 'Green',
+    },
+    {
+      foreground: '#0000ff',
+      text: 'Blue',
     },
   ]);
 });
