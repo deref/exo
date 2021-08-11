@@ -106,7 +106,7 @@ func tailLogs(ctx context.Context, workspace api.Workspace, logRefs []string) er
 				prefix = timestamp
 			}
 
-			fmt.Printf("%s %s\n", prefix, event.Message)
+			fmt.Printf("%s %s%s\n", prefix, event.Message, termReset)
 		}
 		in.Cursor = &output.NextCursor
 		if len(output.Items) < 10 { // TODO: OK heuristic?
@@ -161,3 +161,5 @@ type Color struct {
 func (c Color) IsBlack() bool {
 	return c.Red == 0 && c.Green == 0 && c.Blue == 0
 }
+
+const termReset = "\u001b[0"
