@@ -29,6 +29,12 @@ func (c *Container) ensureImage(ctx context.Context) error {
 		return fmt.Errorf("inspecting image: %w", err)
 	}
 	c.ImageID = inspection.ID
+
+	c.Command = make([]string, len(inspection.Config.Cmd))
+	for i, cmd := range inspection.Config.Cmd {
+		c.Command[i] = cmd
+	}
+
 	return nil
 }
 
