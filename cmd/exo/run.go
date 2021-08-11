@@ -25,9 +25,9 @@ var runCmd = &cobra.Command{
 	Use:   "run [flags] [manifest-file]",
 	Short: "Runs all processes and tails their logs",
 	Long: `Runs all processes and tails their logs.
-	
+
 See 'exo help apply' for details on the manifest arguments.
-	
+
 If a workspace does not exist, one will be created in the current directory.
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -64,19 +64,28 @@ If a workspace does not exist, one will be created in the current directory.
 			return fmt.Errorf("applying manifest: %w", err)
 		}
 
+		components, err := workspace.DescribeComponents(ctx, &api.DescribeComponentsInput{})
+		if err != nil {
+			return fmt.Errorf("could not describe components: %w", err)
+		}
+
+		refs := make([]string, len(components.Components))
+		for i, component := range components.Components {
+			refs[i] = component.ID
+		}
+
 		// Tail all logs until interrupt.
 		(func() {
 			ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 			defer stop()
-			var logRefs []string
-			if err := tailLogs(ctx, workspace, logRefs); err != nil {
+			if err := tailLogs(ctx, workspace, refs); err != nil {
 				logger.Infof("error tailing logs: %v", err)
 			}
 		})()
 
 		// Stop workspace.
 		fmt.Println("stopping workspace...")
-		_, err := workspace.Stop(ctx, &api.StopInput{})
+		_, err = workspace.Stop(ctx, &api.StopInput{})
 		if err != nil {
 			return fmt.Errorf("stopping: %w", err)
 		}
