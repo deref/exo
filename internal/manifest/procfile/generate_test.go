@@ -3,7 +3,7 @@ package procfile_test
 import (
 	"testing"
 
-	"github.com/deref/exo/internal/external/procfile"
+	"github.com/deref/exo/internal/manifest/procfile"
 	"github.com/stretchr/testify/assert"
 )
 

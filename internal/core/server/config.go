@@ -10,9 +10,9 @@ import (
 	"strings"
 
 	"github.com/deref/exo/internal/core/api"
-	"github.com/deref/exo/internal/external/compose"
-	"github.com/deref/exo/internal/external/procfile"
 	"github.com/deref/exo/internal/manifest"
+	"github.com/deref/exo/internal/manifest/compose"
+	"github.com/deref/exo/internal/manifest/procfile"
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/osutil"
 	"github.com/deref/exo/internal/util/pathutil"

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/deref/exo/internal/external/compose"
 	"github.com/deref/exo/internal/manifest"
+	"github.com/deref/exo/internal/manifest/compose"
 	"github.com/deref/exo/internal/util/cmdutil"
 )
 
