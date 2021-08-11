@@ -1,14 +1,11 @@
 package server
 
 import (
-	"bufio"
 	"context"
-	"encoding/json"
 	"fmt"
 	"net/http"
 	"reflect"
 	"strings"
-	"time"
 
 	"github.com/deref/exo/internal/chrono"
 	"github.com/deref/exo/internal/core/api"
@@ -695,81 +692,10 @@ func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeP
 			}
 			output.Processes = append(output.Processes, process)
 		case "container":
-			var state container.State
-			if err := jsonutil.UnmarshalString(component.State, &state); err != nil {
-				// TODO: log error.
-				fmt.Printf("unmarshalling container state: %v\n", err)
-				continue
+			process, err := container.GetProcessDescription(ctx, ws.Docker, component)
+			if err != nil {
+				return nil, fmt.Errorf("could not get container process description: %w", err)
 			}
-			process := api.ProcessDescription{
-				ID:       component.ID,
-				Name:     component.Name,
-				Provider: "docker",
-			}
-
-			containerInfo, err := ws.Docker.ContainerInspect(ctx, state.ContainerID)
-			if err == nil {
-				process.Running = containerInfo.State.Running
-				if process.Running {
-					statRequest, err := ws.Docker.ContainerStats(ctx, state.ContainerID, false)
-					if err != nil {
-						return nil, fmt.Errorf("could not get container stats: %w", err)
-					}
-					defer statRequest.Body.Close()
-
-					scanner := bufio.NewScanner(statRequest.Body)
-					didScan := scanner.Scan()
-					if err = scanner.Err(); err != nil {
-						return nil, fmt.Errorf("error scanning container stats: %w", err)
-					}
-
-					if !didScan {
-						return nil, fmt.Errorf("could not read container stats")
-					}
-
-					var containerStats docker.ContainerStats
-					err = json.Unmarshal(scanner.Bytes(), &containerStats)
-					if err != nil {
-						return nil, fmt.Errorf("could not unmarshal container stats: %w", err)
-					}
-
-					process.ResidentMemory = containerStats.MemoryStats.Usage
-					layout := "2006-01-02T15:04:05.000000000Z"
-					startTime, err := time.Parse(layout, containerInfo.State.StartedAt)
-					if err != nil {
-						return nil, fmt.Errorf("could not parse start time: %w", err)
-					}
-
-					process.CreateTime = startTime.UnixNano() / 1e6
-
-					if containerStats.CPUStats.SystemCPUUsage != 0 {
-						process.CPUPercent = float64(containerStats.CPUStats.CPUUsage.TotalUsage) / 1e9
-					}
-
-					process.EnvVars = map[string]string{}
-					for _, env := range containerInfo.Config.Env {
-						decomposedEnv := strings.SplitN(env, "=", 2)
-						process.EnvVars[decomposedEnv[0]] = decomposedEnv[1]
-					}
-
-					process.Ports = []uint32{}
-					for p := range containerInfo.NetworkSettings.Ports {
-						process.Ports = append(process.Ports, uint32(p.Int()))
-					}
-
-					topBody, err := ws.Docker.ContainerTop(ctx, state.ContainerID, []string{})
-					if err != nil {
-						return nil, fmt.Errorf("could not top container: %w", err)
-					}
-
-					process.ChildrenExecutables = []string{}
-					for _, proc := range topBody.Processes {
-						process.ChildrenExecutables = append(process.ChildrenExecutables, proc[len(proc)-1])
-					}
-
-				}
-			}
-
 			output.Processes = append(output.Processes, process)
 		}
 	}
