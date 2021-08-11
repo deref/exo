@@ -36,3 +36,15 @@ working on the project.
 To test CLI changes against the auto-restarting watched development server, use
 `./script/dexo`. If you're using direnv (see above), then `dexo` will be on
 your `PATH`.
+
+### Troubleshooting
+
+#### The GUI won't start. I see an "Error: esbuild: Failed to install correctly" error in the log.
+
+Manually install esbuild with the following command:
+
+```bash
+node node_modules/esbuild/install.js
+```
+
+Then restart the GUI.
