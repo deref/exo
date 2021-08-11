@@ -61,6 +61,6 @@
 <Story
   name="Text Decorations"
   args={{
-    message: `\u001b[1mBold\u001b[0m \u001b[2mFaint\u001b[0m \u001b[3mItalic\u001b[0m \u001b[4mUnderline\u001b[0m \u001b[9mStrikethrough`,
+    message: `\u001b[1mBold\u001b[0m \u001b[2mFaint\u001b[0m \u001b[3mItalic\u001b[0m \u001b[4mUnderline\u001b[0m \u001b[5mBlink\u001b[0m \u001b[7mInvert\u001b[0m \u001b[9mStrikethrough`,
   }}
 />

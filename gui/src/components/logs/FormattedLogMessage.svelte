@@ -5,8 +5,9 @@
 
   const spans = parseSpans(message);
 
-  const spanStyle = (span: Span): string => {
+  const spanProps = (span: Span): Record<string, string | boolean> => {
     const styles: string[] = [];
+    const classes: string[] = [];
     const addStyle = (key: string, value: string) => {
       styles.push(`${key}: ${value}`);
     };
@@ -28,24 +29,34 @@
         break;
       case 'underline':
         addStyle('text-decoration', 'underline');
+        break;
       case 'blink':
+        classes.push('exo-message-blink');
+        break;
       case 'invert':
-        // Not supported (yet?).
+        classes.push('exo-message-invert');
         break;
       case 'strike':
         addStyle('text-decoration', 'line-through');
         break;
     }
-    return styles.join(';');
+    const props: Record<string, string | boolean> = {};
+    if (styles.length > 0) {
+      props['style'] = styles.join(':');
+    }
+    if (classes.length > 0) {
+      props['class'] = classes.join(' ');
+    }
+    return props;
   };
 </script>
 
 <span>
   {#each spans as span}
     {#if span.href != null}
-      <a href={span.href} style={spanStyle(span)}>{span.text}</a>
+      <a href={span.href} {...spanProps(span)}>{span.text}</a>
     {:else}
-      <span style={spanStyle(span)}>{span.text}</span>
+      <span {...spanProps(span)}>{span.text}</span>
     {/if}
   {/each}
 </span>
@@ -54,5 +65,33 @@
   a,
   span {
     white-space: pre;
+  }
+
+  :global(.exo-message-blink) {
+    animation: blink 1s linear infinite;
+  }
+
+  @keyframes blink {
+    0% {
+      visibility: hidden;
+    }
+    50% {
+      visibility: hidden;
+    }
+    100% {
+      visibility: visible;
+    }
+  }
+
+  :global(.exo-message-invert) {
+    background: white;
+    filter: invert(1);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    :global(.exo-message-invert) {
+      background: black;
+      filter: invert(1);
+    }
   }
 </style>
