@@ -667,19 +667,9 @@ func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeP
 			}
 			output.Processes = append(output.Processes, process)
 		case "container":
-			var state struct {
-				Running bool `json:"running"`
-			}
-			if err := jsonutil.UnmarshalString(component.State, &state); err != nil {
-				// TODO: log error.
-				fmt.Printf("unmarshalling container state: %v\n", err)
-				continue
-			}
-			process := api.ProcessDescription{
-				ID:       component.ID,
-				Name:     component.Name,
-				Provider: "docker",
-				Running:  state.Running,
+			process, err := container.GetProcessDescription(ctx, ws.Docker, component)
+			if err != nil {
+				return nil, fmt.Errorf("could not get container process description: %w", err)
 			}
 			output.Processes = append(output.Processes, process)
 		}
