@@ -49,3 +49,10 @@
     {/if}
   {/each}
 </span>
+
+<style>
+  a,
+  span {
+    white-space: pre;
+  }
+</style>

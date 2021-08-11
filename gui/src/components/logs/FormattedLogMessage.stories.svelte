@@ -18,10 +18,18 @@
 />
 
 <Story
+  name="Whitespace"
+  args={{
+    message:
+      'This half of the sentence is separated...                         ...from this half by many spaces',
+  }}
+/>
+
+<Story
   name="With Link"
   args={{
     message:
-      'This message uses a   string with a https://deref.io URL in it and formats  an anchor tag with the link.',
+      'This message uses a string with a https://deref.io URL in it and formats  an anchor tag with the link.',
   }}
 />
 
