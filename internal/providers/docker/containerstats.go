@@ -1,6 +1,6 @@
-package server
+package docker
 
-type DockerStats struct {
+type ContainerStats struct {
 	BlkioStats struct {
 		IoServiceBytesRecursive []struct {
 			Major int64  `json:"major"`

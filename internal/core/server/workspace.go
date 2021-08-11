@@ -727,7 +727,7 @@ func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeP
 						return nil, fmt.Errorf("could not read container stats")
 					}
 
-					var containerStats DockerStats
+					var containerStats docker.ContainerStats
 					err = json.Unmarshal(scanner.Bytes(), &containerStats)
 					if err != nil {
 						return nil, fmt.Errorf("could not unmarshal container stats: %w", err)
