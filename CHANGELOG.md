@@ -14,7 +14,7 @@ This project adhears to [CalVer](./doc/versioning.md).
 - Job system for reporting parallel task progress.
 - exo²: Use the current version of exo to develop the next version of exo.
 
-## Changed
+### Changed
 
 - Overhauled look and feel.
 
