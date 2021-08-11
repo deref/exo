@@ -45,15 +45,15 @@ test('parseSpans', () => {
 
   check('\u001b[31mRed\u001b[32mGreen\u001b34mBlue', [
     {
-      forground: '#ff0000',
+      foreground: '#ff0000',
       text: 'Red',
     },
     {
-      forground: '#00ff00',
+      foreground: '#00ff00',
       text: 'Green',
     },
     {
-      forground: '#0000ff',
+      foreground: '#0000ff',
       text: 'Blue',
     },
   ]);

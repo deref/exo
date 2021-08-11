@@ -10,8 +10,8 @@
     const addStyle = (key: string, value: string) => {
       styles.push(`${key}: ${value}`);
     };
-    if (span.forground != null) {
-      addStyle('color', span.forground);
+    if (span.foreground != null) {
+      addStyle('color', span.foreground);
     }
     if (span.background != null) {
       addStyle('background', span.background);

@@ -1,7 +1,7 @@
 export interface Span {
   href?: string;
   text: string;
-  forground?: string;
+  foreground?: string;
   background?: string;
   style?: Style;
 }
@@ -109,7 +109,7 @@ const lookupColor = (codes: number[]) => {
 export const parseSpans = (input: string): Span[] => {
   // TODO: Create reusable state machine so that multiple independent lines
   // can have persistent color styles across lines.
-  let forground: string | null = null;
+  let foreground: string | null = null;
   let background: string | null = null;
   let style: Style | null = null;
   let inLink = false;
@@ -132,7 +132,7 @@ export const parseSpans = (input: string): Span[] => {
         }
       };
       setOptional('href', href);
-      setOptional('forground', forground);
+      setOptional('foreground', foreground);
       setOptional('background', background);
       setOptional('style', style);
       spans.push(span);
@@ -175,7 +175,7 @@ export const parseSpans = (input: string): Span[] => {
       switch (command) {
         case 0: {
           // Reset.
-          forground = null;
+          foreground = null;
           background = null;
           style = null;
           break;
@@ -205,7 +205,7 @@ export const parseSpans = (input: string): Span[] => {
           break;
 
         case 38:
-          forground = lookupColor(codes);
+          foreground = lookupColor(codes);
           break;
         case 48:
           background = lookupColor(codes);
@@ -213,11 +213,11 @@ export const parseSpans = (input: string): Span[] => {
 
         default: {
           if (30 <= command && command <= 37) {
-            forground = standardColors[command - 30];
+            foreground = standardColors[command - 30];
           } else if (40 <= command && command <= 47) {
             background = standardColors[command - 40];
           } else if (90 <= command && command <= 97) {
-            forground = brightColors[command - 90];
+            foreground = brightColors[command - 90];
           } else if (100 <= command && command <= 107) {
             background = brightColors[command - 100];
           }
