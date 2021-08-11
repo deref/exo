@@ -5,6 +5,7 @@
     id: string;
     name: string;
     status: Status;
+    progress: number | null;
     children: TaskNode[];
   }
 </script>
@@ -17,6 +18,9 @@
   <div class="row">
     <div class="status">{value.status}</div>
     <div class="message">{value.name}</div>
+    {#if value.progress != null}
+      <div class="progress">{Math.floor(value.progress * 100)}%</div>
+    {/if}
   </div>
   {#if value.children.length > 0}
     <ul>
@@ -35,5 +39,10 @@
 
   .status {
     padding-right: 16px;
+  }
+
+  .progress {
+    text-align: right;
+    width: 50px;
   }
 </style>

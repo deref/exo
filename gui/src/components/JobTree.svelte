@@ -19,6 +19,7 @@
           id,
           name: undefined as any,
           status: undefined as any,
+          progress: null,
           children: [],
         };
         nodes.set(id, node);
@@ -33,6 +34,9 @@
       const child = getNode(task.id);
       child.name = task.name;
       child.status = task.status;
+      if (task.progress !== null) {
+        child.progress = task.progress.current / task.progress.total;
+      }
 
       if (task.parentId !== null) {
         const parent = getNode(task.parentId);
