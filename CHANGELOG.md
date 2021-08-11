@@ -8,9 +8,9 @@ This project adhears to [CalVer](./doc/versioning.md).
 
 ### Added
 
+- Docker Compose compatibility.
 - Linkify URLs in log messages.
 - Support colors and other text attributes in log messages.
-- Docker Compose compatibility.
 - Job system for reporting parallel task progress.
 
 ## Changed
