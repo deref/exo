@@ -9,6 +9,8 @@ import (
 	"net/http"
 	"strings"
 	"sync"
+	"sync/atomic"
+	"unsafe"
 
 	"github.com/deref/exo"
 	"github.com/deref/exo/internal/config"
@@ -154,14 +156,14 @@ func (t *defaultTelemetry) getLatestVersion() (interface{}, error) {
 }
 
 func (t *defaultTelemetry) sendRecordedTelemetry() {
-	// There is the possibility of dropping data since we are not atomically
-	// swapping the pointer, but telemetry is only a best-effort attempt,
-	// so we do not care.
-	g := t.operationGauge
-	if len(g.buckets) == 0 {
+	if len(t.operationGauge.buckets) == 0 {
 		return
 	}
-	t.operationGauge = newOperationGauge()
+
+	newGauge := newOperationGauge()
+	oldPtr := (*unsafe.Pointer)(unsafe.Pointer(&t.operationGauge))
+	swappedPtr := atomic.SwapPointer(oldPtr, unsafe.Pointer(newGauge))
+	g := (*SummaryGauge)(swappedPtr)
 
 	logging.CurrentLogger(t.ctx).Infof("Sending telemetry")
 
