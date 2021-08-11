@@ -24,7 +24,6 @@ import (
 type Kernel struct {
 	VarDir      string
 	Store       state.Store
-	Telemetry   telemetry.Telemetry
 	TaskTracker *task.TaskTracker
 }
 
@@ -72,11 +71,12 @@ func (kern *Kernel) FindWorkspace(ctx context.Context, input *api.FindWorkspaceI
 }
 
 func (kern *Kernel) GetVersion(ctx context.Context, input *api.GetVersionInput) (*api.GetVersionOutput, error) {
+	tel := telemetry.FromContext(ctx)
 	installed := exo.Version
 	current := true
 	var latest *string
-	if kern.Telemetry.IsEnabled() {
-		latestVersion, err := kern.Telemetry.LatestVersion()
+	if tel.IsEnabled() {
+		latestVersion, err := tel.LatestVersion(ctx)
 		if err != nil {
 			return nil, err
 		}
