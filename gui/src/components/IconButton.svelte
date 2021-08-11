@@ -1,32 +1,23 @@
 <script lang="ts">
-  export let active: boolean = false;
   export let tooltip: string = '';
 </script>
 
-<button
-  on:click
-  class={active ? 'active' : ''}
-  title={tooltip !== '' ? tooltip : undefined}
->
+<button on:click title={tooltip !== '' ? tooltip : undefined}>
   <slot />
 </button>
 
 <style>
   button {
-    font-family: inherit;
-    font-size: 0;
-    font-weight: 450;
-    padding: 6px;
-    color: #777777;
-    background-color: #77777700;
+    width: 32px;
+    height: 32px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: var(--grey-7-color);
+    background-color: var(--icon-button-bg-color);
     border-radius: 4px;
     border: none;
     outline: none;
-    margin-left: 4px;
-  }
-
-  button.active {
-    background-color: #55ccff33;
   }
 
   button :global(svg),
@@ -35,19 +26,11 @@
   }
 
   button:hover {
-    background-color: #77777711;
-    color: #444444;
-  }
-
-  button.active:hover {
-    background-color: #55ccff44;
+    background-color: var(--icon-button-hover-bg-color);
+    color: var(--grey-3-color);
   }
 
   button:focus {
-    background-color: #77777733;
-  }
-
-  button.active:focus {
-    background-color: #55ccff66;
+    background-color: var(--icon-button-focus-bg-color);
   }
 </style>

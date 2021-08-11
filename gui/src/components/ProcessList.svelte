@@ -18,7 +18,6 @@
   import CheckboxButton from './CheckboxButton.svelte';
   import AddSVG from './mono/add.svelte';
   import RunSVG from './mono/play.svelte';
-  import LoadingSVG from './mono/refresh.svelte';
   import StopSVG from './mono/stop.svelte';
   import DeleteSVG from './mono/delete.svelte';
 
@@ -104,20 +103,31 @@
         {#each processList.data as { id, name, running } (id)}
           <tr>
             <td>
-              {#if statusPending.has(id)}
-                <button disabled><LoadingSVG /></button>
-              {:else if running}
-                <IconButton
-                  tooltip="Stop process"
-                  on:click={() => setProcRun(id, false)}
-                  active><StopSVG /></IconButton
-                >
-              {:else}
-                <IconButton
-                  tooltip="Run process"
-                  on:click={() => setProcRun(id, true)}><RunSVG /></IconButton
-                >
-              {/if}
+              <div class="run-controls">
+                {#if statusPending.has(id)}
+                  <div class="spinner" />
+                {:else if running}
+                  <div class="spinner running unhover-only" />
+                  <div class="hover-only">
+                    <IconButton
+                      tooltip="Stop process"
+                      on:click={() => setProcRun(id, false)}
+                    >
+                      <StopSVG />
+                    </IconButton>
+                  </div>
+                {:else}
+                  <div class="stopped unhover-only" />
+                  <div class="hover-only">
+                    <IconButton
+                      tooltip="Run process"
+                      on:click={() => setProcRun(id, true)}
+                    >
+                      <RunSVG />
+                    </IconButton>
+                  </div>
+                {/if}
+              </div>
             </td>
 
             <td
@@ -146,8 +156,10 @@
                 on:click={() => {
                   void deleteProcess(workspace, id);
                   setProcLogs(id, false);
-                }}><DeleteSVG /></IconButton
+                }}
               >
+                <DeleteSVG />
+              </IconButton>
             </td>
           </tr>
         {:else}
@@ -221,6 +233,50 @@
     justify-content: space-between;
   }
 
+  .run-controls {
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    margin-right: 8px;
+  }
+
+  tr:not(:hover) .hover-only {
+    display: none;
+  }
+
+  tr:hover .unhover-only {
+    display: none;
+  }
+
+  .stopped {
+    width: 16px;
+    height: 16px;
+    border-radius: 3px;
+    background: var(--grey-c-color);
+  }
+
+  .spinner {
+    width: 20px;
+    height: 20px;
+    border-radius: 100%;
+    animation: spin 1s infinite linear;
+    border: 2px solid;
+    border-top-color: var(--spinner-grey-t);
+    border-right-color: var(--spinner-grey-r);
+    border-bottom-color: var(--spinner-grey-b);
+    border-left-color: var(--spinner-grey-l);
+  }
+
+  .spinner.running {
+    border-top-color: var(--spinner-blue-t);
+    border-right-color: var(--spinner-blue-r);
+    border-bottom-color: var(--spinner-blue-b);
+    border-left-color: var(--spinner-blue-l);
+  }
+
   .process-name {
     display: inline-block;
     text-decoration: none;
@@ -230,12 +286,21 @@
     font-weight: 550;
     padding: 8px 12px;
     border-radius: 4px;
-    color: #555;
-    background: #eee;
+    color: var(--grey-5-color);
+    background: var(--grey-e-color);
   }
 
   .process-name:hover {
-    color: #000;
-    background: #e0e0e0;
+    color: var(--strong-color);
+    background: var(--grey-d-color);
+  }
+
+  @keyframes spin {
+    from {
+      transform: rotate(0deg);
+    }
+    to {
+      transform: rotate(360deg);
+    }
   }
 </style>

@@ -10,7 +10,7 @@
     position: relative;
     border: none;
     background: transparent;
-    color: var(--grey-9-text-color);
+    color: var(--grey-9-color);
     height: 48px;
     width: 48px;
     display: flex;
@@ -25,15 +25,15 @@
 
   button.active {
     background: var(--nav-button-active-bg-color);
-    color: var(--grey-3-text-color);
+    color: var(--grey-3-color);
   }
 
   button:hover {
-    color: var(--grey-6-text-color);
+    color: var(--grey-6-color);
   }
 
   button.active:hover {
     background: var(--nav-button-active-hover-bg-color);
-    color: var(--grey-1-text-color);
+    color: var(--grey-1-color);
   }
 </style>
