@@ -273,10 +273,10 @@
   .spinner {
     position: absolute;
     z-index: 3;
-    top: 6px;
-    left: 6px;
-    width: 20px;
-    height: 20px;
+    top: 7px;
+    left: 7px;
+    width: 18px;
+    height: 18px;
     border-radius: 100%;
     animation: spin 1s infinite linear;
     border: 2px solid;
@@ -284,6 +284,7 @@
     border-right-color: var(--spinner-grey-r);
     border-bottom-color: var(--spinner-grey-b);
     border-left-color: var(--spinner-grey-l);
+    transition: all 0.125s;
   }
 
   .spinner.running {
