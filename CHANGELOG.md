@@ -12,6 +12,7 @@ This project adhears to [CalVer](./doc/versioning.md).
 - Linkify URLs in log messages.
 - Support colors and other text attributes in log messages.
 - Job system for reporting parallel task progress.
+- exo²: Use the current version of exo to develop the next version of exo.
 
 ## Changed
 
