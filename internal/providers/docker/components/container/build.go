@@ -135,6 +135,9 @@ func (c *Container) buildImage(ctx context.Context) error {
 						if event.Status != "" {
 							subtask.ReportMessage(event.Status)
 						}
+						if event.Status == "Pull complete" {
+							_ = subtask.Finish()
+						}
 						if event.ProgressDetail.Total > 0 {
 							subtask.ReportProgress(event.ProgressDetail.Current, event.ProgressDetail.Total)
 						}
