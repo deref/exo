@@ -6,6 +6,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/aybabtme/rgbterm"
 	"github.com/deref/exo/internal/core/api"
 	taskapi "github.com/deref/exo/internal/task/api"
 	"github.com/spf13/cobra"
@@ -106,13 +107,21 @@ func (jp *jobPrinter) printTree(w io.Writer, tasks []api.TaskDescription) {
 
 		prefix := ""
 		if node.Parent != nil {
-			if len(node.Children) > 0 || node.Status != taskapi.StatusRunning {
-				prefix += "  "
-			} else if len(jp.Spinner) > 0 {
-				offset := jp.Iteration + idx
-				frame := jp.Spinner[offset%len(jp.Spinner)]
-				prefix += frame + " "
+			switch node.Status {
+			case taskapi.StatusPending:
+				prefix += rgbterm.FgString("·", 0, 123, 211)
+			case taskapi.StatusSuccess:
+				prefix += rgbterm.FgString("✓", 28, 196, 22)
+			case taskapi.StatusFailure:
+				prefix += rgbterm.FgString("⨯", 215, 55, 30)
+			case taskapi.StatusRunning:
+				if len(jp.Spinner) > 0 {
+					offset := jp.Iteration + idx
+					frame := jp.Spinner[offset%len(jp.Spinner)]
+					prefix += rgbterm.FgString(frame, 172, 66, 199)
+				}
 			}
+			prefix += " "
 
 			depth := depthOf(node)
 			prefix += strings.Repeat("│  ", depth-2)
@@ -133,7 +142,7 @@ func (jp *jobPrinter) printTree(w io.Writer, tasks []api.TaskDescription) {
 			label += fmt.Sprintf(" %-2d%%", int(progress*100.0))
 		}
 
-		fmt.Fprintf(w, "%s%s %s %s\n", prefix, label, node.Message, node.Status)
+		fmt.Fprintf(w, "%s%s %s\n", prefix, label, node.Message)
 		for i, child := range node.Children {
 			rec(i, child)
 		}
