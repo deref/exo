@@ -43,7 +43,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 
 	cfg := &config.Config{}
 	config.MustLoadDefault(cfg)
-	paths := cmdutil.MustMakeDirectories(cfg)
+	mustMakeDirectories(cfg)
 
 	tel := telemetry.New(&cfg.Telemetry)
 	tel.StartSession()
@@ -53,7 +53,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 		// Replace the standard logger with a logger writes to the var directory
 		// and handles log rotation.
 		golog.SetOutput(&lumberjack.Logger{
-			Filename:   filepath.Join(paths.VarDir, "exod.log"),
+			Filename:   filepath.Join(cfg.VarDir, "exod.log"),
 			MaxSize:    20, // megabytes
 			MaxBackups: 3,
 			MaxAge:     28, //days
@@ -71,7 +71,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 			{1, "stdout"},
 			{2, "stderr"},
 		} {
-			dumpPath := filepath.Join(paths.VarDir, "exod."+redirect.Name)
+			dumpPath := filepath.Join(cfg.VarDir, "exod."+redirect.Name)
 			dumpFile, err := os.OpenFile(dumpPath, os.O_WRONLY|os.O_CREATE|os.O_SYNC|os.O_TRUNC, 0600)
 			if err != nil {
 				logger.Infof("creating %s dump file: %v", redirect.Name, err)
@@ -89,7 +89,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 		cmdutil.Fatalf("chdir failed: %w", err)
 	}
 
-	statePath := filepath.Join(paths.VarDir, "state.json")
+	statePath := filepath.Join(cfg.VarDir, "state.json")
 	store := statefile.New(statePath)
 
 	dockerClient, err := docker.NewClientWithOpts()
@@ -103,7 +103,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	}
 
 	kernelCfg := &kernel.Config{
-		VarDir:      paths.VarDir,
+		VarDir:      cfg.VarDir,
 		Store:       store,
 		Telemetry:   tel,
 		SyslogPort:  cfg.Log.SyslogPort,
@@ -152,4 +152,19 @@ func RunServer(ctx context.Context, flags map[string]string) {
 		Addr:    addr,
 		Handler: httputil.HandlerWithContext(ctx, mux),
 	})
+}
+
+func mustMakeDirectories(cfg *config.Config) {
+	paths := []string{
+		cfg.HomeDir,
+		cfg.BinDir,
+		cfg.VarDir,
+		cfg.RunDir,
+	}
+
+	for _, path := range paths {
+		if err := os.Mkdir(path, 0700); err != nil && !os.IsExist(err) {
+			cmdutil.Fatalf("making %q: %w", path, err)
+		}
+	}
 }

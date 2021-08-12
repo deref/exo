@@ -36,4 +36,7 @@ func main() {
 	if err := config.LoadDefault(cfg); err != nil {
 		cmdutil.Fatalf("loading config: %w", err)
 	}
+	if err := rootCmd.Execute(); err != nil {
+		cmdutil.Fatalf("%w", err)
+	}
 }
