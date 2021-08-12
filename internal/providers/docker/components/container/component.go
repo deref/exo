@@ -24,6 +24,8 @@ type State struct {
 }
 
 type ImageProps struct {
-	ID      string            `json:"id"`
-	Command strslice.StrSlice `json:"command"`
+	ID         string            `json:"id"`
+	Command    strslice.StrSlice `json:"command"`
+	WorkingDir string            `json:"workingDir"`
+	Entrypoint strslice.StrSlice `json:"entrypoint"`
 }

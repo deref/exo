@@ -42,10 +42,22 @@ func (c *Container) create(ctx context.Context) error {
 			StartPeriod: time.Duration(c.Spec.Healthcheck.StartPeriod),
 		}
 	}
+
 	cmd := strslice.StrSlice(c.Spec.Command)
 	if len(cmd) == 0 {
 		cmd = c.State.Image.Command
 	}
+
+	entrypoint := strslice.StrSlice(c.Spec.Entrypoint)
+	if len(cmd) == 0 {
+		entrypoint = c.State.Image.Entrypoint
+	}
+
+	workingDir := c.Spec.WorkingDir
+	if workingDir == "" {
+		workingDir = c.State.Image.WorkingDir
+	}
+
 	containerCfg := &container.Config{
 		Hostname:     c.Spec.Hostname,
 		Domainname:   c.Spec.Domainname,
@@ -62,7 +74,7 @@ func (c *Container) create(ctx context.Context) error {
 		Image: c.State.Image.ID,
 		// Volumes         map[string]struct{} // List of volumes (mounts) used for the container
 		WorkingDir: c.Spec.WorkingDir,
-		Entrypoint: strslice.StrSlice(c.Spec.Entrypoint),
+		Entrypoint: entrypoint,
 		// NetworkDisabled bool                `json:",omitempty"` // Is network disabled
 		MacAddress: c.Spec.MacAddress,
 		// OnBuild         []string            // ONBUILD metadata that were defined on the image Dockerfile

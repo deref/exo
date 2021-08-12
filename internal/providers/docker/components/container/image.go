@@ -31,6 +31,8 @@ func (c *Container) ensureImage(ctx context.Context) error {
 
 	c.State.Image.ID = inspection.ID
 	c.State.Image.Command = inspection.Config.Cmd
+	c.State.Image.WorkingDir = inspection.Config.WorkingDir
+	c.State.Image.Entrypoint = inspection.Config.Entrypoint
 
 	return nil
 }
