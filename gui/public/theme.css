@@ -6,7 +6,7 @@
   --scrollbar-height: 4px;
   --scrollbar-thumb-radius: 1px;
   --panel-padding: 1rem;
-  --panel-overflow-y: scroll;
+  --panel-overflow-y: auto;
   --panel-overflow-x: hidden;
   --panel-bg-color: var(--primary-bg-color);
 }

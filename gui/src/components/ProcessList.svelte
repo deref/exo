@@ -86,7 +86,11 @@
   });
 </script>
 
-<Panel title="Processes">
+<Panel
+  title="Processes"
+  backRoute="/"
+  --panel-bg-color="var(--secondary-bg-color)"
+>
   <div slot="actions">
     <IconButton
       tooltip="Add new process"
@@ -292,7 +296,7 @@
     width: 14px;
     height: 14px;
     border-radius: 2px;
-    background: var(--grey-d-color);
+    background: var(--grey-c-color);
   }
 
   .control {
@@ -342,17 +346,17 @@
     padding: 6px 9px;
     border-radius: 4px;
     color: var(--grey-5-color);
-    background: var(--grey-e-color);
+    background: var(--grey-d-color);
     outline: none;
   }
 
   .process-name:hover {
     color: var(--strong-color);
-    background: var(--grey-d-color);
+    background: var(--grey-c-color);
   }
 
   .process-name:focus {
-    background: var(--grey-c-color);
+    background: var(--grey-b-color);
   }
 
   @keyframes spin {

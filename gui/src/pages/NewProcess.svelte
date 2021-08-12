@@ -62,7 +62,12 @@ my-app --port 4000
 
 <Layout>
   <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
-  <Panel title="New process" backRoute={workspaceRoute} --panel-padding="4rem">
+  <Panel
+    title="New process"
+    backRoute={workspaceRoute}
+    --panel-padding="4rem"
+    --panel-overflow-y="scroll"
+  >
     <form
       on:submit|preventDefault={async () => {
         updateFields();
