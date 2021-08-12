@@ -64,9 +64,6 @@ func tailLogs(ctx context.Context, workspace api.Workspace, logRefs []string, st
 	labelWidth := 0
 	logToComponent := make(map[string]string, len(descriptions.Processes))
 	for _, process := range descriptions.Processes {
-		if len(logRefs) == 0 {
-			logIDs = append(logIDs, process.ID)
-		}
 		for _, logName := range log.ComponentLogNames(process.Provider, process.ID) {
 			logToComponent[logName] = process.Name
 			if labelWidth < len(process.Name) {
@@ -123,7 +120,7 @@ func tailLogs(ctx context.Context, workspace api.Workspace, logRefs []string, st
 			for _, proc := range descriptions.Processes {
 				for _, id := range logIDs {
 					if proc.ID == id && !proc.Running {
-						return fmt.Errorf("process stopped running")
+						return fmt.Errorf("process stopped running: %q", proc.Name)
 					}
 				}
 			}
