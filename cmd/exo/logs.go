@@ -87,7 +87,7 @@ func tailLogs(ctx context.Context, workspace api.Workspace, logRefs []string, st
 				cmdutil.Warnf("invalid event timestamp: %q", event.Timestamp)
 				continue
 			}
-			timestamp := t.Format("15:04:05")
+			timestamp := t.Local().Format("15:04:05")
 
 			var prefix string
 			if showName {
