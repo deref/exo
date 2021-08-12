@@ -7,8 +7,9 @@ import (
 
 type Container struct {
 	docker.ComponentBase
-	Spec
-	State
+
+	Spec  Spec
+	State State
 
 	SyslogPort uint
 }
