@@ -3,38 +3,39 @@
   import BackSVG from './mono/leftarrow.svelte';
   import * as router from 'svelte-spa-router';
 
-  export let title: string | undefined = undefined;
-  export let backRoute: string | undefined = undefined;
+  export let title: string = '';
+  export let backRoute: string = '';
 </script>
 
 <div class="panel">
-  {#if $$slots.actions || title !== undefined || backRoute !== undefined}
-    <header>
-      <div class="header-title">
-        {#if backRoute !== undefined}
-          <IconButton
-            tooltip="Go back"
-            on:click={() => {
-              router.push(backRoute ?? '');
-            }}
-          >
-            <BackSVG />
-          </IconButton>
-        {/if}
+  <header>
+    <div class="header-title">
+      {#if backRoute}
+        <IconButton
+          tooltip="Go back"
+          on:click={() => {
+            router.push(backRoute ?? '');
+          }}
+        >
+          <BackSVG />
+        </IconButton>
+      {/if}
 
-        {#if title !== undefined}
-          <h1>{title}</h1>
-        {/if}
-      </div>
+      {#if title}
+        <h1>{title}</h1>
+      {/if}
+    </div>
 
-      <div class="header-actions">
-        <slot name="actions" />
-      </div>
-    </header>
-  {/if}
+    <div class="header-actions">
+      <slot name="actions" />
+    </div>
+  </header>
   <section>
     <slot />
   </section>
+  {#if $$slots.bottom}
+    <slot name="bottom" />
+  {/if}
 </div>
 
 <style>
@@ -46,12 +47,16 @@
 
   .panel {
     height: 100vh;
-    overflow-y: scroll;
-    overflow-x: hidden;
+    overflow: hidden;
     background: var(--panel-bg-color);
+    display: grid;
+    grid-auto-flow: row;
+    grid-template-rows: max-content auto max-content;
   }
 
   section {
+    overflow-y: var(--panel-overflow-y);
+    overflow-x: var(--panel-overflow-x);
     padding: var(--panel-padding);
   }
 
