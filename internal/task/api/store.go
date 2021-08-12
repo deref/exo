@@ -37,11 +37,12 @@ type CreateTaskOutput struct {
 }
 
 type UpdateTaskInput struct {
-	ID       string  `json:"id"`
-	Status   *string `json:"status"`
-	Message  *string `json:"message"`
-	Started  *string `json:"started"`
-	Finished *string `json:"finished"`
+	ID       string        `json:"id"`
+	Status   *string       `json:"status"`
+	Message  *string       `json:"message"`
+	Started  *string       `json:"started"`
+	Finished *string       `json:"finished"`
+	Progress *TaskProgress `json:"progress"`
 }
 
 type UpdateTaskOutput struct {
@@ -71,13 +72,19 @@ func BuildTaskStoreMux(b *josh.MuxBuilder, factory func(req *http.Request) TaskS
 type TaskDescription struct {
 	ID string `json:"id"`
 	// ID of root task in this tree.
-	JobID    string  `json:"jobId"`
-	ParentID *string `json:"parentId"`
-	Name     string  `json:"name"`
-	Status   string  `json:"status"`
-	Message  string  `json:"message"`
-	Created  string  `json:"created"`
-	Updated  string  `json:"updated"`
-	Started  *string `json:"started"`
-	Finished *string `json:"finished"`
+	JobID    string        `json:"jobId"`
+	ParentID *string       `json:"parentId"`
+	Name     string        `json:"name"`
+	Status   string        `json:"status"`
+	Message  string        `json:"message"`
+	Created  string        `json:"created"`
+	Updated  string        `json:"updated"`
+	Started  *string       `json:"started"`
+	Finished *string       `json:"finished"`
+	Progress *TaskProgress `json:"progress"`
+}
+
+type TaskProgress struct {
+	Current int `json:"current"`
+	Total   int `json:"total"`
 }

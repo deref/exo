@@ -13,6 +13,7 @@ import (
 	"strings"
 
 	"github.com/deref/exo/internal/core/api"
+	"github.com/deref/exo/internal/task"
 	"github.com/deref/exo/internal/util/pathutil"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
@@ -36,6 +37,8 @@ func (c *Container) buildImage(ctx context.Context) error {
 	buildContext, buildContextWriter := io.Pipe()
 	defer buildContextWriter.Close()
 	var eg errgroup.Group
+
+	buildTask := task.CurrentTask(ctx)
 
 	spec := c.Spec
 
@@ -105,27 +108,49 @@ func (c *Container) buildImage(ctx context.Context) error {
 		resp, err := c.Docker.ImageBuild(ctx, buildContext, opts)
 		if resp.Body != nil {
 			defer resp.Body.Close()
-			// TODO [DOCKER_PROGRESS]: Capture progress.
-			//_, _ = io.Copy(os.Stdout, resp.Body)
+
+			subtasks := make(map[string]*task.Task)
+
 			scanner := bufio.NewScanner(resp.Body)
 			for scanner.Scan() {
-				var d struct {
-					ErrorDetail struct {
-						Code    int    `json:"code"`
-						Message string `json:"message"`
-					} `json:"errorDetail"`
-					Aux struct {
-						ID string `json:"ID"`
-					} `json:"aux"`
-				}
-				if err := json.Unmarshal(scanner.Bytes(), &d); err != nil {
+				var event buildEvent
+				if err := json.Unmarshal(scanner.Bytes(), &event); err != nil {
 					return fmt.Errorf("failed to unmarshal docker build log: %w", err)
 				}
-				if d.ErrorDetail.Message != "" {
-					return fmt.Errorf("docker build error: " + d.ErrorDetail.Message)
+
+				if event.ErrorDetail.Message != "" {
+					// TODO: Report error code too.
+					return fmt.Errorf("docker build error: " + event.ErrorDetail.Message)
 				}
-				if strings.HasPrefix(d.Aux.ID, "sha256:") {
-					c.State.Image.ID = d.Aux.ID
+
+				if event.ID != "" {
+					var subtask *task.Task
+					if subtask == nil && event.Status == "Pulling fs layer" {
+						subtask = buildTask.StartChild("layer " + event.ID)
+						subtasks[event.ID] = subtask
+					} else {
+						subtask = subtasks[event.ID]
+					}
+					if subtask != nil {
+						if event.Status != "" {
+							subtask.ReportMessage(event.Status)
+						}
+						if event.Status == "Pull complete" {
+							_ = subtask.Finish()
+						}
+						if event.ProgressDetail.Total > 0 {
+							subtask.ReportProgress(event.ProgressDetail.Current, event.ProgressDetail.Total)
+						}
+					}
+				}
+
+				if event.Stream != "" {
+					message := strings.TrimSpace(event.Stream)
+					buildTask.ReportMessage(message)
+				}
+
+				if strings.HasPrefix(event.Aux.ID, "sha256:") {
+					c.State.Image.ID = event.Aux.ID
 				}
 			}
 		}
@@ -141,6 +166,32 @@ func (c *Container) buildImage(ctx context.Context) error {
 	return eg.Wait()
 }
 
+// See <github.com/docker/docker/pkg/jsonmessage>.
+type buildEvent struct {
+	// Image tag, layer IDs, and other identifiers, contingent on content of "status".
+	ID string `json:"id"`
+	// Log message, with trailing newline.
+	Stream string `json:"stream"`
+	// Ad-hoc event type with some payload data too.
+	Status string `json:"status"`
+	// Present for some statuses, such as "Downloading", and "Extracting".
+	ProgressDetail struct {
+		Current int `json:"current"`
+		Total   int `json:"total"`
+	} `json:"progressDetail"`
+	// A rendered progress bar. We prefer "progressDetail".
+	Progress string `json:"progress"`
+	// Non-zero code and/or non-empty message when something has gone wrong.
+	ErrorDetail struct {
+		Code    int    `json:"code"`
+		Message string `json:"message"`
+	} `json:"errorDetail"`
+	// Reports a built ID.
+	Aux struct {
+		ID string `json:"ID"`
+	} `json:"aux"`
+}
+
 func tarBuildContext(w io.WriteCloser, root string) (err error) {
 	defer func() {
 		err2 := w.Close()
@@ -152,7 +203,6 @@ func tarBuildContext(w io.WriteCloser, root string) (err error) {
 	tw := tar.NewWriter(w)
 
 	filepath.Walk(root, func(file string, info os.FileInfo, err error) error {
-		fmt.Println("taring", file)
 		// Generate and write file header.
 		header, err := tar.FileInfoHeader(info, file)
 		if err != nil {
@@ -162,7 +212,6 @@ func tarBuildContext(w io.WriteCloser, root string) (err error) {
 		if err != nil {
 			return err
 		}
-		fmt.Println(">>", header.Name)
 		if err := tw.WriteHeader(header); err != nil {
 			return err
 		}
@@ -180,7 +229,6 @@ func tarBuildContext(w io.WriteCloser, root string) (err error) {
 		return nil
 	})
 
-	fmt.Println("tarred")
 	if err := tw.Close(); err != nil {
 		return err
 	}

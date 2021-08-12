@@ -7,9 +7,7 @@ import (
 	"io"
 	"os"
 	"strings"
-	"syscall"
 	"time"
-	"unsafe"
 
 	"github.com/deref/exo/internal/core/api"
 	taskapi "github.com/deref/exo/internal/task/api"
@@ -44,14 +42,14 @@ func watchJob(ctx context.Context, kernel api.Kernel, jobID string) error {
 
 	// Refresh rate starts fast, in case the job completes fast, but will
 	// slow over time to minimize overhead and UI flicker.
-	delay := 10.0
+	delay := 5.0
 
 	w := &lineCountingWriter{
 		Underlying: out,
 	}
 
 	jp := &jobPrinter{}
-	jp.Spinner = `/-\\|/-` // TODO: `⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏`
+	jp.Spinner = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
 
 	var job api.TaskDescription
 loop:
@@ -84,9 +82,8 @@ loop:
 		case <-ctx.Done():
 			break loop
 		case <-time.After(time.Duration(delay) * time.Millisecond):
-			// Refresh at least twice per second.
-			if delay < 500 {
-				delay *= 1.5
+			if delay < 100 {
+				delay *= 1.3
 			}
 		}
 		jp.Iteration++
@@ -112,20 +109,6 @@ var clearLine = fmt.Sprintf("%c[%dA%c[2K", esc, 1, esc)
 
 func clearLines(n int) {
 	_, _ = fmt.Fprint(os.Stdout, strings.Repeat(clearLine, n))
-}
-
-func getTermSize() (w, h int) {
-	out, err := os.OpenFile("/dev/tty", os.O_WRONLY, 0)
-	if err != nil {
-		return 0, 0
-	}
-	var size struct {
-		rows uint16
-		cols uint16
-	}
-	defer out.Close()
-	_, _, _ = syscall.Syscall(syscall.SYS_IOCTL, out.Fd(), uintptr(syscall.TIOCGWINSZ), uintptr(unsafe.Pointer(&size)))
-	return int(size.cols), int(size.rows)
 }
 
 type lineCountingWriter struct {
