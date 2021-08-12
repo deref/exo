@@ -10,12 +10,12 @@
 
   const workspaceId = params.workspace;
   const workspace = api.workspace(workspaceId);
+  const workspaceRoute = `/workspaces/${encodeURIComponent(workspaceId)}`;
 </script>
 
 <Layout>
   <WorkspaceNav {workspaceId} active="Networking" slot="navbar" />
-  <MonoPanel>
-    <h1>Networks</h1>
+  <MonoPanel title="Networks" backRoute={workspaceRoute}>
     <ComponentTable
       load={workspace.describeNetworks}
       columns={[
@@ -33,11 +33,3 @@
     />
   </MonoPanel>
 </Layout>
-
-<style>
-  h1 {
-    padding: 0;
-    margin: 0;
-    margin-bottom: 30px;
-  }
-</style>

@@ -10,12 +10,12 @@
 
   const workspaceId = params.workspace;
   const workspace = api.workspace(workspaceId);
+  const workspaceRoute = `/workspaces/${encodeURIComponent(workspaceId)}`;
 </script>
 
 <Layout>
   <WorkspaceNav {workspaceId} active="Storage" slot="navbar" />
-  <MonoPanel>
-    <h1>Volumes</h1>
+  <MonoPanel title="Volumes" backRoute={workspaceRoute}>
     <ComponentTable
       load={workspace.describeVolumes}
       columns={[
@@ -33,11 +33,3 @@
     />
   </MonoPanel>
 </Layout>
-
-<style>
-  h1 {
-    padding: 0;
-    margin: 0;
-    margin-bottom: 30px;
-  }
-</style>

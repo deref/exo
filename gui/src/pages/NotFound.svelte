@@ -4,7 +4,7 @@
 </script>
 
 <Layout>
-  <MonoPanel>
+  <MonoPanel title="Error" backRoute="/">
     <div>
       <h1>404 page not found</h1>
     </div>

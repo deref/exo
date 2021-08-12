@@ -13,10 +13,11 @@
 </script>
 
 <Layout>
-  <MonoPanel>
-    Use <Code>exo gui</Code> in your terminal to launch into the current directory's
-    workspace.
-    <h2>Workspaces</h2>
+  <MonoPanel title="Workspaces">
+    <p>
+      Use <Code>exo gui</Code> in your terminal to launch into the current directory's
+      workspace.
+    </p>
     <div>
       {#await workspaces}
         loading workspaces...
@@ -42,8 +43,8 @@
 </Layout>
 
 <style>
-  h2 {
-    margin-top: 36px;
+  p {
+    margin: 0;
     margin-bottom: 24px;
   }
 

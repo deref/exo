@@ -16,7 +16,7 @@
 </script>
 
 <Layout>
-  <MonoPanel>
+  <MonoPanel title="New workspace" backRoute="/">
     <div>
       <form
         on:submit|preventDefault={async () => {

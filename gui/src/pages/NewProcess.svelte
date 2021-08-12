@@ -62,7 +62,11 @@ my-app --port 4000
 
 <Layout>
   <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
-  <MonoPanel --panel-padding="4rem">
+  <MonoPanel
+    title="New process"
+    backRoute={workspaceRoute}
+    --panel-padding="4rem"
+  >
     <form
       on:submit|preventDefault={async () => {
         updateFields();
@@ -168,8 +172,8 @@ my-app --port 4000
     padding: 0;
   }
 
-  :global(input),
-  :global(textarea),
+  * :global(input),
+  * :global(textarea),
   .edit-as,
   .script-editor {
     margin-bottom: 24px;

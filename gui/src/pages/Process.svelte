@@ -19,6 +19,7 @@
 
   const workspaceId = params.workspace;
   const workspace = api.workspace(workspaceId);
+  const workspaceRoute = `/workspaces/${encodeURIComponent(workspaceId)}`;
 
   const processId = params.process;
 
@@ -67,97 +68,88 @@
 
 <Layout>
   <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
-  <MonoPanel>
-    {#if process}
-      <div>
-        <h1>{process.name}</h1>
-        {#if process.running}
-          <CheckeredTableWrapper>
-            <table>
-              <tbody>
-                <tr>
-                  <td class="label">Status</td>
-                  <td>{process.running ? 'Running' : 'Stopped'}</td>
-                  <td />
-                </tr>
-                <tr>
-                  <td class="label">CPU</td>
-                  <td>{process.cpuPercent.toFixed(2)}%</td>
-                  <td
-                    ><svg
-                      bind:this={sparklineSvg}
-                      class="sparkline"
-                      width="100"
-                      height="30"
-                      stroke-width="3"
-                    /></td
-                  >
-                </tr>
-                <tr>
-                  <td class="label">Resident Memory</td>
-                  <td><BytesLabel value={process.residentMemory} /></td>
-                  <td />
-                </tr>
-                <tr>
-                  <td class="label">Started at</td>
-                  <td
-                    ><span title={new Date(process.createTime).toISOString()}
-                      >{new Date(process.createTime).toLocaleTimeString()}</span
-                    ></td
-                  >
-                  <td
-                    ><svg
-                      class="sparkline"
-                      width="100"
-                      height="30"
-                      stroke-width="3"
-                    /></td
-                  >
-                </tr>
-                <tr>
-                  <td class="label">Local Ports</td>
-                  <td>{process.ports?.join(', ') ?? 'None'}</td>
-                  <td />
-                </tr>
-                <tr>
-                  <td class="label">Children</td>
-                  <td>{process.childrenExecutables?.join(', ') ?? 'None'}</td>
-                  <td />
-                </tr>
-              </tbody>
-            </table>
-          </CheckeredTableWrapper>
-          <br />
-          <h3>Environment</h3>
-          <CheckeredTableWrapper>
+  {#if process}
+    <MonoPanel title={process.name} backRoute={workspaceRoute}>
+      {#if process.running}
+        <CheckeredTableWrapper>
+          <table>
             <tbody>
-              <table>
-                {#each Object.entries(process.envVars ?? {}) as [name, val] (name)}
-                  <tr>
-                    <td class="label">{name}</td>
-                    <td><code><pre>{val}</pre></code></td>
-                  </tr>
-                {/each}
-              </table>
+              <tr>
+                <td class="label">Status</td>
+                <td>{process.running ? 'Running' : 'Stopped'}</td>
+                <td />
+              </tr>
+              <tr>
+                <td class="label">CPU</td>
+                <td>{process.cpuPercent.toFixed(2)}%</td>
+                <td
+                  ><svg
+                    bind:this={sparklineSvg}
+                    class="sparkline"
+                    width="100"
+                    height="30"
+                    stroke-width="3"
+                  /></td
+                >
+              </tr>
+              <tr>
+                <td class="label">Resident Memory</td>
+                <td><BytesLabel value={process.residentMemory} /></td>
+                <td />
+              </tr>
+              <tr>
+                <td class="label">Started at</td>
+                <td
+                  ><span title={new Date(process.createTime).toISOString()}
+                    >{new Date(process.createTime).toLocaleTimeString()}</span
+                  ></td
+                >
+                <td
+                  ><svg
+                    class="sparkline"
+                    width="100"
+                    height="30"
+                    stroke-width="3"
+                  /></td
+                >
+              </tr>
+              <tr>
+                <td class="label">Local Ports</td>
+                <td>{process.ports?.join(', ') ?? 'None'}</td>
+                <td />
+              </tr>
+              <tr>
+                <td class="label">Children</td>
+                <td>{process.childrenExecutables?.join(', ') ?? 'None'}</td>
+                <td />
+              </tr>
             </tbody>
-          </CheckeredTableWrapper>
-          <br />
-        {:else}
-          <p>Process is not running</p>
-        {/if}
-      </div>
-    {:else}
-      Loading...
-    {/if}
-  </MonoPanel>
+          </table>
+        </CheckeredTableWrapper>
+        <br />
+        <h3>Environment</h3>
+        <CheckeredTableWrapper>
+          <tbody>
+            <table>
+              {#each Object.entries(process.envVars ?? {}) as [name, val] (name)}
+                <tr>
+                  <td class="label">{name}</td>
+                  <td><code><pre>{val}</pre></code></td>
+                </tr>
+              {/each}
+            </table>
+          </tbody>
+        </CheckeredTableWrapper>
+      {:else}
+        <span>Process is not running</span>
+      {/if}
+    </MonoPanel>
+  {:else}
+    <MonoPanel title="Loading..." backRoute={workspaceRoute} />
+  {/if}
 </Layout>
 
 <style>
-  h1 {
-    padding: 0;
-    margin: 0;
-    margin-bottom: 30px;
-  }
   .sparkline {
     stroke: red;
     fill: none;

@@ -11,8 +11,7 @@
 </script>
 
 <Layout>
-  <MonoPanel>
-    Jobs
+  <MonoPanel title="Jobs" backRoute="/">
     <!-- TODO: common loader component -->
     {#await jobs}
       Loading...
