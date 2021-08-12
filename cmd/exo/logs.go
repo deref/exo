@@ -119,6 +119,8 @@ func tailLogs(ctx context.Context, workspace api.Workspace, logRefs []string, st
 
 			for _, proc := range descriptions.Processes {
 				for _, id := range logIDs {
+					// TODO: Compare some metadata on the log, not the log itself.
+					// SEE NOTE [LOG_COMPONENTS].
 					if proc.ID == id && !proc.Running {
 						return fmt.Errorf("process stopped running: %q", proc.Name)
 					}
