@@ -5,6 +5,7 @@
   --scrollbar-width: 8px;
   --scrollbar-height: 4px;
   --scrollbar-thumb-radius: 1px;
+  --panel-padding: 2rem;
 }
 
 /* Theme color variables */
@@ -44,6 +45,8 @@
   --spinner-blue-r: #007bd477;
   --spinner-blue-b: #007bd4bb;
   --spinner-blue-l: #007bd4ff;
+  --heavy-3d-box-shadow: 0 0.33px 0 1px hsla(0, 0%, 100%, 0.15),
+    0 8px 12px -6px rgba(0, 0, 0, 0.3), 0 0.5px 0 1px rgba(0, 0, 0, 0.2);
 }
 
 /* @media (prefers-color-scheme: dark) {
