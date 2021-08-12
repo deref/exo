@@ -44,14 +44,14 @@ func watchJob(ctx context.Context, kernel api.Kernel, jobID string) error {
 
 	// Refresh rate starts fast, in case the job completes fast, but will
 	// slow over time to minimize overhead and UI flicker.
-	delay := 10.0
+	delay := 5.0
 
 	w := &lineCountingWriter{
 		Underlying: out,
 	}
 
 	jp := &jobPrinter{}
-	jp.Spinner = `/-\\|/-` // TODO: `⠋⠙⠹⠸⠼⠴⠦⠧⠇⠏`
+	jp.Spinner = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
 
 	var job api.TaskDescription
 loop:
@@ -84,9 +84,8 @@ loop:
 		case <-ctx.Done():
 			break loop
 		case <-time.After(time.Duration(delay) * time.Millisecond):
-			// Refresh at least twice per second.
-			if delay < 500 {
-				delay *= 1.5
+			if delay < 100 {
+				delay *= 1.3
 			}
 		}
 		jp.Iteration++

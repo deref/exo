@@ -56,7 +56,7 @@ type taskNode struct {
 }
 
 type jobPrinter struct {
-	Spinner   string
+	Spinner   []string
 	Iteration int
 	ShowJobID bool
 }
@@ -111,7 +111,7 @@ func (jp *jobPrinter) printTree(w io.Writer, tasks []api.TaskDescription) {
 			} else if len(jp.Spinner) > 0 {
 				offset := jp.Iteration + idx
 				frame := jp.Spinner[offset%len(jp.Spinner)]
-				prefix += string(frame) + " "
+				prefix += frame + " "
 			}
 
 			depth := depthOf(node)
