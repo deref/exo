@@ -11,7 +11,7 @@ import (
 )
 
 func (c *Container) ensureImage(ctx context.Context) error {
-	if c.State.ImageID != "" {
+	if c.State.Image.ID != "" {
 		// TODO: When should we rebuild?
 		return nil
 	}
@@ -28,7 +28,12 @@ func (c *Container) ensureImage(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("inspecting image: %w", err)
 	}
-	c.State.ImageID = inspection.ID
+
+	c.State.Image.ID = inspection.ID
+	c.State.Image.Command = inspection.Config.Cmd
+	c.State.Image.WorkingDir = inspection.Config.WorkingDir
+	c.State.Image.Entrypoint = inspection.Config.Entrypoint
+
 	return nil
 }
 

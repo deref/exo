@@ -42,6 +42,7 @@ func (c *Container) create(ctx context.Context) error {
 			StartPeriod: time.Duration(c.Spec.Healthcheck.StartPeriod),
 		}
 	}
+
 	containerCfg := &container.Config{
 		Hostname:     c.Spec.Hostname,
 		Domainname:   c.Spec.Domainname,
@@ -54,7 +55,8 @@ func (c *Container) create(ctx context.Context) error {
 		Cmd:         strslice.StrSlice(c.Spec.Command),
 		Healthcheck: healthCfg,
 		// ArgsEscaped     bool                `json:",omitempty"` // True if command is already escaped (meaning treat as a command line) (Windows specific).
-		Image: c.State.ImageID,
+
+		Image: c.State.Image.ID,
 		// Volumes         map[string]struct{} // List of volumes (mounts) used for the container
 		WorkingDir: c.Spec.WorkingDir,
 		Entrypoint: strslice.StrSlice(c.Spec.Entrypoint),
@@ -65,6 +67,19 @@ func (c *Container) create(ctx context.Context) error {
 		StopSignal: c.Spec.StopSignal,
 		// Shell           strslice.StrSlice   `json:",omitempty"` // Shell for shell-form of RUN, CMD, ENTRYPOINT
 	}
+
+	if len(containerCfg.Cmd) == 0 {
+		containerCfg.Cmd = c.State.Image.Command
+	}
+
+	if len(containerCfg.Entrypoint) == 0 {
+		containerCfg.Entrypoint = c.State.Image.Entrypoint
+	}
+
+	if containerCfg.WorkingDir == "" {
+		containerCfg.WorkingDir = c.State.Image.WorkingDir
+	}
+
 	if c.Spec.StopGracePeriod != nil {
 		timeout := int(time.Duration(*c.Spec.StopGracePeriod).Round(time.Second).Seconds())
 		containerCfg.StopTimeout = &timeout
