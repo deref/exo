@@ -9,6 +9,7 @@ import (
 	"github.com/aybabtme/rgbterm"
 	"github.com/deref/exo/internal/core/api"
 	taskapi "github.com/deref/exo/internal/task/api"
+	"github.com/deref/exo/internal/util/term"
 	"github.com/spf13/cobra"
 )
 
@@ -63,6 +64,8 @@ type jobPrinter struct {
 }
 
 func (jp *jobPrinter) printTree(w io.Writer, tasks []api.TaskDescription) {
+	termW, _ := term.GetSize()
+
 	nodes := make(map[string]*taskNode)
 	getNode := func(id string) *taskNode {
 		node := nodes[id]
@@ -137,12 +140,35 @@ func (jp *jobPrinter) printTree(w io.Writer, tasks []api.TaskDescription) {
 		if jp.ShowJobID {
 			label += " " + node.ID
 		}
+		if node.Parent != nil {
+			prefix += " "
+		}
+		prefix += label + " "
+
+		suffix := ""
 		if node.Progress != nil {
 			progress := float64(node.Progress.Current) / float64(node.Progress.Total)
-			label += fmt.Sprintf(" %-2d%%", int(progress*100.0))
+			if progress < 1 {
+				suffix = fmt.Sprintf("  %2d %% ", int(progress*100.0))
+			}
 		}
 
-		fmt.Fprintf(w, "%s%s %s\n", prefix, label, node.Message)
+		message := node.Message
+
+		// Truncate message.
+		maxMessageW := 50
+		if termW > 0 {
+			prefixW := term.VisualLength(prefix)
+			suffixW := term.VisualLength(suffix)
+			maxMessageW = termW - prefixW - suffixW
+		}
+		message = term.TrimToVisualLength(message, maxMessageW)
+
+		// Right align suffix.
+		messageW := term.VisualLength(message)
+		spacer := strings.Repeat(" ", maxMessageW-messageW)
+
+		fmt.Fprintf(w, "%s%s%s%s\n", prefix, message, spacer, suffix)
 		for i, child := range node.Children {
 			rec(i, child)
 		}

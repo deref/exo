@@ -7,9 +7,7 @@ import (
 	"io"
 	"os"
 	"strings"
-	"syscall"
 	"time"
-	"unsafe"
 
 	"github.com/deref/exo/internal/core/api"
 	taskapi "github.com/deref/exo/internal/task/api"
@@ -111,20 +109,6 @@ var clearLine = fmt.Sprintf("%c[%dA%c[2K", esc, 1, esc)
 
 func clearLines(n int) {
 	_, _ = fmt.Fprint(os.Stdout, strings.Repeat(clearLine, n))
-}
-
-func getTermSize() (w, h int) {
-	out, err := os.OpenFile("/dev/tty", os.O_WRONLY, 0)
-	if err != nil {
-		return 0, 0
-	}
-	var size struct {
-		rows uint16
-		cols uint16
-	}
-	defer out.Close()
-	_, _, _ = syscall.Syscall(syscall.SYS_IOCTL, out.Fd(), uintptr(syscall.TIOCGWINSZ), uintptr(unsafe.Pointer(&size)))
-	return int(size.cols), int(size.rows)
 }
 
 type lineCountingWriter struct {
