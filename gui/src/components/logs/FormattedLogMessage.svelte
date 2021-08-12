@@ -63,11 +63,6 @@
 </span>
 
 <style>
-  a,
-  span {
-    white-space: pre;
-  }
-
   :global(.exo-message-blink) {
     animation: blink 1s linear infinite;
   }

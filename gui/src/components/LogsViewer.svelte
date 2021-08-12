@@ -97,27 +97,25 @@
 </script>
 
 <Panel title="Logs" --panel-padding="0" --panel-overflow-y="hidden">
-  <section>
-    {#if hasData(state.events)}
-      <div class="log-table-container" bind:this={logViewport}>
-        <table>
-          {#each state.events.data as event (event.id)}
-            <tr class="log-entry" style={logStyleFromHash(event.log)}>
-              <td>{shortDate(event.timestamp)}</td>
-              <td>{friendlyName(event.log)}</td>
-              <td>
-                <FormattedLogMessage message={event.message} />
-              </td>
-            </tr>
-          {/each}
-        </table>
-      </div>
-    {:else if isUnresolved(state.events)}
-      <div>Loading logs...</div>
-    {:else}
-      <div>Error fetching logs: {state.events.message}</div>
-    {/if}
-  </section>
+  {#if hasData(state.events)}
+    <div class="log-table-container" bind:this={logViewport}>
+      <table>
+        {#each state.events.data as event (event.id)}
+          <tr class="log-entry" style={logStyleFromHash(event.log)}>
+            <td>{shortDate(event.timestamp)}</td>
+            <td>{friendlyName(event.log)}</td>
+            <td>
+              <FormattedLogMessage message={event.message} />
+            </td>
+          </tr>
+        {/each}
+      </table>
+    </div>
+  {:else if isUnresolved(state.events)}
+    <div>Loading logs...</div>
+  {:else}
+    <div>Error fetching logs: {state.events.message}</div>
+  {/if}
   <div slot="bottom">
     <Textbox
       placeholder="Filter..."
@@ -132,14 +130,11 @@
 </Panel>
 
 <style>
-  section {
-    height: 100%;
-  }
-
   .log-table-container {
     width: 100%;
     height: 100%;
     overflow-y: scroll;
+    overflow-x: hidden;
   }
 
   table {
@@ -159,6 +154,7 @@
     padding: 0 0.3em;
     vertical-align: text-top;
     color: #333333;
+    white-space: pre-wrap;
   }
 
   tr:hover td {
