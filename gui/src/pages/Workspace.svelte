@@ -1,6 +1,6 @@
 <script lang="ts">
   import Layout from '../components/Layout.svelte';
-  import MonoPanel from '../components/MonoPanel.svelte';
+  import Panel from '../components/Panel.svelte';
   import LogsViewer from '../components/LogsViewer.svelte';
   import ProcessList from '../components/ProcessList.svelte';
   import WorkspaceNav from '../components/WorkspaceNav.svelte';
@@ -14,12 +14,12 @@
 
 <Layout>
   <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
-  <MonoPanel --panel-padding="0">
+  <Panel --panel-padding="0">
     <div>
       <ProcessList {workspace} {workspaceId} />
       <LogsViewer {workspace} {workspaceId} />
     </div>
-  </MonoPanel>
+  </Panel>
 </Layout>
 
 <style>

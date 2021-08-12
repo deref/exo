@@ -1,6 +1,6 @@
 <script lang="ts">
   import Layout from '../components/Layout.svelte';
-  import MonoPanel from '../components/MonoPanel.svelte';
+  import Panel from '../components/Panel.svelte';
   import StringLabel from '../components/StringLabel.svelte';
   import WorkspaceNav from '../components/WorkspaceNav.svelte';
   import ComponentTable from '../components/ComponentTable.svelte';
@@ -15,7 +15,7 @@
 
 <Layout>
   <WorkspaceNav {workspaceId} active="Components" slot="navbar" />
-  <MonoPanel title="Components" backRoute={workspaceRoute}>
+  <Panel title="Components" backRoute={workspaceRoute}>
     <ComponentTable
       load={workspace.describeComponents}
       columns={[
@@ -36,5 +36,5 @@
         },
       ]}
     />
-  </MonoPanel>
+  </Panel>
 </Layout>

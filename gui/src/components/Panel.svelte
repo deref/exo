@@ -48,7 +48,7 @@
     height: 100vh;
     overflow-y: scroll;
     overflow-x: hidden;
-    background: var(--primary-bg-color);
+    background: var(--panel-bg-color);
   }
 
   section {

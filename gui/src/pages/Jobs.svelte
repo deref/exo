@@ -1,7 +1,7 @@
 <script lang="ts">
   import Link from '../components/Link.svelte';
   import Layout from '../components/Layout.svelte';
-  import MonoPanel from '../components/MonoPanel.svelte';
+  import Panel from '../components/Panel.svelte';
   import { api } from '../lib/api';
 
   const tasks = api.kernel.describeTasks();
@@ -11,7 +11,7 @@
 </script>
 
 <Layout>
-  <MonoPanel title="Jobs" backRoute="/">
+  <Panel title="Jobs" backRoute="/">
     <!-- TODO: common loader component -->
     {#await jobs}
       Loading...
@@ -53,5 +53,5 @@
     {:catch}
       Error.
     {/await}
-  </MonoPanel>
+  </Panel>
 </Layout>

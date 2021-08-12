@@ -2,7 +2,7 @@
   import Layout from '../components/Layout.svelte';
   import Button from '../components/Button.svelte';
   import Textbox from '../components/Textbox.svelte';
-  import MonoPanel from '../components/MonoPanel.svelte';
+  import Panel from '../components/Panel.svelte';
   import ErrorLabel from '../components/ErrorLabel.svelte';
   import { api, isClientError } from '../lib/api';
   import * as qs from 'qs';
@@ -16,7 +16,7 @@
 </script>
 
 <Layout>
-  <MonoPanel title="New workspace" backRoute="/">
+  <Panel title="New workspace" backRoute="/">
     <div>
       <form
         on:submit|preventDefault={async () => {
@@ -46,7 +46,7 @@
       </form>
       <ErrorLabel value={error} />
     </div>
-  </MonoPanel>
+  </Panel>
 </Layout>
 
 <style>

@@ -1,7 +1,7 @@
 <script lang="ts">
   import Layout from '../components/Layout.svelte';
   import JobTree from '../components/JobTree.svelte';
-  import MonoPanel from '../components/MonoPanel.svelte';
+  import Panel from '../components/Panel.svelte';
   import { api } from '../lib/api';
 
   export let params = { job: '' };
@@ -12,7 +12,7 @@
 </script>
 
 <Layout>
-  <MonoPanel title={`Job: ${jobId}`} backRoute="/jobs">
+  <Panel title={`Job: ${jobId}`} backRoute="/jobs">
     <!-- TODO: common loader component -->
     {#await tasks}
       Loading...
@@ -21,5 +21,5 @@
     {:catch}
       Error
     {/await}
-  </MonoPanel>
+  </Panel>
 </Layout>

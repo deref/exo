@@ -1,7 +1,7 @@
 <script>
   import Code from '../components/Code.svelte';
   import Layout from '../components/Layout.svelte';
-  import MonoPanel from '../components/MonoPanel.svelte';
+  import Panel from '../components/Panel.svelte';
   import { api } from '../lib/api';
   import { onDestroy, onMount } from 'svelte';
 
@@ -15,7 +15,7 @@
 </script>
 
 <Layout>
-  <MonoPanel>
+  <Panel>
     <div>
       <h3>
         <Code>exo</Code> server is offline
@@ -24,7 +24,7 @@
         Run <Code>exo daemon</Code> in your terminal to start.
       </p>
     </div>
-  </MonoPanel>
+  </Panel>
 </Layout>
 
 <style>

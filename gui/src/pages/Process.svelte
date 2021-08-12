@@ -1,6 +1,6 @@
 <script lang="ts">
   import Layout from '../components/Layout.svelte';
-  import MonoPanel from '../components/MonoPanel.svelte';
+  import Panel from '../components/Panel.svelte';
   import BytesLabel from '../components/BytesLabel.svelte';
   import WorkspaceNav from '../components/WorkspaceNav.svelte';
   import CheckeredTableWrapper from '../components/CheckeredTableWrapper.svelte';
@@ -69,7 +69,7 @@
 <Layout>
   <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
   {#if process}
-    <MonoPanel title={process.name} backRoute={workspaceRoute}>
+    <Panel title={process.name} backRoute={workspaceRoute}>
       {#if process.running}
         <CheckeredTableWrapper>
           <table>
@@ -143,9 +143,9 @@
       {:else}
         <span>Process is not running</span>
       {/if}
-    </MonoPanel>
+    </Panel>
   {:else}
-    <MonoPanel title="Loading..." backRoute={workspaceRoute} />
+    <Panel title="Loading..." backRoute={workspaceRoute} />
   {/if}
 </Layout>
 

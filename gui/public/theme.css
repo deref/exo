@@ -6,6 +6,7 @@
   --scrollbar-height: 4px;
   --scrollbar-thumb-radius: 1px;
   --panel-padding: 1rem;
+  --panel-bg-color: var(--primary-bg-color);
 }
 
 /* Theme color variables */

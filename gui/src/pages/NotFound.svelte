@@ -1,14 +1,14 @@
 <script lang="ts">
   import Layout from '../components/Layout.svelte';
-  import MonoPanel from '../components/MonoPanel.svelte';
+  import Panel from '../components/Panel.svelte';
 </script>
 
 <Layout>
-  <MonoPanel title="Error" backRoute="/">
+  <Panel title="Error" backRoute="/">
     <div>
       <h1>404 page not found</h1>
     </div>
-  </MonoPanel>
+  </Panel>
 </Layout>
 
 <style>

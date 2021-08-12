@@ -3,7 +3,7 @@
   import Button from '../components/Button.svelte';
   import Textbox from '../components/Textbox.svelte';
   import CodeBlock from '../components/CodeBlock.svelte';
-  import MonoPanel from '../components/MonoPanel.svelte';
+  import Panel from '../components/Panel.svelte';
   import ErrorLabel from '../components/ErrorLabel.svelte';
   import ShellEditor from '../components/ShellEditor.svelte';
   import WorkspaceNav from '../components/WorkspaceNav.svelte';
@@ -62,11 +62,7 @@ my-app --port 4000
 
 <Layout>
   <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
-  <MonoPanel
-    title="New process"
-    backRoute={workspaceRoute}
-    --panel-padding="4rem"
-  >
+  <Panel title="New process" backRoute={workspaceRoute} --panel-padding="4rem">
     <form
       on:submit|preventDefault={async () => {
         updateFields();
@@ -162,7 +158,7 @@ my-app --port 4000
       {/if}
       <ErrorLabel value={error} />
     </form>
-  </MonoPanel>
+  </Panel>
 </Layout>
 
 <style>
