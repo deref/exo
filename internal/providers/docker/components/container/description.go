@@ -48,8 +48,7 @@ func GetProcessDescription(ctx context.Context, dockerClient *dockerclient.Clien
 		}
 
 		process.ResidentMemory = containerStats.MemoryStats.Usage
-		layout := "2006-01-02T15:04:05.000000000Z"
-		startTime, err := time.Parse(layout, containerInfo.State.StartedAt)
+		startTime, err := time.Parse(time.RFC3339Nano, containerInfo.State.StartedAt)
 		if err != nil {
 			return api.ProcessDescription{}, fmt.Errorf("could not parse start time: %w", err)
 		}
