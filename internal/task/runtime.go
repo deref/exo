@@ -134,8 +134,10 @@ func (t *Task) updateTask(status string, message string, finished string, curren
 		return
 	}
 	input := api.UpdateTaskInput{
-		ID:     t.id,
-		Status: &status,
+		ID: t.id,
+	}
+	if status != "" {
+		input.Status = &status
 	}
 	if message != "" {
 		input.Message = &message
