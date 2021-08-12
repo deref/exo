@@ -7,46 +7,55 @@
   export let backRoute: string | undefined = undefined;
 </script>
 
-{#if $$slots.actions || title !== undefined || backRoute !== undefined}
-  <header>
-    <div class="header-title">
-      {#if backRoute !== undefined}
-        <IconButton
-          tooltip="Go back"
-          on:click={() => {
-            router.push(backRoute ?? '');
-          }}
-        >
-          <BackSVG />
-        </IconButton>
-      {/if}
+<div class="panel">
+  {#if $$slots.actions || title !== undefined || backRoute !== undefined}
+    <header>
+      <div class="header-title">
+        {#if backRoute !== undefined}
+          <IconButton
+            tooltip="Go back"
+            on:click={() => {
+              router.push(backRoute ?? '');
+            }}
+          >
+            <BackSVG />
+          </IconButton>
+        {/if}
 
-      {#if title !== undefined}
-        <h1>{title}</h1>
-      {/if}
-    </div>
+        {#if title !== undefined}
+          <h1>{title}</h1>
+        {/if}
+      </div>
 
-    <div class="header-actions">
-      <slot name="actions" />
-    </div>
-  </header>
-{/if}
-<section>
-  <slot />
-</section>
+      <div class="header-actions">
+        <slot name="actions" />
+      </div>
+    </header>
+  {/if}
+  <section>
+    <slot />
+  </section>
+</div>
 
 <style>
-  section {
+  section,
+  header,
+  .panel {
     position: relative;
+  }
+
+  .panel {
+    height: 100vh;
     overflow-y: scroll;
     overflow-x: hidden;
     background: var(--primary-bg-color);
+  }
+
+  section {
     padding: var(--panel-padding);
-    height: 100vh;
   }
 
   header {
-    background: var(--primary-bg-color);
     border-bottom: 1px solid var(--layout-bg-color);
     overflow: hidden;
     display: flex;
