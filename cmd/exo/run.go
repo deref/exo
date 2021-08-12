@@ -68,8 +68,8 @@ If a workspace does not exist, one will be created in the current directory.
 		(func() {
 			ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 			defer stop()
-			refs := []string{}
-			if err := tailLogs(ctx, workspace, refs); err != nil {
+			var logRefs []string
+			if err := tailLogs(ctx, workspace, logRefs); err != nil {
 				logger.Infof("error tailing logs: %v", err)
 			}
 		})()
