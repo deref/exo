@@ -25,9 +25,9 @@ var runCmd = &cobra.Command{
 	Use:   "run [flags] [manifest-file]",
 	Short: "Runs all processes and tails their logs",
 	Long: `Runs all processes and tails their logs.
-	
+
 See 'exo help apply' for details on the manifest arguments.
-	
+
 If a workspace does not exist, one will be created in the current directory.
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
@@ -69,7 +69,8 @@ If a workspace does not exist, one will be created in the current directory.
 			ctx, stop := signal.NotifyContext(ctx, os.Interrupt, syscall.SIGTERM)
 			defer stop()
 			var logRefs []string
-			if err := tailLogs(ctx, workspace, logRefs); err != nil {
+			stopOnError := true
+			if err := tailLogs(ctx, workspace, logRefs, stopOnError); err != nil {
 				logger.Infof("error tailing logs: %v", err)
 			}
 		})()
