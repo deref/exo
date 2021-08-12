@@ -1,6 +1,10 @@
 <script lang="ts">
-  import sparkline from '@fnando/sparkline';
   import Layout from '../components/Layout.svelte';
+  import MonoPanel from '../components/MonoPanel.svelte';
+  import BytesLabel from '../components/BytesLabel.svelte';
+  import WorkspaceNav from '../components/WorkspaceNav.svelte';
+  import CheckeredTableWrapper from '../components/CheckeredTableWrapper.svelte';
+  import sparkline from '@fnando/sparkline';
   import { api } from '../lib/api';
   import { onDestroy, onMount } from 'svelte';
   import {
@@ -9,16 +13,12 @@
     processes,
   } from '../lib/process/store';
   import type { RemoteData } from '../lib/api';
-  import BytesLabel from '../components/BytesLabel.svelte';
-  import WorkspaceNav from '../components/WorkspaceNav.svelte';
-  import MonoPanel from '../components/MonoPanel.svelte';
-  import CheckeredTableWrapper from '../components/CheckeredTableWrapper.svelte';
   import type { ProcessDescription } from 'src/lib/process/types';
+
   export let params = { workspace: '', process: '' };
 
   const workspaceId = params.workspace;
   const workspace = api.workspace(workspaceId);
-  const workspaceRoute = `/workspaces/${encodeURIComponent(workspaceId)}`;
 
   const processId = params.process;
 
@@ -68,108 +68,96 @@
 <Layout>
   <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
   <MonoPanel>
-    <section>
-      {#if process}
-        <div>
-          <div id="heading">
-            <h1>{process.name}</h1>
-          </div>
-          {#if process.running}
-            <CheckeredTableWrapper>
-              <table>
-                <tbody>
-                  <tr>
-                    <td class="label">Status</td>
-                    <td>{process.running ? 'Running' : 'Stopped'}</td>
-                    <td />
-                  </tr>
-                  <tr>
-                    <td class="label">CPU</td>
-                    <td>{process.cpuPercent.toFixed(2)}%</td>
-                    <td
-                      ><svg
-                        bind:this={sparklineSvg}
-                        class="sparkline"
-                        width="100"
-                        height="30"
-                        stroke-width="3"
-                      /></td
-                    >
-                  </tr>
-                  <tr>
-                    <td class="label">Resident Memory</td>
-                    <td><BytesLabel value={process.residentMemory} /></td>
-                    <td />
-                  </tr>
-                  <tr>
-                    <td class="label">Started at</td>
-                    <td
-                      ><span title={new Date(process.createTime).toISOString()}
-                        >{new Date(
-                          process.createTime,
-                        ).toLocaleTimeString()}</span
-                      ></td
-                    >
-                    <td
-                      ><svg
-                        class="sparkline"
-                        width="100"
-                        height="30"
-                        stroke-width="3"
-                      /></td
-                    >
-                  </tr>
-                  <tr>
-                    <td class="label">Local Ports</td>
-                    <td>{process.ports?.join(', ') ?? 'None'}</td>
-                    <td />
-                  </tr>
-                  <tr>
-                    <td class="label">Children</td>
-                    <td>{process.childrenExecutables?.join(', ') ?? 'None'}</td>
-                    <td />
-                  </tr>
-                </tbody>
-              </table>
-            </CheckeredTableWrapper>
-            <br />
-            <h3>Environment</h3>
-            <CheckeredTableWrapper>
+    {#if process}
+      <div>
+        <h1>{process.name}</h1>
+        {#if process.running}
+          <CheckeredTableWrapper>
+            <table>
               <tbody>
-                <table>
-                  {#each Object.entries(process.envVars ?? {}) as [name, val] (name)}
-                    <tr>
-                      <td class="label">{name}</td>
-                      <td><code><pre>{val}</pre></code></td>
-                    </tr>
-                  {/each}
-                </table>
+                <tr>
+                  <td class="label">Status</td>
+                  <td>{process.running ? 'Running' : 'Stopped'}</td>
+                  <td />
+                </tr>
+                <tr>
+                  <td class="label">CPU</td>
+                  <td>{process.cpuPercent.toFixed(2)}%</td>
+                  <td
+                    ><svg
+                      bind:this={sparklineSvg}
+                      class="sparkline"
+                      width="100"
+                      height="30"
+                      stroke-width="3"
+                    /></td
+                  >
+                </tr>
+                <tr>
+                  <td class="label">Resident Memory</td>
+                  <td><BytesLabel value={process.residentMemory} /></td>
+                  <td />
+                </tr>
+                <tr>
+                  <td class="label">Started at</td>
+                  <td
+                    ><span title={new Date(process.createTime).toISOString()}
+                      >{new Date(process.createTime).toLocaleTimeString()}</span
+                    ></td
+                  >
+                  <td
+                    ><svg
+                      class="sparkline"
+                      width="100"
+                      height="30"
+                      stroke-width="3"
+                    /></td
+                  >
+                </tr>
+                <tr>
+                  <td class="label">Local Ports</td>
+                  <td>{process.ports?.join(', ') ?? 'None'}</td>
+                  <td />
+                </tr>
+                <tr>
+                  <td class="label">Children</td>
+                  <td>{process.childrenExecutables?.join(', ') ?? 'None'}</td>
+                  <td />
+                </tr>
               </tbody>
-            </CheckeredTableWrapper>
-            <br />
-          {:else}
-            <p>Process is not running</p>
-          {/if}
-        </div>
-      {:else}
-        Loading...
-      {/if}
-    </section>
+            </table>
+          </CheckeredTableWrapper>
+          <br />
+          <h3>Environment</h3>
+          <CheckeredTableWrapper>
+            <tbody>
+              <table>
+                {#each Object.entries(process.envVars ?? {}) as [name, val] (name)}
+                  <tr>
+                    <td class="label">{name}</td>
+                    <td><code><pre>{val}</pre></code></td>
+                  </tr>
+                {/each}
+              </table>
+            </tbody>
+          </CheckeredTableWrapper>
+          <br />
+        {:else}
+          <p>Process is not running</p>
+        {/if}
+      </div>
+    {:else}
+      Loading...
+    {/if}
   </MonoPanel>
 </Layout>
 
 <style>
-  section {
-    height: 100%;
-    margin: 0 30px;
-    padding-bottom: 16px;
+  h1 {
+    padding: 0;
+    margin: 0;
+    margin-bottom: 30px;
   }
-
-  #heading {
-    display: flex;
-    align-items: center;
-  }
-
   .sparkline {
     stroke: red;
     fill: none;

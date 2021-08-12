@@ -1,9 +1,9 @@
 <script lang="ts">
   import Layout from '../components/Layout.svelte';
-  import ProcessList from '../components/ProcessList.svelte';
-  import LogsViewer from '../components/LogsViewer.svelte';
-  import WorkspaceNav from '../components/WorkspaceNav.svelte';
   import MonoPanel from '../components/MonoPanel.svelte';
+  import LogsViewer from '../components/LogsViewer.svelte';
+  import ProcessList from '../components/ProcessList.svelte';
+  import WorkspaceNav from '../components/WorkspaceNav.svelte';
   import { api } from '../lib/api';
 
   export let params = { workspace: '' };
@@ -14,16 +14,16 @@
 
 <Layout>
   <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
-  <MonoPanel>
-    <section>
+  <MonoPanel --panel-padding="0">
+    <div>
       <ProcessList {workspace} {workspaceId} />
       <LogsViewer {workspace} {workspaceId} />
-    </section>
+    </div>
   </MonoPanel>
 </Layout>
 
 <style>
-  section {
+  div {
     height: 100%;
     display: grid;
     grid-template-columns: 360px 1fr;

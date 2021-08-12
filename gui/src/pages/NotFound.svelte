@@ -1,20 +1,21 @@
 <script lang="ts">
   import Layout from '../components/Layout.svelte';
+  import MonoPanel from '../components/MonoPanel.svelte';
 </script>
 
 <Layout>
-  <section>
-    <h1>404 page not found</h1>
-  </section>
+  <MonoPanel>
+    <div>
+      <h1>404 page not found</h1>
+    </div>
+  </MonoPanel>
 </Layout>
 
 <style>
-  section {
-    background: #ffffff;
+  div {
     height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding-bottom: 60px;
   }
 </style>

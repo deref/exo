@@ -1,6 +1,7 @@
 <script lang="ts">
-  import Layout from '../components/Layout.svelte';
   import Code from '../components/Code.svelte';
+  import Layout from '../components/Layout.svelte';
+  import MonoPanel from '../components/MonoPanel.svelte';
   import * as router from 'svelte-spa-router';
   import { api } from '../lib/api';
 
@@ -12,7 +13,7 @@
 </script>
 
 <Layout>
-  <section>
+  <MonoPanel>
     Use <Code>exo gui</Code> in your terminal to launch into the current directory's
     workspace.
     <h2>Workspaces</h2>
@@ -37,16 +38,10 @@
         <p style="color: red">{error.message}</p>
       {/await}
     </div>
-  </section>
+  </MonoPanel>
 </Layout>
 
 <style>
-  section {
-    background: #ffffff;
-    padding: 30px;
-    min-height: 100%;
-  }
-
   h2 {
     margin-top: 36px;
     margin-bottom: 24px;
