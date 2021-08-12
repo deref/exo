@@ -138,7 +138,7 @@ func (t *Task) updateTask(status string, message string, finished string, curren
 		Status: &status,
 	}
 	if message != "" {
-		input.Status = &message
+		input.Message = &message
 	}
 	if finished != "" {
 		input.Finished = &finished
