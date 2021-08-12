@@ -20,10 +20,10 @@ type Spec compose.Service
 type State struct {
 	ContainerID string     `json:"containerId"`
 	Running     bool       `json:"running"`
-	Image       ImageProps `json:"image"`
+	Image       ImageState `json:"image"`
 }
 
-type ImageProps struct {
+type ImageState struct {
 	ID         string            `json:"id"`
 	Command    strslice.StrSlice `json:"command"`
 	WorkingDir string            `json:"workingDir"`
