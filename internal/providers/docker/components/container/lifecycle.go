@@ -42,6 +42,10 @@ func (c *Container) create(ctx context.Context) error {
 			StartPeriod: time.Duration(c.Spec.Healthcheck.StartPeriod),
 		}
 	}
+	cmd := c.Spec.Command
+	if len(cmd) == 0 {
+		cmd = c.State.Image.Command
+	}
 	containerCfg := &container.Config{
 		Hostname:     c.Spec.Hostname,
 		Domainname:   c.Spec.Domainname,
@@ -51,10 +55,11 @@ func (c *Container) create(ctx context.Context) error {
 		OpenStdin:    c.Spec.StdinOpen,
 		// StdinOnce       bool                // If true, close stdin after the 1 attached client disconnects.
 		Env:         c.Spec.Environment.Slice(),
-		Cmd:         strslice.StrSlice(c.Spec.Command),
+		Cmd:         strslice.StrSlice(cmd),
 		Healthcheck: healthCfg,
 		// ArgsEscaped     bool                `json:",omitempty"` // True if command is already escaped (meaning treat as a command line) (Windows specific).
-		Image: c.State.ImageID,
+
+		Image: c.State.Image.ID,
 		// Volumes         map[string]struct{} // List of volumes (mounts) used for the container
 		WorkingDir: c.Spec.WorkingDir,
 		Entrypoint: strslice.StrSlice(c.Spec.Entrypoint),

@@ -125,14 +125,14 @@ func (c *Container) buildImage(ctx context.Context) error {
 					return fmt.Errorf("docker build error: " + d.ErrorDetail.Message)
 				}
 				if strings.HasPrefix(d.Aux.ID, "sha256:") {
-					c.State.ImageID = d.Aux.ID
+					c.State.Image.ID = d.Aux.ID
 				}
 			}
 		}
 		if err != nil {
 			return err
 		}
-		if c.State.ImageID == "" {
+		if c.State.Image.ID == "" {
 			return fmt.Errorf("did not build an image")
 		}
 		return nil
