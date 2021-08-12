@@ -143,9 +143,6 @@ func (jp *jobPrinter) printTree(w io.Writer, tasks []api.TaskDescription) {
 		if jp.ShowJobID {
 			label += " " + node.ID
 		}
-		if node.Parent != nil {
-			prefix += " "
-		}
 		prefix += label + " "
 
 		suffix := ""
