@@ -14,7 +14,17 @@ module.exports = {
   babel: (options) => {
     return {
       ...options,
-      plugins: [...(options.plugins || []), "babel-plugin-transform-vite-meta-env"],
+      plugins: [
+        ...(options.plugins || []),
+        'babel-plugin-transform-vite-meta-env',
+      ],
     };
+  },
+  webpackFinal: async (config) => {
+    config.infrastructureLogging = {
+      ...config.infrastructureLogging,
+      level: 'error',
+    };
+    return config;
   },
 };

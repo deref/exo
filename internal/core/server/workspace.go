@@ -1,9 +1,12 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"net/http"
+	"os"
+	"path"
 	"reflect"
 	"strings"
 
@@ -13,6 +16,7 @@ import (
 	"github.com/deref/exo/internal/gensym"
 	logd "github.com/deref/exo/internal/logd/api"
 	"github.com/deref/exo/internal/manifest"
+	"github.com/deref/exo/internal/manifest/procfile"
 	"github.com/deref/exo/internal/providers/core"
 	"github.com/deref/exo/internal/providers/core/components/invalid"
 	"github.com/deref/exo/internal/providers/core/components/log"
@@ -25,6 +29,7 @@ import (
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/deref/exo/internal/util/logging"
+	"github.com/deref/exo/internal/util/pathutil"
 	dockerclient "github.com/docker/docker/client"
 	psprocess "github.com/shirou/gopsutil/v3/process"
 )
@@ -95,7 +100,7 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 	}
 	res := ws.loadManifest(description.Root, input)
 	if res.Err != nil {
-		return nil, err
+		return nil, res.Err
 	}
 	m := res.Manifest
 
@@ -595,6 +600,8 @@ func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeP
 	if err != nil {
 		return nil, fmt.Errorf("describing components: %w", err)
 	}
+	logger := logging.CurrentLogger(ctx)
+
 	output := api.DescribeProcessesOutput{
 		Processes: make([]api.ProcessDescription, 0, len(components.Components)),
 	}
@@ -604,15 +611,16 @@ func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeP
 		case "process":
 			var state process.State
 			if err := jsonutil.UnmarshalString(component.State, &state); err != nil {
-				// TODO: log error.
-				fmt.Printf("unmarshalling process state: %v\n", err)
+				logger.Infof("unmarshalling process state: %v\n", err)
 				continue
 			}
+
 			process := api.ProcessDescription{
 				ID:       component.ID,
 				Name:     component.Name,
 				Provider: "unix",
 				EnvVars:  state.FullEnvironment,
+				Spec:     component.Spec,
 			}
 
 			proc, err := psprocess.NewProcess(int32(state.Pid))
@@ -717,6 +725,89 @@ func (ws *Workspace) DescribeNetworks(ctx context.Context, input *api.DescribeNe
 	return &output, nil
 }
 
+func (ws *Workspace) ExportProcfile(ctx context.Context, input *api.ExportProcfileInput) (*api.ExportProcfileOutput, error) {
+	logger := logging.CurrentLogger(ctx)
+	procs, err := ws.DescribeProcesses(ctx, &api.DescribeProcessesInput{})
+	if err != nil {
+		return nil, fmt.Errorf("describing processes: %w", err)
+	}
+
+	unixProcs := make([]procfile.Process, 0, len(procs.Processes))
+	for _, proc := range procs.Processes {
+		if proc.Provider == "unix" {
+			var spec process.Spec
+			if err := jsonutil.UnmarshalString(proc.Spec, &spec); err != nil {
+				logger.Infof("unmarshalling process spec: %v\n", err)
+				continue
+			}
+
+			unixProcs = append(unixProcs, procfile.Process{
+				Name:        proc.Name,
+				Program:     spec.Program,
+				Arguments:   spec.Arguments,
+				Environment: spec.Environment,
+			})
+		}
+	}
+
+	var export bytes.Buffer
+	if err := procfile.Generate(&export, unixProcs); err != nil {
+		return nil, fmt.Errorf("generating procfile: %w", err)
+	}
+
+	return &api.ExportProcfileOutput{
+		Procfile: export.String(),
+	}, nil
+}
+
+func (ws *Workspace) ReadFile(ctx context.Context, input *api.ReadFileInput) (*api.ReadFileOutput, error) {
+	resolvedPath, err := ws.resolveWorkspacePath(ctx, input.Path)
+	if err != nil {
+		return nil, err
+	}
+
+	content, err := os.ReadFile(resolvedPath)
+	if err != nil {
+		return nil, err
+	}
+
+	return &api.ReadFileOutput{
+		Content: string(content),
+	}, nil
+}
+
+func (ws *Workspace) WriteFile(ctx context.Context, input *api.WriteFileInput) (*api.WriteFileOutput, error) {
+	resolvedPath, err := ws.resolveWorkspacePath(ctx, input.Path)
+	if err != nil {
+		return nil, err
+	}
+
+	mode := os.FileMode(0644)
+	if input.Mode != nil {
+		mode = os.FileMode(*input.Mode)
+	}
+
+	if err := os.WriteFile(resolvedPath, []byte(input.Content), mode); err != nil {
+		return nil, err
+	}
+
+	return &api.WriteFileOutput{}, nil
+}
+
+func (ws *Workspace) resolveWorkspacePath(ctx context.Context, relativePath string) (string, error) {
+	description, err := ws.describe(ctx)
+	if err != nil {
+		return "", fmt.Errorf("describing workspace: %w", err)
+	}
+
+	resolvedPath := path.Join(description.Root, relativePath)
+	if !pathutil.HasPathPrefix(resolvedPath, description.Root) {
+		return "", fmt.Errorf("directory is outside workspace: %q", relativePath)
+	}
+
+	return resolvedPath, nil
+}
+
 type componentFilter struct {
 	Refs  []string
 	Types []string
@@ -799,4 +890,27 @@ func (ws *Workspace) control(ctx context.Context, desc api.ComponentDescription,
 		return fErr
 	}
 	return err
+}
+
+func (ws *Workspace) Build(ctx context.Context, input *api.BuildInput) (*api.BuildOutput, error) {
+	jobID := ws.controlEachProcess(ctx, "building", func(builder api.Builder) error {
+		_, err := builder.Build(ctx, &api.BuildInput{})
+		return err
+	})
+	return &api.BuildOutput{
+		JobID: jobID,
+	}, nil
+}
+
+func (ws *Workspace) BuildComponents(ctx context.Context, input *api.BuildComponentsInput) (*api.BuildComponentsOutput, error) {
+	filter := componentFilter{
+		Refs: input.Refs,
+	}
+	jobID := ws.controlEachComponent(ctx, "building", filter, func(builder api.Builder) error {
+		_, err := builder.Build(ctx, &api.BuildInput{})
+		return err
+	})
+	return &api.BuildComponentsOutput{
+		JobID: jobID,
+	}, nil
 }

@@ -27,6 +27,11 @@ export const fetchLogs = async (
   pagination: Partial<PaginationParams>,
   filterStr: string | null,
 ) => {
+  const visibleLogs = [...get(visibleLogsStore).values()];
+  if (visibleLogs.length == 0) {
+    return;
+  }
+
   logsStore.update((state) => {
     let workspaceState = state[workspaceId];
     if (workspaceState == null) {
@@ -69,7 +74,6 @@ export const fetchLogs = async (
   // The visible logs parameter acts as a filter for log events that restricts the results
   // to events that came from a stream belonging to only certain processes. This should be
   // replaced with a more flexible filtering framework.
-  const visibleLogs = [...get(visibleLogsStore).values()];
   const newEvents = await workspace.getEvents(visibleLogs, filterStr, {
     cursor: get(logsStore)[workspaceId].cursor,
     ...pagination,

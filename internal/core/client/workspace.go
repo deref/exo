@@ -36,6 +36,23 @@ func (c *Process) Restart(ctx context.Context, input *api.RestartInput) (output 
 	return
 }
 
+type Builder struct {
+	client *josh.Client
+}
+
+var _ api.Builder = (*Builder)(nil)
+
+func GetBuilder(client *josh.Client) *Builder {
+	return &Builder{
+		client: client,
+	}
+}
+
+func (c *Builder) Build(ctx context.Context, input *api.BuildInput) (output *api.BuildOutput, err error) {
+	err = c.client.Invoke(ctx, "build", input, &output)
+	return
+}
+
 type Workspace struct {
 	client *josh.Client
 }
@@ -60,6 +77,11 @@ func (c *Workspace) Stop(ctx context.Context, input *api.StopInput) (output *api
 
 func (c *Workspace) Restart(ctx context.Context, input *api.RestartInput) (output *api.RestartOutput, err error) {
 	err = c.client.Invoke(ctx, "restart", input, &output)
+	return
+}
+
+func (c *Workspace) Build(ctx context.Context, input *api.BuildInput) (output *api.BuildOutput, err error) {
+	err = c.client.Invoke(ctx, "build", input, &output)
 	return
 }
 
@@ -150,5 +172,25 @@ func (c *Workspace) DescribeVolumes(ctx context.Context, input *api.DescribeVolu
 
 func (c *Workspace) DescribeNetworks(ctx context.Context, input *api.DescribeNetworksInput) (output *api.DescribeNetworksOutput, err error) {
 	err = c.client.Invoke(ctx, "describe-networks", input, &output)
+	return
+}
+
+func (c *Workspace) ExportProcfile(ctx context.Context, input *api.ExportProcfileInput) (output *api.ExportProcfileOutput, err error) {
+	err = c.client.Invoke(ctx, "export-procfile", input, &output)
+	return
+}
+
+func (c *Workspace) ReadFile(ctx context.Context, input *api.ReadFileInput) (output *api.ReadFileOutput, err error) {
+	err = c.client.Invoke(ctx, "read-file", input, &output)
+	return
+}
+
+func (c *Workspace) WriteFile(ctx context.Context, input *api.WriteFileInput) (output *api.WriteFileOutput, err error) {
+	err = c.client.Invoke(ctx, "write-file", input, &output)
+	return
+}
+
+func (c *Workspace) BuildComponents(ctx context.Context, input *api.BuildComponentsInput) (output *api.BuildComponentsOutput, err error) {
+	err = c.client.Invoke(ctx, "build-components", input, &output)
 	return
 }

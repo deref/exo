@@ -1,5 +1,6 @@
 import { test, expect } from '@jest/globals';
-import { parseSpans, Span } from './parseSpans';
+import { parseSpans } from './parseSpans';
+import type { Span } from './parseSpans';
 
 test('parseSpans', () => {
   const check = (input: string, expected: Span[]) => {

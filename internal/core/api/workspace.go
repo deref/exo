@@ -48,8 +48,26 @@ func BuildProcessMux(b *josh.MuxBuilder, factory func(req *http.Request) Process
 	})
 }
 
+type Builder interface {
+	Build(context.Context, *BuildInput) (*BuildOutput, error)
+}
+
+type BuildInput struct {
+}
+
+type BuildOutput struct {
+	JobID string `json:"jobId"`
+}
+
+func BuildBuilderMux(b *josh.MuxBuilder, factory func(req *http.Request) Builder) {
+	b.AddMethod("build", func(req *http.Request) interface{} {
+		return factory(req).Build
+	})
+}
+
 type Workspace interface {
 	Process
+	Builder
 	// Describes this workspace.
 	Describe(context.Context, *DescribeInput) (*DescribeOutput, error)
 	// Asynchronously deletes all components in the workspace, then deletes the workspace itself.
@@ -79,6 +97,12 @@ type Workspace interface {
 	DescribeProcesses(context.Context, *DescribeProcessesInput) (*DescribeProcessesOutput, error)
 	DescribeVolumes(context.Context, *DescribeVolumesInput) (*DescribeVolumesOutput, error)
 	DescribeNetworks(context.Context, *DescribeNetworksInput) (*DescribeNetworksOutput, error)
+	ExportProcfile(context.Context, *ExportProcfileInput) (*ExportProcfileOutput, error)
+	// Read a file from disk.
+	ReadFile(context.Context, *ReadFileInput) (*ReadFileOutput, error)
+	// Writes a file to disk.
+	WriteFile(context.Context, *WriteFileInput) (*WriteFileOutput, error)
+	BuildComponents(context.Context, *BuildComponentsInput) (*BuildComponentsOutput, error)
 }
 
 type DescribeInput struct {
@@ -241,6 +265,42 @@ type DescribeNetworksOutput struct {
 	Networks []NetworkDescription `json:"networks"`
 }
 
+type ExportProcfileInput struct {
+}
+
+type ExportProcfileOutput struct {
+	Procfile string `json:"procfile"`
+}
+
+type ReadFileInput struct {
+
+	// Relative to the workspace directory. May not traverse higher in the filesystem.
+	Path string `json:"path"`
+}
+
+type ReadFileOutput struct {
+	Content string `json:"content"`
+}
+
+type WriteFileInput struct {
+
+	// Relative to the workspace directory. May not traverse higher in the filesystem.
+	Path    string `json:"path"`
+	Mode    *int   `json:"mode"`
+	Content string `json:"content"`
+}
+
+type WriteFileOutput struct {
+}
+
+type BuildComponentsInput struct {
+	Refs []string `json:"refs"`
+}
+
+type BuildComponentsOutput struct {
+	JobID string `json:"jobId"`
+}
+
 func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Workspace) {
 	b.AddMethod("start", func(req *http.Request) interface{} {
 		return factory(req).Start
@@ -250,6 +310,9 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	})
 	b.AddMethod("restart", func(req *http.Request) interface{} {
 		return factory(req).Restart
+	})
+	b.AddMethod("build", func(req *http.Request) interface{} {
+		return factory(req).Build
 	})
 	b.AddMethod("describe", func(req *http.Request) interface{} {
 		return factory(req).Describe
@@ -305,6 +368,18 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	b.AddMethod("describe-networks", func(req *http.Request) interface{} {
 		return factory(req).DescribeNetworks
 	})
+	b.AddMethod("export-procfile", func(req *http.Request) interface{} {
+		return factory(req).ExportProcfile
+	})
+	b.AddMethod("read-file", func(req *http.Request) interface{} {
+		return factory(req).ReadFile
+	})
+	b.AddMethod("write-file", func(req *http.Request) interface{} {
+		return factory(req).WriteFile
+	})
+	b.AddMethod("build-components", func(req *http.Request) interface{} {
+		return factory(req).BuildComponents
+	})
 }
 
 type WorkspaceDescription struct {
@@ -339,6 +414,7 @@ type ProcessDescription struct {
 	ID                  string            `json:"id"`
 	Provider            string            `json:"provider"`
 	Name                string            `json:"name"`
+	Spec                string            `json:"spec"`
 	Running             bool              `json:"running"`
 	EnvVars             map[string]string `json:"envVars"`
 	CPUPercent          float64           `json:"cpuPercent"`
