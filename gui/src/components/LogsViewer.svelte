@@ -1,4 +1,7 @@
 <script lang="ts">
+  import Panel from './Panel.svelte';
+  import Textbox from './Textbox.svelte';
+  import FormattedLogMessage from './logs/FormattedLogMessage.svelte';
   import { logStyleFromHash } from '../lib/color';
   import { onMount, onDestroy, afterUpdate, beforeUpdate } from 'svelte';
   import { hasData, isUnresolved } from '../lib/api';
@@ -12,8 +15,6 @@
   import type { WorkspaceState } from '../lib/logs/store';
   import { shortDate } from '../lib/time';
   import { processes } from '../lib/process/store';
-  import FormattedLogMessage from './logs/FormattedLogMessage.svelte';
-  import Textbox from './Textbox.svelte';
   import debounce from '../lib/debounce';
 
   export let workspace: WorkspaceApi;
@@ -95,10 +96,9 @@
   }, 250);
 </script>
 
-<section>
-  <h1>Logs</h1>
-  {#if hasData(state.events)}
-    <div class="log-table-overflow-wrapper">
+<Panel title="Logs" --panel-padding="0" --panel-overflow-y="hidden">
+  <section>
+    {#if hasData(state.events)}
       <div class="log-table-container" bind:this={logViewport}>
         <table>
           {#each state.events.data as event (event.id)}
@@ -112,7 +112,13 @@
           {/each}
         </table>
       </div>
-    </div>
+    {:else if isUnresolved(state.events)}
+      <div>Loading logs...</div>
+    {:else}
+      <div>Error fetching logs: {state.events.message}</div>
+    {/if}
+  </section>
+  <div slot="bottom">
     <Textbox
       placeholder="Filter..."
       value={state.filterStr || ''}
@@ -122,33 +128,17 @@
       }}
       --input-width="100%"
     />
-  {:else if isUnresolved(state.events)}
-    <div>Loading logs...</div>
-  {:else}
-    <div>Error fetching logs: {state.events.message}</div>
-  {/if}
-</section>
+  </div>
+</Panel>
 
 <style>
   section {
-    overflow: hidden;
-    padding: 1px;
-    display: grid;
-    grid-auto-flow: row;
-    grid-template-rows: max-content 1fr;
-  }
-
-  .log-table-overflow-wrapper {
-    overflow: hidden;
-    border-radius: 4px;
-    box-shadow: 0px 12px 16px -8px #00000033, 0px 0.25px 0px 1px #00000033;
-    margin-bottom: 18px;
+    height: 100%;
   }
 
   .log-table-container {
     width: 100%;
     height: 100%;
-    overflow-x: auto;
     overflow-y: scroll;
   }
 
