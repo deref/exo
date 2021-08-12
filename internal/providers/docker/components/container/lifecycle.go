@@ -42,7 +42,7 @@ func (c *Container) create(ctx context.Context) error {
 			StartPeriod: time.Duration(c.Spec.Healthcheck.StartPeriod),
 		}
 	}
-	cmd := c.Spec.Command
+	cmd := strslice.StrSlice(c.Spec.Command)
 	if len(cmd) == 0 {
 		cmd = c.State.Image.Command
 	}
@@ -55,7 +55,7 @@ func (c *Container) create(ctx context.Context) error {
 		OpenStdin:    c.Spec.StdinOpen,
 		// StdinOnce       bool                // If true, close stdin after the 1 attached client disconnects.
 		Env:         c.Spec.Environment.Slice(),
-		Cmd:         strslice.StrSlice(cmd),
+		Cmd:         cmd,
 		Healthcheck: healthCfg,
 		// ArgsEscaped     bool                `json:",omitempty"` // True if command is already escaped (meaning treat as a command line) (Windows specific).
 

@@ -30,11 +30,7 @@ func (c *Container) ensureImage(ctx context.Context) error {
 	}
 
 	c.State.Image.ID = inspection.ID
-
-	c.State.Image.Command = make([]string, len(inspection.Config.Cmd))
-	for i, cmd := range inspection.Config.Cmd {
-		c.State.Image.Command[i] = cmd
-	}
+	c.State.Image.Command = inspection.Config.Cmd
 
 	return nil
 }
