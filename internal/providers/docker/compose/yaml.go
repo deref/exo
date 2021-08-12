@@ -52,6 +52,7 @@ type Service struct {
 	// TODO: cap_add
 	// TODO: cap_drop
 	// TODO: cgroup_parent
+
 	Command       Command  `yaml:"command"`
 	Configs       []string `yaml:"configs"` // TODO: support long syntax.
 	ContainerName string   `yaml:"container_name"`
@@ -115,6 +116,7 @@ type Service struct {
 	// TODO: userns_mode
 	Volumes []string `yaml:"volumes"` // TODO: support long syntax.
 	// TODO: volumes_from
+
 	WorkingDir string `yaml:"working_dir"`
 }
 

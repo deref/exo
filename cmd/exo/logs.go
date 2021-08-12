@@ -31,11 +31,12 @@ If refs are provided, filters for the logs of those processes.`,
 		cl := newClient()
 		workspace := requireWorkspace(ctx, cl)
 
-		return tailLogs(ctx, workspace, args)
+		stopOnError := false
+		return tailLogs(ctx, workspace, args, stopOnError)
 	},
 }
 
-func tailLogs(ctx context.Context, workspace api.Workspace, logRefs []string) error {
+func tailLogs(ctx context.Context, workspace api.Workspace, logRefs []string, stopOnError bool) error {
 	colors := NewColorCache()
 
 	showName := len(logRefs) != 1
@@ -106,9 +107,27 @@ func tailLogs(ctx context.Context, workspace api.Workspace, logRefs []string) er
 				prefix = timestamp
 			}
 
-			fmt.Printf("%s %s\n", prefix, event.Message)
+			fmt.Printf("%s %s%s\n", prefix, event.Message, termReset)
 		}
 		in.Cursor = &output.NextCursor
+
+		if stopOnError {
+			descriptions, err = workspace.DescribeProcesses(ctx, &api.DescribeProcessesInput{})
+			if err != nil {
+				return fmt.Errorf("failed to check status of processes: %w", err)
+			}
+
+			for _, proc := range descriptions.Processes {
+				for _, id := range logIDs {
+					// TODO: Compare some metadata on the log, not the log itself.
+					// SEE NOTE [LOG_COMPONENTS].
+					if proc.ID == id && !proc.Running {
+						return fmt.Errorf("process stopped running: %q", proc.Name)
+					}
+				}
+			}
+		}
+
 		if len(output.Items) < 10 { // TODO: OK heuristic?
 			select {
 			case <-time.After(250 * time.Millisecond):
@@ -161,3 +180,5 @@ type Color struct {
 func (c Color) IsBlack() bool {
 	return c.Red == 0 && c.Green == 0 && c.Blue == 0
 }
+
+const termReset = "\u001b[0"

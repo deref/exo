@@ -150,14 +150,14 @@ func (c *Container) buildImage(ctx context.Context) error {
 				}
 
 				if strings.HasPrefix(event.Aux.ID, "sha256:") {
-					c.State.ImageID = event.Aux.ID
+					c.State.Image.ID = event.Aux.ID
 				}
 			}
 		}
 		if err != nil {
 			return err
 		}
-		if c.State.ImageID == "" {
+		if c.State.Image.ID == "" {
 			return fmt.Errorf("did not build an image")
 		}
 		return nil

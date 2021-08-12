@@ -93,6 +93,13 @@
   const setFilterStrDebounced = debounce((filterStr: string) => {
     setFilterStr(workspaceId, workspace, filterStr);
   }, 250);
+  let filterInput = state.filterStr;
+  $: {
+    if (filterInput !== null) {
+      const text = filterInput.trim();
+      setFilterStrDebounced(text);
+    }
+  }
 </script>
 
 <section>
@@ -115,11 +122,7 @@
     </div>
     <Textbox
       placeholder="Filter..."
-      value={state.filterStr || ''}
-      on:input={(e) => {
-        const text = e.currentTarget?.value.trim();
-        setFilterStrDebounced(text);
-      }}
+      bind:value={filterInput}
       --input-width="100%"
     />
   {:else if isUnresolved(state.events)}

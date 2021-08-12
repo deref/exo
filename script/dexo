@@ -10,7 +10,9 @@ script_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )"
 
 pushd "$script_dir/.." > /dev/null
 
-tmp_dir=$(mktemp -d)
+tmp_dir=$(mktemp -d -t tmp-dexo-XXXXXXX)
+trap 'rm -rf -- "$tmp_dir"' EXIT
+
 go build -o "$tmp_dir" ./cmd/exo
 
 config_file="$tmp_dir/config.toml"
