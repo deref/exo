@@ -53,8 +53,7 @@ type Service struct {
 	// TODO: cap_drop
 	// TODO: cgroup_parent
 
-	Command Command `yaml:"command"`
-
+	Command       Command  `yaml:"command"`
 	Configs       []string `yaml:"configs"` // TODO: support long syntax.
 	ContainerName string   `yaml:"container_name"`
 	// TODO: credential_spec
