@@ -26,10 +26,11 @@ type TelemetryConfig struct {
 }
 
 type Config struct {
-	HomeDir string
-	BinDir  string
-	VarDir  string
-	RunDir  string
+	HomeDir      string
+	BinDir       string
+	VarDir       string
+	RunDir       string
+	RunStateFile string
 
 	HTTPPort uint `toml:"httpPort"`
 
@@ -90,6 +91,9 @@ func setDefaults(cfg *Config) {
 	}
 	if cfg.VarDir == "" {
 		cfg.VarDir = filepath.Join(cfg.HomeDir, "var")
+	}
+	if cfg.RunStateFile == "" {
+		cfg.RunStateFile = filepath.Join(cfg.RunDir, "exod.json")
 	}
 
 	if cfg.HTTPPort == 0 {

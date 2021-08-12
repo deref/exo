@@ -53,8 +53,9 @@ for manual uninstall instructions.`,
 		}
 
 		// Remove home directory.
-		fmt.Printf("removing home directory: %s\n", knownPaths.ExoDir)
-		if err := os.RemoveAll(knownPaths.ExoDir); err != nil {
+		fmt.Printf("removing home directory: %s\n", cfg.HomeDir)
+		// TODO: Handle installs with overridden directories.
+		if err := os.RemoveAll(cfg.HomeDir); err != nil {
 			return fmt.Errorf("removing exo directory: %w", err)
 		}
 

@@ -47,7 +47,7 @@ func ensureDaemon() {
 	case err == nil:
 		running = osutil.IsValidPid(runState.Pid)
 		if !running {
-			_ = os.Remove(knownPaths.RunStateFile)
+			_ = os.Remove(cfg.RunStateFile)
 		}
 	case os.IsNotExist(err):
 		// Not running.
@@ -73,7 +73,7 @@ func ensureDaemon() {
 	// Write run state.
 	runState.Pid = cmd.Process.Pid
 	runState.URL = fmt.Sprintf("http://%s", cmdutil.GetAddr(cfg))
-	if err := jsonutil.MarshalFile(knownPaths.RunStateFile, runState); err != nil {
+	if err := jsonutil.MarshalFile(cfg.RunStateFile, runState); err != nil {
 		cmdutil.Fatalf("writing run state: %w", err)
 	}
 
@@ -98,7 +98,7 @@ func ensureDaemon() {
 }
 
 func loadRunState() error {
-	return jsonutil.UnmarshalFile(knownPaths.RunStateFile, &runState)
+	return jsonutil.UnmarshalFile(cfg.RunStateFile, &runState)
 }
 
 func newClient() *client.Root {
