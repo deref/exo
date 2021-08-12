@@ -16,9 +16,9 @@ func (c *Container) Start(ctx context.Context, input *core.StartInput) (*core.St
 }
 
 func (c *Container) start(ctx context.Context) error {
-	err := c.Docker.ContainerStart(ctx, c.ContainerID, types.ContainerStartOptions{})
+	err := c.Docker.ContainerStart(ctx, c.State.ContainerID, types.ContainerStartOptions{})
 	if err != nil {
-		c.Running = true
+		c.State.Running = true
 	}
 	return err
 }
@@ -32,7 +32,7 @@ func (c *Container) Stop(ctx context.Context, input *core.StopInput) (*core.Stop
 
 func (c *Container) stop(ctx context.Context) error {
 	var timeout *time.Duration // Use container's default stop timeout.
-	return c.Docker.ContainerStop(ctx, c.ContainerID, timeout)
+	return c.Docker.ContainerStop(ctx, c.State.ContainerID, timeout)
 }
 
 func (c *Container) Restart(ctx context.Context, input *core.RestartInput) (*core.RestartOutput, error) {
@@ -44,5 +44,5 @@ func (c *Container) Restart(ctx context.Context, input *core.RestartInput) (*cor
 
 func (c *Container) restart(ctx context.Context) error {
 	var timeout *time.Duration // Use container's default stop timeout.
-	return c.Docker.ContainerRestart(ctx, c.ContainerID, timeout)
+	return c.Docker.ContainerRestart(ctx, c.State.ContainerID, timeout)
 }
