@@ -1,6 +1,7 @@
 // References:
 // https://github.com/compose-spec/compose-spec/blob/master/spec.md
 // https://docs.docker.com/compose/compose-file/compose-file-v3/
+// https://github.com/docker/compose/blob/4a51af09d6cdb9407a6717334333900327bc9302/compose/config/compose_spec.json
 //
 // Fields enumerated as of July 17, 2021 with from the following spec file:
 // <https://github.com/compose-spec/compose-spec/blob/5141aafafa6ea03fcf52eb2b44218408825ab480/spec.md>.
