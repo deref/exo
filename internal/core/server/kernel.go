@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"syscall"
+	"time"
 
 	"github.com/deref/exo"
 	"github.com/deref/exo/internal/core/api"
@@ -116,10 +117,24 @@ func (kern *Kernel) Ping(context.Context, *api.PingInput) (*api.PingOutput, erro
 	return &api.PingOutput{}, nil
 }
 
+func (kern *Kernel) Exit(context.Context, *api.ExitInput) (*api.ExitOutput, error) {
+	// Return immediately, then asynchronously try to shutdown.
+	defer func() {
+		go func() {
+			ownPid := os.Getpid()
+			_ = osutil.TerminateProcessWithTimeout(ownPid, 5*time.Second)
+		}()
+	}()
+
+	return &api.ExitOutput{}, nil
+}
+
 // restart replaces the current process with a new copy of itself. This is useful
 // after downloading a new binary.
 func restart(ctx context.Context) {
-	// TODO: Shutdown gracefully.
+	// TODO: Shutdown gracefully. Since shutdown code is tightly tied to process termination,
+	// a refactor is probably needed so that we have a single place to hook into for shutdown
+	// code.
 
 	// Replace the current process with the newer version of itself.
 	exitWithError := func(err error) {

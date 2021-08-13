@@ -21,6 +21,8 @@ type Kernel interface {
 	Upgrade(context.Context, *UpgradeInput) (*UpgradeOutput, error)
 	// Checks whether server is up.
 	Ping(context.Context, *PingInput) (*PingOutput, error)
+	// Gracefully shutdown the exo daemon.
+	Exit(context.Context, *ExitInput) (*ExitOutput, error)
 	DescribeTasks(context.Context, *DescribeTasksInput) (*DescribeTasksOutput, error)
 }
 
@@ -75,6 +77,12 @@ type PingInput struct {
 type PingOutput struct {
 }
 
+type ExitInput struct {
+}
+
+type ExitOutput struct {
+}
+
 type DescribeTasksInput struct {
 
 	// If supplied, filters tasks by job.
@@ -106,6 +114,9 @@ func BuildKernelMux(b *josh.MuxBuilder, factory func(req *http.Request) Kernel) 
 	})
 	b.AddMethod("ping", func(req *http.Request) interface{} {
 		return factory(req).Ping
+	})
+	b.AddMethod("exit", func(req *http.Request) interface{} {
+		return factory(req).Exit
 	})
 	b.AddMethod("describe-tasks", func(req *http.Request) interface{} {
 		return factory(req).DescribeTasks

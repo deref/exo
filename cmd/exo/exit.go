@@ -2,10 +2,9 @@ package main
 
 import (
 	"fmt"
-	"os"
-	"time"
 
-	"github.com/deref/exo/internal/util/osutil"
+	"github.com/deref/exo/internal/core/api"
+	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/spf13/cobra"
 )
 
@@ -19,20 +18,14 @@ var exitCmd = &cobra.Command{
 	Long:  `Stop the exo daemon process.`,
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		loadRunState()
-		if runState.Pid == 0 {
-			return nil
+		ctx := newContext()
+		checkOrEnsureServer()
+		cl := newClient()
+		_, err := cl.Kernel().Exit(ctx, &api.ExitInput{})
+		if err != nil {
+			cmdutil.Fatalf("exiting: %w", err)
 		}
-
-		return killExod()
+		fmt.Println("Ok")
+		return nil
 	},
-}
-
-func killExod() error {
-	_ = osutil.TerminateProcessWithTimeout(runState.Pid, 5*time.Second)
-
-	if err := os.Remove(cfg.RunStateFile); err != nil {
-		return fmt.Errorf("removing run state file: %w", err)
-	}
-	return nil
 }
