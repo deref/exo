@@ -66,8 +66,8 @@ type Service struct {
 	Domainname string  `yaml:"domainname"`
 	Entrypoint Command `yaml:"entrypoint"`
 	// TODO: env_file
-	Environment Dictionary `yaml:"environment"`
-	// TODO: expose
+	Environment Dictionary   `yaml:"environment"`
+	Expose      PortMappings `yaml:"expose"` // TODO: Validate target-only.
 	// TODO: extends
 	// TODO: external_links
 	// TODO: extra_hosts

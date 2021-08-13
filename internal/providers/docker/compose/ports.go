@@ -3,6 +3,7 @@ package compose
 import (
 	"errors"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -84,4 +85,35 @@ func (marshaller *portMappingMarshaller) UnmarshalYAML(unmarshal func(interface{
 	}
 	*marshaller = portMappingMarshaller(mapping)
 	return err
+}
+
+func ParsePortRange(numbers string, protocol string) (res PortRange, err error) {
+	res.Protocol = protocol
+	parts := strings.SplitN(numbers, "-", 2)
+	if len(parts) == 1 {
+		parts = append(parts, parts[0])
+	}
+	for i, dest := range []*uint16{&res.Min, &res.Max} {
+		var n int
+		n, err = strconv.Atoi(parts[i])
+		*dest = uint16(n)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+type PortRange struct {
+	Min      uint16
+	Max      uint16
+	Protocol string
+}
+
+func FormatPort(num uint16, protocol string) string {
+	res := strconv.Itoa(int(num))
+	if protocol != "" {
+		res += "/" + protocol
+	}
+	return res
 }

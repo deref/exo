@@ -6,6 +6,7 @@ import (
 	"time"
 
 	core "github.com/deref/exo/internal/core/api"
+	"github.com/deref/exo/internal/providers/docker/compose"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
@@ -84,10 +85,29 @@ func (c *Container) create(ctx context.Context) error {
 		timeout := int(time.Duration(*c.Spec.StopGracePeriod).Round(time.Second).Seconds())
 		containerCfg.StopTimeout = &timeout
 	}
-	for _, mapping := range c.Spec.Ports {
-		target := nat.Port(mapping.Target) // TODO: Handle port ranges.
-		containerCfg.ExposedPorts[target] = struct{}{}
+
+	exposePort := func(numbers string, protocol string) error {
+		rng, err := compose.ParsePortRange(numbers, protocol)
+		if err != nil {
+			return fmt.Errorf("parsing port: %w", err)
+		}
+		for n := rng.Min; n <= rng.Max; n++ {
+			port := nat.Port(compose.FormatPort(n, rng.Protocol))
+			containerCfg.ExposedPorts[port] = struct{}{}
+		}
+		return nil
 	}
+	for _, exposed := range c.Spec.Expose {
+		if err := exposePort(exposed.Target, exposed.Protocol); err != nil {
+			return fmt.Errorf("exposing port %q: %w", exposed.Target, err)
+		}
+	}
+	for _, mapping := range c.Spec.Ports {
+		if err := exposePort(mapping.Target, mapping.Protocol); err != nil {
+			return fmt.Errorf("exposing mapped port %q: %w", mapping.Target, err)
+		}
+	}
+
 	logCfg := container.LogConfig{}
 	if c.Spec.Logging.Driver == "" && (c.Spec.Logging.Options == nil || len(c.Spec.Logging.Options) == 0) {
 		// No logging configuration specified, so default to logging to exo's
