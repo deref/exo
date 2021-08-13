@@ -129,13 +129,13 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 			newComponents[name] = newComponent
 			if oldComponent, exists := oldComponents[name]; exists {
 				// Update existing component.
-				job.Go("updating "+name, func(*task.Task) error {
-					return ws.updateComponent(job.Context, oldComponent, newComponent)
+				job.Go("updating "+name, func(t *task.Task) error {
+					return ws.updateComponent(t, oldComponent, newComponent)
 				})
 			} else {
 				// Create new component.
-				job.Go("adding "+name, func(*task.Task) error {
-					_, err := ws.createComponent(job.Context, newComponent)
+				job.Go("adding "+name, func(t *task.Task) error {
+					_, err := ws.createComponent(t, newComponent)
 					return err
 				})
 			}
