@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	core "github.com/deref/exo/internal/core/api"
@@ -186,14 +187,41 @@ func (c *Container) create(ctx context.Context) error {
 		//Init *bool `json:",omitempty"`
 	}
 	for _, mapping := range c.Spec.Ports {
-		target := nat.Port(mapping.Target) // TODO: Handle ranges.
-		bindings := hostCfg.PortBindings[target]
-		bindings = append(bindings, nat.PortBinding{
-			HostIP:   mapping.HostIP,
-			HostPort: mapping.Published,
-		})
-		// TODO: Handle mapping.Mode and mapping.Protocol.
-		hostCfg.PortBindings[target] = bindings
+		target, err := nat.NewPort(mapping.Protocol, mapping.Target)
+		if err != nil {
+			return fmt.Errorf("could not parse port: %w", err)
+		}
+
+		low, high, err := target.Range()
+		if err != nil {
+			return fmt.Errorf("could not parse port range: %w", err)
+		}
+
+		for i := low; i <= high; i += 1 {
+			publishedPort, err := nat.NewPort(mapping.Protocol, mapping.Published)
+			if err != nil {
+				return fmt.Errorf("could not parse port range: %w", err)
+			}
+
+			publishedLow, publishedHigh, err := publishedPort.Range()
+			if err != nil {
+				return fmt.Errorf("could not parse port range: %w", err)
+			}
+
+			hostPort := publishedPort.Port()
+			if publishedHigh != publishedLow {
+				hostPort = strconv.Itoa(publishedLow + i - low)
+			}
+
+			bindings := hostCfg.PortBindings[target]
+			bindings = append(bindings, nat.PortBinding{
+				HostIP:   mapping.HostIP,
+				HostPort: hostPort,
+			})
+
+			// TODO: Handle mapping.Mode
+			hostCfg.PortBindings[nat.Port(strconv.Itoa(i))] = bindings
+		}
 	}
 	networkCfg := &network.NetworkingConfig{
 		//EndpointsConfig map[string]*EndpointSettings // Endpoint configs for each connecting network
