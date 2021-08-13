@@ -57,7 +57,11 @@ type Service struct {
 	Configs       []string `yaml:"configs"` // TODO: support long syntax.
 	ContainerName string   `yaml:"container_name"`
 	// TODO: credential_spec
-	// TODO: depends_on
+
+	// Currently ignored.
+	// TODO: DependsOn with both short and long syntax.
+	DependsOn []interface{} `yaml:"depends_on"`
+
 	// TODO: device_cgroup_rules
 	// TODO: devices
 	// TODO: dns
