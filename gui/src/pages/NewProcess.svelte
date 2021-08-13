@@ -1,18 +1,18 @@
 <script lang="ts">
   import Layout from '../components/Layout.svelte';
+  import Button from '../components/Button.svelte';
+  import Textbox from '../components/Textbox.svelte';
+  import CodeBlock from '../components/CodeBlock.svelte';
+  import Panel from '../components/Panel.svelte';
+  import ErrorLabel from '../components/ErrorLabel.svelte';
+  import ShellEditor from '../components/ShellEditor.svelte';
+  import WorkspaceNav from '../components/WorkspaceNav.svelte';
+  import ArgumentsInput from '../components/ArgumentsInput.svelte';
+  import EnvironmentInput from '../components/EnvironmentInput.svelte';
   import { api, isClientError } from '../lib/api';
   import * as router from 'svelte-spa-router';
   import { parseScript, generateScript } from '../lib/process/script';
   import { setLogVisibility } from '../lib/logs/visible-logs';
-  import EnvironmentInput from '../components/EnvironmentInput.svelte';
-  import ArgumentsInput from '../components/ArgumentsInput.svelte';
-  import Textbox from '../components/Textbox.svelte';
-  import Button from '../components/Button.svelte';
-  import CodeBlock from '../components/CodeBlock.svelte';
-  import ErrorLabel from '../components/ErrorLabel.svelte';
-  import ShellEditor from '../components/ShellEditor.svelte';
-  import WorkspaceNav from '../components/WorkspaceNav.svelte';
-  import MonoPanel from '../components/MonoPanel.svelte';
 
   export let params = { workspace: '' };
 
@@ -48,11 +48,26 @@
       arguments: args,
     });
   };
+
+  const codeExample = `# Export environment variables.
+export DEBUG=true
+
+# Set working directory.
+cd /
+
+# Specify command with arguments.
+my-app --port 4000
+`;
 </script>
 
 <Layout>
   <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
-  <MonoPanel>
+  <Panel
+    title="New process"
+    backRoute={workspaceRoute}
+    --panel-padding="4rem"
+    --panel-overflow-y="scroll"
+  >
     <form
       on:submit|preventDefault={async () => {
         updateFields();
@@ -132,7 +147,7 @@
       {:else}
         <div class="columns">
           <div>
-            <div>
+            <div class="script-editor">
               <label for="script">Script:</label>
               <ShellEditor id="script" bind:value={script} />
             </div>
@@ -141,31 +156,28 @@
             </div>
           </div>
           <div>
-            <label>Example:</label>
-            <CodeBlock
-              >{`# Export environment variables.
-export DEBUG=true
-
-# Set working directory.
-cd /
-
-# Specify command with arguments.
-my-app --port 4000
-`}
-            </CodeBlock>
+            <div class="label">Example:</div>
+            <CodeBlock>{codeExample}</CodeBlock>
           </div>
         </div>
       {/if}
       <ErrorLabel value={error} />
     </form>
-  </MonoPanel>
+  </Panel>
 </Layout>
 
 <style>
   form {
-    padding: 40px;
-    max-width: 980px;
+    max-width: 900px;
     margin: 0 auto;
+    padding: 0;
+  }
+
+  * :global(input),
+  * :global(textarea),
+  .edit-as,
+  .script-editor {
+    margin-bottom: 24px;
   }
 
   .columns {
@@ -178,9 +190,9 @@ my-app --port 4000
     width: 100%;
   }
 
-  label {
+  label,
+  .label {
     display: block;
-    margin-top: 24px;
     margin-bottom: 8px;
   }
 
@@ -189,10 +201,6 @@ my-app --port 4000
     flex-direction: row;
     justify-content: flex-end;
     margin-top: 8px;
-  }
-
-  .edit-as {
-    padding-top: 32px;
   }
 
   .edit-as span {

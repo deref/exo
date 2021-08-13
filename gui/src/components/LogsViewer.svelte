@@ -1,4 +1,7 @@
 <script lang="ts">
+  import Panel from './Panel.svelte';
+  import Textbox from './Textbox.svelte';
+  import FormattedLogMessage from './logs/FormattedLogMessage.svelte';
   import { logStyleFromHash } from '../lib/color';
   import { onMount, onDestroy, afterUpdate, beforeUpdate } from 'svelte';
   import { hasData, isUnresolved } from '../lib/api';
@@ -12,8 +15,6 @@
   import type { WorkspaceState } from '../lib/logs/store';
   import { shortTime } from '../lib/time';
   import { processes } from '../lib/process/store';
-  import FormattedLogMessage from './logs/FormattedLogMessage.svelte';
-  import Textbox from './Textbox.svelte';
   import debounce from '../lib/debounce';
 
   export let workspace: WorkspaceApi;
@@ -102,60 +103,54 @@
   }
 </script>
 
-<section>
-  <h1>Logs</h1>
+<Panel title="Logs" --panel-padding="0" --panel-overflow-y="hidden">
   {#if hasData(state.events)}
-    <div class="log-table-overflow-wrapper">
-      <div class="log-table-container" bind:this={logViewport}>
-        <table>
-          {#each state.events.data as event (event.id)}
-            <tr class="log-entry" style={logStyleFromHash(event.log)}>
-              <td class="timestamp">
-                <span class="short-time">{shortTime(event.timestamp)}</span>
-                <span class="full-timestamp">{event.timestamp}</span>
-              </td>
-              <td>{friendlyName(event.log)}</td>
-              <td>
-                <FormattedLogMessage message={event.message} />
-              </td>
-            </tr>
-          {/each}
-        </table>
-      </div>
+    <div class="log-table-container" bind:this={logViewport}>
+      <table>
+        {#each state.events.data as event (event.id)}
+          <tr class="log-entry" style={logStyleFromHash(event.log)}>
+            <td class="timestamp">
+              <span class="short-time">{shortTime(event.timestamp)}</span>
+              <span class="full-timestamp">{event.timestamp}</span>
+            </td>
+            <td>{friendlyName(event.log)}</td>
+            <td>
+              <FormattedLogMessage message={event.message} />
+            </td>
+          </tr>
+        {/each}
+      </table>
     </div>
-    <Textbox
-      placeholder="Filter..."
-      bind:value={filterInput}
-      --input-width="100%"
-    />
   {:else if isUnresolved(state.events)}
     <div>Loading logs...</div>
   {:else}
     <div>Error fetching logs: {state.events.message}</div>
   {/if}
-</section>
+  <div slot="bottom">
+    <input
+      type="text"
+      placeholder="Filter..."
+      bind:value={filterInput}
+    />
+  </div>
+</Panel>
 
 <style>
-  section {
-    overflow: hidden;
-    padding: 1px;
-    display: grid;
-    grid-auto-flow: row;
-    grid-template-rows: max-content 1fr;
-  }
-
-  .log-table-overflow-wrapper {
-    overflow: hidden;
-    border-radius: 4px;
-    box-shadow: 0px 12px 16px -8px #00000033, 0px 0.25px 0px 1px #00000033;
-    margin-bottom: 18px;
-  }
-
   .log-table-container {
     width: 100%;
     height: 100%;
-    overflow-x: auto;
     overflow-y: scroll;
+    overflow-x: hidden;
+  }
+
+  input {
+    width: 100%;
+    background: var(--primary-bg-color);
+    border: none;
+    border-top: 1px solid var(--layout-bg-color);
+    font-size: 16px;
+    padding: 8px 12px;
+    outline: none;
   }
 
   table {
@@ -175,6 +170,7 @@
     padding: 0 0.3em;
     vertical-align: text-top;
     color: #333333;
+    white-space: pre-wrap;
   }
 
   tr:hover td {

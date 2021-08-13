@@ -1,6 +1,7 @@
 <script lang="ts">
-  import Layout from '../components/Layout.svelte';
   import Code from '../components/Code.svelte';
+  import Layout from '../components/Layout.svelte';
+  import Panel from '../components/Panel.svelte';
   import * as router from 'svelte-spa-router';
   import { api } from '../lib/api';
 
@@ -12,10 +13,11 @@
 </script>
 
 <Layout>
-  <section>
-    Use <Code>exo gui</Code> in your terminal to launch into the current directory's
-    workspace.
-    <h2>Workspaces</h2>
+  <Panel title="Workspaces">
+    <p>
+      Use <Code>exo gui</Code> in your terminal to launch into the current directory's
+      workspace.
+    </p>
     <div>
       {#await workspaces}
         loading workspaces...
@@ -37,18 +39,12 @@
         <p style="color: red">{error.message}</p>
       {/await}
     </div>
-  </section>
+  </Panel>
 </Layout>
 
 <style>
-  section {
-    background: #ffffff;
-    padding: 30px;
-    min-height: 100%;
-  }
-
-  h2 {
-    margin-top: 36px;
+  p {
+    margin: 0;
     margin-bottom: 24px;
   }
 
@@ -67,7 +63,7 @@
   li {
     background: linear-gradient(#fff, #f5f5f5);
     border: none;
-    border-radius: 6px;
+    border-radius: 4px;
     padding: 16px 24px;
     box-shadow: 0 0.33px 0 1px hsla(0, 0%, 100%, 0.15),
       0 4px 8px -3px rgba(0, 0, 0, 0.15), 0 0.4px 0 0.8px rgba(0, 0, 0, 0.25);

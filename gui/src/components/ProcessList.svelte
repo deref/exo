@@ -1,4 +1,11 @@
 <script lang="ts">
+  import Panel from './Panel.svelte';
+  import IconButton from './IconButton.svelte';
+  import CheckboxButton from './CheckboxButton.svelte';
+  import AddSVG from './mono/add.svelte';
+  import RunSVG from './mono/play.svelte';
+  import StopSVG from './mono/stop.svelte';
+  import DeleteSVG from './mono/delete.svelte';
   import { onDestroy, onMount } from 'svelte';
   import { link } from 'svelte-spa-router';
   import type { RemoteData, WorkspaceApi } from '../lib/api';
@@ -14,12 +21,6 @@
   } from '../lib/process/store';
   import { setLogVisibility, visibleLogsStore } from '../lib/logs/visible-logs';
   import * as router from 'svelte-spa-router';
-  import IconButton from './IconButton.svelte';
-  import CheckboxButton from './CheckboxButton.svelte';
-  import AddSVG from './mono/add.svelte';
-  import RunSVG from './mono/play.svelte';
-  import StopSVG from './mono/stop.svelte';
-  import DeleteSVG from './mono/delete.svelte';
 
   export let workspace: WorkspaceApi;
   export let workspaceId: string;
@@ -85,9 +86,12 @@
   });
 </script>
 
-<section>
-  <h1>
-    Processes
+<Panel
+  title={`Workspace ${workspaceId}`}
+  backRoute="/"
+  --panel-padding="0 1rem"
+>
+  <div slot="actions">
     <IconButton
       tooltip="Add new process"
       on:click={() => {
@@ -98,107 +102,111 @@
     >
       <AddSVG />
     </IconButton>
-  </h1>
-  <div>
-    {#if processList.stage == 'pending' || processList.stage == 'idle'}
-      Loading...
-    {:else if processList.stage == 'success' || processList.stage == 'refetching'}
-      <table>
-        <thead>
-          <th />
-          <th>Process</th>
-          <th>Logs</th>
-          <th />
-        </thead>
-        {#each processList.data as { id, name, running } (id)}
-          <tr>
-            <td>
-              <div class="run-controls">
-                {#if statusPending.has(id)}
-                  <div class="spinner" />
-                {:else if running}
-                  <div class="spinner running" />
-                  <div class="control hover-only">
-                    <IconButton
-                      tooltip="Stop process"
-                      on:click={() => setProcRun(id, false)}
-                    >
-                      <StopSVG />
-                    </IconButton>
-                  </div>
-                {:else}
-                  <div class="stopped unhover-only" />
-                  <div class="control hover-only">
-                    <IconButton
-                      tooltip="Run process"
-                      on:click={() => setProcRun(id, true)}
-                    >
-                      <RunSVG />
-                    </IconButton>
-                  </div>
-                {/if}
-              </div>
-            </td>
+  </div>
+  <section>
+    <div>
+      {#if processList.stage == 'pending' || processList.stage == 'idle'}
+        Loading...
+      {:else if processList.stage == 'success' || processList.stage == 'refetching'}
+        <table>
+          <thead>
+            <th />
+            <th>Process</th>
+            <th>Logs</th>
+            <th />
+          </thead>
+          {#each processList.data as { id, name, running } (id)}
+            <tr>
+              <td>
+                <div class="run-controls">
+                  {#if statusPending.has(id)}
+                    <div class="spinner" />
+                  {:else if running}
+                    <div class="spinner running" />
+                    <div class="control hover-only">
+                      <IconButton
+                        tooltip="Stop process"
+                        on:click={() => setProcRun(id, false)}
+                      >
+                        <StopSVG />
+                      </IconButton>
+                    </div>
+                  {:else}
+                    <div class="stopped unhover-only" />
+                    <div class="control hover-only">
+                      <IconButton
+                        tooltip="Run process"
+                        on:click={() => setProcRun(id, true)}
+                      >
+                        <RunSVG />
+                      </IconButton>
+                    </div>
+                  {/if}
+                </div>
+              </td>
 
-            <td
-              ><a
-                class="process-name"
-                use:link
-                href={`/workspaces/${encodeURIComponent(
-                  workspaceId,
-                )}/processes/${encodeURIComponent(id)}`}>{name}</a
-              ></td
-            >
+              <td
+                ><a
+                  class="process-name"
+                  use:link
+                  href={`/workspaces/${encodeURIComponent(
+                    workspaceId,
+                  )}/processes/${encodeURIComponent(id)}`}>{name}</a
+                ></td
+              >
 
-            <td>
-              <CheckboxButton
-                tooltip={$visibleLogsStore.has(id) ? 'Hide logs' : 'Show logs'}
-                on:click={() => {
-                  setProcLogs(id, $visibleLogsStore.has(id) ? false : true);
-                }}
-                active={$visibleLogsStore.has(id)}
-              />
-            </td>
-
-            <td>
-              <div class="hover-only-visibility">
-                <IconButton
-                  tooltip="Delete process"
+              <td>
+                <CheckboxButton
+                  tooltip={$visibleLogsStore.has(id)
+                    ? 'Hide logs'
+                    : 'Show logs'}
                   on:click={() => {
-                    void deleteProcess(workspace, id);
-                    setProcLogs(id, false);
+                    setProcLogs(id, $visibleLogsStore.has(id) ? false : true);
                   }}
-                >
-                  <DeleteSVG />
-                </IconButton>
-              </div>
-            </td>
-          </tr>
-        {:else}
-          <i>No processes yet.</i>
-        {/each}
-      </table>
-    {:else if processList.stage == 'error'}
-      Error fetching process list: {processList.message}
-    {/if}
-  </div>
-  <div>
-    {#if procfileExport}
-      <p>
-        Your Procfile is not up to date.
-        <button
-          on:click={async () => {
-            if (procfileExport == null) {
-              return;
-            }
-            await workspace.writeFile('Procfile', procfileExport);
-            checkProcfile();
-          }}>Export?</button
-        >
-      </p>
-    {/if}
-  </div>
-</section>
+                  active={$visibleLogsStore.has(id)}
+                />
+              </td>
+
+              <td>
+                <div class="hover-only-visibility">
+                  <IconButton
+                    tooltip="Delete process"
+                    on:click={() => {
+                      void deleteProcess(workspace, id);
+                      setProcLogs(id, false);
+                    }}
+                  >
+                    <DeleteSVG />
+                  </IconButton>
+                </div>
+              </td>
+            </tr>
+          {:else}
+            <i>No processes yet.</i>
+          {/each}
+        </table>
+      {:else if processList.stage == 'error'}
+        Error fetching process list: {processList.message}
+      {/if}
+    </div>
+    <div>
+      {#if procfileExport}
+        <p>
+          Your Procfile is not up to date.
+          <button
+            on:click={async () => {
+              if (procfileExport == null) {
+                return;
+              }
+              await workspace.writeFile('Procfile', procfileExport);
+              checkProcfile();
+            }}>Export?</button
+          >
+        </p>
+      {/if}
+    </div>
+  </section>
+</Panel>
 
 <style>
   section {
@@ -208,13 +216,13 @@
   }
 
   table {
-    width: calc(100% + 12px);
+    width: 100%;
     border-collapse: collapse;
-    margin-left: -12px;
   }
 
   th {
     padding: 12px 0;
+    color: var(--grey-7-color);
   }
 
   td,
@@ -255,12 +263,6 @@
     border-bottom: 8px solid transparent;
   }
 
-  h1 {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-  }
-
   .run-controls {
     position: relative;
     display: flex;
@@ -288,7 +290,7 @@
     width: 14px;
     height: 14px;
     border-radius: 2px;
-    background: var(--grey-d-color);
+    background: var(--grey-c-color);
   }
 
   .control {
@@ -335,20 +337,20 @@
     line-height: 1;
     font-size: 16px;
     font-weight: 550;
-    padding: 6px 9px;
+    padding: 4px 8px;
     border-radius: 4px;
     color: var(--grey-5-color);
-    background: var(--grey-e-color);
+    background: var(--grey-d-color);
     outline: none;
   }
 
   .process-name:hover {
     color: var(--strong-color);
-    background: var(--grey-d-color);
+    background: var(--grey-c-color);
   }
 
   .process-name:focus {
-    background: var(--grey-c-color);
+    background: var(--grey-b-color);
   }
 
   @keyframes spin {

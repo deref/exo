@@ -7,7 +7,7 @@
   export let id: string | undefined;
   export let value: string = '';
   export let language: string;
-  export let height: string = '200px';
+  export let height: string = '240px';
 
   (self as any).MonacoEnvironment = {
     getWorker(_: unknown, label: string) {
@@ -22,6 +22,11 @@
       value,
       language,
       lineNumbers: 'off',
+      glyphMargin: false,
+      folding: false,
+      lineDecorationsWidth: 0,
+      lineNumbersMinChars: 0,
+      fontSize: 16,
       minimap: {
         enabled: false,
       },
@@ -37,3 +42,13 @@
 </script>
 
 <div {id} bind:this={container} style={`height: ${height}`} />
+
+<style>
+  div {
+    border-radius: 4px;
+    overflow: hidden;
+    padding-top: 6px;
+    padding-left: 12px;
+    box-shadow: var(--heavy-3d-box-shadow);
+  }
+</style>

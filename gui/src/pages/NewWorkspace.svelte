@@ -2,6 +2,7 @@
   import Layout from '../components/Layout.svelte';
   import Button from '../components/Button.svelte';
   import Textbox from '../components/Textbox.svelte';
+  import Panel from '../components/Panel.svelte';
   import ErrorLabel from '../components/ErrorLabel.svelte';
   import { api, isClientError } from '../lib/api';
   import * as qs from 'qs';
@@ -15,43 +16,43 @@
 </script>
 
 <Layout>
-  <section>
-    <form
-      on:submit|preventDefault={async () => {
-        error = null;
-        let workspaceId;
-        try {
-          workspaceId = await api.kernel.createWorkspace(root);
-          router.push(`/workspaces/${encodeURIComponent(workspaceId)}`);
-        } catch (ex) {
-          if (!isClientError(ex)) {
-            throw ex;
+  <Panel title="New workspace" backRoute="/">
+    <div>
+      <form
+        on:submit|preventDefault={async () => {
+          error = null;
+          let workspaceId;
+          try {
+            workspaceId = await api.kernel.createWorkspace(root);
+            router.push(`/workspaces/${encodeURIComponent(workspaceId)}`);
+          } catch (ex) {
+            if (!isClientError(ex)) {
+              throw ex;
+            }
+            error = ex;
           }
-          error = ex;
-        }
-        // XXX Hack to address lack of GUI for applying procfiles, etc.
-        try {
-          await api.workspace(workspaceId).apply();
-        } catch (ex) {
-          // Swallow error.
-          console.error(ex);
-        }
-      }}
-    >
-      <label for="root">Root:</label>
-      <Textbox bind:value={root} name="root" id="root" />
-      <Button type="submit">Create Workspace</Button>
-    </form>
-    <ErrorLabel value={error} />
-  </section>
+          // XXX Hack to address lack of GUI for applying procfiles, etc.
+          try {
+            await api.workspace(workspaceId).apply();
+          } catch (ex) {
+            // Swallow error.
+            console.error(ex);
+          }
+        }}
+      >
+        <label for="root">Root:</label>
+        <Textbox bind:value={root} name="root" id="root" />
+        <Button type="submit">Create Workspace</Button>
+      </form>
+      <ErrorLabel value={error} />
+    </div>
+  </Panel>
 </Layout>
 
 <style>
-  section {
+  div {
     display: flex;
     flex-direction: column;
-    background: #ffffff;
-    padding-bottom: 60px;
     height: 100%;
     width: 100%;
     align-items: center;

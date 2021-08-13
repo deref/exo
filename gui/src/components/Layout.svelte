@@ -72,7 +72,11 @@
     direction: rtl;
   }
 
-  .navbar-wrapper > div {
+  nav:not(:hover) ::-webkit-scrollbar {
+    display: none;
+  }
+
+  nav:hover .navbar-wrapper > div {
     margin-left: calc(-1 * var(--scrollbar-width));
   }
 
