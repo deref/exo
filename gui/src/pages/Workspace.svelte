@@ -1,5 +1,6 @@
 <script lang="ts">
   import Layout from '../components/Layout.svelte';
+  import TwoColumn from '../components/TwoColumn.svelte';
   import LogsViewer from '../components/LogsViewer.svelte';
   import ProcessList from '../components/ProcessList.svelte';
   import WorkspaceNav from '../components/WorkspaceNav.svelte';
@@ -13,17 +14,8 @@
 
 <Layout>
   <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
-  <div>
+  <TwoColumn>
     <ProcessList {workspace} {workspaceId} />
     <LogsViewer {workspace} {workspaceId} />
-  </div>
+  </TwoColumn>
 </Layout>
-
-<style>
-  div {
-    height: 100%;
-    display: grid;
-    grid-template-columns: 360px 1fr;
-    gap: 1px;
-  }
-</style>

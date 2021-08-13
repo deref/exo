@@ -89,7 +89,6 @@
 <Panel
   title={`Workspace ${workspaceId}`}
   backRoute="/"
-  --panel-bg-color="var(--secondary-bg-color)"
   --panel-padding="0 1rem"
 >
   <div slot="actions">
