@@ -63,8 +63,9 @@
   header {
     border-bottom: 1px solid var(--layout-bg-color);
     overflow: hidden;
-    display: flex;
-    justify-content: space-between;
+    display: grid;
+    grid-template-columns: 1fr max-content;
+    gap: 8px;
     align-items: center;
     height: 32px;
   }
@@ -74,6 +75,9 @@
     padding: 0;
     font-size: 16px;
     font-weight: 550;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
   }
 
   h1:first-child {
@@ -84,5 +88,6 @@
   .header-actions {
     display: flex;
     align-items: center;
+    overflow: hidden;
   }
 </style>

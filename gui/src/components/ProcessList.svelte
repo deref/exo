@@ -87,9 +87,10 @@
 </script>
 
 <Panel
-  title="Processes"
+  title={`Workspace ${workspaceId}`}
   backRoute="/"
   --panel-bg-color="var(--secondary-bg-color)"
+  --panel-padding="0 1rem"
 >
   <div slot="actions">
     <IconButton
@@ -216,13 +217,13 @@
   }
 
   table {
-    width: calc(100% + 12px);
+    width: 100%;
     border-collapse: collapse;
-    margin-left: -12px;
   }
 
   th {
     padding: 12px 0;
+    color: var(--grey-7-color);
   }
 
   td,
@@ -261,12 +262,6 @@
 
   tr:not(:last-child) {
     border-bottom: 8px solid transparent;
-  }
-
-  h1 {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
   }
 
   .run-controls {

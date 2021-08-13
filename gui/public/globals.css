@@ -8,6 +8,11 @@
   background-color: var(--bg-color);
 }
 
+* {
+  box-sizing: border-box;
+  cursor: default;
+}
+
 button,
 input,
 textarea {
@@ -16,9 +21,9 @@ textarea {
   font-size: inherit;
 }
 
-* {
-  box-sizing: border-box;
-  cursor: default;
+input,
+textarea {
+  cursor: text;
 }
 
 a,
