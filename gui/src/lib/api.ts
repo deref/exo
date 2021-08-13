@@ -340,8 +340,10 @@ export const api = (() => {
       },
 
       async readFile(path: string): Promise<string | null> {
-        const res = (await invoke('read-file', { path })) as ReadFileResponse;
-        return res.content;
+        const res = (await invoke('read-file', {
+          path,
+        })) as ReadFileResponse | null;
+        return res?.content ?? null;
       },
 
       async writeFile(

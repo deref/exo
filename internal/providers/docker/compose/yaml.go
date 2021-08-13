@@ -35,9 +35,17 @@ type Compose struct {
 	// TODO: extensions with "x-" prefix.
 }
 
+type IgnoredField struct{}
+
+func (ignored *IgnoredField) UnmarshalYAML(b []byte) error {
+	return nil
+}
+
 type Service struct {
-	// XXX fill me.
-	// TODO: deploy
+	// Currently ignored.
+	// TODO: Actually parse this.
+	Deploy IgnoredField `yaml:"deploy"`
+
 	// TODO: blkio_config
 	// TODO: cpu_count
 	// TODO: cpu_percent
@@ -57,7 +65,11 @@ type Service struct {
 	Configs       []string `yaml:"configs"` // TODO: support long syntax.
 	ContainerName string   `yaml:"container_name"`
 	// TODO: credential_spec
-	// TODO: depends_on
+
+	// Currently ignored.
+	// TODO: DependsOn with both short and long syntax.
+	DependsOn IgnoredField `yaml:"depends_on"`
+
 	// TODO: device_cgroup_rules
 	// TODO: devices
 	// TODO: dns

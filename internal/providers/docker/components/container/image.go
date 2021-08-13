@@ -18,12 +18,13 @@ func (c *Container) ensureImage(ctx context.Context) error {
 	if c.canBuild() {
 		return c.buildImage(ctx)
 	}
+
 	inspection, _, err := c.Docker.ImageInspectWithRaw(ctx, c.Spec.Image)
 	if docker.IsErrNotFound(err) {
 		if err := c.pullImage(ctx); err != nil {
 			return fmt.Errorf("pulling image: %w", err)
 		}
-		return nil
+		inspection, _, err = c.Docker.ImageInspectWithRaw(ctx, c.Spec.Image)
 	}
 	if err != nil {
 		return fmt.Errorf("inspecting image: %w", err)
