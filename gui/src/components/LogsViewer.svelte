@@ -117,14 +117,14 @@
     <div>Error fetching logs: {state.events.message}</div>
   {/if}
   <div slot="bottom">
-    <Textbox
+    <input
+      type="text"
       placeholder="Filter..."
       value={state.filterStr || ''}
       on:input={(e) => {
         const text = e.currentTarget?.value.trim();
         setFilterStrDebounced(text);
       }}
-      --input-width="100%"
     />
   </div>
 </Panel>
@@ -135,6 +135,16 @@
     height: 100%;
     overflow-y: scroll;
     overflow-x: hidden;
+  }
+
+  input {
+    width: 100%;
+    background: var(--primary-bg-color);
+    border: none;
+    border-top: 1px solid var(--layout-bg-color);
+    font-size: 16px;
+    padding: 8px 12px;
+    outline: none;
   }
 
   table {

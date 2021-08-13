@@ -67,7 +67,6 @@
     justify-content: space-between;
     align-items: center;
     height: 32px;
-    padding: 0 8px;
   }
 
   h1 {
@@ -75,6 +74,10 @@
     padding: 0;
     font-size: 16px;
     font-weight: 550;
+  }
+
+  h1:first-child {
+    margin-left: 8px;
   }
 
   .header-title,
