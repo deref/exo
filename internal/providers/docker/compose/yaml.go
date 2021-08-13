@@ -35,6 +35,9 @@ type Compose struct {
 	// TODO: extensions with "x-" prefix.
 }
 
+// This is a temporary placeholder for fields that we presently don't support,
+// but are safe to ignore.
+// TODO: Eliminate all usages of this with actual parsing logic.
 type IgnoredField struct{}
 
 func (ignored *IgnoredField) UnmarshalYAML(b []byte) error {
@@ -42,8 +45,6 @@ func (ignored *IgnoredField) UnmarshalYAML(b []byte) error {
 }
 
 type Service struct {
-	// Currently ignored.
-	// TODO: Actually parse this.
 	Deploy IgnoredField `yaml:"deploy"`
 
 	// TODO: blkio_config
@@ -66,8 +67,6 @@ type Service struct {
 	ContainerName string   `yaml:"container_name"`
 	// TODO: credential_spec
 
-	// Currently ignored.
-	// TODO: DependsOn with both short and long syntax.
 	DependsOn IgnoredField `yaml:"depends_on"`
 
 	// TODO: device_cgroup_rules
@@ -107,7 +106,7 @@ type Service struct {
 	// TODO: platform
 	Ports      PortMappings `yaml:"ports"`
 	Privileged bool         `yaml:"privileged"`
-	// TODO: profiles
+	Profiles   IgnoredField `yaml:"profiles"`
 	// TODO: pull_policy
 	// TODO: read_only
 	Restart string `yaml:"restart"`
