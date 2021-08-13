@@ -130,12 +130,12 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 			if oldComponent, exists := oldComponents[name]; exists {
 				// Update existing component.
 				job.Go("updating "+name, func(*task.Task) error {
-					return ws.updateComponent(ctx, oldComponent, newComponent)
+					return ws.updateComponent(job.Context, oldComponent, newComponent)
 				})
 			} else {
 				// Create new component.
 				job.Go("adding "+name, func(*task.Task) error {
-					_, err := ws.createComponent(ctx, newComponent)
+					_, err := ws.createComponent(job.Context, newComponent)
 					return err
 				})
 			}
@@ -149,8 +149,8 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 				continue
 			}
 			job.Go("deleting "+name, func(*task.Task) error {
-				return ws.control(ctx, oldComponent, func(ctx context.Context, lifecycle api.Lifecycle) error {
-					return ws.deleteComponent(ctx, lifecycle)
+				return ws.control(job.Context, oldComponent, func(ctx context.Context, lifecycle api.Lifecycle) error {
+					return ws.deleteComponent(job.Context, lifecycle)
 				})
 			})
 		}

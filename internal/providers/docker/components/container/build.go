@@ -39,6 +39,9 @@ func (c *Container) buildImage(ctx context.Context) error {
 	var eg errgroup.Group
 
 	buildTask := task.CurrentTask(ctx)
+	if buildTask == nil {
+		panic("No build task")
+	}
 
 	spec := c.Spec
 
