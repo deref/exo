@@ -47,7 +47,7 @@ var applyCmd = &cobra.Command{
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := newContext()
-		ensureDaemon()
+		checkOrEnsureServer()
 
 		cl := newClient()
 		kernel := cl.Kernel()

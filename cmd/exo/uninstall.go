@@ -29,7 +29,7 @@ for manual uninstall instructions.`,
 	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := newContext()
-		ensureDaemon()
+		checkOrEnsureServer()
 
 		cl := newClient()
 
@@ -47,10 +47,11 @@ for manual uninstall instructions.`,
 		}
 
 		// Exit daemon.
-		if err := killExod(); err != nil {
-			fmt.Println("exiting daemon")
-			return fmt.Errorf("exiting daemon: %w", err)
-		}
+		// TODO: Replace w/ RPC.
+		// if err := killExod(); err != nil {
+		// 	fmt.Println("exiting daemon")
+		// 	return fmt.Errorf("exiting daemon: %w", err)
+		// }
 
 		// Remove home directory.
 		fmt.Printf("removing home directory: %s\n", cfg.HomeDir)
