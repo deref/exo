@@ -36,8 +36,9 @@ type Compose struct {
 }
 
 type Service struct {
-	// XXX fill me.
-	// TODO: deploy
+	// Currently ignored.
+	// TODO: Actually parse this.
+	Deploy interface{} `yaml:"deploy"`
 	// TODO: blkio_config
 	// TODO: cpu_count
 	// TODO: cpu_percent
