@@ -35,9 +35,17 @@ type Compose struct {
 	// TODO: extensions with "x-" prefix.
 }
 
+type IgnoredField struct{}
+
+func (ignored *IgnoredField) UnmarshalYAML(b []byte) error {
+	return nil
+}
+
 type Service struct {
-	// XXX fill me.
-	// TODO: deploy
+	// Currently ignored.
+	// TODO: Actually parse this.
+	Deploy IgnoredField `yaml:"deploy"`
+
 	// TODO: blkio_config
 	// TODO: cpu_count
 	// TODO: cpu_percent
@@ -52,11 +60,16 @@ type Service struct {
 	// TODO: cap_add
 	// TODO: cap_drop
 	// TODO: cgroup_parent
+
 	Command       Command  `yaml:"command"`
 	Configs       []string `yaml:"configs"` // TODO: support long syntax.
 	ContainerName string   `yaml:"container_name"`
 	// TODO: credential_spec
-	// TODO: depends_on
+
+	// Currently ignored.
+	// TODO: DependsOn with both short and long syntax.
+	DependsOn IgnoredField `yaml:"depends_on"`
+
 	// TODO: device_cgroup_rules
 	// TODO: devices
 	// TODO: dns
@@ -65,8 +78,8 @@ type Service struct {
 	Domainname string  `yaml:"domainname"`
 	Entrypoint Command `yaml:"entrypoint"`
 	// TODO: env_file
-	Environment Dictionary `yaml:"environment"`
-	// TODO: expose
+	Environment Dictionary   `yaml:"environment"`
+	Expose      PortMappings `yaml:"expose"` // TODO: Validate target-only.
 	// TODO: extends
 	// TODO: external_links
 	// TODO: extra_hosts
@@ -115,6 +128,7 @@ type Service struct {
 	// TODO: userns_mode
 	Volumes []string `yaml:"volumes"` // TODO: support long syntax.
 	// TODO: volumes_from
+
 	WorkingDir string `yaml:"working_dir"`
 }
 

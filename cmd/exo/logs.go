@@ -31,11 +31,12 @@ If refs are provided, filters for the logs of those processes.`,
 		cl := newClient()
 		workspace := requireWorkspace(ctx, cl)
 
-		return tailLogs(ctx, workspace, args)
+		stopOnError := false
+		return tailLogs(ctx, workspace, args, stopOnError)
 	},
 }
 
-func tailLogs(ctx context.Context, workspace api.Workspace, logRefs []string) error {
+func tailLogs(ctx context.Context, workspace api.Workspace, logRefs []string, stopOnError bool) error {
 	colors := NewColorCache()
 
 	showName := len(logRefs) != 1
@@ -86,7 +87,7 @@ func tailLogs(ctx context.Context, workspace api.Workspace, logRefs []string) er
 				cmdutil.Warnf("invalid event timestamp: %q", event.Timestamp)
 				continue
 			}
-			timestamp := t.Format("15:04:05")
+			timestamp := t.Local().Format("15:04:05")
 
 			var prefix string
 			if showName {
@@ -109,6 +110,24 @@ func tailLogs(ctx context.Context, workspace api.Workspace, logRefs []string) er
 			fmt.Printf("%s %s%s\n", prefix, event.Message, termReset)
 		}
 		in.Cursor = &output.NextCursor
+
+		if stopOnError {
+			descriptions, err = workspace.DescribeProcesses(ctx, &api.DescribeProcessesInput{})
+			if err != nil {
+				return fmt.Errorf("failed to check status of processes: %w", err)
+			}
+
+			for _, proc := range descriptions.Processes {
+				for _, id := range logIDs {
+					// TODO: Compare some metadata on the log, not the log itself.
+					// SEE NOTE [LOG_COMPONENTS].
+					if proc.ID == id && !proc.Running {
+						return fmt.Errorf("process stopped running: %q", proc.Name)
+					}
+				}
+			}
+		}
+
 		if len(output.Items) < 10 { // TODO: OK heuristic?
 			select {
 			case <-time.After(250 * time.Millisecond):

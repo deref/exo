@@ -11,7 +11,7 @@ const (
 )
 
 func Now(ctx context.Context) time.Time {
-	return time.Now()
+	return time.Now().UTC()
 }
 
 func NowNano(ctx context.Context) int64 {
@@ -23,7 +23,7 @@ func NowString(ctx context.Context) string {
 }
 
 func NanoToIso(nano int64) string {
-	return IsoNano(time.Unix(0, nano))
+	return IsoNano(time.Unix(0, nano).In(time.UTC))
 }
 
 func ParseIsoNano(iso string) (time.Time, error) {

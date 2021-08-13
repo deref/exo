@@ -64,7 +64,7 @@
     const current = await workspace.readFile('Procfile');
     const computed = await workspace.exportProcfile();
 
-    procfileExport = current === computed ? null : computed;
+    procfileExport = current && current === computed ? null : computed;
   }
 
   let refreshInterval: any;

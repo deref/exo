@@ -165,7 +165,7 @@ func pipeToSyslog(ctx context.Context, conn net.Conn, componentID string, name s
 		sm := &rfc5424.SyslogMessage{}
 		sm.SetVersion(1)
 		sm.SetPriority(syslogPriority)
-		sm.SetTimestamp(time.Now().Format(chrono.RFC3339MicroUTC))
+		sm.SetTimestamp(chrono.Now(ctx).Format(chrono.RFC3339MicroUTC))
 		sm.SetAppname(componentID)
 		sm.SetProcID(procID)
 		sm.SetMsgID(name) // See note: [LOG_COMPONENTS].

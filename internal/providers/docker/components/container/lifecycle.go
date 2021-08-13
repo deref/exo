@@ -25,7 +25,7 @@ func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput)
 	}
 
 	if err := c.start(ctx); err != nil {
-		c.Logger.Infof("starting container %q: %v", c.ContainerID, err)
+		c.Logger.Infof("starting container %q: %v", c.State.ContainerID, err)
 	}
 
 	return &core.InitializeOutput{}, nil
@@ -33,48 +33,63 @@ func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput)
 
 func (c *Container) create(ctx context.Context) error {
 	var healthCfg *container.HealthConfig
-	if c.Healthcheck != nil {
+	if c.Spec.Healthcheck != nil {
 		healthCfg = &container.HealthConfig{
-			Test:        c.Healthcheck.Test,
-			Interval:    time.Duration(c.Healthcheck.Interval),
-			Timeout:     time.Duration(c.Healthcheck.Timeout),
-			Retries:     c.Healthcheck.Retries,
-			StartPeriod: time.Duration(c.Healthcheck.StartPeriod),
+			Test:        c.Spec.Healthcheck.Test,
+			Interval:    time.Duration(c.Spec.Healthcheck.Interval),
+			Timeout:     time.Duration(c.Spec.Healthcheck.Timeout),
+			Retries:     c.Spec.Healthcheck.Retries,
+			StartPeriod: time.Duration(c.Spec.Healthcheck.StartPeriod),
 		}
 	}
+
 	containerCfg := &container.Config{
-		Hostname:     c.Hostname,
-		Domainname:   c.Domainname,
-		User:         c.User,
+		Hostname:     c.Spec.Hostname,
+		Domainname:   c.Spec.Domainname,
+		User:         c.Spec.User,
 		ExposedPorts: make(nat.PortSet),
-		Tty:          c.TTY,
-		OpenStdin:    c.StdinOpen,
+		Tty:          c.Spec.TTY,
+		OpenStdin:    c.Spec.StdinOpen,
 		// StdinOnce       bool                // If true, close stdin after the 1 attached client disconnects.
-		Env:         c.Environment.Slice(),
-		Cmd:         strslice.StrSlice(c.Command),
+		Env:         c.Spec.Environment.Slice(),
+		Cmd:         strslice.StrSlice(c.Spec.Command),
 		Healthcheck: healthCfg,
 		// ArgsEscaped     bool                `json:",omitempty"` // True if command is already escaped (meaning treat as a command line) (Windows specific).
-		Image: c.State.ImageID,
+
+		Image: c.State.Image.ID,
 		// Volumes         map[string]struct{} // List of volumes (mounts) used for the container
-		WorkingDir: c.WorkingDir,
-		Entrypoint: strslice.StrSlice(c.Entrypoint),
+		WorkingDir: c.Spec.WorkingDir,
+		Entrypoint: strslice.StrSlice(c.Spec.Entrypoint),
 		// NetworkDisabled bool                `json:",omitempty"` // Is network disabled
-		MacAddress: c.MacAddress,
+		MacAddress: c.Spec.MacAddress,
 		// OnBuild         []string            // ONBUILD metadata that were defined on the image Dockerfile
-		Labels:     c.Labels.WithoutNils(),
-		StopSignal: c.StopSignal,
+		Labels:     c.Spec.Labels.WithoutNils(),
+		StopSignal: c.Spec.StopSignal,
 		// Shell           strslice.StrSlice   `json:",omitempty"` // Shell for shell-form of RUN, CMD, ENTRYPOINT
 	}
-	if c.StopGracePeriod != nil {
-		timeout := int(time.Duration(*c.StopGracePeriod).Round(time.Second).Seconds())
+
+	if len(containerCfg.Cmd) == 0 {
+		containerCfg.Cmd = c.State.Image.Command
+	}
+
+	if len(containerCfg.Entrypoint) == 0 {
+		containerCfg.Entrypoint = c.State.Image.Entrypoint
+	}
+
+	if containerCfg.WorkingDir == "" {
+		containerCfg.WorkingDir = c.State.Image.WorkingDir
+	}
+
+	if c.Spec.StopGracePeriod != nil {
+		timeout := int(time.Duration(*c.Spec.StopGracePeriod).Round(time.Second).Seconds())
 		containerCfg.StopTimeout = &timeout
 	}
-	for _, mapping := range c.Ports {
+	for _, mapping := range c.Spec.Ports {
 		target := nat.Port(mapping.Target) // TODO: Handle port ranges.
 		containerCfg.ExposedPorts[target] = struct{}{}
 	}
 	logCfg := container.LogConfig{}
-	if c.Logging.Driver == "" && (c.Logging.Options == nil || len(c.Logging.Options) == 0) {
+	if c.Spec.Logging.Driver == "" && (c.Spec.Logging.Options == nil || len(c.Spec.Logging.Options) == 0) {
 		// No logging configuration specified, so default to logging to exo's
 		// syslog service.
 		logCfg.Type = "syslog"
@@ -85,8 +100,8 @@ func (c *Container) create(ctx context.Context) error {
 			"syslog-format":   "rfc5424micro",
 		}
 	} else {
-		logCfg.Type = c.Logging.Driver
-		logCfg.Config = c.Logging.Options
+		logCfg.Type = c.Spec.Logging.Driver
+		logCfg.Config = c.Spec.Logging.Options
 	}
 	hostCfg := &container.HostConfig{
 		//// Applicable to all platforms
@@ -118,7 +133,7 @@ func (c *Container) create(ctx context.Context) error {
 		//Links           []string          // List of links (in the name:alias form)
 		//OomScoreAdj     int               // Container preference for OOM-killing
 		//PidMode         PidMode           // PID namespace to use for the container
-		Privileged: c.Privileged,
+		Privileged: c.Spec.Privileged,
 		//PublishAllPorts bool              // Should docker publish all exposed port for the container
 		//ReadonlyRootfs  bool              // Is the container root filesystem in read-only
 		//SecurityOpt     []string          // List of string values to customize labels for MLS systems, such as SELinux.
@@ -126,9 +141,9 @@ func (c *Container) create(ctx context.Context) error {
 		//Tmpfs           map[string]string `json:",omitempty"` // List of tmpfs (mounts) used for the container
 		//UTSMode         UTSMode           // UTS namespace to use for the container
 		//UsernsMode      UsernsMode        // The user namespace to use for the container
-		ShmSize: int64(c.ShmSize),
+		ShmSize: int64(c.Spec.ShmSize),
 		//Sysctls         map[string]string `json:",omitempty"` // List of Namespaced sysctls used for the container
-		Runtime: c.Runtime,
+		Runtime: c.Spec.Runtime,
 
 		//// Applicable to Windows
 		//ConsoleSize [2]uint   // Initial console size (height,width)
@@ -149,7 +164,7 @@ func (c *Container) create(ctx context.Context) error {
 		//// Run a custom init inside the container, if null, use the daemon's configured settings
 		//Init *bool `json:",omitempty"`
 	}
-	for _, mapping := range c.Ports {
+	for _, mapping := range c.Spec.Ports {
 		target := nat.Port(mapping.Target) // TODO: Handle ranges.
 		bindings := hostCfg.PortBindings[target]
 		bindings = append(bindings, nat.PortBinding{
@@ -183,48 +198,48 @@ func (c *Container) create(ctx context.Context) error {
 	//	//// example `v7` to specify ARMv7 when architecture is `arm`.
 	//	//Variant string `json:"variant,omitempty"`
 	//}
-	createdBody, err := c.Docker.ContainerCreate(ctx, containerCfg, hostCfg, networkCfg, platform, c.ContainerName)
+	createdBody, err := c.Docker.ContainerCreate(ctx, containerCfg, hostCfg, networkCfg, platform, c.Spec.ContainerName)
 	if err != nil {
 		return err
 	}
-	c.ContainerID = createdBody.ID
+	c.State.ContainerID = createdBody.ID
 	return nil
 }
 
 func (c *Container) Refresh(ctx context.Context, input *core.RefreshInput) (*core.RefreshOutput, error) {
-	if c.ContainerID == "" {
-		c.Running = false
+	if c.State.ContainerID == "" {
+		c.State.Running = false
 		return &core.RefreshOutput{}, nil
 	}
 
-	inspection, err := c.Docker.ContainerInspect(ctx, c.ContainerID)
+	inspection, err := c.Docker.ContainerInspect(ctx, c.State.ContainerID)
 	if err != nil {
 		return nil, fmt.Errorf("inspecting container: %w", err)
 	}
 
-	c.Running = inspection.State.Running
+	c.State.Running = inspection.State.Running
 	return &core.RefreshOutput{}, nil
 }
 
 func (c *Container) Dispose(ctx context.Context, input *core.DisposeInput) (*core.DisposeOutput, error) {
-	if c.ContainerID == "" {
+	if c.State.ContainerID == "" {
 		return &core.DisposeOutput{}, nil
 	}
 	if err := c.stop(ctx); err != nil {
-		c.Logger.Infof("stopping container %q: %v", c.ContainerID, err)
+		c.Logger.Infof("stopping container %q: %v", c.State.ContainerID, err)
 	}
-	err := c.Docker.ContainerRemove(ctx, c.ContainerID, types.ContainerRemoveOptions{
+	err := c.Docker.ContainerRemove(ctx, c.State.ContainerID, types.ContainerRemoveOptions{
 		// XXX RemoveVolumes: ???,
 		// XXX RemoveLinks: ???,
 		Force: true, // OK?
 	})
 	if docker.IsErrNotFound(err) {
-		c.Logger.Infof("disposing container not found: %q", c.ContainerID)
+		c.Logger.Infof("disposing container not found: %q", c.State.ContainerID)
 		err = nil
 	}
 	if err != nil {
 		return nil, err
 	}
-	c.ContainerID = ""
+	c.State.ContainerID = ""
 	return &core.DisposeOutput{}, nil
 }

@@ -10,8 +10,7 @@ import (
 )
 
 var (
-	cfg        *config.Config = &config.Config{}
-	knownPaths *cmdutil.KnownPaths
+	cfg *config.Config = &config.Config{}
 )
 
 var rootCmd = &cobra.Command{
@@ -37,7 +36,6 @@ func main() {
 	if err := config.LoadDefault(cfg); err != nil {
 		cmdutil.Fatalf("loading config: %w", err)
 	}
-	knownPaths = cmdutil.MustMakeDirectories(cfg)
 	if err := rootCmd.Execute(); err != nil {
 		cmdutil.Fatalf("%w", err)
 	}

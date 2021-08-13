@@ -88,7 +88,7 @@ func (t *Task) Start() {
 	if t.status != api.StatusPending {
 		panic("cannot start task that is not in pending state")
 	}
-	t.updateTask(api.StatusRunning, "", "")
+	t.updateTask(api.StatusRunning, "", "", 0, 0)
 }
 
 // Marks this Task as failed, which will be reported by Finish().
@@ -122,26 +122,34 @@ func (t *Task) Finish() error {
 		message = err.Error()
 	}
 	finished := chrono.NowString(t)
-	t.updateTask(status, message, finished)
+	t.updateTask(status, message, finished, 0, 0)
 	if t.reportingErr != nil {
 		t.tt.Logger.Infof("error reporting task progress: %v", t.reportingErr)
 	}
 	return err
 }
 
-func (t *Task) updateTask(status string, message string, finished string) {
+func (t *Task) updateTask(status string, message string, finished string, current, total int) {
 	if t.id == "" {
 		return
 	}
 	input := api.UpdateTaskInput{
-		ID:     t.id,
-		Status: &status,
+		ID: t.id,
+	}
+	if status != "" {
+		input.Status = &status
 	}
 	if message != "" {
-		input.Status = &message
+		input.Message = &message
 	}
 	if finished != "" {
 		input.Finished = &finished
+	}
+	if total > 0 {
+		input.Progress = &api.TaskProgress{
+			Current: current,
+			Total:   total,
+		}
 	}
 	if _, err := t.tt.Store.UpdateTask(t, &input); err != nil {
 		if t.reportingErr == nil {
@@ -150,12 +158,24 @@ func (t *Task) updateTask(status string, message string, finished string) {
 	}
 }
 
+func (t *Task) ReportMessage(message string) {
+	t.updateTask("", message, "", 0, 0)
+}
+
+func (t *Task) ReportProgress(current, total int) {
+	t.updateTask("", "", "", current, total)
+}
+
 func (t *Task) Wait() error {
 	return t.eg.Wait()
 }
 
+func (t *Task) StartChild(name string) *Task {
+	return t.tt.startTask(t, t, name)
+}
+
 func (t *Task) RunChild(name string, f func(task *Task) error) error {
-	task := t.tt.startTask(t, t, name)
+	task := t.StartChild(name)
 	if err := f(task); err != nil {
 		task.Fail(err)
 	}

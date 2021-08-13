@@ -13,7 +13,7 @@
     setFilterStr,
   } from '../lib/logs/store';
   import type { WorkspaceState } from '../lib/logs/store';
-  import { shortDate } from '../lib/time';
+  import { shortTime } from '../lib/time';
   import { processes } from '../lib/process/store';
   import debounce from '../lib/debounce';
 
@@ -94,6 +94,13 @@
   const setFilterStrDebounced = debounce((filterStr: string) => {
     setFilterStr(workspaceId, workspace, filterStr);
   }, 250);
+  let filterInput = state.filterStr;
+  $: {
+    if (filterInput !== null) {
+      const text = filterInput.trim();
+      setFilterStrDebounced(text);
+    }
+  }
 </script>
 
 <Panel title="Logs" --panel-padding="0" --panel-overflow-y="hidden">
@@ -102,7 +109,10 @@
       <table>
         {#each state.events.data as event (event.id)}
           <tr class="log-entry" style={logStyleFromHash(event.log)}>
-            <td>{shortDate(event.timestamp)}</td>
+            <td class="timestamp">
+              <span class="short-time">{shortTime(event.timestamp)}</span>
+              <span class="full-timestamp">{event.timestamp}</span>
+            </td>
             <td>{friendlyName(event.log)}</td>
             <td>
               <FormattedLogMessage message={event.message} />
@@ -120,11 +130,7 @@
     <input
       type="text"
       placeholder="Filter..."
-      value={state.filterStr || ''}
-      on:input={(e) => {
-        const text = e.currentTarget?.value.trim();
-        setFilterStrDebounced(text);
-      }}
+      bind:value={filterInput}
     />
   </div>
 </Panel>
@@ -190,5 +196,30 @@
   tr:hover td:nth-child(2) {
     background: var(--log-bg-hover-color);
     color: var(--log-hover-color);
+  }
+
+  .timestamp {
+    position: relative;
+  }
+
+  .full-timestamp {
+    display: none;
+  }
+
+  .timestamp:hover {
+    overflow: visible;
+  }
+
+  .timestamp:hover .full-timestamp {
+    display: block;
+    position: absolute;
+    top: 0;
+    left: 0;
+    bottom: 0;
+    width: auto;
+    white-space: nowrap;
+    background: #333333;
+    color: #f3f3f3;
+    padding: 0 0.3em;
   }
 </style>

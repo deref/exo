@@ -106,6 +106,9 @@ func (sto *TaskStore) UpdateTask(ctx context.Context, input *api.UpdateTaskInput
 	if input.Finished != nil {
 		task.Finished = input.Finished
 	}
+	if input.Progress != nil {
+		task.Progress = input.Progress
+	}
 
 	task.Updated = chrono.NowString(ctx)
 

@@ -31,7 +31,7 @@ var exitCmd = &cobra.Command{
 func killExod() error {
 	_ = osutil.TerminateProcessWithTimeout(runState.Pid, 5*time.Second)
 
-	if err := os.Remove(knownPaths.RunStateFile); err != nil {
+	if err := os.Remove(cfg.RunStateFile); err != nil {
 		return fmt.Errorf("removing run state file: %w", err)
 	}
 	return nil
