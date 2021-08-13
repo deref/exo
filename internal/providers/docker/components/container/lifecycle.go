@@ -97,6 +97,7 @@ func (c *Container) create(ctx context.Context) error {
 		}
 		return nil
 	}
+
 	for _, exposed := range c.Spec.Expose {
 		if err := exposePort(exposed.Target, exposed.Protocol); err != nil {
 			return fmt.Errorf("exposing port %q: %w", exposed.Target, err)

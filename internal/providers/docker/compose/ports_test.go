@@ -7,7 +7,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func TestPortSytnax(t *testing.T) {
+func TestPortSyntax(t *testing.T) {
 	assertParsed := func(expected PortMapping, short string) {
 		actual, err := ParsePortMapping(short)
 		assert.NoError(t, err)
@@ -42,6 +42,24 @@ func TestPortSytnax(t *testing.T) {
 		Target:    "6060",
 		Protocol:  "udp",
 	}, "6060:6060/udp")
+	assertParsed(PortMapping{
+		HostIP:    "127.0.0.1",
+		Published: "",
+		Target:    "65432",
+		Protocol:  "udp",
+	}, "127.0.0.1::65432/udp")
+	assertParsed(PortMapping{
+		HostIP:    "2a01:4f8:440c:5e94::1",
+		Published: "53",
+		Target:    "53",
+		Protocol:  "udp",
+	}, "2a01:4f8:440c:5e94::1:53:53/udp")
+	assertParsed(PortMapping{
+		HostIP:    "::",
+		Published: "53",
+		Target:    "53",
+		Protocol:  "udp",
+	}, ":::53:53/udp")
 }
 
 func TestPortYaml(t *testing.T) {
