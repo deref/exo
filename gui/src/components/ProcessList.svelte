@@ -338,7 +338,7 @@
     line-height: 1;
     font-size: 16px;
     font-weight: 550;
-    padding: 6px 9px;
+    padding: 4px 8px;
     border-radius: 4px;
     color: var(--grey-5-color);
     background: var(--grey-d-color);

@@ -45,10 +45,10 @@
 
 <style>
   div {
-    border-radius: 0.5em;
+    border-radius: 4px;
     overflow: hidden;
-    padding-top: 0.5em;
-    padding-left: 1em;
+    padding-top: 6px;
+    padding-left: 12px;
     box-shadow: var(--heavy-3d-box-shadow);
   }
 </style>

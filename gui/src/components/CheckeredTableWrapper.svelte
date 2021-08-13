@@ -20,7 +20,7 @@
   div :global(table) {
     border: none;
     border-collapse: collapse;
-    border-radius: 0.25em;
+    border-radius: 4px;
     box-shadow: 0 0.33px 0 1px hsla(0, 0%, 100%, 0.15),
       0 6px 9px -4px rgba(0, 0, 0, 0.2), 0 0.4px 0 0.8px rgba(0, 0, 0, 0.1);
     overflow: hidden;
