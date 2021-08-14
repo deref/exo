@@ -4,8 +4,6 @@
 @import 'font/fira/fira_code.css';
 
 :root {
-  --font-sans: 'Inter', -apple-system, sans-serif;
-  --font-mono: 'Fira Code', monospace;
   font-family: var(--font-sans);
   color: var(--color);
   background-color: var(--bg-color);

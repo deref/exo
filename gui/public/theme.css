@@ -1,6 +1,8 @@
 /* Default global styles for component properties that can be overridden with `style-props` */
 
 :root {
+  --font-sans: 'Inter', -apple-system, sans-serif;
+  --font-mono: 'Fira Code', monospace;
   --input-width: 300px;
   --scrollbar-width: 8px;
   --scrollbar-height: 4px;
