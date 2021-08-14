@@ -1,6 +1,8 @@
 package exo
 
-import _ "embed"
+import (
+	"embed"
+)
 
 const (
 	CheckVersionEndpoint = "https://exo.deref.io/latest-version"
@@ -10,3 +12,8 @@ const (
 
 //go:embed VERSION
 var Version string
+
+//go:embed NOTICES.md
+//go:embed LICENSE
+//go:embed doc/licenses/ofl
+var Notices embed.FS
