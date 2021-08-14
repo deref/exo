@@ -42,6 +42,7 @@ pre {
 pre,
 code {
   font-family: var(--font-mono);
+  font-variant-ligatures: var(--preferred-ligatures-code);
 }
 
 html,

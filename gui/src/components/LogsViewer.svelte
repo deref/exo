@@ -151,6 +151,7 @@
 
   table {
     font-family: var(--font-mono);
+    font-variant-ligatures: var(--preferred-ligatures-logs);
     font-weight: 450;
     font-size: 15px;
   }

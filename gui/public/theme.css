@@ -11,6 +11,8 @@
   --panel-overflow-y: auto;
   --panel-overflow-x: hidden;
   --panel-bg-color: var(--primary-bg-color);
+  --preferred-ligatures-logs: none;
+  --preferres-ligatures-code: none;
 }
 
 /* Theme color variables */
