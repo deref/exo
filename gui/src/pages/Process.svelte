@@ -161,7 +161,6 @@
     max-width: 600px;
     display: inline-block;
     overflow-x: auto;
-    font-size: 1.05em;
     padding: 8px;
     margin: -10px;
   }

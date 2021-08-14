@@ -127,11 +127,7 @@
     <div>Error fetching logs: {state.events.message}</div>
   {/if}
   <div slot="bottom">
-    <input
-      type="text"
-      placeholder="Filter..."
-      bind:value={filterInput}
-    />
+    <input type="text" placeholder="Filter..." bind:value={filterInput} />
   </div>
 </Panel>
 
@@ -154,7 +150,7 @@
   }
 
   table {
-    font-family: 'Fira Code', monospace;
+    font-family: var(--font-mono);
     font-weight: 450;
     font-size: 15px;
   }

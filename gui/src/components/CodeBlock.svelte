@@ -3,7 +3,6 @@
 <style>
   pre {
     background: rgba(68, 68, 68, 0.0667);
-    font-family: Fira Code, monospace;
     font-size: 16px;
     border-radius: 0.33em;
     padding: 0.667em 1em;
