@@ -3,7 +3,6 @@
 <style>
   code {
     background: rgba(68, 68, 68, 0.0667);
-    font-family: Fira Code, monospace;
     font-size: 0.85em;
     border-radius: 0.33em;
     box-shadow: 0 0.33px 0 1px hsla(0, 0%, 100%, 0.15),
