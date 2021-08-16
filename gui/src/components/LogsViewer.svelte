@@ -1,8 +1,8 @@
 <script lang="ts">
   import Panel from './Panel.svelte';
-  import Textbox from './Textbox.svelte';
-  import FormattedLogMessage from './logs/FormattedLogMessage.svelte';
+  import Logs from './Logs.svelte';
   import { logStyleFromHash } from '../lib/color';
+  import { shortTime } from '../lib/time';
   import { onMount, onDestroy, afterUpdate, beforeUpdate } from 'svelte';
   import { hasData, isUnresolved } from '../lib/api';
   import type { WorkspaceApi } from '../lib/api';
@@ -13,7 +13,6 @@
     setFilterStr,
   } from '../lib/logs/store';
   import type { WorkspaceState } from '../lib/logs/store';
-  import { shortTime } from '../lib/time';
   import { processes } from '../lib/process/store';
   import debounce from '../lib/debounce';
 
@@ -56,6 +55,21 @@
     const [procId, stream] = log.split(':');
     const procName = knownProcessNameById[procId];
     return procName ? (stream ? `${procName}:${stream}` : procName) : log;
+  };
+
+  const formatLogs = (events: any) => {
+    return events.data.map((event: any) => {
+      return {
+        id: event.id,
+        style: logStyleFromHash(event.log),
+        time: {
+          short: shortTime(event.timestamp),
+          full: event.timestamp,
+        },
+        name: friendlyName(event.log),
+        message: event.message,
+      };
+    });
   };
 
   onMount(() => {
@@ -105,21 +119,8 @@
 
 <Panel title="Logs" --panel-padding="0" --panel-overflow-y="hidden">
   {#if hasData(state.events)}
-    <div class="log-table-container" bind:this={logViewport}>
-      <table>
-        {#each state.events.data as event (event.id)}
-          <tr class="log-entry" style={logStyleFromHash(event.log)}>
-            <td class="timestamp">
-              <span class="short-time">{shortTime(event.timestamp)}</span>
-              <span class="full-timestamp">{event.timestamp}</span>
-            </td>
-            <td>{friendlyName(event.log)}</td>
-            <td>
-              <FormattedLogMessage message={event.message} />
-            </td>
-          </tr>
-        {/each}
-      </table>
+    <div class="logs-container" bind:this={logViewport}>
+      <Logs logs={formatLogs(state.events)} />
     </div>
   {:else if isUnresolved(state.events)}
     <div>Loading logs...</div>
@@ -132,7 +133,7 @@
 </Panel>
 
 <style>
-  .log-table-container {
+  .logs-container {
     width: 100%;
     height: 100%;
     overflow-y: scroll;
@@ -147,76 +148,5 @@
     font-size: 16px;
     padding: 8px 12px;
     outline: none;
-  }
-
-  table {
-    font-family: var(--font-mono);
-    font-variant-ligatures: var(--preferred-ligatures-logs);
-    font-weight: 450;
-    font-size: 15px;
-  }
-
-  table,
-  tr,
-  td {
-    border: none;
-    border-collapse: collapse;
-  }
-
-  td {
-    padding: 0 0.3em;
-    vertical-align: text-top;
-    color: #333333;
-    white-space: pre-wrap;
-  }
-
-  tr:hover td {
-    background: #f3f3f3;
-    color: #111111;
-  }
-
-  td:nth-child(1) {
-    color: #999999;
-  }
-
-  tr:hover td:nth-child(1) {
-    background: #eeeeee;
-    color: #555555;
-  }
-
-  td:nth-child(2) {
-    text-align: right;
-    background: var(--log-bg-color);
-    color: var(--log-color);
-  }
-
-  tr:hover td:nth-child(2) {
-    background: var(--log-bg-hover-color);
-    color: var(--log-hover-color);
-  }
-
-  .timestamp {
-    position: relative;
-  }
-
-  .full-timestamp {
-    display: none;
-  }
-
-  .timestamp:hover {
-    overflow: visible;
-  }
-
-  .timestamp:hover .full-timestamp {
-    display: block;
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: auto;
-    white-space: nowrap;
-    background: #333333;
-    color: #f3f3f3;
-    padding: 0 0.3em;
   }
 </style>
