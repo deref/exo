@@ -5,8 +5,6 @@ interface "lifecycle" {
   method "refresh" {}
 
   method "dispose" {
-    input "stop-now" "bool" {}
-
     // TODO: output promise for awaiting synchronous deletes.
   }
 
