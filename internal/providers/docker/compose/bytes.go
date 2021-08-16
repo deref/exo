@@ -4,27 +4,37 @@ import (
 	"errors"
 	"strconv"
 	"strings"
+
+	"github.com/deref/exo/internal/providers/docker/compose/template"
 )
 
-type Bytes int64
+type Bytes struct {
+	Value      int64
+	Expression string
+}
 
 func (bs Bytes) MarshalYAML() (interface{}, error) {
-	return int64(bs), nil
+	i, err := strconv.ParseInt(bs.Expression, 10, 64)
+	if err != nil {
+		return bs.Expression, nil
+	}
+	return i, nil
 }
 
 func (bs *Bytes) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var n int64
-	err := unmarshal(&n)
-	if err == nil {
-		*bs = Bytes(n)
-		return nil
-	}
-	var s string
-	if err = unmarshal(&s); err != nil {
+	return unmarshal(&bs.Expression)
+}
+
+func (bs *Bytes) Interpolate(env Environment) error {
+	tmpl, err := template.New(bs.Expression)
+	if err != nil {
 		return err
 	}
-	n, err = ParseBytes(s)
-	*bs = Bytes(n)
+	str, err := template.Substitute(tmpl, env)
+	if err != nil {
+		return err
+	}
+	bs.Value, err = ParseBytes(str)
 	return err
 }
 

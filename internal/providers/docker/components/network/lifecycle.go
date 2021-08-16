@@ -15,7 +15,7 @@ func (n *Network) Initialize(ctx context.Context, input *core.InitializeInput) (
 	opts := types.NetworkCreate{
 		// We don't care about duplicates, and it's best-effort checking only anyway.
 		CheckDuplicate: false,
-		Driver:         n.Driver,
+		Driver:         n.Driver.Value,
 		//Scope          string
 		EnableIPv6: n.EnableIPv6,
 		//IPAM           *network.IPAM

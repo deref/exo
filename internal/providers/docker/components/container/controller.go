@@ -3,14 +3,14 @@ package container
 import (
 	"fmt"
 
+	"github.com/deref/exo/internal/providers/docker"
 	"github.com/deref/exo/internal/util/jsonutil"
-	"github.com/goccy/go-yaml"
 )
 
 func (c *Container) InitResource(componentID, spec, state string) error {
 	c.ComponentID = componentID
-	if err := yaml.Unmarshal([]byte(spec), &c.Spec); err != nil {
-		return fmt.Errorf("unmarshalling spec: %w", err)
+	if err := docker.LoadSpec(spec, &c.Spec, c.ComponentBase.WorkspaceEnvironment); err != nil {
+		return fmt.Errorf("loading spec: %w", err)
 	}
 	if err := jsonutil.UnmarshalString(state, &c.State); err != nil {
 		return fmt.Errorf("unmarshalling state: %w", err)

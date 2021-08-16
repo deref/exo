@@ -26,15 +26,25 @@ func TestParseBytes(t *testing.T) {
 
 func TestBytesYaml(t *testing.T) {
 	var actual struct {
-		Int Bytes
-		Str Bytes
+		Int Bytes `yaml:"int"`
+		Str Bytes `yaml:"str"`
+		Var Bytes `yaml:"var"`
 	}
-	yamlutil.MustUnmarshalString(`
+	mustLoadYaml(`
 int: 1234
 str: 5k
-`, &actual)
-	assert.Equal(t, int64(1234), int64(actual.Int))
-	assert.Equal(t, int64(5120), int64(actual.Str))
+var: ${ten}k
+`, &actual, MapEnvironment{
+		"ten": "10",
+	})
+	assert.Equal(t, int64(1234), int64(actual.Int.Value))
+	assert.Equal(t, int64(5120), int64(actual.Str.Value))
+	assert.Equal(t, int64(10240), int64(actual.Var.Value))
 
-	assert.Equal(t, "1024", strings.TrimSpace(yamlutil.MustMarshalString(Bytes(1024))))
+	assert.Equal(t, `1024`, strings.TrimSpace(yamlutil.MustMarshalString(Bytes{
+		Expression: "1024",
+	})))
+	assert.Equal(t, `1024mb`, strings.TrimSpace(yamlutil.MustMarshalString(Bytes{
+		Expression: "1024mb",
+	})))
 }

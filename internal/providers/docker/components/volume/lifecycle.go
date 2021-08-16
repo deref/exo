@@ -9,11 +9,15 @@ import (
 
 func (v *Volume) Initialize(ctx context.Context, input *core.InitializeInput) (output *core.InitializeOutput, err error) {
 	opts := volume.VolumeCreateBody{
-		Driver:     v.Driver,
-		DriverOpts: v.DriverOpts,
-		Labels:     v.Labels.WithoutNils(),
-		Name:       v.Name,
+		Driver: v.Driver.Value,
+		Labels: v.Labels.WithoutNils(),
+		Name:   v.Name.Value,
 	}
+	opts.DriverOpts = make(map[string]string)
+	for k, v := range v.DriverOpts {
+		opts.DriverOpts[k] = v.Value
+	}
+
 	createdBody, err := v.Docker.VolumeCreate(ctx, opts)
 	if err != nil {
 		return nil, err

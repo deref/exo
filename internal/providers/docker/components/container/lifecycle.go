@@ -44,9 +44,9 @@ func (c *Container) create(ctx context.Context) error {
 	}
 
 	containerCfg := &container.Config{
-		Hostname:     c.Spec.Hostname,
-		Domainname:   c.Spec.Domainname,
-		User:         c.Spec.User,
+		Hostname:     c.Spec.Hostname.Value,
+		Domainname:   c.Spec.Domainname.Value,
+		User:         c.Spec.User.Value,
 		ExposedPorts: make(nat.PortSet),
 		Tty:          c.Spec.TTY,
 		OpenStdin:    c.Spec.StdinOpen,
@@ -58,13 +58,13 @@ func (c *Container) create(ctx context.Context) error {
 
 		Image: c.State.Image.ID,
 		// Volumes         map[string]struct{} // List of volumes (mounts) used for the container
-		WorkingDir: c.Spec.WorkingDir,
+		WorkingDir: c.Spec.WorkingDir.Value,
 		Entrypoint: strslice.StrSlice(c.Spec.Entrypoint),
 		// NetworkDisabled bool                `json:",omitempty"` // Is network disabled
-		MacAddress: c.Spec.MacAddress,
+		MacAddress: c.Spec.MacAddress.Value,
 		// OnBuild         []string            // ONBUILD metadata that were defined on the image Dockerfile
 		Labels:     c.Spec.Labels.WithoutNils(),
-		StopSignal: c.Spec.StopSignal,
+		StopSignal: c.Spec.StopSignal.Value,
 		// Shell           strslice.StrSlice   `json:",omitempty"` // Shell for shell-form of RUN, CMD, ENTRYPOINT
 	}
 
@@ -89,7 +89,7 @@ func (c *Container) create(ctx context.Context) error {
 		containerCfg.ExposedPorts[target] = struct{}{}
 	}
 	logCfg := container.LogConfig{}
-	if c.Spec.Logging.Driver == "" && (c.Spec.Logging.Options == nil || len(c.Spec.Logging.Options) == 0) {
+	if c.Spec.Logging.Driver.Value == "" && (c.Spec.Logging.Options == nil || len(c.Spec.Logging.Options) == 0) {
 		// No logging configuration specified, so default to logging to exo's
 		// syslog service.
 		logCfg.Type = "syslog"
@@ -100,8 +100,11 @@ func (c *Container) create(ctx context.Context) error {
 			"syslog-format":   "rfc5424micro",
 		}
 	} else {
-		logCfg.Type = c.Spec.Logging.Driver
-		logCfg.Config = c.Spec.Logging.Options
+		logCfg.Type = c.Spec.Logging.Driver.Value
+		logCfg.Config = make(map[string]string)
+		for k, v := range c.Spec.Logging.Options {
+			logCfg.Config[k] = v.Value
+		}
 	}
 	hostCfg := &container.HostConfig{
 		//// Applicable to all platforms
@@ -113,7 +116,7 @@ func (c *Container) create(ctx context.Context) error {
 		//RestartPolicy   RestartPolicy // Restart policy to be used for the container
 		// TODO: Potentially inherit from deploy's restart_policy.
 		RestartPolicy: container.RestartPolicy{
-			Name: c.Spec.Restart,
+			Name: c.Spec.Restart.Value,
 		},
 		//AutoRemove      bool          // Automatically remove container when it exits
 		//VolumeDriver    string        // Name of the volume driver used to mount volumes
@@ -143,7 +146,7 @@ func (c *Container) create(ctx context.Context) error {
 		//UsernsMode      UsernsMode        // The user namespace to use for the container
 		ShmSize: int64(c.Spec.ShmSize),
 		//Sysctls         map[string]string `json:",omitempty"` // List of Namespaced sysctls used for the container
-		Runtime: c.Spec.Runtime,
+		Runtime: c.Spec.Runtime.Value,
 
 		//// Applicable to Windows
 		//ConsoleSize [2]uint   // Initial console size (height,width)
@@ -198,7 +201,7 @@ func (c *Container) create(ctx context.Context) error {
 	//	//// example `v7` to specify ARMv7 when architecture is `arm`.
 	//	//Variant string `json:"variant,omitempty"`
 	//}
-	createdBody, err := c.Docker.ContainerCreate(ctx, containerCfg, hostCfg, networkCfg, platform, c.Spec.ContainerName)
+	createdBody, err := c.Docker.ContainerCreate(ctx, containerCfg, hostCfg, networkCfg, platform, c.Spec.ContainerName.Value)
 	if err != nil {
 		return err
 	}

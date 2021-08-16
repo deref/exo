@@ -19,12 +19,12 @@ func (c *Container) ensureImage(ctx context.Context) error {
 		return c.buildImage(ctx)
 	}
 
-	inspection, _, err := c.Docker.ImageInspectWithRaw(ctx, c.Spec.Image)
+	inspection, _, err := c.Docker.ImageInspectWithRaw(ctx, c.Spec.Image.Value)
 	if docker.IsErrNotFound(err) {
 		if err := c.pullImage(ctx); err != nil {
 			return fmt.Errorf("pulling image: %w", err)
 		}
-		inspection, _, err = c.Docker.ImageInspectWithRaw(ctx, c.Spec.Image)
+		inspection, _, err = c.Docker.ImageInspectWithRaw(ctx, c.Spec.Image.Value)
 	}
 	if err != nil {
 		return fmt.Errorf("inspecting image: %w", err)
@@ -39,7 +39,7 @@ func (c *Container) ensureImage(ctx context.Context) error {
 }
 
 func (c *Container) pullImage(ctx context.Context) error {
-	image, err := c.Docker.ImagePull(ctx, c.Spec.Image, types.ImagePullOptions{
+	image, err := c.Docker.ImagePull(ctx, c.Spec.Image.Value, types.ImagePullOptions{
 		//All           bool
 		//RegistryAuth  string // RegistryAuth is the base64 encoded credentials for the registry
 		//PrivilegeFunc RequestPrivilegeFunc

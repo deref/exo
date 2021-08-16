@@ -3,7 +3,6 @@ package container
 import (
 	"github.com/deref/exo/internal/providers/docker"
 	"github.com/deref/exo/internal/providers/docker/compose"
-	"github.com/docker/docker/api/types/strslice"
 )
 
 type Container struct {
@@ -24,8 +23,8 @@ type State struct {
 }
 
 type ImageState struct {
-	ID         string            `json:"id"`
-	Command    strslice.StrSlice `json:"command"`
-	WorkingDir string            `json:"workingDir"`
-	Entrypoint strslice.StrSlice `json:"entrypoint"`
+	ID         string   `json:"id"`
+	Command    []string `json:"command"`
+	WorkingDir string   `json:"workingDir"`
+	Entrypoint []string `json:"entrypoint"`
 }

@@ -27,7 +27,7 @@ func Parse(r io.Reader) (*Compose, error) {
 }
 
 type Compose struct {
-	Version  string             `yaml:"version"`
+	Version  String             `yaml:"version"`
 	Services map[string]Service `yaml:"services"`
 	Networks map[string]Network `yaml:"networks"`
 	Volumes  map[string]Volume  `yaml:"volumes"`
@@ -64,8 +64,8 @@ type Service struct {
 	// TODO: cgroup_parent
 
 	Command       Command  `yaml:"command"`
-	Configs       []string `yaml:"configs"` // TODO: support long syntax.
-	ContainerName string   `yaml:"container_name"`
+	Configs       []String `yaml:"configs"` // TODO: support long syntax.
+	ContainerName String   `yaml:"container_name"`
 	// TODO: credential_spec
 
 	DependsOn IgnoredField `yaml:"depends_on"`
@@ -75,7 +75,7 @@ type Service struct {
 	// TODO: dns
 	// TODO: dns_opt
 	// TODO: dns_search
-	Domainname string  `yaml:"domainname"`
+	Domainname String  `yaml:"domainname"`
 	Entrypoint Command `yaml:"entrypoint"`
 	// TODO: env_file
 	Environment Dictionary   `yaml:"environment"`
@@ -85,8 +85,8 @@ type Service struct {
 	// TODO: extra_hosts
 	// TODO: group_add
 	Healthcheck *Healthcheck `yaml:"healthcheck"`
-	Hostname    string       `yaml:"hostname"`
-	Image       string       `yaml:"image"`
+	Hostname    String       `yaml:"hostname"`
+	Image       String       `yaml:"image"`
 	// TODO: init
 	// TODO: ipc
 	// TODO: isolation
@@ -94,8 +94,8 @@ type Service struct {
 	// TODO: links
 	Logging Logging `yaml:"logging"`
 	// TODO: network_mode
-	Networks   []string `yaml:"networks"` // TODO: support long syntax.
-	MacAddress string   `yaml:"mac_address"`
+	Networks   []String `yaml:"networks"` // TODO: support long syntax.
+	MacAddress String   `yaml:"mac_address"`
 	// TODO: mem_limit
 	// TODO: mem_reservation
 	// TODO: mem_swappiness
@@ -110,26 +110,26 @@ type Service struct {
 	Profiles   IgnoredField `yaml:"profiles"`
 	// TODO: pull_policy
 	// TODO: read_only
-	Restart string `yaml:"restart"`
-	Runtime string `yaml:"runtime"`
+	Restart String `yaml:"restart"`
+	Runtime String `yaml:"runtime"`
 	// TODO: scale
-	Secrets []string `yaml:"secrets"` // TODO: support long syntax.
+	Secrets []String `yaml:"secrets"` // TODO: support long syntax.
 	// TODO: security_opt
 	ShmSize         Bytes     `yaml:"shm_size"`
 	StdinOpen       bool      `yaml:"stdin_open"`
 	StopGracePeriod *Duration `yaml:"stop_grace_period"`
-	StopSignal      string    `yaml:"stop_signal"`
+	StopSignal      String    `yaml:"stop_signal"`
 	// TODO: storage_opt
 	// TODO: sysctls
 	// TODO: tmpfs
 	TTY bool `yaml:"tty"`
 	// TODO: ulimits
-	User string `yaml:"user"`
+	User String `yaml:"user"`
 	// TODO: userns_mode
-	Volumes []string `yaml:"volumes"` // TODO: support long syntax.
+	Volumes []String `yaml:"volumes"` // TODO: support long syntax.
 	// TODO: volumes_from
 
-	WorkingDir string `yaml:"working_dir"`
+	WorkingDir String `yaml:"working_dir"`
 }
 
 type Healthcheck struct {
@@ -141,13 +141,13 @@ type Healthcheck struct {
 }
 
 type Logging struct {
-	Driver  string            `yaml:"driver"`
-	Options map[string]string `yaml:"options"`
+	Driver  String            `yaml:"driver"`
+	Options map[string]String `yaml:"options"`
 }
 
 type Network struct {
-	Driver     string            `yaml:"driver"`
-	DriverOpts map[string]string `yaml:"driver_opts"`
+	Driver     String            `yaml:"driver"`
+	DriverOpts map[string]String `yaml:"driver_opts"`
 	Attachable bool              `yaml:"attachable"`
 	EnableIPv6 bool              `yaml:"enable_ipv6"`
 	Internal   bool              `yaml:"internal"`
@@ -157,21 +157,21 @@ type Network struct {
 }
 
 type Volume struct {
-	Driver     string            `yaml:"driver"`
-	DriverOpts map[string]string `yaml:"driver_opts"`
+	Driver     String            `yaml:"driver"`
+	DriverOpts map[string]String `yaml:"driver_opts"`
 	// TODO: external
 	Labels Dictionary `yaml:"labels"`
-	Name   string     `yaml:"name"`
+	Name   String     `yaml:"name"`
 }
 
 type Config struct {
-	File     string `yaml:"file"`
+	File     String `yaml:"file"`
 	External bool   `yaml:"external"`
-	Name     string `yaml:"name"`
+	Name     String `yaml:"name"`
 }
 
 type Secret struct {
-	File     string `yaml:"file"`
+	File     String `yaml:"file"`
 	External bool   `yaml:"external"`
-	Name     string `yaml:"name"`
+	Name     String `yaml:"name"`
 }
