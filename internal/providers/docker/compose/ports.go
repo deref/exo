@@ -2,6 +2,8 @@ package compose
 
 import (
 	"errors"
+	"fmt"
+	"net"
 	"regexp"
 	"strconv"
 	"strings"
@@ -51,11 +53,16 @@ func ParsePortMapping(short string) (PortMapping, error) {
 	mapping.Published = result["published"]
 	mapping.Target = result["target"]
 	mapping.Protocol = result["protocol"]
+
+	if mapping.HostIP != "" && net.ParseIP(mapping.HostIP) == nil {
+		return PortMapping{}, fmt.Errorf("invalid IP: %s", mapping.HostIP)
+	}
+
 	return mapping, nil
 }
 
-// https://regex101.com/r/qvbqTT/1
-var portRegexp = regexp.MustCompile(`^((?P<ip>(\d+\.\d+\.\d+\.\d+)|(([0-9a-fA-F]{1,4}:){7,7}[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,7}:|([0-9a-fA-F]{1,4}:){1,6}:[0-9a-fA-F]{1,4}|([0-9a-fA-F]{1,4}:){1,5}(:[0-9a-fA-F]{1,4}){1,2}|([0-9a-fA-F]{1,4}:){1,4}(:[0-9a-fA-F]{1,4}){1,3}|([0-9a-fA-F]{1,4}:){1,3}(:[0-9a-fA-F]{1,4}){1,4}|([0-9a-fA-F]{1,4}:){1,2}(:[0-9a-fA-F]{1,4}){1,5}|[0-9a-fA-F]{1,4}:((:[0-9a-fA-F]{1,4}){1,6})|:((:[0-9a-fA-F]{1,4}){1,7}|:)|fe80:(:[0-9a-fA-F]{0,4}){0,4}%[0-9a-zA-Z]{1,}|::(ffff(:0{1,4}){0,1}:){0,1}((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])|([0-9a-fA-F]{1,4}:){1,4}:((25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9])\.){3,3}(25[0-5]|(2[0-4]|1{0,1}[0-9]){0,1}[0-9]))):)?((?P<published>([-\d]+)?):)?(?P<target>[-\d]+)(/(?P<protocol>.+))?$`)
+// https://regex101.com/r/qvbqTT/2
+var portRegexp = regexp.MustCompile(`^((?P<ip>.*?):)?((?P<published>([-\d]+)?):)?(?P<target>[-\d]+)(/(?P<protocol>.+))?$`)
 
 func (mappings PortMappings) MarshalYAML() (interface{}, error) {
 	res := make([]interface{}, len(mappings))
