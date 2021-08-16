@@ -5,14 +5,11 @@ import (
 	"errors"
 	"fmt"
 	"net"
-	"path/filepath"
 	"time"
 
 	"github.com/deref/exo/internal/chrono"
-	"github.com/deref/exo/internal/gensym"
 	"github.com/deref/exo/internal/logd/api"
 	"github.com/deref/exo/internal/logd/server"
-	"github.com/deref/exo/internal/logd/store/badger"
 	"github.com/deref/exo/internal/util/logging"
 	"github.com/influxdata/go-syslog/v3"
 	"github.com/influxdata/go-syslog/v3/rfc5424"
@@ -20,23 +17,11 @@ import (
 
 type Service struct {
 	Logger     logging.Logger
-	VarDir     string
 	SyslogPort uint
 	server.LogCollector
 }
 
 func (svc *Service) Run(ctx context.Context) error {
-	logsDir := filepath.Join(svc.VarDir, "logs")
-
-	store, err := badger.Open(ctx, svc.Logger, logsDir)
-	if err != nil {
-		return fmt.Errorf("opening store: %w", err)
-	}
-	defer store.Close()
-
-	svc.IDGen = gensym.NewULIDGenerator(ctx)
-	svc.Store = store
-
 	addr := fmt.Sprintf(":%d", svc.SyslogPort)
 	conn, err := net.ListenPacket("udp", addr)
 	if err != nil {
