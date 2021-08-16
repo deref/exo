@@ -57,23 +57,21 @@
     return procName ? (stream ? `${procName}:${stream}` : procName) : log;
   };
 
-  const formatLogs = (events: any) => {
-    return events.data.map((event: any) => {
-      return {
-        id: event.id,
-        style: logStyleFromHash(event.log),
-        time: {
-          short: shortTime(event.timestamp),
-          full: event.timestamp,
-        },
-        name: friendlyName(event.log),
-        message: event.message,
-      };
-    });
-  };
+  const formatLogs = (events: any) =>
+    events.data.map((event: any) => ({
+      id: event.id,
+      style: logStyleFromHash(event.log),
+      time: {
+        short: shortTime(event.timestamp),
+        full: event.timestamp,
+      },
+      name: friendlyName(event.log),
+      message: event.message,
+    }));
 
-  onMount(() => {
-    loadInitialLogs(workspaceId, workspace).then(scheduleNextPoll);
+  onMount(async () => {
+    await loadInitialLogs(workspaceId, workspace)
+    scheduleNextPoll();
   });
 
   onDestroy(() => {
