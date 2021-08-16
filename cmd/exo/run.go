@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/signal"
+	"strings"
 	"syscall"
 
 	"github.com/deref/exo/internal/core/api"
@@ -61,6 +62,11 @@ If a workspace does not exist, one will be created in the current directory.
 
 		// Apply manifest.
 		if err := apply(ctx, kernel, workspace, args); err != nil {
+			// Error string from here:
+			// https://github.com/docker/go-docker/blob/4daae26030ad00e348edddff9767924ae57a3b82/errors.go#L20-L22
+			if strings.Contains(err.Error(), "Cannot connect to the Docker daemon") {
+				fmt.Fprintf(os.Stderr, "\nCould not connect to docker. Please install docker and ensure it is running. https://docs.docker.com/get-docker/\n\n")
+			}
 			return fmt.Errorf("applying manifest: %w", err)
 		}
 
