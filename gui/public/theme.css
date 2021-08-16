@@ -76,9 +76,9 @@
   --checkbox-active-color: #008ac5;
   --checkbox-active-border-color: #008ac577;
   /* Buttons */
-  --icon-button-bg-color: #77777700;
-  --icon-button-hover-bg-color: #77777711;
-  --icon-button-focus-bg-color: #77777733;
+  --icon-button-bg-color: #00000000;
+  --icon-button-hover-bg-color: #00000010;
+  --icon-button-focus-bg-color: #00000018;
   --button-background: linear-gradient(#fff, #f5f5f5);
   --button-hover-background: linear-gradient(#fafafa, #e7e7e7);
   --button-active-background: linear-gradient(#f7f7f7, #e0e0e0);
