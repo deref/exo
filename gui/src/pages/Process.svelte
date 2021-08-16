@@ -12,7 +12,7 @@
     refreshAllProcesses,
     processes,
   } from '../lib/process/store';
-  import type { RemoteData } from '../lib/api';
+  import type { RequestLifecycle } from '../lib/api';
   import type { ProcessDescription } from 'src/lib/process/types';
 
   export let params = { workspace: '', process: '' };
@@ -23,7 +23,7 @@
 
   const processId = params.process;
 
-  let processList: RemoteData<ProcessDescription[]> = { stage: 'pending' };
+  let processList: RequestLifecycle<ProcessDescription[]> = { stage: 'pending' };
   const unsubscribeProcesses = processes.subscribe((processes) => {
     processList = processes;
   });
