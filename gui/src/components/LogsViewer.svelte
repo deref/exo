@@ -1,6 +1,6 @@
 <script lang="ts">
   import Panel from './Panel.svelte';
-  import Logs from './Logs.svelte';
+  import Logs from './logs/Logs.svelte';
   import { logStyleFromHash } from '../lib/color';
   import { onMount, onDestroy, afterUpdate, beforeUpdate } from 'svelte';
   import { hasData, isUnresolved } from '../lib/api';

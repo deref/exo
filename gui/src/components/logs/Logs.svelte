@@ -1,6 +1,6 @@
 <script lang="ts">
-  import FormattedLogMessage from './logs/FormattedLogMessage.svelte';
-  import type { Log } from './logs/logTypes';
+  import FormattedLogMessage from './FormattedLogMessage.svelte';
+  import type { Log } from './logTypes';
 
   export let logs: Log[];
 </script>
