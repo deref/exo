@@ -1,4 +1,4 @@
-interface Log {
+export interface Log {
   id: string;
   style: string;
   time: {
@@ -8,5 +8,3 @@ interface Log {
   name: string;
   message: string;
 }
-
-export type Logs = Log[];

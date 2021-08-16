@@ -1,18 +1,22 @@
 <script lang="ts">
   import FormattedLogMessage from './logs/FormattedLogMessage.svelte';
-  import type { Logs } from './logs/logTypes';
+  import type { Log } from './logs/logTypes';
 
-  export let logs: Logs;
+  export let logs: Log[];
 </script>
 
 <table>
   {#each logs as log (log.id)}
-    <tr class="log-entry" style={log.style}>
-      <td class="timestamp">
-        <span class="short-time">{log.time.short}</span>
-        <span class="full-timestamp">{log.time.full}</span>
+    <tr style={log.style}>
+      <td
+        class="time"
+        on:click={() => {
+          window.alert(`Full timestamp: ${log.time.full}`);
+        }}
+      >
+        {log.time.short}
       </td>
-      <td>{log.name}</td>
+      <td class="name">{log.name}</td>
       <td>
         <FormattedLogMessage message={log.message} />
       </td>
@@ -47,48 +51,24 @@
     color: #111111;
   }
 
-  td:nth-child(1) {
-    color: #999999;
-  }
-
-  tr:hover td:nth-child(1) {
-    background: #eeeeee;
-    color: #555555;
-  }
-
-  td:nth-child(2) {
+  .name {
     text-align: right;
     background: var(--log-bg-color);
     color: var(--log-color);
   }
 
-  tr:hover td:nth-child(2) {
+  tr:hover .name {
     background: var(--log-bg-hover-color);
     color: var(--log-hover-color);
   }
 
-  .timestamp {
-    position: relative;
+  .time {
+    color: #999999;
+    cursor: zoom-in;
   }
 
-  .full-timestamp {
-    display: none;
-  }
-
-  .timestamp:hover {
-    overflow: visible;
-  }
-
-  .timestamp:hover .full-timestamp {
-    display: block;
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: auto;
-    white-space: nowrap;
-    background: #333333;
-    color: #f3f3f3;
-    padding: 0 0.3em;
+  tr:hover .time {
+    background: #eeeeee;
+    color: #555555;
   }
 </style>
