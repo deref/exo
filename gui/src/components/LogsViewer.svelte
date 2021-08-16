@@ -2,7 +2,6 @@
   import Panel from './Panel.svelte';
   import Logs from './Logs.svelte';
   import { logStyleFromHash } from '../lib/color';
-  import { shortTime } from '../lib/time';
   import { onMount, onDestroy, afterUpdate, beforeUpdate } from 'svelte';
   import { hasData, isUnresolved } from '../lib/api';
   import type { WorkspaceApi } from '../lib/api';
@@ -13,6 +12,7 @@
     setFilterStr,
   } from '../lib/logs/store';
   import type { WorkspaceState } from '../lib/logs/store';
+  import { shortTime } from '../lib/time';
   import { processes } from '../lib/process/store';
   import debounce from '../lib/debounce';
 
