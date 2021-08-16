@@ -118,12 +118,10 @@ func (kern *Kernel) Ping(context.Context, *api.PingInput) (*api.PingOutput, erro
 }
 
 func (kern *Kernel) Exit(context.Context, *api.ExitInput) (*api.ExitOutput, error) {
-	// Return immediately, then asynchronously try to shutdown.
-	defer func() {
-		go func() {
-			ownPid := os.Getpid()
-			_ = osutil.TerminateProcessWithTimeout(ownPid, 5*time.Second)
-		}()
+	// Return immediately, shutdown asynchronously.
+	go func() {
+		ownPid := os.Getpid()
+		_ = osutil.TerminateProcessWithTimeout(ownPid, 5*time.Second)
 	}()
 
 	return &api.ExitOutput{}, nil

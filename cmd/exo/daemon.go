@@ -112,7 +112,7 @@ func ensureDaemon() {
 	// Cleanup if unhealthy.
 	if !ok {
 		cmdutil.Warnf("daemon not healthy")
-		osutil.TerminateProcessWithTimeout(os.Getpid(), time.Second*5)
+		osutil.TerminateProcessWithTimeout(runState.Pid, time.Second*5)
 		os.Exit(1)
 	}
 }

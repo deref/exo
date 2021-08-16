@@ -1,8 +1,6 @@
 package main
 
 import (
-	"fmt"
-
 	"github.com/deref/exo/internal/core/api"
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/spf13/cobra"
@@ -25,7 +23,6 @@ var exitCmd = &cobra.Command{
 		if err != nil {
 			cmdutil.Fatalf("exiting: %w", err)
 		}
-		fmt.Println("Ok")
 		return nil
 	},
 }
