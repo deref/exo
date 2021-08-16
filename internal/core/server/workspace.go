@@ -546,7 +546,7 @@ func (ws *Workspace) StartComponents(ctx context.Context, input *api.StartCompon
 
 func (ws *Workspace) Stop(ctx context.Context, input *api.StopInput) (*api.StopOutput, error) {
 	jobID := ws.controlEachProcess(ctx, "stopping", func(ctx context.Context, process api.Process) error {
-		_, err := process.Stop(ctx, &api.StopInput{})
+		_, err := process.Stop(ctx, input)
 		return err
 	})
 	return &api.StopOutput{
@@ -559,7 +559,7 @@ func (ws *Workspace) StopComponents(ctx context.Context, input *api.StopComponen
 		Refs: input.Refs,
 	}
 	jobID := ws.controlEachComponent(ctx, "stopping", filter, func(ctx context.Context, process api.Process) error {
-		_, err := process.Stop(ctx, &api.StopInput{})
+		_, err := process.Stop(ctx, &api.StopInput{StopNow: input.StopNow})
 		return err
 	})
 	return &api.StopComponentsOutput{

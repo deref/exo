@@ -225,7 +225,8 @@ func (c *Container) Dispose(ctx context.Context, input *core.DisposeInput) (*cor
 	if c.State.ContainerID == "" {
 		return &core.DisposeOutput{}, nil
 	}
-	if err := c.stop(ctx); err != nil {
+
+	if err := c.stop(ctx, input.StopNow); err != nil {
 		c.Logger.Infof("stopping container %q: %v", c.State.ContainerID, err)
 	}
 	err := c.Docker.ContainerRemove(ctx, c.State.ContainerID, types.ContainerRemoveOptions{

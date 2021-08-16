@@ -24,14 +24,19 @@ func (c *Container) start(ctx context.Context) error {
 }
 
 func (c *Container) Stop(ctx context.Context, input *core.StopInput) (*core.StopOutput, error) {
-	if err := c.stop(ctx); err != nil {
+	if err := c.stop(ctx, input.StopNow); err != nil {
 		return nil, err
 	}
 	return &core.StopOutput{}, nil
 }
 
-func (c *Container) stop(ctx context.Context) error {
+func (c *Container) stop(ctx context.Context, stopNow bool) error {
 	var timeout *time.Duration // Use container's default stop timeout.
+	if stopNow {
+		zeroDuration := time.Duration(0)
+		timeout = &zeroDuration
+	}
+
 	return c.Docker.ContainerStop(ctx, c.State.ContainerID, timeout)
 }
 

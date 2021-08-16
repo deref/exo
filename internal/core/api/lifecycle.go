@@ -28,6 +28,7 @@ type RefreshOutput struct {
 }
 
 type DisposeInput struct {
+	StopNow bool `json:"stopNow"`
 }
 
 type DisposeOutput struct {

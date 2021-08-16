@@ -5,6 +5,7 @@ interface "process" {
     output "job-id" "string" {}
   }
   method "stop" {
+    input "hard" "bool" {}
     output "job-id" "string" {}
   }
   # TODO: Optional method?
@@ -148,6 +149,7 @@ interface "workspace" {
 
   method "stop-components" {
     input "refs" "[]string" {}
+    input "stop-now" "bool" {}
     output "job-id" "string" {}
   }
 

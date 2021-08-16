@@ -23,6 +23,7 @@ type StartOutput struct {
 }
 
 type StopInput struct {
+	StopNow bool `json:"hard"`
 }
 
 type StopOutput struct {
@@ -229,7 +230,8 @@ type StartComponentsOutput struct {
 }
 
 type StopComponentsInput struct {
-	Refs []string `json:"refs"`
+	Refs    []string `json:"refs"`
+	StopNow bool     `json:"stopNow"`
 }
 
 type StopComponentsOutput struct {
