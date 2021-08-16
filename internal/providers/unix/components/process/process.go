@@ -170,7 +170,7 @@ func (p *Process) stop(stopNow bool) {
 }
 
 func (p *Process) Restart(ctx context.Context, input *core.RestartInput) (*core.RestartOutput, error) {
-	p.stop(false)
+	p.stop(input.StopNow)
 	err := p.start(ctx)
 	if err != nil {
 		return nil, err

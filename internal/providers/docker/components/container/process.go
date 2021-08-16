@@ -41,13 +41,17 @@ func (c *Container) stop(ctx context.Context, stopNow bool) error {
 }
 
 func (c *Container) Restart(ctx context.Context, input *core.RestartInput) (*core.RestartOutput, error) {
-	if err := c.restart(ctx); err != nil {
+	if err := c.restart(ctx, input.StopNow); err != nil {
 		return nil, err
 	}
 	return &core.RestartOutput{}, nil
 }
 
-func (c *Container) restart(ctx context.Context) error {
+func (c *Container) restart(ctx context.Context, stopNow bool) error {
 	var timeout *time.Duration // Use container's default stop timeout.
+	if stopNow {
+		zeroDuration := time.Duration(0)
+		timeout = &zeroDuration
+	}
 	return c.Docker.ContainerRestart(ctx, c.State.ContainerID, timeout)
 }

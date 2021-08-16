@@ -5,11 +5,12 @@ interface "process" {
     output "job-id" "string" {}
   }
   method "stop" {
-    input "hard" "bool" {}
+    input "stop-now" "bool" {}
     output "job-id" "string" {}
   }
   # TODO: Optional method?
   method "restart" {
+    input "stop-now" "bool" {}
     output "job-id" "string" {}
   }
 }

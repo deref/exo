@@ -23,7 +23,7 @@ type StartOutput struct {
 }
 
 type StopInput struct {
-	StopNow bool `json:"hard"`
+	StopNow bool `json:"stopNow"`
 }
 
 type StopOutput struct {
@@ -31,6 +31,7 @@ type StopOutput struct {
 }
 
 type RestartInput struct {
+	StopNow bool `json:"stopNow"`
 }
 
 type RestartOutput struct {
