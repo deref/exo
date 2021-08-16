@@ -47,11 +47,9 @@ for manual uninstall instructions.`,
 		}
 
 		// Exit daemon.
-		// TODO: Replace w/ RPC.
-		// if err := killExod(); err != nil {
-		// 	fmt.Println("exiting daemon")
-		// 	return fmt.Errorf("exiting daemon: %w", err)
-		// }
+		if _, err := cl.Kernel().Exit(ctx, &api.ExitInput{}); err != nil {
+			cmdutil.Fatalf("exiting daemon: %w", err)
+		}
 
 		// Remove home directory.
 		fmt.Printf("removing home directory: %s\n", cfg.HomeDir)
