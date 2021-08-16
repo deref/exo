@@ -7,7 +7,7 @@
 <Meta title="RemoteData" component={RemoteData} />
 
 <Template let:args>
-    <RemoteData data={args.data} let:data={data} let:error={error}>
+    <RemoteData data={args.data} let:data let:error>
         <span slot="success">Success: {data}</span>
         <span slot="pending">Loading (custom)</span>
         <span slot="error">Error: {error}</span>
