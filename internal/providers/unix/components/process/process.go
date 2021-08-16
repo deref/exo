@@ -9,7 +9,6 @@ import (
 	"os"
 	"os/exec"
 	"strconv"
-	"strings"
 	"syscall"
 	"time"
 
@@ -91,10 +90,7 @@ func (p *Process) start(ctx context.Context) error {
 	p.State.Pid = 0 // Overriden below.
 
 	envMap := make(map[string]string)
-	for _, assign := range os.Environ() {
-		parts := strings.SplitN(assign, "=", 2)
-		key := parts[0]
-		val := parts[1]
+	for key, val := range p.WorkspaceEnvironment {
 		envMap[key] = val
 	}
 	for key, val := range p.Environment {
