@@ -16,10 +16,11 @@ type Component interface {
 }
 
 type ComponentBase struct {
-	ComponentID   string
-	WorkspaceRoot string
-	Logger        logging.Logger
-	isDeleted     bool
+	ComponentID          string
+	WorkspaceRoot        string
+	WorkspaceEnvironment map[string]string
+	Logger               logging.Logger
+	isDeleted            bool
 }
 
 func (c *ComponentBase) GetComponentID() string {
