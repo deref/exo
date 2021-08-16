@@ -142,9 +142,9 @@
 
   input {
     width: 100%;
-    background: var(--primary-bg-color);
     border: none;
     border-top: 1px solid var(--layout-bg-color);
+    background: var(--primary-bg-color);
     font-size: 16px;
     padding: 8px 12px;
     outline: none;

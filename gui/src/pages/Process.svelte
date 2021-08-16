@@ -150,12 +150,6 @@
 </Layout>
 
 <style>
-  .sparkline {
-    stroke: red;
-    fill: none;
-    margin: -6px -15px;
-  }
-
   code {
     width: 100%;
     max-width: 600px;
@@ -168,12 +162,11 @@
   .label {
     font-size: 0.8em;
     font-weight: 450;
-    color: #555555;
+    color: var(--grey-5-color);
   }
-
-  /* line with highlight area */
   .sparkline {
-    stroke: red;
-    fill: rgba(255, 0, 0, 0.3);
+    margin: -6px -15px;
+    stroke: var(--sparkline-stroke);
+    fill: var(--sparkline-fill);
   }
 </style>

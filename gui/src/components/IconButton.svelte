@@ -26,8 +26,8 @@
   }
 
   button:hover {
-    background-color: var(--icon-button-hover-bg-color);
     color: var(--grey-3-color);
+    background-color: var(--icon-button-hover-bg-color);
   }
 
   button:focus {
