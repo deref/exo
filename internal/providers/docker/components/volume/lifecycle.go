@@ -8,10 +8,15 @@ import (
 )
 
 func (v *Volume) Initialize(ctx context.Context, input *core.InitializeInput) (output *core.InitializeOutput, err error) {
+	labels := v.Spec.Labels.WithoutNils()
+	for k, v := range v.ExoLabels {
+		labels[k] = v
+	}
+
 	opts := volume.VolumeCreateBody{
 		Driver:     v.Driver,
 		DriverOpts: v.DriverOpts,
-		Labels:     v.Labels.WithoutNils(),
+		Labels:     labels,
 		Name:       v.Name,
 	}
 	createdBody, err := v.Docker.VolumeCreate(ctx, opts)

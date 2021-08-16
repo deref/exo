@@ -12,6 +12,11 @@ func (n *Network) Initialize(ctx context.Context, input *core.InitializeInput) (
 	// TODO: Use component name.
 	name := n.ComponentID
 
+	labels := n.Spec.Labels.WithoutNils()
+	for k, v := range n.ExoLabels {
+		labels[k] = v
+	}
+
 	opts := types.NetworkCreate{
 		// We don't care about duplicates, and it's best-effort checking only anyway.
 		CheckDuplicate: false,
@@ -25,7 +30,7 @@ func (n *Network) Initialize(ctx context.Context, input *core.InitializeInput) (
 		//ConfigOnly     bool
 		//ConfigFrom     *network.ConfigReference
 		//Options        map[string]string
-		Labels: n.Labels.WithoutNils(),
+		Labels: labels,
 	}
 	createdBody, err := n.Docker.NetworkCreate(ctx, name, opts)
 	if err != nil {

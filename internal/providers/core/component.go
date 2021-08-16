@@ -16,13 +16,14 @@ type Component interface {
 }
 
 type ComponentBase struct {
+	ExoLabels     map[string]string
 	ComponentID   string
 	WorkspaceRoot string
 	Logger        logging.Logger
 	isDeleted     bool
 }
 
-func (c *ComponentBase) GetComponentID() string {
+func (c ComponentBase) GetComponentID() string {
 	return c.ComponentID
 }
 

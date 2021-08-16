@@ -16,6 +16,7 @@ type Lifecycle interface {
 }
 
 type InitializeInput struct {
+	ExoLabels map[string]string `json:"exoLabels"`
 }
 
 type InitializeOutput struct {

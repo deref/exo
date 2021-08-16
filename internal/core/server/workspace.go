@@ -296,7 +296,12 @@ func (ws *Workspace) createComponent(ctx context.Context, component manifest.Com
 		Type: component.Type,
 		Spec: component.Spec,
 	}, func(ctx context.Context, lifecycle api.Lifecycle) error {
-		_, err := lifecycle.Initialize(ctx, &api.InitializeInput{})
+		_, err := lifecycle.Initialize(ctx, &api.InitializeInput{
+			ExoLabels: map[string]string{
+				"io.deref.exo.workspace": ws.ID,
+				"io.deref.exo.component": id,
+			},
+		})
 		return err
 	}); err != nil {
 		return "", err
