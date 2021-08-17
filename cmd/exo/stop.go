@@ -7,11 +7,13 @@ import (
 	"github.com/spf13/cobra"
 )
 
-var stopNow = false
+var initTimeout uint = 0
+var timeoutSeconds = &initTimeout
 
 func init() {
 	rootCmd.AddCommand(stopCmd)
-	stopCmd.Flags().BoolVar(&stopNow, "stop-now", false, "Attempts to stop the process immediately")
+	stopCmd.Flags().UintVar(timeoutSeconds, "timeout", 0, "The timeout for stopping the process")
+
 }
 
 var stopCmd = &cobra.Command{
@@ -21,10 +23,8 @@ var stopCmd = &cobra.Command{
 
 If no refs are provided, stops the entire workspace.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		var timeoutSeconds *uint
-		if stopNow {
-			duration := uint(0)
-			timeoutSeconds = &duration
+		if !cmd.Flags().Lookup("timeout").Changed {
+			timeoutSeconds = nil
 		}
 		return controlComponents(args, func(ctx context.Context, ws api.Workspace, refs []string) (jobID string, err error) {
 			if refs == nil {
