@@ -15,7 +15,7 @@
 <Layout>
   <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
   <TwoColumn>
-    <ProcessList {workspace} {workspaceId} />
-    <LogsViewer {workspace} {workspaceId} />
+    <ProcessList slot="left" {workspace} {workspaceId} />
+    <LogsViewer slot="right" {workspace} />
   </TwoColumn>
 </Layout>

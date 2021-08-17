@@ -10,7 +10,6 @@
   import { link } from 'svelte-spa-router';
   import type { RequestLifecycle, WorkspaceApi } from '../lib/api';
   import type { ProcessDescription } from '../lib/process/types';
-  import { loadInitialLogs, resetLogs } from '../lib/logs/store';
   import {
     fetchProcesses,
     processes,
@@ -58,8 +57,6 @@
 
   function setProcLogs(processId: string, visible: boolean) {
     setLogVisibility(processId, visible);
-    resetLogs(workspaceId);
-    loadInitialLogs(workspaceId, workspace);
   }
 
   let procfileExport: string | null = null;

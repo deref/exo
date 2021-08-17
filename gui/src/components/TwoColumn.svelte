@@ -1,6 +1,6 @@
 <div>
-  <slot />
-  <slot />
+  <slot name="left" />
+  <slot name="right" />
 </div>
 
 <style>

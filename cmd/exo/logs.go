@@ -73,8 +73,10 @@ func tailLogs(ctx context.Context, workspace api.Workspace, logRefs []string, st
 		}
 	}
 
+	limit := 500
 	in := &api.GetEventsInput{
 		Logs: logIDs,
+		Prev: &limit,
 	}
 	for {
 		output, err := workspace.GetEvents(ctx, in)
@@ -112,6 +114,7 @@ func tailLogs(ctx context.Context, workspace api.Workspace, logRefs []string, st
 			fmt.Printf("%s %s%s\n", prefix, event.Message, termReset)
 		}
 		in.Cursor = &output.NextCursor
+		in.Prev = nil
 
 		if stopOnError {
 			descriptions, err = workspace.DescribeProcesses(ctx, &api.DescribeProcessesInput{})
