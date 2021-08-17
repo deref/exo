@@ -192,12 +192,12 @@ func (c *Container) create(ctx context.Context) error {
 			return fmt.Errorf("could not parse port: %w", err)
 		}
 
-		low, high, err := target.Range()
+		targetLow, targetHigh, err := target.Range()
 		if err != nil {
 			return fmt.Errorf("could not parse port range: %w", err)
 		}
 
-		for i := low; i <= high; i += 1 {
+		for targetPort := targetLow; targetPort <= targetHigh; targetPort += 1 {
 			publishedPort, err := nat.NewPort(mapping.Protocol, mapping.Published)
 			if err != nil {
 				return fmt.Errorf("could not parse port range: %w", err)
@@ -208,9 +208,14 @@ func (c *Container) create(ctx context.Context) error {
 				return fmt.Errorf("could not parse port range: %w", err)
 			}
 
+			publishedDiff, targetDiff := publishedHigh-publishedLow, targetHigh-targetLow
+			if publishedDiff != 1 && publishedDiff != targetDiff {
+				return fmt.Errorf("unexpected number of ports")
+			}
+
 			hostPort := publishedPort.Port()
 			if publishedHigh != publishedLow {
-				hostPort = strconv.Itoa(publishedLow + i - low)
+				hostPort = strconv.Itoa(publishedLow + targetPort - targetLow)
 			}
 
 			bindings := hostCfg.PortBindings[target]
@@ -220,7 +225,7 @@ func (c *Container) create(ctx context.Context) error {
 			})
 
 			// TODO: Handle mapping.Mode
-			hostCfg.PortBindings[nat.Port(strconv.Itoa(i))] = bindings
+			hostCfg.PortBindings[nat.Port(strconv.Itoa(targetPort))] = bindings
 		}
 	}
 	networkCfg := &network.NetworkingConfig{
