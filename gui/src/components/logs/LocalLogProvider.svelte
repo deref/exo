@@ -1,0 +1,70 @@
+<script lang="ts">
+  import type { LogEvent } from './types';
+  import ErrorLabel from '../ErrorLabel.svelte';
+  import type { WorkspaceApi } from '../../lib/api';
+  import { formatLogs } from './util';
+  import { onDestroy } from 'svelte';
+
+  const maxEvents = 1000;
+  const logsPollInterval = 1000;
+
+  let cursor: string | null = null;
+  let events: LogEvent[];
+
+  export let workspace: WorkspaceApi;
+
+  export let filterStr: string | null = null;
+  export let logs: string[] = [];
+
+  let pollRefreshTimer: ReturnType<typeof setTimeout> | null = null;
+  const scheduleNextPoll = async () => {
+    // Only allow one refresh loop.
+    if (pollRefreshTimer !== null) {
+      return;
+    }
+
+    const res = await workspace.getEvents(logs, filterStr, {
+      cursor,
+      next: maxEvents,
+    });
+    cursor = res.nextCursor;
+    events = [...events, ...formatLogs(res.items, {})].slice(-maxEvents);
+
+    pollRefreshTimer = setTimeout(() => {
+      pollRefreshTimer = null;
+      scheduleNextPoll();
+    }, logsPollInterval);
+  };
+
+  onDestroy(() => {
+    if (pollRefreshTimer !== null) {
+      clearTimeout(pollRefreshTimer);
+    }
+  });
+
+  const resetLogs = async (logs: string[], filterStr: string | null) => {
+    if (logs.length === 0) {
+      cursor = null;
+      events = [];
+      return;
+    }
+
+    const res = await workspace.getEvents(logs, filterStr, {
+      cursor: null,
+      prev: maxEvents,
+    });
+    cursor = res.nextCursor;
+    // TODO: pass in the mapping of log id to name.
+    events = formatLogs(res.items, {});
+    scheduleNextPoll();
+  };
+
+  // Reset log events entirely when filter or logs change.
+  $: {
+    resetLogs(logs, filterStr);
+  }
+</script>
+
+<slot {events}>
+  <ErrorLabel value="Please provide a logs component" />
+</slot>
