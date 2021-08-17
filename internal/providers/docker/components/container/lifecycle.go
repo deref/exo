@@ -3,9 +3,11 @@ package container
 import (
 	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	core "github.com/deref/exo/internal/core/api"
+	"github.com/deref/exo/internal/providers/docker/compose"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/network"
@@ -84,10 +86,30 @@ func (c *Container) create(ctx context.Context) error {
 		timeout := int(time.Duration(*c.Spec.StopGracePeriod).Round(time.Second).Seconds())
 		containerCfg.StopTimeout = &timeout
 	}
-	for _, mapping := range c.Spec.Ports {
-		target := nat.Port(mapping.Target) // TODO: Handle port ranges.
-		containerCfg.ExposedPorts[target] = struct{}{}
+
+	exposePort := func(numbers string, protocol string) error {
+		rng, err := compose.ParsePortRange(numbers, protocol)
+		if err != nil {
+			return fmt.Errorf("parsing port: %w", err)
+		}
+		for n := rng.Min; n <= rng.Max; n++ {
+			port := nat.Port(compose.FormatPort(n, rng.Protocol))
+			containerCfg.ExposedPorts[port] = struct{}{}
+		}
+		return nil
 	}
+
+	for _, exposed := range c.Spec.Expose {
+		if err := exposePort(exposed.Target, exposed.Protocol); err != nil {
+			return fmt.Errorf("exposing port %q: %w", exposed.Target, err)
+		}
+	}
+	for _, mapping := range c.Spec.Ports {
+		if err := exposePort(mapping.Target, mapping.Protocol); err != nil {
+			return fmt.Errorf("exposing mapped port %q: %w", mapping.Target, err)
+		}
+	}
+
 	logCfg := container.LogConfig{}
 	if c.Spec.Logging.Driver == "" && (c.Spec.Logging.Options == nil || len(c.Spec.Logging.Options) == 0) {
 		// No logging configuration specified, so default to logging to exo's
@@ -165,14 +187,46 @@ func (c *Container) create(ctx context.Context) error {
 		//Init *bool `json:",omitempty"`
 	}
 	for _, mapping := range c.Spec.Ports {
-		target := nat.Port(mapping.Target) // TODO: Handle ranges.
-		bindings := hostCfg.PortBindings[target]
-		bindings = append(bindings, nat.PortBinding{
-			HostIP:   mapping.HostIP,
-			HostPort: mapping.Published,
-		})
-		// TODO: Handle mapping.Mode and mapping.Protocol.
-		hostCfg.PortBindings[target] = bindings
+		target, err := nat.NewPort(mapping.Protocol, mapping.Target)
+		if err != nil {
+			return fmt.Errorf("could not parse port: %w", err)
+		}
+
+		targetLow, targetHigh, err := target.Range()
+		if err != nil {
+			return fmt.Errorf("could not parse port range: %w", err)
+		}
+
+		for targetPort := targetLow; targetPort <= targetHigh; targetPort += 1 {
+			publishedPort, err := nat.NewPort(mapping.Protocol, mapping.Published)
+			if err != nil {
+				return fmt.Errorf("could not parse port range: %w", err)
+			}
+
+			publishedLow, publishedHigh, err := publishedPort.Range()
+			if err != nil {
+				return fmt.Errorf("could not parse port range: %w", err)
+			}
+
+			publishedDiff, targetDiff := publishedHigh-publishedLow, targetHigh-targetLow
+			if publishedDiff != 1 && publishedDiff != targetDiff {
+				return fmt.Errorf("unexpected number of ports")
+			}
+
+			hostPort := publishedPort.Port()
+			if publishedHigh != publishedLow {
+				hostPort = strconv.Itoa(publishedLow + targetPort - targetLow)
+			}
+
+			bindings := hostCfg.PortBindings[target]
+			bindings = append(bindings, nat.PortBinding{
+				HostIP:   mapping.HostIP,
+				HostPort: hostPort,
+			})
+
+			// TODO: Handle mapping.Mode
+			hostCfg.PortBindings[nat.Port(strconv.Itoa(targetPort))] = bindings
+		}
 	}
 	networkCfg := &network.NetworkingConfig{
 		//EndpointsConfig map[string]*EndpointSettings // Endpoint configs for each connecting network

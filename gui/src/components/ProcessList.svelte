@@ -11,7 +11,6 @@
   import { link } from 'svelte-spa-router';
   import type { RequestLifecycle, WorkspaceApi } from '../lib/api';
   import type { ProcessDescription } from '../lib/process/types';
-  import { loadInitialLogs, resetLogs } from '../lib/logs/store';
   import {
     fetchProcesses,
     processes,
@@ -23,6 +22,7 @@
   import { setLogVisibility, visibleLogsStore } from '../lib/logs/visible-logs';
   import * as router from 'svelte-spa-router';
   import RemoteData from './RemoteData.svelte';
+  import IfEnabled from './IfEnabled.svelte';
 
   export let workspace: WorkspaceApi;
   export let workspaceId: string;
@@ -59,8 +59,6 @@
 
   function setProcLogs(processId: string, visible: boolean) {
     setLogVisibility(processId, visible);
-    resetLogs(workspaceId);
-    loadInitialLogs(workspaceId, workspace);
   }
 
   let refreshInterval: any;
@@ -193,16 +191,18 @@
         Error fetching process list: {error}
       </div>
     </RemoteData>
-    <ProcfileChecker
-      {procfileExport}
-      clickHandler={async () => {
-        if (procfileExport == null) {
-          return;
-        }
-        await workspace.writeFile('Procfile', procfileExport);
-        checkProcfile();
-      }}
-    />
+    <IfEnabled feature="export procfile">
+      <ProcfileChecker
+        {procfileExport}
+        clickHandler={async () => {
+          if (procfileExport == null) {
+            return;
+          }
+          await workspace.writeFile('Procfile', procfileExport);
+          checkProcfile();
+        }}
+      />
+    </IfEnabled>
   </section>
 </Panel>
 

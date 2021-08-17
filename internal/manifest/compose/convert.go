@@ -5,7 +5,6 @@ import (
 	"io"
 
 	"github.com/deref/exo/internal/manifest"
-	"github.com/deref/exo/internal/providers/docker/compose"
 	"github.com/deref/exo/internal/util/yamlutil"
 )
 
@@ -17,25 +16,23 @@ func Import(r io.Reader) manifest.LoadResult {
 	return Convert(procfile)
 }
 
-func Convert(comp *compose.Compose) manifest.LoadResult {
+func Convert(project *Project) manifest.LoadResult {
 	var m manifest.Manifest
-	// TODO: Is there something like json.RawMessage so we can
-	// avoid marshalling and re-marshalling each spec?
-	for name, service := range comp.Services {
+	for name, service := range project.Services {
 		m.Components = append(m.Components, manifest.Component{
 			Name: name,
 			Type: "container",
 			Spec: yamlutil.MustMarshalString(service),
 		})
 	}
-	for name, network := range comp.Networks {
+	for name, network := range project.Networks {
 		m.Components = append(m.Components, manifest.Component{
 			Name: name,
 			Type: "network",
 			Spec: yamlutil.MustMarshalString(network),
 		})
 	}
-	for name, volume := range comp.Volumes {
+	for name, volume := range project.Volumes {
 		m.Components = append(m.Components, manifest.Component{
 			Name: name,
 			Type: "volume",
