@@ -7,7 +7,6 @@ require (
 	github.com/alessio/shellescape v1.4.1 // indirect
 	github.com/aybabtme/rgbterm v0.0.0-20170906152045-cc83f3b3ce59
 	github.com/containerd/containerd v1.5.4 // indirect
-	github.com/deref/pier v0.0.0-20210620044641-0f71544154e7
 	github.com/dgraph-io/badger/v3 v3.2103.1
 	github.com/docker/docker v20.10.7+incompatible
 	github.com/docker/go-connections v0.4.0
@@ -17,7 +16,7 @@ require (
 	github.com/gofrs/flock v0.8.1
 	github.com/hashicorp/hcl/v2 v2.10.0
 	github.com/influxdata/go-syslog/v3 v3.0.0
-	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
+	github.com/lucasb-eyer/go-colorful v1.2.0
 	github.com/mattn/go-isatty v0.0.13
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/natefinch/atomic v1.0.1
