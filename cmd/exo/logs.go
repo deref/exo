@@ -139,33 +139,33 @@ func tailLogs(ctx context.Context, workspace api.Workspace, logRefs []string, st
 }
 
 type ColorCache struct {
-	pallet []Color
-	colors map[string]Color
+	palette []Color
+	colors  map[string]Color
 }
 
 func NewColorCache() *ColorCache {
 	return &ColorCache{
-		pallet: makePallet(),
-		colors: make(map[string]Color),
+		palette: makePalette(),
+		colors:  make(map[string]Color),
 	}
 }
 
-func makePallet() []Color {
+func makePalette() []Color {
 	n := 256
-	pallet := make([]Color, n)
+	palette := make([]Color, n)
 	for i := 0; i < n; i++ {
 		h := float64(i) / float64(n)
 		r, g, b := rgbterm.HSLtoRGB(h, 0.7, 0.5)
-		pallet[i] = Color{r, g, b}
+		palette[i] = Color{r, g, b}
 	}
-	return pallet
+	return palette
 }
 
 func (cache *ColorCache) Color(key string) Color {
 	color := cache.colors[key]
 	if color.IsBlack() {
 		b := md5.Sum([]byte(key))[0]
-		color = cache.pallet[b]
+		color = cache.palette[b]
 		cache.colors[key] = color
 	}
 	return color
