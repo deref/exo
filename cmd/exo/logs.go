@@ -11,6 +11,7 @@ import (
 	"github.com/deref/exo/internal/core/api"
 	"github.com/deref/exo/internal/providers/core/components/log"
 	"github.com/deref/exo/internal/util/cmdutil"
+	"github.com/lucasb-eyer/go-colorful"
 	"github.com/spf13/cobra"
 )
 
@@ -99,9 +100,10 @@ func tailLogs(ctx context.Context, workspace api.Workspace, logRefs []string, st
 				}
 				label = fmt.Sprintf("%*s", labelWidth, label)
 				color := colors.Color(label)
+				r, g, b := color.RGB255()
 				prefix = rgbterm.FgString(
 					fmt.Sprintf("%s %s", timestamp, label),
-					color.Red, color.Green, color.Blue,
+					r, g, b,
 				)
 			} else {
 				prefix = timestamp
@@ -139,46 +141,35 @@ func tailLogs(ctx context.Context, workspace api.Workspace, logRefs []string, st
 }
 
 type ColorCache struct {
-	pallet []Color
-	colors map[string]Color
+	palette []colorful.Color
+	colors  map[string]colorful.Color
 }
 
 func NewColorCache() *ColorCache {
+	pal, err := colorful.HappyPalette(256)
+	if err != nil {
+		// An error should only be possible if the number of colours requested is
+		// too high. Since this is a fixed constant this panic should be impossible.
+		panic(err)
+	}
 	return &ColorCache{
-		pallet: makePallet(),
-		colors: make(map[string]Color),
+		palette: pal,
+		colors:  make(map[string]colorful.Color),
 	}
 }
 
-func makePallet() []Color {
-	n := 256
-	pallet := make([]Color, n)
-	for i := 0; i < n; i++ {
-		h := float64(i) / float64(n)
-		r, g, b := rgbterm.HSLtoRGB(h, 0.7, 0.5)
-		pallet[i] = Color{r, g, b}
-	}
-	return pallet
-}
-
-func (cache *ColorCache) Color(key string) Color {
+func (cache *ColorCache) Color(key string) colorful.Color {
 	color := cache.colors[key]
-	if color.IsBlack() {
+	if colorIsBlack(color) {
 		b := md5.Sum([]byte(key))[0]
-		color = cache.pallet[b]
+		color = cache.palette[b]
 		cache.colors[key] = color
 	}
 	return color
 }
 
-type Color struct {
-	Red   uint8
-	Green uint8
-	Blue  uint8
-}
-
-func (c Color) IsBlack() bool {
-	return c.Red == 0 && c.Green == 0 && c.Blue == 0
+func colorIsBlack(c colorful.Color) bool {
+	return c.R == 0 && c.G == 0 && c.B == 0
 }
 
 const termReset = "\u001b[0"

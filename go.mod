@@ -17,6 +17,7 @@ require (
 	github.com/gofrs/flock v0.8.1
 	github.com/hashicorp/hcl/v2 v2.10.0
 	github.com/influxdata/go-syslog/v3 v3.0.0
+	github.com/lucasb-eyer/go-colorful v1.2.0 // indirect
 	github.com/mattn/go-isatty v0.0.13
 	github.com/morikuni/aec v1.0.0 // indirect
 	github.com/natefinch/atomic v1.0.1
