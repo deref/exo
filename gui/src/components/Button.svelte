@@ -1,13 +1,12 @@
 <script lang="ts">
   export let type: string | undefined = undefined;
 
-  // TODO: Something better than this.
-  export let size: 'small' | 'medium' = 'medium';
+  export let small: boolean = false;
 
   export let disabled = false;
 </script>
 
-<button {disabled} class={size} on:click {type}>
+<button {disabled} class:small on:click {type}>
   <slot />
 </button>
 
@@ -21,7 +20,8 @@
   }
 
   .small {
-    padding: 3px 10px;
+    padding: 0.2em 0.4em;
+    margin: 0 0.2em;
   }
 
   button:hover {

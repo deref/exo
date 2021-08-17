@@ -42,7 +42,7 @@
   {#if latestVersion !== null}
     | Update available: <strong>{latestVersion}</strong>
     &nbsp;
-    <Button size="small" on:click={doUpgrade}>
+    <Button small on:click={doUpgrade}>
       {#if upgrading}
         Updating &nbsp;<SpinnerSVG />
       {:else}

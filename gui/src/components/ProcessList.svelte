@@ -1,5 +1,6 @@
 <script lang="ts">
   import Panel from './Panel.svelte';
+  import Button from './Button.svelte';
   import IconButton from './IconButton.svelte';
   import CheckboxButton from './CheckboxButton.svelte';
   import AddSVG from './mono/add.svelte';
@@ -198,15 +199,18 @@
       {#if procfileExport}
         <p>
           Your Procfile is not up to date.
-          <button
+          <Button
+            small
             on:click={async () => {
               if (procfileExport == null) {
                 return;
               }
               await workspace.writeFile('Procfile', procfileExport);
               checkProcfile();
-            }}>Export?</button
+            }}
           >
+            Export?
+          </Button>
         </p>
       {/if}
     </div>
