@@ -99,13 +99,15 @@ func ensureDaemon() {
 
 	// Wait server to be healthy.
 	ok := false
-	var delay time.Duration
+	delay := 10 * time.Millisecond
 	for attempt := 0; attempt < 15; attempt++ {
-		<-time.After(delay)
-		delay = 20 * time.Millisecond
 		if checkHealthy() {
 			ok = true
 			break
+		}
+		<-time.After(delay)
+		if delay < 100 {
+			delay *= 2
 		}
 	}
 
