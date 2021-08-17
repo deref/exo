@@ -17,11 +17,11 @@ func main() {
 		cmdutil.Fatalf("parsing arguments: %w", err)
 	}
 
-	timeoutMS := 1000
-	if timeoutFlag, ok := cmd.Flags["timeout-ms"]; ok {
+	intervalMS := 1000
+	if intervalFlag, ok := cmd.Flags["interval-ms"]; ok {
 		var err error
-		if timeoutMS, err = strconv.Atoi(timeoutFlag); err != nil {
-			cmdutil.Fatalf("parsing --timeout-ms: %w", err)
+		if intervalMS, err = strconv.Atoi(intervalFlag); err != nil {
+			cmdutil.Fatalf("parsing --interval-ms: %w", err)
 		}
 	}
 
@@ -29,6 +29,6 @@ func main() {
 	for {
 		i++
 		fmt.Printf("tick %d at %v\n", i, time.Now())
-		<-time.After(time.Duration(timeoutMS) * time.Millisecond)
+		<-time.After(time.Duration(intervalMS) * time.Millisecond)
 	}
 }
