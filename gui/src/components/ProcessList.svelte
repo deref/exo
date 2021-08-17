@@ -1,8 +1,8 @@
 <script lang="ts">
   import Panel from './Panel.svelte';
-  import Button from './Button.svelte';
   import IconButton from './IconButton.svelte';
   import CheckboxButton from './CheckboxButton.svelte';
+  import ProcfileChecker from './processes/ProcfileChecker.svelte';
   import AddSVG from './mono/add.svelte';
   import RunSVG from './mono/play.svelte';
   import StopSVG from './mono/stop.svelte';
@@ -63,6 +63,8 @@
     loadInitialLogs(workspaceId, workspace);
   }
 
+  let refreshInterval: any;
+
   let procfileExport: string | null = null;
   async function checkProcfile() {
     const current = await workspace.readFile('Procfile');
@@ -70,8 +72,6 @@
 
     procfileExport = current && current === computed ? null : computed;
   }
-
-  let refreshInterval: any;
 
   onMount(() => {
     fetchProcesses(workspace);
@@ -108,122 +108,105 @@
     </IconButton>
   </div>
   <section>
-    <div>
-      <RemoteData data={processList} let:data let:error>
-        <div slot="success">
-          <table>
-            <thead>
-              <th />
-              <th>Process</th>
-              <th>Logs</th>
-              <th />
-            </thead>
-            {#each data as { id, name, running } (id)}
-              <tr>
-                <td>
-                  <div class="run-controls">
-                    {#if statusPending.has(id)}
-                      <div class="spinner" />
-                    {:else if running}
-                      <div class="spinner running" />
-                      <div class="control hover-only">
-                        <IconButton
-                          tooltip="Stop process"
-                          on:click={() => setProcRun(id, false)}
-                        >
-                          <StopSVG />
-                        </IconButton>
-                      </div>
-                    {:else}
-                      <div class="stopped unhover-only" />
-                      <div class="control hover-only">
-                        <IconButton
-                          tooltip="Run process"
-                          on:click={() => setProcRun(id, true)}
-                        >
-                          <RunSVG />
-                        </IconButton>
-                      </div>
-                    {/if}
-                  </div>
-                </td>
+    <RemoteData data={processList} let:data let:error>
+      <div slot="success">
+        <table>
+          <thead>
+            <th />
+            <th>Process</th>
+            <th>Logs</th>
+            <th />
+          </thead>
+          {#each data as { id, name, running } (id)}
+            <tr>
+              <td>
+                <div class="run-controls">
+                  {#if statusPending.has(id)}
+                    <div class="spinner" />
+                  {:else if running}
+                    <div class="spinner running" />
+                    <div class="control hover-only">
+                      <IconButton
+                        tooltip="Stop process"
+                        on:click={() => setProcRun(id, false)}
+                      >
+                        <StopSVG />
+                      </IconButton>
+                    </div>
+                  {:else}
+                    <div class="stopped unhover-only" />
+                    <div class="control hover-only">
+                      <IconButton
+                        tooltip="Run process"
+                        on:click={() => setProcRun(id, true)}
+                      >
+                        <RunSVG />
+                      </IconButton>
+                    </div>
+                  {/if}
+                </div>
+              </td>
 
-                <td
-                  ><a
-                    class="process-name"
-                    use:link
-                    href={`/workspaces/${encodeURIComponent(
-                      workspaceId,
-                    )}/processes/${encodeURIComponent(id)}`}>{name}</a
-                  ></td
-                >
+              <td
+                ><a
+                  class="process-name"
+                  use:link
+                  href={`/workspaces/${encodeURIComponent(
+                    workspaceId,
+                  )}/processes/${encodeURIComponent(id)}`}>{name}</a
+                ></td
+              >
 
-                <td>
-                  <CheckboxButton
-                    tooltip={$visibleLogsStore.has(id)
-                      ? 'Hide logs'
-                      : 'Show logs'}
+              <td>
+                <CheckboxButton
+                  tooltip={$visibleLogsStore.has(id)
+                    ? 'Hide logs'
+                    : 'Show logs'}
+                  on:click={() => {
+                    setProcLogs(id, $visibleLogsStore.has(id) ? false : true);
+                  }}
+                  active={$visibleLogsStore.has(id)}
+                />
+              </td>
+
+              <td>
+                <div class="hover-only-visibility">
+                  <IconButton
+                    tooltip="Delete process"
                     on:click={() => {
-                      setProcLogs(id, $visibleLogsStore.has(id) ? false : true);
+                      void deleteProcess(workspace, id);
+                      setProcLogs(id, false);
                     }}
-                    active={$visibleLogsStore.has(id)}
-                  />
-                </td>
+                  >
+                    <DeleteSVG />
+                  </IconButton>
+                </div>
+              </td>
+            </tr>
+          {:else}
+            <i>No processes yet.</i>
+          {/each}
+        </table>
+      </div>
 
-                <td>
-                  <div class="hover-only-visibility">
-                    <IconButton
-                      tooltip="Delete process"
-                      on:click={() => {
-                        void deleteProcess(workspace, id);
-                        setProcLogs(id, false);
-                      }}
-                    >
-                      <DeleteSVG />
-                    </IconButton>
-                  </div>
-                </td>
-              </tr>
-            {:else}
-              <i>No processes yet.</i>
-            {/each}
-          </table>
-        </div>
-
-        <div slot="error">
-          Error fetching process list: {error}
-        </div>
-      </RemoteData>
-    </div>
-    <div>
-      {#if procfileExport}
-        <p>
-          Your Procfile is not up to date.
-          <Button
-            small
-            on:click={async () => {
-              if (procfileExport == null) {
-                return;
-              }
-              await workspace.writeFile('Procfile', procfileExport);
-              checkProcfile();
-            }}
-          >
-            Export?
-          </Button>
-        </p>
-      {/if}
-    </div>
+      <div slot="error">
+        Error fetching process list: {error}
+      </div>
+    </RemoteData>
+    <ProcfileChecker
+      {procfileExport}
+      clickHandler={async () => {
+        if (procfileExport == null) {
+          return;
+        }
+        await workspace.writeFile('Procfile', procfileExport);
+        checkProcfile();
+      }}
+    />
   </section>
 </Panel>
 
 <style>
-  section {
-    display: grid;
-    grid-auto-flow: row;
-    grid-template-rows: max-content 1fr;
-  }
-
   table {
     width: 100%;
     border-collapse: collapse;
