@@ -17,6 +17,9 @@ type Component interface {
 
 type ComponentBase struct {
 	ComponentID          string
+	ComponentName        string
+	ComponentSpec        string
+	ComponentState       string
 	WorkspaceRoot        string
 	WorkspaceEnvironment map[string]string
 	Logger               logging.Logger

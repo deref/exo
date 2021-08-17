@@ -206,7 +206,7 @@ func (ws *Workspace) DescribeComponents(ctx context.Context, input *api.Describe
 	return output, nil
 }
 
-func (ws *Workspace) newController(ctx context.Context, typ string) Controller {
+func (ws *Workspace) newController(ctx context.Context, desc api.ComponentDescription) Controller {
 	description, err := ws.describe(ctx)
 	if err != nil {
 		return &invalid.Invalid{
@@ -214,11 +214,15 @@ func (ws *Workspace) newController(ctx context.Context, typ string) Controller {
 		}
 	}
 	base := core.ComponentBase{
+		ComponentID:          desc.ID,
+		ComponentName:        desc.Name,
+		ComponentSpec:        desc.Spec,
+		ComponentState:       desc.State,
 		WorkspaceRoot:        description.Root,
 		WorkspaceEnvironment: ws.getEnvironment(),
 		Logger:               ws.Logger,
 	}
-	switch typ {
+	switch desc.Type {
 	case "process":
 		return &process.Process{
 			ComponentBase: base,
@@ -252,7 +256,7 @@ func (ws *Workspace) newController(ctx context.Context, typ string) Controller {
 
 	default:
 		return &invalid.Invalid{
-			Err: fmt.Errorf("unsupported component type: %q", typ),
+			Err: fmt.Errorf("unsupported component type: %q", desc.Type),
 		}
 	}
 }
@@ -874,8 +878,8 @@ func (ws *Workspace) controlEachProcess(ctx context.Context, label string, f int
 }
 
 func (ws *Workspace) control(ctx context.Context, desc api.ComponentDescription, f interface{}) error {
-	ctrl := ws.newController(ctx, desc.Type)
-	if err := ctrl.InitResource(desc.ID, desc.Spec, desc.State); err != nil {
+	ctrl := ws.newController(ctx, desc)
+	if err := ctrl.InitResource(); err != nil {
 		return err
 	}
 	ctxV := reflect.ValueOf(ctx)
