@@ -3,13 +3,13 @@
     as well as some shadowing and general style improvements for enhanced legibility.
 
   Please ensure your table has the structure:
-  * table
-    * thead (optional)
-    * ...tr...
-      * ...th...
-    * tbody
-    * ...tr...
-      * ...td...
+  table
+      thead (optional)
+          ...tr...
+              ...th...
+      tbody
+          ...tr...
+              ...td...
 -->
 
 <div>
@@ -20,9 +20,8 @@
   div :global(table) {
     border: none;
     border-collapse: collapse;
-    border-radius: 0.25em;
-    box-shadow: 0 0.33px 0 1px hsla(0, 0%, 100%, 0.15),
-      0 6px 9px -4px rgba(0, 0, 0, 0.2), 0 0.4px 0 0.8px rgba(0, 0, 0, 0.1);
+    border-radius: 4px;
+    box-shadow: var(--heavy-3d-box-shadow);
     overflow: hidden;
   }
 
@@ -33,23 +32,23 @@
   }
 
   div :global(th:nth-child(2n)) {
-    background: #f9f9f9;
+    background: var(--grey-f9-color);
   }
 
   div :global(tbody tr:nth-child(2n + 1)) {
-    background: #eeeeee;
+    background: var(--grey-e-color);
   }
 
   div :global(tbody tr:nth-child(2n)) {
-    background: #ffffff;
+    background: var(--primary-bg-color);
   }
 
   div :global(tbody tr:nth-child(2n + 1) td:nth-child(2n)) {
-    background: #e7e7e7;
+    background: var(--grey-e7-color);
   }
 
   div :global(tbody tr:nth-child(2n) td:nth-child(2n)) {
-    background: #f9f9f9;
+    background: var(--grey-f9-color);
   }
 
   div :global(tr:first-child > *) {

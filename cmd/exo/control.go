@@ -10,7 +10,7 @@ type controlFunc func(ctx context.Context, ws api.Workspace, refs []string) (job
 
 func controlComponents(args []string, f controlFunc) error {
 	ctx := newContext()
-	ensureDaemon()
+	checkOrEnsureServer()
 	cl := newClient()
 	kernel := cl.Kernel()
 	workspace := requireWorkspace(ctx, cl)

@@ -63,36 +63,26 @@
 </span>
 
 <style>
-  a,
-  span {
-    white-space: pre;
-  }
-
   :global(.exo-message-blink) {
     animation: blink 1s linear infinite;
   }
 
   @keyframes blink {
-    0% {
-      visibility: hidden;
+    from {
+      opacity: 0;
+    }
+    49% {
+      opacity: 0;
     }
     50% {
-      visibility: hidden;
+      opacity: 1;
     }
-    100% {
-      visibility: visible;
+    to {
+      opacity: 1;
     }
   }
 
   :global(.exo-message-invert) {
-    background: white;
     filter: invert(1);
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :global(.exo-message-invert) {
-      background: black;
-      filter: invert(1);
-    }
   }
 </style>

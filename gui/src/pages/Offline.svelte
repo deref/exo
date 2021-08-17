@@ -1,8 +1,9 @@
 <script>
+  import Code from '../components/Code.svelte';
+  import Layout from '../components/Layout.svelte';
+  import Panel from '../components/Panel.svelte';
   import { api } from '../lib/api';
   import { onDestroy, onMount } from 'svelte';
-  import Layout from '../components/Layout.svelte';
-  import Code from '../components/Code.svelte';
 
   let pingInterval = null;
   onMount(() => {
@@ -14,33 +15,25 @@
 </script>
 
 <Layout>
-  <main>
+  <Panel>
     <div>
       <h3>
-        <code>exo</code> server is offline
+        <Code>exo</Code> server is offline
       </h3>
-      <p class="hint">
+      <p>
         Run <Code>exo daemon</Code> in your terminal to start.
       </p>
     </div>
-  </main>
+  </Panel>
 </Layout>
 
 <style>
-  main {
+  div {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-family: Inter, sans-serif;
-    font-size: 18px;
-    position: absolute;
-    height: 100%;
-    width: 100%;
-    background: #ffffff;
-    padding-bottom: 60px;
-  }
-  p,
-  h3 {
     text-align: center;
+    font-size: 18px;
+    height: 100%;
   }
 </style>

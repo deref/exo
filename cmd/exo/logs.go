@@ -27,7 +27,7 @@ var logsCmd = &cobra.Command{
 If refs are provided, filters for the logs of those processes.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := newContext()
-		ensureDaemon()
+		checkOrEnsureServer()
 		cl := newClient()
 		workspace := requireWorkspace(ctx, cl)
 

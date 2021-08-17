@@ -20,7 +20,7 @@ func ListenAndServe(ctx context.Context, svr *http.Server) {
 		ShutdownOnInterrupt(ctx, svr)
 		return nil
 	})
-	if err := eg.Wait(); err != nil {
+	if err := eg.Wait(); err != nil && err != http.ErrServerClosed {
 		Fatal(err)
 	}
 }

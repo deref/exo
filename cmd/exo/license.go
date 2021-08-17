@@ -1,0 +1,44 @@
+package main
+
+import (
+	"fmt"
+	"os"
+	"strings"
+
+	"github.com/deref/exo"
+	"github.com/spf13/cobra"
+)
+
+func init() {
+	rootCmd.AddCommand(licenseCmd)
+}
+
+var licenseCmd = &cobra.Command{
+	Use:   "license",
+	Short: "Display license and legal notices",
+	Long:  `Displays license and required legal notices.`,
+	Run: func(cmd *cobra.Command, args []string) {
+		entries, err := exo.Notices.ReadDir(".")
+		if err != nil {
+			panic(err)
+		}
+
+		for _, entry := range entries {
+			if entry.Type().IsDir() {
+				continue
+			}
+			name := entry.Name()
+			hr := strings.Repeat("-", len(name))
+			fmt.Println(hr)
+			fmt.Println(entry.Name())
+			fmt.Println(hr)
+			fmt.Println()
+			bs, err := exo.Notices.ReadFile(name)
+			if err != nil {
+				panic(err)
+			}
+			os.Stdout.Write(bs)
+			fmt.Println()
+		}
+	},
+}

@@ -1,20 +1,21 @@
 <script lang="ts">
   import Layout from '../components/Layout.svelte';
+  import Panel from '../components/Panel.svelte';
 </script>
 
 <Layout>
-  <section>
-    <h1>404 page not found</h1>
-  </section>
+  <Panel title="Error" backRoute="/">
+    <div>
+      <h1>404 page not found</h1>
+    </div>
+  </Panel>
 </Layout>
 
 <style>
-  section {
-    background: #ffffff;
+  div {
     height: 100%;
     display: flex;
     align-items: center;
     justify-content: center;
-    padding-bottom: 60px;
   }
 </style>

@@ -1,6 +1,7 @@
 <script lang="ts">
-  import Layout from '../components/Layout.svelte';
   import Link from '../components/Link.svelte';
+  import Layout from '../components/Layout.svelte';
+  import Panel from '../components/Panel.svelte';
   import { api } from '../lib/api';
 
   const tasks = api.kernel.describeTasks();
@@ -10,8 +11,7 @@
 </script>
 
 <Layout>
-  <section>
-    Jobs
+  <Panel title="Jobs" backRoute="/">
     <!-- TODO: common loader component -->
     {#await jobs}
       Loading...
@@ -53,5 +53,5 @@
     {:catch}
       Error.
     {/await}
-  </section>
+  </Panel>
 </Layout>

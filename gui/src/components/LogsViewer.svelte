@@ -1,4 +1,6 @@
 <script lang="ts">
+  import Panel from './Panel.svelte';
+  import Logs from './logs/Logs.svelte';
   import { logStyleFromHash } from '../lib/color';
   import { onMount, onDestroy, afterUpdate, beforeUpdate } from 'svelte';
   import { hasData, isUnresolved } from '../lib/api';
@@ -12,8 +14,6 @@
   import type { WorkspaceState } from '../lib/logs/store';
   import { shortTime } from '../lib/time';
   import { processes } from '../lib/process/store';
-  import FormattedLogMessage from './logs/FormattedLogMessage.svelte';
-  import Textbox from './Textbox.svelte';
   import debounce from '../lib/debounce';
 
   export let workspace: WorkspaceApi;
@@ -55,6 +55,21 @@
     const [procId, stream] = log.split(':');
     const procName = knownProcessNameById[procId];
     return procName ? (stream ? `${procName}:${stream}` : procName) : log;
+  };
+
+  const formatLogs = (events: any) => {
+    return events.data.map((event: any) => {
+      return {
+        id: event.id,
+        style: logStyleFromHash(event.log),
+        time: {
+          short: shortTime(event.timestamp),
+          full: event.timestamp,
+        },
+        name: friendlyName(event.log),
+        message: event.message,
+      };
+    });
   };
 
   onMount(() => {
@@ -102,128 +117,36 @@
   }
 </script>
 
-<section>
-  <h1>Logs</h1>
+<Panel title="Logs" --panel-padding="0" --panel-overflow-y="hidden">
   {#if hasData(state.events)}
-    <div class="log-table-overflow-wrapper">
-      <div class="log-table-container" bind:this={logViewport}>
-        <table>
-          {#each state.events.data as event (event.id)}
-            <tr class="log-entry" style={logStyleFromHash(event.log)}>
-              <td class="timestamp">
-                <span class="short-time">{shortTime(event.timestamp)}</span>
-                <span class="full-timestamp">{event.timestamp}</span>
-              </td>
-              <td>{friendlyName(event.log)}</td>
-              <td>
-                <FormattedLogMessage message={event.message} />
-              </td>
-            </tr>
-          {/each}
-        </table>
-      </div>
+    <div class="logs-container" bind:this={logViewport}>
+      <Logs logs={formatLogs(state.events)} />
     </div>
-    <Textbox
-      placeholder="Filter..."
-      bind:value={filterInput}
-      --input-width="100%"
-    />
   {:else if isUnresolved(state.events)}
     <div>Loading logs...</div>
   {:else}
     <div>Error fetching logs: {state.events.message}</div>
   {/if}
-</section>
+  <div slot="bottom">
+    <input type="text" placeholder="Filter..." bind:value={filterInput} />
+  </div>
+</Panel>
 
 <style>
-  section {
-    overflow: hidden;
-    padding: 1px;
-    display: grid;
-    grid-auto-flow: row;
-    grid-template-rows: max-content 1fr;
-  }
-
-  .log-table-overflow-wrapper {
-    overflow: hidden;
-    border-radius: 4px;
-    box-shadow: 0px 12px 16px -8px #00000033, 0px 0.25px 0px 1px #00000033;
-    margin-bottom: 18px;
-  }
-
-  .log-table-container {
+  .logs-container {
     width: 100%;
     height: 100%;
-    overflow-x: auto;
     overflow-y: scroll;
+    overflow-x: hidden;
   }
 
-  table {
-    font-family: 'Fira Code', monospace;
-    font-weight: 450;
-    font-size: 15px;
-  }
-
-  table,
-  tr,
-  td {
+  input {
+    width: 100%;
     border: none;
-    border-collapse: collapse;
-  }
-
-  td {
-    padding: 0 0.3em;
-    vertical-align: text-top;
-    color: #333333;
-  }
-
-  tr:hover td {
-    background: #f3f3f3;
-    color: #111111;
-  }
-
-  td:nth-child(1) {
-    color: #999999;
-  }
-
-  tr:hover td:nth-child(1) {
-    background: #eeeeee;
-    color: #555555;
-  }
-
-  td:nth-child(2) {
-    text-align: right;
-    background: var(--log-bg-color);
-    color: var(--log-color);
-  }
-
-  tr:hover td:nth-child(2) {
-    background: var(--log-bg-hover-color);
-    color: var(--log-hover-color);
-  }
-
-  .timestamp {
-    position: relative;
-  }
-
-  .full-timestamp {
-    display: none;
-  }
-
-  .timestamp:hover {
-    overflow: visible;
-  }
-
-  .timestamp:hover .full-timestamp {
-    display: block;
-    position: absolute;
-    top: 0;
-    left: 0;
-    bottom: 0;
-    width: auto;
-    white-space: nowrap;
-    background: #333333;
-    color: #f3f3f3;
-    padding: 0 0.3em;
+    border-top: 1px solid var(--layout-bg-color);
+    background: var(--primary-bg-color);
+    font-size: 16px;
+    padding: 8px 12px;
+    outline: none;
   }
 </style>

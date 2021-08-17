@@ -1,6 +1,7 @@
 // References:
 // https://github.com/compose-spec/compose-spec/blob/master/spec.md
 // https://docs.docker.com/compose/compose-file/compose-file-v3/
+// https://github.com/docker/compose/blob/4a51af09d6cdb9407a6717334333900327bc9302/compose/config/compose_spec.json
 //
 // Fields enumerated as of July 17, 2021 with from the following spec file:
 // <https://github.com/compose-spec/compose-spec/blob/5141aafafa6ea03fcf52eb2b44218408825ab480/spec.md>.
@@ -35,6 +36,9 @@ type Compose struct {
 	// TODO: extensions with "x-" prefix.
 }
 
+// This is a temporary placeholder for fields that we presently don't support,
+// but are safe to ignore.
+// TODO: Eliminate all usages of this with actual parsing logic.
 type IgnoredField struct{}
 
 func (ignored *IgnoredField) UnmarshalYAML(b []byte) error {
@@ -42,8 +46,6 @@ func (ignored *IgnoredField) UnmarshalYAML(b []byte) error {
 }
 
 type Service struct {
-	// Currently ignored.
-	// TODO: Actually parse this.
 	Deploy IgnoredField `yaml:"deploy"`
 
 	// TODO: blkio_config
@@ -66,8 +68,6 @@ type Service struct {
 	ContainerName string   `yaml:"container_name"`
 	// TODO: credential_spec
 
-	// Currently ignored.
-	// TODO: DependsOn with both short and long syntax.
 	DependsOn IgnoredField `yaml:"depends_on"`
 
 	// TODO: device_cgroup_rules
@@ -108,7 +108,7 @@ type Service struct {
 
 	Ports      PortMappings `yaml:"ports"`
 	Privileged bool         `yaml:"privileged"`
-	// TODO: profiles
+	Profiles   IgnoredField `yaml:"profiles"`
 	// TODO: pull_policy
 	// TODO: read_only
 	Restart string `yaml:"restart"`

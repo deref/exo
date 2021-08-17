@@ -21,9 +21,9 @@
 
 <style>
   div {
+    color: var(--error-color);
     display: flex;
     align-items: center;
-    color: red;
   }
 
   span {

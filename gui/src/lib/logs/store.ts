@@ -3,7 +3,7 @@ import type { PaginationParams, WorkspaceApi } from '../api';
 import {
   pendingRequest,
   refetchingResponse,
-  RemoteData,
+  RequestLifecycle,
   successResponse,
 } from '../api';
 import type { LogEvent } from './types';
@@ -16,7 +16,7 @@ export type LogsStore = Record<string, WorkspaceState>; // Keyed by workspaceId.
 export interface WorkspaceState {
   cursor: string | null;
   filterStr: string | null;
-  events: RemoteData<LogEvent[]>;
+  events: RequestLifecycle<LogEvent[]>;
 }
 
 export const logsStore = writable<LogsStore>({});

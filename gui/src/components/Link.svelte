@@ -11,5 +11,7 @@
       router.push(href);
       event.preventDefault();
     }
-  }}><slot /></a
+  }}
 >
+  <slot />
+</a>
