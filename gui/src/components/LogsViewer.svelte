@@ -6,6 +6,8 @@
   import debounce from '../lib/debounce';
   import { visibleLogsStore } from '../lib/logs/visible-logs';
   import { setsIdentical } from '../lib/sets';
+  import { processes } from '../lib/process/store';
+  import { onDestroy } from 'svelte';
 
   export let workspace: WorkspaceApi;
 
@@ -17,6 +19,21 @@
     // minimize requests/flicket, we only update the logs when there is an actual change.
     if (!setsIdentical(logsSet, new Set(logs))) {
       logs = [...logsSet.values()];
+    }
+  });
+
+  // Maintain a mapping of process id to name. This can be removed once log streams are
+  // tagged with a process name.
+  let processIdToName: Record<string, string> = {};
+  const unsubscribeProcessStore = processes.subscribe((processData) => {
+    if (processData.stage === 'success' || processData.stage === 'refetching') {
+      processIdToName = processData.data.reduce(
+        (acc, processDescription) => ({
+          ...acc,
+          [processDescription.id]: processDescription.name,
+        }),
+        {},
+      );
     }
   });
 
@@ -34,10 +51,14 @@
       setFilterStrDebounced(text);
     }
   }
+
+  onDestroy(() => {
+    unsubscribeProcessStore();
+  });
 </script>
 
 <Panel title="Logs" --panel-padding="0" --panel-overflow-y="hidden">
-  <LocalLogProvider {workspace} {filterStr} {logs} let:events>
+  <LocalLogProvider {workspace} {processIdToName} {filterStr} {logs} let:events>
     <Logs {events} />
   </LocalLogProvider>
 

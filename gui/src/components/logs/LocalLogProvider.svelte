@@ -15,6 +15,7 @@
 
   export let filterStr: string | null = null;
   export let logs: string[] = [];
+  export let processIdToName: Record<string, string> = {};
 
   let pollRefreshTimer: ReturnType<typeof setTimeout> | null = null;
   const scheduleNextPoll = async () => {
@@ -28,7 +29,7 @@
       next: maxEvents,
     });
     cursor = res.nextCursor;
-    events = [...events, ...formatLogs(res.items, {})].slice(-maxEvents);
+    events = [...events, ...formatLogs(res.items, processIdToName)].slice(-maxEvents);
 
     pollRefreshTimer = setTimeout(() => {
       pollRefreshTimer = null;
@@ -54,8 +55,7 @@
       prev: maxEvents,
     });
     cursor = res.nextCursor;
-    // TODO: pass in the mapping of log id to name.
-    events = formatLogs(res.items, {});
+    events = formatLogs(res.items, processIdToName);
     scheduleNextPoll();
   };
 
