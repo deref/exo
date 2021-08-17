@@ -14,7 +14,10 @@ import (
 	"github.com/deref/exo/internal/core/server"
 	kernel "github.com/deref/exo/internal/core/server"
 	"github.com/deref/exo/internal/core/state/statefile"
+	"github.com/deref/exo/internal/gensym"
 	"github.com/deref/exo/internal/logd"
+	logdserver "github.com/deref/exo/internal/logd/server"
+	"github.com/deref/exo/internal/logd/store/badger"
 	"github.com/deref/exo/internal/providers/core/components/log"
 	"github.com/deref/exo/internal/task"
 	"github.com/deref/exo/internal/task/api"
@@ -112,10 +115,20 @@ func RunServer(ctx context.Context, flags map[string]string) {
 		TaskTracker: taskTracker,
 	}
 
+	logsDir := filepath.Join(cfg.VarDir, "logs")
+	logStore, err := badger.Open(ctx, logger, logsDir)
+	if err != nil {
+		cmdutil.Fatalf("opening logs store: %w", err)
+	}
+	defer logStore.Close()
+
 	logd := &logd.Service{
-		VarDir:     kernelCfg.VarDir,
 		SyslogPort: kernelCfg.SyslogPort,
 		Logger:     logger,
+		LogCollector: logdserver.LogCollector{
+			IDGen: gensym.NewULIDGenerator(ctx),
+			Store: logStore,
+		},
 	}
 	ctx = log.ContextWithLogCollector(ctx, &logd.LogCollector)
 
@@ -147,7 +160,6 @@ func RunServer(ctx context.Context, flags map[string]string) {
 
 	addr := cmdutil.GetAddr(cfg)
 	logger.Infof("listening for API calls at %s", addr)
-
 	cmdutil.ListenAndServe(ctx, &http.Server{
 		Addr:    addr,
 		Handler: httputil.HandlerWithContext(ctx, mux),

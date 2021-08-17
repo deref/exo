@@ -39,6 +39,10 @@ interface "kernel" {
     doc = "Checks whether server is up."
   }
 
+  method "exit" {
+    doc = "Gracefully shutdown the exo daemon."
+  }
+
   method "describe-tasks" {
     input "job-ids" "[]string" {
       doc = "If supplied, filters tasks by job."

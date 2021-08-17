@@ -35,24 +35,24 @@ interface RefetchingResponse<T> {
   data: T;
 }
 
-export type RemoteData<T> =
+export type RequestLifecycle<T> =
   | IdleRequest
   | PendingRequest
   | ErrorResponse
   | SuccessResponse<T>
   | RefetchingResponse<T>;
 
-export const notRequested = <T>(): RemoteData<T> => ({ stage: 'idle' });
-export const pendingRequest = <T>(): RemoteData<T> => ({ stage: 'pending' });
-export const errorResponse = <T>(message: string): RemoteData<T> => ({
+export const notRequested = <T>(): RequestLifecycle<T> => ({ stage: 'idle' });
+export const pendingRequest = <T>(): RequestLifecycle<T> => ({ stage: 'pending' });
+export const errorResponse = <T>(message: string): RequestLifecycle<T> => ({
   stage: 'error',
   message,
 });
-export const successResponse = <T>(data: T): RemoteData<T> => ({
+export const successResponse = <T>(data: T): RequestLifecycle<T> => ({
   stage: 'success',
   data,
 });
-export const refetchingResponse = <T>(prev: T): RemoteData<T> => ({
+export const refetchingResponse = <T>(prev: T): RequestLifecycle<T> => ({
   stage: 'refetching',
   data: prev,
 });
@@ -62,13 +62,13 @@ type HasData<T> = SuccessResponse<T> | RefetchingResponse<T>;
 type IsUnresolved<T> = IdleRequest | PendingRequest | RefetchingResponse<T>;
 type IsResolved<T> = ErrorResponse | SuccessResponse<T>;
 
-export const hasData = <T>(r: RemoteData<T>): r is HasData<T> =>
+export const hasData = <T>(r: RequestLifecycle<T>): r is HasData<T> =>
   r.stage === 'success' || r.stage === 'refetching';
 
-export const isUnresolved = <T>(r: RemoteData<T>): r is IsUnresolved<T> =>
+export const isUnresolved = <T>(r: RequestLifecycle<T>): r is IsUnresolved<T> =>
   r.stage === 'idle' || r.stage === 'pending' || r.stage === 'refetching';
 
-export const isResolved = <T>(r: RemoteData<T>): r is IsResolved<T> =>
+export const isResolved = <T>(r: RequestLifecycle<T>): r is IsResolved<T> =>
   r.stage === 'error' || r.stage === 'success';
 
 export interface PaginationParams {

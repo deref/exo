@@ -16,11 +16,12 @@ type Component interface {
 }
 
 type ComponentBase struct {
-	ExoLabels     map[string]string
-	ComponentID   string
-	WorkspaceRoot string
-	Logger        logging.Logger
-	isDeleted     bool
+	ComponentID          string
+	WorkspaceRoot        string
+	WorkspaceEnvironment map[string]string
+	Logger               logging.Logger
+	isDeleted            bool
+	ExoLabels            map[string]string
 }
 
 func (c ComponentBase) GetComponentID() string {

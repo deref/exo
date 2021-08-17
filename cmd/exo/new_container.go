@@ -144,7 +144,7 @@ exo flags and options for your docker container command.
 	Args:                  cobra.MinimumNArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := newContext()
-		ensureDaemon()
+		checkOrEnsureServer()
 		cl := newClient()
 		workspace := requireWorkspace(ctx, cl)
 

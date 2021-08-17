@@ -37,7 +37,7 @@ before the program name.
 	Args:                  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := newContext()
-		ensureDaemon()
+		checkOrEnsureServer()
 		cl := newClient()
 		workspace := requireWorkspace(ctx, cl)
 

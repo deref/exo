@@ -214,8 +214,9 @@ func (ws *Workspace) newController(ctx context.Context, typ string) Controller {
 		}
 	}
 	base := core.ComponentBase{
-		WorkspaceRoot: description.Root,
-		Logger:        ws.Logger,
+		WorkspaceRoot:        description.Root,
+		WorkspaceEnvironment: ws.getEnvironment(),
+		Logger:               ws.Logger,
 	}
 	switch typ {
 	case "process":
@@ -254,6 +255,18 @@ func (ws *Workspace) newController(ctx context.Context, typ string) Controller {
 			Err: fmt.Errorf("unsupported component type: %q", typ),
 		}
 	}
+}
+
+// TODO: Use workspace-defined environments, rather than ambient unix environment.
+func (ws *Workspace) getEnvironment() map[string]string {
+	env := make(map[string]string)
+	for _, assign := range os.Environ() {
+		parts := strings.SplitN(assign, "=", 2)
+		key := parts[0]
+		val := parts[1]
+		env[key] = val
+	}
+	return env
 }
 
 func (ws *Workspace) CreateComponent(ctx context.Context, input *api.CreateComponentInput) (*api.CreateComponentOutput, error) {
