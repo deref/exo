@@ -36,9 +36,7 @@ func (t *defaultTelemetry) IsEnabled() bool {
 }
 
 func (t *defaultTelemetry) StartSession(ctx context.Context) {
-	go func() {
-		t.ensureSession(ctx)
-	}()
+	go t.ensureSession(ctx)
 }
 
 func (t *defaultTelemetry) LatestVersion(ctx context.Context) (string, error) {
