@@ -148,6 +148,8 @@ type ColorCache struct {
 func NewColorCache() *ColorCache {
 	pal, err := colorful.HappyPalette(256)
 	if err != nil {
+		// An error should only be possible if the number of colours requested is
+		// too high. Since this is a fixed constant this panic should be impossible.
 		panic(err)
 	}
 	return &ColorCache{
