@@ -26,6 +26,7 @@
 
 <style>
   table {
+    background: var(--primary-bg-color);
     font-family: var(--font-mono);
     font-variant-ligatures: var(--preferred-ligatures-logs);
     font-weight: 450;
@@ -42,13 +43,13 @@
   td {
     padding: 0 0.3em;
     vertical-align: text-top;
-    color: #333333;
+    color: var(--grey-3-color);
     white-space: pre-wrap;
   }
 
   tr:hover td {
-    background: #f3f3f3;
-    color: #111111;
+    background: var(--grey-e-color);
+    color: var(--grey-1-color);
   }
 
   .name {
@@ -63,12 +64,11 @@
   }
 
   .time {
-    color: #999999;
+    color: var(--grey-9-color);
     cursor: zoom-in;
   }
 
   tr:hover .time {
-    background: #eeeeee;
-    color: #555555;
+    color: var(--grey-5-color);
   }
 </style>

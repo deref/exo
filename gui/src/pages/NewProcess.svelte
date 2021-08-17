@@ -211,7 +211,7 @@ my-app --port 4000
     border: none;
     background: none;
     font-weight: 450;
-    color: #777;
+    color: var(--grey-7-color);
   }
 
   .edit-as button:hover {
@@ -219,8 +219,8 @@ my-app --port 4000
   }
 
   .edit-as .selected {
-    color: #06e;
-    font-weight: 450;
     text-decoration: underline;
+    font-weight: 450;
+    color: var(--link-color);
   }
 </style>

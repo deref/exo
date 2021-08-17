@@ -25,10 +25,10 @@
     width: 22px;
     height: 22px;
     padding: 0;
-    color: #777777;
-    background-color: #77777700;
+    color: var(--checkbox-color);
+    background-color: var(--checkbox-bg-color);
+    border: 1px solid var(--checkbox-border-color);
     border-radius: 4px;
-    border: 1px solid #77777777;
     outline: none;
     margin-left: 4px;
     display: flex;
@@ -49,7 +49,7 @@
   }
 
   button.active {
-    border-color: #008ac577;
+    border-color: var(--checkbox-active-border-color);
   }
 
   button :global(svg),
@@ -59,23 +59,23 @@
 
   button.active :global(svg),
   button.active :global(svg *) {
-    fill: #008ac5;
+    fill: var(--checkbox-active-color);
   }
 
   button:hover {
-    background-color: #77777711;
-    color: #444444;
+    background-color: var(--checkbox-hover-bg-color);
+    color: var(--checkbox-hover-color);
   }
 
   button.active:hover {
-    background-color: #55ccff22;
+    background-color: var(--checkbox-active-hover-bg-color);
   }
 
   button:focus {
-    background-color: #77777722;
+    background-color: var(--checkbox-focus-bg-color);
   }
 
   button.active:focus {
-    background-color: #55ccff44;
+    background-color: var(--checkbox-active-focus-bg-color);
   }
 </style>
