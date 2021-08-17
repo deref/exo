@@ -11,7 +11,7 @@ func (dict *Build) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var cfg BuildConfig
 	err := unmarshal(&s)
 	if err == nil {
-		cfg.Context = s
+		cfg.Context.Expression = s
 	} else if err := unmarshal(&cfg); err != nil {
 		return nil
 	}
@@ -20,13 +20,13 @@ func (dict *Build) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 type BuildConfig struct {
-	Context    string     `yaml:"context"`
-	Dockerfile string     `yaml:"dockerfile"`
+	Context    String     `yaml:"context"`
+	Dockerfile String     `yaml:"dockerfile"`
 	Args       Dictionary `yaml:"args"`
-	CacheFrom  []string   `yaml:"cache_from"`
-	ExtraHosts []string   `yaml:"extra_hosts"`
-	Isolation  string     `yaml:"isolation"`
+	CacheFrom  []String   `yaml:"cache_from"`
+	ExtraHosts []String   `yaml:"extra_hosts"`
+	Isolation  String     `yaml:"isolation"`
 	Labels     Dictionary `yaml:"labels"`
 	ShmSize    Bytes      `yaml:"shm_size"`
-	Target     string     `yaml:"target"`
+	Target     String     `yaml:"target"`
 }

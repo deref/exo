@@ -136,7 +136,7 @@ func (c *Container) create(ctx context.Context) error {
 		//Links           []string          // List of links (in the name:alias form)
 		//OomScoreAdj     int               // Container preference for OOM-killing
 		//PidMode         PidMode           // PID namespace to use for the container
-		Privileged: c.Spec.Privileged,
+		Privileged: c.Spec.Privileged.Value,
 		//PublishAllPorts bool              // Should docker publish all exposed port for the container
 		//ReadonlyRootfs  bool              // Is the container root filesystem in read-only
 		//SecurityOpt     []string          // List of string values to customize labels for MLS systems, such as SELinux.
@@ -144,7 +144,7 @@ func (c *Container) create(ctx context.Context) error {
 		//Tmpfs           map[string]string `json:",omitempty"` // List of tmpfs (mounts) used for the container
 		//UTSMode         UTSMode           // UTS namespace to use for the container
 		//UsernsMode      UsernsMode        // The user namespace to use for the container
-		ShmSize: int64(c.Spec.ShmSize),
+		ShmSize: int64(c.Spec.ShmSize.Value),
 		//Sysctls         map[string]string `json:",omitempty"` // List of Namespaced sysctls used for the container
 		Runtime: c.Spec.Runtime.Value,
 

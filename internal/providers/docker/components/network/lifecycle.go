@@ -17,10 +17,10 @@ func (n *Network) Initialize(ctx context.Context, input *core.InitializeInput) (
 		CheckDuplicate: false,
 		Driver:         n.Driver.Value,
 		//Scope          string
-		EnableIPv6: n.EnableIPv6,
+		EnableIPv6: n.EnableIPv6.Value,
 		//IPAM           *network.IPAM
-		Internal:   n.Internal,
-		Attachable: n.Attachable,
+		Internal:   n.Internal.Value,
+		Attachable: n.Attachable.Value,
 		//Ingress        bool
 		//ConfigOnly     bool
 		//ConfigFrom     *network.ConfigReference

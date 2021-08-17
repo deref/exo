@@ -18,10 +18,16 @@ func TestInterpolate(t *testing.T) {
 					Expression: "${VERSION}",
 					Value:      "123",
 				},
+				Services: map[string]Service{
+					"service": {},
+				},
 			},
 			Compose{
 				Version: String{
 					Expression: "${VERSION}",
+				},
+				Services: map[string]Service{
+					"service": {},
 				},
 			},
 			map[string]string{

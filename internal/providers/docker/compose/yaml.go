@@ -106,7 +106,7 @@ type Service struct {
 	// TODO: pids_limit
 	// TODO: platform
 	Ports      PortMappings `yaml:"ports"`
-	Privileged bool         `yaml:"privileged"`
+	Privileged Bool         `yaml:"privileged"`
 	Profiles   IgnoredField `yaml:"profiles"`
 	// TODO: pull_policy
 	// TODO: read_only
@@ -116,13 +116,13 @@ type Service struct {
 	Secrets []String `yaml:"secrets"` // TODO: support long syntax.
 	// TODO: security_opt
 	ShmSize         Bytes     `yaml:"shm_size"`
-	StdinOpen       bool      `yaml:"stdin_open"`
+	StdinOpen       Bool      `yaml:"stdin_open"`
 	StopGracePeriod *Duration `yaml:"stop_grace_period"`
 	StopSignal      String    `yaml:"stop_signal"`
 	// TODO: storage_opt
 	// TODO: sysctls
 	// TODO: tmpfs
-	TTY bool `yaml:"tty"`
+	TTY Bool `yaml:"tty"`
 	// TODO: ulimits
 	User String `yaml:"user"`
 	// TODO: userns_mode
@@ -136,7 +136,7 @@ type Healthcheck struct {
 	Test        Command  `yaml:"test"`
 	Interval    Duration `yaml:"interval"`
 	Timeout     Duration `yaml:"timeout"`
-	Retries     int      `yaml:"retries"`
+	Retries     Int      `yaml:"retries"`
 	StartPeriod Duration `yaml:"start_period"`
 }
 
@@ -148,11 +148,11 @@ type Logging struct {
 type Network struct {
 	Driver     String            `yaml:"driver"`
 	DriverOpts map[string]String `yaml:"driver_opts"`
-	Attachable bool              `yaml:"attachable"`
-	EnableIPv6 bool              `yaml:"enable_ipv6"`
-	Internal   bool              `yaml:"internal"`
+	Attachable Bool              `yaml:"attachable"`
+	EnableIPv6 Bool              `yaml:"enable_ipv6"`
+	Internal   Bool              `yaml:"internal"`
 	Labels     Dictionary        `yaml:"labels"`
-	External   bool              `yaml:"external"`
+	External   Bool              `yaml:"external"`
 	// TODO: name
 }
 
@@ -166,12 +166,12 @@ type Volume struct {
 
 type Config struct {
 	File     String `yaml:"file"`
-	External bool   `yaml:"external"`
+	External Bool   `yaml:"external"`
 	Name     String `yaml:"name"`
 }
 
 type Secret struct {
 	File     String `yaml:"file"`
-	External bool   `yaml:"external"`
+	External Bool   `yaml:"external"`
 	Name     String `yaml:"name"`
 }

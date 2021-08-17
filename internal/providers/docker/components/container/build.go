@@ -30,7 +30,7 @@ func (c *Container) Build(ctx context.Context, input *api.BuildInput) (*api.Buil
 }
 
 func (c *Container) canBuild() bool {
-	return c.Spec.Build.Context != ""
+	return c.Spec.Build.Context.Value != ""
 }
 
 func (c *Container) buildImage(ctx context.Context) error {
@@ -46,7 +46,7 @@ func (c *Container) buildImage(ctx context.Context) error {
 	spec := c.Spec
 
 	eg.Go(func() error {
-		contextPath := filepath.Join(c.WorkspaceRoot, spec.Build.Context)
+		contextPath := filepath.Join(c.WorkspaceRoot, spec.Build.Context.Value)
 		if !pathutil.HasFilePathPrefix(contextPath, c.WorkspaceRoot) {
 			return errors.New("docker container build context path must be in exo workspace root")
 		}
@@ -65,7 +65,7 @@ func (c *Container) buildImage(ctx context.Context) error {
 			//Remove         bool
 			//ForceRemove    bool
 			//PullParent     bool
-			Isolation: container.Isolation(spec.Build.Isolation),
+			Isolation: container.Isolation(spec.Build.Isolation.Value),
 			//CPUSetCPUs     string
 			//CPUSetMems     string
 			//CPUShares      int64
@@ -75,8 +75,8 @@ func (c *Container) buildImage(ctx context.Context) error {
 			//MemorySwap     int64
 			//CgroupParent   string
 			//NetworkMode    string
-			ShmSize:    int64(spec.Build.ShmSize),
-			Dockerfile: spec.Build.Dockerfile,
+			ShmSize:    int64(spec.Build.ShmSize.Value),
+			Dockerfile: spec.Build.Dockerfile.Value,
 			//Ulimits        []*units.Ulimit
 			//// BuildArgs needs to be a *string instead of just a string so that
 			//// we can tell the difference between "" (empty string) and no value
@@ -95,7 +95,7 @@ func (c *Container) buildImage(ctx context.Context) error {
 			CacheFrom: spec.Build.CacheFrom,
 			//SecurityOpt []string
 			ExtraHosts: spec.Build.ExtraHosts,
-			Target:     spec.Build.Target,
+			Target:     spec.Build.Target.Value,
 			//SessionID   string
 			//Platform    string
 			//// Version specifies the version of the unerlying builder to use
