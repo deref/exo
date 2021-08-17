@@ -5,12 +5,12 @@ interface "process" {
     output "job-id" "string" {}
   }
   method "stop" {
-    input "stop-now" "bool" {}
+    input "timeout-seconds" "*uint" {}
     output "job-id" "string" {}
   }
   # TODO: Optional method?
   method "restart" {
-    input "stop-now" "bool" {}
+    input "timeout-seconds" "*uint" {}
     output "job-id" "string" {}
   }
 }
@@ -150,7 +150,7 @@ interface "workspace" {
 
   method "stop-components" {
     input "refs" "[]string" {}
-    input "stop-now" "bool" {}
+    input "timeout-seconds" "*uint" {}
     output "job-id" "string" {}
   }
 

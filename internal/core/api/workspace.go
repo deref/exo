@@ -23,7 +23,7 @@ type StartOutput struct {
 }
 
 type StopInput struct {
-	StopNow bool `json:"stopNow"`
+	TimeoutSeconds *uint `json:"timeoutSeconds"`
 }
 
 type StopOutput struct {
@@ -31,7 +31,7 @@ type StopOutput struct {
 }
 
 type RestartInput struct {
-	StopNow bool `json:"stopNow"`
+	TimeoutSeconds *uint `json:"timeoutSeconds"`
 }
 
 type RestartOutput struct {
@@ -231,8 +231,8 @@ type StartComponentsOutput struct {
 }
 
 type StopComponentsInput struct {
-	Refs    []string `json:"refs"`
-	StopNow bool     `json:"stopNow"`
+	Refs           []string `json:"refs"`
+	TimeoutSeconds *uint    `json:"timeoutSeconds"`
 }
 
 type StopComponentsOutput struct {

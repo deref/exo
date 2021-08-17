@@ -143,13 +143,13 @@ func (p *Process) start(ctx context.Context) error {
 }
 
 func (p *Process) Stop(ctx context.Context, input *core.StopInput) (*core.StopOutput, error) {
-	p.stop(input.StopNow)
+	p.stop(input.TimeoutSeconds)
 	return &core.StopOutput{}, nil
 }
 
 const DefaultShutdownGracePeriod = 5 * time.Second
 
-func (p *Process) stop(stopNow bool) {
+func (p *Process) stop(timeoutSeconds *uint) {
 	if p.zeroPids() {
 		return
 	}
@@ -158,8 +158,8 @@ func (p *Process) stop(stopNow bool) {
 	if p.ShutdownGracePeriodSeconds != nil {
 		timeout = time.Duration(*p.ShutdownGracePeriodSeconds) * time.Second
 	}
-	if stopNow {
-		timeout = time.Duration(0)
+	if timeoutSeconds != nil {
+		timeout = time.Duration(*timeoutSeconds) * time.Second
 	}
 
 	if err := osutil.TerminateGroupWithTimeout(p.Pgid, timeout); err != nil {
@@ -170,7 +170,7 @@ func (p *Process) stop(stopNow bool) {
 }
 
 func (p *Process) Restart(ctx context.Context, input *core.RestartInput) (*core.RestartOutput, error) {
-	p.stop(input.StopNow)
+	p.stop(input.TimeoutSeconds)
 	err := p.start(ctx)
 	if err != nil {
 		return nil, err
