@@ -62,7 +62,7 @@ func ParsePortMapping(short string) (PortMapping, error) {
 }
 
 // https://regex101.com/r/qvbqTT/2
-var portRegexp = regexp.MustCompile(`^((?P<ip>.*?):)?((?P<published>([-\d]+)?):)?(?P<target>[-\d]+)(/(?P<protocol>.+))?$`)
+var portRegexp = regexp.MustCompile(`^((?P<ip>[a-fA-F\d.:]+?):)??((?P<published>([-\d]+)?):)?(?P<target>[-\d]+)(/(?P<protocol>.+))?$`)
 
 func (mappings PortMappings) MarshalYAML() (interface{}, error) {
 	res := make([]interface{}, len(mappings))
