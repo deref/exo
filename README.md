@@ -6,14 +6,10 @@
 
 **Features**
 
-- [Procfile](./doc/procfiles.md) compatible process manager.
+- [Procfile](./doc/procfiles.md) and [Docker Compose](./doc/compose.md) compatible process manager.
 - Terminal commands and browser-based-GUI for all functionality.
 - Multiplexed, colorizing log tailing. Toggle visibility of individual logs.
 - Dynamic process supervision: create, start, stop, restart, delete.
-
-**Coming Soon**
-
-- Docker integration with docker-compose.yml compatibility.
 
 ## Getting Started
 
@@ -32,12 +28,16 @@ Navigate to your code directory and then launch the exo gui:
 exo gui
 ```
 
-To use exo as a drop-in replacement for Foreman and similar Procfile runners,
-do this instead:
+To use exo as a drop-in replacement for `foreman` or `docker-compose`, use
+`run` instead:
 
 ```bash
-exo run ./path/to/Procfile
+exo run
 ```
+
+This will work automatically with your `Procfile`, `compose.yaml`, or similarly
+named manifest files. The `run` command also accepts an explicit filename, if
+you have multiple configurations to choose from.
 
 For more, checkout the [exo guide](./doc/guide.md) or consult the
 builtin help by running `exo help`.
