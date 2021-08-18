@@ -1,5 +1,6 @@
 <script lang="ts">
   import IconButton from '../IconButton.svelte';
+  import Spinner from '../Spinner.svelte';
   import RunSVG from '../mono/play.svelte';
   import StopSVG from '../mono/stop.svelte';
 
@@ -11,9 +12,9 @@
 
 <div class="run-controls">
   {#if statusPending.has(id)}
-    <div class="spinner" />
+    <Spinner />
   {:else if running}
-    <div class="running unhover-only" />
+    <div class="running" />
     <div class="control hover-only">
       <IconButton tooltip="Stop process" on:click={() => setProcRun(id, false)}>
         <StopSVG />
@@ -66,31 +67,5 @@
   .control {
     position: absolute;
     z-index: 4;
-  }
-
-  .spinner {
-    position: absolute;
-    z-index: 3;
-    top: 7px;
-    left: 7px;
-    width: 18px;
-    height: 18px;
-    border-radius: 100%;
-    animation: spin 1s infinite linear;
-    border: 2px solid;
-    border-top-color: var(--spinner-grey-t);
-    border-right-color: var(--spinner-grey-r);
-    border-bottom-color: var(--spinner-grey-b);
-    border-left-color: var(--spinner-grey-l);
-    transition: all 0.125s;
-  }
-
-  @keyframes spin {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
   }
 </style>

@@ -57,10 +57,8 @@
   --sparkline-stroke: #ee0000;
   --sparkline-fill: #ee000044;
   /* Spinners */
-  --spinner-grey-t: #66666633;
-  --spinner-grey-r: #66666677;
-  --spinner-grey-b: #666666bb;
-  --spinner-grey-l: #666666ff;
+  --spinner-grey: #777777ff;
+  --spinner-grey-light: #77777733;
   /* Checkbox */
   --checkbox-color: #777777ff;
   --checkbox-bg-color: #77777700;
