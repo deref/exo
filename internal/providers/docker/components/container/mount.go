@@ -41,11 +41,9 @@ func makeMountFromVolumeString(workspaceRoot, volume string) (mount.Mount, error
 		mountType = mount.TypeVolume
 	}
 
-	result := mount.Mount{
+	return mount.Mount{
 		Type:   mountType,
 		Source: source,
 		Target: target,
-	}
-
-	return result, nil
+	}, nil
 }
