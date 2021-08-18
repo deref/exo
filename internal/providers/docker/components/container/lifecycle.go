@@ -10,6 +10,7 @@ import (
 	"github.com/deref/exo/internal/providers/docker/compose"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/strslice"
 	docker "github.com/docker/docker/client"
@@ -42,6 +43,15 @@ func (c *Container) create(ctx context.Context) error {
 			Timeout:     time.Duration(c.Spec.Healthcheck.Timeout),
 			Retries:     c.Spec.Healthcheck.Retries,
 			StartPeriod: time.Duration(c.Spec.Healthcheck.StartPeriod),
+		}
+	}
+
+	mounts := make([]mount.Mount, len(c.Spec.Volumes))
+	for i, v := range c.Spec.Volumes {
+		if mount, err := makeMountFromVolumeString(c.WorkspaceRoot, v); err != nil {
+			return err
+		} else {
+			mounts[i] = mount
 		}
 	}
 
@@ -175,7 +185,7 @@ func (c *Container) create(ctx context.Context) error {
 		//Resources
 
 		//// Mounts specs used by the container
-		//Mounts []mount.Mount `json:",omitempty"`
+		Mounts: mounts,
 
 		//// MaskedPaths is the list of paths to be masked inside the container (this overrides the default set of paths)
 		//MaskedPaths []string
