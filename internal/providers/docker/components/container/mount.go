@@ -37,8 +37,7 @@ func makeMountFromVolumeString(workspaceRoot, volume string) (mount.Mount, error
 			return mount.Mount{}, err
 		}
 		source = filepath.Join(user.HomeDir, source[2:])
-	} else if strings.HasPrefix(source, "/") {
-	} else {
+	} else if !strings.HasPrefix(source, "/") {
 		mountType = mount.TypeVolume
 	}
 
