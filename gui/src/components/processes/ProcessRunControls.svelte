@@ -13,7 +13,7 @@
   {#if statusPending.has(id)}
     <div class="spinner" />
   {:else if running}
-    <div class="spinner running" />
+    <div class="running unhover-only" />
     <div class="control hover-only">
       <IconButton tooltip="Stop process" on:click={() => setProcRun(id, false)}>
         <StopSVG />
@@ -39,14 +39,6 @@
     display: none;
   }
 
-  :global(tr:hover > td) > .run-controls .spinner.running,
-  :global(tr:focus-within > td) > .run-controls .spinner.running {
-    top: 2px;
-    left: 2px;
-    width: 28px;
-    height: 28px;
-  }
-
   .run-controls {
     position: relative;
     display: flex;
@@ -62,6 +54,13 @@
     height: 14px;
     border-radius: 2px;
     background: var(--grey-c-color);
+  }
+
+  .running {
+    width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    background: var(--online-green-color);
   }
 
   .control {
@@ -84,13 +83,6 @@
     border-bottom-color: var(--spinner-grey-b);
     border-left-color: var(--spinner-grey-l);
     transition: all 0.125s;
-  }
-
-  .spinner.running {
-    border-top-color: var(--spinner-blue-t);
-    border-right-color: var(--spinner-blue-r);
-    border-bottom-color: var(--spinner-blue-b);
-    border-left-color: var(--spinner-blue-l);
   }
 
   @keyframes spin {
