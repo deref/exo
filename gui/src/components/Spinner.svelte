@@ -1,4 +1,8 @@
-<div />
+<script lang="ts">
+  export let inline: boolean = false;
+</script>
+
+<div class:inline />
 
 <style>
   div {
@@ -9,6 +13,10 @@
     border: 2px solid var(--spinner-grey);
     border-bottom-color: var(--spinner-grey-light);
     transition: all 0.125s;
+  }
+
+  .inline {
+    display: inline-block;
   }
 
   @keyframes spin {

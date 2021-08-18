@@ -2,7 +2,7 @@
   import { onDestroy } from 'svelte';
   import { api } from '../lib/api';
   import Button from './Button.svelte';
-  import SpinnerSVG from './mono/spinner.svelte';
+  import Spinner from './Spinner.svelte';
 
   let installedVersion: string | null = null;
   let latestVersion: string | null = null;
@@ -44,7 +44,7 @@
     &nbsp;
     <Button small on:click={doUpgrade}>
       {#if upgrading}
-        Updating &nbsp;<SpinnerSVG />
+        Updating &nbsp;<Spinner inline />
       {:else}
         Upgrade
       {/if}
