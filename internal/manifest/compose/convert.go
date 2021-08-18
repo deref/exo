@@ -22,6 +22,9 @@ func Convert(project *Project) manifest.LoadResult {
 	}
 	for originalName, service := range project.Services {
 		name := manifest.MangleName(originalName)
+		if name != originalName {
+			res = res.AddRenameWarning(originalName, name)
+		}
 		res.Manifest.Components = append(res.Manifest.Components, manifest.Component{
 			Name: name,
 			Type: "container",
@@ -30,6 +33,9 @@ func Convert(project *Project) manifest.LoadResult {
 	}
 	for originalName, network := range project.Networks {
 		name := manifest.MangleName(originalName)
+		if name != originalName {
+			res = res.AddRenameWarning(originalName, name)
+		}
 		res.Manifest.Components = append(res.Manifest.Components, manifest.Component{
 			Name: name,
 			Type: "network",
@@ -38,6 +44,9 @@ func Convert(project *Project) manifest.LoadResult {
 	}
 	for originalName, volume := range project.Volumes {
 		name := manifest.MangleName(originalName)
+		if name != originalName {
+			res = res.AddRenameWarning(originalName, name)
+		}
 		res.Manifest.Components = append(res.Manifest.Components, manifest.Component{
 			Name: name,
 			Type: "volume",
