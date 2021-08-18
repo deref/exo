@@ -1,5 +1,5 @@
 <script lang="ts">
-  export let inline: boolean = false;
+  export let inline = false;
 </script>
 
 <div class:inline />
