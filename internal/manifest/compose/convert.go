@@ -17,29 +17,41 @@ func Import(r io.Reader) manifest.LoadResult {
 }
 
 func Convert(project *Project) manifest.LoadResult {
-	var m manifest.Manifest
-	for name, service := range project.Services {
-		m.Components = append(m.Components, manifest.Component{
+	res := manifest.LoadResult{
+		Manifest: &manifest.Manifest{},
+	}
+	for originalName, service := range project.Services {
+		name := manifest.MangleName(originalName)
+		if name != originalName {
+			res = res.AddRenameWarning(originalName, name)
+		}
+		res.Manifest.Components = append(res.Manifest.Components, manifest.Component{
 			Name: name,
 			Type: "container",
 			Spec: yamlutil.MustMarshalString(service),
 		})
 	}
-	for name, network := range project.Networks {
-		m.Components = append(m.Components, manifest.Component{
+	for originalName, network := range project.Networks {
+		name := manifest.MangleName(originalName)
+		if name != originalName {
+			res = res.AddRenameWarning(originalName, name)
+		}
+		res.Manifest.Components = append(res.Manifest.Components, manifest.Component{
 			Name: name,
 			Type: "network",
 			Spec: yamlutil.MustMarshalString(network),
 		})
 	}
-	for name, volume := range project.Volumes {
-		m.Components = append(m.Components, manifest.Component{
+	for originalName, volume := range project.Volumes {
+		name := manifest.MangleName(originalName)
+		if name != originalName {
+			res = res.AddRenameWarning(originalName, name)
+		}
+		res.Manifest.Components = append(res.Manifest.Components, manifest.Component{
 			Name: name,
 			Type: "volume",
 			Spec: yamlutil.MustMarshalString(volume),
 		})
 	}
-	return manifest.LoadResult{
-		Manifest: &m,
-	}
+	return res
 }
