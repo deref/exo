@@ -19,9 +19,10 @@ manifests (see below), or with CRUD operations such as `exo ls`, `exo new`, and
 `exo rm`.
 
 **Manifests** - A file describing all of the components in a project.
-Presently, [procfiles](./procfiles.md) are the only supported type of
-manifest. Use `exo apply ./path/to/Procfile` whenever your Procfile changes
-to make your workspace match. Processes will be added or removed accordingly.
+Presently, the supported manifest types are [procfiles](./procfiles.md) and
+[compose files](./compose.md). Use `exo apply ./path/to/manifest` whenever your
+manifest changes to make your workspace match. Components will be added or
+removed accordingly.
 
 **Processes** - A running program. Presently, only host-machine processes are
 supported. Docker containers will be supported in the future.
@@ -45,12 +46,12 @@ explicitly with `exo daemon` and terminate it with `exo exit`.
 
 ## Workflow
 
-For most standard procfile setups, `exo gui` will do the right thing on first
-use automatically. You can manage processes and view logs in your browser.
+For typical projects, `exo gui` will do the right thing on first use
+automatically. You can manage processes and view logs in your browser.
 
-If you've got multiple manifests, such as different Procfiles for both dev and
-test. Or if you generally prefer command line interfaces, a typical workflow
-looks something like this:
+If you've got multiple manifests, such as different manifests for each of dev
+and test. Or if you generally prefer command line interfaces, a typical
+workflow looks something like this:
 
 ```bash
 # Initialize a new workspace in the current directory.
@@ -70,7 +71,7 @@ exo stop worker
 exo restart api
 
 # Switch to a different configuration by applying a different manifest.
-exo apply ./Procfile.test
+exo apply ./compose.test.yaml
 
 # Shutdown everything and cleanup state when you're done.
 exo workspace destroy

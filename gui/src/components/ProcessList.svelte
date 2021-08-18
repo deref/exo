@@ -10,7 +10,6 @@
   import { link } from 'svelte-spa-router';
   import type { RequestLifecycle, WorkspaceApi } from '../lib/api';
   import type { ProcessDescription } from '../lib/process/types';
-  import { loadInitialLogs, resetLogs } from '../lib/logs/store';
   import {
     fetchProcesses,
     processes,
@@ -22,6 +21,7 @@
   import { setLogVisibility, visibleLogsStore } from '../lib/logs/visible-logs';
   import * as router from 'svelte-spa-router';
   import RemoteData from './RemoteData.svelte';
+  import IfEnabled from './IfEnabled.svelte';
 
   export let workspace: WorkspaceApi;
   export let workspaceId: string;
@@ -58,8 +58,6 @@
 
   function setProcLogs(processId: string, visible: boolean) {
     setLogVisibility(processId, visible);
-    resetLogs(workspaceId);
-    loadInitialLogs(workspaceId, workspace);
   }
 
   let procfileExport: string | null = null;
@@ -194,22 +192,24 @@
         </div>
       </RemoteData>
     </div>
-    <div>
-      {#if procfileExport}
-        <p>
-          Your Procfile is not up to date.
-          <button
-            on:click={async () => {
-              if (procfileExport == null) {
-                return;
-              }
-              await workspace.writeFile('Procfile', procfileExport);
-              checkProcfile();
-            }}>Export?</button
-          >
-        </p>
-      {/if}
-    </div>
+    <IfEnabled feature="export procfile">
+      <div>
+        {#if procfileExport}
+          <p>
+            Your Procfile is not up to date.
+            <button
+              on:click={async () => {
+                if (procfileExport == null) {
+                  return;
+                }
+                await workspace.writeFile('Procfile', procfileExport);
+                checkProcfile();
+              }}>Export?</button
+            >
+          </p>
+        {/if}
+      </div>
+    </IfEnabled>
   </section>
 </Panel>
 

@@ -161,7 +161,7 @@ func main() {
 				if child != nil {
 					gracefullyShutdown(childPgid, syscall.SIGTERM)
 				}
-				cmdutil.Fatalf("watching files: %w", err)
+				cmdutil.Fatalf("watching files: %v", err)
 			}
 		}
 	}()
