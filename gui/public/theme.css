@@ -42,6 +42,7 @@
   /* Contextual color */
   --error-color: #ee0000;
   --link-color: #0066ee;
+  --online-green-color: #00c220;
   /* Nav */
   --nav-bg-color: #e7e7e7;
   --nav-button-active-bg-color: #d5d5d5;
@@ -56,14 +57,8 @@
   --sparkline-stroke: #ee0000;
   --sparkline-fill: #ee000044;
   /* Spinners */
-  --spinner-grey-t: #66666633;
-  --spinner-grey-r: #66666677;
-  --spinner-grey-b: #666666bb;
-  --spinner-grey-l: #666666ff;
-  --spinner-blue-t: #007bd433;
-  --spinner-blue-r: #007bd477;
-  --spinner-blue-b: #007bd4bb;
-  --spinner-blue-l: #007bd4ff;
+  --spinner-grey: #777777ff;
+  --spinner-grey-light: #77777733;
   /* Checkbox */
   --checkbox-color: #777777ff;
   --checkbox-bg-color: #77777700;
