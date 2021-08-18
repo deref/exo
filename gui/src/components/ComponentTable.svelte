@@ -2,7 +2,7 @@
   import type { SvelteConstructor } from '../lib/svelte';
   import CheckeredTableWrapper from './CheckeredTableWrapper.svelte';
   import ErrorLabel from './ErrorLabel.svelte';
-  import SpinnerSVG from './mono/spinner.svelte';
+  import Spinner from './Spinner.svelte';
 
   type Item = $$Generic;
 
@@ -20,7 +20,7 @@
 </script>
 
 {#await components}
-  <SpinnerSVG />
+  <Spinner />
 {:then components}
   {#if components.length === 0}
     <div>No records</div>

@@ -64,21 +64,12 @@
 
 <style>
   :global(.exo-message-blink) {
-    animation: blink 1s linear infinite;
+    animation: blink 1s steps(1) infinite;
   }
 
   @keyframes blink {
-    from {
-      opacity: 0;
-    }
-    49% {
-      opacity: 0;
-    }
     50% {
-      opacity: 1;
-    }
-    to {
-      opacity: 1;
+      color: transparent;
     }
   }
 
