@@ -1,6 +1,7 @@
 package manifest
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 
@@ -35,6 +36,12 @@ type LoadResult struct {
 	Manifest *Manifest
 	Warnings []string
 	Err      error
+}
+
+func (lr LoadResult) AddRenameWarning(originalName, newName string) LoadResult {
+	warning := fmt.Sprintf("invalid name: %q, renamed to: %q", originalName, newName)
+	lr.Warnings = append(lr.Warnings, warning)
+	return lr
 }
 
 func Read(r io.Reader) LoadResult {
