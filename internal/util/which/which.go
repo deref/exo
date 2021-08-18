@@ -43,6 +43,7 @@ func (q Query) Run() (string, error) {
 	return "", fmt.Errorf("%q not found", q.Program)
 }
 
+// Uses the ambiant working directory and PATH variable.
 func Which(program string) (string, error) {
 	wd, err := os.Getwd()
 	if err != nil {

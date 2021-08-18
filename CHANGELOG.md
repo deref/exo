@@ -4,6 +4,14 @@ All notable changes to this project will be documented in this file.
 
 This project adhears to [CalVer](./doc/versioning.md).
 
+
+## Unreleased
+
+## Added
+
+- Shell completions.
+
+
 ## 2021-08-31
 
 ### Fixed
