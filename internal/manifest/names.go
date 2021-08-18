@@ -25,13 +25,11 @@ func ValidateName(name string) error {
 var namePattern = regexp.MustCompile("^[a-z]([-a-z0-9]*?[a-z0-9])?$")
 
 func MangleName(name string) string {
-	fmt.Println("mangling name ", name)
 	name = strings.ReplaceAll(name, "_", "-")
 	name = invalidRegexp.ReplaceAllString(name, "")
 	name = dashesRegexp.ReplaceAllString(name, "-")
 	name = strings.TrimFunc(name, isInvalidChar)
 	name = strings.TrimRight(name, "-")
-	fmt.Println("mangled name ", name)
 	return name
 }
 
