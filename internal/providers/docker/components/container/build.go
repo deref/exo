@@ -11,6 +11,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"syscall"
 
 	"github.com/deref/exo/internal/core/api"
 	"github.com/deref/exo/internal/task"
@@ -221,7 +222,7 @@ func tarBuildContext(w io.WriteCloser, root string) (err error) {
 
 		// If not a directory, write file content.
 		if !info.IsDir() {
-			data, err := os.Open(file)
+			data, err := os.OpenFile(file, os.O_RDONLY|syscall.O_NOFOLLOW, 0)
 			if err != nil {
 				return err
 			}
