@@ -10,7 +10,7 @@ import (
 )
 
 func main() {
-	res := procfile.Importer.Load(os.Stdin)
+	res := procfile.Import(os.Stdin)
 	for _, warning := range res.Warnings {
 		fmt.Fprintln(os.Stderr, warning)
 	}

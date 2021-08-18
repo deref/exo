@@ -10,16 +10,7 @@ import (
 )
 
 func main() {
-	cmd, err := cmdutil.ParseArgs(os.Args)
-	if err != nil {
-		cmdutil.Fatalf("parsing arguments: %v", err)
-	}
-	projectName := "imported"
-	if flagProjectName, ok := cmd.Flags["project-name"]; ok {
-		projectName = flagProjectName
-	}
-	importer := compose.Importer{ProjectName: projectName}
-	res := importer.Load(os.Stdin)
+	res := compose.Import(os.Stdin)
 	for _, warning := range res.Warnings {
 		fmt.Fprintln(os.Stderr, warning)
 	}

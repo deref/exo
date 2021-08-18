@@ -6,7 +6,6 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
-	"path"
 	"path/filepath"
 	"strings"
 
@@ -31,10 +30,6 @@ var manifestCandidates = []manifestCandidate{
 	{"compose", "docker-compose.yaml"},
 	{"compose", "docker-compose.yml"},
 	{"procfile", "Procfile"},
-}
-
-type loader interface {
-	Load(r io.Reader) manifest.LoadResult
 }
 
 func (ws *Workspace) loadManifest(rootDir string, input *api.ApplyInput) manifest.LoadResult {
@@ -110,23 +105,21 @@ func (ws *Workspace) loadManifest(rootDir string, input *api.ApplyInput) manifes
 		format = *input.Format
 	}
 
-	var load loader
+	var load func(r io.Reader) manifest.LoadResult
 	switch format {
 	case "procfile":
-		load = procfile.Importer
+		load = procfile.Import
 	case "compose":
-		projectDir := path.Base(rootDir)
-		projectDir = manifest.MangleName(projectDir)
-		load = &compose.Importer{ProjectName: projectDir}
+		load = compose.Import
 	case "exo":
-		load = manifest.Loader
+		load = manifest.Read
 	default:
 		return manifest.LoadResult{
 			Err: fmt.Errorf("unknown manifest format: %q", format),
 		}
 	}
 
-	res := load.Load(strings.NewReader(manifestString))
+	res := load(strings.NewReader(manifestString))
 	if res.Err != nil {
 		res.Err = errutil.WithHTTPStatus(http.StatusBadRequest, res.Err)
 	}

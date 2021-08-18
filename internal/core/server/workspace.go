@@ -117,7 +117,6 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 
 	// TODO: Handle partial failures.
 
-	// TODO: Handle component dependencies.
 	job := ws.TaskTracker.StartTask(ctx, "applying")
 	go func() {
 		defer job.Finish()

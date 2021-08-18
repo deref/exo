@@ -8,6 +8,7 @@ import (
 )
 
 func (n *Network) InitResource() error {
+	n.ComponentID = n.ComponentID
 	if err := yaml.Unmarshal([]byte(n.ComponentSpec), &n.Spec); err != nil {
 		return fmt.Errorf("unmarshalling spec: %w", err)
 	}

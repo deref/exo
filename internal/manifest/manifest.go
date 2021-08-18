@@ -44,11 +44,7 @@ func (lr LoadResult) AddRenameWarning(originalName, newName string) LoadResult {
 	return lr
 }
 
-type loader struct{}
-
-var Loader = loader{}
-
-func (l loader) Load(r io.Reader) LoadResult {
+func Read(r io.Reader) LoadResult {
 	bs, err := ioutil.ReadAll(r)
 	if err != nil {
 		return LoadResult{Err: err}

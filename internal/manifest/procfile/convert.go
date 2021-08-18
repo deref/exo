@@ -10,23 +10,18 @@ import (
 	"github.com/deref/exo/internal/util/jsonutil"
 )
 
-type importer struct {
-}
-
-var Importer = importer{}
-
-func (i importer) Load(r io.Reader) manifest.LoadResult {
+func Import(r io.Reader) manifest.LoadResult {
 	procfile, err := Parse(r)
 	if err != nil {
 		return manifest.LoadResult{Err: fmt.Errorf("parsing: %w", err)}
 	}
-	return convert(procfile)
+	return Convert(procfile)
 }
 
 const BasePort = 5000
 const PortStep = 100
 
-func convert(procfile *Procfile) manifest.LoadResult {
+func Convert(procfile *Procfile) manifest.LoadResult {
 	var res manifest.LoadResult
 	m := manifest.NewManifest()
 	port := BasePort
