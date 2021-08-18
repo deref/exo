@@ -1,0 +1,7 @@
+services:
+  echo:
+    image: hashicorp/http-echo
+    command: '-text="hello world"'
+  t1:
+    image: ubuntu:latest
+    command: /bin/bash -c 'while true; do echo "looping"; sleep 1; done'
