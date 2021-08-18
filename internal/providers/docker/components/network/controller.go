@@ -7,12 +7,12 @@ import (
 	"github.com/goccy/go-yaml"
 )
 
-func (n *Network) InitResource(componentID, spec, state string) error {
-	n.ComponentID = componentID
-	if err := yaml.Unmarshal([]byte(spec), &n.Spec); err != nil {
+func (n *Network) InitResource() error {
+	n.ComponentID = n.ComponentID
+	if err := yaml.Unmarshal([]byte(n.ComponentSpec), &n.Spec); err != nil {
 		return fmt.Errorf("unmarshalling spec: %w", err)
 	}
-	if err := jsonutil.UnmarshalString(state, &n.State); err != nil {
+	if err := jsonutil.UnmarshalString(n.ComponentState, &n.State); err != nil {
 		return fmt.Errorf("unmarshalling state: %w", err)
 	}
 	return nil

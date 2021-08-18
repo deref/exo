@@ -1,7 +1,7 @@
 package server
 
 type Controller interface {
-	InitResource(componentID, spec, state string) error
+	InitResource() error
 	MarshalState() (state string, err error)
 	IsDeleted() bool
 	MarkDeleted()

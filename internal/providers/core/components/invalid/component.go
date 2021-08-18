@@ -4,7 +4,7 @@ type Invalid struct {
 	Err error
 }
 
-func (invalid *Invalid) InitResource(componentID, spec, state string) error {
+func (invalid *Invalid) InitResource() error {
 	return nil
 }
 
