@@ -1,8 +1,7 @@
 <script lang="ts">
   import IconButton from '../IconButton.svelte';
   import CheckboxButton from '../CheckboxButton.svelte';
-  import RunSVG from '../mono/play.svelte';
-  import StopSVG from '../mono/stop.svelte';
+  import ProcessRunControls from './ProcessRunControls.svelte';
   import DeleteSVG from '../mono/delete.svelte';
   import { link } from 'svelte-spa-router';
   import {
@@ -56,31 +55,7 @@
   {#each data as { id, name, running } (id)}
     <tr>
       <td>
-        <div class="run-controls">
-          {#if statusPending.has(id)}
-            <div class="spinner" />
-          {:else if running}
-            <div class="spinner running" />
-            <div class="control hover-only">
-              <IconButton
-                tooltip="Stop process"
-                on:click={() => setProcRun(id, false)}
-              >
-                <StopSVG />
-              </IconButton>
-            </div>
-          {:else}
-            <div class="stopped unhover-only" />
-            <div class="control hover-only">
-              <IconButton
-                tooltip="Run process"
-                on:click={() => setProcRun(id, true)}
-              >
-                <RunSVG />
-              </IconButton>
-            </div>
-          {/if}
-        </div>
+        <ProcessRunControls {setProcRun} {statusPending} {id} {running} />
       </td>
 
       <td
@@ -171,71 +146,8 @@
     border-bottom: 8px solid transparent;
   }
 
-  .run-controls {
-    position: relative;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    width: 32px;
-    height: 32px;
-    margin-right: 8px;
-  }
-
-  tr:not(:hover):not(:focus-within) .hover-only {
-    display: none;
-  }
-
   tr:not(:hover):not(:focus-within) .hover-only-visibility {
     visibility: hidden;
-  }
-
-  tr:hover .unhover-only,
-  tr:focus-within .unhover-only {
-    display: none;
-  }
-
-  .stopped {
-    width: 14px;
-    height: 14px;
-    border-radius: 2px;
-    background: var(--grey-c-color);
-  }
-
-  .control {
-    position: absolute;
-    z-index: 4;
-  }
-
-  .spinner {
-    position: absolute;
-    z-index: 3;
-    top: 7px;
-    left: 7px;
-    width: 18px;
-    height: 18px;
-    border-radius: 100%;
-    animation: spin 1s infinite linear;
-    border: 2px solid;
-    border-top-color: var(--spinner-grey-t);
-    border-right-color: var(--spinner-grey-r);
-    border-bottom-color: var(--spinner-grey-b);
-    border-left-color: var(--spinner-grey-l);
-    transition: all 0.125s;
-  }
-
-  .spinner.running {
-    border-top-color: var(--spinner-blue-t);
-    border-right-color: var(--spinner-blue-r);
-    border-bottom-color: var(--spinner-blue-b);
-    border-left-color: var(--spinner-blue-l);
-  }
-
-  tr:hover .spinner.running,
-  tr:focus-within .spinner.running {
-    top: 2px;
-    left: 2px;
-    width: 28px;
-    height: 28px;
   }
 
   .process-name {
@@ -259,14 +171,5 @@
 
   .process-name:focus {
     background: var(--grey-b-color);
-  }
-
-  @keyframes spin {
-    from {
-      transform: rotate(0deg);
-    }
-    to {
-      transform: rotate(360deg);
-    }
   }
 </style>
