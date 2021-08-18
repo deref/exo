@@ -13,13 +13,24 @@ func makeMountFromVolumeString(workspaceRoot, volume string) (mount.Mount, error
 	// This obviously doesn't handle colons in the path well but it would appear
 	// that docker-compose doesn't handle those either.
 	volumeParts := strings.Split(volume, ":")
-	if len(volumeParts) > 2 {
+	if len(volumeParts) > 3 {
 		return mount.Mount{}, fmt.Errorf("invalid volume string %s", volume)
 	}
+
+	isReadOnly := false
+	if len(volumeParts) > 2 {
+		mode := volumeParts[2]
+		if mode == "ro" {
+			isReadOnly = true
+		} else if mode != "rw" {
+			return mount.Mount{}, fmt.Errorf("invalid mode string %s", mode)
+		}
+	}
+
 	if len(volumeParts) == 1 {
 		return mount.Mount{
-			Type:   mount.TypeBind,
-			Source: volumeParts[0],
+			Type:   mount.TypeVolume,
+			Target: volumeParts[0],
 		}, nil
 	}
 
@@ -42,8 +53,9 @@ func makeMountFromVolumeString(workspaceRoot, volume string) (mount.Mount, error
 	}
 
 	return mount.Mount{
-		Type:   mountType,
-		Source: source,
-		Target: target,
+		Type:     mountType,
+		Source:   source,
+		Target:   target,
+		ReadOnly: isReadOnly,
 	}, nil
 }
