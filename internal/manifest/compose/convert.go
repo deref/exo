@@ -25,21 +25,33 @@ func (i *Loader) convert(project *Project) manifest.LoadResult {
 	res := manifest.LoadResult{
 		Manifest: &manifest.Manifest{},
 	}
-	for originalName, service := range project.Services {
+
+	// Since containers reference networks and volumes by their docker-compose name, but the
+	// Docker components will have a namespaced name, so we need to keep track of which
+	// volumes/components a service references.
+	networksByComposeName := map[string]string{}
+	volumesByComposeName := map[string]string{}
+
+	for originalName, volume := range project.Volumes {
 		name := manifest.MangleName(originalName)
 		if originalName != name {
 			res = res.AddRenameWarning(originalName, name)
 		}
-		s := service.ToMap()
-		if _, ok := s["container_name"]; !ok {
-			s["container_name"] = i.prefixedName(name)
+
+		v := volume.ToMap()
+		if _, ok := v["name"]; !ok {
+			v["name"] = i.prefixedName(name)
 		}
+		volumesByComposeName[originalName] = v["name"].(string)
+
 		res.Manifest.Components = append(res.Manifest.Components, manifest.Component{
 			Name: name,
-			Type: "container",
-			Spec: yamlutil.MustMarshalString(s),
+			Type: "volume",
+			Spec: yamlutil.MustMarshalString(v),
 		})
 	}
+
+	// Set up networks.
 	hasDefaultNetwork := false
 	for originalName, network := range project.Networks {
 		if originalName == "default" {
@@ -57,6 +69,7 @@ func (i *Loader) convert(project *Project) manifest.LoadResult {
 		if _, ok := n["name"]; !ok {
 			n["name"] = i.prefixedName(name)
 		}
+		networksByComposeName[originalName] = n["name"].(string)
 
 		res.Manifest.Components = append(res.Manifest.Components, manifest.Component{
 			Name: name,
@@ -65,31 +78,71 @@ func (i *Loader) convert(project *Project) manifest.LoadResult {
 		})
 	}
 	if !hasDefaultNetwork {
+		componentName := "default"
+		name := i.prefixedName(componentName)
+		networksByComposeName[componentName] = name
+
 		res.Manifest.Components = append(res.Manifest.Components, manifest.Component{
-			Name: "default",
+			Name: componentName,
 			Type: "network",
 			Spec: yamlutil.MustMarshalString(map[string]string{
-				"name":   i.prefixedName("default"),
+				"name":   name,
 				"driver": "bridge",
 			}),
 		})
 	}
-	for originalName, volume := range project.Volumes {
+
+	for originalName, service := range project.Services {
 		name := manifest.MangleName(originalName)
 		if originalName != name {
 			res = res.AddRenameWarning(originalName, name)
 		}
-		v := volume.ToMap()
-		if _, ok := v["name"]; !ok {
-			v["name"] = i.prefixedName(name)
+		s := service.ToMap()
+		if _, ok := s["container_name"]; !ok {
+			s["container_name"] = i.prefixedName(name)
 		}
-		// TODO
+
+		// Map the docker-compose network name to the name of the docker network that is created.
+		defaultNetworkName := networksByComposeName["default"]
+		if networks, ok := s["networks"]; ok {
+			switch typedNetworks := networks.(type) {
+			case map[string]interface{}:
+				mappedNetworks := make(map[string]interface{})
+				for network, config := range typedNetworks {
+					networkName, ok := networksByComposeName[network]
+					if !ok {
+						res.Err = fmt.Errorf("unknown network: %q", network)
+						continue
+					}
+					mappedNetworks[networkName] = config
+				}
+				mappedNetworks[defaultNetworkName] = map[interface{}]interface{}{}
+				s["networks"] = mappedNetworks
+
+			case []string:
+				mappedNetworks := make([]string, len(typedNetworks)+1)
+				for i, network := range typedNetworks {
+					networkName, ok := networksByComposeName[network]
+					if !ok {
+						res.Err = fmt.Errorf("unknown network: %q", network)
+						continue
+					}
+					mappedNetworks[i] = networkName
+				}
+				mappedNetworks[len(mappedNetworks)-1] = defaultNetworkName
+				s["networks"] = mappedNetworks
+			}
+		} else {
+			s["networks"] = []string{defaultNetworkName}
+		}
+
 		res.Manifest.Components = append(res.Manifest.Components, manifest.Component{
 			Name: name,
-			Type: "volume",
-			Spec: yamlutil.MustMarshalString(v),
+			Type: "container",
+			Spec: yamlutil.MustMarshalString(s),
 		})
 	}
+
 	return res
 }
 

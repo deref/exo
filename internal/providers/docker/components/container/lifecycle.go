@@ -18,6 +18,8 @@ import (
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
+var _ core.Lifecycle = (*Container)(nil)
+
 func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput) (output *core.InitializeOutput, err error) {
 	if err := c.ensureImage(ctx); err != nil {
 		return nil, fmt.Errorf("ensuring image: %w", err)
@@ -234,7 +236,7 @@ func (c *Container) create(ctx context.Context) error {
 	}
 	for _, networkName := range c.Spec.Networks {
 		networkCfg.EndpointsConfig[networkName] = &network.EndpointSettings{
-			Aliases: []string{c.ComponentID, c.ComponentName, c.Spec.ContainerName},
+			Aliases: []string{c.ComponentID, c.ComponentName},
 		}
 	}
 
