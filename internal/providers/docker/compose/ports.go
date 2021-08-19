@@ -2,7 +2,10 @@ package compose
 
 import (
 	"errors"
+	"fmt"
+	"net"
 	"regexp"
+	"strconv"
 	"strings"
 )
 
@@ -37,15 +40,29 @@ func ParsePortMapping(short string) (PortMapping, error) {
 	if len(submatches) == 0 {
 		return PortMapping{}, errors.New("invalid port mapping syntax")
 	}
+
+	result := make(map[string]string)
+	for i, name := range portRegexp.SubexpNames() {
+		if i != 0 && name != "" {
+			result[name] = submatches[i]
+		}
+	}
+
 	var mapping PortMapping
-	mapping.HostIP = submatches[2]
-	mapping.Published = submatches[4]
-	mapping.Target = submatches[5]
-	mapping.Protocol = submatches[7]
+	mapping.HostIP = result["ip"]
+	mapping.Published = result["published"]
+	mapping.Target = result["target"]
+	mapping.Protocol = result["protocol"]
+
+	if mapping.HostIP != "" && net.ParseIP(mapping.HostIP) == nil {
+		return PortMapping{}, fmt.Errorf("invalid IP: %s", mapping.HostIP)
+	}
+
 	return mapping, nil
 }
 
-var portRegexp = regexp.MustCompile("^((\\d+\\.\\d+\\.\\d+\\.\\d+):)?(([-\\d]+):)?([-\\d]+)(/(.+))?$")
+// https://regex101.com/r/qvbqTT/2
+var portRegexp = regexp.MustCompile(`^((?P<ip>[a-fA-F\d.:]+?):)??((?P<published>([-\d]+)?):)?(?P<target>[-\d]+)(/(?P<protocol>.+))?$`)
 
 func (mappings PortMappings) MarshalYAML() (interface{}, error) {
 	res := make([]interface{}, len(mappings))
@@ -84,4 +101,35 @@ func (marshaller *portMappingMarshaller) UnmarshalYAML(unmarshal func(interface{
 	}
 	*marshaller = portMappingMarshaller(mapping)
 	return err
+}
+
+func ParsePortRange(numbers string, protocol string) (res PortRange, err error) {
+	res.Protocol = protocol
+	parts := strings.SplitN(numbers, "-", 2)
+	if len(parts) == 1 {
+		parts = append(parts, parts[0])
+	}
+	for i, dest := range []*uint16{&res.Min, &res.Max} {
+		var n int
+		n, err = strconv.Atoi(parts[i])
+		*dest = uint16(n)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
+type PortRange struct {
+	Min      uint16
+	Max      uint16
+	Protocol string
+}
+
+func FormatPort(num uint16, protocol string) string {
+	res := strconv.Itoa(int(num))
+	if protocol != "" {
+		res += "/" + protocol
+	}
+	return res
 }

@@ -206,7 +206,7 @@ func (ws *Workspace) DescribeComponents(ctx context.Context, input *api.Describe
 	return output, nil
 }
 
-func (ws *Workspace) newController(ctx context.Context, typ string) Controller {
+func (ws *Workspace) newController(ctx context.Context, desc api.ComponentDescription) Controller {
 	description, err := ws.describe(ctx)
 	if err != nil {
 		return &invalid.Invalid{
@@ -214,11 +214,15 @@ func (ws *Workspace) newController(ctx context.Context, typ string) Controller {
 		}
 	}
 	base := core.ComponentBase{
+		ComponentID:          desc.ID,
+		ComponentName:        desc.Name,
+		ComponentSpec:        desc.Spec,
+		ComponentState:       desc.State,
 		WorkspaceRoot:        description.Root,
 		WorkspaceEnvironment: ws.getEnvironment(),
 		Logger:               ws.Logger,
 	}
-	switch typ {
+	switch desc.Type {
 	case "process":
 		return &process.Process{
 			ComponentBase: base,
@@ -252,7 +256,7 @@ func (ws *Workspace) newController(ctx context.Context, typ string) Controller {
 
 	default:
 		return &invalid.Invalid{
-			Err: fmt.Errorf("unsupported component type: %q", typ),
+			Err: fmt.Errorf("unsupported component type: %q", desc.Type),
 		}
 	}
 }
@@ -564,7 +568,7 @@ func (ws *Workspace) StartComponents(ctx context.Context, input *api.StartCompon
 
 func (ws *Workspace) Stop(ctx context.Context, input *api.StopInput) (*api.StopOutput, error) {
 	jobID := ws.controlEachProcess(ctx, "stopping", func(ctx context.Context, process api.Process) error {
-		_, err := process.Stop(ctx, &api.StopInput{})
+		_, err := process.Stop(ctx, input)
 		return err
 	})
 	return &api.StopOutput{
@@ -577,7 +581,7 @@ func (ws *Workspace) StopComponents(ctx context.Context, input *api.StopComponen
 		Refs: input.Refs,
 	}
 	jobID := ws.controlEachComponent(ctx, "stopping", filter, func(ctx context.Context, process api.Process) error {
-		_, err := process.Stop(ctx, &api.StopInput{})
+		_, err := process.Stop(ctx, &api.StopInput{TimeoutSeconds: input.TimeoutSeconds})
 		return err
 	})
 	return &api.StopComponentsOutput{
@@ -587,7 +591,7 @@ func (ws *Workspace) StopComponents(ctx context.Context, input *api.StopComponen
 
 func (ws *Workspace) Restart(ctx context.Context, input *api.RestartInput) (*api.RestartOutput, error) {
 	jobID := ws.controlEachProcess(ctx, "restarting", func(ctx context.Context, process api.Process) error {
-		_, err := process.Restart(ctx, &api.RestartInput{})
+		_, err := process.Restart(ctx, input)
 		return err
 	})
 	return &api.RestartOutput{
@@ -600,7 +604,7 @@ func (ws *Workspace) RestartComponents(ctx context.Context, input *api.RestartCo
 		Refs: input.Refs,
 	}
 	jobID := ws.controlEachComponent(ctx, "restart", filter, func(ctx context.Context, process api.Process) error {
-		_, err := process.Restart(ctx, &api.RestartInput{})
+		_, err := process.Restart(ctx, &api.RestartInput{TimeoutSeconds: input.TimeoutSeconds})
 		return err
 	})
 	return &api.RestartComponentsOutput{
@@ -879,8 +883,8 @@ func (ws *Workspace) controlEachProcess(ctx context.Context, label string, f int
 }
 
 func (ws *Workspace) control(ctx context.Context, desc api.ComponentDescription, f interface{}) error {
-	ctrl := ws.newController(ctx, desc.Type)
-	if err := ctrl.InitResource(desc.ID, desc.Spec, desc.State); err != nil {
+	ctrl := ws.newController(ctx, desc)
+	if err := ctrl.InitResource(); err != nil {
 		return err
 	}
 	ctxV := reflect.ValueOf(ctx)

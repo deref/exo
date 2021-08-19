@@ -5,8 +5,8 @@
 
 :root {
   font-family: var(--font-sans);
-  color: var(--color);
-  background-color: var(--bg-color);
+  color: var(--primary-color);
+  background-color: var(--primary-bg-color);
 }
 
 * {

@@ -64,30 +64,16 @@
 
 <style>
   :global(.exo-message-blink) {
-    animation: blink 1s linear infinite;
+    animation: blink 1s steps(1) infinite;
   }
 
   @keyframes blink {
-    0% {
-      visibility: hidden;
-    }
     50% {
-      visibility: hidden;
-    }
-    100% {
-      visibility: visible;
+      color: transparent;
     }
   }
 
   :global(.exo-message-invert) {
-    background: white;
     filter: invert(1);
-  }
-
-  @media (prefers-color-scheme: dark) {
-    :global(.exo-message-invert) {
-      background: black;
-      filter: invert(1);
-    }
   }
 </style>

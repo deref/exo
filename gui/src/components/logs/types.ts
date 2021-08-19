@@ -1,4 +1,4 @@
-export interface Log {
+export interface LogEvent {
   id: string;
   style: string;
   time: {

@@ -54,19 +54,16 @@
     padding: 0;
     display: grid;
     gap: 16px;
-    grid-template-columns: repeat(
-      auto-fill,
-      minmax(320px, 1fr)
-    ); /* Auto-responsive */
+    /* Auto-responsive */
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
   }
 
   li {
-    background: linear-gradient(#fff, #f5f5f5);
+    background: var(--button-background);
+    box-shadow: var(--button-shadow);
     border: none;
     border-radius: 4px;
     padding: 16px 24px;
-    box-shadow: 0 0.33px 0 1px hsla(0, 0%, 100%, 0.15),
-      0 4px 8px -3px rgba(0, 0, 0, 0.15), 0 0.4px 0 0.8px rgba(0, 0, 0, 0.25);
     position: relative;
     display: grid;
     grid-template-columns: max-content 2fr;
@@ -85,14 +82,12 @@
   }
 
   li:hover {
-    background: linear-gradient(#fafafa, #e7e7e7);
-    box-shadow: 0 0.33px 0 1px hsla(0, 0%, 100%, 0.15),
-      0 6px 8px -4px rgba(0, 0, 0, 0.2), 0 0.4px 0 0.8px rgba(0, 0, 0, 0.35);
+    background: var(--button-hover-background);
+    box-shadow: var(--button-hover-shadow);
   }
 
   li:active {
-    background: linear-gradient(#f7f7f7, #e0e0e0);
-    box-shadow: 0 0.33px 0 1px hsla(0, 0%, 100%, 0.15),
-      0 4px 6px -3px rgba(0, 0, 0, 0.15), 0 0.4px 0 0.8px rgba(0, 0, 0, 0.45);
+    background: var(--button-active-background);
+    box-shadow: var(--button-active-shadow);
   }
 </style>

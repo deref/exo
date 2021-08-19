@@ -71,7 +71,7 @@ func GetProcessDescription(ctx context.Context, dockerClient *dockerclient.Clien
 		}
 
 		topBody, err := dockerClient.ContainerTop(ctx, state.ContainerID, []string{})
-		if err != nil {
+		if err != nil && !strings.Contains(err.Error(), "wait until the container is running") {
 			return api.ProcessDescription{}, fmt.Errorf("could not top container: %w", err)
 		}
 

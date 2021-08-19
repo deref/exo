@@ -14,6 +14,13 @@ and some whitespace.
 When a process is started, a unique `PORT` environment variable is supplied to
 each.
 
+Most procfile runners, exo included, have a single command to start all
+processes in the procfile, then tail their logs until interrupted:
+
+```bash
+exo run Procfile
+```
+
 ## References
 
 - [The New Heroku](https://blog.heroku.com/the_new_heroku_1_process_model_procfile) - Introduction of Procfiles from 2011.

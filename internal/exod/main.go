@@ -43,13 +43,13 @@ func Main(ctx context.Context) {
 
 func RunServer(ctx context.Context, flags map[string]string) {
 	logger := logging.CurrentLogger(ctx)
+	tel := telemetry.FromContext(ctx)
 
 	cfg := &config.Config{}
 	config.MustLoadDefault(cfg)
 	mustMakeDirectories(cfg)
 
-	tel := telemetry.New(&cfg.Telemetry)
-	tel.StartSession()
+	tel.StartSession(ctx)
 
 	_, forceStdLog := flags["force-std-log"]
 	if !(forceStdLog || isatty.IsTerminal(os.Stdout.Fd())) {
@@ -108,7 +108,6 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	kernelCfg := &kernel.Config{
 		VarDir:      cfg.VarDir,
 		Store:       store,
-		Telemetry:   tel,
 		SyslogPort:  cfg.Log.SyslogPort,
 		Docker:      dockerClient,
 		Logger:      logger,

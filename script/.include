@@ -5,3 +5,4 @@
 
 export ROOT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )/.." &> /dev/null && pwd )"
 export EXO_DEV_HOME="${ROOT_DIR}/.dev"
+export SCRIPT_DIR="${ROOT_DIR}/script"

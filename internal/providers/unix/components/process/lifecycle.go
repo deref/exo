@@ -36,12 +36,13 @@ func (p *Process) Refresh(ctx context.Context, input *core.RefreshInput) (*core.
 }
 
 func (p *Process) refresh() {
-	if !osutil.IsValidPid(p.SupervisorPid) {
-		p.State.clear()
+	if osutil.IsValidPid(p.SupervisorPid) && osutil.IsValidPid(p.Pid) {
+		return
 	}
+	p.State.clear()
 }
 
 func (p *Process) Dispose(ctx context.Context, input *core.DisposeInput) (*core.DisposeOutput, error) {
-	p.stop()
+	p.stop(nil)
 	return &core.DisposeOutput{}, nil
 }
