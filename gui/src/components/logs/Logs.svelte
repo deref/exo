@@ -77,7 +77,7 @@
     padding: 0 0.3em;
     vertical-align: text-top;
     color: var(--grey-3-color);
-    white-space: pre-wrap;
+    white-space: pre-line;
   }
 
   tr:hover td {
