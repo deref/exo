@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 	"fmt"
+	"os/user"
 	"strconv"
 	"time"
 
@@ -10,6 +11,7 @@ import (
 	"github.com/deref/exo/internal/providers/docker/compose"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/strslice"
 	docker "github.com/docker/docker/client"
@@ -174,7 +176,7 @@ func (c *Container) create(ctx context.Context) error {
 		//// Contains container's resources (cgroups, ulimits)
 		//Resources
 
-		//// Mounts specs used by the container
+		// Mounts specs used by the container
 		//Mounts []mount.Mount `json:",omitempty"`
 
 		//// MaskedPaths is the list of paths to be masked inside the container (this overrides the default set of paths)
@@ -186,6 +188,23 @@ func (c *Container) create(ctx context.Context) error {
 		//// Run a custom init inside the container, if null, use the daemon's configured settings
 		//Init *bool `json:",omitempty"`
 	}
+
+	// TODO: make the user home directory a parameter of the container.
+	user, err := user.Current()
+	if err != nil {
+		return fmt.Errorf("could not get user %w", err)
+	}
+	userHomeDir := user.HomeDir
+
+	hostCfg.Mounts = make([]mount.Mount, len(c.Spec.Volumes))
+	for i, v := range c.Spec.Volumes {
+		mnt, err := makeMountFromVolumeString(c.WorkspaceRoot, userHomeDir, v)
+		if err != nil {
+			return fmt.Errorf("invalid mount at index %d: %w", i, err)
+		}
+		hostCfg.Mounts[i] = mnt
+	}
+
 	for _, mapping := range c.Spec.Ports {
 		target, err := nat.NewPort(mapping.Protocol, mapping.Target)
 		if err != nil {
