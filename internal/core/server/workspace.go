@@ -569,7 +569,7 @@ func (ws *Workspace) StopComponents(ctx context.Context, input *api.StopComponen
 
 func (ws *Workspace) Restart(ctx context.Context, input *api.RestartInput) (*api.RestartOutput, error) {
 	jobID := ws.controlEachProcess(ctx, "restarting", func(ctx context.Context, process api.Process) error {
-		_, err := process.Restart(ctx, &api.RestartInput{})
+		_, err := process.Restart(ctx, input)
 		return err
 	})
 	return &api.RestartOutput{
