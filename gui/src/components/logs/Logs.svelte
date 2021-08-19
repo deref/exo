@@ -28,6 +28,9 @@
     }
   });
 
+  // This trims the final newline character at the end of each log message,
+  // because the table layout already effectively adds one line break at
+  // the end of each message and this was causing bugs on some Linux systems.
   const trimFinalNewline = (message: string) =>
     message.replace(/((\n\r)|(\n)|(\r)|(\r\n))$/, '');
 </script>
