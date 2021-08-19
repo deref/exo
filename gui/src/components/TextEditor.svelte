@@ -1,9 +1,9 @@
 <script lang="ts">
   import * as monaco from 'monaco-editor';
   import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
+  import { exo_dark, exo_light } from '../lib/monaco-theme';
 
-  import { onDestroy, onMount } from 'svelte';
-  import Panel from './Panel.svelte';
+  import { onMount } from 'svelte';
 
   export let id: string | undefined;
   export let value: string = '';
@@ -18,15 +18,18 @@
 
   let container: HTMLDivElement | null = null;
 
-  const setTheme = (dark: boolean) => {
-    if (dark) {
-      monaco.editor.setTheme('vs-dark');
-    } else {
-      monaco.editor.setTheme('vs-light');
-    }
-  };
-
   onMount(() => {
+    monaco.editor.defineTheme('exo-light', exo_light);
+    monaco.editor.defineTheme('exo-dark', exo_dark);
+
+    const setTheme = (dark: boolean) => {
+      if (dark) {
+        monaco.editor.setTheme('exo-dark');
+      } else {
+        monaco.editor.setTheme('exo-light');
+      }
+    };
+
     const mqList = window.matchMedia('(prefers-color-scheme: dark)');
 
     const handleThemeChange = (e: MediaQueryListEvent) => {
