@@ -2,6 +2,7 @@ package container
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"strconv"
 	"time"
@@ -229,8 +230,20 @@ func (c *Container) create(ctx context.Context) error {
 		}
 	}
 	networkCfg := &network.NetworkingConfig{
-		//EndpointsConfig map[string]*EndpointSettings // Endpoint configs for each connecting network
+		EndpointsConfig: make(map[string]*network.EndpointSettings), // Endpoint configs for each connecting network
 	}
+	for _, networkName := range c.Spec.Networks {
+		networkCfg.EndpointsConfig[networkName] = &network.EndpointSettings{
+			Aliases: []string{c.ComponentID, c.ComponentName, c.Spec.ContainerName},
+		}
+	}
+
+	if jsonBytes, err := json.MarshalIndent(networkCfg, "", "  "); err == nil {
+		fmt.Println(string(jsonBytes))
+	} else {
+		fmt.Println("Error printing networkCfg:", err)
+	}
+
 	var platform *v1.Platform
 	//platform := &v1.Platform{
 	//	//// Architecture field specifies the CPU architecture, for example
