@@ -2,7 +2,7 @@
   import * as monaco from 'monaco-editor';
   import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
 
-  import { onMount } from 'svelte';
+  import { onDestroy, onMount } from 'svelte';
   import Panel from './Panel.svelte';
 
   export let id: string | undefined;
@@ -60,6 +60,14 @@
     return () => {
       editor.dispose();
     };
+  });
+
+  onDestroy(() => {
+    window
+      .matchMedia('(prefers-color-scheme: dark)')
+      .removeEventListener('change', (e) => {
+        setTheme(e.matches);
+      });
   });
 </script>
 
