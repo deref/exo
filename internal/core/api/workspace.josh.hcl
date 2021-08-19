@@ -156,6 +156,7 @@ interface "workspace" {
 
   method "restart-components" {
     input "refs" "[]string" {}
+    input "timeout-seconds" "*uint" {}
     output "job-id" "string" {}
   }
 

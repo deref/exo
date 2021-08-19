@@ -31,7 +31,8 @@ If no refs are provided, restarts the entire workspace.`,
 				return jobID, err
 			} else {
 				output, err := ws.RestartComponents(ctx, &api.RestartComponentsInput{
-					Refs: refs,
+					TimeoutSeconds: timeoutSeconds,
+					Refs:           refs,
 				})
 				if output != nil {
 					jobID = output.JobID

@@ -240,7 +240,8 @@ type StopComponentsOutput struct {
 }
 
 type RestartComponentsInput struct {
-	Refs []string `json:"refs"`
+	Refs           []string `json:"refs"`
+	TimeoutSeconds *uint    `json:"timeoutSeconds"`
 }
 
 type RestartComponentsOutput struct {

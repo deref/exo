@@ -582,7 +582,7 @@ func (ws *Workspace) RestartComponents(ctx context.Context, input *api.RestartCo
 		Refs: input.Refs,
 	}
 	jobID := ws.controlEachComponent(ctx, "restart", filter, func(ctx context.Context, process api.Process) error {
-		_, err := process.Restart(ctx, &api.RestartInput{})
+		_, err := process.Restart(ctx, &api.RestartInput{TimeoutSeconds: input.TimeoutSeconds})
 		return err
 	})
 	return &api.RestartComponentsOutput{
