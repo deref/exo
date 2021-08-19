@@ -26,14 +26,14 @@
     }
   };
 
-  const mqList = window.matchMedia('(prefers-color-scheme: dark)');
-
-  const handleThemeChange = (e: MediaQueryListEvent) => {
-    setTheme(e.matches);
-    console.log('test color listener');
-  };
-
   onMount(() => {
+    const mqList = window.matchMedia('(prefers-color-scheme: dark)');
+
+    const handleThemeChange = (e: MediaQueryListEvent) => {
+      setTheme(e.matches);
+      console.log('test color listener');
+    };
+
     const editor = monaco.editor.create(container!, {
       value,
       language,
