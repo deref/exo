@@ -3,6 +3,7 @@
   import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
 
   import { onMount } from 'svelte';
+  import Panel from './Panel.svelte';
 
   export let id: string | undefined;
   export let value: string = '';
@@ -16,6 +17,14 @@
   };
 
   let container: HTMLDivElement | null = null;
+
+  const setTheme = (dark: boolean) => {
+    if (dark) {
+      monaco.editor.setTheme('vs-dark');
+    } else {
+      monaco.editor.setTheme('vs-light');
+    }
+  };
 
   onMount(() => {
     const editor = monaco.editor.create(container!, {
@@ -34,6 +43,19 @@
     editor.onDidChangeModelContent((event) => {
       value = editor.getValue();
     });
+
+    // Initialize dark mode if set
+    setTheme(
+      window.matchMedia &&
+        window.matchMedia('(prefers-color-scheme: dark)').matches,
+    );
+
+    // Listen to system theme preference changes and set color theme
+    window
+      .matchMedia('(prefers-color-scheme: dark)')
+      .addEventListener('change', (e) => {
+        setTheme(e.matches);
+      });
 
     return () => {
       editor.dispose();
