@@ -19,6 +19,7 @@
   let container: HTMLDivElement | null = null;
 
   onMount(() => {
+    // Define custom exo color themes for Monaco.
     monaco.editor.defineTheme('exo-light', exo_light);
     monaco.editor.defineTheme('exo-dark', exo_dark);
 
@@ -30,6 +31,8 @@
       }
     };
 
+    // Initialize the Media Query List and handler objects for
+    // finding and applying system color theme changes.
     const mqList = window.matchMedia('(prefers-color-scheme: dark)');
 
     const handleThemeChange = (e: MediaQueryListEvent) => {
@@ -54,10 +57,10 @@
       value = editor.getValue();
     });
 
-    // Initialize dark mode if set
+    // Initialize dark mode if set.
     setTheme(mqList.matches);
 
-    // Listen to system theme preference changes and set color theme
+    // Listen to system theme preference changes and set color theme.
     mqList.addEventListener('change', handleThemeChange);
 
     return () => {

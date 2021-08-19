@@ -3,13 +3,13 @@ import type * as monaco from 'monaco-editor';
 // This file contains custom Monaco Editor color themes,
 // based on the "vs" and "vs-dark" built-in themes,
 // but adapted in both cases to better suit the exo GUI:
-//   * Color palette
-//   * Contrast levels
-//   * Editor background panel
+//   * Color palette.
+//   * Contrast levels.
+//   * Editor background panel.
 //
 // There may be a need for a third theme if the code
 // editors / log streams / etc don't have a #000000
-// background in the non-Black "Dark" theme
+// background in the non-Black "Dark" theme.
 
 export const exo_light: monaco.editor.IStandaloneThemeData = {
   base: 'vs',
