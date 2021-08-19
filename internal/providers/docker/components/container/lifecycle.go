@@ -192,7 +192,7 @@ func (c *Container) create(ctx context.Context) error {
 	for i, v := range c.Spec.Volumes {
 		mnt, err := makeMountFromVolumeString(c.WorkspaceRoot, v)
 		if err != nil {
-			return err
+			return fmt.Errorf("invalid mount at index %d: %w", i, err)
 		}
 		hostCfg.Mounts[i] = mnt
 	}
