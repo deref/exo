@@ -43,6 +43,6 @@ func (p *Process) refresh() {
 }
 
 func (p *Process) Dispose(ctx context.Context, input *core.DisposeInput) (*core.DisposeOutput, error) {
-	p.stop()
+	p.stop(nil)
 	return &core.DisposeOutput{}, nil
 }

@@ -563,7 +563,7 @@ func (ws *Workspace) StartComponents(ctx context.Context, input *api.StartCompon
 
 func (ws *Workspace) Stop(ctx context.Context, input *api.StopInput) (*api.StopOutput, error) {
 	jobID := ws.controlEachProcess(ctx, "stopping", func(ctx context.Context, process api.Process) error {
-		_, err := process.Stop(ctx, &api.StopInput{})
+		_, err := process.Stop(ctx, input)
 		return err
 	})
 	return &api.StopOutput{
@@ -576,7 +576,7 @@ func (ws *Workspace) StopComponents(ctx context.Context, input *api.StopComponen
 		Refs: input.Refs,
 	}
 	jobID := ws.controlEachComponent(ctx, "stopping", filter, func(ctx context.Context, process api.Process) error {
-		_, err := process.Stop(ctx, &api.StopInput{})
+		_, err := process.Stop(ctx, &api.StopInput{TimeoutSeconds: input.TimeoutSeconds})
 		return err
 	})
 	return &api.StopComponentsOutput{
@@ -586,7 +586,7 @@ func (ws *Workspace) StopComponents(ctx context.Context, input *api.StopComponen
 
 func (ws *Workspace) Restart(ctx context.Context, input *api.RestartInput) (*api.RestartOutput, error) {
 	jobID := ws.controlEachProcess(ctx, "restarting", func(ctx context.Context, process api.Process) error {
-		_, err := process.Restart(ctx, &api.RestartInput{})
+		_, err := process.Restart(ctx, input)
 		return err
 	})
 	return &api.RestartOutput{
@@ -599,7 +599,7 @@ func (ws *Workspace) RestartComponents(ctx context.Context, input *api.RestartCo
 		Refs: input.Refs,
 	}
 	jobID := ws.controlEachComponent(ctx, "restart", filter, func(ctx context.Context, process api.Process) error {
-		_, err := process.Restart(ctx, &api.RestartInput{})
+		_, err := process.Restart(ctx, &api.RestartInput{TimeoutSeconds: input.TimeoutSeconds})
 		return err
 	})
 	return &api.RestartComponentsOutput{
