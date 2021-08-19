@@ -190,11 +190,11 @@ func (c *Container) create(ctx context.Context) error {
 
 	hostCfg.Mounts = make([]mount.Mount, len(c.Spec.Volumes))
 	for i, v := range c.Spec.Volumes {
-		if mount, err := makeMountFromVolumeString(c.WorkspaceRoot, v); err != nil {
+		mnt, err := makeMountFromVolumeString(c.WorkspaceRoot, v)
+		if err != nil {
 			return err
-		} else {
-			hostCfg.Mounts[i] = mount
 		}
+		hostCfg.Mounts[i] = mnt
 	}
 
 	for _, mapping := range c.Spec.Ports {
