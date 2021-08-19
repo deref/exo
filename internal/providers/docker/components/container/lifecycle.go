@@ -20,6 +20,7 @@ import (
 )
 
 func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput) (output *core.InitializeOutput, err error) {
+
 	if err := c.ensureImage(ctx); err != nil {
 		return nil, fmt.Errorf("ensuring image: %w", err)
 	}
@@ -47,6 +48,11 @@ func (c *Container) create(ctx context.Context) error {
 		}
 	}
 
+	labels := c.Spec.Labels.WithoutNils()
+	for k, v := range c.GetExoLabels() {
+		labels[k] = v
+	}
+
 	containerCfg := &container.Config{
 		Hostname:     c.Spec.Hostname,
 		Domainname:   c.Spec.Domainname,
@@ -67,7 +73,7 @@ func (c *Container) create(ctx context.Context) error {
 		// NetworkDisabled bool                `json:",omitempty"` // Is network disabled
 		MacAddress: c.Spec.MacAddress,
 		// OnBuild         []string            // ONBUILD metadata that were defined on the image Dockerfile
-		Labels:     c.Spec.Labels.WithoutNils(),
+		Labels:     labels,
 		StopSignal: c.Spec.StopSignal,
 		// Shell           strslice.StrSlice   `json:",omitempty"` // Shell for shell-form of RUN, CMD, ENTRYPOINT
 	}

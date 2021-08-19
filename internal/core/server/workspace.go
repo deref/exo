@@ -218,6 +218,7 @@ func (ws *Workspace) newController(ctx context.Context, desc api.ComponentDescri
 		ComponentName:        desc.Name,
 		ComponentSpec:        desc.Spec,
 		ComponentState:       desc.State,
+		WorkspaceID:          ws.ID,
 		WorkspaceRoot:        description.Root,
 		WorkspaceEnvironment: ws.getEnvironment(),
 		Logger:               ws.Logger,

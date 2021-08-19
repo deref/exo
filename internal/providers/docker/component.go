@@ -9,3 +9,10 @@ type ComponentBase struct {
 	core.ComponentBase
 	Docker *dockerclient.Client
 }
+
+func (c ComponentBase) GetExoLabels() map[string]string {
+	return map[string]string{
+		"io.deref.exo.workspace": c.WorkspaceID,
+		"io.deref.exo.component": c.ComponentID,
+	}
+}

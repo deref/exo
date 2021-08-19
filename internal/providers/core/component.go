@@ -20,13 +20,14 @@ type ComponentBase struct {
 	ComponentName        string
 	ComponentSpec        string
 	ComponentState       string
+	WorkspaceID          string
 	WorkspaceRoot        string
 	WorkspaceEnvironment map[string]string
 	Logger               logging.Logger
 	isDeleted            bool
 }
 
-func (c *ComponentBase) GetComponentID() string {
+func (c ComponentBase) GetComponentID() string {
 	return c.ComponentID
 }
 
