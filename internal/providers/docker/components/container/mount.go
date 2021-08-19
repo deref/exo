@@ -2,14 +2,13 @@ package container
 
 import (
 	"fmt"
-	"os/user"
 	"path/filepath"
 	"strings"
 
 	"github.com/docker/docker/api/types/mount"
 )
 
-func makeMountFromVolumeString(workspaceRoot, volume string) (mount.Mount, error) {
+func makeMountFromVolumeString(workspaceRoot, userHomeDir, volume string) (mount.Mount, error) {
 	// This doesn't handle colons in the filepath well but it would appear that
 	// docker-compose doesn't handle those either.
 	volumeParts := strings.Split(volume, ":")
@@ -43,11 +42,7 @@ func makeMountFromVolumeString(workspaceRoot, volume string) (mount.Mount, error
 			return mount.Mount{}, err
 		}
 	} else if strings.HasPrefix(source, "~/") {
-		user, err := user.Current()
-		if err != nil {
-			return mount.Mount{}, err
-		}
-		source = filepath.Join(user.HomeDir, source[2:])
+		source = filepath.Join(userHomeDir, source[2:])
 	} else if !strings.HasPrefix(source, "/") {
 		mountType = mount.TypeVolume
 	}

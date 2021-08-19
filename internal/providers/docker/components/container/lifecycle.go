@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 	"fmt"
+	"os/user"
 	"strconv"
 	"time"
 
@@ -188,9 +189,16 @@ func (c *Container) create(ctx context.Context) error {
 		//Init *bool `json:",omitempty"`
 	}
 
+	// TODO: make the user home directory a parameter of the container.
+	user, err := user.Current()
+	if err != nil {
+		return fmt.Errorf("could not get user %w", err)
+	}
+	userHomeDir := user.HomeDir
+
 	hostCfg.Mounts = make([]mount.Mount, len(c.Spec.Volumes))
 	for i, v := range c.Spec.Volumes {
-		mnt, err := makeMountFromVolumeString(c.WorkspaceRoot, v)
+		mnt, err := makeMountFromVolumeString(c.WorkspaceRoot, userHomeDir, v)
 		if err != nil {
 			return fmt.Errorf("invalid mount at index %d: %w", i, err)
 		}

@@ -1,7 +1,6 @@
 package container
 
 import (
-	"os/user"
 	"path"
 	"testing"
 
@@ -10,22 +9,17 @@ import (
 )
 
 func TestMakeMount(t *testing.T) {
-	user, err := user.Current()
-	if err != nil {
-		panic(err)
-	}
-	homeDir := user.HomeDir
-
 	workspaceRoot := "/home/test/app"
+	homeDir := "/home/test"
 	makeMount := func(volumeString string) mount.Mount {
-		res, err := makeMountFromVolumeString(workspaceRoot, volumeString)
+		res, err := makeMountFromVolumeString(workspaceRoot, homeDir, volumeString)
 		assert.NoError(t, err)
 		return res
 	}
 
 	assert.Equal(t, mount.Mount{
-		Type:   mount.TypeBind,
-		Source: "/home/node/app",
+		Type:   mount.TypeVolume,
+		Target: "/home/node/app",
 	}, makeMount("/home/node/app"))
 
 	assert.Equal(t, mount.Mount{
