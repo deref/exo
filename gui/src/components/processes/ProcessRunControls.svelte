@@ -14,7 +14,7 @@
   {#if statusPending.has(id)}
     <Spinner />
   {:else if running}
-    <div class="running" />
+    <div class="running unhover-only" />
     <div class="control hover-only">
       <IconButton tooltip="Stop process" on:click={() => setProcRun(id, false)}>
         <StopSVG />
