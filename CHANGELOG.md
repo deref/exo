@@ -4,11 +4,21 @@ All notable changes to this project will be documented in this file.
 
 This project adhears to [CalVer](./doc/versioning.md).
 
-## 2021-08-17
+## Unreleased
+
+Docker Compose compatibility BETA.
 
 ### Added
 
-- Docker Compose compatibility (ALPHA).
+- Dark Mode
+
+
+## 2021-08-17
+
+Docker Compose compatibility ALPHA.
+
+### Added
+
 - Linkify URLs in log messages.
 - Support colors and other text attributes in log messages.
 - Job system for reporting parallel task progress.
