@@ -46,15 +46,6 @@ func (c *Container) create(ctx context.Context) error {
 		}
 	}
 
-	mounts := make([]mount.Mount, len(c.Spec.Volumes))
-	for i, v := range c.Spec.Volumes {
-		if mount, err := makeMountFromVolumeString(c.WorkspaceRoot, v); err != nil {
-			return err
-		} else {
-			mounts[i] = mount
-		}
-	}
-
 	containerCfg := &container.Config{
 		Hostname:     c.Spec.Hostname,
 		Domainname:   c.Spec.Domainname,
@@ -184,8 +175,8 @@ func (c *Container) create(ctx context.Context) error {
 		//// Contains container's resources (cgroups, ulimits)
 		//Resources
 
-		//// Mounts specs used by the container
-		Mounts: mounts,
+		// Mounts specs used by the container
+		//Mounts []mount.Mount `json:",omitempty"`
 
 		//// MaskedPaths is the list of paths to be masked inside the container (this overrides the default set of paths)
 		//MaskedPaths []string
@@ -196,6 +187,16 @@ func (c *Container) create(ctx context.Context) error {
 		//// Run a custom init inside the container, if null, use the daemon's configured settings
 		//Init *bool `json:",omitempty"`
 	}
+
+	hostCfg.Mounts = make([]mount.Mount, len(c.Spec.Volumes))
+	for i, v := range c.Spec.Volumes {
+		if mount, err := makeMountFromVolumeString(c.WorkspaceRoot, v); err != nil {
+			return err
+		} else {
+			hostCfg.Mounts[i] = mount
+		}
+	}
+
 	for _, mapping := range c.Spec.Ports {
 		target, err := nat.NewPort(mapping.Protocol, mapping.Target)
 		if err != nil {
