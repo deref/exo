@@ -28,7 +28,7 @@
     }
   });
 
-  const trimNewlines = (message: string) =>
+  const trimFinalNewline = (message: string) =>
     message.replace(/((\n\r)|(\n)|(\r)|(\r\n))$/, '');
 </script>
 
@@ -46,7 +46,7 @@
         </td>
         <td class="name">{event.name}</td>
         <td>
-          <FormattedLogMessage message={trimNewlines(event.message)} />
+          <FormattedLogMessage message={trimFinalNewline(event.message)} />
         </td>
       </tr>
     {/each}
