@@ -26,6 +26,13 @@
     }
   };
 
+  const mqList = window.matchMedia('(prefers-color-scheme: dark)');
+
+  const handleThemeChange = (e: MediaQueryListEvent) => {
+    setTheme(e.matches);
+    console.log('test color listener');
+  };
+
   onMount(() => {
     const editor = monaco.editor.create(container!, {
       value,
@@ -45,29 +52,15 @@
     });
 
     // Initialize dark mode if set
-    setTheme(
-      window.matchMedia &&
-        window.matchMedia('(prefers-color-scheme: dark)').matches,
-    );
+    setTheme(mqList.matches);
 
     // Listen to system theme preference changes and set color theme
-    window
-      .matchMedia('(prefers-color-scheme: dark)')
-      .addEventListener('change', (e) => {
-        setTheme(e.matches);
-      });
+    mqList.addEventListener('change', handleThemeChange);
 
     return () => {
+      mqList.removeEventListener('change', handleThemeChange);
       editor.dispose();
     };
-  });
-
-  onDestroy(() => {
-    window
-      .matchMedia('(prefers-color-scheme: dark)')
-      .removeEventListener('change', (e) => {
-        setTheme(e.matches);
-      });
   });
 </script>
 
