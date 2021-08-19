@@ -1,6 +1,7 @@
 <script lang="ts">
   import * as monaco from 'monaco-editor';
   import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
+  import { exo_dark, exo_light } from '../lib/monaco-theme';
 
   import { onMount } from 'svelte';
 
@@ -18,6 +19,27 @@
   let container: HTMLDivElement | null = null;
 
   onMount(() => {
+    // Define custom exo color themes for Monaco.
+    monaco.editor.defineTheme('exo-light', exo_light);
+    monaco.editor.defineTheme('exo-dark', exo_dark);
+
+    const setTheme = (dark: boolean) => {
+      if (dark) {
+        monaco.editor.setTheme('exo-dark');
+      } else {
+        monaco.editor.setTheme('exo-light');
+      }
+    };
+
+    // Initialize the Media Query List and handler objects for
+    // finding and applying system color theme changes.
+    const mqList = window.matchMedia('(prefers-color-scheme: dark)');
+
+    const handleThemeChange = (e: MediaQueryListEvent) => {
+      setTheme(e.matches);
+      console.log('test color listener');
+    };
+
     const editor = monaco.editor.create(container!, {
       value,
       language,
@@ -35,7 +57,14 @@
       value = editor.getValue();
     });
 
+    // Initialize dark mode if set.
+    setTheme(mqList.matches);
+
+    // Listen to system theme preference changes and set color theme.
+    mqList.addEventListener('change', handleThemeChange);
+
     return () => {
+      mqList.removeEventListener('change', handleThemeChange);
       editor.dispose();
     };
   });
