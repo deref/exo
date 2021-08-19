@@ -9,6 +9,7 @@ import (
 
 func init() {
 	rootCmd.AddCommand(restartCmd)
+	restartCmd.Flags().UintVar(timeoutSeconds, "timeout", 0, "The timeout for stopping the process")
 }
 
 var restartCmd = &cobra.Command{
@@ -18,9 +19,12 @@ var restartCmd = &cobra.Command{
 
 If no refs are provided, restarts the entire workspace.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if !cmd.Flags().Lookup("timeout").Changed {
+			timeoutSeconds = nil
+		}
 		return controlComponents(args, func(ctx context.Context, ws api.Workspace, refs []string) (jobID string, err error) {
 			if refs == nil {
-				output, err := ws.Restart(ctx, &api.RestartInput{})
+				output, err := ws.Restart(ctx, &api.RestartInput{TimeoutSeconds: timeoutSeconds})
 				if output != nil {
 					jobID = output.JobID
 				}

@@ -13,7 +13,6 @@ var timeoutSeconds = &initTimeout
 func init() {
 	rootCmd.AddCommand(stopCmd)
 	stopCmd.Flags().UintVar(timeoutSeconds, "timeout", 0, "The timeout for stopping the process")
-
 }
 
 var stopCmd = &cobra.Command{
