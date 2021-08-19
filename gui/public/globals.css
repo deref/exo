@@ -19,6 +19,7 @@ input,
 textarea {
   font-family: var(--font-sans);
   font-size: inherit;
+  color: inherit;
 }
 
 input,

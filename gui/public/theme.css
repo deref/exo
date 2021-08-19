@@ -92,7 +92,7 @@
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --primary-color: #aaaaaa;
+    --primary-color: #ffffff;
     --strong-color: #ffffff;
     --grey-1-color: #eeeeee;
     --grey-2-color: #dddddd;
