@@ -20,7 +20,6 @@ import (
 )
 
 func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput) (output *core.InitializeOutput, err error) {
-	c.ExoLabels = input.ExoLabels
 
 	if err := c.ensureImage(ctx); err != nil {
 		return nil, fmt.Errorf("ensuring image: %w", err)
@@ -50,7 +49,7 @@ func (c *Container) create(ctx context.Context) error {
 	}
 
 	labels := c.Spec.Labels.WithoutNils()
-	for k, v := range c.ExoLabels {
+	for k, v := range c.GetExoLabels() {
 		labels[k] = v
 	}
 

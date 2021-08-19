@@ -13,7 +13,7 @@ func (n *Network) Initialize(ctx context.Context, input *core.InitializeInput) (
 	name := n.ComponentID
 
 	labels := n.Spec.Labels.WithoutNils()
-	for k, v := range n.ExoLabels {
+	for k, v := range n.GetExoLabels() {
 		labels[k] = v
 	}
 

@@ -9,7 +9,7 @@ import (
 
 func (v *Volume) Initialize(ctx context.Context, input *core.InitializeInput) (output *core.InitializeOutput, err error) {
 	labels := v.Spec.Labels.WithoutNils()
-	for k, v := range v.ExoLabels {
+	for k, v := range v.GetExoLabels() {
 		labels[k] = v
 	}
 

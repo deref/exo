@@ -218,6 +218,7 @@ func (ws *Workspace) newController(ctx context.Context, desc api.ComponentDescri
 		ComponentName:        desc.Name,
 		ComponentSpec:        desc.Spec,
 		ComponentState:       desc.State,
+		WorkspaceID:          ws.ID,
 		WorkspaceRoot:        description.Root,
 		WorkspaceEnvironment: ws.getEnvironment(),
 		Logger:               ws.Logger,
@@ -313,12 +314,7 @@ func (ws *Workspace) createComponent(ctx context.Context, component manifest.Com
 		Type: component.Type,
 		Spec: component.Spec,
 	}, func(ctx context.Context, lifecycle api.Lifecycle) error {
-		_, err := lifecycle.Initialize(ctx, &api.InitializeInput{
-			ExoLabels: map[string]string{
-				"io.deref.exo.workspace": ws.ID,
-				"io.deref.exo.component": id,
-			},
-		})
+		_, err := lifecycle.Initialize(ctx, &api.InitializeInput{})
 		return err
 	}); err != nil {
 		return "", err

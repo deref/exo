@@ -1,8 +1,6 @@
 interface "lifecycle" {
 
-  method "initialize" {
-    input "exo-labels" "map[string]string" {}
-  }
+  method "initialize" {}
 
   method "refresh" {}
 
