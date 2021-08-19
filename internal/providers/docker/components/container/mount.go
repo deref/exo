@@ -10,8 +10,8 @@ import (
 )
 
 func makeMountFromVolumeString(workspaceRoot, volume string) (mount.Mount, error) {
-	// This obviously doesn't handle colons in the path well but it would appear
-	// that docker-compose doesn't handle those either.
+	// This doesn't handle colons in the filepath well but it would appear that
+	// docker-compose doesn't handle those either.
 	volumeParts := strings.Split(volume, ":")
 	if len(volumeParts) > 3 {
 		return mount.Mount{}, fmt.Errorf("invalid volume string %s", volume)
