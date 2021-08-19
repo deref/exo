@@ -149,7 +149,7 @@
     --icon-button-hover-bg-color: #eeeeee18;
     --icon-button-focus-bg-color: #eeeeee33;
     --button-background: linear-gradient(#222222, #111111);
-    --button-hover-background: linear-gradient(#333333, #222222);
+    --button-hover-background: linear-gradient(#333333, #151515);
     --button-active-background: linear-gradient(#191919, #090909);
     --button-shadow: 0 0.33px 0 1px #ffffff26, 0 4px 8px -3px #00000026,
       0 0.4px 0 0.8px #00000040;
