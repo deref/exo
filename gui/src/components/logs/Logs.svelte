@@ -27,6 +27,9 @@
       logViewport.scrollTop = logViewport.scrollHeight;
     }
   });
+
+  const trimNewlines = (message: string) =>
+    message.replace(/((\n\r)|(\n)|(\r)|(\r\n))$/, '');
 </script>
 
 <div class="logs-container" bind:this={logViewport}>
@@ -43,7 +46,7 @@
         </td>
         <td class="name">{event.name}</td>
         <td>
-          <FormattedLogMessage message={event.message} />
+          <FormattedLogMessage message={trimNewlines(event.message)} />
         </td>
       </tr>
     {/each}
