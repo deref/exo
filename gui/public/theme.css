@@ -111,15 +111,15 @@
     --grey-e7-color: #0c0c0c;
     --grey-f9-color: #070707;
     --layout-bg-color: #222222;
-    --secondary-bg-color: #050505;
+    --secondary-bg-color: #0a0a0a;
     --primary-bg-color: #000000;
     /* Contextual color */
     --error-color: #ee0000;
     --link-color: #007bd4;
     --online-green-color: #00c220;
     /* Nav */
-    --nav-bg-color: #0c0c0c;
-    --nav-button-active-bg-color: #151515;
+    --nav-bg-color: #050505;
+    --nav-button-active-bg-color: #111111;
     --nav-button-active-hover-bg-color: #1c1c1c;
     --dev-mode-bg-color: #0066ee;
     --dev-mode-color: #ffffff;
@@ -148,19 +148,19 @@
     --icon-button-bg-color: #eeeeee00;
     --icon-button-hover-bg-color: #eeeeee18;
     --icon-button-focus-bg-color: #eeeeee33;
-    --button-background: linear-gradient(#222222, #111111);
-    --button-hover-background: linear-gradient(#333333, #151515);
-    --button-active-background: linear-gradient(#191919, #090909);
-    --button-shadow: 0 0.33px 0 1px #ffffff26, 0 4px 8px -3px #00000026,
+    --button-background: linear-gradient(#141414, #040404);
+    --button-hover-background: linear-gradient(#242424, #111111);
+    --button-active-background: linear-gradient(#111111, #000000);
+    --button-shadow: 0 -0.33px 0 1px #ffffff26, 0 4px 8px -3px #00000026,
       0 0.4px 0 0.8px #00000040;
-    --button-hover-shadow: 0 0.33px 0 1px #ffffff26, 0 6px 8px -4px #00000033,
+    --button-hover-shadow: 0 -0.33px 0 1px #ffffff26, 0 6px 8px -4px #00000033,
       0 0.4px 0 0.8px #00000059;
-    --button-active-shadow: 0 0.33px 0 1px #ffffff26, 0 4px 6px -3px #00000026,
+    --button-active-shadow: 0 -0.33px 0 1px #ffffff26, 0 4px 6px -3px #00000026,
       0 0.4px 0 0.8px #00000073;
     /* Shadows */
-    --heavy-3d-box-shadow: 0 0.33px 0 1px #ffffff26, 0 8px 12px -6px #0000004d,
+    --heavy-3d-box-shadow: 0 -0.33px 0 1px #ffffff26, 0 8px 12px -6px #0000004d,
       0 0.5px 0 1px #00000033;
-    --text-input-shadow: 0 0.33px 0 1px #ffffff26,
+    --text-input-shadow: 0 -0.33px 0 1px #ffffff26,
       0 6px 9px -4px #0000001a inset, 0 0.4px 0 0.8px #0000001a inset;
   }
 }
