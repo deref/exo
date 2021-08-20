@@ -80,8 +80,8 @@ type Service struct {
 
 	// CPURealtimeRuntime and CPURealtimePeriod can both be specified as either
 	// strings or integers.
-	CPURealtimeRuntime int64 `yaml:"cpu_rt_runtime"`
-	CPURealtimePeriod  int64 `yaml:"cpu_rt_period"`
+	//CPURealtimeRuntime int64 `yaml:"cpu_rt_runtime"`
+	//CPURealtimePeriod  int64 `yaml:"cpu_rt_period"`
 
 	// TODO: cpus
 	// TODO: cpuset
