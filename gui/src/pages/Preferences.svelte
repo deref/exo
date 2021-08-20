@@ -9,7 +9,7 @@
 </script>
 
 <Layout>
-  <Panel title="Preferences">
+  <Panel title="Preferences" --panel-padding="2rem">
     <div class="center-form">
       <!-- User preferences here -->
       <h2>Theme &amp; GUI</h2>
@@ -55,7 +55,7 @@
 <style>
   .center-form {
     max-width: 640px;
-    margin: 32px auto;
+    margin: 0 auto;
   }
 
   .button-row {
