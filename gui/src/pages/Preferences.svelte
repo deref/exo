@@ -1,5 +1,6 @@
 <script lang="ts">
   import Panel from '../components/Panel.svelte';
+  import Button from '../components/Button.svelte';
   import Layout from '../components/Layout.svelte';
 
   let theme = 'Auto';
@@ -13,30 +14,38 @@
       <!-- User preferences here -->
       <h2>Theme</h2>
       <div class="button-row">
-        <button
+        <Button
           on:click={() => {
             setTheme('Auto');
           }}
-          class:active={theme === 'Auto'}>Auto</button
+          inset={theme === 'Auto'}
         >
-        <button
+          Auto
+        </Button>
+        <Button
           on:click={() => {
             setTheme('Light');
           }}
-          class:active={theme === 'Light'}>Light</button
+          inset={theme === 'Light'}
         >
-        <button
+          Light
+        </Button>
+        <Button
           on:click={() => {
             setTheme('Dark');
           }}
-          class:active={theme === 'Dark'}>Dark</button
+          inset={theme === 'Dark'}
         >
-        <button
+          Dark
+        </Button>
+        <Button
           on:click={() => {
             setTheme('Black');
           }}
-          class:active={theme === 'Black'}>Black</button
+          inset={theme === 'Black'}
         >
+          Black
+        </Button>
       </div>
     </div>
   </Panel>
@@ -48,7 +57,9 @@
     margin: 0 auto;
   }
 
-  button.active {
-    background: blue;
+  .button-row {
+    display: grid;
+    grid-auto-flow: column;
+    gap: 12px;
   }
 </style>

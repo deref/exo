@@ -77,12 +77,15 @@
   --button-background: linear-gradient(#fff, #f5f5f5);
   --button-hover-background: linear-gradient(#fafafa, #e7e7e7);
   --button-active-background: linear-gradient(#f7f7f7, #e0e0e0);
+  --button-inset-background: linear-gradient(#00000022, #00000011);
   --button-shadow: 0 0.33px 0 1px #ffffff26, 0 4px 8px -3px #00000026,
     0 0.4px 0 0.8px #00000040;
   --button-hover-shadow: 0 0.33px 0 1px #ffffff26, 0 6px 8px -4px #00000033,
     0 0.4px 0 0.8px #00000059;
   --button-active-shadow: 0 0.33px 0 1px #ffffff26, 0 4px 6px -3px #00000026,
     0 0.4px 0 0.8px #00000073;
+  --button-inset-shadow: 0 0.33px 0 1px #ffffff26 inset,
+    0 4px 8px -3px #00000026 inset, 0 0.4px 0 0.8px #00000040 inset;
   /* Shadows */
   --heavy-3d-box-shadow: 0 0.33px 0 1px #ffffff26, 0 8px 12px -6px #0000004d,
     0 0.5px 0 1px #00000033;
@@ -151,12 +154,15 @@
     --button-background: linear-gradient(#141414, #040404);
     --button-hover-background: linear-gradient(#242424, #111111);
     --button-active-background: linear-gradient(#111111, #000000);
-    --button-shadow: 0 -0.33px 0 1px #ffffff26, 0 4px 8px -3px #00000026,
+    --button-inset-background: linear-gradient(#222222, #333333);
+    --button-shadow: 0 -0.33px 0 1px #ffffff33, 0 4px 8px -3px #00000026,
       0 0.4px 0 0.8px #00000040;
-    --button-hover-shadow: 0 -0.33px 0 1px #ffffff26, 0 6px 8px -4px #00000033,
+    --button-hover-shadow: 0 -0.33px 0 1px #ffffff55, 0 6px 8px -4px #00000033,
       0 0.4px 0 0.8px #00000059;
-    --button-active-shadow: 0 -0.33px 0 1px #ffffff26, 0 4px 6px -3px #00000026,
+    --button-active-shadow: 0 -0.33px 0 1px #ffffff44, 0 4px 6px -3px #00000026,
       0 0.4px 0 0.8px #00000073;
+    --button-inset-shadow: 0 -0.33px 0 1px #ffffff44 inset,
+      0 4px 8px -3px #00000026 inset, 0 0.4px 0 0.8px #00000040 inset;
     /* Shadows */
     --heavy-3d-box-shadow: 0 -0.33px 0 1px #ffffff26, 0 8px 12px -6px #0000004d,
       0 0.5px 0 1px #00000033;
