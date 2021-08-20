@@ -2,17 +2,19 @@
   import * as router from 'svelte-spa-router';
   import VersionInfo from './VersionInfo.svelte';
   import NavbarButton from './nav/NavbarButton.svelte';
-  import FeedbackSVG from './mono/feedback.svelte';
-
-  const goHome = () => {
-    router.push('#/');
-  };
+  import FeedbackSVG from './mono/FeedbackSVG.svelte';
+  import PreferencesSVG from './mono/PreferencesSVG.svelte';
 </script>
 
 <main>
   <nav>
     <header>
-      <NavbarButton title="Home" on:click={goHome}>
+      <NavbarButton
+        title="Home"
+        on:click={() => {
+          router.push('#/');
+        }}
+      >
         <img src="/deref-rounded-icon.png" alt="Deref" height="24px" />
       </NavbarButton>
     </header>
@@ -20,6 +22,14 @@
       <slot name="navbar" />
     </div>
     <footer>
+      <NavbarButton
+        title="Preferences"
+        on:click={() => {
+          router.push('#/preferences');
+        }}
+      >
+        <PreferencesSVG />
+      </NavbarButton>
       <NavbarButton
         title="Give feedback on GitHub"
         on:click={() => {
