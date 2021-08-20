@@ -53,8 +53,8 @@ type Service struct {
 	// TODO: cpu_percent
 
 	CPUShares int64 `yaml:"cpu_shares"`
-	// TODO: cpu_period
-	// TODO: cpu_quota
+	CPUPeriod int64 `yaml:"cpu_period"`
+	CPUQuota  int64 `yaml:"cpu_quota"`
 	// TODO: cpu_rt_runtime
 	// TODO: cpu_rt_period
 	// TODO: cpus
