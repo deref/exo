@@ -127,9 +127,9 @@ type Service struct {
 	MacAddress string   `yaml:"mac_address"`
 
 	// The following memory values can be specified either as strings or integers.
-	MemoryLimit       int64 `yaml:"mem_limit"`
-	MemoryReservation int64 `yaml:"mem_reservation"`
-	MemorySwappiness  int64 `yaml:"mem_swappiness"`
+	MemoryLimit       MemoryField `yaml:"mem_limit"`
+	MemoryReservation MemoryField `yaml:"mem_reservation"`
+	//MemorySwappiness  MemoryField `yaml:"mem_swappiness"`
 
 	// TODO: memswap_limit
 	// TODO: oom_kill_disable

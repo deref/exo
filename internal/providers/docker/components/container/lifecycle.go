@@ -181,9 +181,12 @@ func (c *Container) create(ctx context.Context) error {
 
 		//// Contains container's resources (cgroups, ulimits)
 		Resources: container.Resources{
-			CPUShares: c.Spec.CPUShares,
-			CPUPeriod: c.Spec.CPUPeriod,
-			CPUQuota:  c.Spec.CPUQuota,
+			CPUShares:         c.Spec.CPUShares,
+			CPUPeriod:         c.Spec.CPUPeriod,
+			CPUQuota:          c.Spec.CPUQuota,
+			Memory:            int64(c.Spec.MemoryLimit),
+			MemoryReservation: int64(c.Spec.MemoryReservation),
+			//MemorySwappiness:  int64(c.Spec.MemorySwappiness),
 			//CPURealtimePeriod:  c.Spec.CPURealtimePeriod,
 			//CPURealtimeRuntime: c.Spec.CPURealtimeRuntime,
 		},
