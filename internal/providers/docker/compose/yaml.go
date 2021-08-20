@@ -48,16 +48,19 @@ func (ignored *IgnoredField) UnmarshalYAML(b []byte) error {
 type Service struct {
 	Deploy IgnoredField `yaml:"deploy"`
 
-	// TODO: blkio_config
+	// Note that these two are only applicable to Windows.
 	// TODO: cpu_count
 	// TODO: cpu_percent
-	// TODO: cpu_shares
+
+	CPUShares int64 `yaml:"cpu_shares"`
 	// TODO: cpu_period
 	// TODO: cpu_quota
 	// TODO: cpu_rt_runtime
 	// TODO: cpu_rt_period
 	// TODO: cpus
 	// TODO: cpuset
+	// TODO: blkio_config
+
 	Build Build `yaml:"build"`
 	// TODO: cap_add
 	// TODO: cap_drop

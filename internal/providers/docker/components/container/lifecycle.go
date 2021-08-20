@@ -180,7 +180,9 @@ func (c *Container) create(ctx context.Context) error {
 		//Isolation   Isolation // Isolation technology of the container (e.g. default, hyperv)
 
 		//// Contains container's resources (cgroups, ulimits)
-		//Resources
+		Resources: container.Resources{
+			CPUShares: c.Spec.CPUShares,
+		},
 
 		// Mounts specs used by the container
 		//Mounts []mount.Mount `json:",omitempty"`
