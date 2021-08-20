@@ -17,9 +17,7 @@
       </NavbarButton>
     </header>
     <div class="navbar-wrapper">
-      <div>
-        <slot name="navbar" />
-      </div>
+      <slot name="navbar" />
     </div>
     <footer>
       <NavbarButton
@@ -68,20 +66,13 @@
 
   .navbar-wrapper {
     width: 48px;
-    overflow-y: scroll;
-    direction: rtl;
+    overflow-y: auto;
+    border-top: 1px solid var(--layout-bg-color);
+    border-bottom: 1px solid var(--layout-bg-color);
   }
 
-  nav:not(:hover) ::-webkit-scrollbar {
+  nav ::-webkit-scrollbar {
     display: none;
-  }
-
-  nav:hover .navbar-wrapper > div {
-    margin-left: calc(-1 * var(--scrollbar-width));
-  }
-
-  .navbar-wrapper :global(*) {
-    direction: ltr;
   }
 
   div {
