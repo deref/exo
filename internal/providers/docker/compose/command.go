@@ -1,6 +1,8 @@
 package compose
 
-import "mvdan.cc/sh/v3/shell"
+import (
+	"github.com/mattn/go-shellwords"
+)
 
 type Command []string
 
@@ -21,8 +23,7 @@ func (cmd *Command) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		return err
 	}
 
-	var noEnv func(string) string
-	strs, err = shell.Fields(s, noEnv)
+	strs, err = shellwords.Parse(s)
 	*cmd = Command(strs)
 	return err
 }
