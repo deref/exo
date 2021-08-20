@@ -12,7 +12,7 @@
   <Panel title="Preferences">
     <div class="center-form">
       <!-- User preferences here -->
-      <h2>Theme</h2>
+      <h2>Theme &amp; GUI</h2>
       <div class="button-row">
         <Button
           on:click={() => {
@@ -47,6 +47,7 @@
           Black
         </Button>
       </div>
+      <hr />
     </div>
   </Panel>
 </Layout>
@@ -54,12 +55,27 @@
 <style>
   .center-form {
     max-width: 640px;
-    margin: 0 auto;
+    margin: 32px auto;
   }
 
   .button-row {
     display: grid;
     grid-auto-flow: column;
     gap: 12px;
+  }
+
+  h2 {
+    font-size: 20px;
+    font-weight: 500;
+    margin: 0;
+    margin-bottom: 24px;
+  }
+
+  hr {
+    border: none;
+    display: block;
+    height: 1px;
+    background: var(--grey-c-color);
+    margin: 32px 0;
   }
 </style>
