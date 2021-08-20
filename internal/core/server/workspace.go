@@ -309,8 +309,9 @@ func (ws *Workspace) createComponent(ctx context.Context, component manifest.Com
 	if err := ws.control(ctx, api.ComponentDescription{
 		// Construct a synthetic component description to avoid re-reading after
 		// the add. Only the fields needed by control are included.
-		// TODO: Store.AddComponent could return a compponent description?
+		// TODO: Store.AddComponent could return a component description?
 		ID:   id,
+		Name: component.Name,
 		Type: component.Type,
 		Spec: component.Spec,
 	}, func(ctx context.Context, lifecycle api.Lifecycle) error {
