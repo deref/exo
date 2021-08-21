@@ -121,7 +121,7 @@ func (g *Graph) Leaves() []interface{} {
 	return out
 }
 
-// TopoSorted returns a slice of all of the graph nodes in topological sort order. That is,
+// TopoSortedLayers returns a slice of all of the graph nodes in topological sort order. That is,
 // if `B` depends on `A`, then `A` is guaranteed to come before `B` in the sorted output.
 // The graph is guaranteed to be cycle-free because cycles are detected while building the
 // graph. Additionally, the output is grouped into "layers", which are guaranteed to not have
@@ -267,13 +267,4 @@ func updateSet(ds depmap, node interface{}, fn updateFn) {
 		ds[node] = nodeSet
 	}
 	fn(nodeSet)
-}
-
-func shift(xs *[]interface{}) interface{} {
-	if len(*xs) == 0 {
-		panic("must not call when empty")
-	}
-	x := (*xs)[0]
-	*xs = (*xs)[1:]
-	return x
 }
