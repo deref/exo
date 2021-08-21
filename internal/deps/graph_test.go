@@ -107,3 +107,30 @@ func TestTopologicalSort(t *testing.T) {
 		assert.True(t, comesBefore(pair.before, pair.after))
 	}
 }
+
+func TestLayeredTopologicalSort(t *testing.T) {
+	g := deps.New()
+
+	g.DependOn("web", "database")
+	g.DependOn("web", "aggregator")
+	g.DependOn("aggregator", "database")
+	g.DependOn("web", "logger")
+	g.DependOn("web", "config")
+	g.DependOn("web", "metrics")
+	g.DependOn("database", "config")
+	g.DependOn("metrics", "config")
+	/*
+		   /--------------\
+		web - aggregator - database
+		   \_ logger               \
+		    \___________________ config
+		     \________ metrics _/
+	*/
+
+	layers := g.TopoSortedLayers()
+	assert.Len(t, layers, 4)
+	assert.ElementsMatch(t, []interface{}{"config", "logger"}, layers[0])
+	assert.ElementsMatch(t, []interface{}{"database", "metrics"}, layers[1])
+	assert.ElementsMatch(t, []interface{}{"aggregator"}, layers[2])
+	assert.ElementsMatch(t, []interface{}{"web"}, layers[3])
+}
