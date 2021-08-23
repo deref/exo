@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
@@ -213,6 +214,12 @@ func (ws *Workspace) newController(ctx context.Context, desc api.ComponentDescri
 			Err: fmt.Errorf("workspace error: %w", err),
 		}
 	}
+	env, err := ws.getEnvironment(ctx)
+	if err != nil {
+		return &invalid.Invalid{
+			Err: fmt.Errorf("environment error: %w", err),
+		}
+	}
 	base := core.ComponentBase{
 		ComponentID:          desc.ID,
 		ComponentName:        desc.Name,
@@ -220,7 +227,7 @@ func (ws *Workspace) newController(ctx context.Context, desc api.ComponentDescri
 		ComponentState:       desc.State,
 		WorkspaceID:          ws.ID,
 		WorkspaceRoot:        description.Root,
-		WorkspaceEnvironment: ws.getEnvironment(),
+		WorkspaceEnvironment: env,
 		Logger:               ws.Logger,
 	}
 	switch desc.Type {
@@ -263,15 +270,41 @@ func (ws *Workspace) newController(ctx context.Context, desc api.ComponentDescri
 }
 
 // TODO: Use workspace-defined environments, rather than ambient unix environment.
-func (ws *Workspace) getEnvironment() map[string]string {
+func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]string, error) {
 	env := make(map[string]string)
-	for _, assign := range os.Environ() {
-		parts := strings.SplitN(assign, "=", 2)
-		key := parts[0]
-		val := parts[1]
-		env[key] = val
+	envPath, err := ws.resolveWorkspacePath(ctx, ".env")
+	if err != nil {
+		return nil, fmt.Errorf("could not resolve path to .env file: %w", err)
 	}
-	return env
+
+	contents, err := ioutil.ReadFile(envPath)
+	if os.IsNotExist(err) {
+		for _, assign := range os.Environ() {
+			parts := strings.SplitN(assign, "=", 2)
+			key := parts[0]
+			val := parts[1]
+			env[key] = val
+		}
+		return env, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("could not read .env file: %w", err)
+	}
+
+	lines := strings.Split(string(contents), "\n")
+	for _, line := range lines {
+		if line == "" {
+			continue
+		}
+		lineParts := strings.SplitN(strings.TrimSpace(line), "=", 2)
+		if len(lineParts) == 1 {
+			return nil, fmt.Errorf("invalid line in .env file: %s", line)
+		}
+		if len(lineParts) == 2 {
+			env[lineParts[0]] = lineParts[1]
+		}
+	}
+	return env, nil
 }
 
 func (ws *Workspace) CreateComponent(ctx context.Context, input *api.CreateComponentInput) (*api.CreateComponentOutput, error) {
