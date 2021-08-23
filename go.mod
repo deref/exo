@@ -21,15 +21,15 @@ require (
 	github.com/lucasb-eyer/go-colorful v1.2.0
 	github.com/mattn/go-isatty v0.0.13
 	github.com/mattn/go-shellwords v1.0.12
-	github.com/morikuni/aec v1.0.0 // indirect
+	github.com/moby/buildkit v0.9.0 // indirect
+	github.com/moby/moby v20.10.8+incompatible
 	github.com/natefinch/atomic v1.0.1
 	github.com/oklog/ulid/v2 v2.0.2
 	github.com/opencontainers/image-spec v1.0.1
 	github.com/pkg/browser v0.0.0-20210706143420-7d21f8c997e2
 	github.com/shirou/gopsutil/v3 v3.21.6
-	github.com/sirupsen/logrus v1.8.1 // indirect
 	github.com/spf13/cobra v1.0.0
-	github.com/stretchr/testify v1.6.1
+	github.com/stretchr/testify v1.7.0
 	github.com/timewasted/go-accept-headers v0.0.0-20130320203746-c78f304b1b09
 	github.com/zclconf/go-cty v1.8.0
 	golang.org/x/net v0.0.0-20210726213435-c6fcb2dbf985 // indirect

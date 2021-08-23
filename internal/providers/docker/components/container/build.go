@@ -18,6 +18,8 @@ import (
 	"github.com/deref/exo/internal/util/pathutil"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/moby/moby/builder/dockerignore"
+	"github.com/moby/moby/pkg/fileutils"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -204,9 +206,26 @@ func tarBuildContext(w io.WriteCloser, root string) (err error) {
 		}
 	}()
 
+	ignore, err := createIgnoreMatcher(root)
+	if err != nil {
+		return fmt.Errorf("reading dockerignore file: %w", err)
+	}
+
 	tw := tar.NewWriter(w)
 
 	filepath.Walk(root, func(file string, info os.FileInfo, err error) error {
+		// Skip ignored files.
+		name := info.Name()
+		ignored, err := ignore.Matches(name)
+		if err != nil {
+			// This is expected to be unreachable.
+			// SEE NOTE: [LAZY_PATTERN_MATCHER].
+			return fmt.Errorf("matching %q: %w", name, err)
+		}
+		if ignored {
+			return nil
+		}
+
 		// Generate and write file header.
 		header, err := tar.FileInfoHeader(info, file)
 		if err != nil {
@@ -237,4 +256,44 @@ func tarBuildContext(w io.WriteCloser, root string) (err error) {
 		return err
 	}
 	return nil
+}
+
+func createIgnoreMatcher(buildContext string) (*fileutils.PatternMatcher, error) {
+	patterns := []string{}
+
+	// Read additional patterns from ignore file.
+	ignorePath := filepath.Join(buildContext, ".dockerignore")
+	file, err := os.Open(ignorePath)
+	if os.IsNotExist(err) {
+		err = nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	if file != nil {
+		defer file.Close()
+
+		morePatterns, err := dockerignore.ReadAll(file)
+		if err != nil {
+			return nil, err
+		}
+		patterns = append(patterns, morePatterns...)
+	}
+
+	// Build a pattern matcher.
+	matcher, err := fileutils.NewPatternMatcher(patterns)
+	if err != nil {
+		return nil, err
+	}
+	// NOTE [LAZY_PATTERN_MATCHER]: PatternMatcher compiles patterns lazily. If
+	// compilation of an individual pattern fails, the returned error does not
+	// not report which. Since the Matches method always visits every pattern, we
+	// can invoke it here to force pattern compilation eagerly. This won't help
+	// identifying which pattern failed to compile, but it will at least prevent
+	// the error from being reported confusingly in the context of a particular
+	// match operation.
+	if _, err := matcher.Matches(""); err != nil {
+		return nil, err
+	}
+	return matcher, nil
 }
