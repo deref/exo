@@ -143,7 +143,7 @@ function themeDefinition(theme) {
     .map((entry) => {
       return `--${entry[0]}: ${entry[1][theme]};`;
     })
-    .join("");
+    .join(" ");
 }
 
 function childDefinition(theme) {
@@ -151,21 +151,16 @@ function childDefinition(theme) {
     .map((entry) => {
       return `--${entry[0]}: ${entry[1][theme]};`;
     })
-    .join("");
+    .join(" ");
 }
 
 var out = `/* GENERATED FILE */
-body.auto {${themeDefinition(0)}}body.auto * {${childDefinition(
-  0
-)}}@media (prefers-color-scheme: dark) {body.auto {${themeDefinition(
-  2
-)}}body.auto * {${childDefinition(2)}}}body.light {${themeDefinition(
-  0
-)}}body.light * {${childDefinition(0)}}body.dark {${themeDefinition(
-  1
-)}}body.dark * {${childDefinition(1)}}body.black {${themeDefinition(
-  2
-)}}body.black * {${childDefinition(2)}}
+body.auto {${themeDefinition(0)}} body.auto * {${childDefinition(0)}}
+@media (prefers-color-scheme: dark)
+{ body.auto {${themeDefinition(2)}} body.auto * {${childDefinition(2)}}}
+body.light {${themeDefinition(0)}} body.light * {${childDefinition(0)}}
+body.dark {${themeDefinition(1)}} body.dark * {${childDefinition(1)}}
+body.black {${themeDefinition(2)}} body.black * {${childDefinition(2)}}
 `;
 
 fs.writeFile("./gui/public/theme-generated.css", out, function (err) {
