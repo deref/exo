@@ -4,7 +4,6 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
@@ -32,6 +31,7 @@ import (
 	"github.com/deref/exo/internal/util/logging"
 	"github.com/deref/exo/internal/util/pathutil"
 	dockerclient "github.com/docker/docker/client"
+	"github.com/joho/godotenv"
 	psprocess "github.com/shirou/gopsutil/v3/process"
 )
 
@@ -271,14 +271,14 @@ func (ws *Workspace) newController(ctx context.Context, desc api.ComponentDescri
 
 // TODO: Use workspace-defined environments, rather than ambient unix environment.
 func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]string, error) {
-	env := make(map[string]string)
 	envPath, err := ws.resolveWorkspacePath(ctx, ".env")
 	if err != nil {
 		return nil, fmt.Errorf("could not resolve path to .env file: %w", err)
 	}
 
-	contents, err := ioutil.ReadFile(envPath)
+	_, err = os.Stat(envPath)
 	if os.IsNotExist(err) {
+		env := make(map[string]string)
 		for _, assign := range os.Environ() {
 			parts := strings.SplitN(assign, "=", 2)
 			key := parts[0]
@@ -291,20 +291,11 @@ func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]string, err
 		return nil, fmt.Errorf("could not read .env file: %w", err)
 	}
 
-	lines := strings.Split(string(contents), "\n")
-	for _, line := range lines {
-		if line == "" {
-			continue
-		}
-		lineParts := strings.SplitN(strings.TrimSpace(line), "=", 2)
-		if len(lineParts) == 1 {
-			return nil, fmt.Errorf("invalid line in .env file: %s", line)
-		}
-		if len(lineParts) == 2 {
-			env[lineParts[0]] = lineParts[1]
-		}
+	envMap, err := godotenv.Read(envPath)
+	if err != nil {
+		return nil, fmt.Errorf("could not process env file: %w", err)
 	}
-	return env, nil
+	return envMap, nil
 }
 
 func (ws *Workspace) CreateComponent(ctx context.Context, input *api.CreateComponentInput) (*api.CreateComponentOutput, error) {
