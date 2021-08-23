@@ -4,12 +4,10 @@
   import WorkspaceNav from '../components/WorkspaceNav.svelte';
   import LayersSVG from '../components/mono/LayersSVG.svelte';
   import * as router from 'svelte-spa-router';
-  // import { api } from '../lib/api';
 
   export let params = { workspace: '' };
 
   const workspaceId = params.workspace;
-  // const workspace = api.workspace(workspaceId);
   const workspaceRoute = `/workspaces/${encodeURIComponent(workspaceId)}`;
 
   const componentTypes = [
