@@ -18,7 +18,9 @@
 
   const workspaceId = params.workspace;
   const workspace = api.workspace(workspaceId);
-  const workspaceRoute = `/workspaces/${encodeURIComponent(workspaceId)}`;
+  const workspaceNewComponentRoute = `/workspaces/${encodeURIComponent(
+    workspaceId,
+  )}/new-component`;
 
   let name: string = '';
 
@@ -64,7 +66,7 @@ my-app --port 4000
   <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
   <Panel
     title="New process"
-    backRoute={workspaceRoute}
+    backRoute={workspaceNewComponentRoute}
     --panel-padding="4rem"
     --panel-overflow-y="scroll"
   >

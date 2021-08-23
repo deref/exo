@@ -1,10 +1,10 @@
 <script lang="ts">
   import * as router from 'svelte-spa-router';
   import NavbarButton from './nav/NavbarButton.svelte';
-  import HomeSVG from './mono/home.svelte';
-  import LayersSVG from './mono/layers.svelte';
-  import StorageSVG from './mono/database.svelte';
-  import NetworkingSVG from './mono/networking.svelte';
+  import HomeSVG from './mono/HomeSVG.svelte';
+  import LayersSVG from './mono/LayersSVG.svelte';
+  import StorageSVG from './mono/StorageSVG.svelte';
+  import NetworkingSVG from './mono/NetworkingSVG.svelte';
 
   export let workspaceId: string;
   export let active: string;
