@@ -6,17 +6,17 @@
   import Textbox from '../components/Textbox.svelte';
   import ResetSVG from '../components/mono/ResetSVG.svelte';
   import { guiTheme, setGuiTheme } from '../lib/gui-theme';
+
+  const resetAllPreferences = () => {
+    guiTheme.auto();
+    setGuiTheme($guiTheme);
+  };
 </script>
 
 <Layout>
   <Panel title="Preferences" --panel-padding="2rem">
     <div slot="actions">
-      <IconButton
-        tooltip="Reset to defaults"
-        on:click={() => {
-          /* Reset preferences */
-        }}
-      >
+      <IconButton tooltip="Reset to defaults" on:click={resetAllPreferences}>
         <ResetSVG />
       </IconButton>
     </div>
