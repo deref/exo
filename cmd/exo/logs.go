@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/md5"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/aybabtme/rgbterm"
@@ -111,7 +112,7 @@ func tailLogs(ctx context.Context, workspace api.Workspace, logRefs []string, st
 				prefix = timestamp
 			}
 
-			fmt.Printf("%s %s%s\n", prefix, event.Message, termReset)
+			fmt.Printf("%s %s%s\n", prefix, strings.TrimRight(event.Message, "\n"), termReset)
 		}
 		in.Cursor = &output.NextCursor
 		in.Prev = nil
