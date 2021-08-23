@@ -5,27 +5,7 @@
   import IconButton from '../components/IconButton.svelte';
   import Textbox from '../components/Textbox.svelte';
   import ResetSVG from '../components/mono/ResetSVG.svelte';
-
-  let theme = 'Auto';
-
-  const setTheme = (s: string) => {
-    theme = s;
-
-    switch (s) {
-      case 'Auto':
-        document.body.classList.remove('light', 'dark', 'black');
-        document.body.classList.add('auto');
-      case 'Light':
-        document.body.classList.remove('auto', 'dark', 'black');
-        document.body.classList.add('light');
-      case 'Dark':
-        document.body.classList.remove('light', 'auto', 'black');
-        document.body.classList.add('dark');
-      case 'Black':
-        document.body.classList.remove('light', 'dark', 'auto');
-        document.body.classList.add('black');
-    }
-  };
+  import { guiTheme, setGuiTheme } from '../lib/gui-theme';
 </script>
 
 <Layout>
@@ -48,33 +28,37 @@
         <div class="button-row">
           <Button
             on:click={() => {
-              setTheme('Auto');
+              guiTheme.auto();
+              setGuiTheme($guiTheme);
             }}
-            inset={theme === 'Auto'}
+            inset={$guiTheme === 'auto'}
           >
             Auto
           </Button>
           <Button
             on:click={() => {
-              setTheme('Light');
+              guiTheme.light();
+              setGuiTheme($guiTheme);
             }}
-            inset={theme === 'Light'}
+            inset={$guiTheme === 'light'}
           >
             Light
           </Button>
           <Button
             on:click={() => {
-              setTheme('Dark');
+              guiTheme.dark();
+              setGuiTheme($guiTheme);
             }}
-            inset={theme === 'Dark'}
+            inset={$guiTheme === 'dark'}
           >
             Dark
           </Button>
           <Button
             on:click={() => {
-              setTheme('Black');
+              guiTheme.black();
+              setGuiTheme($guiTheme);
             }}
-            inset={theme === 'Black'}
+            inset={$guiTheme === 'black'}
           >
             Black
           </Button>

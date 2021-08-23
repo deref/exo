@@ -3,7 +3,8 @@
 @import 'font/inter/inter.css';
 @import 'font/fira/fira_code.css';
 
-:root {
+:root,
+body {
   font-family: var(--font-sans);
   color: var(--primary-color);
   background-color: var(--primary-bg-color);
@@ -27,10 +28,12 @@ textarea {
   cursor: text;
 }
 
+a {
+  color: var(--link-color);
+}
+
 a,
 a *,
-.a,
-.a *,
 button,
 button * {
   cursor: pointer;

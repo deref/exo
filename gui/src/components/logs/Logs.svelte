@@ -102,18 +102,6 @@
     color: var(--log-hover-color);
   }
 
-  @media (prefers-color-scheme: dark) {
-    .name {
-      background: var(--dark-log-bg-color);
-      color: var(--dark-log-color);
-    }
-
-    tr:hover .name {
-      background: var(--dark-log-bg-hover-color);
-      color: var(--dark-log-hover-color);
-    }
-  }
-
   .time {
     color: var(--grey-9-color);
     cursor: zoom-in;

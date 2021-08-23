@@ -1,6 +1,7 @@
 /* Default global styles for component properties that can be overridden with `style-props` */
 
-:root {
+:root,
+body {
   --font-sans: 'Inter', -apple-system, sans-serif;
   --font-mono: 'Fira Code', monospace;
   --input-width: 300px;
@@ -17,7 +18,7 @@
 
 /* Theme color variables */
 
-:root {
+body.auto {
   --primary-color: #000000;
   --strong-color: #000000;
   --grey-1-color: #111111;
@@ -93,8 +94,15 @@
     0 0.4px 0 0.8px #0000001a inset;
 }
 
+body.auto * {
+  --log-color: var(--light-log-color);
+  --log-bg-color: var(--light-log-bg-color);
+  --log-hover-color: var(--light-log-hover-color);
+  --log-bg-hover-color: var(--light-log-bg-hover-color);
+}
+
 @media (prefers-color-scheme: dark) {
-  :root {
+  body.auto {
     --primary-color: #ffffff;
     --strong-color: #ffffff;
     --grey-1-color: #eeeeee;
@@ -168,6 +176,13 @@
       0 0.5px 0 1px #00000033;
     --text-input-shadow: 0 -0.33px 0 1px #ffffff26,
       0 6px 9px -4px #0000001a inset, 0 0.4px 0 0.8px #0000001a inset;
+  }
+
+  body.auto * {
+    --log-color: var(--dark-log-color);
+    --log-bg-color: var(--dark-log-bg-color);
+    --log-hover-color: var(--dark-log-hover-color);
+    --log-bg-hover-color: var(--dark-log-bg-hover-color);
   }
 }
 
@@ -247,6 +262,13 @@ body.light {
     0 0.4px 0 0.8px #0000001a inset;
 }
 
+body.light * {
+  --log-color: var(--light-log-color);
+  --log-bg-color: var(--light-log-bg-color);
+  --log-hover-color: var(--light-log-hover-color);
+  --log-bg-hover-color: var(--light-log-bg-hover-color);
+}
+
 body.dark,
 body.black {
   --primary-color: #ffffff;
@@ -322,4 +344,12 @@ body.black {
     0 0.5px 0 1px #00000033;
   --text-input-shadow: 0 -0.33px 0 1px #ffffff26, 0 6px 9px -4px #0000001a inset,
     0 0.4px 0 0.8px #0000001a inset;
+}
+
+body.dark *,
+body.black * {
+  --log-color: var(--dark-log-color);
+  --log-bg-color: var(--dark-log-bg-color);
+  --log-hover-color: var(--dark-log-hover-color);
+  --log-bg-hover-color: var(--dark-log-bg-hover-color);
 }
