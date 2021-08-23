@@ -5,7 +5,7 @@ type Invalid struct {
 }
 
 func (invalid *Invalid) InitResource() error {
-	return nil
+	return invalid.Err
 }
 
 func (invalid *Invalid) MarshalState() (state string, err error) {
