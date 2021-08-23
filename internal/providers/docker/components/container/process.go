@@ -24,25 +24,34 @@ func (c *Container) start(ctx context.Context) error {
 }
 
 func (c *Container) Stop(ctx context.Context, input *core.StopInput) (*core.StopOutput, error) {
-	if err := c.stop(ctx); err != nil {
+	if err := c.stop(ctx, input.TimeoutSeconds); err != nil {
 		return nil, err
 	}
 	return &core.StopOutput{}, nil
 }
 
-func (c *Container) stop(ctx context.Context) error {
+func (c *Container) stop(ctx context.Context, timeoutSeconds *uint) error {
 	var timeout *time.Duration // Use container's default stop timeout.
+	if timeoutSeconds != nil {
+		duration := time.Second * time.Duration(*timeoutSeconds)
+		timeout = &duration
+	}
+
 	return c.Docker.ContainerStop(ctx, c.State.ContainerID, timeout)
 }
 
 func (c *Container) Restart(ctx context.Context, input *core.RestartInput) (*core.RestartOutput, error) {
-	if err := c.restart(ctx); err != nil {
+	if err := c.restart(ctx, input.TimeoutSeconds); err != nil {
 		return nil, err
 	}
 	return &core.RestartOutput{}, nil
 }
 
-func (c *Container) restart(ctx context.Context) error {
+func (c *Container) restart(ctx context.Context, timeoutSeconds *uint) error {
 	var timeout *time.Duration // Use container's default stop timeout.
+	if timeoutSeconds != nil {
+		duration := time.Second * time.Duration(*timeoutSeconds)
+		timeout = &duration
+	}
 	return c.Docker.ContainerRestart(ctx, c.State.ContainerID, timeout)
 }

@@ -6,6 +6,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"path"
 	"path/filepath"
 	"strings"
 
@@ -105,21 +106,25 @@ func (ws *Workspace) loadManifest(rootDir string, input *api.ApplyInput) manifes
 		format = *input.Format
 	}
 
-	var load func(r io.Reader) manifest.LoadResult
+	var loader interface {
+		Load(r io.Reader) manifest.LoadResult
+	}
 	switch format {
 	case "procfile":
-		load = procfile.Import
+		loader = procfile.Loader
 	case "compose":
-		load = compose.Import
+		projectName := path.Base(rootDir)
+		projectName = manifest.MangleName(projectName)
+		loader = &compose.Loader{ProjectName: projectName}
 	case "exo":
-		load = manifest.Read
+		loader = manifest.Loader
 	default:
 		return manifest.LoadResult{
 			Err: fmt.Errorf("unknown manifest format: %q", format),
 		}
 	}
 
-	res := load(strings.NewReader(manifestString))
+	res := loader.Load(strings.NewReader(manifestString))
 	if res.Err != nil {
 		res.Err = errutil.WithHTTPStatus(http.StatusBadRequest, res.Err)
 	}

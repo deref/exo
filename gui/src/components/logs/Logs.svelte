@@ -27,6 +27,12 @@
       logViewport.scrollTop = logViewport.scrollHeight;
     }
   });
+
+  // This trims the final newline character at the end of each log message,
+  // because the table layout already effectively adds one line break at
+  // the end of each message and this was causing bugs on some Linux systems.
+  const trimFinalNewline = (message: string) =>
+    message.replace(/((\n\r)|(\n)|(\r)|(\r\n))$/, '');
 </script>
 
 <div class="logs-container" bind:this={logViewport}>
@@ -43,7 +49,7 @@
         </td>
         <td class="name">{event.name}</td>
         <td>
-          <FormattedLogMessage message={event.message} />
+          <FormattedLogMessage message={trimFinalNewline(event.message)} />
         </td>
       </tr>
     {/each}
@@ -94,6 +100,18 @@
   tr:hover .name {
     background: var(--log-bg-hover-color);
     color: var(--log-hover-color);
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .name {
+      background: var(--dark-log-bg-color);
+      color: var(--dark-log-color);
+    }
+
+    tr:hover .name {
+      background: var(--dark-log-bg-hover-color);
+      color: var(--dark-log-hover-color);
+    }
   }
 
   .time {

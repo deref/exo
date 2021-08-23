@@ -1,5 +1,8 @@
 httpPort = 4001
 
+[client]
+url = "http://localhost:4001"
+
 [gui]
 port = 3001
 

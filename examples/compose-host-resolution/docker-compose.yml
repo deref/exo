@@ -1,0 +1,7 @@
+services:
+  echo:
+    image: hashicorp/http-echo
+    command: '-text="hello world"'
+  t1:
+    image: curlimages/curl
+    command: sh -c 'while true; do curl -s http://echo:5678; sleep 1; done'

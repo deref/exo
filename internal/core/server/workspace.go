@@ -218,6 +218,7 @@ func (ws *Workspace) newController(ctx context.Context, desc api.ComponentDescri
 		ComponentName:        desc.Name,
 		ComponentSpec:        desc.Spec,
 		ComponentState:       desc.State,
+		WorkspaceID:          ws.ID,
 		WorkspaceRoot:        description.Root,
 		WorkspaceEnvironment: ws.getEnvironment(),
 		Logger:               ws.Logger,
@@ -308,8 +309,9 @@ func (ws *Workspace) createComponent(ctx context.Context, component manifest.Com
 	if err := ws.control(ctx, api.ComponentDescription{
 		// Construct a synthetic component description to avoid re-reading after
 		// the add. Only the fields needed by control are included.
-		// TODO: Store.AddComponent could return a compponent description?
+		// TODO: Store.AddComponent could return a component description?
 		ID:   id,
+		Name: component.Name,
 		Type: component.Type,
 		Spec: component.Spec,
 	}, func(ctx context.Context, lifecycle api.Lifecycle) error {
@@ -563,7 +565,7 @@ func (ws *Workspace) StartComponents(ctx context.Context, input *api.StartCompon
 
 func (ws *Workspace) Stop(ctx context.Context, input *api.StopInput) (*api.StopOutput, error) {
 	jobID := ws.controlEachProcess(ctx, "stopping", func(ctx context.Context, process api.Process) error {
-		_, err := process.Stop(ctx, &api.StopInput{})
+		_, err := process.Stop(ctx, input)
 		return err
 	})
 	return &api.StopOutput{
@@ -576,7 +578,7 @@ func (ws *Workspace) StopComponents(ctx context.Context, input *api.StopComponen
 		Refs: input.Refs,
 	}
 	jobID := ws.controlEachComponent(ctx, "stopping", filter, func(ctx context.Context, process api.Process) error {
-		_, err := process.Stop(ctx, &api.StopInput{})
+		_, err := process.Stop(ctx, &api.StopInput{TimeoutSeconds: input.TimeoutSeconds})
 		return err
 	})
 	return &api.StopComponentsOutput{
@@ -586,7 +588,7 @@ func (ws *Workspace) StopComponents(ctx context.Context, input *api.StopComponen
 
 func (ws *Workspace) Restart(ctx context.Context, input *api.RestartInput) (*api.RestartOutput, error) {
 	jobID := ws.controlEachProcess(ctx, "restarting", func(ctx context.Context, process api.Process) error {
-		_, err := process.Restart(ctx, &api.RestartInput{})
+		_, err := process.Restart(ctx, input)
 		return err
 	})
 	return &api.RestartOutput{
@@ -599,7 +601,7 @@ func (ws *Workspace) RestartComponents(ctx context.Context, input *api.RestartCo
 		Refs: input.Refs,
 	}
 	jobID := ws.controlEachComponent(ctx, "restart", filter, func(ctx context.Context, process api.Process) error {
-		_, err := process.Restart(ctx, &api.RestartInput{})
+		_, err := process.Restart(ctx, &api.RestartInput{TimeoutSeconds: input.TimeoutSeconds})
 		return err
 	})
 	return &api.RestartComponentsOutput{

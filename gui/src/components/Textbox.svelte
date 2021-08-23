@@ -13,6 +13,8 @@
     border: none;
     border-radius: 4px;
     padding: 12px 18px;
+    background: var(--primary-bg-color);
+    color: var(--strong-color);
     box-shadow: var(--text-input-shadow);
     width: var(--input-width);
   }

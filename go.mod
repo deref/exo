@@ -18,7 +18,8 @@ require (
 	github.com/influxdata/go-syslog/v3 v3.0.0
 	github.com/lucasb-eyer/go-colorful v1.2.0
 	github.com/mattn/go-isatty v0.0.13
-	github.com/moby/buildkit v0.9.0
+	github.com/mattn/go-shellwords v1.0.12
+	github.com/moby/buildkit v0.9.0 // indirect
 	github.com/moby/moby v20.10.8+incompatible
 	github.com/natefinch/atomic v1.0.1
 	github.com/oklog/ulid/v2 v2.0.2
@@ -34,7 +35,7 @@ require (
 	golang.org/x/sys v0.0.0-20210806184541-e5e7981a1069 // indirect
 	gopkg.in/alessio/shellescape.v1 v1.0.0-20170105083845-52074bc9df61
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
-	mvdan.cc/sh/v3 v3.3.0
+	mvdan.cc/sh/v3 v3.3.1
 )
 
 // https://github.com/deref/httpie-go/tree/pier

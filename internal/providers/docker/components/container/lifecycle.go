@@ -2,7 +2,9 @@ package container
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
+	"os/user"
 	"strconv"
 	"time"
 
@@ -10,6 +12,7 @@ import (
 	"github.com/deref/exo/internal/providers/docker/compose"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/strslice"
 	docker "github.com/docker/docker/client"
@@ -17,7 +20,10 @@ import (
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
 
+var _ core.Lifecycle = (*Container)(nil)
+
 func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput) (output *core.InitializeOutput, err error) {
+
 	if err := c.ensureImage(ctx); err != nil {
 		return nil, fmt.Errorf("ensuring image: %w", err)
 	}
@@ -45,6 +51,11 @@ func (c *Container) create(ctx context.Context) error {
 		}
 	}
 
+	labels := c.Spec.Labels.WithoutNils()
+	for k, v := range c.GetExoLabels() {
+		labels[k] = v
+	}
+
 	containerCfg := &container.Config{
 		Hostname:     c.Spec.Hostname,
 		Domainname:   c.Spec.Domainname,
@@ -65,7 +76,7 @@ func (c *Container) create(ctx context.Context) error {
 		// NetworkDisabled bool                `json:",omitempty"` // Is network disabled
 		MacAddress: c.Spec.MacAddress,
 		// OnBuild         []string            // ONBUILD metadata that were defined on the image Dockerfile
-		Labels:     c.Spec.Labels.WithoutNils(),
+		Labels:     labels,
 		StopSignal: c.Spec.StopSignal,
 		// Shell           strslice.StrSlice   `json:",omitempty"` // Shell for shell-form of RUN, CMD, ENTRYPOINT
 	}
@@ -174,7 +185,7 @@ func (c *Container) create(ctx context.Context) error {
 		//// Contains container's resources (cgroups, ulimits)
 		//Resources
 
-		//// Mounts specs used by the container
+		// Mounts specs used by the container
 		//Mounts []mount.Mount `json:",omitempty"`
 
 		//// MaskedPaths is the list of paths to be masked inside the container (this overrides the default set of paths)
@@ -186,6 +197,23 @@ func (c *Container) create(ctx context.Context) error {
 		//// Run a custom init inside the container, if null, use the daemon's configured settings
 		//Init *bool `json:",omitempty"`
 	}
+
+	// TODO: make the user home directory a parameter of the container.
+	user, err := user.Current()
+	if err != nil {
+		return fmt.Errorf("could not get user %w", err)
+	}
+	userHomeDir := user.HomeDir
+
+	hostCfg.Mounts = make([]mount.Mount, len(c.Spec.Volumes))
+	for i, v := range c.Spec.Volumes {
+		mnt, err := makeMountFromVolumeString(c.WorkspaceRoot, userHomeDir, v)
+		if err != nil {
+			return fmt.Errorf("invalid mount at index %d: %w", i, err)
+		}
+		hostCfg.Mounts[i] = mnt
+	}
+
 	for _, mapping := range c.Spec.Ports {
 		target, err := nat.NewPort(mapping.Protocol, mapping.Target)
 		if err != nil {
@@ -229,8 +257,20 @@ func (c *Container) create(ctx context.Context) error {
 		}
 	}
 	networkCfg := &network.NetworkingConfig{
-		//EndpointsConfig map[string]*EndpointSettings // Endpoint configs for each connecting network
+		EndpointsConfig: make(map[string]*network.EndpointSettings), // Endpoint configs for each connecting network
 	}
+	for _, networkName := range c.Spec.Networks {
+		networkCfg.EndpointsConfig[networkName] = &network.EndpointSettings{
+			Aliases: []string{c.ComponentID, c.ComponentName},
+		}
+	}
+
+	if jsonBytes, err := json.MarshalIndent(networkCfg, "", "  "); err == nil {
+		fmt.Println(string(jsonBytes))
+	} else {
+		fmt.Println("Error printing networkCfg:", err)
+	}
+
 	var platform *v1.Platform
 	//platform := &v1.Platform{
 	//	//// Architecture field specifies the CPU architecture, for example
@@ -279,7 +319,8 @@ func (c *Container) Dispose(ctx context.Context, input *core.DisposeInput) (*cor
 	if c.State.ContainerID == "" {
 		return &core.DisposeOutput{}, nil
 	}
-	if err := c.stop(ctx); err != nil {
+
+	if err := c.stop(ctx, nil); err != nil {
 		c.Logger.Infof("stopping container %q: %v", c.State.ContainerID, err)
 	}
 	err := c.Docker.ContainerRemove(ctx, c.State.ContainerID, types.ContainerRemoveOptions{
