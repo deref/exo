@@ -26,7 +26,7 @@ func (n *Network) Initialize(ctx context.Context, input *core.InitializeInput) (
 			return nil, fmt.Errorf("listing networks: %w", err)
 		}
 		if len(nets) == 0 {
-			return nil, fmt.Errorf("network %q not found", n.Name)
+			return nil, fmt.Errorf("network %q was not found", n.Name)
 		}
 
 		n.NetworkID = nets[0].ID

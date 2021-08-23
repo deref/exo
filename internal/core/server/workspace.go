@@ -31,6 +31,7 @@ import (
 	"github.com/deref/exo/internal/util/logging"
 	"github.com/deref/exo/internal/util/pathutil"
 	dockerclient "github.com/docker/docker/client"
+	"github.com/joho/godotenv"
 	psprocess "github.com/shirou/gopsutil/v3/process"
 )
 
@@ -213,6 +214,12 @@ func (ws *Workspace) newController(ctx context.Context, desc api.ComponentDescri
 			Err: fmt.Errorf("workspace error: %w", err),
 		}
 	}
+	env, err := ws.getEnvironment(ctx)
+	if err != nil {
+		return &invalid.Invalid{
+			Err: fmt.Errorf("environment error: %w", err),
+		}
+	}
 	base := core.ComponentBase{
 		ComponentID:          desc.ID,
 		ComponentName:        desc.Name,
@@ -220,7 +227,7 @@ func (ws *Workspace) newController(ctx context.Context, desc api.ComponentDescri
 		ComponentState:       desc.State,
 		WorkspaceID:          ws.ID,
 		WorkspaceRoot:        description.Root,
-		WorkspaceEnvironment: ws.getEnvironment(),
+		WorkspaceEnvironment: env,
 		Logger:               ws.Logger,
 	}
 	switch desc.Type {
@@ -263,15 +270,32 @@ func (ws *Workspace) newController(ctx context.Context, desc api.ComponentDescri
 }
 
 // TODO: Use workspace-defined environments, rather than ambient unix environment.
-func (ws *Workspace) getEnvironment() map[string]string {
-	env := make(map[string]string)
-	for _, assign := range os.Environ() {
-		parts := strings.SplitN(assign, "=", 2)
-		key := parts[0]
-		val := parts[1]
-		env[key] = val
+func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]string, error) {
+	envPath, err := ws.resolveWorkspacePath(ctx, ".env")
+	if err != nil {
+		return nil, fmt.Errorf("could not resolve path to .env file: %w", err)
 	}
-	return env
+
+	_, err = os.Stat(envPath)
+	if os.IsNotExist(err) {
+		env := make(map[string]string)
+		for _, assign := range os.Environ() {
+			parts := strings.SplitN(assign, "=", 2)
+			key := parts[0]
+			val := parts[1]
+			env[key] = val
+		}
+		return env, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("could not read .env file: %w", err)
+	}
+
+	envMap, err := godotenv.Read(envPath)
+	if err != nil {
+		return nil, fmt.Errorf("could not process env file: %w", err)
+	}
+	return envMap, nil
 }
 
 func (ws *Workspace) CreateComponent(ctx context.Context, input *api.CreateComponentInput) (*api.CreateComponentOutput, error) {
