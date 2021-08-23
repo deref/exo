@@ -130,9 +130,8 @@ function childDefinition(indent, theme) {
   return Object.entries(childVariables).map((entry) => {return `${indent}--${entry[0]}: ${entry[1][theme]};`}).join(`\n`)
 }
 
-/* First block: Default global styles for component properties that can be overridden with `style-props` */
-var out = `/* GENERATED FILE */
-:root,
+/* Default global styles for component properties that can be overridden with `style-props` */
+var defaults = `:root,
 body {
   --font-sans: 'Inter', -apple-system, sans-serif;
   --font-mono: 'Fira Code', monospace;
@@ -146,7 +145,10 @@ body {
   --panel-bg-color: var(--primary-bg-color);
   --preferred-ligatures-logs: none;
   --preferres-ligatures-code: none;
-}
+}`
+
+var out = `/* GENERATED FILE */
+${defaults}
 body.auto {\n${themeDefinition("  ", 0)}\n}
 body.auto * {\n${childDefinition("  ", 0)}\n}
 @media (prefers-color-scheme: dark) {
