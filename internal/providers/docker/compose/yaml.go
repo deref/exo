@@ -126,10 +126,11 @@ type Service struct {
 	Networks   []string `yaml:"networks"` // TODO: support long syntax.
 	MacAddress string   `yaml:"mac_address"`
 
-	// The following memory values can be specified either as strings or integers.
+	MemorySwappiness *int64 `yaml:"mem_swappiness"`
+
+	// MemoryLimit and MemoryReservation can be specified either as strings or integers.
 	MemoryLimit       MemoryField `yaml:"mem_limit"`
 	MemoryReservation MemoryField `yaml:"mem_reservation"`
-	//MemorySwappiness  MemoryField `yaml:"mem_swappiness"`
 
 	// TODO: memswap_limit
 	// TODO: oom_kill_disable

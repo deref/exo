@@ -186,7 +186,7 @@ func (c *Container) create(ctx context.Context) error {
 			CPUQuota:          c.Spec.CPUQuota,
 			Memory:            int64(c.Spec.MemoryLimit),
 			MemoryReservation: int64(c.Spec.MemoryReservation),
-			//MemorySwappiness:  int64(c.Spec.MemorySwappiness),
+			MemorySwappiness:  c.Spec.MemorySwappiness,
 			//CPURealtimePeriod:  c.Spec.CPURealtimePeriod,
 			//CPURealtimeRuntime: c.Spec.CPURealtimeRuntime,
 		},
