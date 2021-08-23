@@ -2,7 +2,6 @@ package container
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"os/user"
 	"strconv"
@@ -12,6 +11,7 @@ import (
 	"github.com/deref/exo/internal/providers/docker/compose"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/mount"
 	"github.com/docker/docker/api/types/network"
 	"github.com/docker/docker/api/types/strslice"
@@ -26,6 +26,10 @@ func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput)
 
 	if err := c.ensureImage(ctx); err != nil {
 		return nil, fmt.Errorf("ensuring image: %w", err)
+	}
+
+	if err := c.removeExistingContainerByName(ctx); err != nil {
+		return nil, fmt.Errorf("removing existing container %q: %w", c.Spec.ContainerName, err)
 	}
 
 	if err := c.create(ctx); err != nil {
@@ -261,14 +265,9 @@ func (c *Container) create(ctx context.Context) error {
 	}
 	for _, networkName := range c.Spec.Networks {
 		networkCfg.EndpointsConfig[networkName] = &network.EndpointSettings{
+			// TODO: Add other specified aliases.
 			Aliases: []string{c.ComponentID, c.ComponentName},
 		}
-	}
-
-	if jsonBytes, err := json.MarshalIndent(networkCfg, "", "  "); err == nil {
-		fmt.Println(string(jsonBytes))
-	} else {
-		fmt.Println("Error printing networkCfg:", err)
 	}
 
 	var platform *v1.Platform
@@ -337,4 +336,27 @@ func (c *Container) Dispose(ctx context.Context, input *core.DisposeInput) (*cor
 	}
 	c.State.ContainerID = ""
 	return &core.DisposeOutput{}, nil
+}
+
+func (c *Container) removeExistingContainerByName(ctx context.Context) error {
+	// If a container with this name already exists, remove it.
+	containers, err := c.Docker.ContainerList(ctx, types.ContainerListOptions{
+		Filters: filters.NewArgs(filters.KeyValuePair{
+			Key:   "name",
+			Value: c.Spec.ContainerName,
+		}),
+		All: true,
+	})
+	if err != nil {
+		return fmt.Errorf("listing containers: %w", err)
+	}
+	if len(containers) > 0 {
+		if err := c.Docker.ContainerRemove(ctx, containers[0].ID, types.ContainerRemoveOptions{
+			Force: true,
+		}); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }

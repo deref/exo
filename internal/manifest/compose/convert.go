@@ -82,6 +82,8 @@ func (i *Loader) convert(project *Project) manifest.LoadResult {
 			Spec: yamlutil.MustMarshalString(n),
 		})
 	}
+	// TODO: Docker Compose only creates the default network if there is at least 1 service that does not
+	// specify a network. We should do the same.
 	if !hasDefaultNetwork {
 		componentName := "default"
 		name := i.prefixedName(componentName, "")
@@ -159,7 +161,7 @@ func (i *Loader) convert(project *Project) manifest.LoadResult {
 			})
 		}
 
-		// TODO: Add volumes and dependencies.
+		// TODO: Add volumes and dependencies. This will require parsing the volumes.
 
 		component.Spec = yamlutil.MustMarshalString(s)
 		res.Manifest.Components = append(res.Manifest.Components, component)
