@@ -3,6 +3,7 @@ module github.com/deref/exo
 go 1.16
 
 require (
+	code.cloudfoundry.org/bytefmt v0.0.0-20210608160410-67692ebc98de
 	github.com/BurntSushi/toml v0.3.1
 	github.com/alessio/shellescape v1.4.1 // indirect
 	github.com/aybabtme/rgbterm v0.0.0-20170906152045-cc83f3b3ce59
@@ -16,6 +17,7 @@ require (
 	github.com/gofrs/flock v0.8.1
 	github.com/hashicorp/hcl/v2 v2.10.0
 	github.com/influxdata/go-syslog/v3 v3.0.0
+	github.com/joho/godotenv v1.3.0
 	github.com/lucasb-eyer/go-colorful v1.2.0
 	github.com/mattn/go-isatty v0.0.13
 	github.com/mattn/go-shellwords v1.0.12
