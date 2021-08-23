@@ -3,6 +3,23 @@
 @import 'font/inter/inter.css';
 @import 'font/fira/fira_code.css';
 
+/* Default global styles for component properties that can be overridden with `style-props` */
+:root,
+body {
+  --font-sans: 'Inter', -apple-system, sans-serif;
+  --font-mono: 'Fira Code', monospace;
+  --input-width: 300px;
+  --scrollbar-width: 8px;
+  --scrollbar-height: 4px;
+  --scrollbar-thumb-radius: 1px;
+  --panel-padding: 1rem;
+  --panel-overflow-y: auto;
+  --panel-overflow-x: hidden;
+  --panel-bg-color: var(--primary-bg-color);
+  --preferred-ligatures-logs: none;
+  --preferres-ligatures-code: none;
+}
+
 :root,
 body {
   font-family: var(--font-sans);

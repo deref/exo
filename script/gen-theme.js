@@ -84,34 +84,34 @@ var themeVariables = {
   ],
   "button-shadow": [
     "0 0.33px 0 1px #ffffff26, 0 4px 8px -3px #00000026, 0 0.4px 0 0.8px #00000040",
-    "0 -0.33px 0 1px #ffffff33, 0 4px 8px -3px #00000026, 0 0.4px 0 0.8px #00000040;",
-    "0 -0.33px 0 1px #ffffff33, 0 4px 8px -3px #00000026, 0 0.4px 0 0.8px #00000040;",
+    "0 -0.33px 0 1px #ffffff33, 0 4px 8px -3px #00000026, 0 0.4px 0 0.8px #00000040",
+    "0 -0.33px 0 1px #ffffff33, 0 4px 8px -3px #00000026, 0 0.4px 0 0.8px #00000040",
   ],
   "button-hover-shadow": [
     "0 0.33px 0 1px #ffffff26, 0 6px 8px -4px #00000033, 0 0.4px 0 0.8px #00000059",
-    "0 -0.33px 0 1px #ffffff55, 0 6px 8px -4px #00000033, 0 0.4px 0 0.8px #00000059;",
-    "0 -0.33px 0 1px #ffffff55, 0 6px 8px -4px #00000033, 0 0.4px 0 0.8px #00000059;",
+    "0 -0.33px 0 1px #ffffff55, 0 6px 8px -4px #00000033, 0 0.4px 0 0.8px #00000059",
+    "0 -0.33px 0 1px #ffffff55, 0 6px 8px -4px #00000033, 0 0.4px 0 0.8px #00000059",
   ],
   "button-active-shadow": [
     "0 0.33px 0 1px #ffffff26, 0 4px 6px -3px #00000026, 0 0.4px 0 0.8px #00000073",
-    "0 -0.33px 0 1px #ffffff44, 0 4px 6px -3px #00000026, 0 0.4px 0 0.8px #00000073;",
-    "0 -0.33px 0 1px #ffffff44, 0 4px 6px -3px #00000026, 0 0.4px 0 0.8px #00000073;",
+    "0 -0.33px 0 1px #ffffff44, 0 4px 6px -3px #00000026, 0 0.4px 0 0.8px #00000073",
+    "0 -0.33px 0 1px #ffffff44, 0 4px 6px -3px #00000026, 0 0.4px 0 0.8px #00000073",
   ],
   "button-inset-shadow": [
     "0 0.33px 0 1px #ffffff26 inset, 0 4px 8px -3px #00000026 inset, 0 0.4px 0 0.8px #00000040 inset",
-    "0 -0.33px 0 1px #ffffff44 inset, 0 4px 8px -3px #00000026 inset, 0 0.4px 0 0.8px #00000040 inset;",
-    "0 -0.33px 0 1px #ffffff44 inset, 0 4px 8px -3px #00000026 inset, 0 0.4px 0 0.8px #00000040 inset;",
+    "0 -0.33px 0 1px #ffffff44 inset, 0 4px 8px -3px #00000026 inset, 0 0.4px 0 0.8px #00000040 inset",
+    "0 -0.33px 0 1px #ffffff44 inset, 0 4px 8px -3px #00000026 inset, 0 0.4px 0 0.8px #00000040 inset",
   ],
   /* Shadows */
   "heavy-3d-box-shadow": [
     "0 0.33px 0 1px #ffffff26, 0 8px 12px -6px #0000004d, 0 0.5px 0 1px #00000033",
-    "0 -0.33px 0 1px #ffffff26, 0 8px 12px -6px #0000004d, 0 0.5px 0 1px #00000033;",
-    "0 -0.33px 0 1px #ffffff26, 0 8px 12px -6px #0000004d, 0 0.5px 0 1px #00000033;",
+    "0 -0.33px 0 1px #ffffff26, 0 8px 12px -6px #0000004d, 0 0.5px 0 1px #00000033",
+    "0 -0.33px 0 1px #ffffff26, 0 8px 12px -6px #0000004d, 0 0.5px 0 1px #00000033",
   ],
   "text-input-shadow": [
     "0 0.33px 0 1px #ffffff26, 0 6px 9px -4px #0000001a inset, 0 0.4px 0 0.8px #0000001a inset",
-    "0 -0.33px 0 1px #ffffff26, 0 6px 9px -4px #0000001a inset, 0 0.4px 0 0.8px #0000001a inset;",
-    "0 -0.33px 0 1px #ffffff26, 0 6px 9px -4px #0000001a inset, 0 0.4px 0 0.8px #0000001a inset;",
+    "0 -0.33px 0 1px #ffffff26, 0 6px 9px -4px #0000001a inset, 0 0.4px 0 0.8px #0000001a inset",
+    "0 -0.33px 0 1px #ffffff26, 0 6px 9px -4px #0000001a inset, 0 0.4px 0 0.8px #0000001a inset",
   ],
 };
 
@@ -138,55 +138,34 @@ var childVariables = {
   ],
 };
 
-function themeDefinition(indent, theme) {
+function themeDefinition(theme) {
   return Object.entries(themeVariables)
     .map((entry) => {
-      return `${indent}--${entry[0]}: ${entry[1][theme]};`;
+      return `--${entry[0]}: ${entry[1][theme]};`;
     })
-    .join(`\n`);
+    .join("");
 }
 
-function childDefinition(indent, theme) {
+function childDefinition(theme) {
   return Object.entries(childVariables)
     .map((entry) => {
-      return `${indent}--${entry[0]}: ${entry[1][theme]};`;
+      return `--${entry[0]}: ${entry[1][theme]};`;
     })
-    .join(`\n`);
+    .join("");
 }
-
-/* Default global styles for component properties that can be overridden with `style-props` */
-var defaults = `:root,
-body {
-  --font-sans: 'Inter', -apple-system, sans-serif;
-  --font-mono: 'Fira Code', monospace;
-  --input-width: 300px;
-  --scrollbar-width: 8px;
-  --scrollbar-height: 4px;
-  --scrollbar-thumb-radius: 1px;
-  --panel-padding: 1rem;
-  --panel-overflow-y: auto;
-  --panel-overflow-x: hidden;
-  --panel-bg-color: var(--primary-bg-color);
-  --preferred-ligatures-logs: none;
-  --preferres-ligatures-code: none;
-}`;
 
 var out = `/* GENERATED FILE */
-${defaults}
-body.auto {\n${themeDefinition("  ", 0)}\n}
-body.auto * {\n${childDefinition("  ", 0)}\n}
-@media (prefers-color-scheme: dark) {
-  body.auto {\n${themeDefinition("  ", 2)}
-  }
-  body.auto * {\n${childDefinition("  ", 2)}
-  }
-}
-body.light {\n${themeDefinition("  ", 0)}\n}
-body.light * {\n${childDefinition("  ", 0)}\n}
-body.dark {\n${themeDefinition("  ", 1)}\n}
-body.dark * {\n${childDefinition("  ", 1)}\n}
-body.black {\n${themeDefinition("  ", 2)}\n}
-body.black * {\n${childDefinition("  ", 2)}\n}
+body.auto {${themeDefinition(0)}}body.auto * {${childDefinition(
+  0
+)}}@media (prefers-color-scheme: dark) {body.auto {${themeDefinition(
+  2
+)}}body.auto * {${childDefinition(2)}}}body.light {${themeDefinition(
+  0
+)}}body.light * {${childDefinition(0)}}body.dark {${themeDefinition(
+  1
+)}}body.dark * {${childDefinition(1)}}body.black {${themeDefinition(
+  2
+)}}body.black * {${childDefinition(2)}}
 `;
 
 fs.writeFile("./gui/public/theme-generated.css", out, function (err) {
