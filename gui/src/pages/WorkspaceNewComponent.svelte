@@ -57,6 +57,10 @@
     margin-top: 12px;
   }
 
+  button :global(svg *) {
+    fill: currentColor;
+  }
+
   button:hover {
     background: var(--button-hover-background);
     box-shadow: var(--button-hover-shadow);
