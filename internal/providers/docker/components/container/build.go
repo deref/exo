@@ -259,14 +259,10 @@ func tarBuildContext(w io.WriteCloser, root string) (err error) {
 }
 
 func createIgnoreMatcher(buildContext string) (*fileutils.PatternMatcher, error) {
-	// Initialize patterns with always ignored files.
-	const ignoreBasename = ".dockerignore"
-	patterns := []string{
-		ignoreBasename,
-	}
+	patterns := []string{}
 
 	// Read additional patterns from ignore file.
-	ignorePath := filepath.Join(buildContext, ignoreBasename)
+	ignorePath := filepath.Join(buildContext, ".dockerignore")
 	file, err := os.Open(ignorePath)
 	if os.IsNotExist(err) {
 		err = nil
