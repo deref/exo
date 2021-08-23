@@ -10,6 +10,15 @@ import (
 )
 
 func TestConvert(t *testing.T) {
+	projectName := "testproj"
+	defaultNetwork := manifest.Component{
+		Name: "default",
+		Type: "network",
+		Spec: `driver: bridge
+name: testproj_default
+`,
+	}
+
 	testCases := []struct {
 		name     string
 		in       string
@@ -27,13 +36,7 @@ services:
 			expected: manifest.LoadResult{
 				Manifest: &manifest.Manifest{
 					Components: []manifest.Component{
-						{
-							Name: "default",
-							Type: "network",
-							Spec: `driver: bridge
-name: testproj_default
-`,
-						},
+						defaultNetwork,
 						{
 							Name: "web",
 							Type: "container",
@@ -45,6 +48,87 @@ networks:
 volumes:
 - ./src:/srv
 `,
+							DependsOn: []manifest.ComponentRef{
+								{
+									Name: "default",
+									Type: "network",
+								},
+							},
+						},
+					},
+				},
+			},
+		},
+
+		{
+			name: "named networks",
+			in: `
+services:
+  proxy:
+    image: nginx
+    networks:
+    - backend
+    - frontend
+  srv:
+    image: myapp
+    networks:
+    - backend
+networks:
+  frontend:
+  backend:
+`,
+			expected: manifest.LoadResult{
+				Manifest: &manifest.Manifest{
+					Components: []manifest.Component{
+						defaultNetwork,
+						{
+							Name: "frontend",
+							Type: "network",
+							Spec: `driver: bridge
+name: testproj_frontend
+`,
+						},
+						{
+							Name: "backend",
+							Type: "network",
+							Spec: `driver: bridge
+name: testproj_backend
+`,
+						},
+						{
+							Name: "proxy",
+							Type: "container",
+							Spec: `container_name: testproj_proxy_1
+image: nginx
+networks:
+- testproj_backend
+- testproj_frontend
+`,
+							DependsOn: []manifest.ComponentRef{
+								{
+									Name: "backend",
+									Type: "network",
+								},
+								{
+									Name: "frontend",
+									Type: "network",
+								},
+							},
+						},
+						{
+							Name: "srv",
+							Type: "container",
+							Spec: `container_name: testproj_srv_1
+image: myapp
+networks:
+- testproj_backend
+`,
+							DependsOn: []manifest.ComponentRef{
+								{
+									Name: "backend",
+									Type: "network",
+								},
+							},
 						},
 					},
 				},
@@ -52,14 +136,18 @@ volumes:
 		},
 	}
 
-	loader := compose.Loader{ProjectName: "testproj"}
+	loader := compose.Loader{ProjectName: projectName}
 	for _, testCase := range testCases {
 		name := testCase.name
 		in := strings.NewReader(testCase.in)
 		expected := testCase.expected
 		t.Run(name, func(t *testing.T) {
 			out := loader.Load(in)
-			assert.Equal(t, expected, out)
+
+			assert.ElementsMatch(t, expected.Warnings, out.Warnings)
+			if len(expected.Manifest.Components) > 0 {
+				assert.ElementsMatch(t, expected.Manifest.Components, out.Manifest.Components)
+			}
 		})
 	}
 }
