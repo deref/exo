@@ -10,7 +10,8 @@ import (
 )
 
 func main() {
-	res := compose.Import(os.Stdin)
+	importer := &compose.Loader{ProjectName: "unnamed"}
+	res := importer.Load(os.Stdin)
 	for _, warning := range res.Warnings {
 		fmt.Fprintln(os.Stderr, warning)
 	}

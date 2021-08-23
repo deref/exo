@@ -180,6 +180,9 @@ type Logging struct {
 }
 
 type Network struct {
+	// Name is the actual name of the docker network. The docker-compose network name, which can
+	// be referenced by individual services, is the component name.
+	Name       string            `yaml:"name"`
 	Driver     string            `yaml:"driver"`
 	DriverOpts map[string]string `yaml:"driver_opts"`
 	Attachable bool              `yaml:"attachable"`
@@ -187,7 +190,6 @@ type Network struct {
 	Internal   bool              `yaml:"internal"`
 	Labels     Dictionary        `yaml:"labels"`
 	External   bool              `yaml:"external"`
-	// TODO: name
 }
 
 type Volume struct {

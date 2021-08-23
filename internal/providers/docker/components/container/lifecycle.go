@@ -2,6 +2,7 @@ package container
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"os/user"
 	"strconv"
@@ -18,6 +19,8 @@ import (
 	"github.com/docker/go-connections/nat"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 )
+
+var _ core.Lifecycle = (*Container)(nil)
 
 func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput) (output *core.InitializeOutput, err error) {
 
@@ -263,8 +266,20 @@ func (c *Container) create(ctx context.Context) error {
 		}
 	}
 	networkCfg := &network.NetworkingConfig{
-		//EndpointsConfig map[string]*EndpointSettings // Endpoint configs for each connecting network
+		EndpointsConfig: make(map[string]*network.EndpointSettings), // Endpoint configs for each connecting network
 	}
+	for _, networkName := range c.Spec.Networks {
+		networkCfg.EndpointsConfig[networkName] = &network.EndpointSettings{
+			Aliases: []string{c.ComponentID, c.ComponentName},
+		}
+	}
+
+	if jsonBytes, err := json.MarshalIndent(networkCfg, "", "  "); err == nil {
+		fmt.Println(string(jsonBytes))
+	} else {
+		fmt.Println("Error printing networkCfg:", err)
+	}
+
 	var platform *v1.Platform
 	//platform := &v1.Platform{
 	//	//// Architecture field specifies the CPU architecture, for example

@@ -8,7 +8,6 @@ import (
 
 	"github.com/deref/exo/internal/config"
 	"github.com/deref/exo/internal/util/cacheutil"
-	"github.com/deref/exo/internal/util/logging"
 )
 
 type Telemetry interface {
@@ -21,7 +20,6 @@ type Telemetry interface {
 
 func New(ctx context.Context, cfg *config.TelemetryConfig) Telemetry {
 	if cfg.Disable {
-		logging.CurrentLogger(ctx).Infof("Telemetry disabled; not collecting statistics.")
 		return &noOpTelemetry{}
 	}
 
