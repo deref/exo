@@ -1,8 +1,9 @@
-var fs = require("fs");
+const fs = require("fs");
 
-// name: [light, dark, black]
+// Variable definitions follow this format:
+// { name: [light, dark, black] }
 
-var themeVariables = {
+const themeVariables = {
   "primary-color": ["#000000", "#ffffff", "#ffffff"],
   "strong-color": ["#000000", "#ffffff", "#ffffff"],
   "grey-1-color": ["#111111", "#eeeeee", "#eeeeee"],
@@ -24,28 +25,34 @@ var themeVariables = {
   "layout-bg-color": ["#cccccc", "#222222", "#222222"],
   "secondary-bg-color": ["#f5f5f5", "#0a0a0a", "#0a0a0a"],
   "primary-bg-color": ["#ffffff", "#000000", "#000000"],
-  /* Contextual color */
+
+  // Contextual color
   "error-color": ["#ee0000", "#ee0000", "#ee0000"],
   "link-color": ["#0066ee", "#22aaff", "#22aaff"],
   "online-green-color": ["#00c220", "#00c220", "#00c220"],
-  /* Nav */
+
+  // Nav
   "nav-bg-color": ["#e7e7e7", "#050505", "#050505"],
   "nav-button-active-bg-color": ["#d5d5d5", "#111111", "#111111"],
   "nav-button-active-hover-bg-color": ["#cccccc", "#1c1c1c", "#1c1c1c"],
-  /* Code */
+
+  // Code
   "code-bg-color": ["#44444411", "#aaaaaa11", "#aaaaaa11"],
   "code-shadow": [
     "0 0.33px 0 1px #ffffff26, 0 6px 9px -4px #00000033, 0 0.4px 0 0.8px #0000001a",
     "0 0.33px 0 1px #ffffff26, 0 6px 9px -4px #00000033, 0 0.4px 0 0.8px #0000001a",
     "0 0.33px 0 1px #ffffff26, 0 6px 9px -4px #00000033, 0 0.4px 0 0.8px #0000001a",
   ],
-  /* Process details */
+
+  // Process details
   "sparkline-stroke": ["#ee0000", "#ee0000", "#ee0000"],
   "sparkline-fill": ["#ee000044", "#ee000044", "#ee000044"],
-  /* Spinners */
+
+  // Spinners
   "spinner-grey": ["#777777ff", "#777777ff", "#777777ff"],
   "spinner-grey-light": ["#77777733", "#77777733", "#77777733"],
-  /* Checkbox */
+
+  // Checkbox
   "checkbox-color": ["#777777ff", "#999999ff", "#999999ff"],
   "checkbox-bg-color": ["#77777700", "#99999900", "#99999900"],
   "checkbox-border-color": ["#77777777", "#99999977", "#99999977"],
@@ -56,7 +63,8 @@ var themeVariables = {
   "checkbox-active-focus-bg-color": ["#55ccff44", "#19baff44", "#19baff44"],
   "checkbox-active-color": ["#008ac5", "#19baff", "#19baff"],
   "checkbox-active-border-color": ["#008ac577", "#19baff77", "#19baff77"],
-  /* Buttons */
+
+  // Buttons
   "icon-button-bg-color": ["#00000000", "#eeeeee00", "#eeeeee00"],
   "icon-button-hover-bg-color": ["#00000010", "#eeeeee18", "#eeeeee18"],
   "icon-button-focus-bg-color": ["#00000018", "#eeeeee33", "#eeeeee33"],
@@ -100,7 +108,8 @@ var themeVariables = {
     "0 -0.33px 0 1px #ffffff44 inset, 0 4px 8px -3px #00000026 inset, 0 0.4px 0 0.8px #00000040 inset",
     "0 -0.33px 0 1px #ffffff44 inset, 0 4px 8px -3px #00000026 inset, 0 0.4px 0 0.8px #00000040 inset",
   ],
-  /* Shadows */
+
+  // Shadows
   "heavy-3d-box-shadow": [
     "0 0.33px 0 1px #ffffff26, 0 8px 12px -6px #0000004d, 0 0.5px 0 1px #00000033",
     "0 -0.33px 0 1px #ffffff26, 0 8px 12px -6px #0000004d, 0 0.5px 0 1px #00000033",
@@ -118,7 +127,7 @@ var themeVariables = {
   ],
 };
 
-var childVariables = {
+const childVariables = {
   "log-color": [
     "var(--light-log-color)",
     "var(--dark-log-color)",
@@ -141,23 +150,21 @@ var childVariables = {
   ],
 };
 
-function themeDefinition(theme) {
-  return Object.entries(themeVariables)
+const themeDefinition = (theme) =>
+  Object.entries(themeVariables)
     .map((entry) => {
       return `--${entry[0]}: ${entry[1][theme]};`;
     })
     .join(" ");
-}
 
-function childDefinition(theme) {
-  return Object.entries(childVariables)
+const childDefinition = (theme) =>
+  Object.entries(childVariables)
     .map((entry) => {
       return `--${entry[0]}: ${entry[1][theme]};`;
     })
     .join(" ");
-}
 
-var out = `/* Generated file. DO NOT EDIT. */
+const out = `/* Generated file. DO NOT EDIT. */
 body.auto {${themeDefinition(0)}} body.auto * {${childDefinition(0)}}
 @media (prefers-color-scheme: dark)
 { body.auto {${themeDefinition(2)}} body.auto * {${childDefinition(2)}}}
