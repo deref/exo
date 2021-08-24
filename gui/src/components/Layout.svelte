@@ -74,7 +74,7 @@
     position: relative;
     width: 48px;
     height: 100vh;
-    z-index: 3;
+    z-index: 4;
     display: grid;
     grid-template-rows: auto 1fr max-content;
     grid-auto-flow: column;
@@ -84,7 +84,6 @@
 
   .navbar-wrapper {
     width: 48px;
-    overflow-y: auto;
     border-top: 1px solid var(--layout-bg-color);
     border-bottom: 1px solid var(--layout-bg-color);
   }
@@ -96,16 +95,6 @@
   .content-wrapper {
     position: relative;
     z-index: 2;
-    overflow: hidden;
-  }
-
-  footer {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    font-size: 11px;
-    width: 100%;
-    color: var(--grey-5-color);
     overflow: hidden;
   }
 </style>

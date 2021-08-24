@@ -52,7 +52,9 @@
       folding: false,
       lineDecorationsWidth: 0,
       lineNumbersMinChars: 0,
-      fontSize: 16,
+      fontSize: 15,
+      fontWeight: '400',
+      fontFamily: 'Fira Code, mono',
       minimap: {
         enabled: false,
       },

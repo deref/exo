@@ -91,7 +91,7 @@
     margin-top: 8px;
   }
 
-  .dropdown-wrapper:not(:hover) .dropdown {
+  .dropdown-wrapper:not(:hover):not(:focus-within) .dropdown {
     display: none;
   }
 
