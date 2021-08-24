@@ -26,7 +26,7 @@ var themeVariables = {
   "primary-bg-color": ["#ffffff", "#000000", "#000000"],
   /* Contextual color */
   "error-color": ["#ee0000", "#ee0000", "#ee0000"],
-  "link-color": ["#0066ee", "#007bd4", "#007bd4"],
+  "link-color": ["#0066ee", "#22aaff", "#22aaff"],
   "online-green-color": ["#00c220", "#00c220", "#00c220"],
   /* Nav */
   "nav-bg-color": ["#e7e7e7", "#050505", "#050505"],
