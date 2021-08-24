@@ -157,7 +157,7 @@ function childDefinition(theme) {
     .join(" ");
 }
 
-var out = `/* GENERATED FILE */
+var out = `/* Generated file. DO NOT EDIT. */
 body.auto {${themeDefinition(0)}} body.auto * {${childDefinition(0)}}
 @media (prefers-color-scheme: dark)
 { body.auto {${themeDefinition(2)}} body.auto * {${childDefinition(2)}}}
