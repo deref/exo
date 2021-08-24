@@ -10,6 +10,8 @@ import (
 )
 
 func TestConvert(t *testing.T) {
+	t.Skipf("Skipping convert test until we decide what strategy to use for converting compose files to component specs.")
+
 	projectName := "testproj"
 	defaultNetwork := manifest.Component{
 		Name: "default",

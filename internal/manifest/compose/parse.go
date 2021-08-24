@@ -6,6 +6,7 @@ import (
 	"github.com/goccy/go-yaml"
 )
 
+// TODO: Consider whether this representation is useful or if we can just use `compose.Compose`,
 type Project struct {
 	Services map[string]yaml.MapSlice `yaml:"services"`
 	Networks map[string]yaml.MapSlice `yaml:"networks"`
