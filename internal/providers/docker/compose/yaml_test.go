@@ -35,7 +35,7 @@ func TestParseService(t *testing.T) {
   tmpfs:
     size: 208666624`,
 			expected: compose.Service{
-				Volumes: []compose.VolumeAttachment{
+				Volumes: []compose.VolumeMount{
 					{
 						Type:     "volume",
 						Source:   "mydata",
@@ -68,17 +68,22 @@ func TestParseService(t *testing.T) {
 		{
 			name: "volumes: short syntax",
 			in: `volumes:
+- /var/myapp
 - './data:/data'
 - "/home/fred/.ssh:/root/.ssh:ro"
+- '~/util:/usr/bin/util:rw'
 - my-log-volume:/var/log/xyzzy`,
 			expected: compose.Service{
-				Volumes: []compose.VolumeAttachment{
+				Volumes: []compose.VolumeMount{
+					{
+						Type:   "volume",
+						Target: "/var/myapp",
+					},
 					{
 						Type:   "bind",
 						Source: "./data",
 						Target: "/data",
 						Bind: compose.BindOptions{
-							// CreateHostPath is always implied by the short syntax.
 							CreateHostPath: true,
 						},
 					},
@@ -88,7 +93,14 @@ func TestParseService(t *testing.T) {
 						Target:   "/root/.ssh",
 						ReadOnly: true,
 						Bind: compose.BindOptions{
-							// CreateHostPath is always implied by the short syntax.
+							CreateHostPath: true,
+						},
+					},
+					{
+						Type:   "bind",
+						Source: "~/util",
+						Target: "/usr/bin/util",
+						Bind: compose.BindOptions{
 							CreateHostPath: true,
 						},
 					},

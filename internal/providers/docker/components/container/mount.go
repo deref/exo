@@ -5,37 +5,42 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/deref/exo/internal/providers/docker/compose"
 	"github.com/docker/docker/api/types/mount"
 )
 
-func makeMountFromVolumeString(workspaceRoot, userHomeDir, volume string) (mount.Mount, error) {
-	// This doesn't handle colons in the filepath well but it would appear that
-	// docker-compose doesn't handle those either.
-	volumeParts := strings.Split(volume, ":")
-	if len(volumeParts) > 3 {
-		return mount.Mount{}, fmt.Errorf("invalid volume string %s", volume)
-	}
+func makeMountFromVolumeMount(workspaceRoot, userHomeDir string, va compose.VolumeMount) (mount.Mount, error) {
+	var mountType mount.Type
+	var bindOptions *mount.BindOptions
+	var volumeOptions *mount.VolumeOptions
+	var tmpfsOptions *mount.TmpfsOptions
 
-	isReadOnly := false
-	if len(volumeParts) > 2 {
-		mode := volumeParts[2]
-		if mode == "ro" {
-			isReadOnly = true
-		} else if mode != "rw" {
-			return mount.Mount{}, fmt.Errorf("invalid mode string %s", mode)
+	switch va.Type {
+	case "bind":
+		mountType = mount.TypeBind
+		bindOptions = &mount.BindOptions{
+			Propagation:  mount.Propagation(va.Bind.Propagation),
+			NonRecursive: !va.Bind.CreateHostPath,
 		}
+
+	case "volume":
+		mountType = mount.TypeVolume
+		volumeOptions = &mount.VolumeOptions{
+			NoCopy: va.Volume.Nocopy,
+		}
+
+	case "tmpfs":
+		mountType = mount.TypeTmpfs
+		tmpfsOptions = &mount.TmpfsOptions{
+			SizeBytes: va.Tmpfs.Size,
+		}
+
+	default:
+		return mount.Mount{}, fmt.Errorf("unsupported mount type: %q", va.Type)
 	}
 
-	if len(volumeParts) == 1 {
-		return mount.Mount{
-			Type:   mount.TypeVolume,
-			Target: volumeParts[0],
-		}, nil
-	}
-
-	source, target := volumeParts[0], volumeParts[1]
-	mountType := mount.TypeBind
-	if strings.HasPrefix(source, "./") {
+	source := va.Source
+	if strings.HasPrefix(source, ".") {
 		var err error
 		source, err = filepath.Abs(filepath.Join(workspaceRoot, source))
 		if err != nil {
@@ -43,14 +48,15 @@ func makeMountFromVolumeString(workspaceRoot, userHomeDir, volume string) (mount
 		}
 	} else if strings.HasPrefix(source, "~/") {
 		source = filepath.Join(userHomeDir, source[2:])
-	} else if !strings.HasPrefix(source, "/") {
-		mountType = mount.TypeVolume
 	}
 
 	return mount.Mount{
-		Type:     mountType,
-		Source:   source,
-		Target:   target,
-		ReadOnly: isReadOnly,
+		Type:          mountType,
+		Source:        source,
+		Target:        va.Target,
+		ReadOnly:      va.ReadOnly,
+		BindOptions:   bindOptions,
+		VolumeOptions: volumeOptions,
+		TmpfsOptions:  tmpfsOptions,
 	}, nil
 }

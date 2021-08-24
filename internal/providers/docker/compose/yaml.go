@@ -130,13 +130,13 @@ type Service struct {
 	// TODO: ulimits
 	User string `yaml:"user"`
 	// TODO: userns_mode
-	Volumes []VolumeAttachment `yaml:"volumes"`
+	Volumes []VolumeMount `yaml:"volumes"`
 	// TODO: volumes_from
 
 	WorkingDir string `yaml:"working_dir"`
 }
 
-type VolumeAttachment struct {
+type VolumeMount struct {
 	Type        string
 	Source      string
 	Target      string
@@ -147,41 +147,44 @@ type VolumeAttachment struct {
 	Consistency IgnoredField
 }
 
-func (va *VolumeAttachment) UnmarshalYAML(b []byte) error {
+func (vm *VolumeMount) UnmarshalYAML(b []byte) error {
 	var asString string
 	if err := yaml.Unmarshal(b, &asString); err == nil {
-		return va.fromShortSyntax(asString)
+		return vm.fromShortSyntax(asString)
 	}
 
-	asExtended := extendedVolumeAttachment{}
+	asExtended := extendedVolumeMount{}
 	if err := yaml.Unmarshal(b, &asExtended); err != nil {
 		return err
 	}
-	va.Type = asExtended.Type
-	va.Source = asExtended.Source
-	va.Target = asExtended.Target
-	va.ReadOnly = asExtended.ReadOnly
-	va.Bind = asExtended.Bind
-	va.Volume = asExtended.Volume
-	va.Tmpfs = asExtended.Tmpfs
-	va.Consistency = asExtended.Consistency
+	vm.Type = asExtended.Type
+	vm.Source = asExtended.Source
+	vm.Target = asExtended.Target
+	vm.ReadOnly = asExtended.ReadOnly
+	vm.Bind = asExtended.Bind
+	vm.Volume = asExtended.Volume
+	vm.Tmpfs = asExtended.Tmpfs
+	vm.Consistency = asExtended.Consistency
 
 	return nil
 }
 
-func (va *VolumeAttachment) fromShortSyntax(in string) error {
+func (vm *VolumeMount) fromShortSyntax(in string) error {
 	parts := strings.Split(in, ":")
 	switch len(parts) {
+	case 1:
+		vm.Type = "volume"
+		vm.Target = in
 	case 2:
-		va.setSource(parts[0])
-		va.Target = parts[1]
+		vm.setSource(parts[0])
+		vm.Target = parts[1]
 	case 3:
-		va.setSource(parts[0])
-		va.Target = parts[1]
+		vm.setSource(parts[0])
+		vm.Target = parts[1]
 		accessMode := parts[2]
 		switch accessMode {
 		case "ro":
-			va.ReadOnly = true
+			vm.ReadOnly = true
 		case "rw":
 			// Do nothing - va.ReadOnly is already false.
 		default:
@@ -194,23 +197,24 @@ func (va *VolumeAttachment) fromShortSyntax(in string) error {
 	return nil
 }
 
-var localPathRe = regexp.MustCompile("^[./]")
+var localPathRe = regexp.MustCompile("^[./~]")
 
-func (va *VolumeAttachment) setSource(src string) {
-	va.Source = src
+func (vm *VolumeMount) setSource(src string) {
+	vm.Source = src
 	if localPathRe.MatchString(src) {
-		va.Type = "bind"
-		va.Bind = BindOptions{
+		vm.Type = "bind"
+		vm.Bind = BindOptions{
+			// CreateHostPath is always implied by the short syntax.
 			CreateHostPath: true,
 		}
 	} else {
-		va.Type = "volume"
+		vm.Type = "volume"
 	}
 }
 
-// extendedVolumeAttachment is a private struct that is structurally identical to VolumeAttachment but
+// extendedVolumeMount is a private struct that is structurally identical to VolumeAttachment but
 // is only used for YAML unmarshalling where we do not need to consider the short string-based syntax.
-type extendedVolumeAttachment struct {
+type extendedVolumeMount struct {
 	Type        string        `yaml:"type"`
 	Source      string        `yaml:"source"`
 	Target      string        `yaml:"target"`
@@ -231,7 +235,7 @@ type BindOptions struct {
 }
 
 type TmpfsOptions struct {
-	Size uint64 `yaml:"size"`
+	Size int64 `yaml:"size"`
 }
 
 type Healthcheck struct {
