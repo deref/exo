@@ -153,24 +153,31 @@ const childVariables = {
 const themeDefinition = (theme) =>
   Object.entries(themeVariables)
     .map((entry) => {
-      return `--${entry[0]}: ${entry[1][theme]};`;
+      return `  --${entry[0]}: ${entry[1][theme]};`;
     })
-    .join(" ");
+    .join("\n");
 
 const childDefinition = (theme) =>
   Object.entries(childVariables)
     .map((entry) => {
-      return `--${entry[0]}: ${entry[1][theme]};`;
+      return `  --${entry[0]}: ${entry[1][theme]};`;
     })
-    .join(" ");
+    .join("\n");
+
+const themeBlock = (selector, theme) => `body.${selector} {
+${themeDefinition(theme)}
+}
+body.${selector} * {
+${childDefinition(theme)}
+}`;
 
 const out = `/* Generated file. DO NOT EDIT. */
-body.auto {${themeDefinition(0)}} body.auto * {${childDefinition(0)}}
-@media (prefers-color-scheme: dark)
-{ body.auto {${themeDefinition(2)}} body.auto * {${childDefinition(2)}}}
-body.light {${themeDefinition(0)}} body.light * {${childDefinition(0)}}
-body.dark {${themeDefinition(1)}} body.dark * {${childDefinition(1)}}
-body.black {${themeDefinition(2)}} body.black * {${childDefinition(2)}}
+${themeBlock("auto", 0)}
+@media (prefers-color-scheme: dark) {
+${themeBlock("auto", 2)}}
+${themeBlock("light", 0)}
+${themeBlock("dark", 1)}
+${themeBlock("black", 2)}
 `;
 
 fs.writeFile("./gui/public/theme-generated.css", out, function (err) {
