@@ -3,11 +3,39 @@
   export let active: string | undefined = undefined;
 </script>
 
-<button on:click class:active={title && active === title} {title}>
-  <slot />
-</button>
+<div>
+  <button on:click class:active={title && active === title}>
+    <slot />
+  </button>
+  {#if title}
+    <span>{title}</span>
+  {/if}
+</div>
 
 <style>
+  div {
+    position: relative;
+  }
+
+  div:not(:hover):not(:focus-within) span {
+    display: none;
+  }
+
+  span {
+    display: inline-block;
+    position: absolute;
+    left: calc(100% - 4px);
+    top: calc(50% - 11px);
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--strong-color);
+    background: var(--primary-bg-color);
+    box-shadow: var(--dropdown-shadow);
+    height: 22px;
+    padding: 3px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
   button {
     position: relative;
     border: none;
