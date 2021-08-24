@@ -150,6 +150,7 @@ const childVariables = {
   ],
 };
 
+// Format a list of root level theme variables.
 const themeDefinition = (theme) =>
   Object.entries(themeVariables)
     .map((entry) => {
@@ -157,6 +158,7 @@ const themeDefinition = (theme) =>
     })
     .join("\n");
 
+// Format a list of child level theme variables.
 const childDefinition = (theme) =>
   Object.entries(childVariables)
     .map((entry) => {
@@ -164,6 +166,7 @@ const childDefinition = (theme) =>
     })
     .join("\n");
 
+// Format a block of theme variables for root and child selectors.
 const themeBlock = (selector, theme) => `body.${selector} {
 ${themeDefinition(theme)}
 }
@@ -171,6 +174,7 @@ body.${selector} * {
 ${childDefinition(theme)}
 }`;
 
+// Format the entire theme file using the above helpers.
 const out = `/* Generated file. DO NOT EDIT. */
 ${themeBlock("auto", 0)}
 @media (prefers-color-scheme: dark) {
@@ -180,6 +184,7 @@ ${themeBlock("dark", 1)}
 ${themeBlock("black", 2)}
 `;
 
+// Save generated output.
 fs.writeFile("./gui/public/theme-generated.css", out, function (err) {
   if (err) throw err;
   console.log("Generated theme file.");
