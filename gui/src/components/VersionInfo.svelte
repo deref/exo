@@ -1,8 +1,10 @@
 <script lang="ts">
-  import { onDestroy } from 'svelte';
-  import { api } from '../lib/api';
   import Button from './Button.svelte';
   import Spinner from './Spinner.svelte';
+  import EllipsisSVG from './mono/EllipsisSVG.svelte';
+  import NavbarButton from './nav/NavbarButton.svelte';
+  import { onDestroy } from 'svelte';
+  import { api } from '../lib/api';
 
   let installedVersion: string | null = null;
   let latestVersion: string | null = null;
@@ -37,32 +39,69 @@
   });
 </script>
 
-<section>
-  exo {installedVersion || ''}
-  {#if latestVersion !== null}
-    | Update available: <strong>{latestVersion}</strong>
-    &nbsp;
-    <Button small on:click={doUpgrade}>
-      {#if upgrading}
-        Updating &nbsp;<Spinner inline />
-      {:else}
-        Upgrade
+<div class="dropdown-wrapper">
+  <NavbarButton>
+    {#if latestVersion !== null}
+      <div class="upgrade-available" />
+    {:else}
+      <EllipsisSVG />
+    {/if}
+  </NavbarButton>
+  <div class="dropdown version">
+    <section>
+      <div>exo {installedVersion || ''}</div>
+      {#if latestVersion !== null}
+        <div>Update available: <strong>{latestVersion}</strong></div>
+        <Button small on:click={doUpgrade}>
+          {#if upgrading}
+            Updating &nbsp;<Spinner inline />
+          {:else}
+            Upgrade
+          {/if}
+        </Button>
       {/if}
-    </Button>
-  {/if}
-  {#if import.meta.env.MODE === 'development'}
-    &nbsp;
-    <strong>DEV MODE</strong>
-  {/if}
-</section>
+    </section>
+  </div>
+</div>
 
 <style>
-  section {
-    width: 48px;
+  .upgrade-available {
+    width: 20px;
+    height: 20px;
+    border-radius: 10px;
+    background: var(--error-color);
     display: flex;
     align-items: center;
-    padding: 12px 0;
-    writing-mode: vertical-rl;
-    text-orientation: mixed;
+    justify-content: center;
+  }
+
+  .upgrade-available::after {
+    content: '1';
+    color: white;
+    font-size: 12px;
+    font-weight: 500;
+  }
+
+  section:nth-child(2) {
+    margin-top: 8px;
+  }
+
+  .dropdown-wrapper:not(:hover) .dropdown {
+    display: none;
+  }
+
+  .dropdown {
+    position: absolute;
+    bottom: 8px;
+    left: calc(100% - 8px);
+    border-radius: 5px;
+    background: var(--primary-bg-color);
+    box-shadow: var(--dropdown-shadow);
+  }
+
+  .dropdown.version {
+    font-size: 15px;
+    padding: 12px 18px;
+    min-width: 240px;
   }
 </style>

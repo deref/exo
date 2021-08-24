@@ -32,8 +32,6 @@ var themeVariables = {
   "nav-bg-color": ["#e7e7e7", "#050505", "#050505"],
   "nav-button-active-bg-color": ["#d5d5d5", "#111111", "#111111"],
   "nav-button-active-hover-bg-color": ["#cccccc", "#1c1c1c", "#1c1c1c"],
-  "dev-mode-bg-color": ["#007bd4", "#0066ee", "#0066ee"],
-  "dev-mode-color": ["#ffffff", "#ffffff", "#ffffff"],
   /* Code */
   "code-bg-color": ["#44444411", "#aaaaaa11", "#aaaaaa11"],
   "code-shadow": [
@@ -112,6 +110,11 @@ var themeVariables = {
     "0 0.33px 0 1px #ffffff26, 0 6px 9px -4px #0000001a inset, 0 0.4px 0 0.8px #0000001a inset",
     "0 -0.33px 0 1px #ffffff26, 0 6px 9px -4px #0000001a inset, 0 0.4px 0 0.8px #0000001a inset",
     "0 -0.33px 0 1px #ffffff26, 0 6px 9px -4px #0000001a inset, 0 0.4px 0 0.8px #0000001a inset",
+  ],
+  "dropdown-shadow": [
+    "0 0.33px 0 1px #ffffff26, 0 12px 12px -4px #00000033, 0 0.4px 0 0.8px #00000059",
+    "0 -0.33px 0 1px #ffffff55, 0 12px 12px -4px #00000033, 0 0.4px 0 0.8px #00000059",
+    "0 -0.33px 0 1px #ffffff55, 0 12px 12px -4px #00000033, 0 0.4px 0 0.8px #00000059",
   ],
 };
 

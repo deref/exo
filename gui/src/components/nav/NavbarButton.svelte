@@ -1,9 +1,11 @@
 <script lang="ts">
-  export let title: string;
+  export let title: string | undefined = undefined;
   export let active: string | undefined = undefined;
 </script>
 
-<button on:click class:active={active === title} {title}><slot /></button>
+<button on:click class:active={title && active === title} {title}>
+  <slot />
+</button>
 
 <style>
   button {
