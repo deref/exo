@@ -18,6 +18,7 @@
 
   const workspaceId = params.workspace;
   const workspace = api.workspace(workspaceId);
+  const workspaceRoute = `/workspaces/${encodeURIComponent(workspaceId)}`;
   const workspaceNewComponentRoute = `/workspaces/${encodeURIComponent(
     workspaceId,
   )}/new-component`;
