@@ -6,10 +6,13 @@ import (
 	"strings"
 )
 
-type nodeset map[interface{}]struct{}
+type Node interface {
+	ID() string
+}
 
-// Semantically, this is Map<Node, Set<Node>>.
-type depmap map[interface{}]nodeset
+type nodeset map[string]Node
+
+type depmap map[string]nodeset
 
 type Graph struct {
 	// Maintain dependency relationships in both directions.
@@ -54,67 +57,57 @@ func (g *Graph) Dump() string {
 	return out.String()
 }
 
-func (g *Graph) DependOn(node, dep interface{}) error {
-	if node == dep {
+// AddNode will register some node with the graph even if that node does not depend on
+// anything else.
+func (g *Graph) AddNode(node Node) {
+	g.nodes[node.ID()] = node
+}
+
+func (g *Graph) DependOn(node, dep Node) error {
+	if node.ID() == dep.ID() {
 		return errors.New("self-referential dependencies not allowed")
 	}
 	if g.DependsOn(dep, node) {
 		return errors.New("circular dependencies not allowed")
 	}
 
-	g.nodes[node] = struct{}{}
-	g.nodes[dep] = struct{}{}
+	addToNodeset(g.nodes, node)
+	addToNodeset(g.nodes, dep)
 
 	updateSet(g.dependencies, node, func(nodes nodeset) {
-		nodes[dep] = struct{}{}
+		addToNodeset(nodes, dep)
 	})
 	updateSet(g.dependents, dep, func(nodes nodeset) {
-		nodes[node] = struct{}{}
+		addToNodeset(nodes, node)
 	})
 
 	return nil
 }
 
-func (g *Graph) DependsOn(node, dep interface{}) bool {
+func (g *Graph) DependsOn(node, dep Node) bool {
 	tds := g.transitiveDependencies(node)
-	_, ok := tds[dep]
+	_, ok := tds[dep.ID()]
 	return ok
 }
 
-func (g *Graph) HasDependent(node, dep interface{}) bool {
+func (g *Graph) HasDependent(node, dep Node) bool {
 	tds := g.transitiveDependents(node)
-	_, ok := tds[dep]
+	_, ok := tds[dep.ID()]
 	return ok
 }
 
-func (g *Graph) Nodes() []interface{} {
-	approxSize := len(g.dependencies) + len(g.dependents)/2
-	allNodes := make(nodeset, approxSize)
-	var nodeCount int
-	for node := range g.dependencies {
-		nodeCount++
-		allNodes[node] = struct{}{}
+func (g *Graph) Nodes() []Node {
+	out := make([]Node, 0, len(g.nodes))
+	for _, node := range g.nodes {
+		out = append(out, node)
 	}
-	for node := range g.dependents {
-		if _, exists := allNodes[node]; !exists {
-			nodeCount++
-			allNodes[node] = struct{}{}
-		}
-	}
-
-	distinctNodes := make([]interface{}, nodeCount)
-	for node := range allNodes {
-		distinctNodes[nodeCount-1] = node
-		nodeCount--
-	}
-
-	return distinctNodes
+	return out
 }
 
-func (g *Graph) Leaves() []interface{} {
-	out := make([]interface{}, 0)
-	for node := range g.nodes {
-		if _, ok := g.dependencies[node]; !ok {
+func (g *Graph) Leaves() []Node {
+	out := make([]Node, 0)
+	for id, node := range g.nodes {
+		if _, ok := g.dependencies[id]; !ok {
 			out = append(out, node)
 		}
 	}
@@ -128,8 +121,8 @@ func (g *Graph) Leaves() []interface{} {
 // any dependencies within each layer. This is useful, e.g. when building an execution plan for
 // some DAG, in which case each element within each layer could be executed in parallel. If you
 // do not need this layered property, use `Graph.TopoSorted()`, which flattens all elements
-func (g *Graph) TopoSortedLayers() [][]interface{} {
-	out := [][]interface{}{}
+func (g *Graph) TopoSortedLayers() [][]Node {
+	out := [][]Node{}
 
 	shrinkingGraph := g.clone()
 	for {
@@ -141,7 +134,7 @@ func (g *Graph) TopoSortedLayers() [][]interface{} {
 		out = append(out, leaves)
 		for _, leafNode := range leaves {
 
-			dependents := shrinkingGraph.dependents[leafNode]
+			dependents := shrinkingGraph.dependents[leafNode.ID()]
 
 			for dependent := range dependents {
 				// Should be safe because every relationship is bidirectional.
@@ -150,17 +143,17 @@ func (g *Graph) TopoSortedLayers() [][]interface{} {
 					// The only dependent _must_ be `leafNode`, so we can delete the `dep` entry entirely.
 					delete(shrinkingGraph.dependencies, dependent)
 				} else {
-					delete(dependencies, leafNode)
+					delete(dependencies, leafNode.ID())
 				}
 			}
-			delete(shrinkingGraph.dependents, leafNode)
+			delete(shrinkingGraph.dependents, leafNode.ID())
 		}
 
 		nextLeaves := shrinkingGraph.Leaves()
 		// nodes must be removed after the next iteration's leaves have been evaluated so that we do not
 		// delete the last layer's elements before the last iteration.
 		for _, leafNode := range leaves {
-			delete(shrinkingGraph.nodes, leafNode)
+			delete(shrinkingGraph.nodes, leafNode.ID())
 		}
 		leaves = nextLeaves
 	}
@@ -170,14 +163,14 @@ func (g *Graph) TopoSortedLayers() [][]interface{} {
 
 // TopoSorted returns all the nodes in the graph is topological sort order.
 // See also `Graph.TopoSortedLayers()`.
-func (g *Graph) TopoSorted() []interface{} {
+func (g *Graph) TopoSorted() []Node {
 	nodeCount := 0
 	layers := g.TopoSortedLayers()
 	for _, layer := range layers {
 		nodeCount += len(layer)
 	}
 
-	allNodes := make([]interface{}, 0, nodeCount)
+	allNodes := make([]Node, 0, nodeCount)
 	for _, layer := range layers {
 		for _, node := range layer {
 			allNodes = append(allNodes, node)
@@ -187,23 +180,23 @@ func (g *Graph) TopoSorted() []interface{} {
 	return allNodes
 }
 
-func (g *Graph) transitiveDependencies(node interface{}) nodeset {
+func (g *Graph) transitiveDependencies(node Node) nodeset {
 	return g.buildTransitive(node, g.immediateDependencies)
 }
 
-func (g *Graph) immediateDependencies(node interface{}) nodeset {
-	if deps, ok := g.dependencies[node]; ok {
+func (g *Graph) immediateDependencies(node Node) nodeset {
+	if deps, ok := g.dependencies[node.ID()]; ok {
 		return deps
 	}
 	return nil
 }
 
-func (g *Graph) transitiveDependents(node interface{}) nodeset {
+func (g *Graph) transitiveDependents(node Node) nodeset {
 	return g.buildTransitive(node, g.immediateDependents)
 }
 
-func (g *Graph) immediateDependents(node interface{}) nodeset {
-	if deps, ok := g.dependents[node]; ok {
+func (g *Graph) immediateDependents(node Node) nodeset {
+	if deps, ok := g.dependents[node.ID()]; ok {
 		return deps
 	}
 	return nil
@@ -219,20 +212,20 @@ func (g *Graph) clone() *Graph {
 
 // buildTransitive starts at `root` and continues calling `nextFn` to keep discovering more nodes until
 // the graph cannot produce any more. It returns the set of all discovered nodes.
-func (g *Graph) buildTransitive(root interface{}, nextFn func(interface{}) nodeset) nodeset {
+func (g *Graph) buildTransitive(root Node, nextFn func(Node) nodeset) nodeset {
 	out := make(nodeset)
-	searchNext := []interface{}{root}
+	searchNext := []Node{root}
 	for len(searchNext) > 0 {
 		// List of new nodes from this layer of the dependency graph. This is
 		// assigned to `searchNext` at the end of the outer "discovery" loop.
-		discovered := []interface{}{}
+		discovered := []Node{}
 		for _, node := range searchNext {
 			// For each node to discover, find the next nodes.
-			for nextNode := range nextFn(node) {
+			for id, nextNode := range nextFn(node) {
 				// If we have not seen the node before, add it to the output as well
 				// as the list of nodes to traverse in the next iteration.
-				if _, ok := out[nextNode]; !ok {
-					out[nextNode] = struct{}{}
+				if _, ok := out[id]; !ok {
+					addToNodeset(out, nextNode)
 					discovered = append(discovered, nextNode)
 				}
 			}
@@ -260,11 +253,15 @@ func copyNodeset(s nodeset) nodeset {
 
 type updateFn = func(nodes nodeset)
 
-func updateSet(ds depmap, node interface{}, fn updateFn) {
-	nodeSet, ok := ds[node]
+func updateSet(ds depmap, node Node, fn updateFn) {
+	nodeSet, ok := ds[node.ID()]
 	if !ok {
 		nodeSet = make(nodeset)
-		ds[node] = nodeSet
+		ds[node.ID()] = nodeSet
 	}
 	fn(nodeSet)
+}
+
+func addToNodeset(s nodeset, n Node) {
+	s[n.ID()] = n
 }
