@@ -9,7 +9,10 @@
 package compose
 
 import (
+	"fmt"
 	"io"
+	"regexp"
+	"strings"
 
 	"github.com/goccy/go-yaml"
 )
@@ -127,10 +130,108 @@ type Service struct {
 	// TODO: ulimits
 	User string `yaml:"user"`
 	// TODO: userns_mode
-	Volumes []string `yaml:"volumes"` // TODO: support long syntax.
+	Volumes []VolumeAttachment `yaml:"volumes"`
 	// TODO: volumes_from
 
 	WorkingDir string `yaml:"working_dir"`
+}
+
+type VolumeAttachment struct {
+	Type        string
+	Source      string
+	Target      string
+	ReadOnly    bool
+	Bind        BindOptions
+	Volume      VolumeOptions
+	Tmpfs       TmpfsOptions
+	Consistency IgnoredField
+}
+
+func (va *VolumeAttachment) UnmarshalYAML(b []byte) error {
+	var asString string
+	if err := yaml.Unmarshal(b, &asString); err == nil {
+		return va.fromShortSyntax(asString)
+	}
+
+	asExtended := extendedVolumeAttachment{}
+	if err := yaml.Unmarshal(b, &asExtended); err != nil {
+		return err
+	}
+	va.Type = asExtended.Type
+	va.Source = asExtended.Source
+	va.Target = asExtended.Target
+	va.ReadOnly = asExtended.ReadOnly
+	va.Bind = asExtended.Bind
+	va.Volume = asExtended.Volume
+	va.Tmpfs = asExtended.Tmpfs
+	va.Consistency = asExtended.Consistency
+
+	return nil
+}
+
+func (va *VolumeAttachment) fromShortSyntax(in string) error {
+	parts := strings.Split(in, ":")
+	switch len(parts) {
+	case 2:
+		va.setSource(parts[0])
+		va.Target = parts[1]
+	case 3:
+		va.setSource(parts[0])
+		va.Target = parts[1]
+		accessMode := parts[2]
+		switch accessMode {
+		case "ro":
+			va.ReadOnly = true
+		case "rw":
+			// Do nothing - va.ReadOnly is already false.
+		default:
+			return fmt.Errorf(`invalid access mode; expected "ro" or "rw" but got %q`, accessMode)
+		}
+	default:
+		return fmt.Errorf(`invalid volume specification; expected "VOLUME:CONTAINER_PATH" or "VOLUME:CONTAINER_PATH:ACCESS_MODE" but got %q`, in)
+	}
+
+	return nil
+}
+
+var localPathRe = regexp.MustCompile("^[./]")
+
+func (va *VolumeAttachment) setSource(src string) {
+	va.Source = src
+	if localPathRe.MatchString(src) {
+		va.Type = "bind"
+		va.Bind = BindOptions{
+			CreateHostPath: true,
+		}
+	} else {
+		va.Type = "volume"
+	}
+}
+
+// extendedVolumeAttachment is a private struct that is structurally identical to VolumeAttachment but
+// is only used for YAML unmarshalling where we do not need to consider the short string-based syntax.
+type extendedVolumeAttachment struct {
+	Type        string        `yaml:"type"`
+	Source      string        `yaml:"source"`
+	Target      string        `yaml:"target"`
+	ReadOnly    bool          `yaml:"read_only"`
+	Bind        BindOptions   `yaml:"bind"`
+	Volume      VolumeOptions `yaml:"volume"`
+	Tmpfs       TmpfsOptions  `yaml:"tmpfs"`
+	Consistency IgnoredField  `yaml:"consistency"`
+}
+
+type VolumeOptions struct {
+	Nocopy bool `yaml:"nocopy"`
+}
+
+type BindOptions struct {
+	Propagation    string `yaml:"propagation"`
+	CreateHostPath bool   `yaml:"create_host_path"`
+}
+
+type TmpfsOptions struct {
+	Size uint64 `yaml:"size"`
 }
 
 type Healthcheck struct {
