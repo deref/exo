@@ -60,6 +60,18 @@ func (c *Container) create(ctx context.Context) error {
 		labels[k] = v
 	}
 
+	envMap := map[string]string{}
+	for k, v := range c.WorkspaceEnvironment {
+		envMap[k] = v
+	}
+	for k, v := range c.Spec.Environment.WithoutNils() {
+		envMap[k] = v
+	}
+	envSlice := []string{}
+	for k, v := range envMap {
+		envSlice = append(envSlice, fmt.Sprintf("%s=%s", k, v))
+	}
+
 	containerCfg := &container.Config{
 		Hostname:     c.Spec.Hostname,
 		Domainname:   c.Spec.Domainname,
@@ -68,7 +80,7 @@ func (c *Container) create(ctx context.Context) error {
 		Tty:          c.Spec.TTY,
 		OpenStdin:    c.Spec.StdinOpen,
 		// StdinOnce       bool                // If true, close stdin after the 1 attached client disconnects.
-		Env:         c.Spec.Environment.Slice(),
+		Env:         envSlice,
 		Cmd:         strslice.StrSlice(c.Spec.Command),
 		Healthcheck: healthCfg,
 		// ArgsEscaped     bool                `json:",omitempty"` // True if command is already escaped (meaning treat as a command line) (Windows specific).
@@ -187,7 +199,16 @@ func (c *Container) create(ctx context.Context) error {
 		//Isolation   Isolation // Isolation technology of the container (e.g. default, hyperv)
 
 		//// Contains container's resources (cgroups, ulimits)
-		//Resources
+		Resources: container.Resources{
+			CPUShares:         c.Spec.CPUShares,
+			CPUPeriod:         c.Spec.CPUPeriod,
+			CPUQuota:          c.Spec.CPUQuota,
+			Memory:            int64(c.Spec.MemoryLimit),
+			MemoryReservation: int64(c.Spec.MemoryReservation),
+			MemorySwappiness:  c.Spec.MemorySwappiness,
+			//CPURealtimePeriod:  c.Spec.CPURealtimePeriod,
+			//CPURealtimeRuntime: c.Spec.CPURealtimeRuntime,
+		},
 
 		// Mounts specs used by the container
 		//Mounts []mount.Mount `json:",omitempty"`

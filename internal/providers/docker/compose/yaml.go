@@ -13,7 +13,9 @@ import (
 	"io"
 	"regexp"
 	"strings"
+	"strconv"
 
+	"code.cloudfoundry.org/bytefmt"
 	"github.com/goccy/go-yaml"
 )
 
@@ -48,19 +50,45 @@ func (ignored *IgnoredField) UnmarshalYAML(b []byte) error {
 	return nil
 }
 
+type MemoryField int64
+
+func (memory *MemoryField) UnmarshalYAML(b []byte) error {
+	memString := string(b)
+	memBytes, err := strconv.ParseInt(memString, 10, 64)
+	if err == nil {
+		*memory = MemoryField(memBytes)
+		return nil
+	}
+
+	uMemBytes, err := bytefmt.ToBytes(memString)
+	if err == nil {
+		*memory = MemoryField(uMemBytes)
+		return nil
+	}
+
+	return fmt.Errorf("could not unmarshal memory value %s: %w", b, err)
+}
+
 type Service struct {
 	Deploy IgnoredField `yaml:"deploy"`
 
-	// TODO: blkio_config
+	// Note that these two are only applicable to Windows.
 	// TODO: cpu_count
 	// TODO: cpu_percent
-	// TODO: cpu_shares
-	// TODO: cpu_period
-	// TODO: cpu_quota
-	// TODO: cpu_rt_runtime
-	// TODO: cpu_rt_period
+
+	CPUShares int64 `yaml:"cpu_shares"`
+	CPUPeriod int64 `yaml:"cpu_period"`
+	CPUQuota  int64 `yaml:"cpu_quota"`
+
+	// CPURealtimeRuntime and CPURealtimePeriod can both be specified as either
+	// strings or integers.
+	//CPURealtimeRuntime int64 `yaml:"cpu_rt_runtime"`
+	//CPURealtimePeriod  int64 `yaml:"cpu_rt_period"`
+
 	// TODO: cpus
 	// TODO: cpuset
+	// TODO: blkio_config
+
 	Build Build `yaml:"build"`
 	// TODO: cap_add
 	// TODO: cap_drop
@@ -99,9 +127,13 @@ type Service struct {
 	// TODO: network_mode
 	Networks   []string `yaml:"networks"` // TODO: support long syntax.
 	MacAddress string   `yaml:"mac_address"`
-	// TODO: mem_limit
-	// TODO: mem_reservation
-	// TODO: mem_swappiness
+
+	MemorySwappiness *int64 `yaml:"mem_swappiness"`
+
+	// MemoryLimit and MemoryReservation can be specified either as strings or integers.
+	MemoryLimit       MemoryField `yaml:"mem_limit"`
+	MemoryReservation MemoryField `yaml:"mem_reservation"`
+
 	// TODO: memswap_limit
 	// TODO: oom_kill_disable
 	// TODO: oom_score_adj
