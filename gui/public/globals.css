@@ -82,3 +82,14 @@ h1 {
   margin: 24px 0;
   font-weight: 550;
 }
+
+b,
+strong,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+  color: var(--strong-color);
+}

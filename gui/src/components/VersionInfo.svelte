@@ -49,7 +49,12 @@
   </NavbarButton>
   <div class="dropdown version">
     <section>
-      <div>exo {installedVersion || ''}</div>
+      <div>
+        exo {installedVersion || ''}
+        {#if import.meta.env.MODE === 'development'}
+          <strong>dev</strong>
+        {/if}
+      </div>
       {#if latestVersion !== null}
         <div>Update available: <strong>{latestVersion}</strong></div>
         <Button small on:click={doUpgrade}>
