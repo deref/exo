@@ -66,6 +66,6 @@
 
   .control {
     position: absolute;
-    z-index: 4;
+    z-index: 3;
   }
 </style>

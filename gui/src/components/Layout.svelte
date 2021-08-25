@@ -1,27 +1,46 @@
 <script lang="ts">
-  import * as router from 'svelte-spa-router';
   import VersionInfo from './VersionInfo.svelte';
   import NavbarButton from './nav/NavbarButton.svelte';
-  import FeedbackSVG from './mono/feedback.svelte';
+  import FeedbackSVG from './mono/FeedbackSVG.svelte';
+  import PreferencesSVG from './mono/PreferencesSVG.svelte';
+  import { theme, themeOptions } from '../lib/theme';
+  import * as router from 'svelte-spa-router';
 
-  const goHome = () => {
-    router.push('#/');
-  };
+  $: {
+    for (const option of themeOptions) {
+      document.body.classList.toggle(option, $theme === option);
+    }
+  }
 </script>
 
 <main>
   <nav>
     <header>
-      <NavbarButton title="Home" on:click={goHome}>
-        <img src="/deref-rounded-icon.png" alt="Deref" height="24px" />
+      <NavbarButton
+        title="Home"
+        on:click={() => {
+          router.push('#/');
+        }}
+      >
+        {#if import.meta.env.MODE === 'development'}
+          <img src="/deref-rounded-icon-dev.png" alt="Deref" height="24px" />
+        {:else}
+          <img src="/deref-rounded-icon.png" alt="Deref" height="24px" />
+        {/if}
       </NavbarButton>
     </header>
     <div class="navbar-wrapper">
-      <div>
-        <slot name="navbar" />
-      </div>
+      <slot name="navbar" />
     </div>
     <footer>
+      <NavbarButton
+        title="Preferences"
+        on:click={() => {
+          router.push('#/preferences');
+        }}
+      >
+        <PreferencesSVG />
+      </NavbarButton>
       <NavbarButton
         title="Give feedback on GitHub"
         on:click={() => {
@@ -30,12 +49,10 @@
       >
         <FeedbackSVG />
       </NavbarButton>
-      <div class:devmode={import.meta.env.MODE === 'development'}>
-        <VersionInfo />
-      </div>
+      <VersionInfo />
     </footer>
   </nav>
-  <div>
+  <div class="content-wrapper">
     <slot />
   </div>
 </main>
@@ -58,7 +75,7 @@
     position: relative;
     width: 48px;
     height: 100vh;
-    z-index: 3;
+    z-index: 4;
     display: grid;
     grid-template-rows: auto 1fr max-content;
     grid-auto-flow: column;
@@ -68,40 +85,17 @@
 
   .navbar-wrapper {
     width: 48px;
-    overflow-y: scroll;
-    direction: rtl;
+    border-top: 1px solid var(--layout-bg-color);
+    border-bottom: 1px solid var(--layout-bg-color);
   }
 
-  nav:not(:hover) ::-webkit-scrollbar {
+  nav ::-webkit-scrollbar {
     display: none;
   }
 
-  nav:hover .navbar-wrapper > div {
-    margin-left: calc(-1 * var(--scrollbar-width));
-  }
-
-  .navbar-wrapper :global(*) {
-    direction: ltr;
-  }
-
-  div {
+  .content-wrapper {
     position: relative;
     z-index: 2;
     overflow: hidden;
-  }
-
-  footer {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    font-size: 11px;
-    width: 100%;
-    color: var(--grey-5-color);
-    overflow: hidden;
-  }
-
-  div.devmode {
-    background: var(--dev-mode-bg-color);
-    color: var(--dev-mode-color);
   }
 </style>

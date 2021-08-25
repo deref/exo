@@ -22,10 +22,10 @@ export const darkBgHoverColor = (deg: number) => `hsl(${deg}, 80%, 12%)`;
 export const logStyleFromHash = (s: string) => {
   const d = hashDegree(s);
   // Combine styles into one string.
-  return `--log-color:${textColor(d)};
-  --log-bg-color:${bgColor(d)};
-  --log-hover-color:${textHoverColor(d)};
-  --log-bg-hover-color:${bgHoverColor(d)};
+  return `--light-log-color:${textColor(d)};
+  --light-log-bg-color:${bgColor(d)};
+  --light-log-hover-color:${textHoverColor(d)};
+  --light-log-bg-hover-color:${bgHoverColor(d)};
   --dark-log-color:${darkTextColor(d)};
   --dark-log-bg-color:${darkBgColor(d)};
   --dark-log-hover-color:${darkTextHoverColor(d)};

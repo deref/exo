@@ -2,6 +2,7 @@
   import * as monaco from 'monaco-editor';
   import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
   import { exo_dark, exo_light } from '../lib/monaco-theme';
+  import { theme } from '../lib/theme';
 
   import { onMount } from 'svelte';
 
@@ -36,8 +37,11 @@
     const mqList = window.matchMedia('(prefers-color-scheme: dark)');
 
     const handleThemeChange = (e: MediaQueryListEvent) => {
-      setTheme(e.matches);
-      console.log('test color listener');
+      setTheme(
+        (e.matches && $theme === 'auto') ||
+          $theme === 'dark' ||
+          $theme === 'black',
+      );
     };
 
     const editor = monaco.editor.create(container!, {
@@ -48,7 +52,9 @@
       folding: false,
       lineDecorationsWidth: 0,
       lineNumbersMinChars: 0,
-      fontSize: 16,
+      fontSize: 15,
+      fontWeight: '400',
+      fontFamily: 'Fira Code, mono',
       minimap: {
         enabled: false,
       },
@@ -58,7 +64,11 @@
     });
 
     // Initialize dark mode if set.
-    setTheme(mqList.matches);
+    setTheme(
+      (mqList.matches && $theme === 'auto') ||
+        $theme === 'dark' ||
+        $theme === 'black',
+    );
 
     // Listen to system theme preference changes and set color theme.
     mqList.addEventListener('change', handleThemeChange);

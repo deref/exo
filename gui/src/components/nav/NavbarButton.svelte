@@ -1,11 +1,33 @@
 <script lang="ts">
-  export let title: string;
+  import Tooltip from '../Tooltip.svelte';
+
+  export let title: string | undefined = undefined;
   export let active: string | undefined = undefined;
 </script>
 
-<button on:click class:active={active === title} {title}><slot /></button>
+<div>
+  <button on:click class:active={title && active === title}>
+    <slot />
+  </button>
+  {#if title}
+    <div class="tooltip"><Tooltip>{title}</Tooltip></div>
+  {/if}
+</div>
 
 <style>
+  div {
+    position: relative;
+  }
+
+  div:not(:hover):not(:focus-within) .tooltip {
+    display: none;
+  }
+
+  .tooltip {
+    position: absolute;
+    left: calc(100% - 4px);
+    top: calc(50% - 11px);
+  }
   button {
     position: relative;
     border: none;

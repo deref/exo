@@ -3,10 +3,12 @@
 
   export let small: boolean = false;
 
+  export let inset: boolean = false;
+
   export let disabled = false;
 </script>
 
-<button {disabled} class:small on:click {type}>
+<button {disabled} class:small class:inset on:click {type}>
   <slot />
 </button>
 
@@ -32,5 +34,12 @@
   button:active {
     background: var(--button-active-background);
     box-shadow: var(--button-active-shadow);
+  }
+
+  .inset,
+  .inset:hover,
+  .inset:active {
+    background: var(--button-inset-background);
+    box-shadow: var(--button-inset-shadow);
   }
 </style>
