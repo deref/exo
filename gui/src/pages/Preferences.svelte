@@ -4,11 +4,10 @@
   import Layout from '../components/Layout.svelte';
   import IconButton from '../components/IconButton.svelte';
   import ResetSVG from '../components/mono/ResetSVG.svelte';
-  import { guiTheme, setGuiTheme } from '../lib/gui-theme';
+  import { theme } from '../lib/gui-theme';
 
   const resetAllPreferences = () => {
-    guiTheme.auto();
-    setGuiTheme($guiTheme);
+    theme.apply('auto');
   };
 </script>
 
@@ -27,37 +26,33 @@
         <div class="button-row">
           <Button
             on:click={() => {
-              guiTheme.auto();
-              setGuiTheme($guiTheme);
+              theme.apply('auto');
             }}
-            inset={$guiTheme === 'auto'}
+            inset={$theme === 'auto'}
           >
             Auto
           </Button>
           <Button
             on:click={() => {
-              guiTheme.light();
-              setGuiTheme($guiTheme);
+              theme.apply('light');
             }}
-            inset={$guiTheme === 'light'}
+            inset={$theme === 'light'}
           >
             Light
           </Button>
           <Button
             on:click={() => {
-              guiTheme.dark();
-              setGuiTheme($guiTheme);
+              theme.apply('dark');
             }}
-            inset={$guiTheme === 'dark'}
+            inset={$theme === 'dark'}
           >
             Dark
           </Button>
           <Button
             on:click={() => {
-              guiTheme.black();
-              setGuiTheme($guiTheme);
+              theme.apply('black');
             }}
-            inset={$guiTheme === 'black'}
+            inset={$theme === 'black'}
           >
             Black
           </Button>

@@ -3,12 +3,12 @@
   import NavbarButton from './nav/NavbarButton.svelte';
   import FeedbackSVG from './mono/FeedbackSVG.svelte';
   import PreferencesSVG from './mono/PreferencesSVG.svelte';
-  import { guiTheme, setGuiTheme } from '../lib/gui-theme';
+  import { theme, applyBodyTheme } from '../lib/gui-theme';
   import { onMount } from 'svelte';
   import * as router from 'svelte-spa-router';
 
   onMount(() => {
-    setGuiTheme($guiTheme);
+    applyBodyTheme($theme);
   });
 </script>
 
