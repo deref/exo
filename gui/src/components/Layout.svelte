@@ -3,13 +3,14 @@
   import NavbarButton from './nav/NavbarButton.svelte';
   import FeedbackSVG from './mono/FeedbackSVG.svelte';
   import PreferencesSVG from './mono/PreferencesSVG.svelte';
-  import { theme, applyBodyTheme } from '../lib/gui-theme';
-  import { onMount } from 'svelte';
+  import { theme, themeOptions } from '../lib/gui-theme';
   import * as router from 'svelte-spa-router';
 
-  onMount(() => {
-    applyBodyTheme($theme);
-  });
+  $: {
+    for (const option of themeOptions) {
+      document.body.classList.toggle(option, $theme === option);
+    }
+  }
 </script>
 
 <main>
