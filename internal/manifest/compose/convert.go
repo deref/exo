@@ -126,18 +126,12 @@ func (i *Loader) convert(project *compose.Compose) manifest.LoadResult {
 					continue
 				}
 				mappedNetworks[i] = networkName
-				component.DependsOn = append(component.DependsOn, manifest.ComponentRef{
-					Type: "network",
-					Name: network,
-				})
+				component.DependsOn = append(component.DependsOn, network)
 			}
 			service.Networks = mappedNetworks
 		} else {
 			service.Networks = []string{defaultNetworkName}
-			component.DependsOn = append(component.DependsOn, manifest.ComponentRef{
-				Type: "network",
-				Name: "default",
-			})
+			component.DependsOn = append(component.DependsOn, "default")
 		}
 
 		if len(service.Volumes) > 0 {
@@ -148,10 +142,7 @@ func (i *Loader) convert(project *compose.Compose) manifest.LoadResult {
 				if volumeName, ok := volumesByComposeName[volumeMount.Source]; ok {
 					originalName := volumeMount.Source
 					volumeMount.Source = volumeName
-					component.DependsOn = append(component.DependsOn, manifest.ComponentRef{
-						Type: "volume",
-						Name: originalName,
-					})
+					component.DependsOn = append(component.DependsOn, originalName)
 				}
 				// If the volume was not listed under the top-level "volumes" key, then the docker engine
 				// will create a new volume that will not be namespaced by the Compose project name.

@@ -40,13 +40,14 @@ type Workspace struct {
 }
 
 type Component struct {
-	Name        string  `json:"name"`
-	Type        string  `json:"type"`
-	Spec        string  `json:"spec"`
-	State       string  `json:"state"`
-	Created     string  `json:"created"`
-	Initialized *string `json:"initialized"`
-	Disposed    *string `json:"disposed"`
+	Name        string   `json:"name"`
+	Type        string   `json:"type"`
+	Spec        string   `json:"spec"`
+	State       string   `json:"state"`
+	Created     string   `json:"created"`
+	Initialized *string  `json:"initialized"`
+	Disposed    *string  `json:"disposed"`
+	DependsOn   []string `json:"dependsOn"`
 }
 
 func (sto *Store) deref() (*Root, error) {
@@ -245,6 +246,7 @@ func (sto *Store) DescribeComponents(ctx context.Context, input *state.DescribeC
 				Created:     component.Created,
 				Initialized: component.Initialized,
 				Disposed:    component.Disposed,
+				DependsOn:   component.DependsOn,
 			})
 		}
 	}
@@ -293,10 +295,11 @@ func (sto *Store) AddComponent(ctx context.Context, input *state.AddComponentInp
 			return fmt.Errorf("component id %q already exists", input.ID)
 		}
 		workspace.Components[input.ID] = &Component{
-			Name:    input.Name,
-			Type:    input.Type,
-			Spec:    input.Spec,
-			Created: input.Created,
+			Name:      input.Name,
+			Type:      input.Type,
+			Spec:      input.Spec,
+			Created:   input.Created,
+			DependsOn: input.DependsOn,
 		}
 		root.ComponentWorkspaces[input.ID] = input.WorkspaceID
 		return nil
@@ -329,6 +332,9 @@ func (sto *Store) PatchComponent(ctx context.Context, input *state.PatchComponen
 		}
 		if input.Disposed != "" {
 			component.Disposed = &input.Disposed // TODO: Validate iso8601.
+		}
+		if input.DependsOn != nil {
+			component.DependsOn = *input.DependsOn
 		}
 		if input.State != "" {
 			component.State = input.State

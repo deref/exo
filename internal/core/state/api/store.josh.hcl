@@ -45,6 +45,7 @@ interface "store" {
     input "type" "string" {}
     input "spec" "string" {}
     input "created" "string" {}
+	  input "depends-on" "[]string" {}
   }
 
   method "patch-component" {
@@ -52,6 +53,7 @@ interface "store" {
 	  input "state" "string" {}
 	  input "initialized" "string" {}
 	  input "disposed" "string" {}
+	  input "depends-on" "*[]string" {}
   }
 
   method "remove-component" {
@@ -75,4 +77,5 @@ struct "component-description" {
 	field "created" "string" {}
 	field "initialized" "*string" {}
 	field "disposed" "*string" {}
+	field "depends-on" "[]string" {}
 }

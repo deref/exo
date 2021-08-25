@@ -73,22 +73,24 @@ type DescribeComponentsOutput struct {
 }
 
 type AddComponentInput struct {
-	WorkspaceID string `json:"workspaceId"`
-	ID          string `json:"id"`
-	Name        string `json:"name"`
-	Type        string `json:"type"`
-	Spec        string `json:"spec"`
-	Created     string `json:"created"`
+	WorkspaceID string   `json:"workspaceId"`
+	ID          string   `json:"id"`
+	Name        string   `json:"name"`
+	Type        string   `json:"type"`
+	Spec        string   `json:"spec"`
+	Created     string   `json:"created"`
+	DependsOn   []string `json:"dependsOn"`
 }
 
 type AddComponentOutput struct {
 }
 
 type PatchComponentInput struct {
-	ID          string `json:"id"`
-	State       string `json:"state"`
-	Initialized string `json:"initialized"`
-	Disposed    string `json:"disposed"`
+	ID          string    `json:"id"`
+	State       string    `json:"state"`
+	Initialized string    `json:"initialized"`
+	Disposed    string    `json:"disposed"`
+	DependsOn   *[]string `json:"dependsOn"`
 }
 
 type PatchComponentOutput struct {
@@ -137,13 +139,14 @@ type WorkspaceDescription struct {
 }
 
 type ComponentDescription struct {
-	ID          string  `json:"id"`
-	WorkspaceID string  `json:"workspaceId"`
-	Name        string  `json:"name"`
-	Type        string  `json:"type"`
-	Spec        string  `json:"spec"`
-	State       string  `json:"state"`
-	Created     string  `json:"created"`
-	Initialized *string `json:"initialized"`
-	Disposed    *string `json:"disposed"`
+	ID          string   `json:"id"`
+	WorkspaceID string   `json:"workspaceId"`
+	Name        string   `json:"name"`
+	Type        string   `json:"type"`
+	Spec        string   `json:"spec"`
+	State       string   `json:"state"`
+	Created     string   `json:"created"`
+	Initialized *string  `json:"initialized"`
+	Disposed    *string  `json:"disposed"`
+	DependsOn   []string `json:"dependsOn"`
 }
