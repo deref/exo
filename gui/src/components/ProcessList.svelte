@@ -63,7 +63,7 @@
       tooltip="Add new process"
       on:click={() => {
         router.push(
-          `#/workspaces/${encodeURIComponent(workspaceId)}/new-component`,
+          `#/workspaces/${encodeURIComponent(workspaceId)}/new-process`,
         );
       }}
     >
