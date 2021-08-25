@@ -4,7 +4,7 @@
   import Layout from '../components/Layout.svelte';
   import IconButton from '../components/IconButton.svelte';
   import ResetSVG from '../components/mono/ResetSVG.svelte';
-  import { theme } from '../lib/gui-theme';
+  import { theme } from '../lib/theme';
 
   const resetAllPreferences = () => {
     theme.apply('auto');

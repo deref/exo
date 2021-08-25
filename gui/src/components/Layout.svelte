@@ -3,7 +3,7 @@
   import NavbarButton from './nav/NavbarButton.svelte';
   import FeedbackSVG from './mono/FeedbackSVG.svelte';
   import PreferencesSVG from './mono/PreferencesSVG.svelte';
-  import { theme, themeOptions } from '../lib/gui-theme';
+  import { theme, themeOptions } from '../lib/theme';
   import * as router from 'svelte-spa-router';
 
   $: {

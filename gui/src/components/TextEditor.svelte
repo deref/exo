@@ -2,7 +2,7 @@
   import * as monaco from 'monaco-editor';
   import editorWorker from 'monaco-editor/esm/vs/editor/editor.worker?worker';
   import { exo_dark, exo_light } from '../lib/monaco-theme';
-  import { theme } from '../lib/gui-theme';
+  import { theme } from '../lib/theme';
 
   import { onMount } from 'svelte';
 
