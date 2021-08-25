@@ -1,6 +1,6 @@
 const fs = require("fs");
 
-// Run `/path/to/exo $ node sript/gen-theme.js` to generate output.
+// Run `/path/to/exo $ node script/gen-theme.js` to generate output.
 
 // Variable definitions follow this format:
 // { name: [light, dark, black] }
