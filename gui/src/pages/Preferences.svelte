@@ -1,6 +1,4 @@
 <script lang="ts">
-  import Link from '../components/Link.svelte';
-  import Code from '../components/Code.svelte';
   import Panel from '../components/Panel.svelte';
   import Button from '../components/Button.svelte';
   import Layout from '../components/Layout.svelte';
@@ -65,15 +63,6 @@
           </Button>
         </div>
       </div>
-      <hr />
-      <p>
-        More preferences will be available here soon. In the meantime, please
-        refer to the following help:
-        <Link href="https://github.com/deref/exo#telemetry">
-          disabling telemetry manually
-        </Link>
-        with the <Code>{'config.toml'}</Code> file.
-      </p>
     </div>
   </Panel>
 </Layout>
@@ -101,13 +90,5 @@
     font-size: 20px;
     font-weight: 500;
     margin: 0;
-  }
-
-  hr {
-    border: none;
-    display: block;
-    height: 1px;
-    background: var(--grey-c-color);
-    margin: 32px 0;
   }
 </style>
