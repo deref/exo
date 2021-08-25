@@ -18,21 +18,27 @@ func makeMountFromVolumeMount(workspaceRoot, userHomeDir string, va compose.Volu
 	switch va.Type {
 	case "bind":
 		mountType = mount.TypeBind
-		bindOptions = &mount.BindOptions{
-			Propagation:  mount.Propagation(va.Bind.Propagation),
-			NonRecursive: !va.Bind.CreateHostPath,
+		if va.Bind != nil {
+			bindOptions = &mount.BindOptions{
+				Propagation:  mount.Propagation(va.Bind.Propagation),
+				NonRecursive: !va.Bind.CreateHostPath,
+			}
 		}
 
 	case "volume":
 		mountType = mount.TypeVolume
-		volumeOptions = &mount.VolumeOptions{
-			NoCopy: va.Volume.Nocopy,
+		if va.Volume != nil {
+			volumeOptions = &mount.VolumeOptions{
+				NoCopy: va.Volume.Nocopy,
+			}
 		}
 
 	case "tmpfs":
 		mountType = mount.TypeTmpfs
-		tmpfsOptions = &mount.TmpfsOptions{
-			SizeBytes: va.Tmpfs.Size,
+		if va.Tmpfs != nil {
+			tmpfsOptions = &mount.TmpfsOptions{
+				SizeBytes: va.Tmpfs.Size,
+			}
 		}
 
 	default:

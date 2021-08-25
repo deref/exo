@@ -1,9 +1,9 @@
 package deps
 
 import (
-	"bytes"
 	"errors"
 	"fmt"
+	"strings"
 )
 
 type nodeset map[interface{}]struct{}
@@ -27,7 +27,7 @@ func New() *Graph {
 }
 
 func (g *Graph) Dump() string {
-	var out bytes.Buffer
+	var out strings.Builder
 	out.WriteString("Nodes:\n")
 	for node := range g.dependencies {
 		fmt.Fprintf(&out, "\t%v\n", node)

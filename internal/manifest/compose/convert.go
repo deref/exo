@@ -1,9 +1,9 @@
 package compose
 
 import (
-	"bytes"
 	"fmt"
 	"io"
+	"strings"
 
 	"github.com/deref/exo/internal/manifest"
 	"github.com/deref/exo/internal/providers/docker/compose"
@@ -166,7 +166,7 @@ func (i *Loader) convert(project *compose.Compose) manifest.LoadResult {
 }
 
 func (i *Loader) prefixedName(name string, suffix string) string {
-	var out bytes.Buffer
+	var out strings.Builder
 	out.WriteString(i.ProjectName)
 	out.WriteByte('_')
 	out.WriteString(name)

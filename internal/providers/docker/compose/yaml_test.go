@@ -41,7 +41,7 @@ func TestParseService(t *testing.T) {
 						Source:   "mydata",
 						Target:   "/data",
 						ReadOnly: true,
-						Volume: compose.VolumeOptions{
+						Volume: &compose.VolumeOptions{
 							Nocopy: true,
 						},
 					},
@@ -49,7 +49,7 @@ func TestParseService(t *testing.T) {
 						Type:   "bind",
 						Source: "/path/a",
 						Target: "/path/b",
-						Bind: compose.BindOptions{
+						Bind: &compose.BindOptions{
 							Propagation:    "rshared",
 							CreateHostPath: true,
 						},
@@ -57,7 +57,7 @@ func TestParseService(t *testing.T) {
 					{
 						Type:   "tmpfs",
 						Target: "/data/buffer",
-						Tmpfs: compose.TmpfsOptions{
+						Tmpfs: &compose.TmpfsOptions{
 							Size: 208666624,
 						},
 					},
@@ -83,7 +83,7 @@ func TestParseService(t *testing.T) {
 						Type:   "bind",
 						Source: "./data",
 						Target: "/data",
-						Bind: compose.BindOptions{
+						Bind: &compose.BindOptions{
 							CreateHostPath: true,
 						},
 					},
@@ -92,7 +92,7 @@ func TestParseService(t *testing.T) {
 						Source:   "/home/fred/.ssh",
 						Target:   "/root/.ssh",
 						ReadOnly: true,
-						Bind: compose.BindOptions{
+						Bind: &compose.BindOptions{
 							CreateHostPath: true,
 						},
 					},
@@ -100,7 +100,7 @@ func TestParseService(t *testing.T) {
 						Type:   "bind",
 						Source: "~/util",
 						Target: "/usr/bin/util",
-						Bind: compose.BindOptions{
+						Bind: &compose.BindOptions{
 							CreateHostPath: true,
 						},
 					},
