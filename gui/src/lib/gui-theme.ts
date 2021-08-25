@@ -25,10 +25,6 @@ export const guiTheme = createGuiTheme();
 
 export const setGuiTheme = (theme: string) => {
   for (const option of ['auto', 'light', 'dark', 'black']) {
-    if (theme === option) {
-      document.body.classList.add(option);
-    } else {
-      document.body.classList.remove(option);
-    }
+    document.body.classList.toggle(option, theme === option);
   }
 };
