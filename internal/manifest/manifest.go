@@ -21,9 +21,15 @@ type Manifest struct {
 }
 
 type Component struct {
-	Name string `hcl:"name,label"`
-	Type string `hcl:"type,label"`
-	Spec string `hcl:"spec"` // TODO: Custom unmarshalling to allow convenient json representation.
+	Name      string         `hcl:"name,label"`
+	Type      string         `hcl:"type,label"`
+	Spec      string         `hcl:"spec"` // TODO: Custom unmarshalling to allow convenient json representation.
+	DependsOn []ComponentRef `hcl:"depends_on"`
+}
+
+type ComponentRef struct {
+	Name string `hcl:"name"`
+	Type string `hcl:"type"`
 }
 
 func NewManifest() *Manifest {

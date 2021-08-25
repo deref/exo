@@ -2,6 +2,19 @@ services:
   echo:
     image: hashicorp/http-echo
     command: '-text="hello world"'
+    volumes:
+    - "custom:/data"
+    networks:
+    - customnet
   t1:
     image: curlimages/curl
     command: sh -c 'while true; do curl -s http://echo:5678; sleep 1; done'
+    networks:
+    - customnet
+
+volumes:
+  custom:
+
+# TODO: If the name must be mangled, we cannot adopt an existing resource.
+networks:
+  customnet:
