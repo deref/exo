@@ -12,7 +12,10 @@ type Node interface {
 
 type nodeset map[string]Node
 
-type depmap map[string]nodeset
+// The value is a simple slice of strings. This assumes that the number of dependencies for any given node
+// is small enough that a linear search is usually going to be at least as efficient as a lookup in a hash
+// table, and it has less memory overhead.
+type depmap map[string][]string
 
 type Graph struct {
 	// Maintain dependency relationships in both directions.
@@ -67,32 +70,51 @@ func (g *Graph) DependOn(node, dep Node) error {
 	if node.ID() == dep.ID() {
 		return errors.New("self-referential dependencies not allowed")
 	}
-	if g.DependsOn(dep, node) {
+
+	if err := g.AddEdge(node.ID(), dep.ID()); err != nil {
+		return err
+	}
+
+	g.AddNode(node)
+	g.AddNode(dep)
+
+	return nil
+}
+
+// AddEdge registers a dependency between the node identified by parentID and the node identified by childID.
+// This assumes that the nodes will be added separately via AddNode() or DependOn().
+func (g *Graph) AddEdge(parentID, childID string) error {
+	if g.dependsOn(childID, parentID) {
 		return errors.New("circular dependencies not allowed")
 	}
 
-	addToNodeset(g.nodes, node)
-	addToNodeset(g.nodes, dep)
-
-	updateSet(g.dependencies, node, func(nodes nodeset) {
-		addToNodeset(nodes, dep)
+	updateNodeIDs(g.dependencies, parentID, func(ids []string) []string {
+		return addID(ids, childID)
 	})
-	updateSet(g.dependents, dep, func(nodes nodeset) {
-		addToNodeset(nodes, node)
+	updateNodeIDs(g.dependents, childID, func(ids []string) []string {
+		return addID(ids, parentID)
 	})
 
 	return nil
 }
 
 func (g *Graph) DependsOn(node, dep Node) bool {
-	tds := g.transitiveDependencies(node)
-	_, ok := tds[dep.ID()]
+	return g.dependsOn(node.ID(), dep.ID())
+}
+
+func (g *Graph) dependsOn(parentID, childID string) bool {
+	tds := g.transitiveDependencies(parentID)
+	_, ok := tds[childID]
 	return ok
 }
 
 func (g *Graph) HasDependent(node, dep Node) bool {
-	tds := g.transitiveDependents(node)
-	_, ok := tds[dep.ID()]
+	return g.hasDependent(node.ID(), dep.ID())
+}
+
+func (g *Graph) hasDependent(childID, parendID string) bool {
+	tds := g.transitiveDependents(childID)
+	_, ok := tds[parendID]
 	return ok
 }
 
@@ -136,14 +158,14 @@ func (g *Graph) TopoSortedLayers() [][]Node {
 
 			dependents := shrinkingGraph.dependents[leafNode.ID()]
 
-			for dependent := range dependents {
+			for _, dependentID := range dependents {
 				// Should be safe because every relationship is bidirectional.
-				dependencies := shrinkingGraph.dependencies[dependent]
+				dependencies := shrinkingGraph.dependencies[dependentID]
 				if len(dependencies) == 1 {
 					// The only dependent _must_ be `leafNode`, so we can delete the `dep` entry entirely.
-					delete(shrinkingGraph.dependencies, dependent)
+					delete(shrinkingGraph.dependencies, dependentID)
 				} else {
-					delete(dependencies, leafNode.ID())
+					shrinkingGraph.dependencies[dependentID] = removeID(dependencies, leafNode.ID())
 				}
 			}
 			delete(shrinkingGraph.dependents, leafNode.ID())
@@ -180,24 +202,36 @@ func (g *Graph) TopoSorted() []Node {
 	return allNodes
 }
 
-func (g *Graph) transitiveDependencies(node Node) nodeset {
-	return g.buildTransitive(node, g.immediateDependencies)
+func (g *Graph) transitiveDependencies(id string) nodeset {
+	return g.buildTransitive(id, g.immediateDependencies)
 }
 
 func (g *Graph) immediateDependencies(node Node) nodeset {
-	if deps, ok := g.dependencies[node.ID()]; ok {
-		return deps
+	if depIDs, ok := g.dependencies[node.ID()]; ok {
+		out := make(nodeset)
+		for _, nodeID := range depIDs {
+			if node, ok := g.nodes[nodeID]; ok {
+				out[nodeID] = node
+			}
+		}
+		return out
 	}
 	return nil
 }
 
-func (g *Graph) transitiveDependents(node Node) nodeset {
-	return g.buildTransitive(node, g.immediateDependents)
+func (g *Graph) transitiveDependents(id string) nodeset {
+	return g.buildTransitive(id, g.immediateDependents)
 }
 
 func (g *Graph) immediateDependents(node Node) nodeset {
-	if deps, ok := g.dependents[node.ID()]; ok {
-		return deps
+	if depIDs, ok := g.dependents[node.ID()]; ok {
+		out := make(nodeset)
+		for _, nodeID := range depIDs {
+			if node, ok := g.nodes[nodeID]; ok {
+				out[nodeID] = node
+			}
+		}
+		return out
 	}
 	return nil
 }
@@ -212,7 +246,12 @@ func (g *Graph) clone() *Graph {
 
 // buildTransitive starts at `root` and continues calling `nextFn` to keep discovering more nodes until
 // the graph cannot produce any more. It returns the set of all discovered nodes.
-func (g *Graph) buildTransitive(root Node, nextFn func(Node) nodeset) nodeset {
+func (g *Graph) buildTransitive(rootID string, nextFn func(Node) nodeset) nodeset {
+	root, ok := g.nodes[rootID]
+	if !ok {
+		return nil
+	}
+
 	out := make(nodeset)
 	searchNext := []Node{root}
 	for len(searchNext) > 0 {
@@ -225,20 +264,12 @@ func (g *Graph) buildTransitive(root Node, nextFn func(Node) nodeset) nodeset {
 				// If we have not seen the node before, add it to the output as well
 				// as the list of nodes to traverse in the next iteration.
 				if _, ok := out[id]; !ok {
-					addToNodeset(out, nextNode)
+					out[id] = nextNode
 					discovered = append(discovered, nextNode)
 				}
 			}
 		}
 		searchNext = discovered
-	}
-	return out
-}
-
-func copyDepmap(m depmap) depmap {
-	out := make(depmap, len(m))
-	for k, v := range m {
-		out[k] = copyNodeset(v)
 	}
 	return out
 }
@@ -251,17 +282,48 @@ func copyNodeset(s nodeset) nodeset {
 	return out
 }
 
-type updateFn = func(nodes nodeset)
-
-func updateSet(ds depmap, node Node, fn updateFn) {
-	nodeSet, ok := ds[node.ID()]
-	if !ok {
-		nodeSet = make(nodeset)
-		ds[node.ID()] = nodeSet
+func copyDepmap(m depmap) depmap {
+	out := make(depmap, len(m))
+	for k, v := range m {
+		out[k] = make([]string, len(v))
+		copy(out[k], v)
 	}
-	fn(nodeSet)
+	return out
 }
 
-func addToNodeset(s nodeset, n Node) {
-	s[n.ID()] = n
+type updateFn = func(nodeIDs []string) []string
+
+func updateNodeIDs(ds depmap, id string, fn updateFn) {
+	nodeIDs, ok := ds[id]
+	if !ok {
+		nodeIDs = []string{}
+		ds[id] = nodeIDs
+	}
+	ds[id] = fn(nodeIDs)
+}
+
+func addID(ids []string, id string) []string {
+	for _, idElem := range ids {
+		if id == idElem {
+			return ids
+		}
+	}
+	return append(ids, id)
+}
+
+func removeID(ids []string, id string) []string {
+	idx := -1
+	for i, idElem := range ids {
+		if id == idElem {
+			idx = i
+			break
+		}
+	}
+	if idx == -1 {
+		// Not found.
+		return ids
+	}
+
+	ids[idx] = ids[len(ids)-1]
+	return ids[:len(ids)-1]
 }
