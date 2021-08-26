@@ -139,9 +139,6 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 					return ws.updateComponent(t, oldComponent, newComponent, id)
 				},
 			})
-			for _, dependency := range newComponent.DependsOn {
-				runGraph.AddEdge(name, dependency)
-			}
 		} else {
 			runGraph.AddNode(&runTaskNode{
 				name: name,
@@ -150,9 +147,9 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 					return ws.createComponent(t, newComponent, id)
 				},
 			})
-			for _, dependency := range newComponent.DependsOn {
-				runGraph.AddEdge(name, dependency)
-			}
+		}
+		for _, dependency := range newComponent.DependsOn {
+			runGraph.AddEdge(name, dependency)
 		}
 	}
 
@@ -186,16 +183,13 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 			var wg sync.WaitGroup
 			for _, node := range layer {
 				runTask := node.(*runTaskNode)
-				t := runTask.task
 				wg.Add(1)
 				go func() {
 					defer wg.Done()
-
-					t.Start()
-					if err := runTask.run(t); err != nil {
-						t.Fail(err)
-					} else {
-						t.Finish()
+					runTask.task.Start()
+					defer runTask.task.Finish()
+					if err := runTask.run(runTask.task); err != nil {
+						runTask.task.Fail(err)
 					}
 				}()
 			}
@@ -966,10 +960,10 @@ func (ws *Workspace) goControlComponents(t *task.Task, filter componentFilter, f
 			go func() {
 				defer wg.Done()
 				runTask.task.Start()
+				defer runTask.task.Finish()
+				fmt.Printf("\tStarted control for %q\n", runTask.name)
 				if err := runTask.run(runTask.task); err != nil {
 					runTask.task.Fail(err)
-				} else {
-					runTask.task.Finish()
 				}
 			}()
 		}

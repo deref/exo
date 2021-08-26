@@ -142,7 +142,7 @@ func (g *Graph) Leaves() []Node {
 // graph. Additionally, the output is grouped into "layers", which are guaranteed to not have
 // any dependencies within each layer. This is useful, e.g. when building an execution plan for
 // some DAG, in which case each element within each layer could be executed in parallel. If you
-// do not need this layered property, use `Graph.TopoSorted()`, which flattens all elements
+// do not need this layered property, use `Graph.TopoSorted()`, which flattens all elements.
 func (g *Graph) TopoSortedLayers() [][]Node {
 	out := [][]Node{}
 
