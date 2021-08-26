@@ -184,6 +184,10 @@ export interface ComponentDescription {
   type: string;
 }
 
+export interface CreateComponentResponse {
+  id: string;
+}
+
 export interface DescribeTasksInput {
   jobIds?: string[];
 }
@@ -214,6 +218,12 @@ export interface WorkspaceApi {
     name: string,
     spec: ProcessSpec,
   ): Promise<CreateProcessResponse>;
+
+  createComponent(
+    name: string,
+    type: string,
+    spec: string,
+  ): Promise<CreateComponentResponse>;
 
   startProcess(ref: string): Promise<void>;
 
@@ -314,6 +324,20 @@ export const api = (() => {
           spec: JSON.stringify(spec),
         })) as CreateProcessResponse;
       },
+
+      async createComponent(
+        name: string,
+        type: string,
+        spec: string,
+      ): Promise<CreateComponentResponse> {
+        return (await invoke('create-component', {
+          name,
+          type,
+          spec,
+        })) as CreateComponentResponse;
+      },
+
+      // TODO: Add updateComponent once fully working in backend
 
       async startProcess(ref: string): Promise<void> {
         await invoke('start-components', { refs: [ref] });
