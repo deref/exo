@@ -182,8 +182,10 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 
 		layers := runGraph.TopoSortedLayers()
 		for _, layer := range layers {
+			fmt.Printf("Creating layer:\n")
 			var wg sync.WaitGroup
 			for _, node := range layer {
+				fmt.Printf("\t- %s\n", node.ID())
 				runTask := node.(*runTaskNode)
 				wg.Add(1)
 				go func() {

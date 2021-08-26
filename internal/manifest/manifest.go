@@ -45,6 +45,12 @@ func (lr LoadResult) AddRenameWarning(originalName, newName string) LoadResult {
 	return lr
 }
 
+func (lr LoadResult) AddUnsupportedFeatureWarning(featureName, explanation string) LoadResult {
+	warning := fmt.Sprintf("unsupported feature %s: %s", featureName, explanation)
+	lr.Warnings = append(lr.Warnings, warning)
+	return lr
+}
+
 type loader struct{}
 
 var Loader = loader{}

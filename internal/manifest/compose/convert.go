@@ -149,6 +149,18 @@ func (i *Loader) convert(project *compose.Compose) manifest.LoadResult {
 			}
 		}
 
+		for _, dependency := range service.DependsOn.Services {
+			if dependency.Service == "" {
+				// TODO: Figure out why this happens.
+				continue
+			}
+
+			if dependency.Condition != "service_started" {
+				res = res.AddUnsupportedFeatureWarning(fmt.Sprintf("service condition %q", dependency.Service), "only service_started is currently supported")
+			}
+			component.DependsOn = append(component.DependsOn, manifest.MangleName(dependency.Service))
+		}
+
 		component.Spec = yamlutil.MustMarshalString(service)
 		res.Manifest.Components = append(res.Manifest.Components, component)
 	}

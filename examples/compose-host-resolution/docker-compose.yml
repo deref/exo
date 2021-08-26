@@ -3,12 +3,15 @@ services:
     image: hashicorp/http-echo
     command: '-text="hello world"'
     networks:
-    - mynet
+      - foo
   t1:
     image: curlimages/curl
     command: sh -c 'while true; do curl -s http://echo:5678; sleep 1; done'
     networks:
-    - mynet
+      - foo
+    depends_on:
+      echo:
+        condition: service_healthy
 
 networks:
-  mynet:
+  foo:
