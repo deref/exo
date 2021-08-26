@@ -150,6 +150,10 @@ type DescribeComponentsInput struct {
 	IDs []string `json:"ids"`
 	// If non-empty, filters components to supplied types.
 	Types []string `json:"types"`
+	// If true, includes all components that the filtered components depend on.
+	IncludeDependencies bool `json:"includeDependencies"`
+	// If true, includes all components that depend on the filtered components.
+	IncludeDependents bool `json:"includeDependents"`
 }
 
 type DescribeComponentsOutput struct {

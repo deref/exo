@@ -11,6 +11,7 @@ import (
 
 	"github.com/deref/exo/internal/core/state/api"
 	state "github.com/deref/exo/internal/core/state/api"
+	"github.com/deref/exo/internal/deps"
 	"github.com/deref/exo/internal/util/atom"
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/pathutil"
@@ -33,12 +34,6 @@ type Root struct {
 	ComponentWorkspaces map[string]string     `json:"componentWorkspaces"` // Component ID -> Workspace ID.
 }
 
-type Workspace struct {
-	Root       string                `json:"root"`
-	Names      map[string]string     `json:"names"`      // Name -> ID.
-	Components map[string]*Component `json:"components"` // Keyed by ID.
-}
-
 type Component struct {
 	Name        string   `json:"name"`
 	Type        string   `json:"type"`
@@ -48,6 +43,21 @@ type Component struct {
 	Initialized *string  `json:"initialized"`
 	Disposed    *string  `json:"disposed"`
 	DependsOn   []string `json:"dependsOn"`
+}
+
+func (c *Component) getDescription(id, workspaceID string) state.ComponentDescription {
+	return state.ComponentDescription{
+		ID:          id,
+		WorkspaceID: workspaceID,
+		Name:        c.Name,
+		Type:        c.Type,
+		Spec:        c.Spec,
+		State:       c.State,
+		Created:     c.Created,
+		Initialized: c.Initialized,
+		Disposed:    c.Disposed,
+		DependsOn:   c.DependsOn,
+	}
 }
 
 func (sto *Store) deref() (*Root, error) {
@@ -179,19 +189,9 @@ func (sto *Store) Resolve(ctx context.Context, input *state.ResolveInput) (*stat
 	if workspace == nil {
 		return nil, fmt.Errorf("no such workspace: %q", input.WorkspaceID)
 	}
-	results := make([]*string, len(input.Refs))
-	for i, ref := range input.Refs {
-		if _, isID := workspace.Components[ref]; isID {
-			id := ref
-			results[i] = &id
-			continue
-		}
-		id := workspace.Names[ref]
-		if id != "" {
-			results[i] = &id
-		}
-	}
-	return &state.ResolveOutput{IDs: results}, nil
+	ids := workspace.resolve(input.Refs)
+
+	return &state.ResolveOutput{IDs: ids}, nil
 }
 
 func (sto *Store) DescribeComponents(ctx context.Context, input *state.DescribeComponentsInput) (*state.DescribeComponentsOutput, error) {
@@ -233,23 +233,79 @@ func (sto *Store) DescribeComponents(ctx context.Context, input *state.DescribeC
 		}
 	}
 
+	var componentGraph *deps.Graph
+	if input.IncludeDependencies || input.IncludeDependents {
+		componentGraph = deps.New()
+	}
+
 	for componentID, component := range workspace.Components {
 		if (ids == nil || ids[componentID]) &&
 			(types == nil || types[component.Type]) {
-			output.Components = append(output.Components, state.ComponentDescription{
-				ID:          componentID,
-				WorkspaceID: input.WorkspaceID,
-				Name:        component.Name,
-				Type:        component.Type,
-				Spec:        component.Spec,
-				State:       component.State,
-				Created:     component.Created,
-				Initialized: component.Initialized,
-				Disposed:    component.Disposed,
-				DependsOn:   component.DependsOn,
-			})
+			output.Components = append(output.Components, component.getDescription(componentID, input.WorkspaceID))
+		}
+
+		if input.IncludeDependencies || input.IncludeDependents {
+			// Add component dependencies to graph.
+			dependencyIDs := workspace.resolve(component.DependsOn)
+			for _, dependencyID := range dependencyIDs {
+				if dependencyID != nil {
+					componentGraph.DependOn(deps.StringNode(componentID), deps.StringNode(*dependencyID))
+				}
+			}
 		}
 	}
+
+	if input.IncludeDependencies || input.IncludeDependents {
+		seen := make(map[string]struct{}, len(output.Components))
+		nextIDs := []string{}
+		markSeen := func(id string) {
+			if _, ok := seen[id]; !ok {
+				seen[id] = struct{}{}
+				nextIDs = append(nextIDs, id)
+			}
+		}
+
+		// Start search with all components that would be returned anyway.
+		for _, component := range output.Components {
+			markSeen(component.ID)
+		}
+
+		for len(nextIDs) > 0 {
+			// Swap the list for the next iteration with a new list.
+			ids := nextIDs
+			nextIDs = []string{}
+
+			// Discover more dependencies/dependents.
+			if input.IncludeDependencies {
+				for _, id := range ids {
+					dependencies := componentGraph.Dependencies(id)
+					for dependencyID := range dependencies {
+						markSeen(dependencyID)
+					}
+				}
+			}
+			if input.IncludeDependents {
+				for _, id := range ids {
+					dependents := componentGraph.Dependents(id)
+					for dependencyID := range dependents {
+						markSeen(dependencyID)
+					}
+				}
+			}
+		}
+
+		// Remove the components that we have already added to the output from the seen list.
+		for _, component := range output.Components {
+			delete(seen, component.ID)
+		}
+
+		// Resolve the remaining ids to components.
+		for resolvedID := range seen {
+			component := workspace.Components[resolvedID]
+			output.Components = append(output.Components, component.getDescription(resolvedID, input.WorkspaceID))
+		}
+	}
+
 	sort.Sort(componentsSort{output.Components})
 	return output, nil
 }

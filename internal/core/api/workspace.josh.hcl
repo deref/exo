@@ -75,6 +75,14 @@ interface "workspace" {
       doc = "If non-empty, filters components to supplied types."
     }
 
+    input "include-dependencies" "bool" {
+      doc = "If true, includes all components that the filtered components depend on."
+    }
+
+    input "include-dependents" "bool" {
+      doc = "If true, includes all components that depend on the filtered components."
+    }
+
     output "components" "[]ComponentDescription" {}
   }
 

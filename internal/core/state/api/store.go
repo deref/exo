@@ -63,9 +63,11 @@ type ResolveOutput struct {
 }
 
 type DescribeComponentsInput struct {
-	WorkspaceID string   `json:"workspaceId"`
-	IDs         []string `json:"ids"`
-	Types       []string `json:"types"`
+	WorkspaceID         string   `json:"workspaceId"`
+	IDs                 []string `json:"ids"`
+	Types               []string `json:"types"`
+	IncludeDependencies bool     `json:"includeDependencies"`
+	IncludeDependents   bool     `json:"includeDependents"`
 }
 
 type DescribeComponentsOutput struct {

@@ -34,6 +34,8 @@ interface "store" {
     input "workspace-id" "string" {}
     input "ids" "[]string" {}
     input "types" "[]string" {}
+    input "include-dependencies" "bool" {}
+    input "include-dependents" "bool" {}
 
     output "components" "[]ComponentDescription" {}
   }

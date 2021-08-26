@@ -103,7 +103,7 @@ func (g *Graph) DependsOn(node, dep Node) bool {
 }
 
 func (g *Graph) dependsOn(parentID, childID string) bool {
-	tds := g.transitiveDependencies(parentID)
+	tds := g.Dependencies(parentID)
 	_, ok := tds[childID]
 	return ok
 }
@@ -113,7 +113,7 @@ func (g *Graph) HasDependent(node, dep Node) bool {
 }
 
 func (g *Graph) hasDependent(childID, parendID string) bool {
-	tds := g.transitiveDependents(childID)
+	tds := g.Dependents(childID)
 	_, ok := tds[parendID]
 	return ok
 }
@@ -202,7 +202,7 @@ func (g *Graph) TopoSorted() []Node {
 	return allNodes
 }
 
-func (g *Graph) transitiveDependencies(id string) nodeset {
+func (g *Graph) Dependencies(id string) nodeset {
 	return g.buildTransitive(id, g.immediateDependencies)
 }
 
@@ -219,7 +219,7 @@ func (g *Graph) immediateDependencies(node Node) nodeset {
 	return nil
 }
 
-func (g *Graph) transitiveDependents(id string) nodeset {
+func (g *Graph) Dependents(id string) nodeset {
 	return g.buildTransitive(id, g.immediateDependents)
 }
 
