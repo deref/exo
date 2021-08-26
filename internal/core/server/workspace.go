@@ -616,9 +616,16 @@ func (ws *Workspace) GetEvents(ctx context.Context, input *api.GetEventsInput) (
 }
 
 func (ws *Workspace) Start(ctx context.Context, input *api.StartInput) (*api.StartOutput, error) {
-	jobID := ws.controlEachComponent(ctx, "starting", allProcessQuery(withDependencies), func(ctx context.Context, process api.Process) error {
-		_, err := process.Start(ctx, &api.StartInput{})
-		return err
+	jobID := ws.controlEachComponent(ctx, "starting", allProcessQuery(withDependencies), func(ctx context.Context, thing interface{}) error {
+		if process, ok := thing.(api.Process); ok {
+			_, err := process.Start(ctx, &api.StartInput{})
+			return err
+		}
+		if lifecycle, ok := thing.(api.Lifecycle); ok {
+			_, err := lifecycle.Initialize(ctx, &api.InitializeInput{})
+			return err
+		}
+		return nil
 	})
 	return &api.StartOutput{
 		JobID: jobID,
@@ -626,10 +633,19 @@ func (ws *Workspace) Start(ctx context.Context, input *api.StartInput) (*api.Sta
 }
 
 func (ws *Workspace) StartComponents(ctx context.Context, input *api.StartComponentsInput) (*api.StartComponentsOutput, error) {
-	query := makeComponentQuery(withRefs(input.Refs...), withDependencies)
-	jobID := ws.controlEachComponent(ctx, "starting", query, func(ctx context.Context, process api.Process) error {
-		_, err := process.Start(ctx, &api.StartInput{})
-		return err
+	// Note that we are only querying Process component types specifically because they are the only
+	// things that are "startable".
+	query := allProcessQuery(withRefs(input.Refs...), withDependencies)
+	jobID := ws.controlEachComponent(ctx, "starting", query, func(ctx context.Context, thing interface{}) error {
+		if process, ok := thing.(api.Process); ok {
+			_, err := process.Start(ctx, &api.StartInput{})
+			return err
+		}
+		if lifecycle, ok := thing.(api.Lifecycle); ok {
+			_, err := lifecycle.Initialize(ctx, &api.InitializeInput{})
+			return err
+		}
+		return nil
 	})
 	return &api.StartComponentsOutput{
 		JobID: jobID,
@@ -638,9 +654,12 @@ func (ws *Workspace) StartComponents(ctx context.Context, input *api.StartCompon
 
 func (ws *Workspace) Stop(ctx context.Context, input *api.StopInput) (*api.StopOutput, error) {
 	query := allProcessQuery(withReversedDependencies, withDependents)
-	jobID := ws.controlEachComponent(ctx, "stopping", query, func(ctx context.Context, process api.Process) error {
-		_, err := process.Stop(ctx, input)
-		return err
+	jobID := ws.controlEachComponent(ctx, "stopping", query, func(ctx context.Context, thing interface{}) error {
+		if process, ok := thing.(api.Process); ok {
+			_, err := process.Stop(ctx, input)
+			return err
+		}
+		return nil
 	})
 	return &api.StopOutput{
 		JobID: jobID,
@@ -648,14 +667,17 @@ func (ws *Workspace) Stop(ctx context.Context, input *api.StopInput) (*api.StopO
 }
 
 func (ws *Workspace) StopComponents(ctx context.Context, input *api.StopComponentsInput) (*api.StopComponentsOutput, error) {
-	query := makeComponentQuery(
+	query := allProcessQuery(
 		withRefs(input.Refs...),
 		withReversedDependencies,
 		withDependents,
 	)
-	jobID := ws.controlEachComponent(ctx, "stopping", query, func(ctx context.Context, process api.Process) error {
-		_, err := process.Stop(ctx, &api.StopInput{TimeoutSeconds: input.TimeoutSeconds})
-		return err
+	jobID := ws.controlEachComponent(ctx, "stopping", query, func(ctx context.Context, thing interface{}) error {
+		if process, ok := thing.(api.Process); ok {
+			_, err := process.Stop(ctx, &api.StopInput{TimeoutSeconds: input.TimeoutSeconds})
+			return err
+		}
+		return nil
 	})
 	return &api.StopComponentsOutput{
 		JobID: jobID,
@@ -664,9 +686,12 @@ func (ws *Workspace) StopComponents(ctx context.Context, input *api.StopComponen
 
 func (ws *Workspace) Restart(ctx context.Context, input *api.RestartInput) (*api.RestartOutput, error) {
 	query := makeComponentQuery(withDependencies)
-	jobID := ws.controlEachComponent(ctx, "restarting", query, func(ctx context.Context, process api.Process) error {
-		_, err := process.Restart(ctx, input)
-		return err
+	jobID := ws.controlEachComponent(ctx, "restarting", query, func(ctx context.Context, thing interface{}) error {
+		if process, ok := thing.(api.Process); ok {
+			_, err := process.Restart(ctx, input)
+			return err
+		}
+		return nil
 	})
 	return &api.RestartOutput{
 		JobID: jobID,
@@ -680,10 +705,13 @@ func (ws *Workspace) RestartComponents(ctx context.Context, input *api.RestartCo
 	// 2. Stop everything that depends on these components in reverse dependency order, restart these components,
 	//    then restart the dependents in normal order again.
 	// 3. Ensure that all dependendencies are started (in normal order), then restart these components (current behaviour).
-	query := makeComponentQuery(withRefs(input.Refs...), withDependencies)
-	jobID := ws.controlEachComponent(ctx, "restart", query, func(ctx context.Context, process api.Process) error {
-		_, err := process.Restart(ctx, &api.RestartInput{TimeoutSeconds: input.TimeoutSeconds})
-		return err
+	query := allProcessQuery(withRefs(input.Refs...), withDependencies)
+	jobID := ws.controlEachComponent(ctx, "restart", query, func(ctx context.Context, thing interface{}) error {
+		if process, ok := thing.(api.Process); ok {
+			_, err := process.Restart(ctx, &api.RestartInput{TimeoutSeconds: input.TimeoutSeconds})
+			return err
+		}
+		return nil
 	})
 	return &api.RestartComponentsOutput{
 		JobID: jobID,
