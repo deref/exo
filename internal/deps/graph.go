@@ -129,8 +129,21 @@ func (g *Graph) Nodes() []Node {
 func (g *Graph) Leaves() []Node {
 	out := make([]Node, 0)
 	for id, node := range g.nodes {
-		if _, ok := g.dependencies[id]; !ok {
+		ids, ok := g.dependencies[id]
+		if ok {
 			out = append(out, node)
+		} else {
+			// Additionally, if no dependencies exist in the graph, consider this a leaf.
+			var foundReference bool
+			for _, referencedID := range ids {
+				_, foundReference = g.nodes[referencedID]
+				if foundReference {
+					break
+				}
+			}
+			if !foundReference {
+				out = append(out, node)
+			}
 		}
 	}
 	return out
