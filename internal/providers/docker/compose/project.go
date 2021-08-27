@@ -97,7 +97,7 @@ type Service struct {
 	ContainerName string   `yaml:"container_name"`
 	// TODO: credential_spec
 
-	DependsOn IgnoredField `yaml:"depends_on"`
+	DependsOn ServiceDependencies `yaml:"depends_on"`
 
 	// TODO: device_cgroup_rules
 	// TODO: devices
