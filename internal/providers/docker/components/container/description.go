@@ -59,6 +59,7 @@ func GetProcessDescription(ctx context.Context, dockerClient *dockerclient.Clien
 	var wg sync.WaitGroup
 	go func() {
 		wg.Add(1)
+		defer wg.Done()
 		statRequest, err := dockerClient.ContainerStats(ctx, state.ContainerID, false)
 		if err != nil {
 			return
@@ -81,6 +82,7 @@ func GetProcessDescription(ctx context.Context, dockerClient *dockerclient.Clien
 
 	go func() {
 		wg.Add(1)
+		defer wg.Done()
 		topBody, err := dockerClient.ContainerTop(ctx, state.ContainerID, []string{})
 		if err != nil {
 			return
