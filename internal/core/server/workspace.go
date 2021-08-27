@@ -8,7 +8,6 @@ import (
 	"os"
 	"path"
 	"reflect"
-	"sort"
 	"strings"
 	"sync"
 
@@ -35,6 +34,7 @@ import (
 	"github.com/deref/exo/internal/util/pathutil"
 	dockerclient "github.com/docker/docker/client"
 	"github.com/joho/godotenv"
+	"golang.org/x/sync/errgroup"
 )
 
 type Workspace struct {
@@ -734,39 +734,29 @@ func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeP
 		return nil, fmt.Errorf("describing components: %w", err)
 	}
 
-	c := make(chan procDescriptionResult)
+	var eg errgroup.Group
+	processes := make([]api.ProcessDescription, len(components.Components))
 	for i, component := range components.Components {
 		i, component := i, component
-		go func() {
-			result := procDescriptionResult{order: i}
+		eg.Go(func() error {
+			var desc api.ProcessDescription
+			var err error
 			// XXX Violates component state encapsulation.
 			switch component.Type {
 			case "process":
-				result.description, result.err = process.GetProcessDescription(ctx, component)
+				desc, err = process.GetProcessDescription(ctx, component)
 			case "container":
-				result.description, result.err = container.GetProcessDescription(ctx, ws.Docker, component)
+				desc, err = container.GetProcessDescription(ctx, ws.Docker, component)
 			}
-			if result.err != nil {
-				result.err = fmt.Errorf("could not get process description: %w", result.err)
+			if err != nil {
+				return fmt.Errorf("could not get process description: %w", err)
 			}
-			c <- result
-		}()
+			processes[i] = desc
+			return nil
+		})
 	}
-	results := make([]procDescriptionResult, len(components.Components))
-	for i := range components.Components {
-		results[i] = <-c
-	}
-	sort.Slice(results, func(i, j int) bool {
-		return results[i].order < results[j].order
-	})
-	processes := make([]api.ProcessDescription, len(components.Components))
-	for i, result := range results {
-		if result.err != nil {
-			return nil, result.err
-		}
-		processes[i] = result.description
-	}
-	return &api.DescribeProcessesOutput{Processes: processes}, nil
+	err = eg.Wait()
+	return &api.DescribeProcessesOutput{Processes: processes}, err
 }
 
 func (ws *Workspace) DescribeVolumes(ctx context.Context, input *api.DescribeVolumesInput) (*api.DescribeVolumesOutput, error) {
