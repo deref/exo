@@ -5,18 +5,16 @@ import (
 	"encoding/json"
 	"fmt"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/deref/exo/internal/core/api"
 	"github.com/deref/exo/internal/providers/docker"
 	"github.com/deref/exo/internal/util/jsonutil"
-	"github.com/deref/exo/internal/util/logging"
 	dockerclient "github.com/docker/docker/client"
+	"golang.org/x/sync/errgroup"
 )
 
 func GetProcessDescription(ctx context.Context, dockerClient *dockerclient.Client, component api.ComponentDescription) (api.ProcessDescription, error) {
-	logger := logging.CurrentLogger(ctx)
 	if component.Type != "container" {
 		return api.ProcessDescription{}, fmt.Errorf("component not a container")
 	}
@@ -33,6 +31,9 @@ func GetProcessDescription(ctx context.Context, dockerClient *dockerclient.Clien
 
 	containerInfo, err := dockerClient.ContainerInspect(ctx, state.ContainerID)
 	if err != nil {
+		// If there is an error inspecting the container, assume that this is
+		// because the container isn't running and return the information we already
+		// have.
 		return process, nil
 	}
 
@@ -56,21 +57,18 @@ func GetProcessDescription(ctx context.Context, dockerClient *dockerclient.Clien
 		process.Ports = append(process.Ports, uint32(p.Int()))
 	}
 
-	var wg sync.WaitGroup
-	go func() {
-		wg.Add(1)
-		defer wg.Done()
+	var eg errgroup.Group
+	eg.Go(func() error {
 		statRequest, err := dockerClient.ContainerStats(ctx, state.ContainerID, false)
 		if err != nil {
-			return
+			return fmt.Errorf("getting stats for container: %w", err)
 		}
 		defer statRequest.Body.Close()
 
 		var containerStats docker.ContainerStats
 		decoder := json.NewDecoder(statRequest.Body)
 		if err := decoder.Decode(&containerStats); err != nil {
-			logger.Infof(fmt.Sprintf("could not unmarshal container stats: %s", err))
-			return
+			return fmt.Errorf("could not unmarshal container stats: %s", err)
 		}
 
 		process.ResidentMemory = &containerStats.MemoryStats.Usage
@@ -78,23 +76,24 @@ func GetProcessDescription(ctx context.Context, dockerClient *dockerclient.Clien
 			cpuPercent := float64(containerStats.CPUStats.CPUUsage.TotalUsage) / 1e9
 			process.CPUPercent = &cpuPercent
 		}
-	}()
+		return nil
+	})
 
-	go func() {
-		wg.Add(1)
-		defer wg.Done()
+	eg.Go(func() error {
 		topBody, err := dockerClient.ContainerTop(ctx, state.ContainerID, []string{})
 		if err != nil {
-			return
+			return fmt.Errorf("running top in container: %w", err)
 		}
 
 		process.ChildrenExecutables = make([]string, len(topBody.Processes))
 		for i, proc := range topBody.Processes {
 			process.ChildrenExecutables[i] = proc[len(proc)-1]
 		}
-	}()
+		return nil
+	})
 
-	wg.Wait()
-
-	return process, nil
+	// No context for this error since it's just collecting an already
+	// contextualised error.
+	err = eg.Wait()
+	return process, err
 }
