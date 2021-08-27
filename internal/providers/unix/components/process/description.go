@@ -36,7 +36,7 @@ func GetProcessDescription(ctx context.Context, component api.ComponentDescripti
 			return api.ProcessDescription{}, err
 		}
 
-		process.ResidentMemory = memoryInfo.RSS
+		process.ResidentMemory = &memoryInfo.RSS
 
 		connections, err := proc.Connections()
 		if err != nil {
@@ -51,7 +51,7 @@ func GetProcessDescription(ctx context.Context, component api.ComponentDescripti
 		}
 		process.Ports = ports
 
-		process.CreateTime, err = proc.CreateTime()
+		*process.CreateTime, err = proc.CreateTime()
 		if err != nil {
 			return api.ProcessDescription{}, err
 		}
@@ -69,7 +69,7 @@ func GetProcessDescription(ctx context.Context, component api.ComponentDescripti
 			process.ChildrenExecutables = childrenExecutables
 		}
 
-		process.CPUPercent, err = proc.CPUPercent()
+		*process.CPUPercent, err = proc.CPUPercent()
 		if err != nil {
 			return api.ProcessDescription{}, err
 		}

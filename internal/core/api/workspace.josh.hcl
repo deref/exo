@@ -237,9 +237,9 @@ struct "process-description" {
   field "spec" "string" {}
   field "running" "bool" {}
   field "env-vars" "map[string]string" {}
-  field "cpu-percent" "float64" {}
-  field "create-time" "int64" {}
-  field "resident-memory" "uint64" {}
+  field "cpu-percent" "*float64" {}
+  field "create-time" "*int64" {}
+  field "resident-memory" "*uint64" {}
   field "ports" "[]uint32" {}
   field "children-executables" "[]string" {}
 }
