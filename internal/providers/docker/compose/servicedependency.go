@@ -40,11 +40,14 @@ func (sd *ServiceDependencies) UnmarshalYAML(b []byte) error {
 	if err := yaml.Unmarshal(b, &asMap); err != nil {
 		return err
 	}
-	sd.Services = make([]ServiceDependency, len(asMap))
+
+	sd.Services = make([]ServiceDependency, 0, len(asMap))
 	for service, spec := range asMap {
 		switch spec.Condition {
 		case "service_started", "service_healthy", "service_completed_successfully":
 			// Ok.
+		case "":
+			spec.Condition = "service_started"
 		default:
 			return fmt.Errorf("invalid condition %q for service dependency %q", spec.Condition, service)
 		}

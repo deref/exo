@@ -112,6 +112,50 @@ func TestParseService(t *testing.T) {
 				},
 			},
 		},
+
+		{
+			name: "service dependencies - short syntax",
+			in: `depends_on:
+- db
+- messages`,
+			expected: compose.Service{
+				DependsOn: compose.ServiceDependencies{
+					IsShortSyntax: true,
+					Services: []compose.ServiceDependency{
+						{
+							Service:   "db",
+							Condition: "service_started",
+						},
+						{
+							Service:   "messages",
+							Condition: "service_started",
+						},
+					},
+				},
+			},
+		},
+
+		{
+			name: "service dependencies - extended syntax",
+			in: `depends_on:
+  db:
+  messages:
+    condition: service_healthy`,
+			expected: compose.Service{
+				DependsOn: compose.ServiceDependencies{
+					Services: []compose.ServiceDependency{
+						{
+							Service:   "db",
+							Condition: "service_started",
+						},
+						{
+							Service:   "messages",
+							Condition: "service_healthy",
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, testCase := range testCases {

@@ -150,11 +150,6 @@ func (i *Loader) convert(project *compose.Compose) manifest.LoadResult {
 		}
 
 		for _, dependency := range service.DependsOn.Services {
-			if dependency.Service == "" {
-				// TODO: Figure out why this happens.
-				continue
-			}
-
 			if dependency.Condition != "service_started" {
 				res = res.AddUnsupportedFeatureWarning(fmt.Sprintf("service condition %q", dependency.Service), "only service_started is currently supported")
 			}
