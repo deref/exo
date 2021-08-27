@@ -61,11 +61,14 @@ func (c *Container) create(ctx context.Context) error {
 	}
 
 	envMap := map[string]string{}
-	for k, v := range c.WorkspaceEnvironment {
-		envMap[k] = v
-	}
-	for k, v := range c.Spec.Environment.WithoutNils() {
-		envMap[k] = v
+	for k, v := range c.Spec.Environment {
+		if v == nil {
+			if v, ok := c.WorkspaceEnvironment[k]; ok {
+				envMap[k] = v
+			}
+		} else {
+			envMap[k] = *v
+		}
 	}
 	envSlice := []string{}
 	for k, v := range envMap {
