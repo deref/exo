@@ -3,6 +3,7 @@ package process
 import (
 	"context"
 	"fmt"
+	"sync"
 
 	psprocess "github.com/shirou/gopsutil/v3/process"
 
@@ -25,22 +26,34 @@ func GetProcessDescription(ctx context.Context, component api.ComponentDescripti
 	}
 
 	proc, err := psprocess.NewProcess(int32(state.Pid))
-	if err == nil {
-		process.Running, err = proc.IsRunning()
-		if err != nil {
-			return api.ProcessDescription{}, err
+	if err != nil {
+		return api.ProcessDescription{}, fmt.Errorf("getting process: %w", err)
+	}
+
+	var wg sync.WaitGroup
+	work := func(f func()) {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			f()
+		}()
+	}
+
+	work(func() {
+		running, err := proc.IsRunningWithContext(ctx)
+		process.Running = err == nil && running
+	})
+
+	work(func() {
+		if memoryInfo, err := proc.MemoryInfoWithContext(ctx); err == nil {
+			process.ResidentMemory = &memoryInfo.RSS
 		}
+	})
 
-		memoryInfo, err := proc.MemoryInfo()
+	work(func() {
+		connections, err := proc.ConnectionsWithContext(ctx)
 		if err != nil {
-			return api.ProcessDescription{}, err
-		}
-
-		process.ResidentMemory = &memoryInfo.RSS
-
-		connections, err := proc.Connections()
-		if err != nil {
-			return api.ProcessDescription{}, err
+			return
 		}
 
 		var ports []uint32
@@ -51,29 +64,39 @@ func GetProcessDescription(ctx context.Context, component api.ComponentDescripti
 		}
 		process.Ports = ports
 
-		*process.CreateTime, err = proc.CreateTime()
+	})
+
+	work(func() {
+		if createTime, err := proc.CreateTimeWithContext(ctx); err == nil {
+			process.CreateTime = &createTime
+		}
+	})
+
+	work(func() {
+		children, err := proc.ChildrenWithContext(ctx)
 		if err != nil {
-			return api.ProcessDescription{}, err
+			return
 		}
 
-		children, err := proc.Children()
-		if err == nil {
-			var childrenExecutables []string
-			for _, child := range children {
-				exe, err := child.Exe()
-				if err != nil {
-					return api.ProcessDescription{}, err
-				}
-				childrenExecutables = append(childrenExecutables, exe)
+		var childrenExecutables []string
+		for _, child := range children {
+			exe, err := child.Exe()
+			if err != nil {
+				return
 			}
-			process.ChildrenExecutables = childrenExecutables
+			childrenExecutables = append(childrenExecutables, exe)
 		}
+		process.ChildrenExecutables = childrenExecutables
 
-		*process.CPUPercent, err = proc.CPUPercent()
-		if err != nil {
-			return api.ProcessDescription{}, err
+	})
+
+	work(func() {
+		if cpuPercent, err := proc.CPUPercentWithContext(ctx); err == nil {
+			process.CPUPercent = &cpuPercent
 		}
-	}
+	})
+
+	wg.Wait()
 
 	return process, nil
 }
