@@ -3,9 +3,9 @@ package process
 import (
 	"context"
 	"fmt"
-	"sync"
 
 	psprocess "github.com/shirou/gopsutil/v3/process"
+	"golang.org/x/sync/errgroup"
 
 	"github.com/deref/exo/internal/core/api"
 	"github.com/deref/exo/internal/util/jsonutil"
@@ -27,76 +27,84 @@ func GetProcessDescription(ctx context.Context, component api.ComponentDescripti
 
 	proc, err := psprocess.NewProcess(int32(state.Pid))
 	if err != nil {
-		return api.ProcessDescription{}, fmt.Errorf("getting process: %w", err)
+		// Assume this has failed because the process isn't running.
+		return process, nil
 	}
 
-	var wg sync.WaitGroup
-	work := func(f func()) {
-		wg.Add(1)
-		go func() {
-			defer wg.Done()
-			f()
-		}()
-	}
+	var eg errgroup.Group
 
-	work(func() {
+	eg.Go(func() error {
 		running, err := proc.IsRunningWithContext(ctx)
-		process.Running = err == nil && running
-	})
-
-	work(func() {
-		if memoryInfo, err := proc.MemoryInfoWithContext(ctx); err == nil {
-			process.ResidentMemory = &memoryInfo.RSS
+		if err != nil {
+			return fmt.Errorf("getting process running information: %w", err)
 		}
+		process.Running = running
+		return nil
 	})
 
-	work(func() {
+	eg.Go(func() error {
+		memoryInfo, err := proc.MemoryInfoWithContext(ctx)
+		if err != nil {
+			return fmt.Errorf("getting process memory information: %w", err)
+		}
+		process.ResidentMemory = &memoryInfo.RSS
+		return nil
+	})
+
+	eg.Go(func() error {
 		connections, err := proc.ConnectionsWithContext(ctx)
 		if err != nil {
-			return
+			return fmt.Errorf("getting process connections information: %w", err)
 		}
 
-		var ports []uint32
+		ports := []uint32{}
 		for _, conn := range connections {
 			if conn.Laddr.Port != 0 {
 				ports = append(ports, conn.Laddr.Port)
 			}
 		}
 		process.Ports = ports
-
+		return nil
 	})
 
-	work(func() {
-		if createTime, err := proc.CreateTimeWithContext(ctx); err == nil {
-			process.CreateTime = &createTime
+	eg.Go(func() error {
+		createTime, err := proc.CreateTimeWithContext(ctx)
+		if err != nil {
+			return fmt.Errorf("getting process createTime information: %w", err)
 		}
+		process.CreateTime = &createTime
+		return nil
 	})
 
-	work(func() {
+	eg.Go(func() error {
 		children, err := proc.ChildrenWithContext(ctx)
 		if err != nil {
-			return
+			// Assume that this has failed because the process doesn't have any
+			// children.
+			return nil
 		}
 
 		var childrenExecutables []string
 		for _, child := range children {
 			exe, err := child.Exe()
 			if err != nil {
-				return
+				return fmt.Errorf("getting child executable: %w", err)
 			}
 			childrenExecutables = append(childrenExecutables, exe)
 		}
 		process.ChildrenExecutables = childrenExecutables
-
+		return nil
 	})
 
-	work(func() {
-		if cpuPercent, err := proc.CPUPercentWithContext(ctx); err == nil {
-			process.CPUPercent = &cpuPercent
+	eg.Go(func() error {
+		cpuPercent, err := proc.CPUPercentWithContext(ctx)
+		if err != nil {
+			return fmt.Errorf("getting process cpuPercent information: %w", err)
 		}
+		process.CPUPercent = &cpuPercent
+		return nil
 	})
 
-	wg.Wait()
-
-	return process, nil
+	err = eg.Wait()
+	return process, err
 }
