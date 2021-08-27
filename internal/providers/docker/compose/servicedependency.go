@@ -20,6 +20,24 @@ type ServiceDependency struct {
 	Condition string
 }
 
+func (sd ServiceDependencies) MarshalYAML() (interface{}, error) {
+	if sd.IsShortSyntax {
+		services := make([]string, len(sd.Services))
+		for i, service := range sd.Services {
+			services[i] = service.Service
+		}
+		return services, nil
+	}
+
+	services := make(map[string]interface{}, len(sd.Services))
+	for _, service := range sd.Services {
+		services[service.Service] = map[string]interface{}{
+			"condition": service.Condition,
+		}
+	}
+	return services, nil
+}
+
 func (sd *ServiceDependencies) UnmarshalYAML(b []byte) error {
 	var asStrings []string
 	if err := yaml.Unmarshal(b, &asStrings); err == nil {
