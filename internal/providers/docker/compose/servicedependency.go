@@ -8,8 +8,8 @@ import (
 
 // ServiceDependencies represents either the short (list) form of `depends_on` or the full
 // form that indicates the condition under which this service can start. Since there are two
-// mutally exclusive representations of this structure, marshaling and unmarshing must be done
-// manually, and no yaml struct tags are used.
+// mutally exclusive representations of this structure, custom marshaling and unmarshing is
+// implemented.
 type ServiceDependencies struct {
 	Services      []ServiceDependency
 	IsShortSyntax bool
