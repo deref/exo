@@ -18,6 +18,7 @@ import (
 	docker "github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
+	"golang.org/x/sync/errgroup"
 )
 
 var _ core.Lifecycle = (*Container)(nil)
@@ -287,11 +288,17 @@ func (c *Container) create(ctx context.Context) error {
 	networkCfg := &network.NetworkingConfig{
 		EndpointsConfig: make(map[string]*network.EndpointSettings), // Endpoint configs for each connecting network
 	}
-	for _, networkName := range c.Spec.Networks {
-		networkCfg.EndpointsConfig[networkName] = &network.EndpointSettings{
-			// TODO: Add other specified aliases.
-			Aliases: []string{c.ComponentID, c.ComponentName},
-		}
+	netEndpointSettings := &network.EndpointSettings{
+		// TODO: Add other specified aliases.
+		Aliases: []string{c.ComponentID, c.ComponentName},
+	}
+	// Docker only allows a single network to be specified when creating a container. The other networks must be
+	// connected after the container is started. See https://github.com/moby/moby/issues/29265#issuecomment-265909198.
+	var remainingNetworks []string
+	if len(c.Spec.Networks) > 0 {
+		firstNetworkName := c.Spec.Networks[0]
+		remainingNetworks = c.Spec.Networks[1:]
+		networkCfg.EndpointsConfig[firstNetworkName] = netEndpointSettings
 	}
 
 	var platform *v1.Platform
@@ -320,7 +327,15 @@ func (c *Container) create(ctx context.Context) error {
 		return err
 	}
 	c.State.ContainerID = createdBody.ID
-	return nil
+	var netConnects errgroup.Group
+	for _, networkName := range remainingNetworks {
+		networkName := networkName
+		netConnects.Go(func() error {
+			return c.Docker.NetworkConnect(ctx, networkName, createdBody.ID, netEndpointSettings)
+		})
+	}
+
+	return netConnects.Wait()
 }
 
 func (c *Container) Refresh(ctx context.Context, input *core.RefreshInput) (*core.RefreshOutput, error) {
