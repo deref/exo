@@ -47,7 +47,7 @@ interface "store" {
     input "type" "string" {}
     input "spec" "string" {}
     input "created" "string" {}
-	  input "depends-on" "[]string" {}
+    input "depends-on" "[]string" {}
   }
 
   method "patch-component" {

@@ -25,9 +25,7 @@ type componentQuery struct {
 type componentQueryUpdate func(*componentQuery)
 
 func makeComponentQuery(updates ...componentQueryUpdate) componentQuery {
-	q := &componentQuery{
-		Types: processTypes,
-	}
+	q := &componentQuery{}
 
 	for _, update := range updates {
 		update(q)
@@ -58,11 +56,13 @@ var withDependents = componentQueryUpdate(func(q *componentQuery) {
 	q.IncludeDependents = true
 })
 
-// TODO: Filter by interface, not concrete type.
-var processTypes = []string{"process", "container"}
-
 func allProcessQuery(updates ...componentQueryUpdate) componentQuery {
-	updates = append([]componentQueryUpdate{withTypes(processTypes...)}, updates...)
+	updates = append([]componentQueryUpdate{withTypes("process", "container")}, updates...)
+	return makeComponentQuery(updates...)
+}
+
+func allBuildableQuery(updates ...componentQueryUpdate) componentQuery {
+	updates = append([]componentQueryUpdate{withTypes("container")}, updates...)
 	return makeComponentQuery(updates...)
 }
 
