@@ -32,7 +32,6 @@ import (
 	"github.com/deref/exo/internal/util/pathutil"
 	dockerclient "github.com/docker/docker/client"
 	"github.com/joho/godotenv"
-	psprocess "github.com/shirou/gopsutil/v3/process"
 )
 
 type Workspace struct {
@@ -642,87 +641,24 @@ func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeP
 	if err != nil {
 		return nil, fmt.Errorf("describing components: %w", err)
 	}
-	logger := logging.CurrentLogger(ctx)
 
 	output := api.DescribeProcessesOutput{
 		Processes: make([]api.ProcessDescription, 0, len(components.Components)),
 	}
 	for _, component := range components.Components {
+		var proc api.ProcessDescription
+		var err error
 		// XXX Violates component state encapsulation.
 		switch component.Type {
 		case "process":
-			var state process.State
-			if err := jsonutil.UnmarshalString(component.State, &state); err != nil {
-				logger.Infof("unmarshalling process state: %v\n", err)
-				continue
-			}
-
-			process := api.ProcessDescription{
-				ID:       component.ID,
-				Name:     component.Name,
-				Provider: "unix",
-				EnvVars:  state.FullEnvironment,
-				Spec:     component.Spec,
-			}
-
-			proc, err := psprocess.NewProcess(int32(state.Pid))
-			if err == nil {
-				process.Running, err = proc.IsRunning()
-				if err != nil {
-					return nil, err
-				}
-
-				memoryInfo, err := proc.MemoryInfo()
-				if err != nil {
-					return nil, err
-				}
-
-				process.ResidentMemory = memoryInfo.RSS
-
-				connections, err := proc.Connections()
-				if err != nil {
-					return nil, err
-				}
-
-				var ports []uint32
-				for _, conn := range connections {
-					if conn.Laddr.Port != 0 {
-						ports = append(ports, conn.Laddr.Port)
-					}
-				}
-				process.Ports = ports
-
-				process.CreateTime, err = proc.CreateTime()
-				if err != nil {
-					return nil, err
-				}
-
-				children, err := proc.Children()
-				if err == nil {
-					var childrenExecutables []string
-					for _, child := range children {
-						exe, err := child.Exe()
-						if err != nil {
-							return nil, err
-						}
-						childrenExecutables = append(childrenExecutables, exe)
-					}
-					process.ChildrenExecutables = childrenExecutables
-				}
-
-				process.CPUPercent, err = proc.CPUPercent()
-				if err != nil {
-					return nil, err
-				}
-			}
-			output.Processes = append(output.Processes, process)
+			proc, err = process.GetProcessDescription(ctx, component)
 		case "container":
-			process, err := container.GetProcessDescription(ctx, ws.Docker, component)
-			if err != nil {
-				return nil, fmt.Errorf("could not get container process description: %w", err)
-			}
-			output.Processes = append(output.Processes, process)
+			proc, err = container.GetProcessDescription(ctx, ws.Docker, component)
 		}
+		if err != nil {
+			return nil, fmt.Errorf("could not get process description: %w", err)
+		}
+		output.Processes = append(output.Processes, proc)
 	}
 	return &output, nil
 }
