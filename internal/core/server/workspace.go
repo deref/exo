@@ -8,6 +8,7 @@ import (
 	"os"
 	"path"
 	"reflect"
+	"sort"
 	"strings"
 
 	"github.com/deref/exo/internal/chrono"
@@ -634,6 +635,12 @@ func (ws *Workspace) RestartComponents(ctx context.Context, input *api.RestartCo
 // TODO: Filter by interface, not concrete type.
 var processTypes = []string{"process", "container"}
 
+type procDescriptionResult struct {
+	description api.ProcessDescription
+	order       int
+	err         error
+}
+
 func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeProcessesInput) (*api.DescribeProcessesOutput, error) {
 	components, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{
 		Types: processTypes,
@@ -642,25 +649,40 @@ func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeP
 		return nil, fmt.Errorf("describing components: %w", err)
 	}
 
-	output := api.DescribeProcessesOutput{
-		Processes: make([]api.ProcessDescription, 0, len(components.Components)),
+	c := make(chan procDescriptionResult)
+	for i, component := range components.Components {
+		i, component := i, component
+		go func() {
+			var proc api.ProcessDescription
+			var err error
+			// XXX Violates component state encapsulation.
+			switch component.Type {
+			case "process":
+				proc, err = process.GetProcessDescription(ctx, component)
+			case "container":
+				proc, err = container.GetProcessDescription(ctx, ws.Docker, component)
+			}
+			if err != nil {
+				err = fmt.Errorf("could not get process description: %w", err)
+			}
+			c <- procDescriptionResult{description: proc, err: err, order: i}
+		}()
 	}
-	for _, component := range components.Components {
-		var proc api.ProcessDescription
-		var err error
-		// XXX Violates component state encapsulation.
-		switch component.Type {
-		case "process":
-			proc, err = process.GetProcessDescription(ctx, component)
-		case "container":
-			proc, err = container.GetProcessDescription(ctx, ws.Docker, component)
-		}
-		if err != nil {
-			return nil, fmt.Errorf("could not get process description: %w", err)
-		}
-		output.Processes = append(output.Processes, proc)
+	results := make([]procDescriptionResult, len(components.Components))
+	for i := range components.Components {
+		results[i] = <-c
 	}
-	return &output, nil
+	sort.Slice(results, func(i, j int) bool {
+		return results[i].order < results[j].order
+	})
+	processes := make([]api.ProcessDescription, len(components.Components))
+	for i, result := range results {
+		if result.err != nil {
+			return nil, result.err
+		}
+		processes[i] = result.description
+	}
+	return &api.DescribeProcessesOutput{Processes: processes}, nil
 }
 
 func (ws *Workspace) DescribeVolumes(ctx context.Context, input *api.DescribeVolumesInput) (*api.DescribeVolumesOutput, error) {
