@@ -10,61 +10,61 @@ import (
 func TestImmediateDependencies(t *testing.T) {
 	g := deps.New()
 
-	assert.NoError(t, g.DependOn("x", "y"))
+	assert.NoError(t, g.DependOn(deps.StringNode("x"), deps.StringNode("y")))
 
-	assert.True(t, g.DependsOn("x", "y"))
-	assert.True(t, g.HasDependent("y", "x"))
-	assert.False(t, g.DependsOn("y", "x"))
-	assert.False(t, g.HasDependent("x", "y"))
+	assert.True(t, g.DependsOn(deps.StringNode("x"), deps.StringNode("y")))
+	assert.True(t, g.HasDependent(deps.StringNode("y"), deps.StringNode("x")))
+	assert.False(t, g.DependsOn(deps.StringNode("y"), deps.StringNode("x")))
+	assert.False(t, g.HasDependent(deps.StringNode("x"), deps.StringNode("y")))
 
 	// No self-dependencies.
-	assert.Error(t, g.DependOn("z", "z"))
+	assert.Error(t, g.DependOn(deps.StringNode("z"), deps.StringNode("z")))
 	// No bidirectional dependencies.
-	assert.Error(t, g.DependOn("y", "x"))
+	assert.Error(t, g.DependOn(deps.StringNode("y"), deps.StringNode("x")))
 }
 
 func TestTransitiveDependencies(t *testing.T) {
 	g := deps.New()
 
-	assert.NoError(t, g.DependOn("x", "y"))
-	assert.NoError(t, g.DependOn("y", "z"))
+	assert.NoError(t, g.DependOn(deps.StringNode("x"), deps.StringNode("y")))
+	assert.NoError(t, g.DependOn(deps.StringNode("y"), deps.StringNode("z")))
 
-	assert.True(t, g.DependsOn("x", "z"))
-	assert.True(t, g.HasDependent("z", "x"))
-	assert.False(t, g.DependsOn("z", "x"))
-	assert.False(t, g.HasDependent("x", ""))
+	assert.True(t, g.DependsOn(deps.StringNode("x"), deps.StringNode("z")))
+	assert.True(t, g.HasDependent(deps.StringNode("z"), deps.StringNode("x")))
+	assert.False(t, g.DependsOn(deps.StringNode("z"), deps.StringNode("x")))
+	assert.False(t, g.HasDependent(deps.StringNode("x"), deps.StringNode("")))
 
 	// No circular dependencies.
-	assert.Error(t, g.DependOn("z", "x"))
+	assert.Error(t, g.DependOn(deps.StringNode("z"), deps.StringNode("x")))
 }
 
 func TestLeaves(t *testing.T) {
 	g := deps.New()
-	g.DependOn("cake", "eggs")
-	g.DependOn("cake", "flour")
-	g.DependOn("eggs", "chickens")
-	g.DependOn("flour", "grain")
-	g.DependOn("chickens", "feed")
-	g.DependOn("chickens", "grain")
-	g.DependOn("grain", "soil")
+	g.DependOn(deps.StringNode("cake"), deps.StringNode("eggs"))
+	g.DependOn(deps.StringNode("cake"), deps.StringNode("flour"))
+	g.DependOn(deps.StringNode("eggs"), deps.StringNode("chickens"))
+	g.DependOn(deps.StringNode("flour"), deps.StringNode("grain"))
+	g.DependOn(deps.StringNode("chickens"), deps.StringNode("feed"))
+	g.DependOn(deps.StringNode("chickens"), deps.StringNode("grain"))
+	g.DependOn(deps.StringNode("grain"), deps.StringNode("soil"))
 
 	leaves := g.Leaves()
-	assert.ElementsMatch(t, leaves, []interface{}{"feed", "soil"})
+	assert.ElementsMatch(t, leaves, []deps.StringNode{"feed", "soil"})
 }
 
 func TestTopologicalSort(t *testing.T) {
 	g := deps.New()
-	g.DependOn("cake", "eggs")
-	g.DependOn("cake", "flour")
-	g.DependOn("eggs", "chickens")
-	g.DependOn("flour", "grain")
-	g.DependOn("chickens", "grain")
-	g.DependOn("grain", "soil")
+	g.DependOn(deps.StringNode("cake"), deps.StringNode("eggs"))
+	g.DependOn(deps.StringNode("cake"), deps.StringNode("flour"))
+	g.DependOn(deps.StringNode("eggs"), deps.StringNode("chickens"))
+	g.DependOn(deps.StringNode("flour"), deps.StringNode("grain"))
+	g.DependOn(deps.StringNode("chickens"), deps.StringNode("grain"))
+	g.DependOn(deps.StringNode("grain"), deps.StringNode("soil"))
 
 	sorted := g.TopoSorted()
 	pairs := []struct {
-		before interface{}
-		after  interface{}
+		before string
+		after  string
 	}{
 		{
 			before: "soil",
@@ -95,9 +95,9 @@ func TestTopologicalSort(t *testing.T) {
 		iBefore := -1
 		iAfter := -1
 		for i, elem := range sorted {
-			if elem == before {
+			if elem.ID() == before {
 				iBefore = i
-			} else if elem == after {
+			} else if elem.ID() == after {
 				iAfter = i
 			}
 		}
@@ -111,14 +111,14 @@ func TestTopologicalSort(t *testing.T) {
 func TestLayeredTopologicalSort(t *testing.T) {
 	g := deps.New()
 
-	g.DependOn("web", "database")
-	g.DependOn("web", "aggregator")
-	g.DependOn("aggregator", "database")
-	g.DependOn("web", "logger")
-	g.DependOn("web", "config")
-	g.DependOn("web", "metrics")
-	g.DependOn("database", "config")
-	g.DependOn("metrics", "config")
+	g.DependOn(deps.StringNode("web"), deps.StringNode("database"))
+	g.DependOn(deps.StringNode("web"), deps.StringNode("aggregator"))
+	g.DependOn(deps.StringNode("aggregator"), deps.StringNode("database"))
+	g.DependOn(deps.StringNode("web"), deps.StringNode("logger"))
+	g.DependOn(deps.StringNode("web"), deps.StringNode("config"))
+	g.DependOn(deps.StringNode("web"), deps.StringNode("metrics"))
+	g.DependOn(deps.StringNode("database"), deps.StringNode("config"))
+	g.DependOn(deps.StringNode("metrics"), deps.StringNode("config"))
 	/*
 		   /--------------\
 		web - aggregator - database
@@ -129,8 +129,8 @@ func TestLayeredTopologicalSort(t *testing.T) {
 
 	layers := g.TopoSortedLayers()
 	assert.Len(t, layers, 4)
-	assert.ElementsMatch(t, []interface{}{"config", "logger"}, layers[0])
-	assert.ElementsMatch(t, []interface{}{"database", "metrics"}, layers[1])
-	assert.ElementsMatch(t, []interface{}{"aggregator"}, layers[2])
-	assert.ElementsMatch(t, []interface{}{"web"}, layers[3])
+	assert.ElementsMatch(t, []deps.StringNode{"config", "logger"}, layers[0])
+	assert.ElementsMatch(t, []deps.StringNode{"database", "metrics"}, layers[1])
+	assert.ElementsMatch(t, []deps.StringNode{"aggregator"}, layers[2])
+	assert.ElementsMatch(t, []deps.StringNode{"web"}, layers[3])
 }

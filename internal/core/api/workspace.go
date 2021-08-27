@@ -150,6 +150,10 @@ type DescribeComponentsInput struct {
 	IDs []string `json:"ids"`
 	// If non-empty, filters components to supplied types.
 	Types []string `json:"types"`
+	// If true, includes all components that the filtered components depend on.
+	IncludeDependencies bool `json:"includeDependencies"`
+	// If true, includes all components that depend on the filtered components.
+	IncludeDependents bool `json:"includeDependents"`
 }
 
 type DescribeComponentsOutput struct {
@@ -157,9 +161,10 @@ type DescribeComponentsOutput struct {
 }
 
 type CreateComponentInput struct {
-	Name string `json:"name"`
-	Type string `json:"type"`
-	Spec string `json:"spec"`
+	Name      string   `json:"name"`
+	Type      string   `json:"type"`
+	Spec      string   `json:"spec"`
+	DependsOn []string `json:"dependsOn"`
 }
 
 type CreateComponentOutput struct {
@@ -167,8 +172,9 @@ type CreateComponentOutput struct {
 }
 
 type UpdateComponentInput struct {
-	Ref  string `json:"ref"`
-	Spec string `json:"spec"`
+	Ref       string   `json:"ref"`
+	Spec      string   `json:"spec"`
+	DependsOn []string `json:"dependsOn"`
 }
 
 type UpdateComponentOutput struct {
@@ -392,14 +398,15 @@ type WorkspaceDescription struct {
 }
 
 type ComponentDescription struct {
-	ID          string  `json:"id"`
-	Name        string  `json:"name"`
-	Type        string  `json:"type"`
-	Spec        string  `json:"spec"`
-	State       string  `json:"state"`
-	Created     string  `json:"created"`
-	Initialized *string `json:"initialized"`
-	Disposed    *string `json:"disposed"`
+	ID          string   `json:"id"`
+	Name        string   `json:"name"`
+	Type        string   `json:"type"`
+	Spec        string   `json:"spec"`
+	State       string   `json:"state"`
+	Created     string   `json:"created"`
+	Initialized *string  `json:"initialized"`
+	Disposed    *string  `json:"disposed"`
+	DependsOn   []string `json:"dependsOn"`
 }
 
 type LogDescription struct {
