@@ -75,9 +75,7 @@ func (ws *Workspace) describe(ctx context.Context) (*api.WorkspaceDescription, e
 
 func (ws *Workspace) Destroy(ctx context.Context, input *api.DestroyInput) (*api.DestroyOutput, error) {
 	job := ws.TaskTracker.StartTask(ctx, "destroying")
-	query := componentQuery{
-		DependencyOrder: dependencyOrderReverse,
-	}
+	query := makeComponentQuery(withReversedDependencies)
 
 	go func() {
 		defer job.Finish()
@@ -419,9 +417,7 @@ func (ws *Workspace) updateComponent(ctx context.Context, oldComponent api.Compo
 }
 
 func (ws *Workspace) RefreshComponents(ctx context.Context, input *api.RefreshComponentsInput) (*api.RefreshComponentsOutput, error) {
-	query := componentQuery{
-		Refs: input.Refs,
-	}
+	query := makeComponentQuery(withRefs(input.Refs...))
 	jobID := ws.controlEachComponent(ctx, "refreshing", query, func(ctx context.Context, lifecycle api.Lifecycle) error {
 		_, err := lifecycle.Refresh(ctx, &api.RefreshInput{})
 		return err
@@ -432,10 +428,7 @@ func (ws *Workspace) RefreshComponents(ctx context.Context, input *api.RefreshCo
 }
 
 func (ws *Workspace) DisposeComponents(ctx context.Context, input *api.DisposeComponentsInput) (*api.DisposeComponentsOutput, error) {
-	query := componentQuery{
-		Refs:            input.Refs,
-		DependencyOrder: dependencyOrderReverse,
-	}
+	query := makeComponentQuery(withRefs(input.Refs...), withReversedDependencies)
 	jobID := ws.controlEachComponent(ctx, "disposing", query, func(ctx context.Context, lifecycle api.Lifecycle) error {
 		_, err := lifecycle.Dispose(ctx, &api.DisposeInput{})
 		return err
@@ -469,10 +462,7 @@ func (ws *Workspace) resolveRefs(ctx context.Context, refs []string) ([]string, 
 }
 
 func (ws *Workspace) DeleteComponents(ctx context.Context, input *api.DeleteComponentsInput) (*api.DeleteComponentsOutput, error) {
-	query := componentQuery{
-		Refs:            input.Refs,
-		DependencyOrder: dependencyOrderReverse,
-	}
+	query := makeComponentQuery(withRefs(input.Refs...), withReversedDependencies)
 	jobID := ws.controlEachComponent(ctx, "deleting", query, func(ctx context.Context, lifecycle api.Lifecycle) error {
 		return ws.deleteComponent(ctx, lifecycle)
 	})
@@ -1000,9 +990,7 @@ func (ws *Workspace) Build(ctx context.Context, input *api.BuildInput) (*api.Bui
 }
 
 func (ws *Workspace) BuildComponents(ctx context.Context, input *api.BuildComponentsInput) (*api.BuildComponentsOutput, error) {
-	query := componentQuery{
-		Refs: input.Refs,
-	}
+	query := allBuildableQuery(withRefs(input.Refs...))
 	jobID := ws.controlEachComponent(ctx, "building", query, func(ctx context.Context, builder api.Builder) error {
 		_, err := builder.Build(ctx, &api.BuildInput{})
 		return err

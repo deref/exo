@@ -35,14 +35,14 @@ func New() *Graph {
 func (g *Graph) Dump() string {
 	var out strings.Builder
 	out.WriteString("Nodes:\n")
-	for node := range g.dependencies {
+	for node := range g.nodes {
 		fmt.Fprintf(&out, "\t%v\n", node)
 	}
 
 	out.WriteString("Dependencies:\n")
 	for node, deps := range g.dependencies {
 		fmt.Fprintf(&out, "\t%v <-", node)
-		for dep := range deps {
+		for _, dep := range deps {
 			fmt.Fprintf(&out, " %v", dep)
 		}
 		out.WriteByte('\n')
@@ -51,7 +51,7 @@ func (g *Graph) Dump() string {
 	out.WriteString("Dependents:\n")
 	for node, deps := range g.dependents {
 		fmt.Fprintf(&out, "\t%v ->", node)
-		for dep := range deps {
+		for _, dep := range deps {
 			fmt.Fprintf(&out, " %v", dep)
 		}
 		out.WriteByte('\n')
@@ -130,7 +130,7 @@ func (g *Graph) Leaves() []Node {
 	out := make([]Node, 0)
 	for id, node := range g.nodes {
 		ids, ok := g.dependencies[id]
-		if ok {
+		if !ok {
 			out = append(out, node)
 		} else {
 			// Additionally, if no dependencies exist in the graph, consider this a leaf.
