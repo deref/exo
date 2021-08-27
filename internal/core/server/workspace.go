@@ -269,7 +269,6 @@ func (ws *Workspace) newController(ctx context.Context, desc api.ComponentDescri
 	}
 }
 
-// TODO: Use workspace-defined environments, rather than ambient unix environment.
 func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]string, error) {
 	envPath, err := ws.resolveWorkspacePath(ctx, ".env")
 	if err != nil {
