@@ -170,6 +170,10 @@ func (t *Task) Wait() error {
 	return t.eg.Wait()
 }
 
+func (t *Task) CreateChild(name string) *Task {
+	return t.tt.createTask(t, t, name)
+}
+
 func (t *Task) StartChild(name string) *Task {
 	return t.tt.startTask(t, t, name)
 }

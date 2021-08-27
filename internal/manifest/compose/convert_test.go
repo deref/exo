@@ -50,12 +50,7 @@ networks:
 volumes:
 - ./src:/srv
 `,
-							DependsOn: []manifest.ComponentRef{
-								{
-									Name: "default",
-									Type: "network",
-								},
-							},
+							DependsOn: []string{"default"},
 						},
 					},
 				},
@@ -106,16 +101,7 @@ networks:
 - testproj_backend
 - testproj_frontend
 `,
-							DependsOn: []manifest.ComponentRef{
-								{
-									Name: "backend",
-									Type: "network",
-								},
-								{
-									Name: "frontend",
-									Type: "network",
-								},
-							},
+							DependsOn: []string{"backend", "frontend"},
 						},
 						{
 							Name: "srv",
@@ -125,12 +111,7 @@ image: myapp
 networks:
 - testproj_backend
 `,
-							DependsOn: []manifest.ComponentRef{
-								{
-									Name: "backend",
-									Type: "network",
-								},
-							},
+							DependsOn: []string{"backend"},
 						},
 					},
 				},

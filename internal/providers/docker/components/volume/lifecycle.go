@@ -24,7 +24,6 @@ func (v *Volume) Initialize(ctx context.Context, input *core.InitializeInput) (o
 		labels[k] = v
 	}
 
-	fmt.Printf("Creating Volume %q\n", v.Spec.Name)
 	opts := volume.VolumeCreateBody{
 		Driver:     v.Driver,
 		DriverOpts: v.DriverOpts,

@@ -10,10 +10,12 @@ import (
 	"reflect"
 	"sort"
 	"strings"
+	"sync"
 
 	"github.com/deref/exo/internal/chrono"
 	"github.com/deref/exo/internal/core/api"
 	state "github.com/deref/exo/internal/core/state/api"
+	"github.com/deref/exo/internal/deps"
 	"github.com/deref/exo/internal/gensym"
 	logd "github.com/deref/exo/internal/logd/api"
 	"github.com/deref/exo/internal/manifest"
@@ -73,10 +75,13 @@ func (ws *Workspace) describe(ctx context.Context) (*api.WorkspaceDescription, e
 
 func (ws *Workspace) Destroy(ctx context.Context, input *api.DestroyInput) (*api.DestroyOutput, error) {
 	job := ws.TaskTracker.StartTask(ctx, "destroying")
+	query := componentQuery{
+		DependencyOrder: dependencyOrderReverse,
+	}
+
 	go func() {
 		defer job.Finish()
-		filter := componentFilter{}
-		ws.goControlComponents(job, filter, func(ctx context.Context, lifecycle api.Lifecycle) error {
+		ws.goControlComponents(job, query, func(ctx context.Context, lifecycle api.Lifecycle) error {
 			return ws.deleteComponent(ctx, lifecycle)
 		})
 		if err := job.Wait(); err != nil {
@@ -119,43 +124,79 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 	// TODO: Handle partial failures.
 
 	job := ws.TaskTracker.StartTask(ctx, "applying")
-	go func() {
-		defer job.Finish()
-
-		// Apply component upserts.
-		newComponents := make(map[string]manifest.Component, len(m.Components))
-		for _, newComponent := range m.Components {
-			newComponent := newComponent
-			name := newComponent.Name
-			newComponents[name] = newComponent
-			if oldComponent, exists := oldComponents[name]; exists {
-				// Update existing component.
-				job.Go("updating "+name, func(t *task.Task) error {
-					return ws.updateComponent(t, oldComponent, newComponent)
-				})
-			} else {
-				// Create new component.
-				job.Go("adding "+name, func(t *task.Task) error {
-					_, err := ws.createComponent(t, newComponent)
-					return err
-				})
-			}
+	runGraph := deps.New()
+	// Register component upserts.
+	newComponents := make(map[string]manifest.Component, len(m.Components))
+	for _, newComponent := range m.Components {
+		newComponent := newComponent
+		name := newComponent.Name
+		newComponents[name] = newComponent
+		id := gensym.RandomBase32()
+		if oldComponent, exists := oldComponents[name]; exists {
+			// Update existing component.
+			runGraph.AddNode(&runTaskNode{
+				name: name,
+				task: job.CreateChild("updating " + name),
+				run: func(t *task.Task) error {
+					return ws.updateComponent(t, oldComponent, newComponent, id)
+				},
+			})
+		} else {
+			runGraph.AddNode(&runTaskNode{
+				name: name,
+				task: job.CreateChild("adding " + name),
+				run: func(t *task.Task) error {
+					return ws.createComponent(t, newComponent, id)
+				},
+			})
 		}
+		for _, dependency := range newComponent.DependsOn {
+			runGraph.AddEdge(name, dependency)
+		}
+	}
 
-		// Apply component deletions.
-		for name, oldComponent := range oldComponents {
-			name := name
-			oldComponent := oldComponent
-			if _, keep := newComponents[name]; keep {
-				continue
-			}
-			job.Go("deleting "+name, func(*task.Task) error {
+	// Register component deletions.
+	for name, oldComponent := range oldComponents {
+		name := name
+		oldComponent := oldComponent
+		if _, keep := newComponents[name]; keep {
+			continue
+		}
+		runGraph.AddNode(&runTaskNode{
+			name: name,
+			task: job.CreateChild("deleting " + name),
+			run: func(t *task.Task) error {
 				return ws.control(job.Context, oldComponent, func(ctx context.Context, lifecycle api.Lifecycle) error {
 					return ws.deleteComponent(job.Context, lifecycle)
 				})
-			})
+			},
+		})
+		for _, dependency := range oldComponent.DependsOn {
+			runGraph.AddEdge(name, dependency)
 		}
+	}
 
+	// Run tasks.
+	go func() {
+		defer job.Finish()
+
+		layers := runGraph.TopoSortedLayers()
+		for _, layer := range layers {
+			var wg sync.WaitGroup
+			for _, node := range layer {
+				runTask := node.(*runTaskNode)
+				wg.Add(1)
+				go func() {
+					defer wg.Done()
+					runTask.task.Start()
+					defer runTask.task.Finish()
+					if err := runTask.run(runTask.task); err != nil {
+						runTask.task.Fail(err)
+					}
+				}()
+			}
+			wg.Wait()
+		}
 	}()
 
 	return &api.ApplyOutput{
@@ -182,18 +223,21 @@ func (ws *Workspace) Resolve(ctx context.Context, input *api.ResolveInput) (*api
 
 func (ws *Workspace) DescribeComponents(ctx context.Context, input *api.DescribeComponentsInput) (*api.DescribeComponentsOutput, error) {
 	stateOutput, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
-		WorkspaceID: ws.ID,
-		IDs:         input.IDs,
-		Types:       input.Types,
+		WorkspaceID:         ws.ID,
+		IDs:                 input.IDs,
+		Types:               input.Types,
+		IncludeDependencies: input.IncludeDependencies,
+		IncludeDependents:   input.IncludeDependents,
 	})
 	if err != nil {
 		return nil, err
 	}
+
 	output := &api.DescribeComponentsOutput{
-		Components: []api.ComponentDescription{},
+		Components: make([]api.ComponentDescription, len(stateOutput.Components)),
 	}
-	for _, component := range stateOutput.Components {
-		output.Components = append(output.Components, api.ComponentDescription{
+	for i, component := range stateOutput.Components {
+		output.Components[i] = api.ComponentDescription{
 			ID:          component.ID,
 			Name:        component.Name,
 			Type:        component.Type,
@@ -202,7 +246,8 @@ func (ws *Workspace) DescribeComponents(ctx context.Context, input *api.Describe
 			Created:     component.Created,
 			Initialized: component.Initialized,
 			Disposed:    component.Disposed,
-		})
+			DependsOn:   component.DependsOn,
+		}
 	}
 	return output, nil
 }
@@ -298,11 +343,12 @@ func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]string, err
 }
 
 func (ws *Workspace) CreateComponent(ctx context.Context, input *api.CreateComponentInput) (*api.CreateComponentOutput, error) {
-	id, err := ws.createComponent(ctx, manifest.Component{
+	id := gensym.RandomBase32()
+	err := ws.createComponent(ctx, manifest.Component{
 		Name: input.Name,
 		Type: input.Type,
 		Spec: input.Spec,
-	})
+	}, id)
 	if err != nil {
 		return nil, err
 	}
@@ -311,12 +357,10 @@ func (ws *Workspace) CreateComponent(ctx context.Context, input *api.CreateCompo
 	}, nil
 }
 
-func (ws *Workspace) createComponent(ctx context.Context, component manifest.Component) (id string, err error) {
+func (ws *Workspace) createComponent(ctx context.Context, component manifest.Component, id string) error {
 	if err := manifest.ValidateName(component.Name); err != nil {
-		return "", errutil.HTTPErrorf(http.StatusBadRequest, "component name %q invalid: %w", component.Name, err)
+		return errutil.HTTPErrorf(http.StatusBadRequest, "component name %q invalid: %w", component.Name, err)
 	}
-
-	id = gensym.RandomBase32()
 
 	if _, err := ws.Store.AddComponent(ctx, &state.AddComponentInput{
 		WorkspaceID: ws.ID,
@@ -325,23 +369,25 @@ func (ws *Workspace) createComponent(ctx context.Context, component manifest.Com
 		Type:        component.Type,
 		Spec:        component.Spec,
 		Created:     chrono.NowString(ctx),
+		DependsOn:   component.DependsOn,
 	}); err != nil {
-		return "", fmt.Errorf("adding component: %w", err)
+		return fmt.Errorf("adding component: %w", err)
 	}
 
 	if err := ws.control(ctx, api.ComponentDescription{
 		// Construct a synthetic component description to avoid re-reading after
 		// the add. Only the fields needed by control are included.
 		// TODO: Store.AddComponent could return a component description?
-		ID:   id,
-		Name: component.Name,
-		Type: component.Type,
-		Spec: component.Spec,
+		ID:        id,
+		Name:      component.Name,
+		Type:      component.Type,
+		Spec:      component.Spec,
+		DependsOn: component.DependsOn,
 	}, func(ctx context.Context, lifecycle api.Lifecycle) error {
 		_, err := lifecycle.Initialize(ctx, &api.InitializeInput{})
 		return err
 	}); err != nil {
-		return "", err
+		return err
 	}
 
 	// XXX this now double-patches the component to set Initialized timestamp. Optimize?
@@ -349,34 +395,34 @@ func (ws *Workspace) createComponent(ctx context.Context, component manifest.Com
 		ID:          id,
 		Initialized: chrono.NowString(ctx),
 	}); err != nil {
-		return "", fmt.Errorf("modifying component after initialization: %w", err) // XXX this message seems incorrect.
+		return fmt.Errorf("modifying component after initialization: %w", err) // XXX this message seems incorrect.
 	}
 
-	return id, nil
+	return nil
 }
 
 func (ws *Workspace) UpdateComponent(ctx context.Context, input *api.UpdateComponentInput) (*api.UpdateComponentOutput, error) {
 	panic("TODO: UpdateComponent") // XXX can implement this now.
 }
 
-func (ws *Workspace) updateComponent(ctx context.Context, oldComponent api.ComponentDescription, newComponent manifest.Component) error {
+func (ws *Workspace) updateComponent(ctx context.Context, oldComponent api.ComponentDescription, newComponent manifest.Component, id string) error {
 	// TODO: Most updates should be accomplished without a full replacement; especially when there are no spec changes!
 	if err := ws.control(ctx, oldComponent, func(ctx context.Context, lifecycle api.Lifecycle) error {
 		return ws.deleteComponent(ctx, lifecycle)
 	}); err != nil {
 		return fmt.Errorf("delete %q for replacement: %w", oldComponent.Name, err)
 	}
-	if _, err := ws.createComponent(ctx, newComponent); err != nil {
+	if err := ws.createComponent(ctx, newComponent, id); err != nil {
 		return fmt.Errorf("adding replacement %q: %w", newComponent.Name, err)
 	}
 	return nil
 }
 
 func (ws *Workspace) RefreshComponents(ctx context.Context, input *api.RefreshComponentsInput) (*api.RefreshComponentsOutput, error) {
-	filter := componentFilter{
+	query := componentQuery{
 		Refs: input.Refs,
 	}
-	jobID := ws.controlEachComponent(ctx, "refreshing", filter, func(ctx context.Context, lifecycle api.Lifecycle) error {
+	jobID := ws.controlEachComponent(ctx, "refreshing", query, func(ctx context.Context, lifecycle api.Lifecycle) error {
 		_, err := lifecycle.Refresh(ctx, &api.RefreshInput{})
 		return err
 	})
@@ -386,10 +432,11 @@ func (ws *Workspace) RefreshComponents(ctx context.Context, input *api.RefreshCo
 }
 
 func (ws *Workspace) DisposeComponents(ctx context.Context, input *api.DisposeComponentsInput) (*api.DisposeComponentsOutput, error) {
-	filter := componentFilter{
-		Refs: input.Refs,
+	query := componentQuery{
+		Refs:            input.Refs,
+		DependencyOrder: dependencyOrderReverse,
 	}
-	jobID := ws.controlEachComponent(ctx, "disposing", filter, func(ctx context.Context, lifecycle api.Lifecycle) error {
+	jobID := ws.controlEachComponent(ctx, "disposing", query, func(ctx context.Context, lifecycle api.Lifecycle) error {
 		_, err := lifecycle.Dispose(ctx, &api.DisposeInput{})
 		return err
 	})
@@ -422,10 +469,11 @@ func (ws *Workspace) resolveRefs(ctx context.Context, refs []string) ([]string, 
 }
 
 func (ws *Workspace) DeleteComponents(ctx context.Context, input *api.DeleteComponentsInput) (*api.DeleteComponentsOutput, error) {
-	filter := componentFilter{
-		Refs: input.Refs,
+	query := componentQuery{
+		Refs:            input.Refs,
+		DependencyOrder: dependencyOrderReverse,
 	}
-	jobID := ws.controlEachComponent(ctx, "deleting", filter, func(ctx context.Context, lifecycle api.Lifecycle) error {
+	jobID := ws.controlEachComponent(ctx, "deleting", query, func(ctx context.Context, lifecycle api.Lifecycle) error {
 		return ws.deleteComponent(ctx, lifecycle)
 	})
 	return &api.DeleteComponentsOutput{
@@ -443,9 +491,12 @@ func (ws *Workspace) deleteComponent(ctx context.Context, lifecycle api.Lifecycl
 }
 
 func (ws *Workspace) DescribeLogs(ctx context.Context, input *api.DescribeLogsInput) (*api.DescribeLogsOutput, error) {
-	components, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{
-		Types: processTypes,
-	})
+	describe, err := allProcessQuery().describeComponentsInput(ctx, ws)
+	if err != nil {
+		return nil, err
+	}
+
+	components, err := ws.DescribeComponents(ctx, describe)
 	if err != nil {
 		return nil, fmt.Errorf("describing components: %w", err)
 	}
@@ -564,9 +615,16 @@ func (ws *Workspace) GetEvents(ctx context.Context, input *api.GetEventsInput) (
 }
 
 func (ws *Workspace) Start(ctx context.Context, input *api.StartInput) (*api.StartOutput, error) {
-	jobID := ws.controlEachProcess(ctx, "starting", func(ctx context.Context, process api.Process) error {
-		_, err := process.Start(ctx, &api.StartInput{})
-		return err
+	jobID := ws.controlEachComponent(ctx, "starting", allProcessQuery(withDependencies), func(ctx context.Context, thing interface{}) error {
+		if process, ok := thing.(api.Process); ok {
+			_, err := process.Start(ctx, &api.StartInput{})
+			return err
+		}
+		if lifecycle, ok := thing.(api.Lifecycle); ok {
+			_, err := lifecycle.Initialize(ctx, &api.InitializeInput{})
+			return err
+		}
+		return nil
 	})
 	return &api.StartOutput{
 		JobID: jobID,
@@ -574,12 +632,19 @@ func (ws *Workspace) Start(ctx context.Context, input *api.StartInput) (*api.Sta
 }
 
 func (ws *Workspace) StartComponents(ctx context.Context, input *api.StartComponentsInput) (*api.StartComponentsOutput, error) {
-	filter := componentFilter{
-		Refs: input.Refs,
-	}
-	jobID := ws.controlEachComponent(ctx, "starting", filter, func(ctx context.Context, process api.Process) error {
-		_, err := process.Start(ctx, &api.StartInput{})
-		return err
+	// Note that we are only querying Process component types specifically because they are the only
+	// things that are "startable".
+	query := allProcessQuery(withRefs(input.Refs...), withDependencies)
+	jobID := ws.controlEachComponent(ctx, "starting", query, func(ctx context.Context, thing interface{}) error {
+		if process, ok := thing.(api.Process); ok {
+			_, err := process.Start(ctx, &api.StartInput{})
+			return err
+		}
+		if lifecycle, ok := thing.(api.Lifecycle); ok {
+			_, err := lifecycle.Initialize(ctx, &api.InitializeInput{})
+			return err
+		}
+		return nil
 	})
 	return &api.StartComponentsOutput{
 		JobID: jobID,
@@ -587,9 +652,13 @@ func (ws *Workspace) StartComponents(ctx context.Context, input *api.StartCompon
 }
 
 func (ws *Workspace) Stop(ctx context.Context, input *api.StopInput) (*api.StopOutput, error) {
-	jobID := ws.controlEachProcess(ctx, "stopping", func(ctx context.Context, process api.Process) error {
-		_, err := process.Stop(ctx, input)
-		return err
+	query := allProcessQuery(withReversedDependencies, withDependents)
+	jobID := ws.controlEachComponent(ctx, "stopping", query, func(ctx context.Context, thing interface{}) error {
+		if process, ok := thing.(api.Process); ok {
+			_, err := process.Stop(ctx, input)
+			return err
+		}
+		return nil
 	})
 	return &api.StopOutput{
 		JobID: jobID,
@@ -597,12 +666,17 @@ func (ws *Workspace) Stop(ctx context.Context, input *api.StopInput) (*api.StopO
 }
 
 func (ws *Workspace) StopComponents(ctx context.Context, input *api.StopComponentsInput) (*api.StopComponentsOutput, error) {
-	filter := componentFilter{
-		Refs: input.Refs,
-	}
-	jobID := ws.controlEachComponent(ctx, "stopping", filter, func(ctx context.Context, process api.Process) error {
-		_, err := process.Stop(ctx, &api.StopInput{TimeoutSeconds: input.TimeoutSeconds})
-		return err
+	query := allProcessQuery(
+		withRefs(input.Refs...),
+		withReversedDependencies,
+		withDependents,
+	)
+	jobID := ws.controlEachComponent(ctx, "stopping", query, func(ctx context.Context, thing interface{}) error {
+		if process, ok := thing.(api.Process); ok {
+			_, err := process.Stop(ctx, &api.StopInput{TimeoutSeconds: input.TimeoutSeconds})
+			return err
+		}
+		return nil
 	})
 	return &api.StopComponentsOutput{
 		JobID: jobID,
@@ -610,9 +684,13 @@ func (ws *Workspace) StopComponents(ctx context.Context, input *api.StopComponen
 }
 
 func (ws *Workspace) Restart(ctx context.Context, input *api.RestartInput) (*api.RestartOutput, error) {
-	jobID := ws.controlEachProcess(ctx, "restarting", func(ctx context.Context, process api.Process) error {
-		_, err := process.Restart(ctx, input)
-		return err
+	query := makeComponentQuery(withDependencies)
+	jobID := ws.controlEachComponent(ctx, "restarting", query, func(ctx context.Context, thing interface{}) error {
+		if process, ok := thing.(api.Process); ok {
+			_, err := process.Restart(ctx, input)
+			return err
+		}
+		return nil
 	})
 	return &api.RestartOutput{
 		JobID: jobID,
@@ -620,20 +698,24 @@ func (ws *Workspace) Restart(ctx context.Context, input *api.RestartInput) (*api
 }
 
 func (ws *Workspace) RestartComponents(ctx context.Context, input *api.RestartComponentsInput) (*api.RestartComponentsOutput, error) {
-	filter := componentFilter{
-		Refs: input.Refs,
-	}
-	jobID := ws.controlEachComponent(ctx, "restart", filter, func(ctx context.Context, process api.Process) error {
-		_, err := process.Restart(ctx, &api.RestartInput{TimeoutSeconds: input.TimeoutSeconds})
-		return err
+	// Restart currently restarts the component and everything that depends on it in the same order as start. There
+	// are likely 3 different restart "modes" that we will eventually want to support:
+	// 1. Restart only the component(s) requested. Do not cascade restarts to any other components.
+	// 2. Stop everything that depends on these components in reverse dependency order, restart these components,
+	//    then restart the dependents in normal order again.
+	// 3. Ensure that all dependendencies are started (in normal order), then restart these components (current behaviour).
+	query := allProcessQuery(withRefs(input.Refs...), withDependencies)
+	jobID := ws.controlEachComponent(ctx, "restart", query, func(ctx context.Context, thing interface{}) error {
+		if process, ok := thing.(api.Process); ok {
+			_, err := process.Restart(ctx, &api.RestartInput{TimeoutSeconds: input.TimeoutSeconds})
+			return err
+		}
+		return nil
 	})
 	return &api.RestartComponentsOutput{
 		JobID: jobID,
 	}, nil
 }
-
-// TODO: Filter by interface, not concrete type.
-var processTypes = []string{"process", "container"}
 
 type procDescriptionResult struct {
 	description api.ProcessDescription
@@ -642,9 +724,12 @@ type procDescriptionResult struct {
 }
 
 func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeProcessesInput) (*api.DescribeProcessesOutput, error) {
-	components, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{
-		Types: processTypes,
-	})
+	describe, err := allProcessQuery().describeComponentsInput(ctx, ws)
+	if err != nil {
+		return nil, err
+	}
+
+	components, err := ws.DescribeComponents(ctx, describe)
 	if err != nil {
 		return nil, fmt.Errorf("describing components: %w", err)
 	}
@@ -685,9 +770,12 @@ func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeP
 }
 
 func (ws *Workspace) DescribeVolumes(ctx context.Context, input *api.DescribeVolumesInput) (*api.DescribeVolumesOutput, error) {
-	components, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{
-		Types: []string{"volume"},
-	})
+	query := makeComponentQuery(withTypes("volume"))
+	describe, err := query.describeComponentsInput(ctx, ws)
+	if err != nil {
+		return nil, err
+	}
+	components, err := ws.DescribeComponents(ctx, describe)
 	if err != nil {
 		return nil, fmt.Errorf("describing components: %w", err)
 	}
@@ -705,9 +793,12 @@ func (ws *Workspace) DescribeVolumes(ctx context.Context, input *api.DescribeVol
 }
 
 func (ws *Workspace) DescribeNetworks(ctx context.Context, input *api.DescribeNetworksInput) (*api.DescribeNetworksOutput, error) {
-	components, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{
-		Types: []string{"network"},
-	})
+	query := makeComponentQuery(withTypes("network"))
+	describe, err := query.describeComponentsInput(ctx, ws)
+	if err != nil {
+		return nil, err
+	}
+	components, err := ws.DescribeComponents(ctx, describe)
 	if err != nil {
 		return nil, fmt.Errorf("describing components: %w", err)
 	}
@@ -810,32 +901,20 @@ func (ws *Workspace) resolveWorkspacePath(ctx context.Context, relativePath stri
 	return resolvedPath, nil
 }
 
-type componentFilter struct {
-	Refs  []string
-	Types []string
-}
-
-func (ws *Workspace) controlEachComponent(ctx context.Context, label string, filter componentFilter, f interface{}) (jobID string) {
+func (ws *Workspace) controlEachComponent(ctx context.Context, label string, query componentQuery, f interface{}) (jobID string) {
 	job := ws.TaskTracker.StartTask(ctx, label)
 	go func() {
 		defer job.Finish()
-		ws.goControlComponents(job, filter, f)
+		ws.goControlComponents(job, query, f)
 	}()
 	return job.ID()
 }
 
-func (ws *Workspace) goControlComponents(t *task.Task, filter componentFilter, f interface{}) {
-	describe := &api.DescribeComponentsInput{
-		Types: filter.Types,
-	}
-
-	if filter.Refs != nil {
-		ids, err := ws.resolveRefs(t, filter.Refs)
-		if err != nil {
-			t.Fail(fmt.Errorf("resolving refs: %w", err))
-			return
-		}
-		describe.IDs = ids
+func (ws *Workspace) goControlComponents(t *task.Task, query componentQuery, f interface{}) {
+	describe, err := query.describeComponentsInput(t, ws)
+	if err != nil {
+		t.Fail(err)
+		return
 	}
 
 	components, err := ws.DescribeComponents(t, describe)
@@ -844,19 +923,44 @@ func (ws *Workspace) goControlComponents(t *task.Task, filter componentFilter, f
 		return
 	}
 
+	// Build graph of tasks to run.
+	runGraph := deps.New()
 	for _, component := range components.Components {
 		component := component
-		t.Go(component.Name, func(t *task.Task) error {
-			return ws.control(t, component, f)
+		runGraph.AddNode(&runTaskNode{
+			name: component.Name,
+			task: t.CreateChild(component.Name),
+			run: func(t *task.Task) error {
+				return ws.control(t, component, f)
+			},
 		})
+		for _, dependency := range component.DependsOn {
+			runGraph.AddEdge(component.Name, dependency)
+		}
 	}
-}
 
-func (ws *Workspace) controlEachProcess(ctx context.Context, label string, f interface{}) (jobID string) {
-	filter := componentFilter{
-		Types: processTypes,
+	// Run tasks.
+	layers := runGraph.TopoSortedLayers()
+	for i, layer := range layers {
+		if query.DependencyOrder == dependencyOrderReverse {
+			layer = layers[len(layers)-1-i]
+		}
+
+		var wg sync.WaitGroup
+		for _, node := range layer {
+			runTask := node.(*runTaskNode)
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				runTask.task.Start()
+				defer runTask.task.Finish()
+				if err := runTask.run(runTask.task); err != nil {
+					runTask.task.Fail(err)
+				}
+			}()
+		}
+		wg.Wait()
 	}
-	return ws.controlEachComponent(ctx, label, filter, f)
 }
 
 func (ws *Workspace) control(ctx context.Context, desc api.ComponentDescription, f interface{}) error {
@@ -896,7 +1000,7 @@ func (ws *Workspace) control(ctx context.Context, desc api.ComponentDescription,
 }
 
 func (ws *Workspace) Build(ctx context.Context, input *api.BuildInput) (*api.BuildOutput, error) {
-	jobID := ws.controlEachProcess(ctx, "building", func(ctx context.Context, builder api.Builder) error {
+	jobID := ws.controlEachComponent(ctx, "building", allBuildableQuery(), func(ctx context.Context, builder api.Builder) error {
 		_, err := builder.Build(ctx, &api.BuildInput{})
 		return err
 	})
@@ -906,14 +1010,24 @@ func (ws *Workspace) Build(ctx context.Context, input *api.BuildInput) (*api.Bui
 }
 
 func (ws *Workspace) BuildComponents(ctx context.Context, input *api.BuildComponentsInput) (*api.BuildComponentsOutput, error) {
-	filter := componentFilter{
+	query := componentQuery{
 		Refs: input.Refs,
 	}
-	jobID := ws.controlEachComponent(ctx, "building", filter, func(ctx context.Context, builder api.Builder) error {
+	jobID := ws.controlEachComponent(ctx, "building", query, func(ctx context.Context, builder api.Builder) error {
 		_, err := builder.Build(ctx, &api.BuildInput{})
 		return err
 	})
 	return &api.BuildComponentsOutput{
 		JobID: jobID,
 	}, nil
+}
+
+type runTaskNode struct {
+	name string
+	task *task.Task
+	run  func(task *task.Task) error
+}
+
+func (n *runTaskNode) ID() string {
+	return n.name
 }

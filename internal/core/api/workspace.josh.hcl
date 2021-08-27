@@ -75,6 +75,14 @@ interface "workspace" {
       doc = "If non-empty, filters components to supplied types."
     }
 
+    input "include-dependencies" "bool" {
+      doc = "If true, includes all components that the filtered components depend on."
+    }
+
+    input "include-dependents" "bool" {
+      doc = "If true, includes all components that depend on the filtered components."
+    }
+
     output "components" "[]ComponentDescription" {}
   }
 
@@ -84,6 +92,7 @@ interface "workspace" {
     input "name" "string" {}
     input "type" "string" {}
     input "spec" "string" {}
+    input "depends-on" "[]string" {}
 
     output "id" "string" {}
   }
@@ -93,6 +102,7 @@ interface "workspace" {
 
     input "ref" "string" {}
     input "spec" "string" {}
+    input "depends-on" "[]string" {}
   }
 
   method "refresh-components" {
@@ -216,6 +226,7 @@ struct "component-description" {
   field "created" "string" {}
   field "initialized" "*string" {}
   field "disposed" "*string" {}
+  field "depends-on" "[]string" {}
 }
 
 struct "log-description" {
