@@ -653,19 +653,18 @@ func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeP
 	for i, component := range components.Components {
 		i, component := i, component
 		go func() {
-			var proc api.ProcessDescription
-			var err error
+			result := procDescriptionResult{order: i}
 			// XXX Violates component state encapsulation.
 			switch component.Type {
 			case "process":
-				proc, err = process.GetProcessDescription(ctx, component)
+				result.description, result.err = process.GetProcessDescription(ctx, component)
 			case "container":
-				proc, err = container.GetProcessDescription(ctx, ws.Docker, component)
+				result.description, result.err = container.GetProcessDescription(ctx, ws.Docker, component)
 			}
-			if err != nil {
-				err = fmt.Errorf("could not get process description: %w", err)
+			if result.err != nil {
+				result.err = fmt.Errorf("could not get process description: %w", result.err)
 			}
-			c <- procDescriptionResult{description: proc, err: err, order: i}
+			c <- result
 		}()
 	}
 	results := make([]procDescriptionResult, len(components.Components))
