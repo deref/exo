@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/deref/exo/internal/core/client"
+	"github.com/deref/exo/internal/exod"
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/deref/exo/internal/util/osutil"
@@ -60,6 +61,8 @@ func checkOrEnsureServer() {
 }
 
 func ensureDaemon() {
+	exod.MustMakeDirectories(cfg)
+
 	// Validate exod process record.
 	err := loadRunState()
 	running := false
