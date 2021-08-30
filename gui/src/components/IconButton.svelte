@@ -26,7 +26,7 @@
   }
 
   button:hover {
-    color: var(--grey-3-color);
+    color: var(--strong-color);
     background-color: var(--icon-button-hover-bg-color);
   }
 

@@ -51,10 +51,10 @@
   }
 
   .stopped {
-    width: 14px;
-    height: 14px;
-    border-radius: 7px;
-    background: var(--grey-c-color);
+    width: 16px;
+    height: 16px;
+    border-radius: 8px;
+    border: 1px solid var(--grey-a-color);
   }
 
   .running {
