@@ -3,7 +3,7 @@
   import IconButton from './IconButton.svelte';
   import ProcfileChecker from './processes/ProcfileChecker.svelte';
   import ProcessListTable from './processes/ProcessListTable.svelte';
-  import AddSVG from './mono/add.svelte';
+  import AddSVG from './mono/AddSVG.svelte';
   import { onDestroy, onMount } from 'svelte';
   import type { RequestLifecycle, WorkspaceApi } from '../lib/api';
   import type { ProcessDescription } from '../lib/process/types';
