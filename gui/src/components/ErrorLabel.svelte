@@ -1,5 +1,5 @@
 <script lang="ts">
-  import WarningSVG from './mono/warning.svelte';
+  import WarningSVG from './mono/WarningSVG.svelte';
 
   export let value: unknown = null;
 </script>
