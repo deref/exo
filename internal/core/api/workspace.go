@@ -428,9 +428,9 @@ type ProcessDescription struct {
 	Spec                string            `json:"spec"`
 	Running             bool              `json:"running"`
 	EnvVars             map[string]string `json:"envVars"`
-	CPUPercent          float64           `json:"cpuPercent"`
-	CreateTime          int64             `json:"createTime"`
-	ResidentMemory      uint64            `json:"residentMemory"`
+	CPUPercent          *float64          `json:"cpuPercent"`
+	CreateTime          *int64            `json:"createTime"`
+	ResidentMemory      *uint64           `json:"residentMemory"`
 	Ports               []uint32          `json:"ports"`
 	ChildrenExecutables []string          `json:"childrenExecutables"`
 }
