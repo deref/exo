@@ -11,6 +11,7 @@ import (
 	"github.com/deref/exo/internal/providers/docker"
 	"github.com/deref/exo/internal/util/jsonutil"
 	dockerclient "github.com/docker/docker/client"
+	"github.com/moby/moby/errdefs"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -32,8 +33,8 @@ func GetProcessDescription(ctx context.Context, dockerClient *dockerclient.Clien
 	containerInfo, err := dockerClient.ContainerInspect(ctx, state.ContainerID)
 	if err != nil {
 		// If there is an error inspecting the container, assume that this is
-		// because the container isn't running and return the information we already
-		// have.
+		// because the container hasn't been created yet and return the information
+		// we already have.
 		return process, nil
 	}
 
@@ -60,7 +61,7 @@ func GetProcessDescription(ctx context.Context, dockerClient *dockerclient.Clien
 	var eg errgroup.Group
 	eg.Go(func() error {
 		statRequest, err := dockerClient.ContainerStats(ctx, state.ContainerID, false)
-		if err != nil {
+		if err != nil && !errdefs.IsConflict(err) { // ignore not running errors
 			return fmt.Errorf("getting stats for container: %w", err)
 		}
 		defer statRequest.Body.Close()
@@ -81,7 +82,7 @@ func GetProcessDescription(ctx context.Context, dockerClient *dockerclient.Clien
 
 	eg.Go(func() error {
 		topBody, err := dockerClient.ContainerTop(ctx, state.ContainerID, []string{})
-		if err != nil {
+		if err != nil && !errdefs.IsConflict(err) { // ignore not running errors
 			return fmt.Errorf("running top in container: %w", err)
 		}
 
