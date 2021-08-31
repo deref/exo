@@ -47,7 +47,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 
 	cfg := &config.Config{}
 	config.MustLoadDefault(cfg)
-	mustMakeDirectories(cfg)
+	MustMakeDirectories(cfg)
 
 	tel.StartSession(ctx)
 
@@ -165,7 +165,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	})
 }
 
-func mustMakeDirectories(cfg *config.Config) {
+func MustMakeDirectories(cfg *config.Config) {
 	paths := []string{
 		cfg.HomeDir,
 		cfg.BinDir,

@@ -4,13 +4,26 @@ All notable changes to this project will be documented in this file.
 
 This project adhears to [CalVer](./doc/versioning.md).
 
-## Unreleased
+## 2021-08-28
+
+### Fixed
+
+- Directory creation race on first run.
+
+
+## 2021-08-27
 
 Docker Compose compatibility BETA.
 
 ### Added
 
 - Dark Mode
+- Component dependencies
+- Support for `.env` files
+
+### Fixed
+
+- Many Docker compose compatibility issues.
 
 
 ## 2021-08-17
