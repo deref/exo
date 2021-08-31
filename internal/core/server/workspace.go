@@ -707,12 +707,6 @@ func (ws *Workspace) RestartComponents(ctx context.Context, input *api.RestartCo
 	}, nil
 }
 
-type procDescriptionResult struct {
-	description api.ProcessDescription
-	order       int
-	err         error
-}
-
 func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeProcessesInput) (*api.DescribeProcessesOutput, error) {
 	describe, err := allProcessQuery().describeComponentsInput(ctx, ws)
 	if err != nil {
