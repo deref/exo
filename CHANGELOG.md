@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 This project adhears to [CalVer](./doc/versioning.md).
 
+## 2021-08-31
+
+### Fixed
+
+- Docker compose volume name prefixing.
+
 ## 2021-08-28
 
 ### Fixed
