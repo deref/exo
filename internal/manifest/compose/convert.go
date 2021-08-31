@@ -135,19 +135,21 @@ func (i *Loader) convert(project *compose.Compose) manifest.LoadResult {
 		}
 
 		if len(service.Volumes) > 0 {
-			for _, volumeMount := range service.Volumes {
+			for i, volumeMount := range service.Volumes {
 				if volumeMount.Type != "volume" {
 					continue
 				}
 				if volumeName, ok := volumesByComposeName[volumeMount.Source]; ok {
 					originalName := volumeMount.Source
-					volumeMount.Source = volumeName
+					service.Volumes[i].Source = volumeName
 					component.DependsOn = append(component.DependsOn, originalName)
 				}
 				// If the volume was not listed under the top-level "volumes" key, then the docker engine
 				// will create a new volume that will not be namespaced by the Compose project name.
 			}
 		}
+
+		fmt.Printf("service: %+v\n", service.Volumes)
 
 		for _, dependency := range service.DependsOn.Services {
 			if dependency.Condition != "service_started" {
