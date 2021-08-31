@@ -1,6 +1,6 @@
 <script lang="ts">
   import IconButton from './IconButton.svelte';
-  import BackSVG from './mono/leftarrow.svelte';
+  import BackSVG from './mono/BackSVG.svelte';
   import * as router from 'svelte-spa-router';
 
   export let title: string = '';

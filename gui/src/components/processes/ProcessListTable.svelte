@@ -2,7 +2,7 @@
   import IconButton from '../IconButton.svelte';
   import CheckboxButton from '../CheckboxButton.svelte';
   import ProcessRunControls from './ProcessRunControls.svelte';
-  import DeleteSVG from '../mono/delete.svelte';
+  import DeleteSVG from '../mono/DeleteSVG.svelte';
   import { link } from 'svelte-spa-router';
   import {
     startProcess,

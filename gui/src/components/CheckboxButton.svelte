@@ -1,5 +1,5 @@
 <script lang="ts">
-  import CheckSVG from './mono/check.svelte';
+  import CheckSVG from './mono/CheckSVG.svelte';
 
   export let active: boolean = false;
   export let tooltip: string = '';
