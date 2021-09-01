@@ -181,6 +181,13 @@ export const parseSpans = (input: string): Span[] => {
           break;
         }
 
+        case 23: {
+          if (style === 'bold' || style === 'italic') {
+            style = null;
+          }
+          break;
+        }
+
         case 1:
           style = 'bold';
           break;
