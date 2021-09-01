@@ -81,6 +81,27 @@ func (g *Graph) DependOn(node, dep Node) error {
 	return nil
 }
 
+// UnmetDependencies returns the list of ids of dependencies that have no corresponding
+// node in the graph. In other words, some edge was added indicating that a node in the graph
+// depends on a node that is not in the graph.
+func (g *Graph) UnmetDependencies() []string {
+	unmetIDS := make(map[string]struct{})
+	for id := range g.dependencies {
+		if _, ok := g.nodes[id]; !ok {
+			unmetIDS[id] = struct{}{}
+		}
+	}
+
+	idSlice := make([]string, len(unmetIDS))
+	var i int
+	for id := range unmetIDS {
+		idSlice[i] = id
+		i++
+	}
+
+	return idSlice
+}
+
 // AddEdge registers a dependency between the node identified by parentID and the node identified by childID.
 // This assumes that the nodes will be added separately via AddNode() or DependOn().
 func (g *Graph) AddEdge(parentID, childID string) error {
@@ -105,6 +126,11 @@ func (g *Graph) DependsOn(node, dep Node) bool {
 func (g *Graph) dependsOn(parentID, childID string) bool {
 	tds := g.Dependencies(parentID)
 	_, ok := tds[childID]
+	return ok
+}
+
+func (g *Graph) HasNode(id string) bool {
+	_, ok := g.nodes[id]
 	return ok
 }
 

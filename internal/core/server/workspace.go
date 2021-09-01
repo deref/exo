@@ -113,54 +113,85 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 		return nil, fmt.Errorf("describing components: %w", err)
 	}
 
-	// Index old components by name.
 	oldComponents := make(map[string]api.ComponentDescription, len(describeOutput.Components))
-	for _, component := range describeOutput.Components {
-		oldComponents[component.Name] = component
+	for _, oldComponent := range describeOutput.Components {
+		oldComponents[oldComponent.Name] = oldComponent
 	}
 
 	// TODO: Handle partial failures.
-
 	job := ws.TaskTracker.StartTask(ctx, "applying")
-	runGraph := deps.New()
-	// Register component upserts.
-	newComponents := make(map[string]manifest.Component, len(m.Components))
-	for _, newComponent := range m.Components {
-		newComponent := newComponent
-		name := newComponent.Name
-		newComponents[name] = newComponent
-		id := gensym.RandomBase32()
-		if oldComponent, exists := oldComponents[name]; exists {
-			// Update existing component.
-			runGraph.AddNode(&runTaskNode{
-				name: name,
-				task: job.CreateChild("updating " + name),
-				run: func(t *task.Task) error {
-					return ws.updateComponent(t, oldComponent, newComponent, id)
-				},
-			})
-		} else {
-			runGraph.AddNode(&runTaskNode{
-				name: name,
-				task: job.CreateChild("adding " + name),
-				run: func(t *task.Task) error {
-					return ws.createComponent(t, newComponent, id)
-				},
-			})
-		}
-		for _, dependency := range newComponent.DependsOn {
-			runGraph.AddEdge(name, dependency)
+
+	// The algorithm for applying a new manifest is as follows:
+	// 1. Build dependency graph for the new manifest, allComponents.
+	// 2. Create empty dependency graphs for deletions, deleteGraph, and for creations, createGraph.
+	// 3. Iterate all components in the old graph, and for each component that does not exist in the new graph:
+	//   3.1. Add a node to deleteGraph
+	//   3.2. For each dependency of node, add an _inverted_ edge for each dependency of that node. This
+	//        allows us to check whether deleting these nodes would leave the graph with unmet dependencies.
+	// 4. Check whether deleteGraph has unmet dependencies. If so, return an error because applying deletions would
+	//    leave the graph with unmet dependencies.
+	// 5. Create a set to track components to update, updateSet.
+	// 6. Walk the new components.
+	//   6.1. If the component already exists, get this component and all components that depend on it. For each,
+	//     6.1.1. Check if the component is in updateSet. If not, add a delete task to deleteGraph and a create task
+	//            to createGraph, and add the component to updateSet.
+	//   6.2. Otherwise, add a task to create the component to createGraph.
+	// 7. Apply all deletes in topographic order.
+	// 8. Apply all creates in topographic order.
+
+	// 1.
+	allComponents := deps.New()
+	for _, c := range m.Components {
+		allComponents.AddNode(&componentNode{
+			component: c,
+		})
+		for _, dependency := range c.DependsOn {
+			allComponents.AddEdge(c.Name, dependency)
 		}
 	}
 
-	// Register component deletions.
+	// 2.
+	createGraph := deps.New()
+	deleteGraph := deps.New()
+
+	// 3.
 	for name, oldComponent := range oldComponents {
-		name := name
-		oldComponent := oldComponent
-		if _, keep := newComponents[name]; keep {
+		if allComponents.HasNode(name) {
 			continue
 		}
-		runGraph.AddNode(&runTaskNode{
+
+		deleteGraph.AddNode(&runTaskNode{
+			name: name,
+			task: job.CreateChild("deleting " + name),
+			run: func(t *task.Task) error {
+				return ws.control(job.Context, oldComponent, func(ctx context.Context, lifecycle api.Lifecycle) error {
+					return ws.deleteComponent(job.Context, lifecycle)
+				})
+			},
+		})
+		// Invert the dependencies for deletions so that we can check whether there is anything
+		// left in the graph that still depends on something that we want to delete.
+		for _, dependency := range oldComponent.DependsOn {
+			deleteGraph.AddEdge(dependency, name)
+		}
+	}
+
+	// 4.
+	unmetDeps := deleteGraph.UnmetDependencies()
+	if len(unmetDeps) > 0 {
+		return nil, fmt.Errorf("would remove components that are still depended on: %s", strings.Join(unmetDeps, ", "))
+	}
+
+	// 5.
+	updateSet := make(map[string]struct{})
+
+	recreateComponentOnce := func(name string, oldComponent api.ComponentDescription, newComponent manifest.Component) {
+		// 6.1.1.
+		if _, alreadyUpdated := updateSet[name]; alreadyUpdated {
+			return
+		}
+
+		deleteGraph.AddNode(&runTaskNode{
 			name: name,
 			task: job.CreateChild("deleting " + name),
 			run: func(t *task.Task) error {
@@ -170,7 +201,52 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 			},
 		})
 		for _, dependency := range oldComponent.DependsOn {
-			runGraph.AddEdge(name, dependency)
+			deleteGraph.AddEdge(dependency, name)
+		}
+
+		createGraph.AddNode(&runTaskNode{
+			name: name,
+			task: job.CreateChild("re-creating " + name),
+			run: func(t *task.Task) error {
+				// Should the replacement component get the old component's ID?
+				return ws.createComponent(t, newComponent, gensym.RandomBase32())
+			},
+		})
+		for _, dependency := range newComponent.DependsOn {
+			createGraph.AddEdge(name, dependency)
+		}
+		updateSet[name] = struct{}{}
+	}
+
+	// 6.
+	for _, newComponent := range m.Components {
+		newComponent := newComponent
+		name := newComponent.Name
+
+		if oldComponent, exists := oldComponents[name]; exists {
+			name := name
+			// 6.1.
+			recreateComponentOnce(name, oldComponent, newComponent)
+
+			componentsForUpdate := allComponents.Dependents(name)
+			for updatedComponentName, componentForUpdate := range componentsForUpdate {
+				forDelete := oldComponents[updatedComponentName]
+				forCreate := componentForUpdate.(*componentNode).component
+				recreateComponentOnce(updatedComponentName, forDelete, forCreate)
+			}
+		} else {
+			// 6.2.
+			createGraph.AddNode(&runTaskNode{
+				name: name,
+				task: job.CreateChild("adding " + name),
+				run: func(t *task.Task) error {
+					id := gensym.RandomBase32()
+					return ws.createComponent(t, newComponent, id)
+				},
+			})
+			for _, dependency := range newComponent.DependsOn {
+				createGraph.AddEdge(name, dependency)
+			}
 		}
 	}
 
@@ -178,29 +254,34 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 	go func() {
 		defer job.Finish()
 
-		layers := runGraph.TopoSortedLayers()
-		for _, layer := range layers {
-			var wg sync.WaitGroup
-			for _, node := range layer {
-				runTask := node.(*runTaskNode)
-				wg.Add(1)
-				go func() {
-					defer wg.Done()
-					runTask.task.Start()
-					defer runTask.task.Finish()
-					if err := runTask.run(runTask.task); err != nil {
-						runTask.task.Fail(err)
-					}
-				}()
-			}
-			wg.Wait()
-		}
+		executeRunTasks(deleteGraph)
+		executeRunTasks(createGraph)
 	}()
 
 	return &api.ApplyOutput{
 		Warnings: res.Warnings,
 		JobID:    job.ID(),
 	}, nil
+}
+
+func executeRunTasks(g *deps.Graph) {
+	layers := g.TopoSortedLayers()
+	for _, layer := range layers {
+		var wg sync.WaitGroup
+		for _, node := range layer {
+			runTask := node.(*runTaskNode)
+			wg.Add(1)
+			go func() {
+				defer wg.Done()
+				runTask.task.Start()
+				defer runTask.task.Finish()
+				if err := runTask.run(runTask.task); err != nil {
+					runTask.task.Fail(err)
+				}
+			}()
+		}
+		wg.Wait()
+	}
 }
 
 func (ws *Workspace) Resolve(ctx context.Context, input *api.ResolveInput) (*api.ResolveOutput, error) {
@@ -1002,4 +1083,12 @@ type runTaskNode struct {
 
 func (n *runTaskNode) ID() string {
 	return n.name
+}
+
+type componentNode struct {
+	component manifest.Component
+}
+
+func (n *componentNode) ID() string {
+	return n.component.Name
 }
