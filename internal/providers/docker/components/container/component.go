@@ -28,4 +28,5 @@ type ImageState struct {
 	Command    strslice.StrSlice `json:"command"`
 	WorkingDir string            `json:"workingDir"`
 	Entrypoint strslice.StrSlice `json:"entrypoint"`
+	Shell      []string          `json:"shell"`
 }

@@ -34,7 +34,10 @@ func (c *Container) ensureImage(ctx context.Context) error {
 	c.State.Image.Command = inspection.Config.Cmd
 	c.State.Image.WorkingDir = inspection.Config.WorkingDir
 	c.State.Image.Entrypoint = inspection.Config.Entrypoint
-
+	c.State.Image.Shell = inspection.Config.Shell
+	if len(c.State.Image.Shell) == 0 {
+		c.State.Image.Shell = []string{"/bin/sh", "-c"}
+	}
 	return nil
 }
 
