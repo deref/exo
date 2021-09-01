@@ -14,6 +14,7 @@ import (
 	"os/exec"
 	"os/signal"
 	"strconv"
+	"sync"
 	"syscall"
 	"time"
 
@@ -126,11 +127,25 @@ func Main() {
 
 	// Proxy logs.
 	syslogProcID := strconv.Itoa(child.Pid)
-	go pipeToSyslog(ctx, conn, cfg.ComponentID, "out", syslogProcID, stdout)
-	go pipeToSyslog(ctx, conn, cfg.ComponentID, "err", syslogProcID, stderr)
 
-	// Wait for child process to exit.
+	var wg sync.WaitGroup
+	work := func(f func()) {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			f()
+		}()
+	}
+	work(func() {
+		pipeToSyslog(ctx, conn, cfg.ComponentID, "out", syslogProcID, stdout)
+	})
+	work(func() {
+		pipeToSyslog(ctx, conn, cfg.ComponentID, "err", syslogProcID, stderr)
+	})
+
+	// Wait for child process and log forwarding to exit.
 	err = cmd.Wait()
+	wg.Wait()
 	if _, ok := err.(*exec.ExitError); ok {
 		cleanExit()
 	}
