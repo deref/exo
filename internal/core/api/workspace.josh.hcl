@@ -131,6 +131,17 @@ interface "workspace" {
     output "job-id" "string" {}
   }
 
+  method "get-component-state" {
+    input "ref" "string" {}
+
+    output "state" "string" {}
+  }
+
+  method "set-component-state" {
+    input "ref" "string" {}
+    input "state" "string" {}
+  }
+
   method "describe-logs" {
     input "refs" "[]string" {}
 
