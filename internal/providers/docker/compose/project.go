@@ -12,6 +12,7 @@ import (
 	"fmt"
 	"io"
 	"strconv"
+	"strings"
 
 	"code.cloudfoundry.org/bytefmt"
 	"github.com/goccy/go-yaml"
@@ -20,12 +21,24 @@ import (
 func Parse(r io.Reader) (*Compose, error) {
 	dec := yaml.NewDecoder(r,
 		yaml.DisallowDuplicateKey(),
-		yaml.DisallowUnknownField(), // TODO: Handle this more gracefully.
 	)
 	var comp Compose
 	if err := dec.Decode(&comp); err != nil {
 		return nil, err
 	}
+
+	// Validate.
+	for key := range comp.Raw {
+		switch key {
+		case "version", "services", "networks", "volumes", "configs", "secrets":
+			// Ok.
+		default:
+			if !strings.HasPrefix(key, "x-") {
+				return nil, fmt.Errorf("unsupported top-level key in compose file: %q", key)
+			}
+		}
+	}
+
 	return &comp, nil
 }
 
@@ -36,6 +49,8 @@ type Compose struct {
 	Volumes  map[string]Volume  `yaml:"volumes"`
 	Configs  map[string]Config  `yaml:"configs"`
 	Secrets  map[string]Secret  `yaml:"secrets"`
+
+	Raw map[string]interface{} `yaml:",inline"`
 	// TODO: extensions with "x-" prefix.
 }
 
