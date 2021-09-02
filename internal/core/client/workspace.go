@@ -135,6 +135,16 @@ func (c *Workspace) DeleteComponents(ctx context.Context, input *api.DeleteCompo
 	return
 }
 
+func (c *Workspace) GetComponentState(ctx context.Context, input *api.GetComponentStateInput) (output *api.GetComponentStateOutput, err error) {
+	err = c.client.Invoke(ctx, "get-component-state", input, &output)
+	return
+}
+
+func (c *Workspace) SetComponentState(ctx context.Context, input *api.SetComponentStateInput) (output *api.SetComponentStateOutput, err error) {
+	err = c.client.Invoke(ctx, "set-component-state", input, &output)
+	return
+}
+
 func (c *Workspace) DescribeLogs(ctx context.Context, input *api.DescribeLogsInput) (output *api.DescribeLogsOutput, err error) {
 	err = c.client.Invoke(ctx, "describe-logs", input, &output)
 	return

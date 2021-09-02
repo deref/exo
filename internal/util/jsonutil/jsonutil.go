@@ -63,3 +63,20 @@ func MarshalFile(filePath string, v interface{}) error {
 	bs = append(bs, '\n')
 	return ioutil.WriteFile(filePath, bs, 0600)
 }
+
+func PrettyPrintJSONString(w io.Writer, jsonStr string) error {
+	var val interface{}
+	if err := UnmarshalString(jsonStr, &val); err != nil {
+		return err
+	}
+
+	enc := json.NewEncoder(w)
+	enc.SetIndent("", "  ")
+	return enc.Encode(val)
+}
+
+func IsValid(jsonStr string) bool {
+	var val interface{}
+	err := UnmarshalString(jsonStr, &val)
+	return err == nil
+}

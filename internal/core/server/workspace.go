@@ -505,6 +505,48 @@ func (ws *Workspace) deleteComponent(ctx context.Context, lifecycle api.Lifecycl
 	return nil
 }
 
+func (ws *Workspace) GetComponentState(ctx context.Context, input *api.GetComponentStateInput) (*api.GetComponentStateOutput, error) {
+	query := makeComponentQuery(withRefs(input.Ref))
+	describe, err := query.describeComponentsInput(ctx, ws)
+	if err != nil {
+		return nil, err
+	}
+
+	describeOutput, err := ws.DescribeComponents(ctx, describe)
+	if err != nil {
+		return nil, fmt.Errorf("describing components: %w", err)
+	}
+
+	if len(describeOutput.Components) == 0 {
+		return nil, fmt.Errorf("component not found: %q", input.Ref)
+	}
+
+	return &api.GetComponentStateOutput{
+		State: describeOutput.Components[0].State,
+	}, nil
+}
+
+func (ws *Workspace) SetComponentState(ctx context.Context, input *api.SetComponentStateInput) (*api.SetComponentStateOutput, error) {
+	id, err := ws.resolveRef(ctx, input.Ref)
+	if err != nil {
+		return nil, err
+	}
+
+	// Validate that state is legal JSON.
+	if !jsonutil.IsValid(input.State) {
+		return nil, fmt.Errorf("state is not valid JSON")
+	}
+
+	if _, err = ws.Store.PatchComponent(ctx, &state.PatchComponentInput{
+		ID:    id,
+		State: input.State,
+	}); err != nil {
+		return nil, fmt.Errorf("updating state: %w", err)
+	}
+
+	return &api.SetComponentStateOutput{}, nil
+}
+
 func (ws *Workspace) DescribeLogs(ctx context.Context, input *api.DescribeLogsInput) (*api.DescribeLogsOutput, error) {
 	describe, err := allProcessQuery().describeComponentsInput(ctx, ws)
 	if err != nil {

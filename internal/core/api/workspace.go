@@ -90,6 +90,8 @@ type Workspace interface {
 	DisposeComponents(context.Context, *DisposeComponentsInput) (*DisposeComponentsOutput, error)
 	// Asynchronously disposes components, then removes them from the manifest.
 	DeleteComponents(context.Context, *DeleteComponentsInput) (*DeleteComponentsOutput, error)
+	GetComponentState(context.Context, *GetComponentStateInput) (*GetComponentStateOutput, error)
+	SetComponentState(context.Context, *SetComponentStateInput) (*SetComponentStateOutput, error)
 	DescribeLogs(context.Context, *DescribeLogsInput) (*DescribeLogsOutput, error)
 	// Returns pages of log events for some set of logs. If `cursor` is specified, standard pagination behavior is used. Otherwise the cursor is assumed to represent the current tail of the log.
 	GetEvents(context.Context, *GetEventsInput) (*GetEventsOutput, error)
@@ -204,6 +206,22 @@ type DeleteComponentsInput struct {
 
 type DeleteComponentsOutput struct {
 	JobID string `json:"jobId"`
+}
+
+type GetComponentStateInput struct {
+	Ref string `json:"ref"`
+}
+
+type GetComponentStateOutput struct {
+	State string `json:"state"`
+}
+
+type SetComponentStateInput struct {
+	Ref   string `json:"ref"`
+	State string `json:"state"`
+}
+
+type SetComponentStateOutput struct {
 }
 
 type DescribeLogsInput struct {
@@ -353,6 +371,12 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	})
 	b.AddMethod("delete-components", func(req *http.Request) interface{} {
 		return factory(req).DeleteComponents
+	})
+	b.AddMethod("get-component-state", func(req *http.Request) interface{} {
+		return factory(req).GetComponentState
+	})
+	b.AddMethod("set-component-state", func(req *http.Request) interface{} {
+		return factory(req).SetComponentState
 	})
 	b.AddMethod("describe-logs", func(req *http.Request) interface{} {
 		return factory(req).DescribeLogs
