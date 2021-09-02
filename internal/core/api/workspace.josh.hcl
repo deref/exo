@@ -221,6 +221,9 @@ interface "workspace" {
     output "job-id" "string" {}
   }
 
+  method "describe-environment" {
+    output "variables" "map[string]string" {}
+  }
 }
 
 struct "workspace-description" {

@@ -204,3 +204,8 @@ func (c *Workspace) BuildComponents(ctx context.Context, input *api.BuildCompone
 	err = c.client.Invoke(ctx, "build-components", input, &output)
 	return
 }
+
+func (c *Workspace) DescribeEnvironment(ctx context.Context, input *api.DescribeEnvironmentInput) (output *api.DescribeEnvironmentOutput, err error) {
+	err = c.client.Invoke(ctx, "describe-environment", input, &output)
+	return
+}

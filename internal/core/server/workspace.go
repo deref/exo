@@ -393,6 +393,16 @@ func (ws *Workspace) newController(ctx context.Context, desc api.ComponentDescri
 	}
 }
 
+func (ws *Workspace) DescribeEnvironment(ctx context.Context, input *api.DescribeEnvironmentInput) (*api.DescribeEnvironmentOutput, error) {
+	env, err := ws.getEnvironment(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return &api.DescribeEnvironmentOutput{
+		Variables: env,
+	}, nil
+}
+
 func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]string, error) {
 	envPath, err := ws.resolveWorkspacePath(ctx, ".env")
 	if err != nil {

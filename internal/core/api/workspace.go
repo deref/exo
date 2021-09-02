@@ -107,6 +107,7 @@ type Workspace interface {
 	// Writes a file to disk.
 	WriteFile(context.Context, *WriteFileInput) (*WriteFileOutput, error)
 	BuildComponents(context.Context, *BuildComponentsInput) (*BuildComponentsOutput, error)
+	DescribeEnvironment(context.Context, *DescribeEnvironmentInput) (*DescribeEnvironmentOutput, error)
 }
 
 type DescribeInput struct {
@@ -329,6 +330,13 @@ type BuildComponentsOutput struct {
 	JobID string `json:"jobId"`
 }
 
+type DescribeEnvironmentInput struct {
+}
+
+type DescribeEnvironmentOutput struct {
+	Variables map[string]string `json:"variables"`
+}
+
 func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Workspace) {
 	b.AddMethod("start", func(req *http.Request) interface{} {
 		return factory(req).Start
@@ -413,6 +421,9 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	})
 	b.AddMethod("build-components", func(req *http.Request) interface{} {
 		return factory(req).BuildComponents
+	})
+	b.AddMethod("describe-environment", func(req *http.Request) interface{} {
+		return factory(req).DescribeEnvironment
 	})
 }
 
