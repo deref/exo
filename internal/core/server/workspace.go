@@ -400,7 +400,32 @@ func (ws *Workspace) createComponent(ctx context.Context, component manifest.Com
 }
 
 func (ws *Workspace) UpdateComponent(ctx context.Context, input *api.UpdateComponentInput) (*api.UpdateComponentOutput, error) {
-	panic("TODO: UpdateComponent") // XXX can implement this now.
+	id, err := ws.resolveRef(ctx, input.Ref)
+	if err != nil {
+		return nil, err
+	}
+
+	describeOutput, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{IDs: []string{id}})
+	if err != nil {
+		return nil, fmt.Errorf("describing components: %w", err)
+	}
+
+	oldComponent := describeOutput.Components[0]
+	dependsOn := oldComponent.DependsOn
+	if input.DependsOn != nil {
+		dependsOn = input.DependsOn
+	}
+
+	if err := ws.updateComponent(ctx, oldComponent, manifest.Component{
+		Type:      oldComponent.Type,
+		Name:      oldComponent.Name,
+		Spec:      input.Spec,
+		DependsOn: dependsOn,
+	}, oldComponent.ID); err != nil {
+		return nil, err
+	}
+
+	return &api.UpdateComponentOutput{}, nil
 }
 
 func (ws *Workspace) updateComponent(ctx context.Context, oldComponent api.ComponentDescription, newComponent manifest.Component, id string) error {
