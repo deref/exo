@@ -162,8 +162,8 @@ type Service struct {
 	Restart string `yaml:"restart"`
 	Runtime string `yaml:"runtime"`
 	// TODO: scale
-	Secrets []string `yaml:"secrets"` // TODO: support long syntax.
-	// TODO: security_opt
+	Secrets         []string  `yaml:"secrets"` // TODO: support long syntax.
+	SecurityOpt     []string  `yaml:"security_opt"`
 	ShmSize         Bytes     `yaml:"shm_size"`
 	StdinOpen       bool      `yaml:"stdin_open"`
 	StopGracePeriod *Duration `yaml:"stop_grace_period"`
