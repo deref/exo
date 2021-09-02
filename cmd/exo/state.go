@@ -141,6 +141,8 @@ var stateEditCmd = &cobra.Command{
 		if editor == "" {
 
 			for _, candidateEditor := range []string{
+				"sensible-editor",
+				"editor",
 				"code",
 				"vim",
 				"nano",
