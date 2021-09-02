@@ -42,3 +42,17 @@ func (q Query) Run() (string, error) {
 	}
 	return "", fmt.Errorf("%q not found", q.Program)
 }
+
+func Which(program string) (string, error) {
+	wd, err := os.Getwd()
+	if err != nil {
+		return "", fmt.Errorf("getting working directory: %w", err)
+	}
+	pathVar, _ := os.LookupEnv("PATH")
+
+	return Query{
+		WorkingDirectory: wd,
+		PathVariable:     pathVar,
+		Program:          program,
+	}.Run()
+}

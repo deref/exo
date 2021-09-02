@@ -30,10 +30,7 @@ var stateCmd = &cobra.Command{
 	Short:  "View and update the state store.",
 	Long:   `Contains subcommands for getting, setting, and clearing state on a per-component basis.`,
 	Hidden: true,
-	Args:   cobra.MaximumNArgs(0),
-	RunE: func(cmd *cobra.Command, args []string) error {
-		return nil
-	},
+	Args:   cobra.NoArgs,
 }
 
 var stateGetCmd = &cobra.Command{
@@ -71,7 +68,7 @@ var stateSetCmd = &cobra.Command{
 
 		var newState map[string]interface{}
 		if err := json.NewDecoder(os.Stdin).Decode(&newState); err != nil {
-			return fmt.Errorf("reading state from stdin: %v", err)
+			return fmt.Errorf("reading state from stdin: %w", err)
 		}
 
 		workspace := requireWorkspace(ctx, cl)
@@ -134,14 +131,14 @@ var stateEditCmd = &cobra.Command{
 			return fmt.Errorf("closing temporary file: %w", err)
 		}
 
-		// TODO: Read from EDITOR, or guess from common editors.
+		stat, err := os.Stat(tmpfile.Name())
+		if err != nil {
+			return fmt.Errorf("checking modification time: %w", err)
+		}
+		originalModTime := stat.ModTime()
+
 		editor := os.Getenv("EDITOR")
 		if editor == "" {
-			wd, err := os.Getwd()
-			if err != nil {
-				return fmt.Errorf("getting working directory: %w", err)
-			}
-			pathVar, _ := os.LookupEnv("PATH")
 
 			for _, candidateEditor := range []string{
 				"code",
@@ -151,11 +148,7 @@ var stateEditCmd = &cobra.Command{
 				"emacs",
 				"ee",
 			} {
-				found, err := which.Query{
-					WorkingDirectory: wd,
-					PathVariable:     pathVar,
-					Program:          candidateEditor,
-				}.Run()
+				found, err := which.Which(candidateEditor)
 				if err != nil && !strings.Contains(err.Error(), "not found") {
 					return fmt.Errorf("looking up candidate editor %q: %w", candidateEditor, err)
 				}
@@ -176,6 +169,15 @@ var stateEditCmd = &cobra.Command{
 		edit.Stderr = os.Stderr
 		if err := edit.Run(); err != nil {
 			return fmt.Errorf("editing state file: %w", err)
+		}
+
+		if stat, err = os.Stat(tmpfile.Name()); err != nil {
+			return fmt.Errorf("checking modification time: %w", err)
+		}
+		newModTime := stat.ModTime()
+		if !newModTime.After(originalModTime) {
+			fmt.Fprintf(os.Stderr, "Not modified - not updating state.")
+			return nil
 		}
 
 		newState, err := os.ReadFile(tmpfile.Name())
