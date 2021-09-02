@@ -166,6 +166,62 @@ cpu_percent: 80`,
 				CPUPercent: 80,
 			},
 		},
+
+		{
+			name: "block io config",
+			in: `blkio_config:
+  weight: 300
+  weight_device:
+  - path: /dev/sda
+    weight: 400
+  device_read_bps:
+  - path: /dev/sdb
+    rate: '12mb'
+  device_read_iops:
+  - path: /dev/sdb
+    rate: 120
+  device_write_bps:
+  - path: /dev/sdb
+    rate: '1024k'
+  device_write_iops:
+  - path: /dev/sdb
+    rate: 30`,
+			expected: compose.Service{
+				BlkioConfig: compose.BlkioConfig{
+					Weight: 300,
+					WeightDevice: []compose.WeightDevice{
+						{
+							Path:   "/dev/sda",
+							Weight: 400,
+						},
+					},
+					DeviceReadBPS: []compose.ThrottleDevice{
+						{
+							Path: "/dev/sdb",
+							Rate: compose.Bytes(12582912),
+						},
+					},
+					DeviceReadIOPS: []compose.ThrottleDevice{
+						{
+							Path: "/dev/sdb",
+							Rate: 120,
+						},
+					},
+					DeviceWriteBPS: []compose.ThrottleDevice{
+						{
+							Path: "/dev/sdb",
+							Rate: compose.Bytes(1048576),
+						},
+					},
+					DeviceWriteIOPS: []compose.ThrottleDevice{
+						{
+							Path: "/dev/sdb",
+							Rate: 30,
+						},
+					},
+				},
+			},
+		},
 	}
 
 	for _, testCase := range testCases {
@@ -183,7 +239,9 @@ cpu_percent: 80`,
 			}
 
 			comp, err := compose.Parse(&content)
-			assert.NoError(t, err)
+			if !assert.NoError(t, err) {
+				return
+			}
 
 			svc := comp.Services["test-svc"]
 			assert.Equal(t, expected, svc)

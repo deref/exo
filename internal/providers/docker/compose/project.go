@@ -100,7 +100,7 @@ type Service struct {
 
 	// TODO: cpus
 	// TODO: cpuset
-	// TODO: blkio_config
+	BlkioConfig BlkioConfig `yaml:"blkio_config"`
 
 	Build Build `yaml:"build"`
 	// TODO: cap_add
@@ -225,4 +225,23 @@ type Secret struct {
 	File     string `yaml:"file"`
 	External bool   `yaml:"external"`
 	Name     string `yaml:"name"`
+}
+
+type BlkioConfig struct {
+	DeviceReadBPS   []ThrottleDevice `yaml:"device_read_bps"`
+	DeviceWriteBPS  []ThrottleDevice `yaml:"device_write_bps"`
+	DeviceReadIOPS  []ThrottleDevice `yaml:"device_read_iops"`
+	DeviceWriteIOPS []ThrottleDevice `yaml:"device_write_iops"`
+	Weight          uint16           `yaml:"weight"`
+	WeightDevice    []WeightDevice   `yaml:"weight_device"`
+}
+
+type ThrottleDevice struct {
+	Path string `yaml:"path"`
+	Rate Bytes  `yaml:"rate"`
+}
+
+type WeightDevice struct {
+	Path   string `yaml:"path"`
+	Weight uint16 `yaml:"weight"`
 }

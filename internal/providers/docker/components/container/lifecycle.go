@@ -10,6 +10,7 @@ import (
 	core "github.com/deref/exo/internal/core/api"
 	"github.com/deref/exo/internal/providers/docker/compose"
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/blkiodev"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/mount"
@@ -160,6 +161,20 @@ func (c *Container) create(ctx context.Context) error {
 		logCfg.Type = c.Spec.Logging.Driver
 		logCfg.Config = c.Spec.Logging.Options
 	}
+
+	blkioWeightDevice := make([]*blkiodev.WeightDevice, len(c.Spec.BlkioConfig.WeightDevice))
+	for i, weightDevice := range c.Spec.BlkioConfig.WeightDevice {
+		blkioWeightDevice[i] = &blkiodev.WeightDevice{
+			Path:   weightDevice.Path,
+			Weight: weightDevice.Weight,
+		}
+	}
+
+	blkioDeviceReadBps := convertThrottleDevice(c.Spec.BlkioConfig.DeviceReadBPS)
+	blkioDeviceReadIops := convertThrottleDevice(c.Spec.BlkioConfig.DeviceReadIOPS)
+	blkioDeviceWriteBps := convertThrottleDevice(c.Spec.BlkioConfig.DeviceWriteBPS)
+	blkioDeviceWriteIops := convertThrottleDevice(c.Spec.BlkioConfig.DeviceWriteIOPS)
+
 	hostCfg := &container.HostConfig{
 		//// Applicable to all platforms
 		//Binds           []string      // List of volume bindings for this container
@@ -218,6 +233,12 @@ func (c *Container) create(ctx context.Context) error {
 			MemorySwappiness:  c.Spec.MemorySwappiness,
 			//CPURealtimePeriod:  c.Spec.CPURealtimePeriod,
 			//CPURealtimeRuntime: c.Spec.CPURealtimeRuntime,
+			BlkioWeight:          uint16(c.Spec.BlkioConfig.Weight),
+			BlkioWeightDevice:    blkioWeightDevice,
+			BlkioDeviceReadBps:   blkioDeviceReadBps,
+			BlkioDeviceReadIOps:  blkioDeviceReadIops,
+			BlkioDeviceWriteBps:  blkioDeviceWriteBps,
+			BlkioDeviceWriteIOps: blkioDeviceWriteIops,
 		},
 
 		// Mounts specs used by the container
@@ -404,4 +425,18 @@ func (c *Container) removeExistingContainerByName(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func convertThrottleDevice(in []compose.ThrottleDevice) []*blkiodev.ThrottleDevice {
+	if in == nil {
+		return nil
+	}
+	out := make([]*blkiodev.ThrottleDevice, len(in))
+	for i, throttleDevice := range in {
+		out[i] = &blkiodev.ThrottleDevice{
+			Path: throttleDevice.Path,
+			Rate: uint64(throttleDevice.Rate),
+		}
+	}
+	return out
 }
