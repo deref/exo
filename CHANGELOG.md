@@ -9,23 +9,31 @@ This project adhears to [CalVer](./doc/versioning.md).
 
 ## Added
 
-- Shell completions.
+- (#313)[https://github.com/deref/exo/pull/213] Shell completions (optional install).
+- (#284)[https://github.com/deref/exo/pull/284] `exo env` command.
+- Additional docker-compose compatibility: anchors & aliases, x- fields, cpu
+  contraints, arbitrary CMD syntax, and more.
+- (#280)[https://github.com/deref/exo/pull/280] `exo state ...` commands for performing state repair.
+
+## Fixed
+
+- (#273)[https://github.com/deref/exo/pull/273] Truncated output after processes terminate.
 
 
-## 2021-08-31
+## 2021.08.31
 
 ### Fixed
 
 - Docker compose volume name prefixing.
 
-## 2021-08-28
+## 2021.08.28
 
 ### Fixed
 
 - Directory creation race on first run.
 
 
-## 2021-08-27
+## 2021.08.27
 
 Docker Compose compatibility BETA.
 
@@ -40,7 +48,7 @@ Docker Compose compatibility BETA.
 - Many Docker compose compatibility issues.
 
 
-## 2021-08-17
+## 2021.08.17
 
 Docker Compose compatibility ALPHA.
 
@@ -62,7 +70,7 @@ Docker Compose compatibility ALPHA.
 - Log viewer line wrapping.
 
 
-## 2021-07-29
+## 2021.07.29
 
 Initial release.
 
