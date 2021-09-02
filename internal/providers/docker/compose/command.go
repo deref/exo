@@ -1,12 +1,10 @@
 package compose
 
-// FIXME: this incorrectly treats the "command" passed to docker as a meaningful
-// shell command that can be parsed into "shell words". In reality the command
-// is an arbitrary string that is passed to the entrypoint of the container as
-// an argument. It could be a shell command but it could also be a python
-// program or a Dan Brown novel.
 type Command struct {
-	Parts       []string
+	Parts []string
+	// IsShellForm is true if the command was provided as a string rather than an
+	// array of strings. This indicates that it should be passed to the image's
+	// shell as the first argument.
 	IsShellForm bool
 }
 
