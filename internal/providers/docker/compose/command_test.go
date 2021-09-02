@@ -17,8 +17,8 @@ func TestCommandYaml(t *testing.T) {
 shell: 'foo "bar baz"'
 parsed: ['x', 'y z']
 `, &actual)
-	assert.Equal(t, []string{"foo", "bar baz"}, []string(actual.Shell))
-	assert.Equal(t, []string{"x", "y z"}, []string(actual.Parsed))
+	assert.Equal(t, Command{Parts: []string{`foo "bar baz"`}, IsShellForm: true}, actual.Shell)
+	assert.Equal(t, Command{Parts: []string{"x", "y z"}}, actual.Parsed)
 
-	assert.Equal(t, "- x\n- y", strings.TrimSpace(yamlutil.MustMarshalString(Command([]string{"x", "y"}))))
+	assert.Equal(t, "- x\n- y", strings.TrimSpace(yamlutil.MustMarshalString(Command{Parts: []string{"x", "y"}})))
 }

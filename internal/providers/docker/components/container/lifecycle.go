@@ -48,7 +48,7 @@ func (c *Container) create(ctx context.Context) error {
 	var healthCfg *container.HealthConfig
 	if c.Spec.Healthcheck != nil {
 		healthCfg = &container.HealthConfig{
-			Test:        c.Spec.Healthcheck.Test,
+			Test:        strslice.StrSlice(c.Spec.Healthcheck.Test.Parts),
 			Interval:    time.Duration(c.Spec.Healthcheck.Interval),
 			Timeout:     time.Duration(c.Spec.Healthcheck.Timeout),
 			Retries:     c.Spec.Healthcheck.Retries,
@@ -85,14 +85,13 @@ func (c *Container) create(ctx context.Context) error {
 		OpenStdin:    c.Spec.StdinOpen,
 		// StdinOnce       bool                // If true, close stdin after the 1 attached client disconnects.
 		Env:         envSlice,
-		Cmd:         strslice.StrSlice(c.Spec.Command),
 		Healthcheck: healthCfg,
 		// ArgsEscaped     bool                `json:",omitempty"` // True if command is already escaped (meaning treat as a command line) (Windows specific).
 
 		Image: c.State.Image.ID,
 		// Volumes         map[string]struct{} // List of volumes (mounts) used for the container
 		WorkingDir: c.Spec.WorkingDir,
-		Entrypoint: strslice.StrSlice(c.Spec.Entrypoint),
+		Entrypoint: strslice.StrSlice(c.Spec.Entrypoint.Parts),
 		// NetworkDisabled bool                `json:",omitempty"` // Is network disabled
 		MacAddress: c.Spec.MacAddress,
 		// OnBuild         []string            // ONBUILD metadata that were defined on the image Dockerfile
@@ -101,6 +100,11 @@ func (c *Container) create(ctx context.Context) error {
 		// Shell           strslice.StrSlice   `json:",omitempty"` // Shell for shell-form of RUN, CMD, ENTRYPOINT
 	}
 
+	if c.Spec.Command.IsShellForm {
+		containerCfg.Cmd = append(c.State.Image.Shell, c.Spec.Command.Parts[0])
+	} else {
+		containerCfg.Cmd = c.Spec.Command.Parts
+	}
 	if len(containerCfg.Cmd) == 0 {
 		containerCfg.Cmd = c.State.Image.Command
 	}

@@ -20,7 +20,6 @@ require (
 	github.com/joho/godotenv v1.3.0
 	github.com/lucasb-eyer/go-colorful v1.2.0
 	github.com/mattn/go-isatty v0.0.13
-	github.com/mattn/go-shellwords v1.0.12
 	github.com/moby/buildkit v0.9.0 // indirect
 	github.com/moby/moby v20.10.8+incompatible
 	github.com/natefinch/atomic v1.0.1
