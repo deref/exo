@@ -13,7 +13,7 @@ We expect that all contributors follow the project's [Code of Conduct](https://g
 
 ## Fixing Bugs
 
-If you would like to fix any of the open bugs, please leave a comment on the issue indicating that you would like to help. The open bugs that we have identified as being good candidates for community contribution may be found [here](https://github.com/deref/exo/issues?q=is%3Aopen+is%3Aissue+label%3Abug+label%3A%22help+wanted%22).
+If you would like to fix any of the open bugs, please leave a comment on the issue indicating that you would like to help. The open bugs that we have identified as being good candidates for community contribution may be found [here](https://github.com/deref/exo/issues?q=is%3Aopen+is%3Aissue+label%3A%22help+wanted%22).
 
 If the fix requires a large code change and/or architectural modifications, please start a thread with your proposed solution. For trivial changes, it is sufficient to indicate that you are working on the issue and opening a PR.
 
