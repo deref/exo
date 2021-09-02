@@ -170,11 +170,6 @@ func (c *Container) create(ctx context.Context) error {
 		}
 	}
 
-	blkioDeviceReadBps := convertThrottleDevice(c.Spec.BlkioConfig.DeviceReadBPS)
-	blkioDeviceReadIops := convertThrottleDevice(c.Spec.BlkioConfig.DeviceReadIOPS)
-	blkioDeviceWriteBps := convertThrottleDevice(c.Spec.BlkioConfig.DeviceWriteBPS)
-	blkioDeviceWriteIops := convertThrottleDevice(c.Spec.BlkioConfig.DeviceWriteIOPS)
-
 	hostCfg := &container.HostConfig{
 		//// Applicable to all platforms
 		//Binds           []string      // List of volume bindings for this container
@@ -192,8 +187,8 @@ func (c *Container) create(ctx context.Context) error {
 		//VolumesFrom     []string      // List of volumes to take from other container
 
 		//// Applicable to UNIX platforms
-		//CapAdd          strslice.StrSlice // List of kernel capabilities to add to the container
-		//CapDrop         strslice.StrSlice // List of kernel capabilities to remove from the container
+		CapAdd:  c.Spec.CapAdd,
+		CapDrop: c.Spec.CapDrop,
 		//CgroupnsMode    CgroupnsMode      // Cgroup namespace mode to use for the container
 		//DNS             []string          `json:"Dns"`        // List of DNS server to lookup
 		//DNSOptions      []string          `json:"DnsOptions"` // List of DNSOption to look for
@@ -223,22 +218,26 @@ func (c *Container) create(ctx context.Context) error {
 
 		//// Contains container's resources (cgroups, ulimits)
 		Resources: container.Resources{
-			CPUCount:          c.Spec.CPUCount,
-			CPUPercent:        c.Spec.CPUPercent,
-			CPUShares:         c.Spec.CPUShares,
-			CPUPeriod:         c.Spec.CPUPeriod,
-			CPUQuota:          c.Spec.CPUQuota,
-			Memory:            int64(c.Spec.MemoryLimit),
-			MemoryReservation: int64(c.Spec.MemoryReservation),
-			MemorySwappiness:  c.Spec.MemorySwappiness,
-			//CPURealtimePeriod:  c.Spec.CPURealtimePeriod,
-			//CPURealtimeRuntime: c.Spec.CPURealtimeRuntime,
+			CPUCount:             c.Spec.CPUCount,
+			CPUPercent:           c.Spec.CPUPercent,
+			CPUShares:            c.Spec.CPUShares,
+			CPUPeriod:            c.Spec.CPUPeriod,
+			CPUQuota:             c.Spec.CPUQuota,
+			Memory:               int64(c.Spec.MemoryLimit),
+			MemoryReservation:    int64(c.Spec.MemoryReservation),
+			MemorySwappiness:     c.Spec.MemorySwappiness,
+			CPURealtimePeriod:    time.Duration(c.Spec.CPURealtimePeriod).Microseconds(),
+			CPURealtimeRuntime:   time.Duration(c.Spec.CPURealtimeRuntime).Microseconds(),
 			BlkioWeight:          uint16(c.Spec.BlkioConfig.Weight),
 			BlkioWeightDevice:    blkioWeightDevice,
-			BlkioDeviceReadBps:   blkioDeviceReadBps,
-			BlkioDeviceReadIOps:  blkioDeviceReadIops,
-			BlkioDeviceWriteBps:  blkioDeviceWriteBps,
-			BlkioDeviceWriteIOps: blkioDeviceWriteIops,
+			BlkioDeviceReadBps:   convertThrottleDevice(c.Spec.BlkioConfig.DeviceReadBPS),
+			BlkioDeviceReadIOps:  convertThrottleDevice(c.Spec.BlkioConfig.DeviceReadIOPS),
+			BlkioDeviceWriteBps:  convertThrottleDevice(c.Spec.BlkioConfig.DeviceWriteBPS),
+			BlkioDeviceWriteIOps: convertThrottleDevice(c.Spec.BlkioConfig.DeviceWriteIOPS),
+			CpusetCpus:           c.Spec.CPUSet,
+			CgroupParent:         c.Spec.CgroupParent,
+			DeviceCgroupRules:    c.Spec.DeviceCgroupRules,
+			Devices:              convertDeviceMappings(c.Spec.Devices),
 		},
 
 		// Mounts specs used by the container
@@ -431,11 +430,28 @@ func convertThrottleDevice(in []compose.ThrottleDevice) []*blkiodev.ThrottleDevi
 	if in == nil {
 		return nil
 	}
+
 	out := make([]*blkiodev.ThrottleDevice, len(in))
 	for i, throttleDevice := range in {
 		out[i] = &blkiodev.ThrottleDevice{
 			Path: throttleDevice.Path,
 			Rate: uint64(throttleDevice.Rate),
+		}
+	}
+	return out
+}
+
+func convertDeviceMappings(in []compose.DeviceMapping) []container.DeviceMapping {
+	if in == nil {
+		return nil
+	}
+
+	out := make([]container.DeviceMapping, len(in))
+	for i, deviceMapping := range in {
+		out[i] = container.DeviceMapping{
+			PathOnHost:        deviceMapping.PathOnHost,
+			PathInContainer:   deviceMapping.PathInContainer,
+			CgroupPermissions: deviceMapping.CgroupPermissions,
 		}
 	}
 	return out

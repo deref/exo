@@ -93,19 +93,21 @@ type Service struct {
 	CPUPeriod int64 `yaml:"cpu_period"`
 	CPUQuota  int64 `yaml:"cpu_quota"`
 
-	// CPURealtimeRuntime and CPURealtimePeriod can both be specified as either
-	// strings or integers.
-	//CPURealtimeRuntime int64 `yaml:"cpu_rt_runtime"`
-	//CPURealtimePeriod  int64 `yaml:"cpu_rt_period"`
+	CPURealtimeRuntime Duration `yaml:"cpu_rt_runtime"`
+	CPURealtimePeriod  Duration `yaml:"cpu_rt_period"`
 
-	// TODO: cpus
-	// TODO: cpuset
+	CPUSet string `yaml:"cpuset"`
+
+	// TODO: issue deprecation warning if `cpus` is set (replaced by `deploy.reservations.cpus`)
+
 	BlkioConfig BlkioConfig `yaml:"blkio_config"`
 
 	Build Build `yaml:"build"`
-	// TODO: cap_add
-	// TODO: cap_drop
-	// TODO: cgroup_parent
+
+	CapAdd  []string `yaml:"cap_add"`
+	CapDrop []string `yaml:"cap_drop"`
+
+	CgroupParent string `yaml:"cgroup_parent"`
 
 	Command       Command  `yaml:"command"`
 	Configs       []string `yaml:"configs"` // TODO: support long syntax.
@@ -114,8 +116,10 @@ type Service struct {
 
 	DependsOn ServiceDependencies `yaml:"depends_on"`
 
-	// TODO: device_cgroup_rules
-	// TODO: devices
+	DeviceCgroupRules []string `yaml:"device_cgroup_rules"`
+
+	Devices []DeviceMapping `yaml:"devices"`
+
 	// TODO: dns
 	// TODO: dns_opt
 	// TODO: dns_search

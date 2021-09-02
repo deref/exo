@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/deref/exo/internal/providers/docker/compose"
 	"github.com/stretchr/testify/assert"
@@ -160,10 +161,16 @@ func TestParseService(t *testing.T) {
 		{
 			name: "cpu config",
 			in: `cpu_count: 2
-cpu_percent: 80`,
+cpu_percent: 80
+cpu_rt_runtime: 400ms
+cpu_rt_period: 1400
+cpuset: 0,2,4`,
 			expected: compose.Service{
-				CPUCount:   2,
-				CPUPercent: 80,
+				CPUCount:           2,
+				CPUPercent:         80,
+				CPURealtimeRuntime: compose.Duration(400 * time.Millisecond),
+				CPURealtimePeriod:  compose.Duration(1400 * time.Microsecond),
+				CPUSet:             "0,2,4",
 			},
 		},
 
@@ -218,6 +225,71 @@ cpu_percent: 80`,
 							Path: "/dev/sdb",
 							Rate: 30,
 						},
+					},
+				},
+			},
+		},
+
+		{
+			name: "capabilities",
+			in: `cap_add:
+- ALL
+cap_drop:
+- NET_ADMIN
+- SYS_ADMIN`,
+			expected: compose.Service{
+				CapAdd:  []string{"ALL"},
+				CapDrop: []string{"NET_ADMIN", "SYS_ADMIN"},
+			},
+		},
+
+		{
+			name: "cgroup parent",
+			in:   `cgroup_parent: m-executor-abcd`,
+			expected: compose.Service{
+				CgroupParent: "m-executor-abcd",
+			},
+		},
+
+		{
+			name: "device cgroup rules",
+			in: `device_cgroup_rules:
+- 'c 1:3 mr'
+- 'a 7:* rmw'`,
+			expected: compose.Service{
+				DeviceCgroupRules: []string{"c 1:3 mr", "a 7:* rmw"},
+			},
+		},
+
+		{
+			name: "device mappings",
+			in: `devices:
+- "/dev/ttyUSB0:/dev/ttyUSB1"`,
+			expected: compose.Service{
+				Devices: []compose.DeviceMapping{
+					{
+						PathOnHost:      "/dev/ttyUSB0",
+						PathInContainer: "/dev/ttyUSB1",
+					},
+				},
+			},
+		},
+
+		{
+			name: "devices",
+			in: `devices:
+- "/dev/ttyUSB0:/dev/ttyUSB1"
+- "/dev/sda:/dev/xvda:rwm"`,
+			expected: compose.Service{
+				Devices: []compose.DeviceMapping{
+					{
+						PathOnHost:      "/dev/ttyUSB0",
+						PathInContainer: "/dev/ttyUSB1",
+					},
+					{
+						PathOnHost:        "/dev/sda",
+						PathInContainer:   "/dev/xvda",
+						CgroupPermissions: "rwm",
 					},
 				},
 			},
