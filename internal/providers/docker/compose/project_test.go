@@ -156,6 +156,16 @@ func TestParseService(t *testing.T) {
 				},
 			},
 		},
+
+		{
+			name: "cpu config",
+			in: `cpu_count: 2
+cpu_percent: 80`,
+			expected: compose.Service{
+				CPUCount:   2,
+				CPUPercent: 80,
+			},
+		},
 	}
 
 	for _, testCase := range testCases {

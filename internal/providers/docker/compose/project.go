@@ -86,8 +86,8 @@ type Service struct {
 	Deploy IgnoredField `yaml:"deploy"`
 
 	// Note that these two are only applicable to Windows.
-	// TODO: cpu_count
-	// TODO: cpu_percent
+	CPUCount   int64 `yaml:"cpu_count"`
+	CPUPercent int64 `yaml:"cpu_percent"`
 
 	CPUShares int64 `yaml:"cpu_shares"`
 	CPUPeriod int64 `yaml:"cpu_period"`
