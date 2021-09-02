@@ -118,9 +118,8 @@ type Service struct {
 
 	DeviceCgroupRules []string `yaml:"device_cgroup_rules"`
 
-	Devices []DeviceMapping `yaml:"devices"`
-
-	// TODO: dns
+	Devices []DeviceMapping     `yaml:"devices"`
+	DNS     StringOrStringSlice `yaml:"dns"`
 	// TODO: dns_opt
 	// TODO: dns_search
 	Domainname string  `yaml:"domainname"`

@@ -294,6 +294,24 @@ cap_drop:
 				},
 			},
 		},
+
+		{
+			name: "DNS - single string",
+			in:   `dns: "8.8.8.8"`,
+			expected: compose.Service{
+				DNS: compose.StringOrStringSlice{"8.8.8.8"},
+			},
+		},
+
+		{
+			name: "DNS - list",
+			in: `dns:
+- '8.8.8.8'
+- '4.4.4.4'`,
+			expected: compose.Service{
+				DNS: compose.StringOrStringSlice{"8.8.8.8", "4.4.4.4"},
+			},
+		},
 	}
 
 	for _, testCase := range testCases {

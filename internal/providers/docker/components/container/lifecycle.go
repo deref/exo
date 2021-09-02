@@ -190,7 +190,7 @@ func (c *Container) create(ctx context.Context) error {
 		CapAdd:  c.Spec.CapAdd,
 		CapDrop: c.Spec.CapDrop,
 		//CgroupnsMode    CgroupnsMode      // Cgroup namespace mode to use for the container
-		//DNS             []string          `json:"Dns"`        // List of DNS server to lookup
+		DNS: c.Spec.DNS,
 		//DNSOptions      []string          `json:"DnsOptions"` // List of DNSOption to look for
 		//DNSSearch       []string          `json:"DnsSearch"`  // List of DNSSearch to look for
 		//ExtraHosts      []string          // List of extra hosts
