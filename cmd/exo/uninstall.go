@@ -33,6 +33,9 @@ for manual uninstall instructions.`,
 
 		cl := newClient()
 
+		shell := "" // All shells.
+		completionUninstall(shell)
+
 		// Destroy workspaces.
 		workspaces, err := cl.Kernel().DescribeWorkspaces(ctx, &api.DescribeWorkspacesInput{})
 		if err != nil {

@@ -2,6 +2,8 @@ package osutil
 
 import (
 	"os"
+
+	"golang.org/x/sys/unix"
 )
 
 func Exists(filePath string) (bool, error) {
@@ -25,4 +27,9 @@ func IsSymlink(filePath string) (bool, error) {
 	}
 
 	return fileInfo.Mode()&os.ModeSymlink == os.ModeSymlink, nil
+}
+
+func IsWritable(filePath string) (bool, error) {
+	err := unix.Access(filePath, unix.W_OK)
+	return err == nil, err
 }
