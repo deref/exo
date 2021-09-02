@@ -118,12 +118,12 @@ type Service struct {
 
 	DeviceCgroupRules []string `yaml:"device_cgroup_rules"`
 
-	Devices []DeviceMapping     `yaml:"devices"`
-	DNS     StringOrStringSlice `yaml:"dns"`
-	// TODO: dns_opt
-	// TODO: dns_search
-	Domainname string  `yaml:"domainname"`
-	Entrypoint Command `yaml:"entrypoint"`
+	Devices    []DeviceMapping     `yaml:"devices"`
+	DNS        StringOrStringSlice `yaml:"dns"`
+	DNSOptions []string            `yaml:"dns_opt"`
+	DNSSearch  StringOrStringSlice `yaml:"dns_search"`
+	Domainname string              `yaml:"domainname"`
+	Entrypoint Command             `yaml:"entrypoint"`
 	// TODO: env_file
 	Environment Dictionary   `yaml:"environment"`
 	Expose      PortMappings `yaml:"expose"` // TODO: Validate target-only.

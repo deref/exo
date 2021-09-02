@@ -312,6 +312,34 @@ cap_drop:
 				DNS: compose.StringOrStringSlice{"8.8.8.8", "4.4.4.4"},
 			},
 		},
+
+		{
+			name: "DNS options",
+			in: `dns_opt:
+- use-vc
+- no-tld-query`,
+			expected: compose.Service{
+				DNSOptions: []string{"use-vc", "no-tld-query"},
+			},
+		},
+
+		{
+			name: "DNS search - short",
+			in:   "dns_search: example.com",
+			expected: compose.Service{
+				DNSSearch: compose.StringOrStringSlice{"example.com"},
+			},
+		},
+
+		{
+			name: "DNS search - long",
+			in: `dns_search:
+- ns1.example.com
+- ns2.example.com`,
+			expected: compose.Service{
+				DNSSearch: compose.StringOrStringSlice{"ns1.example.com", "ns2.example.com"},
+			},
+		},
 	}
 
 	for _, testCase := range testCases {

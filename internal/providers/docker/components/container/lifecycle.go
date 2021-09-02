@@ -190,9 +190,9 @@ func (c *Container) create(ctx context.Context) error {
 		CapAdd:  c.Spec.CapAdd,
 		CapDrop: c.Spec.CapDrop,
 		//CgroupnsMode    CgroupnsMode      // Cgroup namespace mode to use for the container
-		DNS: c.Spec.DNS,
-		//DNSOptions      []string          `json:"DnsOptions"` // List of DNSOption to look for
-		//DNSSearch       []string          `json:"DnsSearch"`  // List of DNSSearch to look for
+		DNS:        c.Spec.DNS,
+		DNSOptions: c.Spec.DNSOptions,
+		DNSSearch:  c.Spec.DNSSearch,
 		//ExtraHosts      []string          // List of extra hosts
 		//GroupAdd        []string          // List of additional groups that the container process will run as
 		//IpcMode         IpcMode           // IPC namespace to use for the container
