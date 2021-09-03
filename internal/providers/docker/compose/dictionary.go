@@ -3,6 +3,7 @@ package compose
 import (
 	"fmt"
 	"sort"
+	"strconv"
 	"strings"
 )
 
@@ -27,10 +28,15 @@ func (dict *Dictionary) UnmarshalYAML(unmarshal func(interface{}) error) error {
 		for k, v := range data {
 			var ok bool
 			s, ok := v.(string)
-			if !ok {
-				return fmt.Errorf("expected values to be string, got %v", v)
+			if ok {
+				res[k] = &s
+			} else {
+				strVal := fmt.Sprint(v)
+				if _, err := strconv.ParseFloat(strVal, 64); err != nil {
+					return fmt.Errorf("expected values to be string, got %v", v)
+				}
+				res[k] = &strVal
 			}
-			res[k] = &s
 		}
 	case []interface{}:
 		for _, elem := range data {
