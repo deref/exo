@@ -11,6 +11,7 @@ import (
 )
 
 func TestParseService(t *testing.T) {
+	trueVal := true
 	testCases := []struct {
 		name     string
 		in       string
@@ -375,6 +376,14 @@ cap_drop:
 - mail`,
 			expected: compose.Service{
 				GroupAdd: []string{"mail"},
+			},
+		},
+
+		{
+			name: "Init process flag",
+			in:   `init: true`,
+			expected: compose.Service{
+				Init: &trueVal,
 			},
 		},
 	}

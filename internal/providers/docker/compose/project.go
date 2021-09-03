@@ -139,6 +139,7 @@ type Service struct {
 	Healthcheck *Healthcheck `yaml:"healthcheck"`
 	Hostname    string       `yaml:"hostname"`
 	Image       string       `yaml:"image"`
+	Init        *bool        `yaml:"init"`
 	// TODO: init
 	// TODO: ipc
 	// TODO: isolation

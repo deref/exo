@@ -250,7 +250,7 @@ func (c *Container) create(ctx context.Context) error {
 		//ReadonlyPaths []string
 
 		//// Run a custom init inside the container, if null, use the daemon's configured settings
-		//Init *bool `json:",omitempty"`
+		Init: c.Spec.Init,
 	}
 
 	// TODO: make the user home directory a parameter of the container.
