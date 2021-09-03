@@ -143,8 +143,8 @@ type Service struct {
 	IPC         string       `yaml:"ipc"`
 	Isolation   string       `yaml:"isolation"`
 	Labels      Dictionary   `yaml:"labels"`
-	// TODO: links
-	Logging Logging `yaml:"logging"`
+	Links       []string     `yaml:"links"`
+	Logging     Logging      `yaml:"logging"`
 	// TODO: network_mode
 	Networks   []string `yaml:"networks"` // TODO: support long syntax.
 	MacAddress string   `yaml:"mac_address"`

@@ -199,7 +199,9 @@ func (c *Container) create(ctx context.Context) error {
 		GroupAdd:   c.Spec.GroupAdd,
 		//IpcMode         IpcMode           // IPC namespace to use for the container
 		//Cgroup          CgroupSpec        // Cgroup to use for the container
-		Links: c.Spec.ExternalLinks,
+
+		// See NOTE: [RESOLVING SERVICE CONTAINERS].
+		Links: append(append([]string{}, c.Spec.Links...), c.Spec.ExternalLinks...),
 		//OomScoreAdj     int               // Container preference for OOM-killing
 		//PidMode         PidMode           // PID namespace to use for the container
 		Privileged: c.Spec.Privileged,
