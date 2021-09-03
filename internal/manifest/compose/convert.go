@@ -130,19 +130,23 @@ func (i *Loader) convert(project *compose.Compose) manifest.LoadResult {
 		// Map the docker-compose network name to the name of the docker network that is created.
 		defaultNetworkName := networksByComposeName["default"]
 		if len(service.Networks) > 0 {
-			mappedNetworks := make([]string, len(service.Networks))
+			mappedNetworks := make([]compose.ServiceNetwork, len(service.Networks))
 			for i, network := range service.Networks {
-				networkName, ok := networksByComposeName[network]
+				networkName, ok := networksByComposeName[network.Network]
 				if !ok {
 					res.Err = fmt.Errorf("unknown network: %q", network)
 					continue
 				}
-				mappedNetworks[i] = networkName
-				component.DependsOn = append(component.DependsOn, network)
+				mappedNetworks[i] = network
+				component.DependsOn = append(component.DependsOn, networkName)
 			}
 			service.Networks = mappedNetworks
 		} else {
-			service.Networks = []string{defaultNetworkName}
+			service.Networks = []compose.ServiceNetwork{
+				{
+					Network: defaultNetworkName,
+				},
+			}
 			component.DependsOn = append(component.DependsOn, "default")
 		}
 

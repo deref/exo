@@ -326,17 +326,13 @@ func (c *Container) create(ctx context.Context) error {
 	networkCfg := &network.NetworkingConfig{
 		EndpointsConfig: make(map[string]*network.EndpointSettings), // Endpoint configs for each connecting network
 	}
-	netEndpointSettings := &network.EndpointSettings{
-		// TODO: Add other specified aliases.
-		Aliases: []string{c.ComponentID, c.ComponentName},
-	}
 	// Docker only allows a single network to be specified when creating a container. The other networks must be
 	// connected after the container is started. See https://github.com/moby/moby/issues/29265#issuecomment-265909198.
-	var remainingNetworks []string
+	var remainingNetworks []compose.ServiceNetwork
 	if len(c.Spec.Networks) > 0 {
-		firstNetworkName := c.Spec.Networks[0]
+		firstNetwork := c.Spec.Networks[0]
 		remainingNetworks = c.Spec.Networks[1:]
-		networkCfg.EndpointsConfig[firstNetworkName] = netEndpointSettings
+		networkCfg.EndpointsConfig[firstNetwork.Network] = c.endpointSettings(firstNetwork)
 	}
 
 	var platform *v1.Platform
@@ -366,10 +362,11 @@ func (c *Container) create(ctx context.Context) error {
 	}
 	c.State.ContainerID = createdBody.ID
 	var netConnects errgroup.Group
-	for _, networkName := range remainingNetworks {
-		networkName := networkName
+	for _, network := range remainingNetworks {
+		network := network
 		netConnects.Go(func() error {
-			return c.Docker.NetworkConnect(ctx, networkName, createdBody.ID, netEndpointSettings)
+			// TODO: Use network info to create netEndpointSettings
+			return c.Docker.NetworkConnect(ctx, network.Network, createdBody.ID, c.endpointSettings(network))
 		})
 	}
 
@@ -436,6 +433,23 @@ func (c *Container) removeExistingContainerByName(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (c *Container) endpointSettings(sn compose.ServiceNetwork) *network.EndpointSettings {
+	es := &network.EndpointSettings{
+		Aliases: append([]string{c.ComponentID, c.ComponentName}, sn.Aliases...),
+		Links:   append(append([]string{}, c.Spec.Links...), c.Spec.ExternalLinks...),
+	}
+
+	if sn.IPV4Address != "" || sn.IPV6Address != "" || len(sn.LinkLocalIPs) > 0 {
+		es.IPAMConfig = &network.EndpointIPAMConfig{
+			IPv4Address:  sn.IPV4Address,
+			IPv6Address:  sn.IPV6Address,
+			LinkLocalIPs: sn.LinkLocalIPs,
+		}
+	}
+
+	return es
 }
 
 func convertThrottleDevice(in []compose.ThrottleDevice) []*blkiodev.ThrottleDevice {

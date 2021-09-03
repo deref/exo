@@ -135,19 +135,19 @@ type Service struct {
 	// List of host/IP pairs to add to /etc/hosts of the form `HOST:IP`
 	ExtraHosts []string `yaml:"extra_hosts"`
 
-	GroupAdd    []string     `yaml:"group_add"`
-	Healthcheck *Healthcheck `yaml:"healthcheck"`
-	Hostname    string       `yaml:"hostname"`
-	Image       string       `yaml:"image"`
-	Init        *bool        `yaml:"init"`
-	IPC         string       `yaml:"ipc"`
-	Isolation   string       `yaml:"isolation"`
-	Labels      Dictionary   `yaml:"labels"`
-	Links       []string     `yaml:"links"`
-	Logging     Logging      `yaml:"logging"`
-	NetworkMode string       `yaml:"network_mode"`
-	Networks    []string     `yaml:"networks"` // TODO: support long syntax.
-	MacAddress  string       `yaml:"mac_address"`
+	GroupAdd    []string        `yaml:"group_add"`
+	Healthcheck *Healthcheck    `yaml:"healthcheck"`
+	Hostname    string          `yaml:"hostname"`
+	Image       string          `yaml:"image"`
+	Init        *bool           `yaml:"init"`
+	IPC         string          `yaml:"ipc"`
+	Isolation   string          `yaml:"isolation"`
+	Labels      Dictionary      `yaml:"labels"`
+	Links       []string        `yaml:"links"`
+	Logging     Logging         `yaml:"logging"`
+	NetworkMode string          `yaml:"network_mode"`
+	Networks    ServiceNetworks `yaml:"networks"`
+	MacAddress  string          `yaml:"mac_address"`
 
 	MemorySwappiness *int64 `yaml:"mem_swappiness"`
 

@@ -410,6 +410,54 @@ cap_drop:
 				NetworkMode: "host",
 			},
 		},
+
+		{
+			name: "Networks - short form",
+			in: `networks:
+- net1
+- net2`,
+			expected: compose.Service{
+				Networks: compose.ServiceNetworks{
+					{
+						Network: "net1",
+					},
+					{
+						Network: "net2",
+					},
+				},
+			},
+		},
+
+		{
+			name: "Networks - long form",
+			in: `networks:
+  net1:
+  net2:
+    aliases:
+    - foo
+    - bar
+    ipv4_address: 172.16.238.10
+    ipv6_address: 2001:3984:3989::10
+    link_local_ips:
+    - 57.123.22.11
+    - 57.123.22.13
+    priority: 1000`,
+			expected: compose.Service{
+				Networks: compose.ServiceNetworks{
+					{
+						Network: "net1",
+					},
+					{
+						Network:      "net2",
+						Aliases:      []string{"foo", "bar"},
+						IPV4Address:  "172.16.238.10",
+						IPV6Address:  "2001:3984:3989::10",
+						LinkLocalIPs: []string{"57.123.22.11", "57.123.22.13"},
+						Priority:     1000,
+					},
+				},
+			},
+		},
 	}
 
 	for _, testCase := range testCases {
