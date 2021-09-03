@@ -140,7 +140,7 @@ type Service struct {
 	Hostname    string       `yaml:"hostname"`
 	Image       string       `yaml:"image"`
 	Init        *bool        `yaml:"init"`
-	// TODO: init
+	IPC         string       `yaml:"ipc"`
 	// TODO: ipc
 	// TODO: isolation
 	Labels Dictionary `yaml:"labels"`

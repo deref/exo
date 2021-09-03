@@ -386,6 +386,14 @@ cap_drop:
 				Init: &trueVal,
 			},
 		},
+
+		{
+			name: "IPC",
+			in:   `ipc: "service:foo"`,
+			expected: compose.Service{
+				IPC: "service:foo",
+			},
+		},
 	}
 
 	for _, testCase := range testCases {

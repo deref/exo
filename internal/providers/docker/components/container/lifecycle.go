@@ -2,9 +2,11 @@ package container
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os/user"
 	"strconv"
+	"strings"
 	"time"
 
 	core "github.com/deref/exo/internal/core/api"
@@ -253,6 +255,11 @@ func (c *Container) create(ctx context.Context) error {
 		Init: c.Spec.Init,
 	}
 
+	var err error
+	if hostCfg.IpcMode, err = c.parseIPCMode(c.Spec.IPC); err != nil {
+		return err
+	}
+
 	// TODO: make the user home directory a parameter of the container.
 	user, err := user.Current()
 	if err != nil {
@@ -455,4 +462,25 @@ func convertDeviceMappings(in []compose.DeviceMapping) []container.DeviceMapping
 		}
 	}
 	return out
+}
+
+func (c *Container) parseIPCMode(in string) (container.IpcMode, error) {
+	switch in {
+	case "", "none", "private", "shareable", "host":
+		return container.IpcMode(in), nil
+	}
+
+	if strings.HasPrefix(in, "container:") {
+		return container.IpcMode(in), nil
+	}
+
+	// Note that all services that share an IPC namespace with another service actually shares a namespace
+	// with that service's first container. See https://github.com/docker/compose/blob/v2.0.0-rc.3/compose/service.py#L1379.
+	if strings.HasPrefix(in, "service:") {
+		// XXX: We need to be able to look up the container name(s) for the referenced service to be able to
+		// convert this to the `container:name` format supported by Docker.
+		return container.IpcMode(""), errors.New("service IPC mode not yet supported")
+	}
+
+	return container.IpcMode(""), fmt.Errorf("unsupported IPC mode: %q", in)
 }
