@@ -402,6 +402,14 @@ cap_drop:
 				Isolation: "hyperv",
 			},
 		},
+
+		{
+			name: "Network mode",
+			in:   `network_mode: host`,
+			expected: compose.Service{
+				NetworkMode: "host",
+			},
+		},
 	}
 
 	for _, testCase := range testCases {

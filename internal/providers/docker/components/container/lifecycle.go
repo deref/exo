@@ -197,7 +197,6 @@ func (c *Container) create(ctx context.Context) error {
 		DNSSearch:  c.Spec.DNSSearch,
 		ExtraHosts: c.Spec.ExtraHosts,
 		GroupAdd:   c.Spec.GroupAdd,
-		//IpcMode         IpcMode           // IPC namespace to use for the container
 		//Cgroup          CgroupSpec        // Cgroup to use for the container
 
 		// See NOTE: [RESOLVING SERVICE CONTAINERS].
@@ -243,9 +242,6 @@ func (c *Container) create(ctx context.Context) error {
 			Devices:              convertDeviceMappings(c.Spec.Devices),
 		},
 
-		// Mounts specs used by the container
-		//Mounts []mount.Mount `json:",omitempty"`
-
 		//// MaskedPaths is the list of paths to be masked inside the container (this overrides the default set of paths)
 		//MaskedPaths []string
 
@@ -262,6 +258,10 @@ func (c *Container) create(ctx context.Context) error {
 	}
 
 	if hostCfg.Isolation, err = parseIsolation(c.Spec.Isolation); err != nil {
+		return err
+	}
+
+	if hostCfg.NetworkMode, err = c.parseNetworkMode(c.Spec.NetworkMode); err != nil {
 		return err
 	}
 
@@ -498,4 +498,11 @@ func parseIsolation(in string) (container.Isolation, error) {
 	default:
 		return container.IsolationEmpty, fmt.Errorf("invalid isolation: %q", in)
 	}
+}
+
+func (c *Container) parseNetworkMode(in string) (container.NetworkMode, error) {
+	if strings.HasPrefix(in, "service:") {
+		return container.NetworkMode(""), errors.New("service network mode not yet supported")
+	}
+	return container.NetworkMode(in), nil
 }

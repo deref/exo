@@ -145,9 +145,9 @@ type Service struct {
 	Labels      Dictionary   `yaml:"labels"`
 	Links       []string     `yaml:"links"`
 	Logging     Logging      `yaml:"logging"`
-	// TODO: network_mode
-	Networks   []string `yaml:"networks"` // TODO: support long syntax.
-	MacAddress string   `yaml:"mac_address"`
+	NetworkMode string       `yaml:"network_mode"`
+	Networks    []string     `yaml:"networks"` // TODO: support long syntax.
+	MacAddress  string       `yaml:"mac_address"`
 
 	MemorySwappiness *int64 `yaml:"mem_swappiness"`
 
