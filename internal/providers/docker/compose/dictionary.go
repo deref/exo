@@ -5,6 +5,8 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+
+	"github.com/goccy/go-yaml"
 )
 
 // string->string mapping that may be encoded as either a map or an array of
@@ -16,6 +18,26 @@ func (dict Dictionary) MarshalYAML() (interface{}, error) {
 	return map[string]*string(dict), nil
 }
 
+type stringOrNum string
+
+func (sn *stringOrNum) UnmarshalYAML(b []byte) error {
+	// This is necessary as otherwise you end up parsing the number and converting
+	// it back to a string. That means a value like "99999999999999.999" becomes
+	// "1e+14".
+	if _, err := strconv.ParseFloat(string(b), 64); err == nil {
+		*sn = stringOrNum(string(b))
+		return nil
+	}
+
+	var s string
+	err := yaml.Unmarshal(b, &s)
+	if err == nil {
+		*sn = stringOrNum(s)
+		return nil
+	}
+	return fmt.Errorf("unmarshaling stringOrNum: %w", err)
+}
+
 func (dict *Dictionary) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var data interface{}
 	if err := unmarshal(&data); err != nil {
@@ -25,18 +47,13 @@ func (dict *Dictionary) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	res := make(map[string]*string)
 	switch data := data.(type) {
 	case map[string]interface{}:
-		for k, v := range data {
-			var ok bool
-			s, ok := v.(string)
-			if ok {
-				res[k] = &s
-			} else {
-				strVal := fmt.Sprint(v)
-				if _, err := strconv.ParseFloat(strVal, 64); err != nil {
-					return fmt.Errorf("expected values to be string, got %v", v)
-				}
-				res[k] = &strVal
-			}
+		stringOrNumMap := make(map[string]stringOrNum)
+		if err := unmarshal(&stringOrNumMap); err != nil {
+			return err
+		}
+		for k, v := range stringOrNumMap {
+			s := string(v)
+			res[k] = &s
 		}
 	case []interface{}:
 		for _, elem := range data {
