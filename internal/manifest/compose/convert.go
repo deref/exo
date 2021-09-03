@@ -115,6 +115,14 @@ func (i *Loader) convert(project *compose.Compose) manifest.LoadResult {
 			service.ContainerName = i.prefixedName(originalName, "1")
 		}
 
+		for k := range service.Labels {
+			if strings.HasPrefix(k, "com.docker.compose") {
+				res.Err = fmt.Errorf("service may not specify labels with prefix \"com.docker.compose\", but %q specified %q", originalName, k)
+			}
+		}
+		service.Labels["com.docker.compose.project"] = &i.ProjectName
+		service.Labels["com.docker.compose.service"] = &originalName
+
 		// Map the docker-compose network name to the name of the docker network that is created.
 		defaultNetworkName := networksByComposeName["default"]
 		if len(service.Networks) > 0 {
