@@ -216,7 +216,6 @@ func (c *Container) create(ctx context.Context) error {
 
 		//// Applicable to Windows
 		//ConsoleSize [2]uint   // Initial console size (height,width)
-		//Isolation   Isolation // Isolation technology of the container (e.g. default, hyperv)
 
 		//// Contains container's resources (cgroups, ulimits)
 		Resources: container.Resources{
@@ -257,6 +256,10 @@ func (c *Container) create(ctx context.Context) error {
 
 	var err error
 	if hostCfg.IpcMode, err = c.parseIPCMode(c.Spec.IPC); err != nil {
+		return err
+	}
+
+	if hostCfg.Isolation, err = parseIsolation(c.Spec.Isolation); err != nil {
 		return err
 	}
 
@@ -483,4 +486,14 @@ func (c *Container) parseIPCMode(in string) (container.IpcMode, error) {
 	}
 
 	return container.IpcMode(""), fmt.Errorf("unsupported IPC mode: %q", in)
+}
+
+func parseIsolation(in string) (container.Isolation, error) {
+	switch in {
+	case "", "default", "process", "hyperv":
+		return container.Isolation(in), nil
+
+	default:
+		return container.IsolationEmpty, fmt.Errorf("invalid isolation: %q", in)
+	}
 }

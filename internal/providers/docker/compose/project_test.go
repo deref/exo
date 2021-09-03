@@ -394,6 +394,14 @@ cap_drop:
 				IPC: "service:foo",
 			},
 		},
+
+		{
+			name: "Isolation",
+			in:   `isolation: hyperv`,
+			expected: compose.Service{
+				Isolation: "hyperv",
+			},
+		},
 	}
 
 	for _, testCase := range testCases {

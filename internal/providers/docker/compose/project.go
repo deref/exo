@@ -141,9 +141,8 @@ type Service struct {
 	Image       string       `yaml:"image"`
 	Init        *bool        `yaml:"init"`
 	IPC         string       `yaml:"ipc"`
-	// TODO: ipc
-	// TODO: isolation
-	Labels Dictionary `yaml:"labels"`
+	Isolation   string       `yaml:"isolation"`
+	Labels      Dictionary   `yaml:"labels"`
 	// TODO: links
 	Logging Logging `yaml:"logging"`
 	// TODO: network_mode
