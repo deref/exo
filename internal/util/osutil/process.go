@@ -24,12 +24,12 @@ func IsValidPid(pid int) bool {
 	return err == nil
 }
 
-func SignalProcess(pid int, sig syscall.Signal) error {
+func SignalProcess(pid int, sig os.Signal) error {
 	proc := FindProcess(pid)
 	return proc.Signal(sig)
 }
 
-func SignalGroup(pgid int, sig syscall.Signal) error {
+func SignalGroup(pgid int, sig os.Signal) error {
 	return SignalProcess(-pgid, sig)
 }
 

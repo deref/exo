@@ -8,7 +8,11 @@ interface "process" {
     input "timeout-seconds" "*uint" {}
     output "job-id" "string" {}
   }
-  # TODO: Optional method?
+  # TODO: Optional methods?
+  method "signal" {
+    input "signal" "string" {}
+    output "job-id" "string" {}
+  }
   method "restart" {
     input "timeout-seconds" "*uint" {}
     output "job-id" "string" {}
@@ -172,6 +176,13 @@ interface "workspace" {
   method "stop-components" {
     input "refs" "[]string" {}
     input "timeout-seconds" "*uint" {}
+    output "job-id" "string" {}
+  }
+
+  method "signal-components" {
+    input "refs" "[]string" {}
+    input "signal" "string" {}
+
     output "job-id" "string" {}
   }
 

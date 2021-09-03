@@ -17,6 +17,7 @@ import (
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/osutil"
 	"github.com/deref/exo/internal/util/which"
+	"github.com/moby/moby/pkg/signal"
 )
 
 func (p *Process) zeroPids() bool {
@@ -172,4 +173,22 @@ func (p *Process) Restart(ctx context.Context, input *core.RestartInput) (*core.
 		return nil, err
 	}
 	return &core.RestartOutput{}, nil
+}
+
+func (p *Process) Signal(ctx context.Context, input *core.SignalInput) (*core.SignalOutput, error) {
+	// As of moby/moby v20.10.8, signal.ParseSignal uses the host platform's
+	// signal table, not that of the container or hypervisor. This appears to be
+	// a bug in Docker, but is probably not a problem in practice because the
+	// most commonly used signal names and numbers are shared across Darwin, and
+	// popular Linux architectures. It's convenient for us here, since we can
+	// reuse their parsing and name/number mapping logic.
+	sig, err := signal.ParseSignal(input.Signal)
+	if err != nil {
+		return nil, err
+	}
+	if p.zeroPids() {
+		return &core.SignalOutput{}, nil
+	}
+	err = osutil.SignalProcess(p.Pid, sig)
+	return nil, err
 }

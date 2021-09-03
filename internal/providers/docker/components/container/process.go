@@ -55,3 +55,10 @@ func (c *Container) restart(ctx context.Context, timeoutSeconds *uint) error {
 	}
 	return c.Docker.ContainerRestart(ctx, c.State.ContainerID, timeout)
 }
+
+func (c *Container) Signal(ctx context.Context, input *core.SignalInput) (*core.SignalOutput, error) {
+	if err := c.Docker.ContainerKill(ctx, c.State.ContainerID, input.Signal); err != nil {
+		return nil, err
+	}
+	return &core.SignalOutput{}, nil
+}
