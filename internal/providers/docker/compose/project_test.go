@@ -358,6 +358,16 @@ cap_drop:
 				ExternalLinks: []string{"container1", "container2:alias"},
 			},
 		},
+
+		{
+			name: "Extra hosts",
+			in: `extra_hosts:
+- "somehost:162.242.195.82"
+- "otherhost:50.31.209.229"`,
+			expected: compose.Service{
+				ExtraHosts: []string{"somehost:162.242.195.82", "otherhost:50.31.209.229"},
+			},
+		},
 	}
 
 	for _, testCase := range testCases {

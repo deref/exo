@@ -193,7 +193,7 @@ func (c *Container) create(ctx context.Context) error {
 		DNS:        c.Spec.DNS,
 		DNSOptions: c.Spec.DNSOptions,
 		DNSSearch:  c.Spec.DNSSearch,
-		//ExtraHosts      []string          // List of extra hosts
+		ExtraHosts: c.Spec.ExtraHosts,
 		//GroupAdd        []string          // List of additional groups that the container process will run as
 		//IpcMode         IpcMode           // IPC namespace to use for the container
 		//Cgroup          CgroupSpec        // Cgroup to use for the container

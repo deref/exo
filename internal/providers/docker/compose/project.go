@@ -129,11 +129,12 @@ type Service struct {
 	Expose      PortMappings        `yaml:"expose"` // TODO: Validate target-only.
 	// TODO: extends
 
-	// List of links in the form `SERVICE` or `SERVICE:ALIAS`
+	// List of links of the form `SERVICE` or `SERVICE:ALIAS`
 	ExternalLinks []string `yaml:"external_links"`
 
-	// TODO: external_links
-	// TODO: extra_hosts
+	// List of host/IP pairs to add to /etc/hosts of the form `HOST:IP`
+	ExtraHosts []string `yaml:"extra_hosts"`
+
 	// TODO: group_add
 	Healthcheck *Healthcheck `yaml:"healthcheck"`
 	Hostname    string       `yaml:"hostname"`
