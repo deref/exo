@@ -135,7 +135,7 @@ type Service struct {
 	// List of host/IP pairs to add to /etc/hosts of the form `HOST:IP`
 	ExtraHosts []string `yaml:"extra_hosts"`
 
-	// TODO: group_add
+	GroupAdd    []string     `yaml:"group_add"`
 	Healthcheck *Healthcheck `yaml:"healthcheck"`
 	Hostname    string       `yaml:"hostname"`
 	Image       string       `yaml:"image"`

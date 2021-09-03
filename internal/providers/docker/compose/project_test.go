@@ -368,6 +368,15 @@ cap_drop:
 				ExtraHosts: []string{"somehost:162.242.195.82", "otherhost:50.31.209.229"},
 			},
 		},
+
+		{
+			name: "Additional groups",
+			in: `group_add:
+- mail`,
+			expected: compose.Service{
+				GroupAdd: []string{"mail"},
+			},
+		},
 	}
 
 	for _, testCase := range testCases {
