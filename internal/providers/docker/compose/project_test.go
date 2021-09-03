@@ -340,6 +340,14 @@ cap_drop:
 				DNSSearch: compose.StringOrStringSlice{"ns1.example.com", "ns2.example.com"},
 			},
 		},
+
+		{
+			name: "Env file",
+			in:   `env_file: .dockerenv`,
+			expected: compose.Service{
+				EnvFile: compose.StringOrStringSlice{".dockerenv"},
+			},
+		},
 	}
 
 	for _, testCase := range testCases {

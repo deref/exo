@@ -118,15 +118,15 @@ type Service struct {
 
 	DeviceCgroupRules []string `yaml:"device_cgroup_rules"`
 
-	Devices    []DeviceMapping     `yaml:"devices"`
-	DNS        StringOrStringSlice `yaml:"dns"`
-	DNSOptions []string            `yaml:"dns_opt"`
-	DNSSearch  StringOrStringSlice `yaml:"dns_search"`
-	Domainname string              `yaml:"domainname"`
-	Entrypoint Command             `yaml:"entrypoint"`
-	// TODO: env_file
-	Environment Dictionary   `yaml:"environment"`
-	Expose      PortMappings `yaml:"expose"` // TODO: Validate target-only.
+	Devices     []DeviceMapping     `yaml:"devices"`
+	DNS         StringOrStringSlice `yaml:"dns"`
+	DNSOptions  []string            `yaml:"dns_opt"`
+	DNSSearch   StringOrStringSlice `yaml:"dns_search"`
+	Domainname  string              `yaml:"domainname"`
+	Entrypoint  Command             `yaml:"entrypoint"`
+	EnvFile     StringOrStringSlice `yaml:"env_file"` // TODO: Add to the environment for a docker container component.
+	Environment Dictionary          `yaml:"environment"`
+	Expose      PortMappings        `yaml:"expose"` // TODO: Validate target-only.
 	// TODO: extends
 	// TODO: external_links
 	// TODO: extra_hosts
