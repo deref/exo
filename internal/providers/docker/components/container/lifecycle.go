@@ -197,7 +197,7 @@ func (c *Container) create(ctx context.Context) error {
 		//GroupAdd        []string          // List of additional groups that the container process will run as
 		//IpcMode         IpcMode           // IPC namespace to use for the container
 		//Cgroup          CgroupSpec        // Cgroup to use for the container
-		//Links           []string          // List of links (in the name:alias form)
+		Links: c.Spec.ExternalLinks,
 		//OomScoreAdj     int               // Container preference for OOM-killing
 		//PidMode         PidMode           // PID namespace to use for the container
 		Privileged: c.Spec.Privileged,

@@ -342,10 +342,20 @@ cap_drop:
 		},
 
 		{
-			name: "Env file",
+			name: "Env files",
 			in:   `env_file: .dockerenv`,
 			expected: compose.Service{
 				EnvFile: compose.StringOrStringSlice{".dockerenv"},
+			},
+		},
+
+		{
+			name: "External links",
+			in: `external_links:
+- container1
+- container2:alias`,
+			expected: compose.Service{
+				ExternalLinks: []string{"container1", "container2:alias"},
 			},
 		},
 	}

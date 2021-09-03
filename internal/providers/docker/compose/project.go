@@ -128,6 +128,10 @@ type Service struct {
 	Environment Dictionary          `yaml:"environment"`
 	Expose      PortMappings        `yaml:"expose"` // TODO: Validate target-only.
 	// TODO: extends
+
+	// List of links in the form `SERVICE` or `SERVICE:ALIAS`
+	ExternalLinks []string `yaml:"external_links"`
+
 	// TODO: external_links
 	// TODO: extra_hosts
 	// TODO: group_add
