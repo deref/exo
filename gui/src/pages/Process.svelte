@@ -48,10 +48,12 @@
         process = processList.data.filter((p) => p.id === processId)[0];
       }
       if (process && process.running) {
-        cpuPercentages.push(process.cpuPercent);
+        process.cpuPercent && cpuPercentages.push(process.cpuPercent);
+
         if (cpuPercentages.length > 100) {
           cpuPercentages.shift();
         }
+
         if (
           cpuPercentages.some((p) => p !== 0) &&
           sparklineSvg &&
@@ -84,37 +86,47 @@
               </tr>
               <tr>
                 <td class="label">CPU</td>
-                <td>{process.cpuPercent.toFixed(2)}%</td>
-                <td
-                  ><svg
+                <td>
+                  {#if process.cpuPercent}
+                    {process.cpuPercent.toFixed(2)}%
+                  {/if}
+                </td>
+                <td>
+                  <svg
                     bind:this={sparklineSvg}
                     class="sparkline"
                     width="100"
                     height="30"
                     stroke-width="3"
-                  /></td
-                >
+                  />
+                </td>
               </tr>
               <tr>
                 <td class="label">Resident Memory</td>
-                <td><BytesLabel value={process.residentMemory} /></td>
+                <td>
+                  {#if process.residentMemory}
+                    <BytesLabel value={process.residentMemory} />
+                  {/if}
+                </td>
                 <td />
               </tr>
               <tr>
                 <td class="label">Started at</td>
-                <td
-                  ><span title={new Date(process.createTime).toISOString()}
-                    >{new Date(process.createTime).toLocaleTimeString()}</span
-                  ></td
-                >
-                <td
-                  ><svg
+                <td>
+                  {#if process.createTime}
+                    <span title={new Date(process.createTime).toISOString()}>
+                      {new Date(process.createTime).toLocaleTimeString()}
+                    </span>
+                  {/if}
+                </td>
+                <td>
+                  <svg
                     class="sparkline"
                     width="100"
                     height="30"
                     stroke-width="3"
-                  /></td
-                >
+                  />
+                </td>
               </tr>
               <tr>
                 <td class="label">Local Ports</td>
@@ -123,7 +135,9 @@
               </tr>
               <tr>
                 <td class="label">Children</td>
-                <td>{process.childrenExecutables?.join(', ') ?? 'None'}</td>
+                <td>
+                  {process.childrenExecutables?.join(', ') ?? 'None'}
+                </td>
                 <td />
               </tr>
             </tbody>
@@ -131,7 +145,7 @@
         </CheckeredTableWrapper>
         <br />
         <h3>Environment</h3>
-        <EnvironmentTable variables={process.envVars} />
+        <EnvironmentTable variables={process.envVars ?? undefined} />
       {:else}
         <span>Process is not running</span>
       {/if}
