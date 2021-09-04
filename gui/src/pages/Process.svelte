@@ -3,6 +3,7 @@
   import Panel from '../components/Panel.svelte';
   import BytesLabel from '../components/BytesLabel.svelte';
   import WorkspaceNav from '../components/WorkspaceNav.svelte';
+  import EnvironmentTable from '../components/EnvironmentTable.svelte';
   import CheckeredTableWrapper from '../components/CheckeredTableWrapper.svelte';
   import sparkline from '@fnando/sparkline';
   import { api } from '../lib/api';
@@ -13,7 +14,7 @@
     processes,
   } from '../lib/process/store';
   import type { RequestLifecycle } from '../lib/api';
-  import type { ProcessDescription } from 'src/lib/process/types';
+  import type { ProcessDescription } from '../lib/process/types';
 
   export let params = { workspace: '', process: '' };
 
@@ -23,7 +24,9 @@
 
   const processId = params.process;
 
-  let processList: RequestLifecycle<ProcessDescription[]> = { stage: 'pending' };
+  let processList: RequestLifecycle<ProcessDescription[]> = {
+    stage: 'pending',
+  };
   const unsubscribeProcesses = processes.subscribe((processes) => {
     processList = processes;
   });
@@ -45,10 +48,12 @@
         process = processList.data.filter((p) => p.id === processId)[0];
       }
       if (process && process.running) {
-        cpuPercentages.push(process.cpuPercent);
+        process.cpuPercent && cpuPercentages.push(process.cpuPercent);
+
         if (cpuPercentages.length > 100) {
           cpuPercentages.shift();
         }
+
         if (
           cpuPercentages.some((p) => p !== 0) &&
           sparklineSvg &&
@@ -81,37 +86,47 @@
               </tr>
               <tr>
                 <td class="label">CPU</td>
-                <td>{process.cpuPercent.toFixed(2)}%</td>
-                <td
-                  ><svg
+                <td>
+                  {#if process.cpuPercent}
+                    {process.cpuPercent.toFixed(2)}%
+                  {/if}
+                </td>
+                <td>
+                  <svg
                     bind:this={sparklineSvg}
                     class="sparkline"
                     width="100"
                     height="30"
                     stroke-width="3"
-                  /></td
-                >
+                  />
+                </td>
               </tr>
               <tr>
                 <td class="label">Resident Memory</td>
-                <td><BytesLabel value={process.residentMemory} /></td>
+                <td>
+                  {#if process.residentMemory}
+                    <BytesLabel value={process.residentMemory} />
+                  {/if}
+                </td>
                 <td />
               </tr>
               <tr>
                 <td class="label">Started at</td>
-                <td
-                  ><span title={new Date(process.createTime).toISOString()}
-                    >{new Date(process.createTime).toLocaleTimeString()}</span
-                  ></td
-                >
-                <td
-                  ><svg
+                <td>
+                  {#if process.createTime}
+                    <span title={new Date(process.createTime).toISOString()}>
+                      {new Date(process.createTime).toLocaleTimeString()}
+                    </span>
+                  {/if}
+                </td>
+                <td>
+                  <svg
                     class="sparkline"
                     width="100"
                     height="30"
                     stroke-width="3"
-                  /></td
-                >
+                  />
+                </td>
               </tr>
               <tr>
                 <td class="label">Local Ports</td>
@@ -120,7 +135,9 @@
               </tr>
               <tr>
                 <td class="label">Children</td>
-                <td>{process.childrenExecutables?.join(', ') ?? 'None'}</td>
+                <td>
+                  {process.childrenExecutables?.join(', ') ?? 'None'}
+                </td>
                 <td />
               </tr>
             </tbody>
@@ -128,18 +145,7 @@
         </CheckeredTableWrapper>
         <br />
         <h3>Environment</h3>
-        <CheckeredTableWrapper>
-          <tbody>
-            <table>
-              {#each Object.entries(process.envVars ?? {}) as [name, val] (name)}
-                <tr>
-                  <td class="label">{name}</td>
-                  <td><code><pre>{val}</pre></code></td>
-                </tr>
-              {/each}
-            </table>
-          </tbody>
-        </CheckeredTableWrapper>
+        <EnvironmentTable variables={process.envVars ?? undefined} />
       {:else}
         <span>Process is not running</span>
       {/if}
@@ -150,15 +156,6 @@
 </Layout>
 
 <style>
-  code {
-    width: 100%;
-    max-width: 600px;
-    display: inline-block;
-    overflow-x: auto;
-    padding: 8px;
-    margin: -10px;
-  }
-
   .label {
     font-size: 0.8em;
     font-weight: 450;
