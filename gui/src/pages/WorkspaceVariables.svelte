@@ -1,10 +1,10 @@
 <script lang="ts">
-  import Layout from '../components/Layout.svelte';
   import Panel from '../components/Panel.svelte';
-  import EnvironmentTable from '../components/EnvironmentTable.svelte';
+  import Layout from '../components/Layout.svelte';
+  import Spinner from '../components/Spinner.svelte';
   import WorkspaceNav from '../components/WorkspaceNav.svelte';
+  import EnvironmentTable from '../components/EnvironmentTable.svelte';
   import { api } from '../lib/api';
-  import Spinner from '../Components/Spinner.svelte';
 
   export let params = { workspace: '' };
 
@@ -16,8 +16,8 @@
 </script>
 
 <Layout>
-  <WorkspaceNav {workspaceId} active="Components" slot="navbar" />
-  <Panel title="Variables" backRoute={workspaceRoute}>
+  <WorkspaceNav {workspaceId} active="Variables" slot="navbar" />
+  <Panel title="Workspace Variables" backRoute={workspaceRoute}>
     {#await variables}
       <Spinner />
     {:then variables}
