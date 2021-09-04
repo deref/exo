@@ -81,6 +81,18 @@ func TestOrganize(t *testing.T) {
 				{Name: "z"},
 			},
 		},
+
+		// Conflict.
+		{
+			[]Process{
+				{Name: "a", Environment: map[string]string{"PORT": "5000"}},
+				{Name: "b", Environment: map[string]string{"PORT": "5000"}},
+			},
+			[]Process{
+				{Name: "a", Environment: map[string]string{}},
+				{Name: "b", Environment: map[string]string{"PORT": "5000"}},
+			},
+		},
 	}
 	for _, test := range tests {
 		Organize(&test.Processes)
