@@ -1006,6 +1006,12 @@ func (ws *Workspace) ExportProcfile(ctx context.Context, input *api.ExportProcfi
 		}
 	}
 
+	// Produce a stable order of processes for export.  Ideally, this would
+	// preserve the original order from an imported Procfile, but that would
+	// require some metadata on components.  Acheiving a stable order on the
+	// first export is the next best thing.
+	procfile.Organize(&unixProcs)
+
 	var export bytes.Buffer
 	if err := procfile.Generate(&export, unixProcs); err != nil {
 		return nil, fmt.Errorf("generating procfile: %w", err)
