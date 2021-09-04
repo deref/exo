@@ -23,7 +23,9 @@
 
   const processId = params.process;
 
-  let processList: RequestLifecycle<ProcessDescription[]> = { stage: 'pending' };
+  let processList: RequestLifecycle<ProcessDescription[]> = {
+    stage: 'pending',
+  };
   const unsubscribeProcesses = processes.subscribe((processes) => {
     processList = processes;
   });
@@ -128,18 +130,7 @@
         </CheckeredTableWrapper>
         <br />
         <h3>Environment</h3>
-        <CheckeredTableWrapper>
-          <tbody>
-            <table>
-              {#each Object.entries(process.envVars ?? {}) as [name, val] (name)}
-                <tr>
-                  <td class="label">{name}</td>
-                  <td><code><pre>{val}</pre></code></td>
-                </tr>
-              {/each}
-            </table>
-          </tbody>
-        </CheckeredTableWrapper>
+        <EnvironmentTable variables={process.envVars} />
       {:else}
         <span>Process is not running</span>
       {/if}
