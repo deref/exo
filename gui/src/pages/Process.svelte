@@ -3,6 +3,7 @@
   import Panel from '../components/Panel.svelte';
   import BytesLabel from '../components/BytesLabel.svelte';
   import WorkspaceNav from '../components/WorkspaceNav.svelte';
+  import EnvironmentTable from '../components/EnvironmentTable.svelte';
   import CheckeredTableWrapper from '../components/CheckeredTableWrapper.svelte';
   import sparkline from '@fnando/sparkline';
   import { api } from '../lib/api';
@@ -13,7 +14,7 @@
     processes,
   } from '../lib/process/store';
   import type { RequestLifecycle } from '../lib/api';
-  import type { ProcessDescription } from 'src/lib/process/types';
+  import type { ProcessDescription } from '../lib/process/types';
 
   export let params = { workspace: '', process: '' };
 
@@ -141,15 +142,6 @@
 </Layout>
 
 <style>
-  code {
-    width: 100%;
-    max-width: 600px;
-    display: inline-block;
-    overflow-x: auto;
-    padding: 8px;
-    margin: -10px;
-  }
-
   .label {
     font-size: 0.8em;
     font-weight: 450;
