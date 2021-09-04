@@ -88,7 +88,7 @@ func GetProcessDescription(ctx context.Context, component api.ComponentDescripti
 		for _, child := range children {
 			exe, err := child.Exe()
 			if err != nil {
-				return fmt.Errorf("getting child executable: %w", err)
+				continue
 			}
 			childrenExecutables = append(childrenExecutables, exe)
 		}
