@@ -48,7 +48,9 @@
         process = processList.data.filter((p) => p.id === processId)[0];
       }
       if (process && process.running) {
-        process.cpuPercent && cpuPercentages.push(process.cpuPercent);
+        if (process.cpuPercent !== null) {
+          cpuPercentages.push(process.cpuPercent);
+        }
 
         if (cpuPercentages.length > 100) {
           cpuPercentages.shift();
