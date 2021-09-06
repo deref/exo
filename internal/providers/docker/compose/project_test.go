@@ -11,8 +11,6 @@ import (
 )
 
 func TestParseService(t *testing.T) {
-	trueVal := true
-	int64Val := int64(5280)
 	testCases := []struct {
 		name     string
 		in       string
@@ -384,7 +382,7 @@ cap_drop:
 			name: "Init process flag",
 			in:   `init: true`,
 			expected: compose.Service{
-				Init: &trueVal,
+				Init: boolRef(true),
 			},
 		},
 
@@ -481,7 +479,7 @@ cap_drop:
 			in: `oom_kill_disable: true
 oom_score_adj: 200`,
 			expected: compose.Service{
-				OomKillDisable: &trueVal,
+				OomKillDisable: boolRef(true),
 				OomScoreAdj:    200,
 			},
 		},
@@ -492,7 +490,7 @@ oom_score_adj: 200`,
 pids_limit: 5280`,
 			expected: compose.Service{
 				PidMode:   "host",
-				PidsLimit: &int64Val,
+				PidsLimit: int64Ref(5280),
 			},
 		},
 
@@ -509,6 +507,78 @@ pids_limit: 5280`,
 			in:   `pull_policy: missing`,
 			expected: compose.Service{
 				PullPolicy: "missing",
+			},
+		},
+
+		{
+			name: "Read-only root filesystem",
+			in:   `read_only: true`,
+			expected: compose.Service{
+				ReadOnly: true,
+			},
+		},
+
+		{
+			name: "Storage options",
+			in: `storage_opt:
+  size: 20G`,
+			expected: compose.Service{
+				StorageOpt: map[string]string{
+					"size": "20G",
+				},
+			},
+		},
+
+		{
+			name: "Sysctls",
+			in: `sysctls:
+- net.core.somaxconn=1024
+- net.ipv4.tcp_syncookies=0`,
+			expected: compose.Service{
+				Sysctls: compose.Dictionary{
+					"net.core.somaxconn":      strRef("1024"),
+					"net.ipv4.tcp_syncookies": strRef("0"),
+				},
+			},
+		},
+
+		{
+			name: "Ulimits",
+			in: `ulimits:
+  nproc: 65535
+  nofile:
+    soft: 20000
+    hard: 40000`,
+			expected: compose.Service{
+				Ulimits: compose.Ulimits{
+					{
+						Name: "nproc",
+						Soft: 65535,
+						Hard: 65535,
+					},
+					{
+						Name: "nofile",
+						Soft: 20000,
+						Hard: 40000,
+					},
+				},
+			},
+		},
+
+		{
+			name: "Userns mode",
+			in:   `userns_mode: "host"`,
+			expected: compose.Service{
+				UsernsMode: "host",
+			},
+		},
+
+		{
+			name: "Volumes from container",
+			in: `volumes_from:
+- container:my-container:ro`,
+			expected: compose.Service{
+				VolumesFrom: []string{"container:my-container:ro"},
 			},
 		},
 	}
@@ -536,4 +606,16 @@ pids_limit: 5280`,
 			assert.Equal(t, expected, svc)
 		})
 	}
+}
+
+func boolRef(b bool) *bool {
+	return &b
+}
+
+func strRef(s string) *string {
+	return &s
+}
+
+func int64Ref(i int64) *int64 {
+	return &i
 }

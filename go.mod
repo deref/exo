@@ -11,6 +11,7 @@ require (
 	github.com/dgraph-io/badger/v3 v3.2103.1
 	github.com/docker/docker v20.10.7+incompatible
 	github.com/docker/go-connections v0.4.0
+	github.com/docker/go-units v0.4.0
 	github.com/fatih/color v1.12.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.9
 	github.com/goccy/go-yaml v1.8.10

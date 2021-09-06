@@ -20,6 +20,7 @@ import (
 	"github.com/docker/docker/api/types/strslice"
 	docker "github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
+	"github.com/docker/go-units"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"golang.org/x/sync/errgroup"
 )
@@ -179,14 +180,12 @@ func (c *Container) create(ctx context.Context) error {
 		LogConfig: logCfg,
 		//NetworkMode     NetworkMode   // Network mode to use for the container
 		PortBindings: make(nat.PortMap),
-		//RestartPolicy   RestartPolicy // Restart policy to be used for the container
 		// TODO: Potentially inherit from deploy's restart_policy.
 		RestartPolicy: container.RestartPolicy{
 			Name: c.Spec.Restart,
 		},
 		//AutoRemove      bool          // Automatically remove container when it exits
 		//VolumeDriver    string        // Name of the volume driver used to mount volumes
-		//VolumesFrom     []string      // List of volumes to take from other container
 
 		//// Applicable to UNIX platforms
 		CapAdd:  c.Spec.CapAdd,
@@ -204,15 +203,14 @@ func (c *Container) create(ctx context.Context) error {
 		//OomScoreAdj     int               // Container preference for OOM-killing
 		Privileged: c.Spec.Privileged,
 		//PublishAllPorts bool              // Should docker publish all exposed port for the container
-		//ReadonlyRootfs  bool              // Is the container root filesystem in read-only
-		SecurityOpt: c.Spec.SecurityOpt,
-		//StorageOpt      map[string]string `json:",omitempty"` // Storage driver options per container.
-		//Tmpfs           map[string]string `json:",omitempty"` // List of tmpfs (mounts) used for the container
+		ReadonlyRootfs: c.Spec.ReadOnly,
+		SecurityOpt:    c.Spec.SecurityOpt,
+		StorageOpt:     c.Spec.StorageOpt,
 		//UTSMode         UTSMode           // UTS namespace to use for the container
-		//UsernsMode      UsernsMode        // The user namespace to use for the container
-		ShmSize: int64(c.Spec.ShmSize),
-		//Sysctls         map[string]string `json:",omitempty"` // List of Namespaced sysctls used for the container
-		Runtime: c.Spec.Runtime,
+		UsernsMode: container.UsernsMode(c.Spec.UsernsMode),
+		ShmSize:    int64(c.Spec.ShmSize),
+		Sysctls:    c.Spec.Sysctls.WithoutNils(),
+		Runtime:    c.Spec.Runtime,
 
 		//// Applicable to Windows
 		//ConsoleSize [2]uint   // Initial console size (height,width)
@@ -242,6 +240,7 @@ func (c *Container) create(ctx context.Context) error {
 			Devices:              convertDeviceMappings(c.Spec.Devices),
 			OomKillDisable:       c.Spec.OomKillDisable,
 			PidsLimit:            c.Spec.PidsLimit,
+			Ulimits:              convertUlimits(c.Spec.Ulimits),
 		},
 
 		OomScoreAdj: c.Spec.OomScoreAdj,
@@ -271,6 +270,18 @@ func (c *Container) create(ctx context.Context) error {
 
 	if hostCfg.PidMode, err = c.parsePIDMode(c.Spec.PidMode); err != nil {
 		return err
+	}
+
+	if hostCfg.VolumesFrom, err = c.parseVolumesFrom(c.Spec.VolumesFrom); err != nil {
+		return err
+	}
+
+	if len(c.Spec.Tmpfs) > 0 {
+		hostCfg.Tmpfs = make(map[string]string, len(c.Spec.Tmpfs))
+		// This matches the docker-compose behaviour for specifying tmpfs mounts with the service-level `tmpfs` option.
+		for _, path := range c.Spec.Tmpfs {
+			hostCfg.Tmpfs[path] = ""
+		}
 	}
 
 	// TODO: make the user home directory a parameter of the container.
@@ -490,6 +501,23 @@ func convertDeviceMappings(in []compose.DeviceMapping) []container.DeviceMapping
 	return out
 }
 
+func convertUlimits(in compose.Ulimits) []*units.Ulimit {
+	if in == nil {
+		return nil
+	}
+
+	out := make([]*units.Ulimit, len(in))
+	for i, ulimit := range in {
+		out[i] = &units.Ulimit{
+			Name: ulimit.Name,
+			Hard: ulimit.Hard,
+			Soft: ulimit.Soft,
+		}
+	}
+
+	return out
+}
+
 func (c *Container) parseIPCMode(in string) (container.IpcMode, error) {
 	switch in {
 	case "", "none", "private", "shareable", "host":
@@ -539,4 +567,14 @@ func (c *Container) parsePIDMode(in string) (container.PidMode, error) {
 	}
 
 	return container.PidMode(""), fmt.Errorf("Invalid PID mode: %q", in)
+}
+
+func (c *Container) parseVolumesFrom(in []string) ([]string, error) {
+	for _, v := range in {
+		if !strings.HasPrefix(v, "container:") {
+			return nil, errors.New("volumes from service not yet supported")
+		}
+	}
+
+	return in, nil
 }
