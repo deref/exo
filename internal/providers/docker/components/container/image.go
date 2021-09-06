@@ -11,23 +11,32 @@ import (
 )
 
 func (c *Container) ensureImage(ctx context.Context) error {
-	if c.State.Image.ID != "" {
-		// TODO: When should we rebuild?
+	if c.State.Image.ID != "" && c.Spec.PullPolicy != "build" {
 		return nil
 	}
+
 	if c.canBuild() {
 		return c.buildImage(ctx)
 	}
 
-	inspection, _, err := c.Docker.ImageInspectWithRaw(ctx, c.Spec.Image)
-	if docker.IsErrNotFound(err) {
+	var inspection types.ImageInspect
+	var err error
+	if c.Spec.PullPolicy != "always" {
+		inspection, _, err = c.Docker.ImageInspectWithRaw(ctx, c.Spec.Image)
+		if docker.IsErrNotFound(err) && c.Spec.PullPolicy == "never" {
+			return fmt.Errorf("pull policy for %q set to \"never\", no image %q found in local cache, and no build specification provided", c.ComponentName, c.Spec.Image)
+		} else if err != nil {
+			return fmt.Errorf("inspecting image: %w", err)
+		}
+	}
+	if inspection.ID == "" {
 		if err := c.pullImage(ctx); err != nil {
 			return fmt.Errorf("pulling image: %w", err)
 		}
 		inspection, _, err = c.Docker.ImageInspectWithRaw(ctx, c.Spec.Image)
-	}
-	if err != nil {
-		return fmt.Errorf("inspecting image: %w", err)
+		if err != nil {
+			return fmt.Errorf("inspecting image: %w", err)
+		}
 	}
 
 	c.State.Image.ID = inspection.ID

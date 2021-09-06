@@ -164,8 +164,9 @@ type Service struct {
 	Platform       string       `yaml:"platform"`
 	Ports          PortMappings `yaml:"ports"`
 	Privileged     bool         `yaml:"privileged"`
-	Profiles       IgnoredField `yaml:"profiles"`
-	// TODO: pull_policy
+	// TODO: Support profiles. See https://docs.docker.com/compose/profiles/.
+	Profiles   IgnoredField `yaml:"profiles"`
+	PullPolicy string       `yaml:"pull_policy"`
 	// TODO: read_only
 	Restart string `yaml:"restart"`
 	Runtime string `yaml:"runtime"`

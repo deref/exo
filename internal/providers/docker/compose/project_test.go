@@ -503,6 +503,14 @@ pids_limit: 5280`,
 				Platform: "linux/arm64/v8",
 			},
 		},
+
+		{
+			name: "Pull Policy",
+			in:   `pull_policy: missing`,
+			expected: compose.Service{
+				PullPolicy: "missing",
+			},
+		},
 	}
 
 	for _, testCase := range testCases {
