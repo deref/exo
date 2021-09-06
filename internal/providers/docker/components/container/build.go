@@ -217,15 +217,15 @@ func getArchive(contextDir, relDockerfile string) (io.ReadCloser, error) {
 	// removed. The daemon will remove them for us, if needed, after it
 	// parses the Dockerfile.
 	var includes = []string{"."}
-	keepThem1, err := fileutils.Matches(".dockerignore", excludes)
+	isIgnoringDockerIgnore, err := fileutils.Matches(".dockerignore", excludes)
 	if err != nil {
 		return nil, fmt.Errorf("matching .dockerignore: %w", err)
 	}
-	keepThem2, err := fileutils.Matches(relDockerfile, excludes)
+	isIgnoringDockerfile, err := fileutils.Matches(relDockerfile, excludes)
 	if err != nil {
 		return nil, fmt.Errorf("matching Dockerfile: %w", err)
 	}
-	if keepThem1 || keepThem2 {
+	if isIgnoringDockerIgnore || isIgnoringDockerfile {
 		includes = append(includes, ".dockerignore", relDockerfile)
 	}
 
