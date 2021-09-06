@@ -19,7 +19,7 @@ This project adhears to [CalVer](./doc/versioning.md).
 ## Fixed
 
 - (#273)[https://github.com/deref/exo/pull/273] Truncated output after processes terminate.
-
+- (e062d58)[https://github.com/deref/exo/commit/e062d589fec56fcbefc777444eb6d1ac4ddf0d7d] Fix `run` exiting prematurely on some Mac systems.
 
 ## 2021.08.31
 
