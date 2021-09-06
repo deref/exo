@@ -4,6 +4,8 @@ import (
 	"os"
 	"syscall"
 	"unsafe"
+
+	"golang.org/x/sys/unix"
 )
 
 func GetSize() (w, h int) {
@@ -11,13 +13,10 @@ func GetSize() (w, h int) {
 	if err != nil {
 		return 0, 0
 	}
-	var size struct {
-		rows uint16
-		cols uint16
-	}
+	var size unix.Winsize
 	defer out.Close()
 	_, _, _ = syscall.Syscall(syscall.SYS_IOCTL, out.Fd(), uintptr(syscall.TIOCGWINSZ), uintptr(unsafe.Pointer(&size)))
-	return int(size.cols), int(size.rows)
+	return int(size.Col), int(size.Row)
 }
 
 // VisualLength determines the length of a string (taking into account ansi control sequences)

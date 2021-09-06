@@ -2,6 +2,7 @@ import Home from './pages/Home.svelte';
 import NewWorkspace from './pages/NewWorkspace.svelte';
 import Workspace from './pages/Workspace.svelte';
 import WorkspaceComponents from './pages/WorkspaceComponents.svelte';
+import WorkspaceVariables from './pages/WorkspaceVariables.svelte';
 import WorkspaceStorage from './pages/WorkspaceStorage.svelte';
 import WorkspaceNetworking from './pages/WorkspaceNetworking.svelte';
 import NewProcess from './pages/NewProcess.svelte';
@@ -16,6 +17,7 @@ export default {
   '/new-workspace': NewWorkspace,
   '/workspaces/:workspace': Workspace,
   '/workspaces/:workspace/components': WorkspaceComponents,
+  '/workspaces/:workspace/variables': WorkspaceVariables,
   '/workspaces/:workspace/storage': WorkspaceStorage,
   '/workspaces/:workspace/networking': WorkspaceNetworking,
   '/workspaces/:workspace/new-process': NewProcess,

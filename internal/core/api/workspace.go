@@ -12,6 +12,7 @@ import (
 type Process interface {
 	Start(context.Context, *StartInput) (*StartOutput, error)
 	Stop(context.Context, *StopInput) (*StopOutput, error)
+	Signal(context.Context, *SignalInput) (*SignalOutput, error)
 	Restart(context.Context, *RestartInput) (*RestartOutput, error)
 }
 
@@ -30,6 +31,14 @@ type StopOutput struct {
 	JobID string `json:"jobId"`
 }
 
+type SignalInput struct {
+	Signal string `json:"signal"`
+}
+
+type SignalOutput struct {
+	JobID string `json:"jobId"`
+}
+
 type RestartInput struct {
 	TimeoutSeconds *uint `json:"timeoutSeconds"`
 }
@@ -44,6 +53,9 @@ func BuildProcessMux(b *josh.MuxBuilder, factory func(req *http.Request) Process
 	})
 	b.AddMethod("stop", func(req *http.Request) interface{} {
 		return factory(req).Stop
+	})
+	b.AddMethod("signal", func(req *http.Request) interface{} {
+		return factory(req).Signal
 	})
 	b.AddMethod("restart", func(req *http.Request) interface{} {
 		return factory(req).Restart
@@ -97,6 +109,7 @@ type Workspace interface {
 	GetEvents(context.Context, *GetEventsInput) (*GetEventsOutput, error)
 	StartComponents(context.Context, *StartComponentsInput) (*StartComponentsOutput, error)
 	StopComponents(context.Context, *StopComponentsInput) (*StopComponentsOutput, error)
+	SignalComponents(context.Context, *SignalComponentsInput) (*SignalComponentsOutput, error)
 	RestartComponents(context.Context, *RestartComponentsInput) (*RestartComponentsOutput, error)
 	DescribeProcesses(context.Context, *DescribeProcessesInput) (*DescribeProcessesOutput, error)
 	DescribeVolumes(context.Context, *DescribeVolumesInput) (*DescribeVolumesOutput, error)
@@ -107,6 +120,7 @@ type Workspace interface {
 	// Writes a file to disk.
 	WriteFile(context.Context, *WriteFileInput) (*WriteFileOutput, error)
 	BuildComponents(context.Context, *BuildComponentsInput) (*BuildComponentsOutput, error)
+	DescribeEnvironment(context.Context, *DescribeEnvironmentInput) (*DescribeEnvironmentOutput, error)
 }
 
 type DescribeInput struct {
@@ -263,6 +277,15 @@ type StopComponentsOutput struct {
 	JobID string `json:"jobId"`
 }
 
+type SignalComponentsInput struct {
+	Refs   []string `json:"refs"`
+	Signal string   `json:"signal"`
+}
+
+type SignalComponentsOutput struct {
+	JobID string `json:"jobId"`
+}
+
 type RestartComponentsInput struct {
 	Refs           []string `json:"refs"`
 	TimeoutSeconds *uint    `json:"timeoutSeconds"`
@@ -329,12 +352,22 @@ type BuildComponentsOutput struct {
 	JobID string `json:"jobId"`
 }
 
+type DescribeEnvironmentInput struct {
+}
+
+type DescribeEnvironmentOutput struct {
+	Variables map[string]string `json:"variables"`
+}
+
 func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Workspace) {
 	b.AddMethod("start", func(req *http.Request) interface{} {
 		return factory(req).Start
 	})
 	b.AddMethod("stop", func(req *http.Request) interface{} {
 		return factory(req).Stop
+	})
+	b.AddMethod("signal", func(req *http.Request) interface{} {
+		return factory(req).Signal
 	})
 	b.AddMethod("restart", func(req *http.Request) interface{} {
 		return factory(req).Restart
@@ -390,6 +423,9 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	b.AddMethod("stop-components", func(req *http.Request) interface{} {
 		return factory(req).StopComponents
 	})
+	b.AddMethod("signal-components", func(req *http.Request) interface{} {
+		return factory(req).SignalComponents
+	})
 	b.AddMethod("restart-components", func(req *http.Request) interface{} {
 		return factory(req).RestartComponents
 	})
@@ -413,6 +449,9 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	})
 	b.AddMethod("build-components", func(req *http.Request) interface{} {
 		return factory(req).BuildComponents
+	})
+	b.AddMethod("describe-environment", func(req *http.Request) interface{} {
+		return factory(req).DescribeEnvironment
 	})
 }
 

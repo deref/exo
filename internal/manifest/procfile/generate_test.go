@@ -65,7 +65,7 @@ ui: docker run --rm --name=nginx -v config/nginx.conf:/etc/nginx/nginx.conf:ro -
 					},
 				},
 			},
-			expected: `weird: SOME_ARG=ignore=other=equals OTHER_ARG=''"'"'"' 'foo'"'"'' 'multiple words' 'Hello
+			expected: `weird: OTHER_ARG=''"'"'"' SOME_ARG=ignore=other=equals 'foo'"'"'' 'multiple words' 'Hello
 World' '"quotes"' ''"'"'other quotes'"'"''
 `,
 		},
@@ -74,9 +74,6 @@ World' '"quotes"' ''"'"'other quotes'"'"''
 	for _, testCase := range testCases {
 		in := testCase.in
 		expected := testCase.expected
-		t.Run(testCase.name, func(t *testing.T) {
-
-		})
 		var buf bytes.Buffer
 		err := procfile.Generate(&buf, in)
 		if !assert.NoError(t, err) {

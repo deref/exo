@@ -8,6 +8,9 @@ exo uninstall
 
 ## Manual Uninstall
 
+If you installed shell completions, reference `exo completion --help` for
+information on relevant install paths for your preferred shell.
+
 Stop supervised processes and free any workspace resources:
 
 ```bash
@@ -34,4 +37,3 @@ rm -rf ~/.exo
 ```
 
 Remove `~/.exo/bin` from your path.
-

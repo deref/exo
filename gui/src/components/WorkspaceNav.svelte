@@ -3,6 +3,7 @@
   import NavbarButton from './nav/NavbarButton.svelte';
   import HomeSVG from './mono/HomeSVG.svelte';
   import LayersSVG from './mono/LayersSVG.svelte';
+  import VariableSVG from './mono/VariableSVG.svelte';
   import StorageSVG from './mono/StorageSVG.svelte';
   import NetworkingSVG from './mono/NetworkingSVG.svelte';
 
@@ -29,6 +30,16 @@
     {active}
   >
     <LayersSVG />
+  </NavbarButton>
+
+  <NavbarButton
+    title="Variables"
+    on:click={() => {
+      router.push(`#/workspaces/${workspaceId}/variables`);
+    }}
+    {active}
+  >
+    <VariableSVG />
   </NavbarButton>
 
   <NavbarButton

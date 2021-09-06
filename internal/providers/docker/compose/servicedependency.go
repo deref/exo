@@ -2,6 +2,8 @@ package compose
 
 import (
 	"fmt"
+	"sort"
+	"strings"
 
 	"github.com/goccy/go-yaml"
 )
@@ -78,6 +80,25 @@ func (sd *ServiceDependencies) UnmarshalYAML(b []byte) error {
 			Condition: condition,
 		})
 	}
+	sort.Sort(serviceDependenciesSort{sd.Services})
 
 	return nil
+}
+
+type serviceDependenciesSort struct {
+	dependencies []ServiceDependency
+}
+
+func (iface serviceDependenciesSort) Len() int {
+	return len(iface.dependencies)
+}
+
+func (iface serviceDependenciesSort) Less(i, j int) bool {
+	return strings.Compare(iface.dependencies[i].Service, iface.dependencies[j].Service) < 0
+}
+
+func (iface serviceDependenciesSort) Swap(i, j int) {
+	tmp := iface.dependencies[i]
+	iface.dependencies[i] = iface.dependencies[j]
+	iface.dependencies[j] = tmp
 }

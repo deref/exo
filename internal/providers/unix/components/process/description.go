@@ -30,17 +30,9 @@ func GetProcessDescription(ctx context.Context, component api.ComponentDescripti
 		// Assume this has failed because the process isn't running.
 		return process, nil
 	}
+	process.Running = true
 
 	var eg errgroup.Group
-
-	eg.Go(func() error {
-		running, err := proc.IsRunningWithContext(ctx)
-		if err != nil {
-			return fmt.Errorf("getting process running information: %w", err)
-		}
-		process.Running = running
-		return nil
-	})
 
 	eg.Go(func() error {
 		memoryInfo, err := proc.MemoryInfoWithContext(ctx)
@@ -88,7 +80,7 @@ func GetProcessDescription(ctx context.Context, component api.ComponentDescripti
 		for _, child := range children {
 			exe, err := child.Exe()
 			if err != nil {
-				return fmt.Errorf("getting child executable: %w", err)
+				continue
 			}
 			childrenExecutables = append(childrenExecutables, exe)
 		}

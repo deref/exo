@@ -43,7 +43,9 @@ export type RequestLifecycle<T> =
   | RefetchingResponse<T>;
 
 export const notRequested = <T>(): RequestLifecycle<T> => ({ stage: 'idle' });
-export const pendingRequest = <T>(): RequestLifecycle<T> => ({ stage: 'pending' });
+export const pendingRequest = <T>(): RequestLifecycle<T> => ({
+  stage: 'pending',
+});
 export const errorResponse = <T>(message: string): RequestLifecycle<T> => ({
   stage: 'error',
   message,
@@ -198,6 +200,8 @@ export interface KernelApi {
 export interface WorkspaceApi {
   describeComponents(): Promise<ComponentDescription[]>;
 
+  describeEnvironment(): Promise<Record<string, string>>;
+
   describeProcesses(): Promise<ProcessDescription[]>;
 
   describeVolumes(): Promise<VolumeDescription[]>;
@@ -274,6 +278,11 @@ export const api = (() => {
       async describeComponents(): Promise<ComponentDescription[]> {
         const { components } = (await invoke('describe-components')) as any;
         return components;
+      },
+
+      async describeEnvironment(): Promise<Record<string, string>> {
+        const { variables } = (await invoke('describe-environment')) as any;
+        return variables;
       },
 
       async describeProcesses(): Promise<ProcessDescription[]> {

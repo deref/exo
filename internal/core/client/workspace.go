@@ -31,6 +31,11 @@ func (c *Process) Stop(ctx context.Context, input *api.StopInput) (output *api.S
 	return
 }
 
+func (c *Process) Signal(ctx context.Context, input *api.SignalInput) (output *api.SignalOutput, err error) {
+	err = c.client.Invoke(ctx, "signal", input, &output)
+	return
+}
+
 func (c *Process) Restart(ctx context.Context, input *api.RestartInput) (output *api.RestartOutput, err error) {
 	err = c.client.Invoke(ctx, "restart", input, &output)
 	return
@@ -72,6 +77,11 @@ func (c *Workspace) Start(ctx context.Context, input *api.StartInput) (output *a
 
 func (c *Workspace) Stop(ctx context.Context, input *api.StopInput) (output *api.StopOutput, err error) {
 	err = c.client.Invoke(ctx, "stop", input, &output)
+	return
+}
+
+func (c *Workspace) Signal(ctx context.Context, input *api.SignalInput) (output *api.SignalOutput, err error) {
+	err = c.client.Invoke(ctx, "signal", input, &output)
 	return
 }
 
@@ -165,6 +175,11 @@ func (c *Workspace) StopComponents(ctx context.Context, input *api.StopComponent
 	return
 }
 
+func (c *Workspace) SignalComponents(ctx context.Context, input *api.SignalComponentsInput) (output *api.SignalComponentsOutput, err error) {
+	err = c.client.Invoke(ctx, "signal-components", input, &output)
+	return
+}
+
 func (c *Workspace) RestartComponents(ctx context.Context, input *api.RestartComponentsInput) (output *api.RestartComponentsOutput, err error) {
 	err = c.client.Invoke(ctx, "restart-components", input, &output)
 	return
@@ -202,5 +217,10 @@ func (c *Workspace) WriteFile(ctx context.Context, input *api.WriteFileInput) (o
 
 func (c *Workspace) BuildComponents(ctx context.Context, input *api.BuildComponentsInput) (output *api.BuildComponentsOutput, err error) {
 	err = c.client.Invoke(ctx, "build-components", input, &output)
+	return
+}
+
+func (c *Workspace) DescribeEnvironment(ctx context.Context, input *api.DescribeEnvironmentInput) (output *api.DescribeEnvironmentOutput, err error) {
+	err = c.client.Invoke(ctx, "describe-environment", input, &output)
 	return
 }
