@@ -365,7 +365,6 @@ func (c *Container) create(ctx context.Context) error {
 	for _, network := range remainingNetworks {
 		network := network
 		netConnects.Go(func() error {
-			// TODO: Use network info to create netEndpointSettings
 			return c.Docker.NetworkConnect(ctx, network.Network, createdBody.ID, c.endpointSettings(network))
 		})
 	}
