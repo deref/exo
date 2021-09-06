@@ -10,6 +10,7 @@ import (
 
 	core "github.com/deref/exo/internal/core/api"
 	"github.com/deref/exo/internal/providers/docker/compose"
+	"github.com/deref/exo/internal/util/pathutil"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
@@ -67,6 +68,9 @@ func (c *Container) create(ctx context.Context) error {
 	for _, envFilePath := range c.Spec.EnvironmentFiles {
 		if !path.IsAbs(envFilePath) {
 			envFilePath = path.Join(c.WorkspaceRoot, envFilePath)
+		}
+		if !pathutil.HasPathPrefix(envFilePath, c.WorkspaceRoot) {
+			return fmt.Errorf("env file %s is not contained within the workspace", envFilePath)
 		}
 		envFileVars, err := godotenv.Read(envFilePath)
 		if err != nil {
