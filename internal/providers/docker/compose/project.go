@@ -152,19 +152,19 @@ type Service struct {
 	MemorySwappiness *int64 `yaml:"mem_swappiness"`
 
 	// MemoryLimit and MemoryReservation can be specified either as strings or integers.
+	// TODO: Deprecate these fields once we support `deploy.limits.memory` and `deploy.reservations.memory`.
 	MemoryLimit       MemoryField `yaml:"mem_limit"`
 	MemoryReservation MemoryField `yaml:"mem_reservation"`
 
-	// TODO: memswap_limit
-	// TODO: oom_kill_disable
-	// TODO: oom_score_adj
-	// TODO: pid
-	// TODO: pids_limit
-	// TODO: platform
-
-	Ports      PortMappings `yaml:"ports"`
-	Privileged bool         `yaml:"privileged"`
-	Profiles   IgnoredField `yaml:"profiles"`
+	MemswapLimit   Bytes        `yaml:"memswap_limit"`
+	OomKillDisable *bool        `yaml:"oom_kill_disable"`
+	OomScoreAdj    int          `yaml:"oom_score_adj"`
+	PidMode        string       `yaml:"pid"`
+	PidsLimit      *int64       `yaml:"pids_limit"`
+	Platform       string       `yaml:"platform"`
+	Ports          PortMappings `yaml:"ports"`
+	Privileged     bool         `yaml:"privileged"`
+	Profiles       IgnoredField `yaml:"profiles"`
 	// TODO: pull_policy
 	// TODO: read_only
 	Restart string `yaml:"restart"`

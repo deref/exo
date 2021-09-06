@@ -100,7 +100,7 @@ func (c *Container) buildImage(ctx context.Context) error {
 			ExtraHosts: spec.Build.ExtraHosts,
 			Target:     spec.Build.Target,
 			//SessionID   string
-			//Platform    string
+			Platform: spec.Platform,
 			//// Version specifies the version of the unerlying builder to use
 			//Version BuilderVersion
 			//// BuildID is an optional identifier that can be passed together with the

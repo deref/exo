@@ -12,6 +12,7 @@ import (
 
 func TestParseService(t *testing.T) {
 	trueVal := true
+	int64Val := int64(5280)
 	testCases := []struct {
 		name     string
 		in       string
@@ -456,6 +457,50 @@ cap_drop:
 						Priority:     1000,
 					},
 				},
+			},
+		},
+
+		{
+			name: "Memswap Limit - numeric",
+			in:   `memswap_limit: -1`,
+			expected: compose.Service{
+				MemswapLimit: -1,
+			},
+		},
+
+		{
+			name: "Memswap Limit - bytes string",
+			in:   `memswap_limit: 2g`,
+			expected: compose.Service{
+				MemswapLimit: 2147483648,
+			},
+		},
+
+		{
+			name: "OOM Settings",
+			in: `oom_kill_disable: true
+oom_score_adj: 200`,
+			expected: compose.Service{
+				OomKillDisable: &trueVal,
+				OomScoreAdj:    200,
+			},
+		},
+
+		{
+			name: "PID settings",
+			in: `pid: host
+pids_limit: 5280`,
+			expected: compose.Service{
+				PidMode:   "host",
+				PidsLimit: &int64Val,
+			},
+		},
+
+		{
+			name: "Platform",
+			in:   `platform: linux/arm64/v8`,
+			expected: compose.Service{
+				Platform: "linux/arm64/v8",
 			},
 		},
 	}

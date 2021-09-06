@@ -202,7 +202,6 @@ func (c *Container) create(ctx context.Context) error {
 		// See NOTE: [RESOLVING SERVICE CONTAINERS].
 		Links: append(append([]string{}, c.Spec.Links...), c.Spec.ExternalLinks...),
 		//OomScoreAdj     int               // Container preference for OOM-killing
-		//PidMode         PidMode           // PID namespace to use for the container
 		Privileged: c.Spec.Privileged,
 		//PublishAllPorts bool              // Should docker publish all exposed port for the container
 		//ReadonlyRootfs  bool              // Is the container root filesystem in read-only
@@ -228,6 +227,7 @@ func (c *Container) create(ctx context.Context) error {
 			Memory:               int64(c.Spec.MemoryLimit),
 			MemoryReservation:    int64(c.Spec.MemoryReservation),
 			MemorySwappiness:     c.Spec.MemorySwappiness,
+			MemorySwap:           int64(c.Spec.MemswapLimit),
 			CPURealtimePeriod:    time.Duration(c.Spec.CPURealtimePeriod).Microseconds(),
 			CPURealtimeRuntime:   time.Duration(c.Spec.CPURealtimeRuntime).Microseconds(),
 			BlkioWeight:          uint16(c.Spec.BlkioConfig.Weight),
@@ -240,7 +240,11 @@ func (c *Container) create(ctx context.Context) error {
 			CgroupParent:         c.Spec.CgroupParent,
 			DeviceCgroupRules:    c.Spec.DeviceCgroupRules,
 			Devices:              convertDeviceMappings(c.Spec.Devices),
+			OomKillDisable:       c.Spec.OomKillDisable,
+			PidsLimit:            c.Spec.PidsLimit,
 		},
+
+		OomScoreAdj: c.Spec.OomScoreAdj,
 
 		//// MaskedPaths is the list of paths to be masked inside the container (this overrides the default set of paths)
 		//MaskedPaths []string
@@ -262,6 +266,10 @@ func (c *Container) create(ctx context.Context) error {
 	}
 
 	if hostCfg.NetworkMode, err = c.parseNetworkMode(c.Spec.NetworkMode); err != nil {
+		return err
+	}
+
+	if hostCfg.PidMode, err = c.parsePIDMode(c.Spec.PidMode); err != nil {
 		return err
 	}
 
@@ -518,4 +526,17 @@ func (c *Container) parseNetworkMode(in string) (container.NetworkMode, error) {
 		return container.NetworkMode(""), errors.New("service network mode not yet supported")
 	}
 	return container.NetworkMode(in), nil
+}
+
+func (c *Container) parsePIDMode(in string) (container.PidMode, error) {
+	switch in {
+	case "", "host":
+		return container.PidMode(in), nil
+	}
+
+	if strings.HasPrefix(in, "container:") {
+		return container.PidMode(in), nil
+	}
+
+	return container.PidMode(""), fmt.Errorf("Invalid PID mode: %q", in)
 }
