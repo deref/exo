@@ -28,4 +28,4 @@ For a smooth development experience, please take a look at the [local developmen
 
 ## Join the Team
 
-Interested in working on exo full-time? Email [jobs@deref.io](jobs@deref.io).
+Interested in working on exo full-time? Email [jobs@deref.io](jobs@deref.io) and mention that you're coming from `CONTRIBUTING.md`.
