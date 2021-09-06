@@ -14,6 +14,7 @@ This project adhears to [CalVer](./doc/versioning.md).
 - Additional docker-compose compatibility: anchors & aliases, x- fields, cpu
   contraints, arbitrary CMD syntax, and more.
 - (#280)[https://github.com/deref/exo/pull/280] `exo state ...` commands for performing state repair.
+- (#188)[https://github.com/deref/exo/issues/188] `exo kill -s signal ...` command.
 
 ## Fixed
 

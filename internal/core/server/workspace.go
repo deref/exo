@@ -831,6 +831,40 @@ func (ws *Workspace) StopComponents(ctx context.Context, input *api.StopComponen
 	}, nil
 }
 
+func (ws *Workspace) Signal(ctx context.Context, input *api.SignalInput) (*api.SignalOutput, error) {
+	query := allProcessQuery(withReversedDependencies, withDependents)
+	jobID := ws.controlEachComponent(ctx, "signalling", query, func(ctx context.Context, thing interface{}) error {
+		if process, ok := thing.(api.Process); ok {
+			_, err := process.Signal(ctx, input)
+			return err
+		}
+		return nil
+	})
+	return &api.SignalOutput{
+		JobID: jobID,
+	}, nil
+}
+
+func (ws *Workspace) SignalComponents(ctx context.Context, input *api.SignalComponentsInput) (*api.SignalComponentsOutput, error) {
+	query := allProcessQuery(
+		withRefs(input.Refs...),
+		withReversedDependencies,
+		withDependents,
+	)
+	jobID := ws.controlEachComponent(ctx, "signalling", query, func(ctx context.Context, thing interface{}) error {
+		if process, ok := thing.(api.Process); ok {
+			_, err := process.Signal(ctx, &api.SignalInput{
+				Signal: input.Signal,
+			})
+			return err
+		}
+		return nil
+	})
+	return &api.SignalComponentsOutput{
+		JobID: jobID,
+	}, nil
+}
+
 func (ws *Workspace) Restart(ctx context.Context, input *api.RestartInput) (*api.RestartOutput, error) {
 	query := makeComponentQuery(withDependencies)
 	jobID := ws.controlEachComponent(ctx, "restarting", query, func(ctx context.Context, thing interface{}) error {
@@ -971,6 +1005,12 @@ func (ws *Workspace) ExportProcfile(ctx context.Context, input *api.ExportProcfi
 			})
 		}
 	}
+
+	// Produce a stable order of processes for export.  Ideally, this would
+	// preserve the original order from an imported Procfile, but that would
+	// require some metadata on components.  Acheiving a stable order on the
+	// first export is the next best thing.
+	procfile.Organize(&unixProcs)
 
 	var export bytes.Buffer
 	if err := procfile.Generate(&export, unixProcs); err != nil {
