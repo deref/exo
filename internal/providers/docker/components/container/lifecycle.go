@@ -69,7 +69,7 @@ func (c *Container) create(ctx context.Context) error {
 	}
 
 	envMap := map[string]string{}
-	for _, envFilePath := range c.Spec.EnvironmentFiles {
+	for _, envFilePath := range c.Spec.EnvFile {
 		if !path.IsAbs(envFilePath) {
 			envFilePath = path.Join(c.WorkspaceRoot, envFilePath)
 		}
