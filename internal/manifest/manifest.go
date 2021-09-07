@@ -7,6 +7,7 @@ import (
 	"io/ioutil"
 
 	"github.com/deref/exo/internal/util/yamlutil"
+	"github.com/goccy/go-yaml"
 )
 
 var Version = "0.1"
@@ -17,6 +18,15 @@ type Manifest struct {
 }
 
 type ComponentSpec string
+
+func (spec ComponentSpec) MarshalJSON() ([]byte, error) {
+	var d interface{}
+	if err := yaml.Unmarshal([]byte(spec), &d); err != nil {
+		return nil, fmt.Errorf("spec is not valid yaml")
+	}
+
+	return json.Marshal(d)
+}
 
 func (spec *ComponentSpec) UnmarshalJSON(b []byte) error {
 	s := string(b)
