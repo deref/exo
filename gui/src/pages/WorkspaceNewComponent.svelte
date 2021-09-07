@@ -52,7 +52,27 @@
           <b>Container</b>
         </button>
 
-        <!-- Volume, network, etc. -->
+        <button
+          on:click={() => {
+            router.push(
+              `/workspaces/${encodeURIComponent(workspaceId)}/new-volume`,
+            );
+          }}
+        >
+          <DockerSVG />
+          <b>Volume</b>
+        </button>
+
+        <button
+          on:click={() => {
+            router.push(
+              `/workspaces/${encodeURIComponent(workspaceId)}/new-network`,
+            );
+          }}
+        >
+          <DockerSVG />
+          <b>Network</b>
+        </button>
       </section>
 
       <!-- Databases, Apps, cloud services, etc. -->

@@ -2,7 +2,7 @@
   interface EditorMode {
     name: string;
     id: string;
-    onActivate(): void;
+    onActivate?(): void;
   }
 
   export let mode: string;
@@ -19,7 +19,7 @@
           return;
         }
         mode = editorMode.id;
-        if ('effect' in editorMode) {
+        if (editorMode.onActivate) {
           editorMode.onActivate();
         }
       }}

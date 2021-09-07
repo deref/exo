@@ -8,6 +8,8 @@ import WorkspaceNetworking from './pages/WorkspaceNetworking.svelte';
 import WorkspaceNewComponent from './pages/WorkspaceNewComponent.svelte';
 import NewProcess from './pages/NewProcess.svelte';
 import NewDockerContainer from './pages/NewDockerContainer.svelte';
+import NewDockerNetwork from './pages/NewDockerNetwork.svelte';
+import NewDockerVolume from './pages/NewDockerVolume.svelte';
 import Process from './pages/Process.svelte';
 import Preferences from './pages/Preferences.svelte';
 import Jobs from './pages/Jobs.svelte';
@@ -25,6 +27,8 @@ export default {
   '/workspaces/:workspace/new-component': WorkspaceNewComponent,
   '/workspaces/:workspace/new-process': NewProcess,
   '/workspaces/:workspace/new-container': NewDockerContainer,
+  '/workspaces/:workspace/new-volume': NewDockerVolume,
+  '/workspaces/:workspace/new-network': NewDockerNetwork,
   '/workspaces/:workspace/processes/:process': Process,
   '/preferences': Preferences,
   '/jobs': Jobs,
