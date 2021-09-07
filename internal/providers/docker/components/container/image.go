@@ -23,8 +23,10 @@ func (c *Container) ensureImage(ctx context.Context) error {
 	var err error
 	if c.Spec.PullPolicy != "always" {
 		inspection, _, err = c.Docker.ImageInspectWithRaw(ctx, c.Spec.Image)
-		if docker.IsErrNotFound(err) && c.Spec.PullPolicy == "never" {
-			return fmt.Errorf("pull policy for %q set to \"never\", no image %q found in local cache, and no build specification provided", c.ComponentName, c.Spec.Image)
+		if docker.IsErrNotFound(err) {
+			if c.Spec.PullPolicy == "never" {
+				return fmt.Errorf("pull policy for %q set to \"never\", no image %q found in local cache, and no build specification provided", c.ComponentName, c.Spec.Image)
+			}
 		} else if err != nil {
 			return fmt.Errorf("inspecting image: %w", err)
 		}
@@ -35,7 +37,7 @@ func (c *Container) ensureImage(ctx context.Context) error {
 		}
 		inspection, _, err = c.Docker.ImageInspectWithRaw(ctx, c.Spec.Image)
 		if err != nil {
-			return fmt.Errorf("inspecting image: %w", err)
+			return fmt.Errorf("inspecting pulled image: %w", err)
 		}
 	}
 
