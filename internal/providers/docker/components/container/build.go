@@ -54,6 +54,7 @@ func (c *Container) buildImage(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("getting build context: %w", err)
 	}
+	defer buildContext.Close()
 
 	opts := types.ImageBuildOptions{
 		//Tags           []string
