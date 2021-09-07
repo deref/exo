@@ -37,6 +37,12 @@ func (d Duration) MarshalYAML() (interface{}, error) {
 }
 
 func (d *Duration) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var i int64
+	if err := unmarshal(&i); err == nil {
+		*d = Duration(time.Duration(i) * time.Microsecond)
+		return nil
+	}
+
 	var s string
 	if err := unmarshal(&s); err != nil {
 		return err

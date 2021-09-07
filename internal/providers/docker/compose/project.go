@@ -83,103 +83,98 @@ func (memory *MemoryField) UnmarshalYAML(b []byte) error {
 }
 
 type Service struct {
-	Deploy IgnoredField `yaml:"deploy"`
-
 	// Note that these two are only applicable to Windows.
-	// TODO: cpu_count
-	// TODO: cpu_percent
+	CPUCount   int64 `yaml:"cpu_count"`
+	CPUPercent int64 `yaml:"cpu_percent"`
 
-	CPUShares int64 `yaml:"cpu_shares"`
-	CPUPeriod int64 `yaml:"cpu_period"`
-	CPUQuota  int64 `yaml:"cpu_quota"`
-
-	// CPURealtimeRuntime and CPURealtimePeriod can both be specified as either
-	// strings or integers.
-	//CPURealtimeRuntime int64 `yaml:"cpu_rt_runtime"`
-	//CPURealtimePeriod  int64 `yaml:"cpu_rt_period"`
-
-	// TODO: cpus
-	// TODO: cpuset
-	// TODO: blkio_config
-
-	Build Build `yaml:"build"`
-	// TODO: cap_add
-	// TODO: cap_drop
-	// TODO: cgroup_parent
-
-	Command       Command  `yaml:"command"`
-	Configs       []string `yaml:"configs"` // TODO: support long syntax.
-	ContainerName string   `yaml:"container_name"`
+	CPUShares          int64       `yaml:"cpu_shares"`
+	CPUPeriod          int64       `yaml:"cpu_period"`
+	CPUQuota           int64       `yaml:"cpu_quota"`
+	CPURealtimeRuntime Duration    `yaml:"cpu_rt_runtime"`
+	CPURealtimePeriod  Duration    `yaml:"cpu_rt_period"`
+	CPUSet             string      `yaml:"cpuset"`
+	BlkioConfig        BlkioConfig `yaml:"blkio_config"`
+	Build              Build       `yaml:"build"`
+	CapAdd             []string    `yaml:"cap_add"`
+	CapDrop            []string    `yaml:"cap_drop"`
+	CgroupParent       string      `yaml:"cgroup_parent"`
+	Command            Command     `yaml:"command"`
+	Configs            []string    `yaml:"configs"` // TODO: support long syntax.
+	ContainerName      string      `yaml:"container_name"`
 	// TODO: credential_spec
-
-	DependsOn ServiceDependencies `yaml:"depends_on"`
-
-	// TODO: device_cgroup_rules
-	// TODO: devices
-	// TODO: dns
-	// TODO: dns_opt
-	// TODO: dns_search
-
-	Domainname       string           `yaml:"domainname"`
-	Entrypoint       Command          `yaml:"entrypoint"`
-	EnvironmentFiles EnvironmentFiles `yaml:"env_file"`
-	Environment      Dictionary       `yaml:"environment"`
-	Expose           PortMappings     `yaml:"expose"` // TODO: Validate target-only.
+	DependsOn         ServiceDependencies `yaml:"depends_on"`
+	DeviceCgroupRules []string            `yaml:"device_cgroup_rules"`
+	Devices           []DeviceMapping     `yaml:"devices"`
+	DNS               StringOrStringSlice `yaml:"dns"`
+	DNSOptions        []string            `yaml:"dns_opt"`
+	DNSSearch         StringOrStringSlice `yaml:"dns_search"`
+	Domainname        string              `yaml:"domainname"`
+	Entrypoint        Command             `yaml:"entrypoint"`
+	EnvFile           StringOrStringSlice `yaml:"env_file"` // TODO: Add to the environment for a docker container component.
+	Environment       Dictionary          `yaml:"environment"`
+	Expose            PortMappings        `yaml:"expose"` // TODO: Validate target-only.
 	// TODO: extends
-	// TODO: external_links
-	// TODO: extra_hosts
-	// TODO: group_add
-	Healthcheck *Healthcheck `yaml:"healthcheck"`
-	Hostname    string       `yaml:"hostname"`
-	Image       string       `yaml:"image"`
-	// TODO: init
-	// TODO: ipc
-	// TODO: isolation
-	Labels Dictionary `yaml:"labels"`
-	// TODO: links
-	Logging Logging `yaml:"logging"`
-	// TODO: network_mode
-	Networks   []string `yaml:"networks"` // TODO: support long syntax.
-	MacAddress string   `yaml:"mac_address"`
-
-	MemorySwappiness *int64 `yaml:"mem_swappiness"`
-
+	// List of links of the form `SERVICE` or `SERVICE:ALIAS`
+	ExternalLinks []string `yaml:"external_links"`
+	// List of host/IP pairs to add to /etc/hosts of the form `HOST:IP`
+	ExtraHosts       []string        `yaml:"extra_hosts"`
+	GroupAdd         []string        `yaml:"group_add"`
+	Healthcheck      *Healthcheck    `yaml:"healthcheck"`
+	Hostname         string          `yaml:"hostname"`
+	Image            string          `yaml:"image"`
+	Init             *bool           `yaml:"init"`
+	IPC              string          `yaml:"ipc"`
+	Isolation        string          `yaml:"isolation"`
+	Labels           Dictionary      `yaml:"labels"`
+	Links            []string        `yaml:"links"`
+	Logging          Logging         `yaml:"logging"`
+	NetworkMode      string          `yaml:"network_mode"`
+	Networks         ServiceNetworks `yaml:"networks"`
+	MacAddress       string          `yaml:"mac_address"`
+	MemorySwappiness *int64          `yaml:"mem_swappiness"`
 	// MemoryLimit and MemoryReservation can be specified either as strings or integers.
+	// TODO: Deprecate these fields once we support `deploy.limits.memory` and `deploy.reservations.memory`.
 	MemoryLimit       MemoryField `yaml:"mem_limit"`
 	MemoryReservation MemoryField `yaml:"mem_reservation"`
 
-	// TODO: memswap_limit
-	// TODO: oom_kill_disable
-	// TODO: oom_score_adj
-	// TODO: pid
-	// TODO: pids_limit
-	// TODO: platform
+	MemswapLimit   Bytes        `yaml:"memswap_limit"`
+	OomKillDisable *bool        `yaml:"oom_kill_disable"`
+	OomScoreAdj    int          `yaml:"oom_score_adj"`
+	PidMode        string       `yaml:"pid"`
+	PidsLimit      *int64       `yaml:"pids_limit"`
+	Platform       string       `yaml:"platform"`
+	Ports          PortMappings `yaml:"ports"`
+	Privileged     bool         `yaml:"privileged"`
+	// TODO: Support profiles. See https://docs.docker.com/compose/profiles/.
+	Profiles        IgnoredField        `yaml:"profiles"`
+	PullPolicy      string              `yaml:"pull_policy"`
+	ReadOnly        bool                `yaml:"read_only"`
+	Restart         string              `yaml:"restart"`
+	Runtime         string              `yaml:"runtime"`
+	SecurityOpt     []string            `yaml:"security_opt"`
+	ShmSize         Bytes               `yaml:"shm_size"`
+	StdinOpen       bool                `yaml:"stdin_open"`
+	StopGracePeriod *Duration           `yaml:"stop_grace_period"`
+	StopSignal      string              `yaml:"stop_signal"`
+	StorageOpt      map[string]string   `yaml:"storage_opt"`
+	Sysctls         Dictionary          `yaml:"sysctls"`
+	Tmpfs           StringOrStringSlice `yaml:"tmpfs"`
+	TTY             bool                `yaml:"tty"`
+	Ulimits         Ulimits             `yaml:"ulimits"`
+	User            string              `yaml:"user"`
+	UsernsMode      string              `yaml:"userns_mode"`
+	Volumes         []VolumeMount       `yaml:"volumes"`
+	VolumesFrom     []string            `yaml:"volumes_from"`
+	WorkingDir      string              `yaml:"working_dir"`
 
-	Ports      PortMappings `yaml:"ports"`
-	Privileged bool         `yaml:"privileged"`
-	Profiles   IgnoredField `yaml:"profiles"`
-	// TODO: pull_policy
-	// TODO: read_only
-	Restart string `yaml:"restart"`
-	Runtime string `yaml:"runtime"`
-	// TODO: scale
-	Secrets []string `yaml:"secrets"` // TODO: support long syntax.
-	// TODO: security_opt
-	ShmSize         Bytes     `yaml:"shm_size"`
-	StdinOpen       bool      `yaml:"stdin_open"`
-	StopGracePeriod *Duration `yaml:"stop_grace_period"`
-	StopSignal      string    `yaml:"stop_signal"`
-	// TODO: storage_opt
-	// TODO: sysctls
-	// TODO: tmpfs
-	TTY bool `yaml:"tty"`
-	// TODO: ulimits
-	User string `yaml:"user"`
-	// TODO: userns_mode
-	Volumes []VolumeMount `yaml:"volumes"`
-	// TODO: volumes_from
-
-	WorkingDir string `yaml:"working_dir"`
+	// NOTE [DOCKER SWARM FEATURES]:
+	// Docker-Compose manages local, single-container deployments as well as Docker Swarm
+	// deployments. Since Swarm is not as widely used as Kubernetes, support for the Swarm
+	// features that Docker-Compose includes is not a top priority. The settings listed
+	// below are the ones that are applicable to a Swarm deployment.
+	Deploy  IgnoredField `yaml:"deploy"`
+	Scale   IgnoredField `yaml:"scale"`
+	Secrets IgnoredField `yaml:"secrets"`
 }
 
 type Healthcheck struct {
@@ -226,4 +221,23 @@ type Secret struct {
 	File     string `yaml:"file"`
 	External bool   `yaml:"external"`
 	Name     string `yaml:"name"`
+}
+
+type BlkioConfig struct {
+	DeviceReadBPS   []ThrottleDevice `yaml:"device_read_bps"`
+	DeviceWriteBPS  []ThrottleDevice `yaml:"device_write_bps"`
+	DeviceReadIOPS  []ThrottleDevice `yaml:"device_read_iops"`
+	DeviceWriteIOPS []ThrottleDevice `yaml:"device_write_iops"`
+	Weight          uint16           `yaml:"weight"`
+	WeightDevice    []WeightDevice   `yaml:"weight_device"`
+}
+
+type ThrottleDevice struct {
+	Path string `yaml:"path"`
+	Rate Bytes  `yaml:"rate"`
+}
+
+type WeightDevice struct {
+	Path   string `yaml:"path"`
+	Weight uint16 `yaml:"weight"`
 }

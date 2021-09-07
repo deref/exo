@@ -2,16 +2,19 @@ package container
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"os/user"
 	"path"
 	"strconv"
+	"strings"
 	"time"
 
 	core "github.com/deref/exo/internal/core/api"
 	"github.com/deref/exo/internal/providers/docker/compose"
 	"github.com/deref/exo/internal/util/pathutil"
 	"github.com/docker/docker/api/types"
+	"github.com/docker/docker/api/types/blkiodev"
 	"github.com/docker/docker/api/types/container"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/mount"
@@ -19,6 +22,7 @@ import (
 	"github.com/docker/docker/api/types/strslice"
 	docker "github.com/docker/docker/client"
 	"github.com/docker/go-connections/nat"
+	"github.com/docker/go-units"
 	"github.com/joho/godotenv"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"golang.org/x/sync/errgroup"
@@ -65,7 +69,7 @@ func (c *Container) create(ctx context.Context) error {
 	}
 
 	envMap := map[string]string{}
-	for _, envFilePath := range c.Spec.EnvironmentFiles {
+	for _, envFilePath := range c.Spec.EnvFile {
 		if !path.IsAbs(envFilePath) {
 			envFilePath = path.Join(c.WorkspaceRoot, envFilePath)
 		}
@@ -178,6 +182,15 @@ func (c *Container) create(ctx context.Context) error {
 		logCfg.Type = c.Spec.Logging.Driver
 		logCfg.Config = c.Spec.Logging.Options
 	}
+
+	blkioWeightDevice := make([]*blkiodev.WeightDevice, len(c.Spec.BlkioConfig.WeightDevice))
+	for i, weightDevice := range c.Spec.BlkioConfig.WeightDevice {
+		blkioWeightDevice[i] = &blkiodev.WeightDevice{
+			Path:   weightDevice.Path,
+			Weight: weightDevice.Weight,
+		}
+	}
+
 	hostCfg := &container.HostConfig{
 		//// Applicable to all platforms
 		//Binds           []string      // List of volume bindings for this container
@@ -185,59 +198,70 @@ func (c *Container) create(ctx context.Context) error {
 		LogConfig: logCfg,
 		//NetworkMode     NetworkMode   // Network mode to use for the container
 		PortBindings: make(nat.PortMap),
-		//RestartPolicy   RestartPolicy // Restart policy to be used for the container
 		// TODO: Potentially inherit from deploy's restart_policy.
 		RestartPolicy: container.RestartPolicy{
 			Name: c.Spec.Restart,
 		},
 		//AutoRemove      bool          // Automatically remove container when it exits
 		//VolumeDriver    string        // Name of the volume driver used to mount volumes
-		//VolumesFrom     []string      // List of volumes to take from other container
 
 		//// Applicable to UNIX platforms
-		//CapAdd          strslice.StrSlice // List of kernel capabilities to add to the container
-		//CapDrop         strslice.StrSlice // List of kernel capabilities to remove from the container
+		CapAdd:  c.Spec.CapAdd,
+		CapDrop: c.Spec.CapDrop,
 		//CgroupnsMode    CgroupnsMode      // Cgroup namespace mode to use for the container
-		//DNS             []string          `json:"Dns"`        // List of DNS server to lookup
-		//DNSOptions      []string          `json:"DnsOptions"` // List of DNSOption to look for
-		//DNSSearch       []string          `json:"DnsSearch"`  // List of DNSSearch to look for
-		//ExtraHosts      []string          // List of extra hosts
-		//GroupAdd        []string          // List of additional groups that the container process will run as
-		//IpcMode         IpcMode           // IPC namespace to use for the container
+		DNS:        c.Spec.DNS,
+		DNSOptions: c.Spec.DNSOptions,
+		DNSSearch:  c.Spec.DNSSearch,
+		ExtraHosts: c.Spec.ExtraHosts,
+		GroupAdd:   c.Spec.GroupAdd,
 		//Cgroup          CgroupSpec        // Cgroup to use for the container
-		//Links           []string          // List of links (in the name:alias form)
+
+		// See NOTE: [RESOLVING SERVICE CONTAINERS].
+		Links: append(append([]string{}, c.Spec.Links...), c.Spec.ExternalLinks...),
 		//OomScoreAdj     int               // Container preference for OOM-killing
-		//PidMode         PidMode           // PID namespace to use for the container
 		Privileged: c.Spec.Privileged,
 		//PublishAllPorts bool              // Should docker publish all exposed port for the container
-		//ReadonlyRootfs  bool              // Is the container root filesystem in read-only
-		//SecurityOpt     []string          // List of string values to customize labels for MLS systems, such as SELinux.
-		//StorageOpt      map[string]string `json:",omitempty"` // Storage driver options per container.
-		//Tmpfs           map[string]string `json:",omitempty"` // List of tmpfs (mounts) used for the container
+		ReadonlyRootfs: c.Spec.ReadOnly,
+		SecurityOpt:    c.Spec.SecurityOpt,
+		StorageOpt:     c.Spec.StorageOpt,
 		//UTSMode         UTSMode           // UTS namespace to use for the container
-		//UsernsMode      UsernsMode        // The user namespace to use for the container
-		ShmSize: int64(c.Spec.ShmSize),
-		//Sysctls         map[string]string `json:",omitempty"` // List of Namespaced sysctls used for the container
-		Runtime: c.Spec.Runtime,
+		UsernsMode: container.UsernsMode(c.Spec.UsernsMode),
+		ShmSize:    int64(c.Spec.ShmSize),
+		Sysctls:    c.Spec.Sysctls.WithoutNils(),
+		Runtime:    c.Spec.Runtime,
 
 		//// Applicable to Windows
 		//ConsoleSize [2]uint   // Initial console size (height,width)
-		//Isolation   Isolation // Isolation technology of the container (e.g. default, hyperv)
 
 		//// Contains container's resources (cgroups, ulimits)
 		Resources: container.Resources{
-			CPUShares:         c.Spec.CPUShares,
-			CPUPeriod:         c.Spec.CPUPeriod,
-			CPUQuota:          c.Spec.CPUQuota,
-			Memory:            int64(c.Spec.MemoryLimit),
-			MemoryReservation: int64(c.Spec.MemoryReservation),
-			MemorySwappiness:  c.Spec.MemorySwappiness,
-			//CPURealtimePeriod:  c.Spec.CPURealtimePeriod,
-			//CPURealtimeRuntime: c.Spec.CPURealtimeRuntime,
+			CPUCount:             c.Spec.CPUCount,
+			CPUPercent:           c.Spec.CPUPercent,
+			CPUShares:            c.Spec.CPUShares,
+			CPUPeriod:            c.Spec.CPUPeriod,
+			CPUQuota:             c.Spec.CPUQuota,
+			Memory:               int64(c.Spec.MemoryLimit),
+			MemoryReservation:    int64(c.Spec.MemoryReservation),
+			MemorySwappiness:     c.Spec.MemorySwappiness,
+			MemorySwap:           int64(c.Spec.MemswapLimit),
+			CPURealtimePeriod:    time.Duration(c.Spec.CPURealtimePeriod).Microseconds(),
+			CPURealtimeRuntime:   time.Duration(c.Spec.CPURealtimeRuntime).Microseconds(),
+			BlkioWeight:          uint16(c.Spec.BlkioConfig.Weight),
+			BlkioWeightDevice:    blkioWeightDevice,
+			BlkioDeviceReadBps:   convertThrottleDevice(c.Spec.BlkioConfig.DeviceReadBPS),
+			BlkioDeviceReadIOps:  convertThrottleDevice(c.Spec.BlkioConfig.DeviceReadIOPS),
+			BlkioDeviceWriteBps:  convertThrottleDevice(c.Spec.BlkioConfig.DeviceWriteBPS),
+			BlkioDeviceWriteIOps: convertThrottleDevice(c.Spec.BlkioConfig.DeviceWriteIOPS),
+			CpusetCpus:           c.Spec.CPUSet,
+			CgroupParent:         c.Spec.CgroupParent,
+			DeviceCgroupRules:    c.Spec.DeviceCgroupRules,
+			Devices:              convertDeviceMappings(c.Spec.Devices),
+			OomKillDisable:       c.Spec.OomKillDisable,
+			PidsLimit:            c.Spec.PidsLimit,
+			Ulimits:              convertUlimits(c.Spec.Ulimits),
 		},
 
-		// Mounts specs used by the container
-		//Mounts []mount.Mount `json:",omitempty"`
+		OomScoreAdj: c.Spec.OomScoreAdj,
 
 		//// MaskedPaths is the list of paths to be masked inside the container (this overrides the default set of paths)
 		//MaskedPaths []string
@@ -246,7 +270,36 @@ func (c *Container) create(ctx context.Context) error {
 		//ReadonlyPaths []string
 
 		//// Run a custom init inside the container, if null, use the daemon's configured settings
-		//Init *bool `json:",omitempty"`
+		Init: c.Spec.Init,
+	}
+
+	var err error
+	if hostCfg.IpcMode, err = c.parseIPCMode(c.Spec.IPC); err != nil {
+		return err
+	}
+
+	if hostCfg.Isolation, err = parseIsolation(c.Spec.Isolation); err != nil {
+		return err
+	}
+
+	if hostCfg.NetworkMode, err = c.parseNetworkMode(c.Spec.NetworkMode); err != nil {
+		return err
+	}
+
+	if hostCfg.PidMode, err = c.parsePIDMode(c.Spec.PidMode); err != nil {
+		return err
+	}
+
+	if hostCfg.VolumesFrom, err = c.parseVolumesFrom(c.Spec.VolumesFrom); err != nil {
+		return err
+	}
+
+	if len(c.Spec.Tmpfs) > 0 {
+		hostCfg.Tmpfs = make(map[string]string, len(c.Spec.Tmpfs))
+		// This matches the docker-compose behaviour for specifying tmpfs mounts with the service-level `tmpfs` option.
+		for _, path := range c.Spec.Tmpfs {
+			hostCfg.Tmpfs[path] = ""
+		}
 	}
 
 	// TODO: make the user home directory a parameter of the container.
@@ -310,17 +363,13 @@ func (c *Container) create(ctx context.Context) error {
 	networkCfg := &network.NetworkingConfig{
 		EndpointsConfig: make(map[string]*network.EndpointSettings), // Endpoint configs for each connecting network
 	}
-	netEndpointSettings := &network.EndpointSettings{
-		// TODO: Add other specified aliases.
-		Aliases: []string{c.ComponentID, c.ComponentName},
-	}
 	// Docker only allows a single network to be specified when creating a container. The other networks must be
 	// connected after the container is started. See https://github.com/moby/moby/issues/29265#issuecomment-265909198.
-	var remainingNetworks []string
+	var remainingNetworks []compose.ServiceNetwork
 	if len(c.Spec.Networks) > 0 {
-		firstNetworkName := c.Spec.Networks[0]
+		firstNetwork := c.Spec.Networks[0]
 		remainingNetworks = c.Spec.Networks[1:]
-		networkCfg.EndpointsConfig[firstNetworkName] = netEndpointSettings
+		networkCfg.EndpointsConfig[firstNetwork.Network] = c.endpointSettings(firstNetwork)
 	}
 
 	var platform *v1.Platform
@@ -350,10 +399,10 @@ func (c *Container) create(ctx context.Context) error {
 	}
 	c.State.ContainerID = createdBody.ID
 	var netConnects errgroup.Group
-	for _, networkName := range remainingNetworks {
-		networkName := networkName
+	for _, network := range remainingNetworks {
+		network := network
 		netConnects.Go(func() error {
-			return c.Docker.NetworkConnect(ctx, networkName, createdBody.ID, netEndpointSettings)
+			return c.Docker.NetworkConnect(ctx, network.Network, createdBody.ID, c.endpointSettings(network))
 		})
 	}
 
@@ -420,4 +469,130 @@ func (c *Container) removeExistingContainerByName(ctx context.Context) error {
 	}
 
 	return nil
+}
+
+func (c *Container) endpointSettings(sn compose.ServiceNetwork) *network.EndpointSettings {
+	es := &network.EndpointSettings{
+		Aliases: append([]string{c.ComponentID, c.ComponentName}, sn.Aliases...),
+		Links:   append(append([]string{}, c.Spec.Links...), c.Spec.ExternalLinks...),
+	}
+
+	if sn.IPV4Address != "" || sn.IPV6Address != "" || len(sn.LinkLocalIPs) > 0 {
+		es.IPAMConfig = &network.EndpointIPAMConfig{
+			IPv4Address:  sn.IPV4Address,
+			IPv6Address:  sn.IPV6Address,
+			LinkLocalIPs: sn.LinkLocalIPs,
+		}
+	}
+
+	return es
+}
+
+func convertThrottleDevice(in []compose.ThrottleDevice) []*blkiodev.ThrottleDevice {
+	if in == nil {
+		return nil
+	}
+
+	out := make([]*blkiodev.ThrottleDevice, len(in))
+	for i, throttleDevice := range in {
+		out[i] = &blkiodev.ThrottleDevice{
+			Path: throttleDevice.Path,
+			Rate: uint64(throttleDevice.Rate),
+		}
+	}
+	return out
+}
+
+func convertDeviceMappings(in []compose.DeviceMapping) []container.DeviceMapping {
+	if in == nil {
+		return nil
+	}
+
+	out := make([]container.DeviceMapping, len(in))
+	for i, deviceMapping := range in {
+		out[i] = container.DeviceMapping{
+			PathOnHost:        deviceMapping.PathOnHost,
+			PathInContainer:   deviceMapping.PathInContainer,
+			CgroupPermissions: deviceMapping.CgroupPermissions,
+		}
+	}
+	return out
+}
+
+func convertUlimits(in compose.Ulimits) []*units.Ulimit {
+	if in == nil {
+		return nil
+	}
+
+	out := make([]*units.Ulimit, len(in))
+	for i, ulimit := range in {
+		out[i] = &units.Ulimit{
+			Name: ulimit.Name,
+			Hard: ulimit.Hard,
+			Soft: ulimit.Soft,
+		}
+	}
+
+	return out
+}
+
+func (c *Container) parseIPCMode(in string) (container.IpcMode, error) {
+	switch in {
+	case "", "none", "private", "shareable", "host":
+		return container.IpcMode(in), nil
+	}
+
+	if strings.HasPrefix(in, "container:") {
+		return container.IpcMode(in), nil
+	}
+
+	// Note that all services that share an IPC namespace with another service actually shares a namespace
+	// with that service's first container. See https://github.com/docker/compose/blob/v2.0.0-rc.3/compose/service.py#L1379.
+	if strings.HasPrefix(in, "service:") {
+		// XXX: We need to be able to look up the container name(s) for the referenced service to be able to
+		// convert this to the `container:name` format supported by Docker.
+		return container.IpcMode(""), errors.New("service IPC mode not yet supported")
+	}
+
+	return container.IpcMode(""), fmt.Errorf("unsupported IPC mode: %q", in)
+}
+
+func parseIsolation(in string) (container.Isolation, error) {
+	switch in {
+	case "", "default", "process", "hyperv":
+		return container.Isolation(in), nil
+
+	default:
+		return container.IsolationEmpty, fmt.Errorf("invalid isolation: %q", in)
+	}
+}
+
+func (c *Container) parseNetworkMode(in string) (container.NetworkMode, error) {
+	if strings.HasPrefix(in, "service:") {
+		return container.NetworkMode(""), errors.New("service network mode not yet supported")
+	}
+	return container.NetworkMode(in), nil
+}
+
+func (c *Container) parsePIDMode(in string) (container.PidMode, error) {
+	switch in {
+	case "", "host":
+		return container.PidMode(in), nil
+	}
+
+	if strings.HasPrefix(in, "container:") {
+		return container.PidMode(in), nil
+	}
+
+	return container.PidMode(""), fmt.Errorf("Invalid PID mode: %q", in)
+}
+
+func (c *Container) parseVolumesFrom(in []string) ([]string, error) {
+	for _, v := range in {
+		if !strings.HasPrefix(v, "container:") {
+			return nil, errors.New("volumes from service not yet supported")
+		}
+	}
+
+	return in, nil
 }
