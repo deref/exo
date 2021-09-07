@@ -19,7 +19,6 @@ type Manifest struct {
 type ComponentSpec string
 
 func (spec *ComponentSpec) UnmarshalJSON(b []byte) error {
-	fmt.Printf("string is : %+v\n", string(b))
 	s := string(b)
 	if !yamlutil.IsValid(s) {
 		return fmt.Errorf("component spec is not valid yaml")

@@ -108,8 +108,6 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 	}
 	m := res.Manifest
 
-	fmt.Printf("manifest is: %+v\n", m)
-
 	describeOutput, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{})
 	if err != nil {
 		return nil, fmt.Errorf("describing components: %w", err)
