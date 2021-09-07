@@ -46,11 +46,8 @@ interface "workspace" {
   method "apply" {
     doc = "Performs creates, updates, refreshes, disposes, as needed."
 
-    input "format" "*string" {
-      doc = "One of 'exo', 'compose', or 'procfile'."
-    }
     input "manifest-path" "*string" {
-      doc = "Path of manifest file to load. May be relative to the workspace root. If format is not provided, will be inferred from path name."
+      doc = "Path of manifest file to load. May be relative to the workspace root."
     }
     input "manifest" "*string" {
       doc = "Contents of the manifest file. Not required if manifest-path is provided."

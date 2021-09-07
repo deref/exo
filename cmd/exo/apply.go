@@ -74,6 +74,9 @@ func apply(ctx context.Context, kernel api.Kernel, workspace api.Workspace, args
 
 	for _, candidate := range manifestCandidates {
 		_, err := os.Stat(candidate.Filename)
+		if applyFlags.Format != "" && applyFlags.Format != candidate.Format {
+			continue
+		}
 		if manifestPath == "" && err == nil {
 			manifestPath = path.Join(workingDir, candidate.Filename)
 		}
@@ -102,9 +105,6 @@ func apply(ctx context.Context, kernel api.Kernel, workspace api.Workspace, args
 	}
 	s := string(bs)
 	input.Manifest = &s
-	if applyFlags.Format != "" {
-		input.Format = &applyFlags.Format
-	}
 
 	output, err := workspace.Apply(ctx, input)
 	if output != nil {

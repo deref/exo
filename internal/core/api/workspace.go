@@ -139,9 +139,7 @@ type DestroyOutput struct {
 
 type ApplyInput struct {
 
-	// One of 'exo', 'compose', or 'procfile'.
-	Format *string `json:"format"`
-	// Path of manifest file to load. May be relative to the workspace root. If format is not provided, will be inferred from path name.
+	// Path of manifest file to load. May be relative to the workspace root.
 	ManifestPath *string `json:"manifestPath"`
 	// Contents of the manifest file. Not required if manifest-path is provided.
 	Manifest *string `json:"manifest"`
