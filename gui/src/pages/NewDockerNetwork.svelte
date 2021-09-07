@@ -5,8 +5,7 @@
   export let params: Params;
 
   const specExample = `# See https://github.com/compose-spec/compose-spec/blob/master/spec.md#Networks-top-level-element
-name: mynetwork
-`;
+name: mynetwork`;
 </script>
 
 <NewDockerComponent
