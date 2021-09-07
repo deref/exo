@@ -12,11 +12,11 @@ import (
 type PortMappings []PortMapping
 
 type PortMapping struct {
-	Target    string `yaml:"target"`
-	Published string `yaml:"published"`
-	HostIP    string `yaml:"host_ip"`
-	Protocol  string `yaml:"protocol"`
-	Mode      string `yaml:"mode"`
+	Target    string `yaml:"target,omitempty"`
+	Published string `yaml:"published,omitempty"`
+	HostIP    string `yaml:"host_ip,omitempty"`
+	Protocol  string `yaml:"protocol,omitempty"`
+	Mode      string `yaml:"mode,omitempty"`
 }
 
 func ParsePortMappings(short string) (mappings PortMappings, err error) {

@@ -20,13 +20,13 @@ func (dict *Build) UnmarshalYAML(unmarshal func(interface{}) error) error {
 }
 
 type BuildConfig struct {
-	Context    string     `yaml:"context"`
-	Dockerfile string     `yaml:"dockerfile"`
-	Args       Dictionary `yaml:"args"`
-	CacheFrom  []string   `yaml:"cache_from"`
-	ExtraHosts []string   `yaml:"extra_hosts"`
-	Isolation  string     `yaml:"isolation"`
-	Labels     Dictionary `yaml:"labels"`
-	ShmSize    Bytes      `yaml:"shm_size"`
-	Target     string     `yaml:"target"`
+	Context    string     `yaml:"context,omitempty"`
+	Dockerfile string     `yaml:"dockerfile,omitempty"`
+	Args       Dictionary `yaml:"args,omitempty"`
+	CacheFrom  []string   `yaml:"cache_from,omitempty"`
+	ExtraHosts []string   `yaml:"extra_hosts,omitempty"`
+	Isolation  string     `yaml:"isolation,omitempty"`
+	Labels     Dictionary `yaml:"labels,omitempty"`
+	ShmSize    Bytes      `yaml:"shm_size,omitempty"`
+	Target     string     `yaml:"target,omitempty"`
 }

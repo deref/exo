@@ -43,12 +43,12 @@ func Parse(r io.Reader) (*Compose, error) {
 }
 
 type Compose struct {
-	Version  string             `yaml:"version"`
-	Services map[string]Service `yaml:"services"`
-	Networks map[string]Network `yaml:"networks"`
-	Volumes  map[string]Volume  `yaml:"volumes"`
-	Configs  map[string]Config  `yaml:"configs"`
-	Secrets  map[string]Secret  `yaml:"secrets"`
+	Version  string             `yaml:"version,omitempty"`
+	Services map[string]Service `yaml:"services,omitempty"`
+	Networks map[string]Network `yaml:"networks,omitempty"`
+	Volumes  map[string]Volume  `yaml:"volumes,omitempty"`
+	Configs  map[string]Config  `yaml:"configs,omitempty"`
+	Secrets  map[string]Secret  `yaml:"secrets,omitempty"`
 
 	Raw map[string]interface{} `yaml:",inline"`
 	// TODO: extensions with "x-" prefix.
@@ -84,160 +84,160 @@ func (memory *MemoryField) UnmarshalYAML(b []byte) error {
 
 type Service struct {
 	// Note that these two are only applicable to Windows.
-	CPUCount   int64 `yaml:"cpu_count"`
-	CPUPercent int64 `yaml:"cpu_percent"`
+	CPUCount   int64 `yaml:"cpu_count,omitempty"`
+	CPUPercent int64 `yaml:"cpu_percent,omitempty"`
 
-	CPUShares          int64       `yaml:"cpu_shares"`
-	CPUPeriod          int64       `yaml:"cpu_period"`
-	CPUQuota           int64       `yaml:"cpu_quota"`
-	CPURealtimeRuntime Duration    `yaml:"cpu_rt_runtime"`
-	CPURealtimePeriod  Duration    `yaml:"cpu_rt_period"`
-	CPUSet             string      `yaml:"cpuset"`
-	BlkioConfig        BlkioConfig `yaml:"blkio_config"`
-	Build              Build       `yaml:"build"`
-	CapAdd             []string    `yaml:"cap_add"`
-	CapDrop            []string    `yaml:"cap_drop"`
-	CgroupParent       string      `yaml:"cgroup_parent"`
-	Command            Command     `yaml:"command"`
-	Configs            []string    `yaml:"configs"` // TODO: support long syntax.
-	ContainerName      string      `yaml:"container_name"`
+	CPUShares          int64       `yaml:"cpu_shares,omitempty"`
+	CPUPeriod          int64       `yaml:"cpu_period,omitempty"`
+	CPUQuota           int64       `yaml:"cpu_quota,omitempty"`
+	CPURealtimeRuntime Duration    `yaml:"cpu_rt_runtime,omitempty"`
+	CPURealtimePeriod  Duration    `yaml:"cpu_rt_period,omitempty"`
+	CPUSet             string      `yaml:"cpuset,omitempty"`
+	BlkioConfig        BlkioConfig `yaml:"blkio_config,omitempty"`
+	Build              Build       `yaml:"build,omitempty"`
+	CapAdd             []string    `yaml:"cap_add,omitempty"`
+	CapDrop            []string    `yaml:"cap_drop,omitempty"`
+	CgroupParent       string      `yaml:"cgroup_parent,omitempty"`
+	Command            Command     `yaml:"command,omitempty"`
+	Configs            []string    `yaml:"configs,omitempty"` // TODO: support long syntax.
+	ContainerName      string      `yaml:"container_name,omitempty"`
 	// TODO: credential_spec
-	DependsOn         ServiceDependencies `yaml:"depends_on"`
-	DeviceCgroupRules []string            `yaml:"device_cgroup_rules"`
-	Devices           []DeviceMapping     `yaml:"devices"`
-	DNS               StringOrStringSlice `yaml:"dns"`
-	DNSOptions        []string            `yaml:"dns_opt"`
-	DNSSearch         StringOrStringSlice `yaml:"dns_search"`
-	Domainname        string              `yaml:"domainname"`
-	Entrypoint        Command             `yaml:"entrypoint"`
-	EnvFile           StringOrStringSlice `yaml:"env_file"` // TODO: Add to the environment for a docker container component.
-	Environment       Dictionary          `yaml:"environment"`
-	Expose            PortMappings        `yaml:"expose"` // TODO: Validate target-only.
+	DependsOn         ServiceDependencies `yaml:"depends_on,omitempty"`
+	DeviceCgroupRules []string            `yaml:"device_cgroup_rules,omitempty"`
+	Devices           []DeviceMapping     `yaml:"devices,omitempty"`
+	DNS               StringOrStringSlice `yaml:"dns,omitempty"`
+	DNSOptions        []string            `yaml:"dns_opt,omitempty"`
+	DNSSearch         StringOrStringSlice `yaml:"dns_search,omitempty"`
+	Domainname        string              `yaml:"domainname,omitempty"`
+	Entrypoint        Command             `yaml:"entrypoint,omitempty"`
+	EnvFile           StringOrStringSlice `yaml:"env_file,omitempty"` // TODO: Add to the environment for a docker container component.
+	Environment       Dictionary          `yaml:"environment,omitempty"`
+	Expose            PortMappings        `yaml:"expose,omitempty"` // TODO: Validate target-only.
 	// TODO: extends
 	// List of links of the form `SERVICE` or `SERVICE:ALIAS`
-	ExternalLinks []string `yaml:"external_links"`
+	ExternalLinks []string `yaml:"external_links,omitempty"`
 	// List of host/IP pairs to add to /etc/hosts of the form `HOST:IP`
-	ExtraHosts       []string        `yaml:"extra_hosts"`
-	GroupAdd         []string        `yaml:"group_add"`
-	Healthcheck      *Healthcheck    `yaml:"healthcheck"`
-	Hostname         string          `yaml:"hostname"`
-	Image            string          `yaml:"image"`
-	Init             *bool           `yaml:"init"`
-	IPC              string          `yaml:"ipc"`
-	Isolation        string          `yaml:"isolation"`
-	Labels           Dictionary      `yaml:"labels"`
-	Links            []string        `yaml:"links"`
-	Logging          Logging         `yaml:"logging"`
-	NetworkMode      string          `yaml:"network_mode"`
-	Networks         ServiceNetworks `yaml:"networks"`
-	MacAddress       string          `yaml:"mac_address"`
-	MemorySwappiness *int64          `yaml:"mem_swappiness"`
+	ExtraHosts       []string        `yaml:"extra_hosts,omitempty"`
+	GroupAdd         []string        `yaml:"group_add,omitempty"`
+	Healthcheck      *Healthcheck    `yaml:"healthcheck,omitempty"`
+	Hostname         string          `yaml:"hostname,omitempty"`
+	Image            string          `yaml:"image,omitempty"`
+	Init             *bool           `yaml:"init,omitempty"`
+	IPC              string          `yaml:"ipc,omitempty"`
+	Isolation        string          `yaml:"isolation,omitempty"`
+	Labels           Dictionary      `yaml:"labels,omitempty"`
+	Links            []string        `yaml:"links,omitempty"`
+	Logging          Logging         `yaml:"logging,omitempty"`
+	NetworkMode      string          `yaml:"network_mode,omitempty"`
+	Networks         ServiceNetworks `yaml:"networks,omitempty"`
+	MacAddress       string          `yaml:"mac_address,omitempty"`
+	MemorySwappiness *int64          `yaml:"mem_swappiness,omitempty"`
 	// MemoryLimit and MemoryReservation can be specified either as strings or integers.
 	// TODO: Deprecate these fields once we support `deploy.limits.memory` and `deploy.reservations.memory`.
-	MemoryLimit       MemoryField `yaml:"mem_limit"`
-	MemoryReservation MemoryField `yaml:"mem_reservation"`
+	MemoryLimit       MemoryField `yaml:"mem_limit,omitempty"`
+	MemoryReservation MemoryField `yaml:"mem_reservation,omitempty"`
 
-	MemswapLimit   Bytes        `yaml:"memswap_limit"`
-	OomKillDisable *bool        `yaml:"oom_kill_disable"`
-	OomScoreAdj    int          `yaml:"oom_score_adj"`
-	PidMode        string       `yaml:"pid"`
-	PidsLimit      *int64       `yaml:"pids_limit"`
-	Platform       string       `yaml:"platform"`
-	Ports          PortMappings `yaml:"ports"`
-	Privileged     bool         `yaml:"privileged"`
+	MemswapLimit   Bytes        `yaml:"memswap_limit,omitempty"`
+	OomKillDisable *bool        `yaml:"oom_kill_disable,omitempty"`
+	OomScoreAdj    int          `yaml:"oom_score_adj,omitempty"`
+	PidMode        string       `yaml:"pid,omitempty"`
+	PidsLimit      *int64       `yaml:"pids_limit,omitempty"`
+	Platform       string       `yaml:"platform,omitempty"`
+	Ports          PortMappings `yaml:"ports,omitempty"`
+	Privileged     bool         `yaml:"privileged,omitempty"`
 	// TODO: Support profiles. See https://docs.docker.com/compose/profiles/.
-	Profiles        IgnoredField        `yaml:"profiles"`
-	PullPolicy      string              `yaml:"pull_policy"`
-	ReadOnly        bool                `yaml:"read_only"`
-	Restart         string              `yaml:"restart"`
-	Runtime         string              `yaml:"runtime"`
-	SecurityOpt     []string            `yaml:"security_opt"`
-	ShmSize         Bytes               `yaml:"shm_size"`
-	StdinOpen       bool                `yaml:"stdin_open"`
-	StopGracePeriod *Duration           `yaml:"stop_grace_period"`
-	StopSignal      string              `yaml:"stop_signal"`
-	StorageOpt      map[string]string   `yaml:"storage_opt"`
-	Sysctls         Dictionary          `yaml:"sysctls"`
-	Tmpfs           StringOrStringSlice `yaml:"tmpfs"`
-	TTY             bool                `yaml:"tty"`
-	Ulimits         Ulimits             `yaml:"ulimits"`
-	User            string              `yaml:"user"`
-	UsernsMode      string              `yaml:"userns_mode"`
-	Volumes         []VolumeMount       `yaml:"volumes"`
-	VolumesFrom     []string            `yaml:"volumes_from"`
-	WorkingDir      string              `yaml:"working_dir"`
+	Profiles        IgnoredField        `yaml:"profiles,omitempty"`
+	PullPolicy      string              `yaml:"pull_policy,omitempty"`
+	ReadOnly        bool                `yaml:"read_only,omitempty"`
+	Restart         string              `yaml:"restart,omitempty"`
+	Runtime         string              `yaml:"runtime,omitempty"`
+	SecurityOpt     []string            `yaml:"security_opt,omitempty"`
+	ShmSize         Bytes               `yaml:"shm_size,omitempty"`
+	StdinOpen       bool                `yaml:"stdin_open,omitempty"`
+	StopGracePeriod *Duration           `yaml:"stop_grace_period,omitempty"`
+	StopSignal      string              `yaml:"stop_signal,omitempty"`
+	StorageOpt      map[string]string   `yaml:"storage_opt,omitempty"`
+	Sysctls         Dictionary          `yaml:"sysctls,omitempty"`
+	Tmpfs           StringOrStringSlice `yaml:"tmpfs,omitempty"`
+	TTY             bool                `yaml:"tty,omitempty"`
+	Ulimits         Ulimits             `yaml:"ulimits,omitempty"`
+	User            string              `yaml:"user,omitempty"`
+	UsernsMode      string              `yaml:"userns_mode,omitempty"`
+	Volumes         []VolumeMount       `yaml:"volumes,omitempty"`
+	VolumesFrom     []string            `yaml:"volumes_from,omitempty"`
+	WorkingDir      string              `yaml:"working_dir,omitempty"`
 
 	// NOTE [DOCKER SWARM FEATURES]:
 	// Docker-Compose manages local, single-container deployments as well as Docker Swarm
 	// deployments. Since Swarm is not as widely used as Kubernetes, support for the Swarm
 	// features that Docker-Compose includes is not a top priority. The settings listed
 	// below are the ones that are applicable to a Swarm deployment.
-	Deploy  IgnoredField `yaml:"deploy"`
-	Scale   IgnoredField `yaml:"scale"`
-	Secrets IgnoredField `yaml:"secrets"`
+	Deploy  IgnoredField `yaml:"deploy,omitempty"`
+	Scale   IgnoredField `yaml:"scale,omitempty"`
+	Secrets IgnoredField `yaml:"secrets,omitempty"`
 }
 
 type Healthcheck struct {
-	Test        Command  `yaml:"test"`
-	Interval    Duration `yaml:"interval"`
-	Timeout     Duration `yaml:"timeout"`
-	Retries     int      `yaml:"retries"`
-	StartPeriod Duration `yaml:"start_period"`
+	Test        Command  `yaml:"test,omitempty"`
+	Interval    Duration `yaml:"interval,omitempty"`
+	Timeout     Duration `yaml:"timeout,omitempty"`
+	Retries     int      `yaml:"retries,omitempty"`
+	StartPeriod Duration `yaml:"start_period,omitempty"`
 }
 
 type Logging struct {
-	Driver  string            `yaml:"driver"`
-	Options map[string]string `yaml:"options"`
+	Driver  string            `yaml:"driver,omitempty"`
+	Options map[string]string `yaml:"options,omitempty"`
 }
 
 type Network struct {
 	// Name is the actual name of the docker network. The docker-compose network name, which can
 	// be referenced by individual services, is the component name.
-	Name       string            `yaml:"name"`
-	Driver     string            `yaml:"driver"`
-	DriverOpts map[string]string `yaml:"driver_opts"`
-	Attachable bool              `yaml:"attachable"`
-	EnableIPv6 bool              `yaml:"enable_ipv6"`
-	Internal   bool              `yaml:"internal"`
-	Labels     Dictionary        `yaml:"labels"`
-	External   bool              `yaml:"external"`
+	Name       string            `yaml:"name,omitempty"`
+	Driver     string            `yaml:"driver,omitempty"`
+	DriverOpts map[string]string `yaml:"driver_opts,omitempty"`
+	Attachable bool              `yaml:"attachable,omitempty"`
+	EnableIPv6 bool              `yaml:"enable_ipv6,omitempty"`
+	Internal   bool              `yaml:"internal,omitempty"`
+	Labels     Dictionary        `yaml:"labels,omitempty"`
+	External   bool              `yaml:"external,omitempty"`
 }
 
 type Volume struct {
-	Driver     string            `yaml:"driver"`
-	DriverOpts map[string]string `yaml:"driver_opts"`
+	Driver     string            `yaml:"driver,omitempty"`
+	DriverOpts map[string]string `yaml:"driver_opts,omitempty"`
 	// TODO: external
-	Labels Dictionary `yaml:"labels"`
-	Name   string     `yaml:"name"`
+	Labels Dictionary `yaml:"labels,omitempty"`
+	Name   string     `yaml:"name,omitempty"`
 }
 
 type Config struct {
-	File     string `yaml:"file"`
-	External bool   `yaml:"external"`
-	Name     string `yaml:"name"`
+	File     string `yaml:"file,omitempty"`
+	External bool   `yaml:"external,omitempty"`
+	Name     string `yaml:"name,omitempty"`
 }
 
 type Secret struct {
-	File     string `yaml:"file"`
-	External bool   `yaml:"external"`
-	Name     string `yaml:"name"`
+	File     string `yaml:"file,omitempty"`
+	External bool   `yaml:"external,omitempty"`
+	Name     string `yaml:"name,omitempty"`
 }
 
 type BlkioConfig struct {
-	DeviceReadBPS   []ThrottleDevice `yaml:"device_read_bps"`
-	DeviceWriteBPS  []ThrottleDevice `yaml:"device_write_bps"`
-	DeviceReadIOPS  []ThrottleDevice `yaml:"device_read_iops"`
-	DeviceWriteIOPS []ThrottleDevice `yaml:"device_write_iops"`
-	Weight          uint16           `yaml:"weight"`
-	WeightDevice    []WeightDevice   `yaml:"weight_device"`
+	DeviceReadBPS   []ThrottleDevice `yaml:"device_read_bps,omitempty"`
+	DeviceWriteBPS  []ThrottleDevice `yaml:"device_write_bps,omitempty"`
+	DeviceReadIOPS  []ThrottleDevice `yaml:"device_read_iops,omitempty"`
+	DeviceWriteIOPS []ThrottleDevice `yaml:"device_write_iops,omitempty"`
+	Weight          uint16           `yaml:"weight,omitempty"`
+	WeightDevice    []WeightDevice   `yaml:"weight_device,omitempty"`
 }
 
 type ThrottleDevice struct {
-	Path string `yaml:"path"`
-	Rate Bytes  `yaml:"rate"`
+	Path string `yaml:"path,omitempty"`
+	Rate Bytes  `yaml:"rate,omitempty"`
 }
 
 type WeightDevice struct {
-	Path   string `yaml:"path"`
-	Weight uint16 `yaml:"weight"`
+	Path   string `yaml:"path,omitempty"`
+	Weight uint16 `yaml:"weight,omitempty"`
 }
