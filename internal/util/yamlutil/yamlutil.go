@@ -15,3 +15,9 @@ func MustUnmarshalString(s string, v interface{}) {
 		panic(err)
 	}
 }
+
+func IsValid(s string) bool {
+	var d interface{}
+	err := yaml.Unmarshal([]byte(s), &d)
+	return err == nil
+}

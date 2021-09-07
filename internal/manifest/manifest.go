@@ -1,30 +1,39 @@
 package manifest
 
 import (
+	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
 
-	"github.com/hashicorp/hcl/v2"
-	"github.com/hashicorp/hcl/v2/gohcl"
-	"github.com/hashicorp/hcl/v2/hclsimple"
-	"github.com/hashicorp/hcl/v2/hclwrite"
-	"github.com/zclconf/go-cty/cty/function"
-	"github.com/zclconf/go-cty/cty/function/stdlib"
+	"github.com/deref/exo/internal/util/yamlutil"
 )
 
 var Version = "0.1"
 
 type Manifest struct {
-	Exo        string      `hcl:"exo"`
-	Components []Component `hcl:"component,block"`
+	Exo        string      `json:"exo"`
+	Components []Component `json:"components"`
+}
+
+type ComponentSpec string
+
+func (spec *ComponentSpec) UnmarshalJSON(b []byte) error {
+	fmt.Printf("string is : %+v\n", string(b))
+	s := string(b)
+	if !yamlutil.IsValid(s) {
+		return fmt.Errorf("component spec is not valid yaml")
+	}
+
+	*spec = ComponentSpec(s)
+	return nil
 }
 
 type Component struct {
-	Name      string   `hcl:"name,label"`
-	Type      string   `hcl:"type,label"`
-	Spec      string   `hcl:"spec"` // TODO: Custom unmarshalling to allow convenient json representation.
-	DependsOn []string `hcl:"depends_on"`
+	Name      string        `json:"name"`
+	Type      string        `json:"type"`
+	Spec      ComponentSpec `json:"spec"` // TODO: Custom unmarshalling to allow convenient json representation.
+	DependsOn []string      `json:"depends_on"`
 }
 
 func NewManifest() *Manifest {
@@ -60,25 +69,18 @@ func (l loader) Load(r io.Reader) LoadResult {
 	if err != nil {
 		return LoadResult{Err: err}
 	}
-	return ReadBytes(bs)
-}
-
-func ReadBytes(bs []byte) LoadResult {
-	var manifest Manifest
-	evalCtx := &hcl.EvalContext{
-		Functions: map[string]function.Function{
-			"jsonencode": stdlib.JSONEncodeFunc,
-		},
-	}
-	if err := hclsimple.Decode("exo.hcl", bs, evalCtx, &manifest); err != nil {
+	manifest := Manifest{}
+	if err := json.Unmarshal(bs, &manifest); err != nil {
 		return LoadResult{Err: err}
 	}
 	return LoadResult{Manifest: &manifest}
 }
 
 func Generate(w io.Writer, manifest *Manifest) error {
-	f := hclwrite.NewEmptyFile()
-	gohcl.EncodeIntoBody(manifest, f.Body())
-	_, err := f.WriteTo(w)
+	bytes, err := json.Marshal(manifest)
+	if err != nil {
+		return fmt.Errorf("outputting manifest file: %w", err)
+	}
+	_, err = w.Write(bytes)
 	return err
 }

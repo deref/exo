@@ -108,6 +108,8 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 	}
 	m := res.Manifest
 
+	fmt.Printf("manifest is: %+v\n", m)
+
 	describeOutput, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{})
 	if err != nil {
 		return nil, fmt.Errorf("describing components: %w", err)
@@ -436,7 +438,7 @@ func (ws *Workspace) CreateComponent(ctx context.Context, input *api.CreateCompo
 	err := ws.createComponent(ctx, manifest.Component{
 		Name: input.Name,
 		Type: input.Type,
-		Spec: input.Spec,
+		Spec: manifest.ComponentSpec(input.Spec),
 	}, id)
 	if err != nil {
 		return nil, err
@@ -456,7 +458,7 @@ func (ws *Workspace) createComponent(ctx context.Context, component manifest.Com
 		ID:          id,
 		Name:        component.Name,
 		Type:        component.Type,
-		Spec:        component.Spec,
+		Spec:        string(component.Spec),
 		Created:     chrono.NowString(ctx),
 		DependsOn:   component.DependsOn,
 	}); err != nil {
@@ -470,7 +472,7 @@ func (ws *Workspace) createComponent(ctx context.Context, component manifest.Com
 		ID:        id,
 		Name:      component.Name,
 		Type:      component.Type,
-		Spec:      component.Spec,
+		Spec:      string(component.Spec),
 		DependsOn: component.DependsOn,
 	}, func(ctx context.Context, lifecycle api.Lifecycle) error {
 		_, err := lifecycle.Initialize(ctx, &api.InitializeInput{})
@@ -510,7 +512,7 @@ func (ws *Workspace) UpdateComponent(ctx context.Context, input *api.UpdateCompo
 	if err := ws.updateComponent(ctx, oldComponent, manifest.Component{
 		Type:      oldComponent.Type,
 		Name:      oldComponent.Name,
-		Spec:      input.Spec,
+		Spec:      manifest.ComponentSpec(input.Spec),
 		DependsOn: dependsOn,
 	}, oldComponent.ID); err != nil {
 		return nil, err

@@ -50,11 +50,13 @@ func convert(procfile *Procfile) manifest.LoadResult {
 		component := manifest.Component{
 			Name: name,
 			Type: "process",
-			Spec: jsonutil.MustMarshalString(process.Spec{
-				Program:     p.Program,
-				Arguments:   p.Arguments,
-				Environment: environment,
-			}),
+			Spec: manifest.ComponentSpec(
+				jsonutil.MustMarshalString(process.Spec{
+					Program:     p.Program,
+					Arguments:   p.Arguments,
+					Environment: environment,
+				}),
+			),
 		}
 		m.Components = append(m.Components, component)
 	}

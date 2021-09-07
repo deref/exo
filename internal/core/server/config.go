@@ -91,7 +91,7 @@ func (ws *Workspace) loadManifest(rootDir string, input *api.ApplyInput) manifes
 			format = "procfile"
 		case "compose.yaml", "compose.yml", "docker-compose.yaml", "docker-compose.yml":
 			format = "compose"
-		case "exo.hcl", "":
+		case "exo.json", "":
 			format = "exo"
 		default:
 			if strings.HasPrefix(name, "procfile.") || strings.HasSuffix(name, ".procfile") {

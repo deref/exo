@@ -48,7 +48,7 @@ func (i *Loader) convert(project *compose.Compose) manifest.LoadResult {
 		res.Manifest.Components = append(res.Manifest.Components, manifest.Component{
 			Name: name,
 			Type: "volume",
-			Spec: yamlutil.MustMarshalString(volume),
+			Spec: manifest.ComponentSpec(yamlutil.MustMarshalString(volume)),
 		})
 	}
 
@@ -78,7 +78,7 @@ func (i *Loader) convert(project *compose.Compose) manifest.LoadResult {
 		res.Manifest.Components = append(res.Manifest.Components, manifest.Component{
 			Name: name,
 			Type: "network",
-			Spec: yamlutil.MustMarshalString(network),
+			Spec: manifest.ComponentSpec(yamlutil.MustMarshalString(network)),
 		})
 	}
 	// TODO: Docker Compose only creates the default network if there is at least 1 service that does not
@@ -91,10 +91,12 @@ func (i *Loader) convert(project *compose.Compose) manifest.LoadResult {
 		res.Manifest.Components = append(res.Manifest.Components, manifest.Component{
 			Name: componentName,
 			Type: "network",
-			Spec: yamlutil.MustMarshalString(map[string]string{
-				"name":   name,
-				"driver": "bridge",
-			}),
+			Spec: manifest.ComponentSpec(
+				yamlutil.MustMarshalString(map[string]string{
+					"name":   name,
+					"driver": "bridge",
+				}),
+			),
 		})
 	}
 
@@ -156,7 +158,7 @@ func (i *Loader) convert(project *compose.Compose) manifest.LoadResult {
 			component.DependsOn = append(component.DependsOn, manifest.MangleName(dependency.Service))
 		}
 
-		component.Spec = yamlutil.MustMarshalString(service)
+		component.Spec = manifest.ComponentSpec(yamlutil.MustMarshalString(service))
 		res.Manifest.Components = append(res.Manifest.Components, component)
 	}
 
