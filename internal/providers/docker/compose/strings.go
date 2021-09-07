@@ -10,7 +10,7 @@ func (ss StringOrStringSlice) MarshalYAML() (interface{}, error) {
 	if len(ss) == 1 {
 		return ss[0], nil
 	}
-	return ss, nil
+	return []string(ss), nil
 }
 
 func (ss *StringOrStringSlice) UnmarshalYAML(b []byte) error {
