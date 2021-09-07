@@ -33,6 +33,9 @@
   // the end of each message and this was causing bugs on some Linux systems.
   const trimFinalNewline = (message: string) =>
     message.replace(/((\n\r)|(\n)|(\r)|(\r\n))$/, '');
+
+  // SEE NOTE [LOG_COMPONENTS]
+  const trimLabel = (name: string) => name.replace(/(:err$)|(:out$)/g, '');
 </script>
 
 <div class="logs-container" bind:this={logViewport}>
@@ -47,7 +50,7 @@
         >
           {event.time.short}
         </td>
-        <td class="name">{event.name}</td>
+        <td class="name" title={event.name}>{trimLabel(event.name)}</td>
         <td>
           <FormattedLogMessage message={trimFinalNewline(event.message)} />
         </td>

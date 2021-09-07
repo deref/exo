@@ -93,3 +93,11 @@ h5,
 h6 {
   color: var(--strong-color);
 }
+
+hr {
+  border: none;
+  display: block;
+  height: 1px;
+  background: var(--grey-c-color);
+  margin: 32px 0;
+}

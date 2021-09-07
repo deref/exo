@@ -60,10 +60,10 @@
 >
   <div slot="actions">
     <IconButton
-      tooltip="Add new process"
+      tooltip="Add new component"
       on:click={() => {
         router.push(
-          `#/workspaces/${encodeURIComponent(workspaceId)}/new-process`,
+          `#/workspaces/${encodeURIComponent(workspaceId)}/new-component`,
         );
       }}
     >
