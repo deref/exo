@@ -7,7 +7,7 @@ import (
 	"github.com/goccy/go-yaml"
 )
 
-type serviceNetworkWithoutName struct {
+type ServiceNetworkWithoutName struct {
 	Aliases      []string `json:"aliases,omitempty"`
 	IPV4Address  string   `json:"ipv4_address,omitempty"`
 	IPV6Address  string   `json:"ipv6_address,omitempty"`
@@ -17,7 +17,7 @@ type serviceNetworkWithoutName struct {
 
 type ServiceNetwork struct {
 	Network string
-	serviceNetworkWithoutName
+	ServiceNetworkWithoutName
 }
 
 type ServiceNetworks []ServiceNetwork
@@ -83,9 +83,9 @@ func (sn *ServiceNetworks) UnmarshalYAML(b []byte) error {
 }
 
 func (networks ServiceNetworks) MarshalYAML() (interface{}, error) {
-	sns := map[string]serviceNetworkWithoutName{}
+	sns := map[string]ServiceNetworkWithoutName{}
 	for _, sn := range networks {
-		sns[sn.Network] = sn.serviceNetworkWithoutName
+		sns[sn.Network] = sn.ServiceNetworkWithoutName
 	}
 	return sns, nil
 }
