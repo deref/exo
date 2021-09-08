@@ -75,6 +75,29 @@ func (sn *ServiceNetworks) UnmarshalYAML(b []byte) error {
 	return nil
 }
 
+func (sn ServiceNetworks) MarshalYAML() (interface{}, error) {
+	out := make(map[string]interface{}, len(sn))
+	for _, n := range sn {
+		out[n.Network] = map[string]interface{}{}
+		if n.Aliases != nil {
+			out["aliases"] = n.Aliases
+		}
+		if n.IPV4Address != "" {
+			out["ipv4_address"] = n.IPV4Address
+		}
+		if n.IPV6Address != "" {
+			out["ipv6_address"] = n.IPV6Address
+		}
+		if n.LinkLocalIPs != nil {
+			out["link_local_ips"] = n.LinkLocalIPs
+		}
+		if n.Priority != 0 {
+			out["priority"] = n.Priority
+		}
+	}
+	return out, nil
+}
+
 func toStringSlice(xs []interface{}) []string {
 	out := make([]string, len(xs))
 	for i, x := range xs {
