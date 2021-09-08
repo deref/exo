@@ -54,26 +54,30 @@ func (sd *ServiceDependencies) UnmarshalYAML(b []byte) error {
 		return nil
 	}
 
-	asMap := make(map[string]struct {
-		Condition string `yaml:"condition"`
-	})
+	var asMap yaml.MapSlice
 	if err := yaml.Unmarshal(b, &asMap); err != nil {
 		return err
 	}
 
 	sd.Services = make([]ServiceDependency, 0, len(asMap))
-	for service, spec := range asMap {
-		switch spec.Condition {
+	for _, item := range asMap {
+		service := item.Key.(string)
+		condition := "service_started"
+		if spec, ok := item.Value.(map[string]interface{}); ok {
+			if specCondition, ok := spec["condition"]; ok {
+				condition = specCondition.(string)
+			}
+		}
+
+		switch condition {
 		case "service_started", "service_healthy", "service_completed_successfully":
 			// Ok.
-		case "":
-			spec.Condition = "service_started"
 		default:
-			return fmt.Errorf("invalid condition %q for service dependency %q", spec.Condition, service)
+			return fmt.Errorf("invalid condition %q for service dependency %q", condition, service)
 		}
 		sd.Services = append(sd.Services, ServiceDependency{
 			Service:   service,
-			Condition: spec.Condition,
+			Condition: condition,
 		})
 	}
 	sort.Sort(serviceDependenciesSort{sd.Services})

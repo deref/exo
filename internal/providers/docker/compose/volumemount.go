@@ -22,14 +22,14 @@ type VolumeMount struct {
 // extendedVolumeMount is a private struct that is structurally identical to VolumeAttachment but
 // is only used for YAML unmarshalling where we do not need to consider the short string-based syntax.
 type extendedVolumeMount struct {
-	Type        string         `yaml:"type"`
-	Source      string         `yaml:"source"`
-	Target      string         `yaml:"target"`
-	ReadOnly    bool           `yaml:"read_only"`
-	Bind        *BindOptions   `yaml:"bind"`
-	Volume      *VolumeOptions `yaml:"volume"`
-	Tmpfs       *TmpfsOptions  `yaml:"tmpfs"`
-	Consistency *IgnoredField  `yaml:"consistency"`
+	Type        string         `yaml:"type,omitempty"`
+	Source      string         `yaml:"source,omitempty"`
+	Target      string         `yaml:"target,omitempty"`
+	ReadOnly    bool           `yaml:"read_only,omitempty"`
+	Bind        *BindOptions   `yaml:"bind,omitempty"`
+	Volume      *VolumeOptions `yaml:"volume,omitempty"`
+	Tmpfs       *TmpfsOptions  `yaml:"tmpfs,omitempty"`
+	Consistency *IgnoredField  `yaml:"consistency,omitempty"`
 }
 
 func (vm *VolumeMount) UnmarshalYAML(b []byte) error {

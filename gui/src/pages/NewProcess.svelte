@@ -1,14 +1,16 @@
 <script lang="ts">
+  import Panel from '../components/Panel.svelte';
   import Layout from '../components/Layout.svelte';
   import Button from '../components/Button.svelte';
   import Textbox from '../components/Textbox.svelte';
+  import EditAs from '../components/form/EditAs.svelte';
   import CodeBlock from '../components/CodeBlock.svelte';
-  import Panel from '../components/Panel.svelte';
   import ErrorLabel from '../components/ErrorLabel.svelte';
   import ShellEditor from '../components/ShellEditor.svelte';
   import WorkspaceNav from '../components/WorkspaceNav.svelte';
   import ArgumentsInput from '../components/ArgumentsInput.svelte';
   import EnvironmentInput from '../components/EnvironmentInput.svelte';
+  import LayersSVG from '../components/mono/LayersSVG.svelte';
   import { api, isClientError } from '../lib/api';
   import * as router from 'svelte-spa-router';
   import { parseScript, generateScript } from '../lib/process/script';
@@ -19,13 +21,12 @@
   const workspaceId = params.workspace;
   const workspace = api.workspace(workspaceId);
   const workspaceRoute = `/workspaces/${encodeURIComponent(workspaceId)}`;
+  const workspaceNewComponentRoute = `/workspaces/${encodeURIComponent(
+    workspaceId,
+  )}/new-component`;
 
   let name: string = '';
-
   let script: string = '';
-  let structured = false;
-  let error: Error | null = null;
-
   let directory: string = '';
   let program: string = '';
   let environment: Record<string, string> = {};
@@ -49,6 +50,22 @@
     });
   };
 
+  let mode = 'script';
+  const editorModes = [
+    {
+      id: 'script',
+      name: 'Script',
+      onActivate: updateScript,
+    },
+    {
+      id: 'fields',
+      name: 'Fields',
+      onActivate: updateFields,
+    },
+  ];
+
+  let error: Error | null = null;
+
   const codeExample = `# Export environment variables.
 export DEBUG=true
 
@@ -63,135 +80,125 @@ my-app --port 4000
 <Layout>
   <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
   <Panel
-    title="New process"
-    backRoute={workspaceRoute}
-    --panel-padding="4rem"
+    title="New Process"
+    backRoute={workspaceNewComponentRoute}
+    --panel-padding="2rem"
     --panel-overflow-y="scroll"
   >
-    <form
-      on:submit|preventDefault={async () => {
-        updateFields();
-        try {
-          const { id } = await workspace.createProcess(name, {
-            directory,
-            environment,
-            program,
-            arguments: args,
-          });
-          setLogVisibility(id, true);
+    <div class="center-form">
+      <h1><LayersSVG /> New Process</h1>
+      <form
+        on:submit|preventDefault={async () => {
+          updateFields();
+          try {
+            const { id } = await workspace.createProcess(name, {
+              directory,
+              environment,
+              program,
+              arguments: args,
+            });
+            setLogVisibility(id, true);
 
-          router.push(workspaceRoute);
-        } catch (ex) {
-          if (!isClientError(ex)) {
-            throw ex;
+            router.push(workspaceRoute);
+          } catch (ex) {
+            if (!isClientError(ex)) {
+              throw ex;
+            }
+            error = ex;
           }
-          error = ex;
-        }
-      }}
-    >
-      <div>
-        <label for="name">Name:</label>
-        <Textbox id="name" name="name" bind:value={name} />
-      </div>
-      <div class="edit-as">
-        <span>Edit as:</span>
-        <button
-          class:selected={!structured}
-          on:click|preventDefault={(e) => {
-            if (!structured) {
-              return;
-            }
-            structured = false;
-            updateScript();
-          }}
-        >
-          script
-        </button>
-        <button
-          class:selected={structured}
-          on:click|preventDefault={() => {
-            if (structured) {
-              return;
-            }
-            structured = true;
-            updateFields();
-          }}
-        >
-          fields
-        </button>
-      </div>
-      {#if structured}
+        }}
+      >
         <div>
-          <label for="program">Program:</label>
-          <Textbox id="program" name="program" bind:value={program} />
+          <label for="name">Name:</label>
+          <Textbox id="name" name="name" bind:value={name} />
         </div>
-        <div>
-          <label for="args">Arguments: (one per line)</label>
-          <ArgumentsInput id="args" name="args" bind:value={args} />
-        </div>
-        <div>
-          <label for="directory">Working Directory:</label>
-          <Textbox id="directory" name="directory" bind:value={directory} />
-        </div>
-        <div>
-          <label for="environment">Environment:</label>
-          <EnvironmentInput
-            id="environment"
-            name="environment"
-            bind:environment
-          />
-        </div>
-        <div class="buttons">
-          <Button type="submit">Create Process</Button>
-        </div>
-      {:else}
-        <div class="columns">
+
+        <EditAs bind:mode {editorModes} />
+
+        {#if mode === 'fields'}
+          <div>
+            <label for="program">Program:</label>
+            <Textbox id="program" name="program" bind:value={program} />
+          </div>
+          <div>
+            <label for="args">Arguments: (one per line)</label>
+            <ArgumentsInput id="args" name="args" bind:value={args} />
+          </div>
+          <div>
+            <label for="directory">Working Directory:</label>
+            <Textbox id="directory" name="directory" bind:value={directory} />
+          </div>
+          <div>
+            <label for="environment">Environment:</label>
+            <EnvironmentInput
+              id="environment"
+              name="environment"
+              bind:environment
+            />
+          </div>
+          <div class="buttons">
+            <Button type="submit">Create Process</Button>
+          </div>
+        {:else}
           <div>
             <div class="script-editor">
               <label for="script">Script:</label>
               <ShellEditor id="script" bind:value={script} />
             </div>
+            <details>
+              <summary>Show/hide example</summary>
+              <CodeBlock>
+                {codeExample}
+              </CodeBlock>
+            </details>
             <div class="buttons">
               <Button type="submit">Create Process</Button>
             </div>
           </div>
-          <div>
-            <div class="label">Example:</div>
-            <CodeBlock>{codeExample}</CodeBlock>
-          </div>
-        </div>
-      {/if}
-      <ErrorLabel value={error} />
-    </form>
+        {/if}
+        <ErrorLabel value={error} />
+      </form>
+    </div>
   </Panel>
 </Layout>
 
 <style>
-  form {
-    max-width: 900px;
+  .center-form {
+    max-width: 640px;
     margin: 0 auto;
-    padding: 0;
+  }
+
+  h1 {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    font-size: 24px;
+    font-weight: 500;
+    margin: 0;
+    margin-bottom: 36px;
   }
 
   * :global(input),
   * :global(textarea),
-  .edit-as,
   .script-editor {
     margin-bottom: 24px;
   }
 
-  .columns {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: 30px;
+  details {
+    margin: 24px 0;
+  }
+
+  summary {
+    margin-bottom: 12px;
+    user-select: none;
+    cursor: pointer;
   }
 
   * :global(input) {
     width: 100%;
   }
 
-  label,
-  .label {
+  label {
     display: block;
     margin-bottom: 8px;
   }
@@ -201,26 +208,5 @@ my-app --port 4000
     flex-direction: row;
     justify-content: flex-end;
     margin-top: 8px;
-  }
-
-  .edit-as span {
-    margin-right: 8px;
-  }
-
-  .edit-as button {
-    border: none;
-    background: none;
-    font-weight: 450;
-    color: var(--grey-7-color);
-  }
-
-  .edit-as button:hover {
-    text-decoration: underline;
-  }
-
-  .edit-as .selected {
-    text-decoration: underline;
-    font-weight: 450;
-    color: var(--link-color);
   }
 </style>

@@ -3,6 +3,7 @@
   import Button from '../components/Button.svelte';
   import Layout from '../components/Layout.svelte';
   import IconButton from '../components/IconButton.svelte';
+  import PreferencesSectionsConfig from '../components/form/PreferencesSectionsConfig.svelte';
   import ResetSVG from '../components/mono/ResetSVG.svelte';
   import { theme } from '../lib/theme';
 
@@ -58,6 +59,7 @@
           </Button>
         </div>
       </div>
+      <!-- <PreferencesSectionsConfig /> -->
     </div>
   </Panel>
 </Layout>

@@ -117,22 +117,38 @@ func (i *Loader) convert(project *compose.Compose) manifest.LoadResult {
 			service.ContainerName = i.prefixedName(originalName, "1")
 		}
 
+		if service.Labels == nil {
+			service.Labels = make(compose.Dictionary)
+		}
+		for k := range service.Labels {
+			if strings.HasPrefix(k, "com.docker.compose") {
+				res.Err = fmt.Errorf("service may not specify labels with prefix \"com.docker.compose\", but %q specified %q", originalName, k)
+				return res
+			}
+		}
+		service.Labels["com.docker.compose.project"] = &i.ProjectName
+		service.Labels["com.docker.compose.service"] = &originalName
+
 		// Map the docker-compose network name to the name of the docker network that is created.
 		defaultNetworkName := networksByComposeName["default"]
 		if len(service.Networks) > 0 {
-			mappedNetworks := make([]string, len(service.Networks))
+			mappedNetworks := make([]compose.ServiceNetwork, len(service.Networks))
 			for i, network := range service.Networks {
-				networkName, ok := networksByComposeName[network]
+				networkName, ok := networksByComposeName[network.Network]
 				if !ok {
 					res.Err = fmt.Errorf("unknown network: %q", network)
 					continue
 				}
-				mappedNetworks[i] = networkName
-				component.DependsOn = append(component.DependsOn, network)
+				mappedNetworks[i] = network
+				component.DependsOn = append(component.DependsOn, networkName)
 			}
 			service.Networks = mappedNetworks
 		} else {
-			service.Networks = []string{defaultNetworkName}
+			service.Networks = []compose.ServiceNetwork{
+				{
+					Network: defaultNetworkName,
+				},
+			}
 			component.DependsOn = append(component.DependsOn, "default")
 		}
 
@@ -156,6 +172,38 @@ func (i *Loader) convert(project *compose.Compose) manifest.LoadResult {
 				res = res.AddUnsupportedFeatureWarning(fmt.Sprintf("service condition %q", dependency.Service), "only service_started is currently supported")
 			}
 			component.DependsOn = append(component.DependsOn, manifest.MangleName(dependency.Service))
+		}
+
+		for idx, link := range service.Links {
+			var linkService, linkAlias string
+			parts := strings.Split(link, ":")
+			switch len(parts) {
+			case 1:
+				linkService = parts[0]
+				linkAlias = parts[0]
+			case 2:
+				linkService = parts[0]
+				linkAlias = parts[1]
+			default:
+				res.Err = fmt.Errorf("expected SERVICE or SERVICE:ALIAS for link, but got: %q", link)
+				return res
+			}
+			// NOTE [RESOLVING SERVICE CONTAINERS]:
+			// There are several locations in a compose definition where a service may reference another service
+			// by the compose name. We currently handle these situations by rewriting these locations to reference
+			// a container named `<project>_<mangled_service_name>_1` with the assumption that a container will
+			// be created by that name. However, this will break when the referenced service specifies a non-default
+			// container name. Additionally, we may want to handle cases where a service is scaled past a single
+			// container.
+			// Some of these values could/should be resolved at runtime, and we should do it when we have the entire
+			// project graph available.
+
+			// See https://github.com/docker/compose/blob/v2.0.0-rc.3/compose/service.py#L836 for how compose configures
+			// links.
+			mangledServiceName := manifest.MangleName(linkService)
+			containerName := i.prefixedName(mangledServiceName, "1")
+			service.Links[idx] = fmt.Sprintf("%s:%s", containerName, linkAlias)
+			component.DependsOn = append(component.DependsOn, mangledServiceName)
 		}
 
 		component.Spec = manifest.ComponentSpec(yamlutil.MustMarshalString(service))

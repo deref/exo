@@ -5,21 +5,22 @@ All notable changes to this project will be documented in this file.
 This project adhears to [CalVer](./doc/versioning.md).
 
 
-## Unreleased
+## 2021.09.07
 
 ## Added
 
-- (#313)[https://github.com/deref/exo/pull/213] Shell completions (optional install).
-- (#284)[https://github.com/deref/exo/pull/284] `exo env` command.
+- [#313](https://github.com/deref/exo/pull/213) Shell completions (optional install).
+- [#284](https://github.com/deref/exo/pull/284) `exo env` command.
 - Additional docker-compose compatibility: anchors & aliases, x- fields, cpu
   contraints, arbitrary CMD syntax, and more.
-- (#280)[https://github.com/deref/exo/pull/280] `exo state ...` commands for performing state repair.
-- (#188)[https://github.com/deref/exo/issues/188] `exo kill -s signal ...` command.
+- [#280](https://github.com/deref/exo/pull/280) `exo state ...` commands for performing state repair.
+- [#188](https://github.com/deref/exo/issues/188) `exo kill -s signal ...` command.
 
 ## Fixed
 
-- (#273)[https://github.com/deref/exo/pull/273] Truncated output after processes terminate.
-- (e062d58)[https://github.com/deref/exo/commit/e062d589fec56fcbefc777444eb6d1ac4ddf0d7d] Fix `run` exiting prematurely on some Mac systems.
+- [#273](https://github.com/deref/exo/pull/273) Truncated output after processes terminate.
+- [e062d58](https://github.com/deref/exo/commit/e062d589fec56fcbefc777444eb6d1ac4ddf0d7d) Fix `run` exiting prematurely on some Mac systems.
+
 
 ## 2021.08.31
 
