@@ -433,16 +433,27 @@ func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]string, err
 
 func (ws *Workspace) CreateComponent(ctx context.Context, input *api.CreateComponentInput) (*api.CreateComponentOutput, error) {
 	id := gensym.RandomBase32()
-	err := ws.createComponent(ctx, manifest.Component{
-		Name: input.Name,
-		Type: input.Type,
-		Spec: input.Spec,
-	}, id)
-	if err != nil {
-		return nil, err
-	}
+	job := ws.TaskTracker.StartTask(ctx, "creating "+input.Name)
+
+	go func() {
+		defer job.Finish()
+		err := ws.createComponent(ctx, manifest.Component{
+			Name: input.Name,
+			Type: input.Type,
+			Spec: input.Spec,
+		}, id)
+		if err != nil {
+			job.Fail(fmt.Errorf("creating component: %w", err))
+			return
+		}
+		if err := job.Wait(); err != nil {
+			return
+		}
+	}()
+
 	return &api.CreateComponentOutput{
-		ID: id,
+		ID:    id,
+		JobID: job.ID(),
 	}, nil
 }
 

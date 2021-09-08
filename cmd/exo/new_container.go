@@ -166,7 +166,6 @@ exo flags and options for your docker container command.
 		if err != nil {
 			return err
 		}
-		fmt.Println(output.ID)
-		return nil
+		return watchJob(ctx, cl.Kernel(), output.JobID)
 	},
 }
