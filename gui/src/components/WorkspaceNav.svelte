@@ -1,10 +1,9 @@
 <script lang="ts">
-  import * as router from 'svelte-spa-router';
-  import NavbarButton from './nav/NavbarButton.svelte';
+  import NavbarRoute from './nav/NavbarRoute.svelte';
   import HomeSVG from './mono/HomeSVG.svelte';
   import LayersSVG from './mono/LayersSVG.svelte';
-  import VariableSVG from './mono/VariableSVG.svelte';
   import StorageSVG from './mono/StorageSVG.svelte';
+  import VariableSVG from './mono/VariableSVG.svelte';
   import NetworkingSVG from './mono/NetworkingSVG.svelte';
 
   export let workspaceId: string;
@@ -12,53 +11,39 @@
 </script>
 
 <aside>
-  <NavbarButton
-    title="Dashboard"
-    on:click={() => {
-      router.push(`#/workspaces/${workspaceId}`);
-    }}
-    {active}
-  >
+  <NavbarRoute title="Dashboard" href={`#/workspaces/${workspaceId}`} {active}>
     <HomeSVG />
-  </NavbarButton>
+  </NavbarRoute>
 
-  <NavbarButton
+  <NavbarRoute
     title="Components"
-    on:click={() => {
-      router.push(`#/workspaces/${workspaceId}/components`);
-    }}
+    href={`#/workspaces/${workspaceId}/components`}
     {active}
   >
     <LayersSVG />
-  </NavbarButton>
+  </NavbarRoute>
 
-  <NavbarButton
+  <NavbarRoute
     title="Variables"
-    on:click={() => {
-      router.push(`#/workspaces/${workspaceId}/variables`);
-    }}
+    href={`#/workspaces/${workspaceId}/variables`}
     {active}
   >
     <VariableSVG />
-  </NavbarButton>
+  </NavbarRoute>
 
-  <NavbarButton
+  <NavbarRoute
     title="Storage"
-    on:click={() => {
-      router.push(`#/workspaces/${workspaceId}/storage`);
-    }}
+    href={`#/workspaces/${workspaceId}/storage`}
     {active}
   >
     <StorageSVG />
-  </NavbarButton>
+  </NavbarRoute>
 
-  <NavbarButton
+  <NavbarRoute
     title="Networking"
-    on:click={() => {
-      router.push(`#/workspaces/${workspaceId}/networking`);
-    }}
+    href={`#/workspaces/${workspaceId}/networking`}
     {active}
   >
     <NetworkingSVG />
-  </NavbarButton>
+  </NavbarRoute>
 </aside>
