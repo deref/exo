@@ -7,13 +7,17 @@ import (
 	"github.com/goccy/go-yaml"
 )
 
+type serviceNetworkWithoutName struct {
+	Aliases      []string `json:"aliases"`
+	IPV4Address  string   `json:"ipv4_address"`
+	IPV6Address  string   `json:"ipv6_address"`
+	LinkLocalIPs []string `json:"link_local_ips"`
+	Priority     int64    `json:"priority"`
+}
+
 type ServiceNetwork struct {
-	Network      string
-	Aliases      []string
-	IPV4Address  string
-	IPV6Address  string
-	LinkLocalIPs []string
-	Priority     int64
+	Network string
+	serviceNetworkWithoutName
 }
 
 type ServiceNetworks []ServiceNetwork
@@ -33,7 +37,7 @@ func (sn *ServiceNetworks) UnmarshalYAML(b []byte) error {
 
 	var asMap yaml.MapSlice
 	if err := yaml.Unmarshal(b, &asMap); err != nil {
-		return err
+		return fmt.Errorf("unmarshalling networks: %w", err)
 	}
 
 	nets := make([]ServiceNetwork, len(asMap))
@@ -43,7 +47,10 @@ func (sn *ServiceNetworks) UnmarshalYAML(b []byte) error {
 		}
 
 		if item.Value != nil {
-			opts := item.Value.(map[string]interface{})
+			opts, ok := item.Value.(map[string]interface{})
+			if !ok {
+				return fmt.Errorf("could not unmarshal network item %s", sn.Network)
+			}
 
 			if jsonBytes, err := json.MarshalIndent(opts, "", "  "); err == nil {
 				fmt.Println(string(jsonBytes))
@@ -73,6 +80,14 @@ func (sn *ServiceNetworks) UnmarshalYAML(b []byte) error {
 	*sn = nets
 
 	return nil
+}
+
+func (networks ServiceNetworks) MarshalYAML() (interface{}, error) {
+	sns := map[string]serviceNetworkWithoutName{}
+	for _, sn := range networks {
+		sns[sn.Network] = sn.serviceNetworkWithoutName
+	}
+	return sns, nil
 }
 
 func toStringSlice(xs []interface{}) []string {

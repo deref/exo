@@ -19,13 +19,21 @@ type Manifest struct {
 
 type ComponentSpec string
 
+func (spec ComponentSpec) MarshalYAML() (interface{}, error) {
+	return spec, nil
+}
+
 func (spec ComponentSpec) MarshalJSON() ([]byte, error) {
 	var d interface{}
 	if err := yaml.Unmarshal([]byte(spec), &d); err != nil {
 		return nil, fmt.Errorf("spec is not valid yaml")
 	}
 
-	return json.Marshal(d)
+	bs, err := json.Marshal(d)
+	if err != nil {
+		return nil, fmt.Errorf("marshalling component spec json: %w", err)
+	}
+	return bs, nil
 }
 
 func (spec *ComponentSpec) UnmarshalJSON(b []byte) error {
