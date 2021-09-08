@@ -19,13 +19,13 @@ type Manifest struct {
 
 type ComponentSpec string
 
-func (spec ComponentSpec) MarshalYAML() ([]byte, error) {
+func (spec ComponentSpec) MarshalYAML() (interface{}, error) {
 	var d interface{}
 	if err := yaml.Unmarshal([]byte(spec), &d); err != nil {
-		return nil, fmt.Errorf("spec is not valid yaml")
+		return nil, fmt.Errorf("spec is not valid yaml: %w", err)
 	}
 
-	return []byte(spec), nil
+	return d, nil
 }
 
 func (spec *ComponentSpec) UnmarshalYAML(b []byte) error {
