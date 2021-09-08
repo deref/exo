@@ -81,3 +81,9 @@ exo stop myapp
 **Daemon** - A background service that manages components and supervises
 processes. Most commands start this service automatically. You can start it
 explicitly with `exo daemon` and terminate it with `exo exit`.
+
+
+## More Resources
+
+- Builtin documentation: Run `exo help` or try passing `--help` to any subcommand.
+- [Videos](./videos.md)
