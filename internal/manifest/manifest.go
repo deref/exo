@@ -42,7 +42,7 @@ type Component struct {
 	Name      string        `json:"name"`
 	Type      string        `json:"type"`
 	Spec      ComponentSpec `json:"spec"` // TODO: Custom unmarshalling to allow convenient json representation.
-	DependsOn []string      `json:"depends_on"`
+	DependsOn []string      `json:"depends_on,omitempty"`
 }
 
 func NewManifest() *Manifest {
