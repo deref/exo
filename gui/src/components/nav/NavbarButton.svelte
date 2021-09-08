@@ -1,8 +1,8 @@
 <script lang="ts">
   import Tooltip from '../Tooltip.svelte';
 
-  export let title: string | undefined = undefined;
-  export let active: string | undefined = undefined;
+  export let title: string | undefined;
+  export let active: string | undefined;
 </script>
 
 <div>
