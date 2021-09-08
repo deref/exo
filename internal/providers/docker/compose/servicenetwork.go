@@ -8,11 +8,11 @@ import (
 )
 
 type serviceNetworkWithoutName struct {
-	Aliases      []string `json:"aliases"`
-	IPV4Address  string   `json:"ipv4_address"`
-	IPV6Address  string   `json:"ipv6_address"`
-	LinkLocalIPs []string `json:"link_local_ips"`
-	Priority     int64    `json:"priority"`
+	Aliases      []string `json:"aliases,omitempty"`
+	IPV4Address  string   `json:"ipv4_address,omitempty"`
+	IPV6Address  string   `json:"ipv6_address,omitempty"`
+	LinkLocalIPs []string `json:"link_local_ips,omitempty"`
+	Priority     int64    `json:"priority,omitempty"`
 }
 
 type ServiceNetwork struct {
