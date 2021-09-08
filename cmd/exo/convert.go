@@ -55,6 +55,10 @@ var convertCmd = &cobra.Command{
 }
 
 func convertAndSave(manifestPath string, manifestFormat *string) (string, error) {
+	if path.Base(manifestPath) == "exo.json" || (manifestFormat != nil && *manifestFormat == "exo") {
+		return manifestPath, nil
+	}
+
 	res := loadManifest(manifestPath, manifestFormat)
 	if res.Err != nil {
 		return "", res.Err
