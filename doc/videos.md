@@ -8,7 +8,7 @@ Completely new to dev process managers? Start here!
 
 ## Migrating to exo
 
-- Foreman or other Heroku-compatible Procfile runner (coming soon)
+- [Foreman or other Heroku-compatible Procfile runner](https://youtu.be/WPaLj9R8rXE)
 - Docker Compose (coming soon)
 - Node Concurrently (coming soon)
 - Supervisord (coming soon)
