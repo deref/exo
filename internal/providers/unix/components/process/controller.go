@@ -6,10 +6,11 @@ import (
 	"fmt"
 
 	"github.com/deref/exo/internal/util/jsonutil"
+	"github.com/goccy/go-yaml"
 )
 
 func (p *Process) InitResource() error {
-	if err := jsonutil.UnmarshalString(p.ComponentSpec, &p.Spec); err != nil {
+	if err := yaml.Unmarshal([]byte(p.ComponentSpec), &p.Spec); err != nil {
 		return fmt.Errorf("unmarshalling spec: %w", err)
 	}
 	if err := jsonutil.UnmarshalString(p.ComponentState, &p.State); err != nil {

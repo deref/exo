@@ -7,7 +7,7 @@ import (
 
 	"github.com/deref/exo/internal/manifest"
 	"github.com/deref/exo/internal/providers/unix/components/process"
-	"github.com/deref/exo/internal/util/jsonutil"
+	"github.com/deref/exo/internal/util/yamlutil"
 )
 
 type loader struct{}
@@ -51,7 +51,7 @@ func convert(procfile *Procfile) manifest.LoadResult {
 			Name: name,
 			Type: "process",
 			Spec: manifest.ComponentSpec(
-				jsonutil.MustMarshalString(process.Spec{
+				yamlutil.MustMarshalString(process.Spec{
 					Program:     p.Program,
 					Arguments:   p.Arguments,
 					Environment: environment,
