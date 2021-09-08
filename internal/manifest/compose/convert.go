@@ -25,7 +25,7 @@ func (i *Loader) Load(r io.Reader) manifest.LoadResult {
 
 func (i *Loader) convert(project *compose.Compose) manifest.LoadResult {
 	res := manifest.LoadResult{
-		Manifest: &manifest.Manifest{},
+		Manifest: manifest.NewManifest(),
 	}
 
 	// Since containers reference networks and volumes by their docker-compose name, but the
