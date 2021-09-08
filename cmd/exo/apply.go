@@ -113,7 +113,7 @@ func apply(ctx context.Context, kernel api.Kernel, workspace api.Workspace, args
 		}
 	}
 	if err != nil {
-		return err
+		return fmt.Errorf("workspace apply: %w", err)
 	}
 	return watchJob(ctx, kernel, output.JobID)
 }

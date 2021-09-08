@@ -1,7 +1,6 @@
 package main
 
 import (
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -13,6 +12,7 @@ import (
 	"github.com/deref/exo/internal/manifest"
 	"github.com/deref/exo/internal/manifest/compose"
 	"github.com/deref/exo/internal/manifest/procfile"
+	"github.com/goccy/go-yaml"
 	"github.com/spf13/cobra"
 )
 
@@ -55,7 +55,7 @@ var convertCmd = &cobra.Command{
 }
 
 func convertAndSave(manifestPath string, manifestFormat *string) (string, error) {
-	if path.Base(manifestPath) == "exo.json" || (manifestFormat != nil && *manifestFormat == "exo") {
+	if path.Base(manifestPath) == "exo.json" || path.Base(manifestPath) == "exo.yaml" || (manifestFormat != nil && *manifestFormat == "exo") {
 		return manifestPath, nil
 	}
 
@@ -68,13 +68,13 @@ func convertAndSave(manifestPath string, manifestFormat *string) (string, error)
 		fmt.Printf("WARNING: %s\n", warn)
 	}
 
-	manifestBytes, err := json.MarshalIndent(res.Manifest, "", "  ")
+	manifestBytes, err := yaml.Marshal(res.Manifest)
 	if err != nil {
 		return "", fmt.Errorf("marshalling manifest: %w", err)
 	}
 
 	dir, _ := path.Split(manifestPath)
-	filename := path.Join(dir, "exo.json")
+	filename := path.Join(dir, "exo.yaml")
 	return filename, ioutil.WriteFile(filename, manifestBytes, 0600)
 }
 

@@ -19,24 +19,16 @@ type Manifest struct {
 
 type ComponentSpec string
 
-func (spec ComponentSpec) MarshalYAML() (interface{}, error) {
-	return spec, nil
-}
-
-func (spec ComponentSpec) MarshalJSON() ([]byte, error) {
+func (spec ComponentSpec) MarshalYAML() ([]byte, error) {
 	var d interface{}
 	if err := yaml.Unmarshal([]byte(spec), &d); err != nil {
 		return nil, fmt.Errorf("spec is not valid yaml")
 	}
 
-	bs, err := json.Marshal(d)
-	if err != nil {
-		return nil, fmt.Errorf("marshalling component spec json: %w", err)
-	}
-	return bs, nil
+	return []byte(spec), nil
 }
 
-func (spec *ComponentSpec) UnmarshalJSON(b []byte) error {
+func (spec *ComponentSpec) UnmarshalYAML(b []byte) error {
 	s := string(b)
 	if !yamlutil.IsValid(s) {
 		return fmt.Errorf("component spec is not valid yaml")
@@ -87,8 +79,8 @@ func (l loader) Load(r io.Reader) LoadResult {
 		return LoadResult{Err: err}
 	}
 	manifest := Manifest{}
-	if err := json.Unmarshal(bs, &manifest); err != nil {
-		return LoadResult{Err: err}
+	if err := yaml.Unmarshal(bs, &manifest); err != nil {
+		return LoadResult{Err: fmt.Errorf("unmarshalling manifest yaml: %w", err)}
 	}
 	return LoadResult{Manifest: &manifest}
 }

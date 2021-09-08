@@ -104,7 +104,7 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 	}
 	res := ws.loadManifest(description.Root, input)
 	if res.Err != nil {
-		return nil, res.Err
+		return nil, fmt.Errorf("loading manifest: %w", res.Err)
 	}
 	m := res.Manifest
 

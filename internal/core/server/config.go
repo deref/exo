@@ -16,7 +16,7 @@ import (
 
 func (ws *Workspace) loadManifest(rootDir string, input *api.ApplyInput) manifest.LoadResult {
 	manifestString := ""
-	manifestPath := path.Join(rootDir, "exo.json")
+	manifestPath := path.Join(rootDir, "exo.yaml")
 	if input.ManifestPath != nil {
 		manifestPath = *input.ManifestPath
 	}
