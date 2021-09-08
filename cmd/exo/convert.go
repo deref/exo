@@ -68,7 +68,10 @@ func convertAndSave(manifestPath string, manifestFormat *string) (string, error)
 		fmt.Printf("WARNING: %s\n", warn)
 	}
 
-	manifestBytes, err := yaml.Marshal(res.Manifest)
+	manifestBytes, err := yaml.MarshalWithOptions(
+		res.Manifest,
+		yaml.IndentSequence(true),
+	)
 	if err != nil {
 		return "", fmt.Errorf("marshalling manifest: %w", err)
 	}
