@@ -8,6 +8,7 @@ import (
 	core "github.com/deref/exo/internal/core/api"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
+	docker "github.com/docker/docker/client"
 )
 
 func (n *Network) Initialize(ctx context.Context, input *core.InitializeInput) (output *core.InitializeOutput, err error) {
@@ -82,7 +83,12 @@ func (n *Network) Dispose(ctx context.Context, input *core.DisposeInput) (*core.
 	if n.NetworkID == "" {
 		return &core.DisposeOutput{}, nil
 	}
-	if err := n.Docker.NetworkRemove(ctx, n.NetworkID); err != nil {
+	err := n.Docker.NetworkRemove(ctx, n.NetworkID)
+	if docker.IsErrNotFound(err) {
+		n.Logger.Infof("disposing network not found: %q", n.NetworkID)
+		err = nil
+	}
+	if err != nil {
 		return nil, err
 	}
 	n.NetworkID = ""
