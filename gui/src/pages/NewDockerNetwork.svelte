@@ -5,7 +5,7 @@
 
   export let params: Params;
 
-  const specExample = `name: mynetwork`;
+  const code = `name: mynetwork`;
   const href =
     'https://github.com/compose-spec/compose-spec/blob/master/spec.md#Networks-top-level-element';
 </script>
@@ -14,7 +14,5 @@
   <p>
     See <a {href}>compose network reference</a>.
   </p>
-  <CodeBlock>
-    {specExample}
-  </CodeBlock>
+  <CodeBlock {code} />
 </NewDockerComponent>

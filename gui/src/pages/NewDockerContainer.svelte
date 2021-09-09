@@ -5,7 +5,7 @@
 
   export let params: Params;
 
-  const specExample = `image: postgres:9.4
+  const code = `image: postgres:9.4
 environment:
     POSTGRES_USER: "postgres"
     POSTGRES_PASSWORD: "postgres"`;
@@ -17,7 +17,5 @@ environment:
   <p>
     See <a {href}>services volume reference</a>.
   </p>
-  <CodeBlock>
-    {specExample}
-  </CodeBlock>
+  <CodeBlock {code} />
 </NewDockerComponent>
