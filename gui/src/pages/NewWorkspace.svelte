@@ -16,8 +16,13 @@
 </script>
 
 <Layout>
-  <Panel title="New workspace" backRoute="/">
-    <div>
+  <Panel
+    title="New project"
+    backRoute="/"
+    --panel-padding="2rem"
+    --panel-overflow-y="scroll"
+  >
+    <div class="center-form">
       <form
         on:submit|preventDefault={async () => {
           error = null;
@@ -40,9 +45,19 @@
           }
         }}
       >
+        <h1>New project</h1>
+        <p>Select your project root directory to create a new workspace.</p>
         <label for="root">Root:</label>
-        <Textbox bind:value={root} name="root" id="root" />
-        <Button type="submit">Create Workspace</Button>
+        <Textbox
+          bind:value={root}
+          name="root"
+          id="root"
+          placeholder="/home/user/path/to/project"
+          --input-width="100%"
+        />
+        <div class="buttons">
+          <Button type="submit">Create project</Button>
+        </div>
       </form>
       <ErrorLabel value={error} />
     </div>
@@ -50,20 +65,30 @@
 </Layout>
 
 <style>
-  div {
-    display: flex;
-    flex-direction: column;
-    height: 100%;
-    width: 100%;
-    align-items: center;
-    justify-content: center;
+  label {
+    display: block;
+    margin-bottom: 8px;
   }
 
-  form {
-    padding: 20px;
+  h1 {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    font-size: 24px;
+    font-weight: 500;
+    margin: 0;
+    margin-bottom: 36px;
+  }
+
+  .center-form {
+    max-width: 640px;
+    margin: 0 auto;
+  }
+
+  .buttons {
     display: flex;
     flex-direction: row;
-    gap: 20px;
-    align-items: center;
+    justify-content: flex-end;
+    margin: 24px 0;
   }
 </style>

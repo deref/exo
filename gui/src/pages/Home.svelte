@@ -13,25 +13,29 @@
 </script>
 
 <Layout>
-  <Panel title="Workspaces">
-    <div>
-      Use <Code>exo gui</Code> in your terminal to launch into the current directory's
-      workspace.
-    </div>
-    <div>
-      {#await workspaces}
-        loading workspaces...
-      {:then workspaces}
-        <WorkspaceList {workspaces} />
-      {:catch error}
-        <p style="color: red">{error.message}</p>
-      {/await}
+  <Panel title="Workspaces" --panel-padding="2rem" --panel-overflow-y="scroll">
+    <div class="center-form">
+      <div>
+        {#await workspaces}
+          loading workspaces...
+        {:then workspaces}
+          <WorkspaceList {workspaces} />
+        {:catch error}
+          <p style="color: red">{error.message}</p>
+        {/await}
+      </div>
+      <hr />
+      <div>
+        Use <Code>exo gui</Code> in your terminal to launch into the current directory's
+        workspace.
+      </div>
     </div>
   </Panel>
 </Layout>
 
 <style>
-  div {
-    margin-bottom: 24px;
+  .center-form {
+    max-width: 640px;
+    margin: 0 auto;
   }
 </style>
