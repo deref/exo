@@ -108,6 +108,23 @@ func (jp *jobPrinter) printTree(w io.Writer, tasks []api.TaskDescription) {
 		return d
 	}
 
+	// Measure labels.
+	maxPrefixW := 8
+	for _, task := range tasks {
+		node := getNode(task.ID)
+		depth := depthOf(node)
+		statusW := 2
+		indentW := 3
+		padRight := 2
+		width := statusW + (depth-1)*indentW + term.VisualLength(node.Name) + padRight
+		if jp.ShowJobID {
+			width += 1 + term.VisualLength(node.ID)
+		}
+		if maxPrefixW < width {
+			maxPrefixW = width
+		}
+	}
+
 	var rec func(idx int, node *taskNode)
 	rec = func(idx int, node *taskNode) {
 
@@ -143,7 +160,15 @@ func (jp *jobPrinter) printTree(w io.Writer, tasks []api.TaskDescription) {
 		if jp.ShowJobID {
 			label += " " + node.ID
 		}
-		prefix += label + " "
+		prefix += label
+
+		// Padding between prefix and message to align message column.
+		prefixW := term.VisualLength(prefix)
+		alignMessage := ""
+		padPrefix := maxPrefixW - prefixW
+		if padPrefix > 0 {
+			alignMessage = strings.Repeat(" ", padPrefix)
+		}
 
 		suffix := ""
 		if node.Progress != nil {
@@ -158,17 +183,16 @@ func (jp *jobPrinter) printTree(w io.Writer, tasks []api.TaskDescription) {
 		// Truncate message.
 		maxMessageW := 50
 		if termW > 0 {
-			prefixW := term.VisualLength(prefix)
 			suffixW := term.VisualLength(suffix)
-			maxMessageW = termW - prefixW - suffixW
+			maxMessageW = termW - maxPrefixW - suffixW
 		}
 		message = term.TrimToVisualLength(message, maxMessageW)
 
 		// Right align suffix.
 		messageW := term.VisualLength(message)
-		spacer := strings.Repeat(" ", maxMessageW-messageW)
+		alignSuffix := strings.Repeat(" ", maxMessageW-messageW)
 
-		fmt.Fprintf(w, "%s%s%s%s\n", prefix, message, spacer, suffix)
+		fmt.Fprintf(w, "%s%s%s%s%s\n", prefix, alignMessage, message, alignSuffix, suffix)
 		for i, child := range node.Children {
 			rec(i, child)
 		}
