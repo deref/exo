@@ -1,9 +1,6 @@
 package compose
 
 import (
-	"encoding/json"
-	"fmt"
-
 	"github.com/goccy/go-yaml"
 )
 
@@ -18,9 +15,9 @@ type ServiceNetwork struct {
 
 type ServiceNetworks []ServiceNetwork
 
-func (sn *ServiceNetworks) UnmarshalYAML(b []byte) error {
+func (sn *ServiceNetworks) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var asStrings []string
-	if err := yaml.Unmarshal(b, &asStrings); err == nil {
+	if err := unmarshal(&asStrings); err == nil {
 		nets := make([]ServiceNetwork, len(asStrings))
 		for i, network := range asStrings {
 			nets[i] = ServiceNetwork{
@@ -32,7 +29,7 @@ func (sn *ServiceNetworks) UnmarshalYAML(b []byte) error {
 	}
 
 	var asMap yaml.MapSlice
-	if err := yaml.Unmarshal(b, &asMap); err != nil {
+	if err := unmarshal(&asMap); err != nil {
 		return err
 	}
 
@@ -44,12 +41,6 @@ func (sn *ServiceNetworks) UnmarshalYAML(b []byte) error {
 
 		if item.Value != nil {
 			opts := item.Value.(map[string]interface{})
-
-			if jsonBytes, err := json.MarshalIndent(opts, "", "  "); err == nil {
-				fmt.Println(string(jsonBytes))
-			} else {
-				fmt.Println("Error printing opts:", err)
-			}
 
 			if aliases, ok := opts["aliases"]; ok {
 				sn.Aliases = toStringSlice(aliases.([]interface{}))

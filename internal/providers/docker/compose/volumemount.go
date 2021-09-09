@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
-
-	"github.com/goccy/go-yaml"
 )
 
 type VolumeMount struct {
@@ -32,14 +30,14 @@ type extendedVolumeMount struct {
 	Consistency *IgnoredField  `yaml:"consistency,omitempty"`
 }
 
-func (vm *VolumeMount) UnmarshalYAML(b []byte) error {
+func (vm *VolumeMount) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var asString string
-	if err := yaml.Unmarshal(b, &asString); err == nil {
+	if err := unmarshal(&asString); err == nil {
 		return vm.fromShortSyntax(asString)
 	}
 
 	asExtended := extendedVolumeMount{}
-	if err := yaml.Unmarshal(b, &asExtended); err != nil {
+	if err := unmarshal(&asExtended); err != nil {
 		return err
 	}
 	vm.Type = asExtended.Type
