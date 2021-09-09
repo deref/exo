@@ -2,8 +2,8 @@
   import NavbarButton from './NavbarButton.svelte';
   import * as router from 'svelte-spa-router';
 
-  export let title: string | undefined;
-  export let active: string | undefined;
+  export let title: string | undefined = undefined;
+  export let active: string | undefined = undefined;
   export let href: string;
 </script>
 
