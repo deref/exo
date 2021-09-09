@@ -11,11 +11,11 @@ type Process struct {
 }
 
 type Spec struct {
-	Directory                  string            `json:"directory"`
+	Directory                  string            `json:"directory,omitempty"`
 	Program                    string            `json:"program"`
-	Arguments                  []string          `json:"arguments"`
+	Arguments                  []string          `json:"arguments,omitempty"`
 	Environment                map[string]string `json:"environment"`
-	ShutdownGracePeriodSeconds *int              `json:"shutdownGracePeriodSeconds"`
+	ShutdownGracePeriodSeconds *int              `json:"shutdownGracePeriodSeconds,omitempty"`
 }
 
 type State struct {
