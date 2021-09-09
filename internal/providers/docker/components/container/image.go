@@ -2,10 +2,10 @@ package container
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
-	"io"
-	"os"
 
+	"github.com/deref/exo/internal/task"
 	"github.com/docker/docker/api/types"
 	docker "github.com/docker/docker/client"
 )
@@ -64,7 +64,22 @@ func (c *Container) ensureImage(ctx context.Context) error {
 	return nil
 }
 
+type dockerPullStatus struct {
+	ID             string `json:"id"`
+	Status         string `json:"status"`
+	Progress       string `json:"string"`
+	ProgressDetail struct {
+		Current int `json:"current"`
+		Total   int `json:"total"`
+	} `json:"progressDetail"`
+}
+
 func (c *Container) pullImage(ctx context.Context) error {
+	pullTask := task.CurrentTask(ctx)
+	if pullTask == nil {
+		panic("No build task")
+	}
+
 	image, err := c.Docker.ImagePull(ctx, c.Spec.Image, types.ImagePullOptions{
 		//All           bool
 		//RegistryAuth  string // RegistryAuth is the base64 encoded credentials for the registry
@@ -72,9 +87,17 @@ func (c *Container) pullImage(ctx context.Context) error {
 		//Platform      string
 	})
 	if image != nil {
-		// TODO [DOCKER_PROGRESS]: Report progress somehow.
-		_, _ = io.Copy(os.Stdout, image)
-		_ = image.Close()
+		defer image.Close()
+		decoder := json.NewDecoder(image)
+		for decoder.More() {
+			var status dockerPullStatus
+			if err := decoder.Decode(&status); err != nil {
+				pullTask.Fail(fmt.Errorf("decoding image pull status: %w", err))
+				break
+			}
+			pullTask.ReportProgress(status.ProgressDetail.Current, status.ProgressDetail.Total)
+			pullTask.ReportMessage(status.Status)
+		}
 	}
 	return err
 }
