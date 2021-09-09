@@ -8,13 +8,56 @@ import (
 
 	"github.com/deref/exo/internal/util/yamlutil"
 	"github.com/goccy/go-yaml"
+	yamlv3 "gopkg.in/yaml.v3"
 )
 
 var Version = "0.1"
 
 type Manifest struct {
+	original   *yamlv3.Node
 	Exo        string      `json:"exo"`
 	Components []Component `json:"components"`
+}
+
+// FIXME: should settle on one yaml library. goccy/go-yaml didn't appear to
+// expose the necessary Node functionality, specifically the ability to
+// deserialise a node. That meant that whilst you could add comments to a YAML
+// block before serialisation, it didn't seem possible to preserve comments when
+// deserialising.
+
+func (m *Manifest) UnmarshalYAML(b []byte) error {
+	type innerManifestType Manifest
+	innerManifest := innerManifestType(*m)
+	if err := yaml.Unmarshal(b, &innerManifest); err != nil {
+		return fmt.Errorf("unmarshalling manifest yaml: %w", err)
+	}
+	*m = Manifest(innerManifest)
+
+	m.original = &yamlv3.Node{}
+	if err := yamlv3.Unmarshal(b, m.original); err != nil {
+		return fmt.Errorf("unmarshalling raw manifest yaml: %w", err)
+	}
+	return nil
+}
+
+func (spec Manifest) MarshalYAML() ([]byte, error) {
+	type innerManifest Manifest
+	bs, err := yaml.Marshal(innerManifest(spec))
+	if err != nil {
+		return nil, fmt.Errorf("marshalling manifest yaml: %w", err)
+	}
+
+	node := &yamlv3.Node{}
+	if err := yamlv3.Unmarshal(bs, node); err != nil {
+		return nil, fmt.Errorf("unmarshalling marshalled manifest yaml: %w", err)
+	}
+	yamlutil.MergeFormatting(spec.original, node)
+
+	result, err := yamlv3.Marshal(node)
+	if err != nil {
+		return nil, fmt.Errorf("marshalling node: %w", err)
+	}
+	return result, nil
 }
 
 type ComponentSpec string

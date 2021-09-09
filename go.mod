@@ -31,12 +31,12 @@ require (
 	github.com/spf13/cobra v1.0.0
 	github.com/stretchr/testify v1.7.0
 	github.com/timewasted/go-accept-headers v0.0.0-20130320203746-c78f304b1b09
-	github.com/zclconf/go-cty v1.8.0
 	golang.org/x/net v0.0.0-20210726213435-c6fcb2dbf985 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20210806184541-e5e7981a1069
 	gopkg.in/alessio/shellescape.v1 v1.0.0-20170105083845-52074bc9df61
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
+	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
 	mvdan.cc/sh/v3 v3.3.1
 )
 
