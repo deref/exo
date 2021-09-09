@@ -1,9 +1,5 @@
 package compose
 
-import (
-	"github.com/goccy/go-yaml"
-)
-
 type StringOrStringSlice []string
 
 func (ss StringOrStringSlice) MarshalYAML() (interface{}, error) {
@@ -13,9 +9,9 @@ func (ss StringOrStringSlice) MarshalYAML() (interface{}, error) {
 	return []string(ss), nil
 }
 
-func (ss *StringOrStringSlice) UnmarshalYAML(b []byte) error {
+func (ss *StringOrStringSlice) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var asSlice []interface{}
-	if err := yaml.Unmarshal(b, &asSlice); err == nil {
+	if err := unmarshal(&asSlice); err == nil {
 		stringSlice := make([]string, len(asSlice))
 		for i, s := range asSlice {
 			stringSlice[i] = s.(string)
@@ -25,7 +21,7 @@ func (ss *StringOrStringSlice) UnmarshalYAML(b []byte) error {
 	}
 
 	var asString string
-	err := yaml.Unmarshal(b, &asString)
+	err := unmarshal(&asString)
 	if err == nil {
 		*ss = []string{asString}
 	}

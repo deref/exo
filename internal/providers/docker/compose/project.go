@@ -59,14 +59,17 @@ type Compose struct {
 // TODO: Eliminate all usages of this with actual parsing logic.
 type IgnoredField struct{}
 
-func (ignored *IgnoredField) UnmarshalYAML(b []byte) error {
+func (ignored *IgnoredField) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	return nil
 }
 
 type MemoryField int64
 
-func (memory *MemoryField) UnmarshalYAML(b []byte) error {
-	memString := string(b)
+func (memory *MemoryField) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var memString string
+	if err := unmarshal(&memString); err != nil {
+		return err
+	}
 	memBytes, err := strconv.ParseInt(memString, 10, 64)
 	if err == nil {
 		*memory = MemoryField(memBytes)
@@ -79,7 +82,7 @@ func (memory *MemoryField) UnmarshalYAML(b []byte) error {
 		return nil
 	}
 
-	return fmt.Errorf("could not unmarshal memory value %s: %w", b, err)
+	return fmt.Errorf("unmarshaling memory value: %w", err)
 }
 
 type Service struct {
