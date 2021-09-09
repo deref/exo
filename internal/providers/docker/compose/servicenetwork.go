@@ -1,5 +1,7 @@
 package compose
 
+import "sort"
+
 type ServiceNetworkWithoutName struct {
 	Aliases      []string `yaml:"aliases,omitempty"`
 	IPV4Address  string   `yaml:"ipv4_address,omitempty"`
@@ -41,8 +43,16 @@ func (sn *ServiceNetworks) UnmarshalYAML(unmarshal func(interface{}) error) erro
 		return err
 	}
 
+	i, keys := 0, make([]string, len(asMap))
+	for k := range asMap {
+		keys[i] = k
+		i++
+	}
+	sort.Strings(keys)
+
 	nets := []ServiceNetwork{}
-	for key, item := range asMap {
+	for _, key := range keys {
+		item := asMap[key]
 		if item == nil {
 			item = &ServiceNetworkWithoutName{}
 		}
