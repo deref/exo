@@ -11,8 +11,6 @@
 </script>
 
 <NewDockerComponent {params} componentType="network" displayType="Network">
-  <p>
-    See <a {href}>compose network reference</a>.
-  </p>
+  <p>See <a {href}>compose network reference</a>.</p>
   <CodeBlock {code} />
 </NewDockerComponent>

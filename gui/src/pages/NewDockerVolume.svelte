@@ -11,8 +11,6 @@
 </script>
 
 <NewDockerComponent {params} componentType="volume" displayType="Volume">
-  <p>
-    See <a {href}>compose volume reference</a>.
-  </p>
+  <p>See <a {href}>compose volume reference</a>.</p>
   <CodeBlock {code} />
 </NewDockerComponent>

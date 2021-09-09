@@ -14,8 +14,6 @@ environment:
 </script>
 
 <NewDockerComponent {params} componentType="container" displayType="Container">
-  <p>
-    See <a {href}>services volume reference</a>.
-  </p>
+  <p>See <a {href}>services volume reference</a>.</p>
   <CodeBlock {code} />
 </NewDockerComponent>
