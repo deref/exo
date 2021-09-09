@@ -25,8 +25,8 @@ func TestDictionaryYaml(t *testing.T) {
 	}
 	mapStr := `
 dict:
-  a: "1"
-  b: "2"
+    a: "1"
+    b: "2"
 `
 	arrayStr := `
 dict:

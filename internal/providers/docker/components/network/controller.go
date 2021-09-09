@@ -4,7 +4,7 @@ import (
 	"fmt"
 
 	"github.com/deref/exo/internal/util/jsonutil"
-	"github.com/goccy/go-yaml"
+	"gopkg.in/yaml.v3"
 )
 
 func (n *Network) InitResource() error {

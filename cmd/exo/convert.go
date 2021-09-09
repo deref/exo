@@ -12,8 +12,8 @@ import (
 	"github.com/deref/exo/internal/manifest"
 	"github.com/deref/exo/internal/manifest/compose"
 	"github.com/deref/exo/internal/manifest/procfile"
-	"github.com/goccy/go-yaml"
 	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v3"
 )
 
 func init() {
@@ -70,10 +70,7 @@ func convertAndSave(manifestPath string, manifestFormat *string) (string, error)
 		fmt.Printf("WARNING: %s\n", warn)
 	}
 
-	manifestBytes, err := yaml.MarshalWithOptions(
-		res.Manifest,
-		yaml.IndentSequence(true),
-	)
+	manifestBytes, err := yaml.Marshal(res.Manifest)
 	if err != nil {
 		return "", fmt.Errorf("marshalling manifest: %w", err)
 	}

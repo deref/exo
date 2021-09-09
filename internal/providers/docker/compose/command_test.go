@@ -20,5 +20,5 @@ parsed: ['x', 'y z']
 	assert.Equal(t, Command{Parts: []string{`foo "bar baz"`}, IsShellForm: true}, actual.Shell)
 	assert.Equal(t, Command{Parts: []string{"x", "y z"}}, actual.Parsed)
 
-	assert.Equal(t, "- x\n- y", strings.TrimSpace(yamlutil.MustMarshalString(Command{Parts: []string{"x", "y"}})))
+	assert.Equal(t, "- x\n- \"y\"", strings.TrimSpace(yamlutil.MustMarshalString(Command{Parts: []string{"x", "y"}})))
 }

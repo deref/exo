@@ -1,13 +1,6 @@
 package compose
 
-import (
-	"fmt"
-
-	"github.com/goccy/go-yaml"
-)
-
-type ServiceNetwork struct {
-	Network      string
+type ServiceNetworkWithoutName struct {
 	Aliases      []string `yaml:"aliases,omitempty"`
 	IPV4Address  string   `yaml:"ipv4_address,omitempty"`
 	IPV6Address  string   `yaml:"ipv6_address,omitempty"`
@@ -15,17 +8,19 @@ type ServiceNetwork struct {
 	Priority     int64    `yaml:"priority,omitempty"`
 }
 
+type ServiceNetwork struct {
+	Network string
+	ServiceNetworkWithoutName
+}
+
 type ServiceNetworks []ServiceNetwork
 
-func (sn ServiceNetworks) MarshalYAML() (interface{}, error) {
-	slice := make(yaml.MapSlice, len(sn))
-	for i, n := range sn {
-		slice[i] = yaml.MapItem{
-			Key:   n.Network,
-			Value: n,
-		}
+func (sns ServiceNetworks) MarshalYAML() (interface{}, error) {
+	m := map[string]ServiceNetworkWithoutName{}
+	for _, sn := range sns {
+		m[sn.Network] = sn.ServiceNetworkWithoutName
 	}
-	return slice, nil
+	return m, nil
 }
 
 func (sn *ServiceNetworks) UnmarshalYAML(unmarshal func(interface{}) error) error {
@@ -41,28 +36,22 @@ func (sn *ServiceNetworks) UnmarshalYAML(unmarshal func(interface{}) error) erro
 		return nil
 	}
 
-	var mapSlice yaml.MapSlice
-	if err := unmarshal(&mapSlice); err != nil {
-		return err
-	}
-
-	var asMap map[string]ServiceNetwork
+	var asMap map[string]*ServiceNetworkWithoutName
 	if err := unmarshal(&asMap); err != nil {
 		return err
 	}
 
-	nets := make([]ServiceNetwork, len(mapSlice))
-	for i, item := range mapSlice {
-		key, ok := item.Key.(string)
-		if !ok {
-			return fmt.Errorf("expected string key at index %d, got: %T", i, item.Key)
+	nets := []ServiceNetwork{}
+	for key, item := range asMap {
+		if item == nil {
+			item = &ServiceNetworkWithoutName{}
 		}
-		sn := asMap[key]
-		sn.Network = key
-		nets[i] = sn
+		nets = append(nets, ServiceNetwork{
+			Network:                   key,
+			ServiceNetworkWithoutName: *item,
+		})
 	}
 	*sn = nets
-
 	return nil
 }
 

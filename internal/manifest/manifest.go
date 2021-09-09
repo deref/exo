@@ -7,7 +7,7 @@ import (
 	"io/ioutil"
 
 	"github.com/deref/exo/internal/util/yamlutil"
-	"github.com/goccy/go-yaml"
+	"gopkg.in/yaml.v3"
 	yamlv3 "gopkg.in/yaml.v3"
 )
 

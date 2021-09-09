@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"sort"
 	"strings"
-
-	"github.com/goccy/go-yaml"
 )
 
 // ServiceDependencies represents either the short (list) form of `depends_on` or the full
@@ -54,16 +52,15 @@ func (sd *ServiceDependencies) UnmarshalYAML(unmarshal func(interface{}) error) 
 		return nil
 	}
 
-	var asMap yaml.MapSlice
+	var asMap map[string]interface{}
 	if err := unmarshal(&asMap); err != nil {
 		return err
 	}
 
 	sd.Services = make([]ServiceDependency, 0, len(asMap))
-	for _, item := range asMap {
-		service := item.Key.(string)
+	for service, value := range asMap {
 		condition := "service_started"
-		if spec, ok := item.Value.(map[string]interface{}); ok {
+		if spec, ok := value.(map[string]interface{}); ok {
 			if specCondition, ok := spec["condition"]; ok {
 				condition = specCondition.(string)
 			}

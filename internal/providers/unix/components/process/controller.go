@@ -6,7 +6,7 @@ import (
 	"fmt"
 
 	"github.com/deref/exo/internal/util/jsonutil"
-	"github.com/goccy/go-yaml"
+	"gopkg.in/yaml.v3"
 )
 
 func (p *Process) InitResource() error {

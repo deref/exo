@@ -1,6 +1,6 @@
 package yamlutil
 
-import "github.com/goccy/go-yaml"
+import "gopkg.in/yaml.v3"
 
 func MustMarshalString(v interface{}) string {
 	bs, err := yaml.Marshal(v)

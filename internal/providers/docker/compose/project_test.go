@@ -447,12 +447,14 @@ cap_drop:
 						Network: "net1",
 					},
 					{
-						Network:      "net2",
-						Aliases:      []string{"foo", "bar"},
-						IPV4Address:  "172.16.238.10",
-						IPV6Address:  "2001:3984:3989::10",
-						LinkLocalIPs: []string{"57.123.22.11", "57.123.22.13"},
-						Priority:     1000,
+						Network: "net2",
+						ServiceNetworkWithoutName: compose.ServiceNetworkWithoutName{
+							Aliases:      []string{"foo", "bar"},
+							IPV4Address:  "172.16.238.10",
+							IPV6Address:  "2001:3984:3989::10",
+							LinkLocalIPs: []string{"57.123.22.11", "57.123.22.13"},
+							Priority:     1000,
+						},
 					},
 				},
 			},
@@ -552,14 +554,18 @@ pids_limit: 5280`,
 			expected: compose.Service{
 				Ulimits: compose.Ulimits{
 					{
-						Name: "nproc",
-						Soft: 65535,
-						Hard: 65535,
+						Name: "nofile",
+						Limits: compose.Limits{
+							Soft: 20000,
+							Hard: 40000,
+						},
 					},
 					{
-						Name: "nofile",
-						Soft: 20000,
-						Hard: 40000,
+						Name: "nproc",
+						Limits: compose.Limits{
+							Soft: 65535,
+							Hard: 65535,
+						},
 					},
 				},
 			},

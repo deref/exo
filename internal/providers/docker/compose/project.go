@@ -15,13 +15,11 @@ import (
 	"strings"
 
 	"code.cloudfoundry.org/bytefmt"
-	"github.com/goccy/go-yaml"
+	"gopkg.in/yaml.v3"
 )
 
 func Parse(r io.Reader) (*Compose, error) {
-	dec := yaml.NewDecoder(r,
-		yaml.DisallowDuplicateKey(),
-	)
+	dec := yaml.NewDecoder(r)
 	var comp Compose
 	if err := dec.Decode(&comp); err != nil {
 		return nil, err
