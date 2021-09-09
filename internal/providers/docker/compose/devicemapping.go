@@ -3,8 +3,6 @@ package compose
 import (
 	"errors"
 	"strings"
-
-	"github.com/goccy/go-yaml"
 )
 
 type DeviceMapping struct {
@@ -26,9 +24,9 @@ func (dm DeviceMapping) MarshalYAML() (interface{}, error) {
 	return out.String(), nil
 }
 
-func (dm *DeviceMapping) UnmarshalYAML(b []byte) error {
+func (dm *DeviceMapping) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var dmStr string
-	if err := yaml.Unmarshal(b, &dmStr); err != nil {
+	if err := unmarshal(&dmStr); err != nil {
 		return err
 	}
 
