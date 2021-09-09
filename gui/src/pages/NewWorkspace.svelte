@@ -41,7 +41,12 @@
         }}
       >
         <label for="root">Root:</label>
-        <Textbox bind:value={root} name="root" id="root" />
+        <Textbox
+          bind:value={root}
+          name="root"
+          id="root"
+          placeholder="/home/user/path/to/project"
+        />
         <Button type="submit">Create Workspace</Button>
       </form>
       <ErrorLabel value={error} />

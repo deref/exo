@@ -34,22 +34,22 @@
     margin: 24px 0;
   }
 
-  div span {
+  span {
     margin-right: 8px;
   }
 
-  div button {
+  button {
     border: none;
     background: none;
     font-weight: 450;
     color: var(--grey-7-color);
   }
 
-  div button:hover {
+  button:hover {
     text-decoration: underline;
   }
 
-  div .selected {
+  .selected {
     text-decoration: underline;
     font-weight: 450;
     color: var(--link-color);
