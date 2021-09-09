@@ -209,7 +209,8 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 			task: job.CreateChild("re-creating " + name),
 			run: func(t *task.Task) error {
 				// Should the replacement component get the old component's ID?
-				return ws.createComponent(t, newComponent, gensym.RandomBase32())
+				_, err := ws.createComponent(t, newComponent, gensym.RandomBase32())
+				return err
 			},
 		})
 		for _, dependency := range newComponent.DependsOn {
@@ -241,7 +242,8 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 				task: job.CreateChild("adding " + name),
 				run: func(t *task.Task) error {
 					id := gensym.RandomBase32()
-					return ws.createComponent(t, newComponent, id)
+					_, err := ws.createComponent(t, newComponent, id)
+					return err
 				},
 			})
 			for _, dependency := range newComponent.DependsOn {
@@ -433,33 +435,24 @@ func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]string, err
 
 func (ws *Workspace) CreateComponent(ctx context.Context, input *api.CreateComponentInput) (*api.CreateComponentOutput, error) {
 	id := gensym.RandomBase32()
-	job := ws.TaskTracker.StartTask(ctx, "creating "+input.Name)
-
-	go func() {
-		defer job.Finish()
-		err := ws.createComponent(ctx, manifest.Component{
-			Name: input.Name,
-			Type: input.Type,
-			Spec: input.Spec,
-		}, id)
-		if err != nil {
-			job.Fail(fmt.Errorf("creating component: %w", err))
-			return
-		}
-		if err := job.Wait(); err != nil {
-			return
-		}
-	}()
+	jobID, err := ws.createComponent(ctx, manifest.Component{
+		Name: input.Name,
+		Type: input.Type,
+		Spec: input.Spec,
+	}, id)
+	if err != nil {
+		return nil, err
+	}
 
 	return &api.CreateComponentOutput{
 		ID:    id,
-		JobID: job.ID(),
+		JobID: jobID,
 	}, nil
 }
 
-func (ws *Workspace) createComponent(ctx context.Context, component manifest.Component, id string) error {
+func (ws *Workspace) createComponent(ctx context.Context, component manifest.Component, id string) (string, error) {
 	if err := manifest.ValidateName(component.Name); err != nil {
-		return errutil.HTTPErrorf(http.StatusBadRequest, "component name %q invalid: %w", component.Name, err)
+		return "", errutil.HTTPErrorf(http.StatusBadRequest, "component name %q invalid: %w", component.Name, err)
 	}
 
 	if _, err := ws.Store.AddComponent(ctx, &state.AddComponentInput{
@@ -471,34 +464,45 @@ func (ws *Workspace) createComponent(ctx context.Context, component manifest.Com
 		Created:     chrono.NowString(ctx),
 		DependsOn:   component.DependsOn,
 	}); err != nil {
-		return fmt.Errorf("adding component: %w", err)
+		return "", fmt.Errorf("adding component: %w", err)
 	}
 
-	if err := ws.control(ctx, api.ComponentDescription{
-		// Construct a synthetic component description to avoid re-reading after
-		// the add. Only the fields needed by control are included.
-		// TODO: Store.AddComponent could return a component description?
-		ID:        id,
-		Name:      component.Name,
-		Type:      component.Type,
-		Spec:      component.Spec,
-		DependsOn: component.DependsOn,
-	}, func(ctx context.Context, lifecycle api.Lifecycle) error {
-		_, err := lifecycle.Initialize(ctx, &api.InitializeInput{})
-		return err
-	}); err != nil {
-		return err
-	}
+	job := ws.TaskTracker.StartTask(ctx, "creating "+component.Name)
+	go func() {
+		defer job.Finish()
 
-	// XXX this now double-patches the component to set Initialized timestamp. Optimize?
-	if _, err := ws.Store.PatchComponent(ctx, &state.PatchComponentInput{
-		ID:          id,
-		Initialized: chrono.NowString(ctx),
-	}); err != nil {
-		return fmt.Errorf("modifying component after initialization: %w", err) // XXX this message seems incorrect.
-	}
+		if err := ws.control(ctx, api.ComponentDescription{
+			// Construct a synthetic component description to avoid re-reading after
+			// the add. Only the fields needed by control are included.
+			// TODO: Store.AddComponent could return a component description?
+			ID:        id,
+			Name:      component.Name,
+			Type:      component.Type,
+			Spec:      component.Spec,
+			DependsOn: component.DependsOn,
+		}, func(ctx context.Context, lifecycle api.Lifecycle) error {
+			_, err := lifecycle.Initialize(ctx, &api.InitializeInput{})
+			return err
+		}); err != nil {
+			job.Fail(err)
+			return
+		}
 
-	return nil
+		// XXX this now double-patches the component to set Initialized timestamp. Optimize?
+		if _, err := ws.Store.PatchComponent(ctx, &state.PatchComponentInput{
+			ID:          id,
+			Initialized: chrono.NowString(ctx),
+		}); err != nil {
+			job.Fail(fmt.Errorf("modifying component after initialization: %w", err)) // XXX this message seems incorrect.
+			return
+		}
+
+		if err := job.Wait(); err != nil {
+			return
+		}
+	}()
+
+	return job.ID(), nil
 }
 
 func (ws *Workspace) UpdateComponent(ctx context.Context, input *api.UpdateComponentInput) (*api.UpdateComponentOutput, error) {
@@ -537,7 +541,7 @@ func (ws *Workspace) updateComponent(ctx context.Context, oldComponent api.Compo
 	}); err != nil {
 		return fmt.Errorf("delete %q for replacement: %w", oldComponent.Name, err)
 	}
-	if err := ws.createComponent(ctx, newComponent, id); err != nil {
+	if _, err := ws.createComponent(ctx, newComponent, id); err != nil {
 		return fmt.Errorf("adding replacement %q: %w", newComponent.Name, err)
 	}
 	return nil
