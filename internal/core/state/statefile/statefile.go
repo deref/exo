@@ -155,22 +155,30 @@ func (sto *Store) RemoveWorkspace(ctx context.Context, input *state.RemoveWorksp
 	return &state.RemoveWorkspaceOutput{}, nil
 }
 
-func (sto *Store) FindWorkspace(ctx context.Context, input *state.FindWorkspaceInput) (*state.FindWorkspaceOutput, error) {
+func (sto *Store) ResolveWorkspace(ctx context.Context, input *state.ResolveWorkspaceInput) (*state.ResolveWorkspaceOutput, error) {
 	var root Root
 	if err := sto.atom.Deref(&root); err != nil {
 		return nil, err
 	}
-	// Find the deepest root prefix match.
+
+	// Resolve by ID.
+	if _, validID := root.Workspaces[input.Ref]; validID {
+		return &state.ResolveWorkspaceOutput{
+			ID: &input.Ref,
+		}, nil
+	}
+
+	// Resolve by path. Searches for the deepest root prefix match.
 	maxLen := 0
 	found := ""
 	for id, workspace := range root.Workspaces {
 		n := len(workspace.Root)
-		if n > maxLen && pathutil.HasFilePathPrefix(input.Path, workspace.Root) {
+		if n > maxLen && pathutil.HasFilePathPrefix(input.Ref, workspace.Root) {
 			found = id
 			maxLen = n
 		}
 	}
-	var output state.FindWorkspaceOutput
+	var output state.ResolveWorkspaceOutput
 	if maxLen > 0 {
 		output.ID = &found
 	}

@@ -47,7 +47,7 @@ docker network create <name>
 		ctx := newContext()
 		checkOrEnsureServer()
 		cl := newClient()
-		workspace := requireWorkspace(ctx, cl)
+		workspace := requireCurrentWorkspace(ctx, cl)
 
 		name := args[0]
 

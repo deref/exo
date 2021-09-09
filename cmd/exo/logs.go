@@ -30,7 +30,7 @@ If refs are provided, filters for the logs of those processes.`,
 		ctx := newContext()
 		checkOrEnsureServer()
 		cl := newClient()
-		workspace := requireWorkspace(ctx, cl)
+		workspace := requireCurrentWorkspace(ctx, cl)
 
 		stopOnError := false
 		return tailLogs(ctx, workspace, args, stopOnError)

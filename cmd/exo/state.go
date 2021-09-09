@@ -44,7 +44,7 @@ var stateGetCmd = &cobra.Command{
 		checkOrEnsureServer()
 		cl := newClient()
 
-		workspace := requireWorkspace(ctx, cl)
+		workspace := requireCurrentWorkspace(ctx, cl)
 		output, err := workspace.GetComponentState(ctx, &api.GetComponentStateInput{Ref: componentRef})
 		if err != nil {
 			return err
@@ -71,7 +71,7 @@ var stateSetCmd = &cobra.Command{
 			return fmt.Errorf("reading state from stdin: %w", err)
 		}
 
-		workspace := requireWorkspace(ctx, cl)
+		workspace := requireCurrentWorkspace(ctx, cl)
 		_, err := workspace.SetComponentState(ctx, &api.SetComponentStateInput{
 			Ref:   componentRef,
 			State: jsonutil.MustMarshalString(newState),
@@ -91,7 +91,7 @@ var stateClearCmd = &cobra.Command{
 		checkOrEnsureServer()
 		cl := newClient()
 
-		workspace := requireWorkspace(ctx, cl)
+		workspace := requireCurrentWorkspace(ctx, cl)
 		_, err := workspace.SetComponentState(ctx, &api.SetComponentStateInput{
 			Ref:   componentRef,
 			State: "{}",
@@ -112,7 +112,7 @@ var stateEditCmd = &cobra.Command{
 		checkOrEnsureServer()
 		cl := newClient()
 
-		workspace := requireWorkspace(ctx, cl)
+		workspace := requireCurrentWorkspace(ctx, cl)
 		output, err := workspace.GetComponentState(ctx, &api.GetComponentStateInput{Ref: componentRef})
 		if err != nil {
 			return err

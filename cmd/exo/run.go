@@ -38,7 +38,7 @@ If a workspace does not exist, one will be created in the current directory.
 		logger := logging.CurrentLogger(ctx)
 
 		// Ensure workspace.
-		workspace := mustFindWorkspace(ctx, cl)
+		workspace := mustResolveCurrentWorkspace(ctx, cl)
 		if workspace == nil {
 			output, err := cl.Kernel().CreateWorkspace(ctx, &api.CreateWorkspaceInput{
 				Root: cmdutil.MustGetwd(),

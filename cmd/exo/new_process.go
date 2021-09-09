@@ -39,7 +39,7 @@ before the program name.
 		ctx := newContext()
 		checkOrEnsureServer()
 		cl := newClient()
-		workspace := requireWorkspace(ctx, cl)
+		workspace := requireCurrentWorkspace(ctx, cl)
 
 		name := args[0]
 		args = args[1:]

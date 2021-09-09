@@ -26,7 +26,7 @@ The default signal is SIGKILL.`,
 		ctx := newContext()
 		checkOrEnsureServer()
 		cl := newClient()
-		workspace := requireWorkspace(ctx, cl)
+		workspace := requireCurrentWorkspace(ctx, cl)
 
 		// We could use controlComponents here, but that does an implicit `watchJob`
 		// which we don't want, since signal sending is so fast that we want to treat

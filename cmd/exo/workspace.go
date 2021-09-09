@@ -33,7 +33,7 @@ If no subcommand is given, describes the current workspace.`,
 		checkOrEnsureServer()
 
 		cl := newClient()
-		workspace := requireWorkspace(ctx, cl)
+		workspace := requireCurrentWorkspace(ctx, cl)
 		output, err := workspace.Describe(ctx, &api.DescribeInput{})
 		if err != nil {
 			cmdutil.Fatalf("describing workspace: %w", err)
@@ -47,32 +47,36 @@ If no subcommand is given, describes the current workspace.`,
 	},
 }
 
-func requireWorkspace(ctx context.Context, cl *client.Root) api.Workspace {
-	workspace := mustFindWorkspace(ctx, cl)
+func requireCurrentWorkspace(ctx context.Context, cl *client.Root) api.Workspace {
+	workspace := mustResolveCurrentWorkspace(ctx, cl)
 	if workspace == nil {
 		cmdutil.Fatalf("no workspace for current directory")
 	}
 	return workspace
 }
 
-func mustFindWorkspace(ctx context.Context, cl *client.Root) api.Workspace {
-	workspace, err := findWorkspace(ctx, cl)
+func mustResolveCurrentWorkspace(ctx context.Context, cl *client.Root) api.Workspace {
+	workspace, err := resolveCurrentWorkspace(ctx, cl)
 	if err != nil {
-		cmdutil.Fatal(err)
+		cmdutil.Fatalf("error resolving workspace: %v", err)
 	}
 	return workspace
 }
 
-func findWorkspace(ctx context.Context, cl *client.Root) (api.Workspace, error) {
+func resolveCurrentWorkspace(ctx context.Context, cl *client.Root) (api.Workspace, error) {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return nil, fmt.Errorf("getwd: %w", err)
 	}
-	output, err := cl.Kernel().FindWorkspace(ctx, &api.FindWorkspaceInput{
-		Path: cwd,
+	return resolveWorkspace(ctx, cl, cwd)
+}
+
+func resolveWorkspace(ctx context.Context, cl *client.Root, ref string) (api.Workspace, error) {
+	output, err := cl.Kernel().ResolveWorkspace(ctx, &api.ResolveWorkspaceInput{
+		Ref: ref,
 	})
 	if err != nil {
-		return nil, fmt.Errorf("finding workspace: %w", err)
+		return nil, err
 	}
 	var workspace api.Workspace
 	if output.ID != nil {

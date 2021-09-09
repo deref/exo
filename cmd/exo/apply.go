@@ -51,7 +51,7 @@ var applyCmd = &cobra.Command{
 
 		cl := newClient()
 		kernel := cl.Kernel()
-		workspace := requireWorkspace(ctx, cl)
+		workspace := requireCurrentWorkspace(ctx, cl)
 
 		return apply(ctx, kernel, workspace, args)
 	},

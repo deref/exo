@@ -27,7 +27,7 @@ var lsCmd = &cobra.Command{
 		ctx := newContext()
 		checkOrEnsureServer()
 		cl := newClient()
-		workspace := requireWorkspace(ctx, cl)
+		workspace := requireCurrentWorkspace(ctx, cl)
 		output, err := workspace.DescribeComponents(ctx, &api.DescribeComponentsInput{
 			Types: lsFlags.Types,
 		})

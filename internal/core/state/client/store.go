@@ -36,8 +36,8 @@ func (c *Store) RemoveWorkspace(ctx context.Context, input *api.RemoveWorkspaceI
 	return
 }
 
-func (c *Store) FindWorkspace(ctx context.Context, input *api.FindWorkspaceInput) (output *api.FindWorkspaceOutput, err error) {
-	err = c.client.Invoke(ctx, "find-workspace", input, &output)
+func (c *Store) ResolveWorkspace(ctx context.Context, input *api.ResolveWorkspaceInput) (output *api.ResolveWorkspaceOutput, err error) {
+	err = c.client.Invoke(ctx, "resolve-workspace", input, &output)
 	return
 }
 

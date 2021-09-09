@@ -19,7 +19,7 @@ var disposeCmd = &cobra.Command{
 		checkOrEnsureServer()
 		cl := newClient()
 		kernel := cl.Kernel()
-		workspace := requireWorkspace(ctx, cl)
+		workspace := requireCurrentWorkspace(ctx, cl)
 		output, err := workspace.DisposeComponents(ctx, &api.DisposeComponentsInput{
 			Refs: args,
 		})

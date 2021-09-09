@@ -59,14 +59,14 @@ func (kern *Kernel) DescribeWorkspaces(ctx context.Context, input *api.DescribeW
 	}, nil
 }
 
-func (kern *Kernel) FindWorkspace(ctx context.Context, input *api.FindWorkspaceInput) (*api.FindWorkspaceOutput, error) {
-	output, err := kern.Store.FindWorkspace(ctx, &state.FindWorkspaceInput{
-		Path: input.Path,
+func (kern *Kernel) ResolveWorkspace(ctx context.Context, input *api.ResolveWorkspaceInput) (*api.ResolveWorkspaceOutput, error) {
+	output, err := kern.Store.ResolveWorkspace(ctx, &state.ResolveWorkspaceInput{
+		Ref: input.Ref,
 	})
 	if err != nil {
 		return nil, err
 	}
-	return &api.FindWorkspaceOutput{
+	return &api.ResolveWorkspaceOutput{
 		ID: output.ID,
 	}, nil
 }
