@@ -2,6 +2,7 @@ package task
 
 import (
 	"context"
+	"strings"
 
 	"github.com/deref/exo/internal/chrono"
 	"github.com/deref/exo/internal/task/api"
@@ -140,7 +141,8 @@ func (t *Task) updateTask(status string, message string, finished string, curren
 		input.Status = &status
 	}
 	if message != "" {
-		input.Message = &message
+		firstLine := strings.SplitN(message, "\n", 2)[0]
+		input.Message = &firstLine
 	}
 	if finished != "" {
 		input.Finished = &finished
