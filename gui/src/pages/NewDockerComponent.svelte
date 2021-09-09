@@ -10,7 +10,6 @@
   import Button from '../components/Button.svelte';
   import Textbox from '../components/Textbox.svelte';
   import EditAs from '../components/form/EditAs.svelte';
-  import CodeBlock from '../components/CodeBlock.svelte';
   import ErrorLabel from '../components/ErrorLabel.svelte';
   import TextEditor from '../components/TextEditor.svelte';
   import DockerSVG from '../components/mono/DockerSVG.svelte';
@@ -46,7 +45,6 @@
 
   export let componentType: string;
   export let displayType: string;
-  export let specExample: string;
 </script>
 
 <Layout>
@@ -94,12 +92,12 @@
             <label for="spec">Spec:</label>
             <TextEditor id="spec" bind:value={spec} language="yaml" />
           </div>
-          <details>
-            <summary>Show/hide example</summary>
-            <CodeBlock>
-              {specExample}
-            </CodeBlock>
-          </details>
+          {#if $$slots.help}
+            <details>
+              <summary>Show/hide example</summary>
+              <slot name="help" />
+            </details>
+          {/if}
         {:else}
           <!-- GUI form edit mode -->
         {/if}
