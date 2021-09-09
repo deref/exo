@@ -28,7 +28,9 @@ var convertFlags struct {
 var convertCmd = &cobra.Command{
 	Use:   "convert [flags] [manifest-file]",
 	Short: "Converts a docker-compose file or Procfile into an exo manifest",
-	Long: `If unspecified, a manifest format will be guessed from the manifest filename.  This can be
+	Long: `Converts a docker-compose file or Procfile into an exo manifest
+
+	If unspecified, a manifest format will be guessed from the manifest filename.  This can be
 	overidden explicitly with the --format flag.`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
