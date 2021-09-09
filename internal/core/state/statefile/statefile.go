@@ -12,6 +12,7 @@ import (
 	"github.com/deref/exo/internal/core/state/api"
 	state "github.com/deref/exo/internal/core/state/api"
 	"github.com/deref/exo/internal/deps"
+	"github.com/deref/exo/internal/gensym"
 	"github.com/deref/exo/internal/util/atom"
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/pathutil"
@@ -32,6 +33,7 @@ var _ state.Store = (*Store)(nil)
 type Root struct {
 	Workspaces          map[string]*Workspace `json:"workspaces"`          // Keyed by ID.
 	ComponentWorkspaces map[string]string     `json:"componentWorkspaces"` // Component ID -> Workspace ID.
+	InstallationID      string                `json:"installationId"`
 }
 
 type Component struct {
@@ -442,4 +444,18 @@ func (sto *Store) RemoveComponent(ctx context.Context, input *state.RemoveCompon
 		return nil, err
 	}
 	return &state.RemoveComponentOutput{}, nil
+}
+
+func (sto *Store) EnsureInstallation(ctx context.Context, input *state.EnsureInstallationInput) (*state.EnsureInstallationOutput, error) {
+	_, err := sto.swap(func(root *Root) error {
+		if root.InstallationID != "" {
+			return nil
+		}
+		root.InstallationID = gensym.RandomBase32()
+		return nil
+	})
+	if err != nil {
+		return nil, err
+	}
+	return &state.EnsureInstallationOutput{}, nil
 }

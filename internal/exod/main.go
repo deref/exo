@@ -13,6 +13,7 @@ import (
 	"github.com/deref/exo/internal/config"
 	"github.com/deref/exo/internal/core/server"
 	kernel "github.com/deref/exo/internal/core/server"
+	state "github.com/deref/exo/internal/core/state/api"
 	"github.com/deref/exo/internal/core/state/statefile"
 	"github.com/deref/exo/internal/gensym"
 	"github.com/deref/exo/internal/logd"
@@ -94,6 +95,9 @@ func RunServer(ctx context.Context, flags map[string]string) {
 
 	statePath := filepath.Join(cfg.VarDir, "state.json")
 	store := statefile.New(statePath)
+	if _, err := store.EnsureInstallation(ctx, &state.EnsureInstallationInput{}); err != nil {
+		cmdutil.Fatalf("failed to initialize exo installation: %v", err)
+	}
 
 	dockerClient, err := docker.NewClientWithOpts()
 	if err != nil {

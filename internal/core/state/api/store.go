@@ -20,6 +20,8 @@ type Store interface {
 	AddComponent(context.Context, *AddComponentInput) (*AddComponentOutput, error)
 	PatchComponent(context.Context, *PatchComponentInput) (*PatchComponentOutput, error)
 	RemoveComponent(context.Context, *RemoveComponentInput) (*RemoveComponentOutput, error)
+	// Ensure that one-time initialization has been completed. This is safe to call whenever the server is restarted.
+	EnsureInstallation(context.Context, *EnsureInstallationInput) (*EnsureInstallationOutput, error)
 }
 
 type DescribeWorkspacesInput struct {
@@ -105,6 +107,12 @@ type RemoveComponentInput struct {
 type RemoveComponentOutput struct {
 }
 
+type EnsureInstallationInput struct {
+}
+
+type EnsureInstallationOutput struct {
+}
+
 func BuildStoreMux(b *josh.MuxBuilder, factory func(req *http.Request) Store) {
 	b.AddMethod("describe-workspaces", func(req *http.Request) interface{} {
 		return factory(req).DescribeWorkspaces
@@ -132,6 +140,9 @@ func BuildStoreMux(b *josh.MuxBuilder, factory func(req *http.Request) Store) {
 	})
 	b.AddMethod("remove-component", func(req *http.Request) interface{} {
 		return factory(req).RemoveComponent
+	})
+	b.AddMethod("ensure-installation", func(req *http.Request) interface{} {
+		return factory(req).EnsureInstallation
 	})
 }
 
