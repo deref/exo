@@ -11,12 +11,10 @@
 </script>
 
 <NewDockerComponent {params} componentType="volume" displayType="Volume">
-  <div slot="help">
-    <p>
-      See <a {href}>compose volume reference</a>.
-    </p>
-    <CodeBlock>
-      {specExample}
-    </CodeBlock>
-  </div>
+  <p>
+    See <a {href}>compose volume reference</a>.
+  </p>
+  <CodeBlock>
+    {specExample}
+  </CodeBlock>
 </NewDockerComponent>

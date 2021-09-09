@@ -14,12 +14,10 @@ environment:
 </script>
 
 <NewDockerComponent {params} componentType="container" displayType="Container">
-  <div slot="help">
-    <p>
-      See <a {href}>services volume reference</a>.
-    </p>
-    <CodeBlock>
-      {specExample}
-    </CodeBlock>
-  </div>
+  <p>
+    See <a {href}>services volume reference</a>.
+  </p>
+  <CodeBlock>
+    {specExample}
+  </CodeBlock>
 </NewDockerComponent>

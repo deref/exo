@@ -92,12 +92,10 @@
             <label for="spec">Spec:</label>
             <TextEditor id="spec" bind:value={spec} language="yaml" />
           </div>
-          {#if $$slots.help}
-            <details>
-              <summary>Show/hide example</summary>
-              <slot name="help" />
-            </details>
-          {/if}
+          <details>
+            <summary>Show/hide example</summary>
+            <slot />
+          </details>
         {:else}
           <!-- GUI form edit mode -->
         {/if}

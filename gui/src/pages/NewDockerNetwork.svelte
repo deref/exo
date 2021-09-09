@@ -11,12 +11,10 @@
 </script>
 
 <NewDockerComponent {params} componentType="network" displayType="Network">
-  <div slot="help">
-    <p>
-      See <a {href}>compose network reference</a>.
-    </p>
-    <CodeBlock>
-      {specExample}
-    </CodeBlock>
-  </div>
+  <p>
+    See <a {href}>compose network reference</a>.
+  </p>
+  <CodeBlock>
+    {specExample}
+  </CodeBlock>
 </NewDockerComponent>
