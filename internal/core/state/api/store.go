@@ -111,6 +111,7 @@ type EnsureInstallationInput struct {
 }
 
 type EnsureInstallationOutput struct {
+	InstallationID string `json:"installationId"`
 }
 
 func BuildStoreMux(b *josh.MuxBuilder, factory func(req *http.Request) Store) {

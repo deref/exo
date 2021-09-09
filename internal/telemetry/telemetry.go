@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/deref/exo/internal/config"
 	"github.com/deref/exo/internal/util/cacheutil"
 )
 
@@ -18,14 +17,19 @@ type Telemetry interface {
 	RecordOperation(OperationInvocation)
 }
 
-func New(ctx context.Context, cfg *config.TelemetryConfig) Telemetry {
+type Config struct {
+	Disable        bool
+	InstallationID string
+}
+
+func New(ctx context.Context, cfg Config) Telemetry {
 	if cfg.Disable {
 		return &noOpTelemetry{}
 	}
 
 	t := &defaultTelemetry{
-		ctx: ctx,
-		cfg: cfg,
+		ctx:            ctx,
+		installationID: cfg.InstallationID,
 		client: &http.Client{
 			Timeout: time.Second * 5,
 		},

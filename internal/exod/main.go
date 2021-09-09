@@ -44,13 +44,10 @@ func Main(ctx context.Context) {
 
 func RunServer(ctx context.Context, flags map[string]string) {
 	logger := logging.CurrentLogger(ctx)
-	tel := telemetry.FromContext(ctx)
 
 	cfg := &config.Config{}
 	config.MustLoadDefault(cfg)
 	MustMakeDirectories(cfg)
-
-	tel.StartSession(ctx)
 
 	_, forceStdLog := flags["force-std-log"]
 	if !(forceStdLog || isatty.IsTerminal(os.Stdout.Fd())) {
@@ -95,9 +92,17 @@ func RunServer(ctx context.Context, flags map[string]string) {
 
 	statePath := filepath.Join(cfg.VarDir, "state.json")
 	store := statefile.New(statePath)
-	if _, err := store.EnsureInstallation(ctx, &state.EnsureInstallationInput{}); err != nil {
+	insureInstallationOut, err := store.EnsureInstallation(ctx, &state.EnsureInstallationInput{})
+	if err != nil {
 		cmdutil.Fatalf("failed to initialize exo installation: %v", err)
 	}
+
+	tel := telemetry.New(ctx, telemetry.Config{
+		Disable:        cfg.Telemetry.Disable,
+		InstallationID: insureInstallationOut.InstallationID,
+	})
+	ctx = telemetry.ContextWithTelemetry(ctx, tel)
+	tel.StartSession(ctx)
 
 	dockerClient, err := docker.NewClientWithOpts()
 	if err != nil {

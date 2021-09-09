@@ -447,15 +447,22 @@ func (sto *Store) RemoveComponent(ctx context.Context, input *state.RemoveCompon
 }
 
 func (sto *Store) EnsureInstallation(ctx context.Context, input *state.EnsureInstallationInput) (*state.EnsureInstallationOutput, error) {
+	var installationID string
+
 	_, err := sto.swap(func(root *Root) error {
 		if root.InstallationID != "" {
+			installationID = root.InstallationID
 			return nil
 		}
-		root.InstallationID = gensym.RandomBase32()
+		installationID = gensym.RandomBase32()
+		root.InstallationID = installationID
 		return nil
 	})
 	if err != nil {
 		return nil, err
 	}
-	return &state.EnsureInstallationOutput{}, nil
+
+	return &state.EnsureInstallationOutput{
+		InstallationID: installationID,
+	}, nil
 }

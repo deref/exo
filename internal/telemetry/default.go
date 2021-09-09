@@ -13,15 +13,14 @@ import (
 	"unsafe"
 
 	"github.com/deref/exo"
-	"github.com/deref/exo/internal/config"
 	"github.com/deref/exo/internal/util/cacheutil"
 	"github.com/deref/exo/internal/util/logging"
 )
 
 type defaultTelemetry struct {
 	ctx            context.Context
-	cfg            *config.TelemetryConfig
 	client         *http.Client
+	installationID string
 	sessionID      string
 	operationGauge *SummaryGauge
 

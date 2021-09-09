@@ -64,6 +64,8 @@ interface "store" {
 
   method "ensure-installation" {
     doc = "Ensure that one-time initialization has been completed. This is safe to call whenever the server is restarted."
+
+    output "installation-id" "string" {}
   }
 }
 
