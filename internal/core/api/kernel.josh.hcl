@@ -60,7 +60,9 @@ struct "task-description" {
   field "parent-id" "*string" {}
   field "name" "string" {}
   field "status" "string" {}
-  field "message" "string" {}
+  field "message" "string" {
+    doc = "Most recent log message. Single-line of text."
+  }
   field "created" "string" {}
   field "updated" "string" {}
   field "started" "*string" {}

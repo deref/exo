@@ -12,9 +12,9 @@ type Ulimit struct {
 	Soft int64
 }
 
-func (u *Ulimits) UnmarshalYAML(b []byte) error {
+func (u *Ulimits) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var asMap yaml.MapSlice
-	if err := yaml.Unmarshal(b, &asMap); err != nil {
+	if err := unmarshal(&asMap); err != nil {
 		return err
 	}
 

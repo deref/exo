@@ -40,9 +40,9 @@ func (sd ServiceDependencies) MarshalYAML() (interface{}, error) {
 	return services, nil
 }
 
-func (sd *ServiceDependencies) UnmarshalYAML(b []byte) error {
+func (sd *ServiceDependencies) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var asStrings []string
-	if err := yaml.Unmarshal(b, &asStrings); err == nil {
+	if err := unmarshal(&asStrings); err == nil {
 		sd.IsShortSyntax = true
 		sd.Services = make([]ServiceDependency, len(asStrings))
 		for i, service := range asStrings {
@@ -55,7 +55,7 @@ func (sd *ServiceDependencies) UnmarshalYAML(b []byte) error {
 	}
 
 	var asMap yaml.MapSlice
-	if err := yaml.Unmarshal(b, &asMap); err != nil {
+	if err := unmarshal(&asMap); err != nil {
 		return err
 	}
 

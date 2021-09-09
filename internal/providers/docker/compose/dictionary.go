@@ -5,8 +5,6 @@ import (
 	"sort"
 	"strconv"
 	"strings"
-
-	"github.com/goccy/go-yaml"
 )
 
 // string->string mapping that may be encoded as either a map or an array of
@@ -20,22 +18,22 @@ func (dict Dictionary) MarshalYAML() (interface{}, error) {
 
 type stringOrNum string
 
-func (sn *stringOrNum) UnmarshalYAML(b []byte) error {
+func (sn *stringOrNum) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var s string
+	if err := unmarshal(&s); err != nil {
+		return err
+	}
+
 	// This is necessary as otherwise you end up parsing the number and converting
 	// it back to a string. That means a value like "99999999999999.999" becomes
 	// "1e+14".
-	if _, err := strconv.ParseFloat(string(b), 64); err == nil {
-		*sn = stringOrNum(string(b))
-		return nil
-	}
-
-	var s string
-	err := yaml.Unmarshal(b, &s)
-	if err == nil {
+	if _, err := strconv.ParseFloat(s, 64); err == nil {
 		*sn = stringOrNum(s)
 		return nil
 	}
-	return fmt.Errorf("unmarshaling stringOrNum: %w", err)
+
+	*sn = stringOrNum(s)
+	return nil
 }
 
 func (dict *Dictionary) UnmarshalYAML(unmarshal func(interface{}) error) error {

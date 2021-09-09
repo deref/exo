@@ -126,10 +126,11 @@ func BuildKernelMux(b *josh.MuxBuilder, factory func(req *http.Request) Kernel) 
 type TaskDescription struct {
 	ID string `json:"id"`
 	// ID of root task in this tree.
-	JobID    string        `json:"jobId"`
-	ParentID *string       `json:"parentId"`
-	Name     string        `json:"name"`
-	Status   string        `json:"status"`
+	JobID    string  `json:"jobId"`
+	ParentID *string `json:"parentId"`
+	Name     string  `json:"name"`
+	Status   string  `json:"status"`
+	// Most recent log message. Single-line of text.
 	Message  string        `json:"message"`
 	Created  string        `json:"created"`
 	Updated  string        `json:"updated"`

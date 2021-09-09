@@ -123,7 +123,7 @@ func (c *Container) create(ctx context.Context) error {
 	}
 
 	if c.Spec.Command.IsShellForm {
-		containerCfg.Cmd = append(c.State.Image.Shell, c.Spec.Command.Parts[0])
+		containerCfg.Cmd = append(append([]string{}, c.State.Image.Shell...), c.Spec.Command.Parts[0])
 	} else {
 		containerCfg.Cmd = c.Spec.Command.Parts
 	}

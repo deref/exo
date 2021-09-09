@@ -39,6 +39,16 @@ func (s runState) String() string {
 	return "<invalid state>"
 }
 
+func shouldIgnorePath(p string, ignores []string) bool {
+	// TODO: implement something a little more robust than substring match for ignore.
+	for _, ignore := range ignores {
+		if strings.Contains(p, ignore) {
+			return true
+		}
+	}
+	return false
+}
+
 func main() {
 	cmd, err := cmdutil.ParseArgs(os.Args)
 	if err != nil {
@@ -47,6 +57,11 @@ func main() {
 
 	if len(cmd.Args) == 0 {
 		cmdutil.Fatalf("expected command to execute")
+	}
+
+	var ignores []string
+	if ignoreStr, ok := cmd.Flags["ignore"]; ok {
+		ignores = strings.Split(ignoreStr, ",")
 	}
 
 	changed := make(chan string, 1)
@@ -154,7 +169,9 @@ func main() {
 			select {
 			// Watch for file change events.
 			case event := <-watcher.Events:
-				changed <- event.Name
+				if !shouldIgnorePath(event.Name, ignores) {
+					changed <- event.Name
+				}
 
 			// Exit on error.
 			case err := <-watcher.Errors:
@@ -172,18 +189,11 @@ func main() {
 	}
 
 	if _, ok := cmd.Flags["r"]; ok {
-		var ignores []string
-		if ignoreStr, ok := cmd.Flags["ignore"]; ok {
-			ignores = strings.Split(ignoreStr, ",")
-		}
 
 		if err := filepath.Walk(dir, func(path string, info fs.FileInfo, err error) error {
 			if info.Mode().IsDir() {
-				// TODO: implement something a little more robust than substring match for ignore.
-				for _, ignore := range ignores {
-					if strings.Contains(path, ignore) {
-						return nil
-					}
+				if shouldIgnorePath(path, ignores) {
+					return nil
 				}
 
 				if err := watcher.Add(path); err != nil {

@@ -39,8 +39,8 @@ This will work automatically with your `Procfile`, `compose.yaml`, or similarly
 named manifest files. The `run` command also accepts an explicit filename, if
 you have multiple configurations to choose from.
 
-For more, checkout the [exo guide](./doc/guide.md) or consult the
-builtin help by running `exo help`.
+For more, checkout the [exo guide](./doc/guide.md), watch some
+[videos](./doc/guide.md) or consult the builtin help by running `exo help`.
 
 ---
 

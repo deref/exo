@@ -15,29 +15,35 @@ func (c *Container) ensureImage(ctx context.Context) error {
 		return nil
 	}
 
-	if c.canBuild() {
-		return c.buildImage(ctx)
-	}
-
 	var inspection types.ImageInspect
 	var err error
-	if c.Spec.PullPolicy != "always" {
-		inspection, _, err = c.Docker.ImageInspectWithRaw(ctx, c.Spec.Image)
-		if docker.IsErrNotFound(err) {
-			if c.Spec.PullPolicy == "never" {
-				return fmt.Errorf("pull policy for %q set to \"never\", no image %q found in local cache, and no build specification provided", c.ComponentName, c.Spec.Image)
-			}
-		} else if err != nil {
-			return fmt.Errorf("inspecting image: %w", err)
+	if c.canBuild() {
+		if err := c.buildImage(ctx); err != nil {
+			return fmt.Errorf("building image: %w", err)
 		}
-	}
-	if inspection.ID == "" {
-		if err := c.pullImage(ctx); err != nil {
-			return fmt.Errorf("pulling image: %w", err)
-		}
-		inspection, _, err = c.Docker.ImageInspectWithRaw(ctx, c.Spec.Image)
+		inspection, _, err = c.Docker.ImageInspectWithRaw(ctx, c.State.Image.ID)
 		if err != nil {
-			return fmt.Errorf("inspecting pulled image: %w", err)
+			return fmt.Errorf("inspecting built image: %w", err)
+		}
+	} else {
+		if c.Spec.PullPolicy != "always" {
+			inspection, _, err = c.Docker.ImageInspectWithRaw(ctx, c.Spec.Image)
+			if docker.IsErrNotFound(err) {
+				if c.Spec.PullPolicy == "never" {
+					return fmt.Errorf("pull policy for %q set to \"never\", no image %q found in local cache, and no build specification provided", c.ComponentName, c.Spec.Image)
+				}
+			} else if err != nil {
+				return fmt.Errorf("inspecting image: %w", err)
+			}
+		}
+		if inspection.ID == "" {
+			if err := c.pullImage(ctx); err != nil {
+				return fmt.Errorf("pulling image: %w", err)
+			}
+			inspection, _, err = c.Docker.ImageInspectWithRaw(ctx, c.Spec.Image)
+			if err != nil {
+				return fmt.Errorf("inspecting pulled image: %w", err)
+			}
 		}
 	}
 
