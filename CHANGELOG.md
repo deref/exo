@@ -5,6 +5,13 @@ All notable changes to this project will be documented in this file.
 This project adhears to [CalVer](./doc/versioning.md).
 
 
+## 2021.09.08
+
+## Fixed
+
+- Various docker-compose parsing issues.
+
+
 ## 2021.09.07
 
 ## Added
