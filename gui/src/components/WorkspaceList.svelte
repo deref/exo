@@ -5,7 +5,10 @@
   export let workspaces: WorkspaceDescription[];
 </script>
 
-<button on:click={() => router.push('#/new-workspace')}> New workspace </button>
+<button on:click={() => router.push('#/new-workspace')}>
+  Add new project
+</button>
+
 {#each workspaces as workspace}
   <button
     on:click={() => {
