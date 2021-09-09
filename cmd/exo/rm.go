@@ -21,7 +21,7 @@ var rmCmd = &cobra.Command{
 		checkOrEnsureServer()
 		cl := newClient()
 		kernel := cl.Kernel()
-		workspace := requireWorkspace(ctx, cl)
+		workspace := requireCurrentWorkspace(ctx, cl)
 		output, err := workspace.DeleteComponents(ctx, &api.DeleteComponentsInput{
 			Refs: args,
 		})

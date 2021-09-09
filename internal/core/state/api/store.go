@@ -14,7 +14,7 @@ type Store interface {
 	DescribeWorkspaces(context.Context, *DescribeWorkspacesInput) (*DescribeWorkspacesOutput, error)
 	AddWorkspace(context.Context, *AddWorkspaceInput) (*AddWorkspaceOutput, error)
 	RemoveWorkspace(context.Context, *RemoveWorkspaceInput) (*RemoveWorkspaceOutput, error)
-	FindWorkspace(context.Context, *FindWorkspaceInput) (*FindWorkspaceOutput, error)
+	ResolveWorkspace(context.Context, *ResolveWorkspaceInput) (*ResolveWorkspaceOutput, error)
 	Resolve(context.Context, *ResolveInput) (*ResolveOutput, error)
 	DescribeComponents(context.Context, *DescribeComponentsInput) (*DescribeComponentsOutput, error)
 	AddComponent(context.Context, *AddComponentInput) (*AddComponentOutput, error)
@@ -45,11 +45,11 @@ type RemoveWorkspaceInput struct {
 type RemoveWorkspaceOutput struct {
 }
 
-type FindWorkspaceInput struct {
-	Path string `json:"path"`
+type ResolveWorkspaceInput struct {
+	Ref string `json:"ref"`
 }
 
-type FindWorkspaceOutput struct {
+type ResolveWorkspaceOutput struct {
 	ID *string `json:"id"`
 }
 
@@ -115,8 +115,8 @@ func BuildStoreMux(b *josh.MuxBuilder, factory func(req *http.Request) Store) {
 	b.AddMethod("remove-workspace", func(req *http.Request) interface{} {
 		return factory(req).RemoveWorkspace
 	})
-	b.AddMethod("find-workspace", func(req *http.Request) interface{} {
-		return factory(req).FindWorkspace
+	b.AddMethod("resolve-workspace", func(req *http.Request) interface{} {
+		return factory(req).ResolveWorkspace
 	})
 	b.AddMethod("resolve", func(req *http.Request) interface{} {
 		return factory(req).Resolve

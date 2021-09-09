@@ -13,7 +13,7 @@ func controlComponents(args []string, f controlFunc) error {
 	checkOrEnsureServer()
 	cl := newClient()
 	kernel := cl.Kernel()
-	workspace := requireWorkspace(ctx, cl)
+	workspace := requireCurrentWorkspace(ctx, cl)
 
 	var jobID string
 	var err error

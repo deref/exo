@@ -1,6 +1,8 @@
 package main
 
 import (
+	"fmt"
+
 	"github.com/deref/exo/internal/core/api"
 	"github.com/spf13/cobra"
 )
@@ -24,9 +26,17 @@ Deleting a workspace also deletes all resources in that workspace.`,
 		kernel := cl.Kernel()
 		var workspace api.Workspace
 		if len(args) < 1 {
-			workspace = requireWorkspace(ctx, cl)
+			workspace = requireCurrentWorkspace(ctx, cl)
 		} else {
-			workspace = cl.GetWorkspace(args[0])
+			ref := args[0]
+			var err error
+			workspace, err = resolveWorkspace(ctx, cl, ref)
+			if err != nil {
+				return fmt.Errorf("resolving workspace: %w", err)
+			}
+			if workspace == nil {
+				return fmt.Errorf("unresolved workspace ref: %q", ref)
+			}
 		}
 		output, err := workspace.Destroy(ctx, &api.DestroyInput{})
 		if err != nil {

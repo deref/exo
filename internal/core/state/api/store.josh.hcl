@@ -17,8 +17,8 @@ interface "store" {
     input "id" "string" {}
   }
   
-  method "find-workspace" {
-    input "path" "string" {}
+  method "resolve-workspace" {
+    input "ref" "string" {}
 
     output "id" "*string" {}
   }

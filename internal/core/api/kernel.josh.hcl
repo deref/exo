@@ -10,8 +10,8 @@ interface "kernel" {
     output "workspaces" "[]WorkspaceDescription" {}
   }
   
-  method "find-workspace" {
-    input "path" "string" {}
+  method "resolve-workspace" {
+    input "ref" "string" {}
 
     output "id" "*string" {}
   }

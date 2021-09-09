@@ -28,11 +28,11 @@ If the current directory is part of a workspace, navigates to it.`,
 		cl := newClient()
 
 		cwd := cmdutil.MustGetwd()
-		output, err := cl.Kernel().FindWorkspace(ctx, &api.FindWorkspaceInput{
-			Path: cwd,
+		output, err := cl.Kernel().ResolveWorkspace(ctx, &api.ResolveWorkspaceInput{
+			Ref: cwd,
 		})
 		if err != nil {
-			return fmt.Errorf("finding workspace: %w", err)
+			return fmt.Errorf("resolving workspace: %w", err)
 		}
 
 		routes := newGUIRoutes()

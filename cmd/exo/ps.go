@@ -22,7 +22,7 @@ var psCmd = &cobra.Command{
 		ctx := newContext()
 		checkOrEnsureServer()
 		cl := newClient()
-		workspace := requireWorkspace(ctx, cl)
+		workspace := requireCurrentWorkspace(ctx, cl)
 		output, err := workspace.DescribeProcesses(ctx, &api.DescribeProcessesInput{})
 		if err != nil {
 			return err

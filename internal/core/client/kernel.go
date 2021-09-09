@@ -31,8 +31,8 @@ func (c *Kernel) DescribeWorkspaces(ctx context.Context, input *api.DescribeWork
 	return
 }
 
-func (c *Kernel) FindWorkspace(ctx context.Context, input *api.FindWorkspaceInput) (output *api.FindWorkspaceOutput, err error) {
-	err = c.client.Invoke(ctx, "find-workspace", input, &output)
+func (c *Kernel) ResolveWorkspace(ctx context.Context, input *api.ResolveWorkspaceInput) (output *api.ResolveWorkspaceOutput, err error) {
+	err = c.client.Invoke(ctx, "resolve-workspace", input, &output)
 	return
 }
 

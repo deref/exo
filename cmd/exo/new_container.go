@@ -146,7 +146,7 @@ exo flags and options for your docker container command.
 		ctx := newContext()
 		checkOrEnsureServer()
 		cl := newClient()
-		workspace := requireWorkspace(ctx, cl)
+		workspace := requireCurrentWorkspace(ctx, cl)
 
 		name := args[0]
 

@@ -22,7 +22,7 @@ var envCmd = &cobra.Command{
 		ctx := newContext()
 		checkOrEnsureServer()
 		cl := newClient()
-		workspace := requireWorkspace(ctx, cl)
+		workspace := requireCurrentWorkspace(ctx, cl)
 		output, err := workspace.DescribeEnvironment(ctx, &api.DescribeEnvironmentInput{})
 		if err != nil {
 			return err
