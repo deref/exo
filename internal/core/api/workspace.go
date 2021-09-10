@@ -162,8 +162,8 @@ type ResolveOutput struct {
 
 type DescribeComponentsInput struct {
 
-	// If non-empty, filters components to supplied ids.
-	IDs []string `json:"ids"`
+	// If non-empty, filters components to supplied refs.
+	Refs []string `json:"refs"`
 	// If non-empty, filters components to supplied types.
 	Types []string `json:"types"`
 	// If true, includes all components that the filtered components depend on.
