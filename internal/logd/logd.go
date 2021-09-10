@@ -107,9 +107,14 @@ func syslogToEvent(syslogMessage syslog.Message) (*api.AddEventInput, error) {
 		}
 	}
 
+	message := *rfc5425Message.Message
+	if message[len(message)-1] == '\n' {
+		message = message[:len(message)-1]
+	}
+
 	return &api.AddEventInput{
 		Log:       logName,
 		Timestamp: rfc5425Message.Timestamp.Format(chrono.RFC3339MicroUTC),
-		Message:   *rfc5425Message.Message,
+		Message:   message,
 	}, nil
 }
