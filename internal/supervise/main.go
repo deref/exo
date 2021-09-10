@@ -158,6 +158,8 @@ func pipeToSyslog(ctx context.Context, conn net.Conn, componentID string, name s
 	b := bufio.NewReaderSize(r, api.MaxMessageSize)
 	for {
 		message, err := b.ReadString('\n')
+		// Error handling is performed after piping the message to syslog since we
+		// always want to write the message, even if an error has occurred.
 		if message != "" {
 			if message[len(message)-1] == '\n' {
 				message = message[:len(message)-1]
