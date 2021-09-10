@@ -1,11 +1,12 @@
-import type { NextPage } from "next";
+import React, { useEffect } from "react";
+import { useRouter } from "next/router";
 
-const Home: NextPage = () => {
-  return (
-    <div>
-      <h1>Hello</h1>
-    </div>
-  );
-};
+export default function Home() {
+  const router = useRouter();
 
-export default Home;
+  useEffect(() => {
+    router.push("/guide");
+  });
+
+  return <div />;
+}

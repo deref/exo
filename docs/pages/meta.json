@@ -1,0 +1,7 @@
+{
+  "guide": "Guide",
+  "install": "Install",
+  "uninstall": "Uninstall",
+  "compose": "Compose",
+  "procfiles": "Procfiles"
+}
