@@ -1,6 +1,6 @@
 export default {
   github: "https://github.com/deref/exo", // GitHub link in the navbar
-  docsRepositoryBase: "https://github.com/deref/exo/blob/main/docs", // base URL for the docs repository
+  docsRepositoryBase: "https://github.com/deref/exo/blob/main/docs/pages", // base URL for the docs repository
   titleSuffix: " – exo docs",
   nextLinks: true,
   prevLinks: true,
