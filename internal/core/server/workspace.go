@@ -305,7 +305,7 @@ func (ws *Workspace) Resolve(ctx context.Context, input *api.ResolveInput) (*api
 func (ws *Workspace) DescribeComponents(ctx context.Context, input *api.DescribeComponentsInput) (*api.DescribeComponentsOutput, error) {
 	stateOutput, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
 		WorkspaceID:         ws.ID,
-		IDs:                 input.IDs,
+		Refs:                input.Refs,
 		Types:               input.Types,
 		IncludeDependencies: input.IncludeDependencies,
 		IncludeDependents:   input.IncludeDependents,
@@ -506,12 +506,7 @@ func (ws *Workspace) createComponent(ctx context.Context, component manifest.Com
 }
 
 func (ws *Workspace) UpdateComponent(ctx context.Context, input *api.UpdateComponentInput) (*api.UpdateComponentOutput, error) {
-	id, err := ws.resolveRef(ctx, input.Ref)
-	if err != nil {
-		return nil, err
-	}
-
-	describeOutput, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{IDs: []string{id}})
+	describeOutput, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{Refs: []string{input.Ref}})
 	if err != nil {
 		return nil, fmt.Errorf("describing components: %w", err)
 	}
@@ -613,10 +608,7 @@ func (ws *Workspace) deleteComponent(ctx context.Context, lifecycle api.Lifecycl
 
 func (ws *Workspace) GetComponentState(ctx context.Context, input *api.GetComponentStateInput) (*api.GetComponentStateOutput, error) {
 	query := makeComponentQuery(withRefs(input.Ref))
-	describe, err := query.describeComponentsInput(ctx, ws)
-	if err != nil {
-		return nil, err
-	}
+	describe := query.describeComponentsInput(ws)
 
 	describeOutput, err := ws.DescribeComponents(ctx, describe)
 	if err != nil {
@@ -654,11 +646,7 @@ func (ws *Workspace) SetComponentState(ctx context.Context, input *api.SetCompon
 }
 
 func (ws *Workspace) DescribeLogs(ctx context.Context, input *api.DescribeLogsInput) (*api.DescribeLogsOutput, error) {
-	describe, err := allProcessQuery().describeComponentsInput(ctx, ws)
-	if err != nil {
-		return nil, err
-	}
-
+	describe := allProcessQuery().describeComponentsInput(ws)
 	components, err := ws.DescribeComponents(ctx, describe)
 	if err != nil {
 		return nil, fmt.Errorf("describing components: %w", err)
@@ -915,11 +903,7 @@ func (ws *Workspace) RestartComponents(ctx context.Context, input *api.RestartCo
 }
 
 func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeProcessesInput) (*api.DescribeProcessesOutput, error) {
-	describe, err := allProcessQuery().describeComponentsInput(ctx, ws)
-	if err != nil {
-		return nil, err
-	}
-
+	describe := allProcessQuery().describeComponentsInput(ws)
 	components, err := ws.DescribeComponents(ctx, describe)
 	if err != nil {
 		return nil, fmt.Errorf("describing components: %w", err)
@@ -952,10 +936,7 @@ func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeP
 
 func (ws *Workspace) DescribeVolumes(ctx context.Context, input *api.DescribeVolumesInput) (*api.DescribeVolumesOutput, error) {
 	query := makeComponentQuery(withTypes("volume"))
-	describe, err := query.describeComponentsInput(ctx, ws)
-	if err != nil {
-		return nil, err
-	}
+	describe := query.describeComponentsInput(ws)
 	components, err := ws.DescribeComponents(ctx, describe)
 	if err != nil {
 		return nil, fmt.Errorf("describing components: %w", err)
@@ -975,10 +956,7 @@ func (ws *Workspace) DescribeVolumes(ctx context.Context, input *api.DescribeVol
 
 func (ws *Workspace) DescribeNetworks(ctx context.Context, input *api.DescribeNetworksInput) (*api.DescribeNetworksOutput, error) {
 	query := makeComponentQuery(withTypes("network"))
-	describe, err := query.describeComponentsInput(ctx, ws)
-	if err != nil {
-		return nil, err
-	}
+	describe := query.describeComponentsInput(ws)
 	components, err := ws.DescribeComponents(ctx, describe)
 	if err != nil {
 		return nil, fmt.Errorf("describing components: %w", err)
@@ -1098,12 +1076,7 @@ func (ws *Workspace) controlEachComponent(ctx context.Context, label string, que
 }
 
 func (ws *Workspace) goControlComponents(t *task.Task, query componentQuery, f interface{}) {
-	describe, err := query.describeComponentsInput(t, ws)
-	if err != nil {
-		t.Fail(err)
-		return
-	}
-
+	describe := query.describeComponentsInput(ws)
 	components, err := ws.DescribeComponents(t, describe)
 	if err != nil {
 		t.Fail(fmt.Errorf("describing components: %w", err))

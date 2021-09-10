@@ -1,9 +1,6 @@
 package server
 
 import (
-	"context"
-	"fmt"
-
 	"github.com/deref/exo/internal/core/api"
 )
 
@@ -66,20 +63,11 @@ func allBuildableQuery(updates ...componentQueryUpdate) componentQuery {
 	return makeComponentQuery(updates...)
 }
 
-func (q componentQuery) describeComponentsInput(ctx context.Context, ws *Workspace) (*api.DescribeComponentsInput, error) {
-	describe := &api.DescribeComponentsInput{
+func (q componentQuery) describeComponentsInput(ws *Workspace) *api.DescribeComponentsInput {
+	return &api.DescribeComponentsInput{
+		Refs:                q.Refs,
 		Types:               q.Types,
 		IncludeDependencies: q.IncludeDependencies,
 		IncludeDependents:   q.IncludeDependents,
 	}
-
-	if q.Refs != nil {
-		ids, err := ws.resolveRefs(ctx, q.Refs)
-		if err != nil {
-			return nil, fmt.Errorf("resolving refs: %w", err)
-		}
-		describe.IDs = ids
-	}
-
-	return describe, nil
 }

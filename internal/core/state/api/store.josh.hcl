@@ -32,7 +32,7 @@ interface "store" {
 
   method "describe-components" {
     input "workspace-id" "string" {}
-    input "ids" "[]string" {}
+    input "refs" "[]string" {}
     input "types" "[]string" {}
     input "include-dependencies" "bool" {}
     input "include-dependents" "bool" {}
