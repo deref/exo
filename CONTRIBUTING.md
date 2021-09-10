@@ -4,7 +4,7 @@ Thank you for your interest in giving back to exo! exo is primarily developed an
 
 - [Request a Feature](https://github.com/deref/exo/issues/new?labels=feature-request&template=feature_request.md&title=%5BFEATURE%5D)
 - [File a Bug Report](https://github.com/deref/exo/issues/new?labels=bug&template=bug_report.md&title=%5BBUG%5D)
-- [Contribute Documentation](https://github.com/deref/exo/new/main/doc)
+- [Contribute Documentation](https://github.com/deref/exo/new/main/docs)
 - [Fix a Bug](#fixing-bugs)
 - [Contributing a Feature](#contributing-features)
 - [Engaging in the Slack community](https://join.slack.com/t/deref-community/shared_invite/zt-tu8arun7-qqpVcTe3IDHjpSG_TrSaBQ)
@@ -18,13 +18,13 @@ If you would like to fix any of the open bugs, please leave a comment on the iss
 
 If the fix requires a large code change and/or architectural modifications, please start a thread with your proposed solution. For trivial changes, it is sufficient to indicate that you are working on the issue and opening a PR.
 
-For a smooth development experience, please take a look at the [local development guide](https://github.com/deref/exo/blob/main/doc/local-development.md).
+For a smooth development experience, please take a look at the [local development guide](https://github.com/deref/exo/blob/main/docs/pages/local-development.md).
 
 ## Contributing Features
 
-If you would like to contribute a new feature, please use the [Feature Request template](https://github.com/deref/exo/issues/new?labels=feature-request&template=feature_request.md&title=%5BFEATURE%5D) to propose the feature you would like to add. Before opening your request, please take a moment to familiarize yourself with the [project philosophy](https://github.com/deref/exo/blob/main/doc/project-philosophy.md) to maximize the likelihood that your feature is accepted. In the feature request, please indicate that you would like to implement the feature yourself. We will ensure that we respond in a timely manner.
+If you would like to contribute a new feature, please use the [Feature Request template](https://github.com/deref/exo/issues/new?labels=feature-request&template=feature_request.md&title=%5BFEATURE%5D) to propose the feature you would like to add. Before opening your request, please take a moment to familiarize yourself with the [project philosophy](https://github.com/deref/exo/blob/main/docs/pages/project-philosophy.md) to maximize the likelihood that your feature is accepted. In the feature request, please indicate that you would like to implement the feature yourself. We will ensure that we respond in a timely manner.
 
-For a smooth development experience, please take a look at the [local development guide](https://github.com/deref/exo/blob/main/doc/local-development.md).
+For a smooth development experience, please take a look at the [local development guide](https://github.com/deref/exo/blob/main/docs/pages/local-development.md).
 
 ## Join the Team
 

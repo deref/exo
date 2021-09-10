@@ -15,5 +15,5 @@ var Version string
 
 //go:embed NOTICES.md
 //go:embed LICENSE
-//go:embed doc/licenses/ofl
+//go:embed docs/licenses/ofl
 var Notices embed.FS

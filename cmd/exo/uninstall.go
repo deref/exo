@@ -24,7 +24,7 @@ Performs the following steps:
 - Shutsdown the exo daemon.
 - Deletes the exo home directory.
 
-If this command fails, see <https://github.com/deref/exo/tree/main/doc/uninstall.md>
+If this command fails, see <https://github.com/deref/exo/tree/main/docs/pages/uninstall.md>
 for manual uninstall instructions.`,
 	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {

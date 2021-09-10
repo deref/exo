@@ -2,15 +2,13 @@
 
 All notable changes to this project will be documented in this file.
 
-This project adhears to [CalVer](./doc/versioning.md).
-
+This project adhears to [CalVer](./docs/pages/versioning.md).
 
 ## 2021.09.08
 
 ## Fixed
 
 - Various docker-compose parsing issues.
-
 
 ## 2021.09.07
 
@@ -28,7 +26,6 @@ This project adhears to [CalVer](./doc/versioning.md).
 - [#273](https://github.com/deref/exo/pull/273) Truncated output after processes terminate.
 - [e062d58](https://github.com/deref/exo/commit/e062d589fec56fcbefc777444eb6d1ac4ddf0d7d) Fix `run` exiting prematurely on some Mac systems.
 
-
 ## 2021.08.31
 
 ### Fixed
@@ -40,7 +37,6 @@ This project adhears to [CalVer](./doc/versioning.md).
 ### Fixed
 
 - Directory creation race on first run.
-
 
 ## 2021.08.27
 
@@ -55,7 +51,6 @@ Docker Compose compatibility BETA.
 ### Fixed
 
 - Many Docker compose compatibility issues.
-
 
 ## 2021.08.17
 
@@ -77,7 +72,6 @@ Docker Compose compatibility ALPHA.
 - GUI fails gracefully when backend is down.
 - Terminate whole process groups more reliably.
 - Log viewer line wrapping.
-
 
 ## 2021.07.29
 

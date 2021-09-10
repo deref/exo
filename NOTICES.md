@@ -40,6 +40,5 @@ https://github.com/rsms/inter
 
 This Font Software is licensed under the [SIL Open Font License, Version 1.1][2].
 
-
 [1]: ./LICENSE
-[2]: ./doc/licenses/ofl
+[2]: ./docs/licenses/ofl

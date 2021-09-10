@@ -6,7 +6,7 @@
 
 **Features**
 
-- [Procfile](./doc/procfiles.md) and [Docker Compose](./doc/compose.md) compatible process manager.
+- [Procfile](./docs/pages/procfiles.md) and [Docker Compose](./docs/pages/compose.md) compatible process manager.
 - Terminal commands and browser-based-GUI for all functionality.
 - Multiplexed, colorizing log tailing. Toggle visibility of individual logs.
 - Dynamic process supervision: create, start, stop, restart, delete.
@@ -19,7 +19,7 @@ Install exo:
 curl -sL https://exo.deref.io/install | bash
 ```
 
-If you prefer manual installation, see [./doc/install.md](./doc/install.md) for
+If you prefer manual installation, see [./docs/pages/install.md](./docs/pages/install.md) for
 details, including uninstall instructions.
 
 Navigate to your code directory and then launch the exo gui:
@@ -39,8 +39,8 @@ This will work automatically with your `Procfile`, `compose.yaml`, or similarly
 named manifest files. The `run` command also accepts an explicit filename, if
 you have multiple configurations to choose from.
 
-For more, checkout the [exo guide](./doc/guide.md), watch some
-[videos](./doc/guide.md) or consult the builtin help by running `exo help`.
+For more, checkout the [exo guide](./docs/pages/guide.md), watch some
+[videos](./docs/pages/videos.md) or consult the builtin help by running `exo help`.
 
 ---
 
