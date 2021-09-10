@@ -8,13 +8,12 @@ import (
 
 	"github.com/deref/exo/internal/util/yamlutil"
 	"gopkg.in/yaml.v3"
-	yamlv3 "gopkg.in/yaml.v3"
 )
 
 var Version = "0.1"
 
 type Manifest struct {
-	original   *yamlv3.Node
+	original   *yaml.Node
 	Exo        string      `json:"exo"`
 	Components []Component `json:"components"`
 }
@@ -25,16 +24,16 @@ type Manifest struct {
 // block before serialisation, it didn't seem possible to preserve comments when
 // deserialising.
 
-func (m *Manifest) UnmarshalYAML(b []byte) error {
+func (m *Manifest) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	type innerManifestType Manifest
-	innerManifest := innerManifestType(*m)
-	if err := yaml.Unmarshal(b, &innerManifest); err != nil {
+	innerManifest := (*innerManifestType)(m)
+	if err := unmarshal(innerManifest); err != nil {
 		return fmt.Errorf("unmarshalling manifest yaml: %w", err)
 	}
-	*m = Manifest(innerManifest)
+	*m = Manifest(*innerManifest)
 
-	m.original = &yamlv3.Node{}
-	if err := yamlv3.Unmarshal(b, m.original); err != nil {
+	m.original = &yaml.Node{}
+	if err := unmarshal(m.original); err != nil {
 		return fmt.Errorf("unmarshalling raw manifest yaml: %w", err)
 	}
 	return nil
@@ -47,13 +46,13 @@ func (spec Manifest) MarshalYAML() ([]byte, error) {
 		return nil, fmt.Errorf("marshalling manifest yaml: %w", err)
 	}
 
-	node := &yamlv3.Node{}
-	if err := yamlv3.Unmarshal(bs, node); err != nil {
+	node := &yaml.Node{}
+	if err := yaml.Unmarshal(bs, node); err != nil {
 		return nil, fmt.Errorf("unmarshalling marshalled manifest yaml: %w", err)
 	}
 	yamlutil.MergeFormatting(spec.original, node)
 
-	result, err := yamlv3.Marshal(node)
+	result, err := yaml.Marshal(node)
 	if err != nil {
 		return nil, fmt.Errorf("marshalling node: %w", err)
 	}
@@ -71,8 +70,13 @@ func (spec ComponentSpec) MarshalYAML() (interface{}, error) {
 	return d, nil
 }
 
-func (spec *ComponentSpec) UnmarshalYAML(b []byte) error {
-	s := string(b)
+func (spec *ComponentSpec) UnmarshalYAML(value *yaml.Node) error {
+	bs, err := yaml.Marshal(value)
+	if err != nil {
+		return fmt.Errorf("marshalling component spec for unmarshalling: %w", err)
+	}
+
+	s := string(bs)
 	if !yamlutil.IsValid(s) {
 		return fmt.Errorf("component spec is not valid yaml")
 	}
