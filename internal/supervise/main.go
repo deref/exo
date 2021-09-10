@@ -157,40 +157,32 @@ func Main() {
 func pipeToSyslog(ctx context.Context, conn net.Conn, componentID string, name string, procID string, r io.Reader) {
 	b := bufio.NewReaderSize(r, api.MaxMessageSize)
 	for {
-		message, isPrefix, err := b.ReadLine()
+		message, err := b.ReadString('\n')
+		if message != "" {
+			if message[len(message)-1] == '\n' {
+				message = message[:len(message)-1]
+			}
+			sm := &rfc5424.SyslogMessage{}
+			sm.SetVersion(1)
+			sm.SetPriority(syslogPriority)
+			sm.SetTimestamp(chrono.Now(ctx).Format(chrono.RFC3339MicroUTC))
+			sm.SetAppname(componentID)
+			sm.SetProcID(procID)
+			sm.SetMsgID(name) // See note: [LOG_COMPONENTS].
+			sm.SetMessage(message)
+			packet, err := sm.String()
+			if err != nil {
+				fatalf("building syslog message: %w", err)
+			}
+			if _, err := io.WriteString(conn, packet); err != nil {
+				log.Printf("sending syslog message: %v", err)
+			}
+		}
 		if errors.Is(err, io.EOF) || errors.Is(err, os.ErrClosed) {
 			return
 		}
 		if err != nil {
 			fatalf("reading %s: %v", name, err)
-		}
-		// TODO: Do something better with lines that are too long.
-		for isPrefix {
-			// Skip remainder of line.
-			message = append([]byte{}, message...)
-			_, isPrefix, err = b.ReadLine()
-			if err == io.EOF {
-				return
-			}
-			if err != nil {
-				fatalf("reading %s: %v", name, err)
-			}
-		}
-
-		sm := &rfc5424.SyslogMessage{}
-		sm.SetVersion(1)
-		sm.SetPriority(syslogPriority)
-		sm.SetTimestamp(chrono.Now(ctx).Format(chrono.RFC3339MicroUTC))
-		sm.SetAppname(componentID)
-		sm.SetProcID(procID)
-		sm.SetMsgID(name) // See note: [LOG_COMPONENTS].
-		sm.SetMessage(string(message))
-		packet, err := sm.String()
-		if err != nil {
-			fatalf("building syslog message: %w", err)
-		}
-		if _, err := io.WriteString(conn, packet); err != nil {
-			log.Printf("sending syslog message: %v", err)
 		}
 	}
 }
