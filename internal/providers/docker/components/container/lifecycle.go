@@ -438,7 +438,7 @@ func (c *Container) Dispose(ctx context.Context, input *core.DisposeInput) (*cor
 		Force: true, // OK?
 	})
 	if docker.IsErrNotFound(err) {
-		c.Logger.Infof("disposing container not found: %q", c.State.ContainerID)
+		c.Logger.Infof("container to be removed not found: %q", c.State.ContainerID)
 		err = nil
 	}
 	if err != nil {

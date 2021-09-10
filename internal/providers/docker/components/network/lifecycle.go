@@ -85,7 +85,7 @@ func (n *Network) Dispose(ctx context.Context, input *core.DisposeInput) (*core.
 	}
 	err := n.Docker.NetworkRemove(ctx, n.NetworkID)
 	if docker.IsErrNotFound(err) {
-		n.Logger.Infof("disposing network not found: %q", n.NetworkID)
+		n.Logger.Infof("network to be removed not found: %q", n.NetworkID)
 		err = nil
 	}
 	if err != nil {
