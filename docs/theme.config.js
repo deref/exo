@@ -13,7 +13,7 @@ export default {
   logo: (
     <>
       {/* <svg>...</svg> */}
-      <span>exo</span>
+      <h3 style={{ margin: 0 }}>exo</h3>
     </>
   ),
   head: (
