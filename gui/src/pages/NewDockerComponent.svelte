@@ -10,7 +10,6 @@
   import Button from '../components/Button.svelte';
   import Textbox from '../components/Textbox.svelte';
   import EditAs from '../components/form/EditAs.svelte';
-  import CodeBlock from '../components/CodeBlock.svelte';
   import ErrorLabel from '../components/ErrorLabel.svelte';
   import TextEditor from '../components/TextEditor.svelte';
   import DockerSVG from '../components/mono/DockerSVG.svelte';
@@ -46,7 +45,6 @@
 
   export let componentType: string;
   export let displayType: string;
-  export let specExample: string;
 </script>
 
 <Layout>
@@ -96,9 +94,7 @@
           </div>
           <details>
             <summary>Show/hide example</summary>
-            <CodeBlock>
-              {specExample}
-            </CodeBlock>
+            <slot />
           </details>
         {:else}
           <!-- GUI form edit mode -->

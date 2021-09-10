@@ -1,4 +1,8 @@
-<pre><code><slot/></code></pre>
+<script lang="ts">
+  export let code: string | undefined = undefined;
+</script>
+
+<pre><code>{code}</code></pre>
 
 <style>
   pre {
