@@ -2,7 +2,7 @@
 
 **exo-** _prefix_ – external; from outside.
 
-![The Exo GUI](https://github.com/deref/exo/blob/main/doc/screenshot-light.png?raw=true)
+![The Exo GUI](https://exo.deref.io/light-190821.png)
 
 **Features**
 
@@ -60,4 +60,3 @@ can be disabled by adding the following setting to your exo config (located at
 [telemetry]
 disable: true
 ```
-
