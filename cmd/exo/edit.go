@@ -13,11 +13,10 @@ func init() {
 }
 
 var editCmd = &cobra.Command{
-	Use:    "edit <component>",
-	Short:  "Edit component spec",
-	Long:   "Edit component spec using your preferred editor.",
-	Hidden: true,
-	Args:   cobra.ExactArgs(1),
+	Use:   "edit <component>",
+	Short: "Edit component spec",
+	Long:  "Edit component spec using your preferred editor.",
+	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		componentRef := args[0]
 		ctx := newContext()
