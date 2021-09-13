@@ -25,7 +25,6 @@ The CloudFlare K/V bucket is read by the [download-page worker](https://dash.clo
 
 In order to decouple our code from CloudFlare, we proxy these two endpoints at `https://exo.deref.io/install` and `https://exo.deref.io/latest-version` respectively.
 
-
 ### Installer
 
 The installer served by the CloudFlare worker via `https://exo.deref.io/install` is designed to be piped to Bash, and it performs the following tasks:

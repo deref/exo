@@ -37,7 +37,6 @@ exo workspace destroy
 exo exit
 ```
 
-
 ## Concepts
 
 **Workspaces** - A mapping of filesystem paths. Most projects have one
@@ -81,7 +80,6 @@ exo stop myapp
 **Daemon** - A background service that manages components and supervises
 processes. Most commands start this service automatically. You can start it
 explicitly with `exo daemon` and terminate it with `exo exit`.
-
 
 ## More Resources
 

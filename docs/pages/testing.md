@@ -37,6 +37,4 @@ Exercises: `exo apply`, `exo logs`, and import for supported manifest formats.
 
 ## Logs
 
-- Load test log throughput. Try [../examples/voluminous-logs] with both `exo
-  logs` and log viewer in the GUI.
-
+- Load test log throughput. Try [../examples/voluminous-logs] with both `exo logs` and log viewer in the GUI.
