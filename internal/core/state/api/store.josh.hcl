@@ -62,10 +62,10 @@ interface "store" {
     input "id" "string" {}
   }
 
-  method "ensure-installation" {
-    doc = "Ensure that one-time initialization has been completed. This is safe to call whenever the server is restarted."
+  method "ensure-device" {
+    doc = "Ensure that one-time device initialization has been completed. This is safe to call whenever the server is restarted."
 
-    output "installation-id" "string" {}
+    output "device-id" "string" {}
   }
 }
 

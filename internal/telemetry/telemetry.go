@@ -18,8 +18,8 @@ type Telemetry interface {
 }
 
 type Config struct {
-	Disable        bool
-	InstallationID string
+	Disable  bool
+	DeviceID string
 }
 
 func New(ctx context.Context, cfg Config) Telemetry {
@@ -28,8 +28,8 @@ func New(ctx context.Context, cfg Config) Telemetry {
 	}
 
 	t := &defaultTelemetry{
-		ctx:            ctx,
-		installationID: cfg.InstallationID,
+		ctx:      ctx,
+		deviceID: cfg.DeviceID,
 		client: &http.Client{
 			Timeout: time.Second * 5,
 		},

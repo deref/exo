@@ -20,7 +20,7 @@ import (
 type defaultTelemetry struct {
 	ctx            context.Context
 	client         *http.Client
-	installationID string
+	deviceID       string
 	sessionID      string
 	operationGauge *SummaryGauge
 

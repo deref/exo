@@ -33,7 +33,7 @@ var _ state.Store = (*Store)(nil)
 type Root struct {
 	Workspaces          map[string]*Workspace `json:"workspaces"`          // Keyed by ID.
 	ComponentWorkspaces map[string]string     `json:"componentWorkspaces"` // Component ID -> Workspace ID.
-	InstallationID      string                `json:"installationId"`
+	DeviceID            string                `json:"deviceId"`
 }
 
 type Component struct {
@@ -446,12 +446,12 @@ func (sto *Store) RemoveComponent(ctx context.Context, input *state.RemoveCompon
 	return &state.RemoveComponentOutput{}, nil
 }
 
-func (sto *Store) EnsureInstallation(ctx context.Context, input *state.EnsureInstallationInput) (*state.EnsureInstallationOutput, error) {
-	var installationID string
+func (sto *Store) EnsureDevice(ctx context.Context, input *state.EnsureDeviceInput) (*state.EnsureDeviceOutput, error) {
+	var deviceID string
 
 	_, err := sto.swap(func(root *Root) error {
-		if root.InstallationID != "" {
-			installationID = root.InstallationID
+		if root.DeviceID != "" {
+			deviceID = root.DeviceID
 			return nil
 		}
 		installationID = gensym.RandomBase32()
@@ -462,7 +462,7 @@ func (sto *Store) EnsureInstallation(ctx context.Context, input *state.EnsureIns
 		return nil, err
 	}
 
-	return &state.EnsureInstallationOutput{
-		InstallationID: installationID,
+	return &state.EnsureDeviceOutput{
+		DeviceID: deviceID,
 	}, nil
 }
