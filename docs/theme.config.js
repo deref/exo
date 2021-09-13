@@ -18,6 +18,12 @@ export default {
   ),
   head: (
     <>
+      <link
+        rel="icon"
+        type="image/png"
+        sizes="216x216"
+        href="/deref-rounded-icon.png"
+      />
       <meta name="viewport" content="width=device-width, initial-scale=1.0" />
       <meta
         name="description"
