@@ -91,15 +91,19 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	}
 
 	statePath := filepath.Join(cfg.VarDir, "state.json")
-	store := statefile.New(statePath)
-	insureInstallationOut, err := store.EnsureInstallation(ctx, &state.EnsureInstallationInput{})
+	deviceIDPath := filepath.Join(cfg.VarDir, "deviceid")
+	store := statefile.New(statefile.Config{
+		StoreFilename:    statePath,
+		DeviceIDFilename: deviceIDPath,
+	})
+	ensureDeviceOut, err := store.EnsureDevice(ctx, &state.EnsureDeviceInput{})
 	if err != nil {
 		cmdutil.Fatalf("failed to initialize exo installation: %v", err)
 	}
 
 	tel := telemetry.New(ctx, telemetry.Config{
-		Disable:        cfg.Telemetry.Disable,
-		InstallationID: insureInstallationOut.InstallationID,
+		Disable:  cfg.Telemetry.Disable,
+		DeviceID: ensureDeviceOut.DeviceID,
 	})
 	ctx = telemetry.ContextWithTelemetry(ctx, tel)
 	tel.StartSession(ctx)

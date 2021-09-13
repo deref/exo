@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
+	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -18,14 +19,21 @@ import (
 	"github.com/deref/exo/internal/util/pathutil"
 )
 
-func New(filename string) *Store {
+type Config struct {
+	StoreFilename    string
+	DeviceIDFilename string
+}
+
+func New(cfg Config) *Store {
 	return &Store{
-		atom: atom.NewFileAtom(filename, atom.CodecJSON),
+		atom:             atom.NewFileAtom(cfg.StoreFilename, atom.CodecJSON),
+		deviceIDFilename: cfg.DeviceIDFilename,
 	}
 }
 
 type Store struct {
-	atom atom.Atom
+	atom             atom.Atom
+	deviceIDFilename string
 }
 
 var _ state.Store = (*Store)(nil)
@@ -454,8 +462,17 @@ func (sto *Store) EnsureDevice(ctx context.Context, input *state.EnsureDeviceInp
 			deviceID = root.DeviceID
 			return nil
 		}
-		installationID = gensym.RandomBase32()
-		root.InstallationID = installationID
+		deviceIDFile, err := os.ReadFile(sto.deviceIDFilename)
+		switch {
+		case os.IsNotExist(err):
+			deviceID = gensym.RandomBase32()
+		case err != nil:
+			return err
+		default:
+			deviceID = string(deviceIDFile)
+		}
+
+		root.DeviceID = deviceID
 		return nil
 	})
 	if err != nil {
