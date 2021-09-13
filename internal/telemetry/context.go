@@ -1,6 +1,8 @@
 package telemetry
 
-import "context"
+import (
+	"context"
+)
 
 type contextKey int
 

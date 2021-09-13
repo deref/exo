@@ -25,6 +25,8 @@ For more information, see https://exo.deref.io`,
 	},
 }
 
+// newContext creates a global context that is used as the top-level process context.
+// All request-specific contexts are derived from it.
 func newContext() context.Context {
 	ctx := context.Background()
 

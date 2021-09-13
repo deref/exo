@@ -1,6 +1,8 @@
 package logging
 
-import "context"
+import (
+	"context"
+)
 
 type contextKey int
 
