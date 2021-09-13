@@ -156,8 +156,28 @@ func Main() {
 
 func pipeToSyslog(ctx context.Context, conn net.Conn, componentID string, name string, procID string, r io.Reader) {
 	b := bufio.NewReaderSize(r, api.MaxMessageSize)
+	readLine := func() (string, error) {
+		// Usage of ReadLine in preference to ReadString is intentional, since
+		// ReadString will perform unbounded buffering.
+		// See discussion here: https://github.com/deref/exo/pull/322
+		message, isPrefix, err := b.ReadLine()
+		for isPrefix {
+			// Skip remainder of line.
+			message = append([]byte{}, message...)
+			_, isPrefix, err = b.ReadLine()
+			if err == io.EOF {
+				break
+			}
+			if err != nil {
+				fatalf("reading %s: %v", name, err)
+			}
+		}
+		return string(message), err
+	}
+
 	for {
-		message, err := b.ReadString('\n')
+		message, err := readLine()
+
 		// Error handling is performed after piping the message to syslog since we
 		// always want to write the message, even if an error has occurred.
 		if message != "" {
