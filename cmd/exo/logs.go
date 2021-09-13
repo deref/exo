@@ -178,4 +178,4 @@ func colorIsBlack(c colorful.Color) bool {
 	return c.R == 0 && c.G == 0 && c.B == 0
 }
 
-const termReset = "\u001b[0"
+const termReset = "\u001b[0m"
