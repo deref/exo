@@ -26,9 +26,7 @@ For more information, see https://exo.deref.io`,
 }
 
 // newContext creates a global context that is used as the top-level process context.
-// All request-specific contexts are derived from it. Any key added to the context
-// here needs to have a corresponding call to contextutil.RegisterContextCloner so
-// that we can copy these values from a request-specific context to an asynchronous one.
+// All request-specific contexts are derived from it.
 func newContext() context.Context {
 	ctx := context.Background()
 

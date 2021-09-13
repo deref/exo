@@ -468,7 +468,7 @@ func (ws *Workspace) createComponent(ctx context.Context, component manifest.Com
 		return "", fmt.Errorf("adding component: %w", err)
 	}
 
-	job := ws.TaskTracker.StartTask(contextutil.DeriveBackgroundContext(ctx), "creating "+component.Name)
+	job := ws.TaskTracker.StartTask(contextutil.WithoutCancel(ctx), "creating "+component.Name)
 	go func() {
 		defer job.Finish()
 
