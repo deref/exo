@@ -6,8 +6,8 @@ For typical projects with a Procfile or compose yaml file, `exo gui` will do
 the right thing on first use automatically. You can manage processes and view
 logs in your browser.
 
-If you've got multiple manifests, such as different manifests for each of dev
-and test. Or if you generally prefer command line interfaces, a typical
+If you've got multiple manifests (such as different manifests for each of dev
+and test), or if you generally prefer command line interfaces, a typical
 workflow looks something like this:
 
 ```bash
@@ -36,7 +36,6 @@ exo workspace destroy
 # If you're very, very done and don't want exo running anymore.
 exo exit
 ```
-
 
 ## Concepts
 
@@ -81,7 +80,6 @@ exo stop myapp
 **Daemon** - A background service that manages components and supervises
 processes. Most commands start this service automatically. You can start it
 explicitly with `exo daemon` and terminate it with `exo exit`.
-
 
 ## More Resources
 
