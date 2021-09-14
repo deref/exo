@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/deref/exo"
 	"github.com/deref/exo/internal/util/cacheutil"
 )
 
@@ -13,7 +14,7 @@ type Telemetry interface {
 	IsEnabled() bool
 	LatestVersion(context.Context) (string, error)
 	StartSession(context.Context)
-	SendEvent(context.Context, event)
+	SendEvent(context.Context, Event)
 	RecordOperation(OperationInvocation)
 }
 
@@ -27,12 +28,15 @@ func New(ctx context.Context, cfg Config) Telemetry {
 		return &noOpTelemetry{}
 	}
 
+	httpClient := &http.Client{
+		Timeout: time.Second * 10,
+	}
+
 	t := &defaultTelemetry{
-		ctx:      ctx,
-		deviceID: cfg.DeviceID,
-		client: &http.Client{
-			Timeout: time.Second * 5,
-		},
+		ctx:            ctx,
+		deviceID:       cfg.DeviceID,
+		client:         httpClient,
+		ampClient:      NewAmplitudeClient(ctx, httpClient, exo.AmplitudeAPIKey),
 		operationGauge: newOperationGauge(),
 	}
 	t.latestVersion = cacheutil.NewTTLVal(t.getLatestVersion, 5*time.Minute)

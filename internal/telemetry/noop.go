@@ -17,7 +17,7 @@ func (t *noOpTelemetry) StartSession(_ context.Context) {
 	// Do nothing.
 }
 
-func (t *noOpTelemetry) SendEvent(_ context.Context, _ event) {
+func (t *noOpTelemetry) SendEvent(_ context.Context, _ Event) {
 	// Do nothing.
 }
 

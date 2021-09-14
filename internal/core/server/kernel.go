@@ -23,6 +23,7 @@ import (
 )
 
 type Kernel struct {
+	DeviceID    string
 	VarDir      string
 	Store       state.Store
 	TaskTracker *task.TaskTracker
@@ -96,7 +97,7 @@ func (kern *Kernel) Upgrade(ctx context.Context, input *api.UpgradeInput) (*api.
 	if upgrade.IsManaged {
 		return nil, errutil.WithHTTPStatus(http.StatusBadRequest, errors.New("exo installed with system package manager"))
 	}
-	err := upgrade.UpgradeSelf()
+	err := upgrade.UpgradeSelf(kern.DeviceID)
 	if err != nil {
 		return nil, err
 	}

@@ -15,14 +15,14 @@ import (
 
 const IsManaged = false
 
-func UpgradeSelf() error {
+func UpgradeSelf(deviceID string) error {
 	tmpfile, err := ioutil.TempFile("", "example")
 	if err != nil {
 		return fmt.Errorf("creating temporary file: %w", err)
 	}
 	defer os.Remove(tmpfile.Name())
 
-	resp, err := http.Get(exo.UpdateScriptEndpoint)
+	resp, err := http.Get(fmt.Sprintf("%s?id=%s", exo.UpdateScriptEndpoint, deviceID))
 	if err != nil {
 		return fmt.Errorf("fetching update script: %w", err)
 	}

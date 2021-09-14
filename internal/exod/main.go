@@ -107,6 +107,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	})
 	ctx = telemetry.ContextWithTelemetry(ctx, tel)
 	tel.StartSession(ctx)
+	tel.SendEvent(ctx, telemetry.SystemInfoIdentifiedEvent())
 
 	dockerClient, err := docker.NewClientWithOpts()
 	if err != nil {
@@ -119,6 +120,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	}
 
 	kernelCfg := &kernel.Config{
+		DeviceID:    ensureDeviceOut.DeviceID,
 		VarDir:      cfg.VarDir,
 		Store:       store,
 		SyslogPort:  cfg.Log.SyslogPort,

@@ -2,11 +2,15 @@ package main
 
 import (
 	"fmt"
+	"path/filepath"
 	"strings"
 
 	"github.com/deref/exo"
+	state "github.com/deref/exo/internal/core/state/api"
+	"github.com/deref/exo/internal/core/state/statefile"
 	"github.com/deref/exo/internal/telemetry"
 	"github.com/deref/exo/internal/upgrade"
+	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/spf13/cobra"
 )
 
@@ -46,7 +50,17 @@ var upgradeCmd = &cobra.Command{
 		case -1:
 			fmt.Println("Upgrade needed")
 			// TODO: Prompt for confirmation?
-			return upgrade.UpgradeSelf()
+			statePath := filepath.Join(cfg.VarDir, "state.json")
+			deviceIDPath := filepath.Join(cfg.VarDir, "deviceid")
+			store := statefile.New(statefile.Config{
+				StoreFilename:    statePath,
+				DeviceIDFilename: deviceIDPath,
+			})
+			ensureDeviceOut, err := store.EnsureDevice(ctx, &state.EnsureDeviceInput{})
+			if err != nil {
+				cmdutil.Fatalf("getting device version")
+			}
+			return upgrade.UpgradeSelf(ensureDeviceOut.DeviceID)
 		case 1:
 			fmt.Println("You are already running a prerelease version; not downgrading.")
 		default:

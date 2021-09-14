@@ -13,6 +13,7 @@ import (
 )
 
 type Config struct {
+	DeviceID    string
 	VarDir      string
 	Store       state.Store
 	SyslogPort  uint
@@ -27,6 +28,7 @@ func BuildRootMux(prefix string, cfg *Config) *http.ServeMux {
 	endKernel := b.Begin("kernel")
 	api.BuildKernelMux(b, func(req *http.Request) api.Kernel {
 		return &Kernel{
+			DeviceID:    cfg.DeviceID,
 			VarDir:      cfg.VarDir,
 			Store:       cfg.Store,
 			TaskTracker: cfg.TaskTracker,

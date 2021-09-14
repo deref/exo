@@ -467,7 +467,7 @@ func (sto *Store) EnsureDevice(ctx context.Context, input *state.EnsureDeviceInp
 		case os.IsNotExist(err):
 			deviceID = gensym.RandomBase32()
 		case err != nil:
-			return err
+			return fmt.Errorf("reading device id file: %w", err)
 		default:
 			deviceID = string(deviceIDFile)
 		}
