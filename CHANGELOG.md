@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 This project adhears to [CalVer](./doc/versioning.md).
 
+## 2021.09.14
+
+### Added
+
+- Status and progress of docker image pulls
+- [#318](https://github.com/deref/exo/pull/318) Aligned job messages
+- [#321](https://github.com/deref/exo/pull/321) Add command to edit raw specification
+
+### Fixed
+
+- [#316](https://github.com/deref/exo/pull/316) Shell form docker commands when image pull policy set
+- [#323](https://github.com/deref/exo/pull/323) Duplicated new lines
+- [#327](https://github.com/deref/exo/issues/327) Characters omitted in log output
 
 ## 2021.09.08
 
@@ -14,7 +27,7 @@ This project adhears to [CalVer](./doc/versioning.md).
 
 ## 2021.09.07
 
-## Added
+### Added
 
 - [#313](https://github.com/deref/exo/pull/213) Shell completions (optional install).
 - [#284](https://github.com/deref/exo/pull/284) `exo env` command.
@@ -23,7 +36,7 @@ This project adhears to [CalVer](./doc/versioning.md).
 - [#280](https://github.com/deref/exo/pull/280) `exo state ...` commands for performing state repair.
 - [#188](https://github.com/deref/exo/issues/188) `exo kill -s signal ...` command.
 
-## Fixed
+### Fixed
 
 - [#273](https://github.com/deref/exo/pull/273) Truncated output after processes terminate.
 - [e062d58](https://github.com/deref/exo/commit/e062d589fec56fcbefc777444eb6d1ac4ddf0d7d) Fix `run` exiting prematurely on some Mac systems.
