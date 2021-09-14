@@ -58,7 +58,7 @@ var upgradeCmd = &cobra.Command{
 			})
 			ensureDeviceOut, err := store.EnsureDevice(ctx, &state.EnsureDeviceInput{})
 			if err != nil {
-				cmdutil.Fatalf("getting device version")
+				cmdutil.Fatalf("getting device id")
 			}
 			return upgrade.UpgradeSelf(ensureDeviceOut.DeviceID)
 		case 1:

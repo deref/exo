@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"net/http"
 	"time"
+
+	"github.com/deref/exo/internal/util/logging"
 )
 
 const (
@@ -55,8 +57,6 @@ func (a *AmplitudeClient) Publish(evt Event) error {
 
 func (a *AmplitudeClient) Flush() {
 	notify := make(chan struct{})
-	defer close(notify)
-
 	a.flush <- notify
 	// Wait for flush to complete.
 	<-notify
@@ -102,24 +102,24 @@ func (a *AmplitudeClient) run() {
 	}
 }
 
-func (a *AmplitudeClient) publish(events []Event) error {
+func (a *AmplitudeClient) publish(events []Event) {
+	logger := logging.CurrentLogger(a.ctx)
 	var buf bytes.Buffer
 	e := json.NewEncoder(&buf)
 	if err := e.Encode(UploadRequest{
 		APIKey: a.apiKey,
 		Events: events,
 	}); err != nil {
-		return fmt.Errorf("serializing upload request: %w", err)
+		logger.Infof("Could not serialize upload request: %w", err)
+		return
 	}
 
 	res, err := a.client.Post(amplitudeURL, "application/json", &buf)
 	if err != nil {
-		return fmt.Errorf("performing telemetry request: %w", err)
+		logger.Infof("Could not perform telemetry request: %w", err)
+		return
 	}
-	defer res.Body.Close()
-	// TODO: Do something with response, potentially log errors, etc.
-
-	return nil
+	res.Body.Close()
 }
 
 type UploadRequest struct {

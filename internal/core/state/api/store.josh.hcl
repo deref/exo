@@ -63,7 +63,7 @@ interface "store" {
   }
 
   method "ensure-device" {
-    doc = "Ensure that one-time device initialization has been completed. This is safe to call whenever the server is restarted."
+    doc = "Ensure that one-time device initialization has been completed. This method is idempotent."
 
     output "device-id" "string" {}
   }

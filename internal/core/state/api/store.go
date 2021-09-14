@@ -20,7 +20,7 @@ type Store interface {
 	AddComponent(context.Context, *AddComponentInput) (*AddComponentOutput, error)
 	PatchComponent(context.Context, *PatchComponentInput) (*PatchComponentOutput, error)
 	RemoveComponent(context.Context, *RemoveComponentInput) (*RemoveComponentOutput, error)
-	// Ensure that one-time device initialization has been completed. This is safe to call whenever the server is restarted.
+	// Ensure that one-time device initialization has been completed. This method is idempotent.
 	EnsureDevice(context.Context, *EnsureDeviceInput) (*EnsureDeviceOutput, error)
 }
 

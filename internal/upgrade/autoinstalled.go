@@ -7,6 +7,7 @@ import (
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 
@@ -22,7 +23,7 @@ func UpgradeSelf(deviceID string) error {
 	}
 	defer os.Remove(tmpfile.Name())
 
-	resp, err := http.Get(fmt.Sprintf("%s?id=%s&prev=%s", exo.UpdateScriptEndpoint, deviceID, exo.Version))
+	resp, err := http.Get(fmt.Sprintf("%s?id=%s&prev=%s", exo.UpdateScriptEndpoint, url.QueryEscape(deviceID), exo.Version))
 	if err != nil {
 		return fmt.Errorf("fetching update script: %w", err)
 	}

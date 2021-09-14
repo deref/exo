@@ -32,8 +32,8 @@ func newContext() context.Context {
 	ctx = logging.ContextWithLogger(ctx, logger)
 
 	// This telemetry object will be replaced by one that includes the
-	// installation ID when the daemon starts. For one-off commands,
-	// it is fine for the ID to not be populated.
+	// device ID when the daemon starts. For one-off commands, it is
+	// fine for the ID to not be populated.
 	tel := telemetry.New(ctx, telemetry.Config{
 		Disable: cfg.Telemetry.Disable,
 	})
