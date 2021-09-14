@@ -1,5 +1,4 @@
 <script lang="ts">
-  import Panel from '../components/Panel.svelte';
   import Layout from '../components/Layout.svelte';
   import Button from '../components/Button.svelte';
   import Textbox from '../components/Textbox.svelte';
@@ -10,6 +9,7 @@
   import WorkspaceNav from '../components/WorkspaceNav.svelte';
   import ArgumentsInput from '../components/ArgumentsInput.svelte';
   import EnvironmentInput from '../components/EnvironmentInput.svelte';
+  import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
   import LayersSVG from '../components/mono/LayersSVG.svelte';
   import { api, isClientError } from '../lib/api';
   import * as router from 'svelte-spa-router';
@@ -79,93 +79,81 @@ my-app --port 4000
 
 <Layout>
   <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
-  <Panel
-    title="New Process"
-    backRoute={workspaceNewComponentRoute}
-    --panel-padding="2rem"
-    --panel-overflow-y="scroll"
-  >
-    <div class="center-form">
-      <h1><LayersSVG /> New Process</h1>
-      <form
-        on:submit|preventDefault={async () => {
-          updateFields();
-          try {
-            const { id } = await workspace.createProcess(name, {
-              directory,
-              environment,
-              program,
-              arguments: args,
-            });
-            setLogVisibility(id, true);
+  <CenterFormPanel title="New Process" backRoute={workspaceNewComponentRoute}>
+    <h1><LayersSVG /> New Process</h1>
+    <form
+      on:submit|preventDefault={async () => {
+        updateFields();
+        try {
+          const { id } = await workspace.createProcess(name, {
+            directory,
+            environment,
+            program,
+            arguments: args,
+          });
+          setLogVisibility(id, true);
 
-            router.push(workspaceRoute);
-          } catch (ex) {
-            if (!isClientError(ex)) {
-              throw ex;
-            }
-            error = ex;
+          router.push(workspaceRoute);
+        } catch (ex) {
+          if (!isClientError(ex)) {
+            throw ex;
           }
-        }}
-      >
+          error = ex;
+        }
+      }}
+    >
+      <div>
+        <label for="name">Name:</label>
+        <Textbox id="name" name="name" bind:value={name} />
+      </div>
+
+      <EditAs bind:mode {editorModes} />
+
+      {#if mode === 'fields'}
         <div>
-          <label for="name">Name:</label>
-          <Textbox id="name" name="name" bind:value={name} />
+          <label for="program">Program:</label>
+          <Textbox id="program" name="program" bind:value={program} />
         </div>
-
-        <EditAs bind:mode {editorModes} />
-
-        {#if mode === 'fields'}
-          <div>
-            <label for="program">Program:</label>
-            <Textbox id="program" name="program" bind:value={program} />
+        <div>
+          <label for="args">Arguments: (one per line)</label>
+          <ArgumentsInput id="args" name="args" bind:value={args} />
+        </div>
+        <div>
+          <label for="directory">Working Directory:</label>
+          <Textbox id="directory" name="directory" bind:value={directory} />
+        </div>
+        <div>
+          <label for="environment">Environment:</label>
+          <EnvironmentInput
+            id="environment"
+            name="environment"
+            bind:environment
+          />
+        </div>
+        <div class="buttons">
+          <Button type="submit">Create Process</Button>
+        </div>
+      {:else}
+        <div>
+          <div class="script-editor">
+            <label for="script">Script:</label>
+            <ShellEditor id="script" bind:value={script} />
           </div>
-          <div>
-            <label for="args">Arguments: (one per line)</label>
-            <ArgumentsInput id="args" name="args" bind:value={args} />
-          </div>
-          <div>
-            <label for="directory">Working Directory:</label>
-            <Textbox id="directory" name="directory" bind:value={directory} />
-          </div>
-          <div>
-            <label for="environment">Environment:</label>
-            <EnvironmentInput
-              id="environment"
-              name="environment"
-              bind:environment
-            />
-          </div>
+          <details>
+            <summary>Show/hide example</summary>
+            <CodeBlock code={codeExample} />
+          </details>
           <div class="buttons">
             <Button type="submit">Create Process</Button>
           </div>
-        {:else}
-          <div>
-            <div class="script-editor">
-              <label for="script">Script:</label>
-              <ShellEditor id="script" bind:value={script} />
-            </div>
-            <details>
-              <summary>Show/hide example</summary>
-              <CodeBlock code={codeExample} />
-            </details>
-            <div class="buttons">
-              <Button type="submit">Create Process</Button>
-            </div>
-          </div>
-        {/if}
-        <ErrorLabel value={error} />
-      </form>
-    </div>
-  </Panel>
+        </div>
+      {/if}
+      <ErrorLabel value={error} />
+    </form>
+  </CenterFormPanel>
 </Layout>
 
 <style>
-  .center-form {
-    max-width: 640px;
-    margin: 0 auto;
-  }
-
   h1 {
     display: flex;
     align-items: center;
