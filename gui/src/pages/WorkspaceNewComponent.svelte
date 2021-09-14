@@ -1,7 +1,7 @@
 <script lang="ts">
-  import Panel from '../components/Panel.svelte';
   import Layout from '../components/Layout.svelte';
   import WorkspaceNav from '../components/WorkspaceNav.svelte';
+  import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
   import LayersSVG from '../components/mono/LayersSVG.svelte';
   import DockerSVG from '../components/mono/DockerSVG.svelte';
   import * as router from 'svelte-spa-router';
@@ -14,70 +14,63 @@
 
 <Layout>
   <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
-  <Panel
-    title="New component"
-    backRoute={workspaceRoute}
-    --panel-padding="2rem"
-    --panel-overflow-y="scroll"
-  >
-    <div class="center-form">
-      <section>
-        <!-- Generic components, no heading. -->
+  <CenterFormPanel title="New component" backRoute={workspaceRoute}>
+    <section>
+      <!-- Generic components, no heading. -->
 
-        <button
-          on:click={() => {
-            router.push(
-              `/workspaces/${encodeURIComponent(workspaceId)}/new-process`,
-            );
-          }}
-        >
-          <LayersSVG />
-          <b>Process</b>
-        </button>
+      <button
+        on:click={() => {
+          router.push(
+            `/workspaces/${encodeURIComponent(workspaceId)}/new-process`,
+          );
+        }}
+      >
+        <LayersSVG />
+        <b>Process</b>
+      </button>
 
-        <!-- Timer, External Link, etc. -->
-      </section>
+      <!-- Timer, External Link, etc. -->
+    </section>
 
-      <section>
-        <h2>Docker</h2>
+    <section>
+      <h2>Docker</h2>
 
-        <button
-          on:click={() => {
-            router.push(
-              `/workspaces/${encodeURIComponent(workspaceId)}/new-container`,
-            );
-          }}
-        >
-          <DockerSVG />
-          <b>Container</b>
-        </button>
+      <button
+        on:click={() => {
+          router.push(
+            `/workspaces/${encodeURIComponent(workspaceId)}/new-container`,
+          );
+        }}
+      >
+        <DockerSVG />
+        <b>Container</b>
+      </button>
 
-        <button
-          on:click={() => {
-            router.push(
-              `/workspaces/${encodeURIComponent(workspaceId)}/new-volume`,
-            );
-          }}
-        >
-          <DockerSVG />
-          <b>Volume</b>
-        </button>
+      <button
+        on:click={() => {
+          router.push(
+            `/workspaces/${encodeURIComponent(workspaceId)}/new-volume`,
+          );
+        }}
+      >
+        <DockerSVG />
+        <b>Volume</b>
+      </button>
 
-        <button
-          on:click={() => {
-            router.push(
-              `/workspaces/${encodeURIComponent(workspaceId)}/new-network`,
-            );
-          }}
-        >
-          <DockerSVG />
-          <b>Network</b>
-        </button>
-      </section>
+      <button
+        on:click={() => {
+          router.push(
+            `/workspaces/${encodeURIComponent(workspaceId)}/new-network`,
+          );
+        }}
+      >
+        <DockerSVG />
+        <b>Network</b>
+      </button>
+    </section>
 
-      <!-- Databases, Apps, cloud services, etc. -->
-    </div>
-  </Panel>
+    <!-- Databases, Apps, cloud services, etc. -->
+  </CenterFormPanel>
 </Layout>
 
 <style>
@@ -87,11 +80,6 @@
     margin: 0;
     margin-top: 24px;
     margin-bottom: 16px;
-  }
-
-  .center-form {
-    max-width: 640px;
-    margin: 0 auto;
   }
 
   button {

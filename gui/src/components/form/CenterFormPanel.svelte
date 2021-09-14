@@ -11,6 +11,9 @@
 </script>
 
 <Panel {title} {backRoute} --panel-padding="2rem" --panel-overflow-y="scroll">
+  <div slot="actions">
+    <slot name="actions" />
+  </div>
   <div>
     <slot />
   </div>

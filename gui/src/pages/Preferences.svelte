@@ -1,8 +1,8 @@
 <script lang="ts">
-  import Panel from '../components/Panel.svelte';
   import Button from '../components/Button.svelte';
   import Layout from '../components/Layout.svelte';
   import IconButton from '../components/IconButton.svelte';
+  import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
   import PreferencesSectionsConfig from '../components/form/PreferencesSectionsConfig.svelte';
   import ResetSVG from '../components/mono/ResetSVG.svelte';
   import { theme } from '../lib/theme';
@@ -13,13 +13,13 @@
 </script>
 
 <Layout>
-  <Panel title="Preferences" --panel-padding="2rem">
+  <CenterFormPanel title="Preferences">
     <div slot="actions">
       <IconButton tooltip="Reset to defaults" on:click={resetAllPreferences}>
         <ResetSVG />
       </IconButton>
     </div>
-    <div class="center-form">
+    <div>
       <div class="group">
         <div class="group-header">
           <h2>Theme &amp; GUI</h2>
@@ -61,7 +61,7 @@
       </div>
       <!-- <PreferencesSectionsConfig /> -->
     </div>
-  </Panel>
+  </CenterFormPanel>
 </Layout>
 
 <style>
@@ -70,11 +70,6 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 24px;
-  }
-
-  .center-form {
-    max-width: 640px;
-    margin: 0 auto;
   }
 
   .button-row {

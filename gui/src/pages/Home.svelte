@@ -1,8 +1,8 @@
 <script lang="ts">
   import Code from '../components/Code.svelte';
-  import Panel from '../components/Panel.svelte';
   import Layout from '../components/Layout.svelte';
   import WorkspaceList from '../components/WorkspaceList.svelte';
+  import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
   import { api } from '../lib/api';
 
   const workspaces = api.kernel
@@ -13,29 +13,20 @@
 </script>
 
 <Layout>
-  <Panel title="Workspaces" --panel-padding="2rem" --panel-overflow-y="scroll">
-    <div class="center-form">
-      <div>
-        {#await workspaces}
-          loading workspaces...
-        {:then workspaces}
-          <WorkspaceList {workspaces} />
-        {:catch error}
-          <p style="color: red">{error.message}</p>
-        {/await}
-      </div>
-      <hr />
-      <div>
-        Use <Code>exo gui</Code> in your terminal to launch into the current directory's
-        workspace.
-      </div>
+  <CenterFormPanel title="Workspaces">
+    <div>
+      {#await workspaces}
+        loading workspaces...
+      {:then workspaces}
+        <WorkspaceList {workspaces} />
+      {:catch error}
+        <p style="color: red">{error.message}</p>
+      {/await}
     </div>
-  </Panel>
+    <hr />
+    <div>
+      Use <Code>exo gui</Code> in your terminal to launch into the current directory's
+      workspace.
+    </div>
+  </CenterFormPanel>
 </Layout>
-
-<style>
-  .center-form {
-    max-width: 640px;
-    margin: 0 auto;
-  }
-</style>
