@@ -1,6 +1,6 @@
 // +build !managed
 
-package upgrade
+package install
 
 import (
 	"fmt"
@@ -16,12 +16,17 @@ import (
 
 const IsManaged = false
 
-func UpgradeSelf(deviceID string) error {
+func (i *Install) UpgradeSelf() error {
 	tmpfile, err := ioutil.TempFile("", "example")
 	if err != nil {
 		return fmt.Errorf("creating temporary file: %w", err)
 	}
 	defer os.Remove(tmpfile.Name())
+
+	deviceID, err := i.GetDeviceID()
+	if err != nil {
+		return err
+	}
 
 	resp, err := http.Get(fmt.Sprintf("%s?id=%s&prev=%s", exo.UpdateScriptEndpoint, url.QueryEscape(deviceID), exo.Version))
 	if err != nil {

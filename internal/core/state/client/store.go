@@ -65,8 +65,3 @@ func (c *Store) RemoveComponent(ctx context.Context, input *api.RemoveComponentI
 	err = c.client.Invoke(ctx, "remove-component", input, &output)
 	return
 }
-
-func (c *Store) EnsureDevice(ctx context.Context, input *api.EnsureDeviceInput) (output *api.EnsureDeviceOutput, err error) {
-	err = c.client.Invoke(ctx, "ensure-device", input, &output)
-	return
-}

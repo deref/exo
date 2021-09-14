@@ -61,12 +61,6 @@ interface "store" {
   method "remove-component" {
     input "id" "string" {}
   }
-
-  method "ensure-device" {
-    doc = "Ensure that one-time device initialization has been completed. This method is idempotent."
-
-    output "device-id" "string" {}
-  }
 }
 
 struct "workspace-description" {

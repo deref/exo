@@ -2,15 +2,11 @@ package main
 
 import (
 	"fmt"
-	"path/filepath"
 	"strings"
 
 	"github.com/deref/exo"
-	state "github.com/deref/exo/internal/core/state/api"
-	"github.com/deref/exo/internal/core/state/statefile"
+	"github.com/deref/exo/internal/install"
 	"github.com/deref/exo/internal/telemetry"
-	"github.com/deref/exo/internal/upgrade"
-	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/spf13/cobra"
 )
 
@@ -28,7 +24,7 @@ var upgradeCmd = &cobra.Command{
 		tel := telemetry.FromContext(ctx)
 		if !tel.IsEnabled() {
 			fmt.Println("Cannot check current version - telemetry disabled.")
-			if upgrade.IsManaged {
+			if install.IsManaged {
 				fmt.Println("Please upgrade using your system package manager.")
 			} else {
 				fmt.Println("You may upgrade with the following command.")
@@ -49,18 +45,9 @@ var upgradeCmd = &cobra.Command{
 			fmt.Println("You are already running the latest version")
 		case -1:
 			fmt.Println("Upgrade needed")
+			inst := install.Get(cfg.VarDir + "/deviceid")
 			// TODO: Prompt for confirmation?
-			statePath := filepath.Join(cfg.VarDir, "state.json")
-			deviceIDPath := filepath.Join(cfg.VarDir, "deviceid")
-			store := statefile.New(statefile.Config{
-				StoreFilename:    statePath,
-				DeviceIDFilename: deviceIDPath,
-			})
-			ensureDeviceOut, err := store.EnsureDevice(ctx, &state.EnsureDeviceInput{})
-			if err != nil {
-				cmdutil.Fatalf("getting device id")
-			}
-			return upgrade.UpgradeSelf(ensureDeviceOut.DeviceID)
+			return inst.UpgradeSelf()
 		case 1:
 			fmt.Println("You are already running a prerelease version; not downgrading.")
 		default:

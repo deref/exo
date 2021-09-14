@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"net/http"
-	"os"
 	"path/filepath"
 	"sort"
 	"strings"
@@ -13,27 +12,23 @@ import (
 	"github.com/deref/exo/internal/core/state/api"
 	state "github.com/deref/exo/internal/core/state/api"
 	"github.com/deref/exo/internal/deps"
-	"github.com/deref/exo/internal/gensym"
 	"github.com/deref/exo/internal/util/atom"
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/pathutil"
 )
 
 type Config struct {
-	StoreFilename    string
-	DeviceIDFilename string
+	StoreFilename string
 }
 
 func New(cfg Config) *Store {
 	return &Store{
-		atom:             atom.NewFileAtom(cfg.StoreFilename, atom.CodecJSON),
-		deviceIDFilename: cfg.DeviceIDFilename,
+		atom: atom.NewFileAtom(cfg.StoreFilename, atom.CodecJSON),
 	}
 }
 
 type Store struct {
-	atom             atom.Atom
-	deviceIDFilename string
+	atom atom.Atom
 }
 
 var _ state.Store = (*Store)(nil)
@@ -452,34 +447,4 @@ func (sto *Store) RemoveComponent(ctx context.Context, input *state.RemoveCompon
 		return nil, err
 	}
 	return &state.RemoveComponentOutput{}, nil
-}
-
-func (sto *Store) EnsureDevice(ctx context.Context, input *state.EnsureDeviceInput) (*state.EnsureDeviceOutput, error) {
-	var deviceID string
-
-	_, err := sto.swap(func(root *Root) error {
-		if root.DeviceID != "" {
-			deviceID = root.DeviceID
-			return nil
-		}
-		deviceIDFile, err := os.ReadFile(sto.deviceIDFilename)
-		switch {
-		case os.IsNotExist(err):
-			deviceID = gensym.RandomBase32()
-		case err != nil:
-			return fmt.Errorf("reading device id file: %w", err)
-		default:
-			deviceID = string(deviceIDFile)
-		}
-
-		root.DeviceID = deviceID
-		return nil
-	})
-	if err != nil {
-		return nil, err
-	}
-
-	return &state.EnsureDeviceOutput{
-		DeviceID: deviceID,
-	}, nil
 }

@@ -20,8 +20,6 @@ type Store interface {
 	AddComponent(context.Context, *AddComponentInput) (*AddComponentOutput, error)
 	PatchComponent(context.Context, *PatchComponentInput) (*PatchComponentOutput, error)
 	RemoveComponent(context.Context, *RemoveComponentInput) (*RemoveComponentOutput, error)
-	// Ensure that one-time device initialization has been completed. This method is idempotent.
-	EnsureDevice(context.Context, *EnsureDeviceInput) (*EnsureDeviceOutput, error)
 }
 
 type DescribeWorkspacesInput struct {
@@ -107,13 +105,6 @@ type RemoveComponentInput struct {
 type RemoveComponentOutput struct {
 }
 
-type EnsureDeviceInput struct {
-}
-
-type EnsureDeviceOutput struct {
-	DeviceID string `json:"deviceId"`
-}
-
 func BuildStoreMux(b *josh.MuxBuilder, factory func(req *http.Request) Store) {
 	b.AddMethod("describe-workspaces", func(req *http.Request) interface{} {
 		return factory(req).DescribeWorkspaces
@@ -141,9 +132,6 @@ func BuildStoreMux(b *josh.MuxBuilder, factory func(req *http.Request) Store) {
 	})
 	b.AddMethod("remove-component", func(req *http.Request) interface{} {
 		return factory(req).RemoveComponent
-	})
-	b.AddMethod("ensure-device", func(req *http.Request) interface{} {
-		return factory(req).EnsureDevice
 	})
 }
 

@@ -13,9 +13,9 @@ import (
 	"github.com/deref/exo/internal/config"
 	"github.com/deref/exo/internal/core/server"
 	kernel "github.com/deref/exo/internal/core/server"
-	state "github.com/deref/exo/internal/core/state/api"
 	"github.com/deref/exo/internal/core/state/statefile"
 	"github.com/deref/exo/internal/gensym"
+	"github.com/deref/exo/internal/install"
 	"github.com/deref/exo/internal/logd"
 	logdserver "github.com/deref/exo/internal/logd/server"
 	"github.com/deref/exo/internal/logd/store/badger"
@@ -91,19 +91,20 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	}
 
 	statePath := filepath.Join(cfg.VarDir, "state.json")
-	deviceIDPath := filepath.Join(cfg.VarDir, "deviceid")
+	// deviceIDPath := filepath.Join(cfg.VarDir, "deviceid")
 	store := statefile.New(statefile.Config{
-		StoreFilename:    statePath,
-		DeviceIDFilename: deviceIDPath,
+		StoreFilename: statePath,
 	})
-	ensureDeviceOut, err := store.EnsureDevice(ctx, &state.EnsureDeviceInput{})
+
+	inst := install.Get(filepath.Join(cfg.VarDir, "deviceid"))
+	deviceID, err := inst.GetDeviceID()
 	if err != nil {
-		cmdutil.Fatalf("failed to initialize exo installation: %v", err)
+		cmdutil.Fatalf("failed to initialize device: %v", err)
 	}
 
 	tel := telemetry.New(ctx, telemetry.Config{
 		Disable:  cfg.Telemetry.Disable,
-		DeviceID: ensureDeviceOut.DeviceID,
+		DeviceID: deviceID,
 	})
 	ctx = telemetry.ContextWithTelemetry(ctx, tel)
 	tel.StartSession(ctx)
@@ -120,7 +121,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	}
 
 	kernelCfg := &kernel.Config{
-		DeviceID:    ensureDeviceOut.DeviceID,
+		Install:     inst,
 		VarDir:      cfg.VarDir,
 		Store:       store,
 		SyslogPort:  cfg.Log.SyslogPort,

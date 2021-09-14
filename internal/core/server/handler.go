@@ -5,6 +5,7 @@ import (
 
 	"github.com/deref/exo/internal/core/api"
 	state "github.com/deref/exo/internal/core/state/api"
+	"github.com/deref/exo/internal/install"
 	josh "github.com/deref/exo/internal/josh/server"
 	"github.com/deref/exo/internal/task"
 	taskapi "github.com/deref/exo/internal/task/api"
@@ -13,9 +14,9 @@ import (
 )
 
 type Config struct {
-	DeviceID    string
 	VarDir      string
 	Store       state.Store
+	Install     *install.Install
 	SyslogPort  uint
 	Docker      *docker.Client
 	Logger      logging.Logger
@@ -28,8 +29,7 @@ func BuildRootMux(prefix string, cfg *Config) *http.ServeMux {
 	endKernel := b.Begin("kernel")
 	api.BuildKernelMux(b, func(req *http.Request) api.Kernel {
 		return &Kernel{
-			DeviceID:    cfg.DeviceID,
-			VarDir:      cfg.VarDir,
+			Install:     cfg.Install,
 			Store:       cfg.Store,
 			TaskTracker: cfg.TaskTracker,
 		}
