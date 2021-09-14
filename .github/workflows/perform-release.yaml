@@ -123,6 +123,8 @@ jobs:
           echo "binary_name=$BINARY_NAME" >> $GITHUB_ENV
           echo "artifact_dir=$ARTIFACT_DIR" >> $GITHUB_ENV
           echo "binary_path=${ARTIFACT_DIR}/${BINARY_NAME}" >> $GITHUB_ENV
+      - name: Output release URL file
+        run: echo -n "${{ secrets.AMPLITUDE_API_KEY }}" > AMPLITUDE_API_KEY
       - name: Build
         run: |
           mkdir -p "${{ env.artifact_dir }}"
