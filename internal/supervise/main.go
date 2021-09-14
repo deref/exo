@@ -163,7 +163,6 @@ func pipeToSyslog(ctx context.Context, conn net.Conn, componentID string, name s
 		message, isPrefix, err := b.ReadLine()
 		for isPrefix {
 			// Skip remainder of line.
-			message = append([]byte{}, message...)
 			_, isPrefix, err = b.ReadLine()
 			if err == io.EOF {
 				break
