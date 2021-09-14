@@ -71,8 +71,8 @@ interface "workspace" {
   method "describe-components" {
     doc = "Returns component descriptions."
 
-    input "ids" "[]string" {
-      doc = "If non-empty, filters components to supplied ids."
+    input "refs" "[]string" {
+      doc = "If non-empty, filters components to supplied refs."
     }
 
     input "types" "[]string" {

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"net"
+	"strings"
 	"time"
 
 	"github.com/deref/exo/internal/chrono"
@@ -107,9 +108,10 @@ func syslogToEvent(syslogMessage syslog.Message) (*api.AddEventInput, error) {
 		}
 	}
 
+	message := strings.TrimSuffix(*rfc5425Message.Message, "\n")
 	return &api.AddEventInput{
 		Log:       logName,
 		Timestamp: rfc5425Message.Timestamp.Format(chrono.RFC3339MicroUTC),
-		Message:   *rfc5425Message.Message,
+		Message:   message,
 	}, nil
 }

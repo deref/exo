@@ -225,11 +225,11 @@ func (sto *Store) DescribeComponents(ctx context.Context, input *state.DescribeC
 		return output, nil
 	}
 
-	var ids map[string]bool
-	if input.IDs != nil {
-		ids = make(map[string]bool, len(input.IDs))
-		for _, id := range input.IDs {
-			ids[id] = true
+	var refs map[string]bool
+	if input.Refs != nil {
+		refs = make(map[string]bool, len(input.Refs))
+		for _, ref := range input.Refs {
+			refs[ref] = true
 		}
 	}
 
@@ -247,7 +247,7 @@ func (sto *Store) DescribeComponents(ctx context.Context, input *state.DescribeC
 	}
 
 	for componentID, component := range workspace.Components {
-		if (ids == nil || ids[componentID]) &&
+		if (refs == nil || refs[componentID] || refs[component.Name]) &&
 			(types == nil || types[component.Type]) {
 			output.Components = append(output.Components, component.getDescription(componentID, input.WorkspaceID))
 		}

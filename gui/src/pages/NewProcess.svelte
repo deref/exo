@@ -147,9 +147,7 @@ my-app --port 4000
             </div>
             <details>
               <summary>Show/hide example</summary>
-              <CodeBlock>
-                {codeExample}
-              </CodeBlock>
+              <CodeBlock code={codeExample} />
             </details>
             <div class="buttons">
               <Button type="submit">Create Process</Button>

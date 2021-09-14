@@ -64,7 +64,7 @@ type ResolveOutput struct {
 
 type DescribeComponentsInput struct {
 	WorkspaceID         string   `json:"workspaceId"`
-	IDs                 []string `json:"ids"`
+	Refs                []string `json:"refs"`
 	Types               []string `json:"types"`
 	IncludeDependencies bool     `json:"includeDependencies"`
 	IncludeDependents   bool     `json:"includeDependents"`

@@ -51,7 +51,7 @@ func (v *Volume) Dispose(ctx context.Context, input *core.DisposeInput) (*core.D
 	force := false
 	err := v.Docker.VolumeRemove(ctx, v.VolumeName, force)
 	if dockerclient.IsErrNotFound(err) {
-		v.Logger.Infof("disposing volume not found: %q", v.VolumeName)
+		v.Logger.Infof("volume to be removed not found: %q", v.VolumeName)
 		err = nil
 	}
 	if err != nil {
