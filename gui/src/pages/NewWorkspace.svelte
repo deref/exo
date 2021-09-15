@@ -1,8 +1,8 @@
 <script lang="ts">
   import Layout from '../components/Layout.svelte';
-  import Button from '../components/Button.svelte';
   import Textbox from '../components/Textbox.svelte';
   import ErrorLabel from '../components/ErrorLabel.svelte';
+  import SubmitButton from '../components/form/SubmitButton.svelte';
   import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
   import { api, isClientError } from '../lib/api';
   import * as qs from 'qs';
@@ -49,34 +49,8 @@
         placeholder="/home/user/path/to/project"
         --input-width="100%"
       />
-      <div class="buttons">
-        <Button type="submit">Create project</Button>
-      </div>
+      <SubmitButton>Create project</SubmitButton>
     </form>
     <ErrorLabel value={error} />
   </CenterFormPanel>
 </Layout>
-
-<style>
-  label {
-    display: block;
-    margin-bottom: 8px;
-  }
-
-  h1 {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    font-size: 24px;
-    font-weight: 500;
-    margin: 0;
-    margin-bottom: 36px;
-  }
-
-  .buttons {
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-end;
-    margin: 24px 0;
-  }
-</style>

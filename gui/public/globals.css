@@ -77,10 +77,31 @@ body {
   padding: 0;
 }
 
+h1,
+h2,
+h3 {
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  margin: 0;
+}
+
 h1 {
-  font-size: 28px;
-  margin: 24px 0;
-  font-weight: 550;
+  font-size: 24px;
+  gap: 18px;
+  margin-bottom: 32px;
+}
+
+h2 {
+  font-size: 20px;
+  gap: 12px;
+  margin-bottom: 16px;
+}
+
+h3 {
+  font-size: 17px;
+  gap: 8px;
+  margin-bottom: 12px;
 }
 
 b,
@@ -100,4 +121,19 @@ hr {
   height: 1px;
   background: var(--grey-c-color);
   margin: 32px 0;
+}
+
+form label {
+  display: block;
+  margin-bottom: 8px;
+}
+
+details {
+  margin: 24px 0;
+}
+
+summary {
+  margin-bottom: 12px;
+  user-select: none;
+  cursor: pointer;
 }
