@@ -98,6 +98,12 @@ h2 {
   margin-bottom: 16px;
 }
 
+h3 {
+  font-size: 17px;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
 b,
 strong,
 h1,
