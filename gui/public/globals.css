@@ -116,3 +116,8 @@ hr {
   background: var(--grey-c-color);
   margin: 32px 0;
 }
+
+form label {
+  display: block;
+  margin-bottom: 8px;
+}

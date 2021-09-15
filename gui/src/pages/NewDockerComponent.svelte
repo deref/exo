@@ -112,11 +112,6 @@
     cursor: pointer;
   }
 
-  label {
-    display: block;
-    margin-bottom: 8px;
-  }
-
   .buttons {
     display: flex;
     flex-direction: row;

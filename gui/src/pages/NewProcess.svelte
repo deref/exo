@@ -174,11 +174,6 @@ my-app --port 4000
     width: 100%;
   }
 
-  label {
-    display: block;
-    margin-bottom: 8px;
-  }
-
   .buttons {
     display: flex;
     flex-direction: row;
