@@ -83,6 +83,12 @@ h1 {
   font-weight: 550;
 }
 
+h2 {
+  font-size: 20px;
+  margin: 16px 0;
+  font-weight: 500;
+}
+
 b,
 strong,
 h1,

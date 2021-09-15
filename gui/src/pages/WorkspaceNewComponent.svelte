@@ -74,12 +74,8 @@
 </Layout>
 
 <style>
-  h2 {
-    font-size: 20px;
-    font-weight: 500;
-    margin: 0;
-    margin-top: 24px;
-    margin-bottom: 16px;
+  section {
+    margin-bottom: 24px;
   }
 
   button {

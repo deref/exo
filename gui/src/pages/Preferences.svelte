@@ -69,18 +69,12 @@
     display: flex;
     justify-content: space-between;
     align-items: center;
-    margin-bottom: 24px;
+    margin-bottom: 8px;
   }
 
   .button-row {
     display: grid;
     grid-auto-flow: column;
     gap: 12px;
-  }
-
-  h2 {
-    font-size: 20px;
-    font-weight: 500;
-    margin: 0;
   }
 </style>
