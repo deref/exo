@@ -98,15 +98,3 @@
     </form>
   </CenterFormPanel>
 </Layout>
-
-<style>
-  details {
-    margin: 24px 0;
-  }
-
-  summary {
-    margin-bottom: 12px;
-    user-select: none;
-    cursor: pointer;
-  }
-</style>

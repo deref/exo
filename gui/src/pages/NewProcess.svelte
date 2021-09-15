@@ -156,16 +156,6 @@ my-app --port 4000
     margin-bottom: 24px;
   }
 
-  details {
-    margin: 24px 0;
-  }
-
-  summary {
-    margin-bottom: 12px;
-    user-select: none;
-    cursor: pointer;
-  }
-
   * :global(input) {
     width: 100%;
   }
