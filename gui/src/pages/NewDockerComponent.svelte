@@ -6,11 +6,11 @@
 
 <script lang="ts">
   import Layout from '../components/Layout.svelte';
-  import Button from '../components/Button.svelte';
   import Textbox from '../components/Textbox.svelte';
   import EditAs from '../components/form/EditAs.svelte';
   import ErrorLabel from '../components/ErrorLabel.svelte';
   import TextEditor from '../components/TextEditor.svelte';
+  import SubmitButton from '../components/form/SubmitButton.svelte';
   import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
   import DockerSVG from '../components/mono/DockerSVG.svelte';
   import { api, isClientError } from '../lib/api';
@@ -91,9 +91,7 @@
       {:else}
         <!-- GUI form edit mode -->
       {/if}
-      <div class="buttons">
-        <Button type="submit">Create {displayType}</Button>
-      </div>
+      <SubmitButton>Create {displayType}</SubmitButton>
       <div style="margin: 24px 0;">
         <ErrorLabel value={error} />
       </div>
@@ -110,12 +108,5 @@
     margin-bottom: 12px;
     user-select: none;
     cursor: pointer;
-  }
-
-  .buttons {
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-end;
-    margin-top: 8px;
   }
 </style>

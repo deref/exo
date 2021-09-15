@@ -1,6 +1,5 @@
 <script lang="ts">
   import Layout from '../components/Layout.svelte';
-  import Button from '../components/Button.svelte';
   import Textbox from '../components/Textbox.svelte';
   import EditAs from '../components/form/EditAs.svelte';
   import CodeBlock from '../components/CodeBlock.svelte';
@@ -8,6 +7,7 @@
   import ShellEditor from '../components/ShellEditor.svelte';
   import WorkspaceNav from '../components/WorkspaceNav.svelte';
   import ArgumentsInput from '../components/ArgumentsInput.svelte';
+  import SubmitButton from '../components/form/SubmitButton.svelte';
   import EnvironmentInput from '../components/EnvironmentInput.svelte';
   import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
   import LayersSVG from '../components/mono/LayersSVG.svelte';
@@ -130,9 +130,7 @@ my-app --port 4000
             bind:environment
           />
         </div>
-        <div class="buttons">
-          <Button type="submit">Create Process</Button>
-        </div>
+        <SubmitButton>Create Process</SubmitButton>
       {:else}
         <div>
           <div class="script-editor">
@@ -143,9 +141,7 @@ my-app --port 4000
             <summary>Show/hide example</summary>
             <CodeBlock code={codeExample} />
           </details>
-          <div class="buttons">
-            <Button type="submit">Create Process</Button>
-          </div>
+          <SubmitButton>Create Process</SubmitButton>
         </div>
       {/if}
       <ErrorLabel value={error} />
@@ -172,12 +168,5 @@ my-app --port 4000
 
   * :global(input) {
     width: 100%;
-  }
-
-  .buttons {
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-end;
-    margin-top: 8px;
   }
 </style>
