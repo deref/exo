@@ -63,16 +63,6 @@
     margin-bottom: 8px;
   }
 
-  h1 {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    font-size: 24px;
-    font-weight: 500;
-    margin: 0;
-    margin-bottom: 36px;
-  }
-
   .buttons {
     display: flex;
     flex-direction: row;

@@ -77,16 +77,25 @@ body {
   padding: 0;
 }
 
+h1,
+h2,
+h3 {
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  margin: 0;
+}
+
 h1 {
-  font-size: 28px;
-  margin: 24px 0;
-  font-weight: 550;
+  font-size: 24px;
+  gap: 18px;
+  margin-bottom: 32px;
 }
 
 h2 {
   font-size: 20px;
-  margin: 16px 0;
-  font-weight: 500;
+  gap: 12px;
+  margin-bottom: 16px;
 }
 
 b,
