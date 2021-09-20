@@ -50,8 +50,9 @@ func (kern *Kernel) DescribeWorkspaces(ctx context.Context, input *api.DescribeW
 	workspaces := make([]api.WorkspaceDescription, len(output.Workspaces))
 	for i, workspace := range output.Workspaces {
 		workspaces[i] = api.WorkspaceDescription{
-			ID:   workspace.ID,
-			Root: workspace.Root,
+			ID:          workspace.ID,
+			Root:        workspace.Root,
+			DisplayName: workspace.DisplayName,
 		}
 	}
 	return &api.DescribeWorkspacesOutput{
