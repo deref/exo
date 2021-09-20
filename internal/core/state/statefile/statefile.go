@@ -100,6 +100,10 @@ func (sto *Store) DescribeWorkspaces(ctx context.Context, input *state.DescribeW
 			output.Workspaces = append(output.Workspaces, state.WorkspaceDescription{
 				ID:   id,
 				Root: workspace.Root,
+				// TODO: DisplayName should be fetched from storage. If blank, then
+				// we should automatically create an unambiguous display name. For
+				// example we may choose the shorestest unique path suffix.
+				DisplayName: filepath.Base(workspace.Root),
 			})
 		}
 	}

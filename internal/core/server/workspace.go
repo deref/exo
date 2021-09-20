@@ -68,9 +68,11 @@ func (ws *Workspace) describe(ctx context.Context) (*api.WorkspaceDescription, e
 	if len(output.Workspaces) != 1 {
 		return nil, fmt.Errorf("invalid workspace: %q", ws.ID)
 	}
+	desc := output.Workspaces[0]
 	return &api.WorkspaceDescription{
-		ID:   ws.ID,
-		Root: output.Workspaces[0].Root,
+		ID:          ws.ID,
+		Root:        desc.Root,
+		DisplayName: desc.DisplayName,
 	}, nil
 }
 

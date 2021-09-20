@@ -42,6 +42,7 @@ If no subcommand is given, describes the current workspace.`,
 		w := tabwriter.NewWriter(os.Stdout, 4, 8, 3, ' ', 0)
 		_, _ = fmt.Fprintf(w, "id:\t%s\n", desc.ID)
 		_, _ = fmt.Fprintf(w, "path:\t%s\n", desc.Root)
+		_, _ = fmt.Fprintf(w, "display-name:\t%s\n", desc.DisplayName)
 		_ = w.Flush()
 		return nil
 	},

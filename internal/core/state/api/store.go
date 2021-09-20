@@ -136,8 +136,9 @@ func BuildStoreMux(b *josh.MuxBuilder, factory func(req *http.Request) Store) {
 }
 
 type WorkspaceDescription struct {
-	ID   string `json:"id"`
-	Root string `json:"root"`
+	ID          string `json:"id"`
+	Root        string `json:"root"`
+	DisplayName string `json:"displayName"`
 }
 
 type ComponentDescription struct {
