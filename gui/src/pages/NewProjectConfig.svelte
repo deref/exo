@@ -62,12 +62,14 @@
             describeWorkingDirectory(workingDirectory).parent,
           )}>..</button
       >
-      {#each describeWorkingDirectory(workingDirectory).children as child}
-        <button
-          on:click={() => setWorkingDirectory(workingDirectory + '/' + child)}
-          >{child}</button
-        >
-      {/each}
+      <div class="directories">
+        {#each describeWorkingDirectory(workingDirectory).children as child}
+          <button
+            on:click={() => setWorkingDirectory(workingDirectory + '/' + child)}
+            >{child}</button
+          >
+        {/each}
+      </div>
       <SubmitButton>Create project</SubmitButton>
     </form>
     <ErrorLabel value={error} />
@@ -79,19 +81,37 @@
     color: var(--grey-9-color);
   }
 
+  .directories {
+    margin: 12px 0;
+  }
+
+  .directories button {
+    border-radius: 0;
+  }
+
+  .directories button:first-of-type {
+    border-top-left-radius: 5px;
+    border-top-right-radius: 5px;
+  }
+
+  .directories button:last-of-type {
+    border-bottom-left-radius: 5px;
+    border-bottom-right-radius: 5px;
+  }
+
   button {
-    background: var(--button-background);
+    background: var(--primary-bg-color);
     box-shadow: var(--button-shadow);
     border: none;
-    border-radius: 3px;
-    padding: 6px 12px;
+    border-radius: 5px;
+    padding: 5px 10px;
     position: relative;
     display: grid;
     width: 100%;
     grid-template-columns: max-content 2fr;
     align-items: center;
     gap: 12px;
-    margin-top: 4px;
+    margin-top: 1px;
   }
 
   button > b {
@@ -105,12 +125,12 @@
   }
 
   button:hover {
-    background: var(--button-hover-background);
+    background: var(--grey-e-color);
     box-shadow: var(--button-hover-shadow);
   }
 
   button:active {
-    background: var(--button-active-background);
+    background: var(--grey-c-color);
     box-shadow: var(--button-active-shadow);
   }
 </style>
