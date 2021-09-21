@@ -14,6 +14,7 @@ require (
 	github.com/docker/go-units v0.4.0
 	github.com/fatih/color v1.12.0 // indirect
 	github.com/fsnotify/fsnotify v1.4.9
+	github.com/go-git/go-git/v5 v5.4.2
 	github.com/goccy/go-yaml v1.8.10
 	github.com/gofrs/flock v0.8.1
 	github.com/hashicorp/hcl/v2 v2.10.0
@@ -26,6 +27,7 @@ require (
 	github.com/natefinch/atomic v1.0.1
 	github.com/oklog/ulid/v2 v2.0.2
 	github.com/opencontainers/image-spec v1.0.1
+	github.com/otiai10/copy v1.6.0
 	github.com/pkg/browser v0.0.0-20210706143420-7d21f8c997e2
 	github.com/shirou/gopsutil/v3 v3.21.6
 	github.com/spf13/cobra v1.0.0
@@ -37,6 +39,7 @@ require (
 	golang.org/x/sys v0.0.0-20210806184541-e5e7981a1069
 	gopkg.in/alessio/shellescape.v1 v1.0.0-20170105083845-52074bc9df61
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
+	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
 	mvdan.cc/sh/v3 v3.3.1
 )
 

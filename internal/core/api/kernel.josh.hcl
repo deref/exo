@@ -1,21 +1,27 @@
 interface "kernel" {
-  
+
+  method "create-project" {
+    input "root" "string" {}
+    input "template-id" "*string" {}
+    output "workspace-id" "string" {}
+  }
+
   method "create-workspace" {
     input "root" "string" {}
-    
+
     output "id" "string" {}
   }
-  
+
   method "describe-workspaces" {
     output "workspaces" "[]WorkspaceDescription" {}
   }
-  
+
   method "resolve-workspace" {
     input "ref" "string" {}
 
     output "id" "*string" {}
   }
-  
+
   method "panic" {
     doc = "Debug method to test what happens when the service panics."
 

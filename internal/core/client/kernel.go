@@ -21,6 +21,11 @@ func GetKernel(client *josh.Client) *Kernel {
 	}
 }
 
+func (c *Kernel) CreateProject(ctx context.Context, input *api.CreateProjectInput) (output *api.CreateProjectOutput, err error) {
+	err = c.client.Invoke(ctx, "create-project", input, &output)
+	return
+}
+
 func (c *Kernel) CreateWorkspace(ctx context.Context, input *api.CreateWorkspaceInput) (output *api.CreateWorkspaceOutput, err error) {
 	err = c.client.Invoke(ctx, "create-workspace", input, &output)
 	return

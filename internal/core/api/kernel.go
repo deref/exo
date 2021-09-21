@@ -10,6 +10,7 @@ import (
 )
 
 type Kernel interface {
+	CreateProject(context.Context, *CreateProjectInput) (*CreateProjectOutput, error)
 	CreateWorkspace(context.Context, *CreateWorkspaceInput) (*CreateWorkspaceOutput, error)
 	DescribeWorkspaces(context.Context, *DescribeWorkspacesInput) (*DescribeWorkspacesOutput, error)
 	ResolveWorkspace(context.Context, *ResolveWorkspaceInput) (*ResolveWorkspaceOutput, error)
@@ -24,6 +25,15 @@ type Kernel interface {
 	// Gracefully shutdown the exo daemon.
 	Exit(context.Context, *ExitInput) (*ExitOutput, error)
 	DescribeTasks(context.Context, *DescribeTasksInput) (*DescribeTasksOutput, error)
+}
+
+type CreateProjectInput struct {
+	Root       string  `json:"root"`
+	TemplateID *string `json:"templateId"`
+}
+
+type CreateProjectOutput struct {
+	WorkspaceID string `json:"workspaceId"`
 }
 
 type CreateWorkspaceInput struct {
@@ -94,6 +104,9 @@ type DescribeTasksOutput struct {
 }
 
 func BuildKernelMux(b *josh.MuxBuilder, factory func(req *http.Request) Kernel) {
+	b.AddMethod("create-project", func(req *http.Request) interface{} {
+		return factory(req).CreateProject
+	})
 	b.AddMethod("create-workspace", func(req *http.Request) interface{} {
 		return factory(req).CreateWorkspace
 	})

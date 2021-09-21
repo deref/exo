@@ -194,6 +194,7 @@ export interface DescribeTasksInput {
 
 export interface KernelApi {
   describeWorkspaces(): Promise<WorkspaceDescription[]>;
+  createProject(root: string, templateId?: string): Promise<string>;
   createWorkspace(root: string): Promise<string>;
   getVersion(): Promise<GetVersionResponse>;
   upgrade(): Promise<void>;
@@ -254,6 +255,13 @@ export const api = (() => {
       async describeWorkspaces(): Promise<WorkspaceDescription[]> {
         const { workspaces } = (await invoke('describe-workspaces', {})) as any;
         return workspaces;
+      },
+      async createProject(root: string, templateId?: string): Promise<string> {
+        const { id } = (await invoke('create-project', {
+          root,
+          templateId,
+        })) as any;
+        return id;
       },
       async createWorkspace(root: string): Promise<string> {
         const { id } = (await invoke('create-workspace', { root })) as any;

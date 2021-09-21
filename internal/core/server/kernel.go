@@ -20,12 +20,73 @@ import (
 	"github.com/deref/exo/internal/upgrade"
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/osutil"
+	"github.com/go-git/go-git/v5"
+	"github.com/otiai10/copy"
 )
 
 type Kernel struct {
 	VarDir      string
 	Store       state.Store
 	TaskTracker *task.TaskTracker
+}
+
+// GetTemplateFiles returns the path to a directory that contains the intial
+// project template.
+func GetTemplateFiles(ctx context.Context, templateName string) (string, error) {
+	dir, err := os.MkdirTemp("", "exo-template-clone-")
+	if err != nil {
+		return "", fmt.Errorf("making temp dir: %w", err)
+	}
+	defer os.RemoveAll(dir)
+
+	_, err = git.PlainCloneContext(ctx, dir, false, &git.CloneOptions{
+		URL:          "https://github.com/railwayapp/starters",
+		SingleBranch: true,
+		Tags:         git.NoTags,
+		Depth:        1,
+		//Progress:     os.Stderr,
+	})
+	if err != nil {
+		return "", fmt.Errorf("cloning repo: %w", err)
+	}
+
+	templateDir := path.Join(dir, "examples", templateName)
+	return templateDir, nil
+}
+
+func (kern *Kernel) CreateProject(ctx context.Context, input *api.CreateProjectInput) (*api.CreateProjectOutput, error) {
+	projectDir := input.Root
+	if !path.IsAbs(projectDir) {
+		return &api.CreateProjectOutput{}, errors.New("path must be absolute")
+	}
+
+	var templateDir string
+	if input.TemplateID != nil {
+		var err error
+		templateDir, err = GetTemplateFiles(ctx, *input.TemplateID)
+		if err != nil {
+			return &api.CreateProjectOutput{}, fmt.Errorf("getting template files: %w", err)
+		}
+	}
+
+	err := os.Mkdir(projectDir, 0750)
+	if err != nil {
+		return &api.CreateProjectOutput{}, fmt.Errorf("making project dir: %w", err)
+	}
+
+	if templateDir != "" {
+		copy.Copy(templateDir, projectDir, copy.Options{
+			OnSymlink: func(string) copy.SymlinkAction {
+				return copy.Deep
+			},
+		})
+	}
+
+	result, err := kern.CreateWorkspace(ctx, &api.CreateWorkspaceInput{Root: projectDir})
+	if err != nil {
+		return &api.CreateProjectOutput{}, fmt.Errorf("creating workspace: %w", err)
+	}
+	return &api.CreateProjectOutput{WorkspaceID: result.ID}, err
 }
 
 func (kern *Kernel) CreateWorkspace(ctx context.Context, input *api.CreateWorkspaceInput) (*api.CreateWorkspaceOutput, error) {
