@@ -212,7 +212,7 @@ func (kern *Kernel) GetUserHomeDir(ctx context.Context, input *api.GetUserHomeDi
 
 func (kern *Kernel) ReadDir(ctx context.Context, input *api.ReadDirInput) (*api.ReadDirOutput, error) {
 	if !path.IsAbs(input.Path) {
-		return &api.ReadDirOutput{}, fmt.Errorf("path not absolute: %s", input.Path)
+		return &api.ReadDirOutput{}, fmt.Errorf("path not absolute: %q", input.Path)
 	}
 
 	entries, err := os.ReadDir(input.Path)
