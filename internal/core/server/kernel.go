@@ -200,3 +200,32 @@ func (kern *Kernel) DescribeTasks(ctx context.Context, input *api.DescribeTasksI
 	}
 	return &output, nil
 }
+
+func (kern *Kernel) GetUserHomeDir(ctx context.Context, input *api.GetUserHomeDirInput) (*api.GetUserHomeDirOutput, error) {
+	path, err := os.UserHomeDir()
+	if err != nil {
+		return &api.GetUserHomeDirOutput{}, errors.New("could not get user home directory")
+	}
+	return &api.GetUserHomeDirOutput{Path: path}, nil
+}
+
+func (kern *Kernel) ReadDir(ctx context.Context, input *api.ReadDirInput) (*api.ReadDirOutput, error) {
+	if !path.IsAbs(input.Path) {
+		return &api.ReadDirOutput{}, fmt.Errorf("path not absolute: %s", input.Path)
+	}
+
+	entries, err := os.ReadDir(input.Path)
+	if err != nil {
+		return nil, fmt.Errorf("reading directory: %w", err)
+	}
+
+	results := make([]api.DirectoryEntry, len(entries))
+	for i, e := range entries {
+		results[i] = api.DirectoryEntry{
+			Name:         e.Name(),
+			IsDirectory:  e.IsDir(),
+			AbsolutePath: path.Join(input.Path, e.Name()),
+		}
+	}
+	return &api.ReadDirOutput{Entries: results}, nil
+}

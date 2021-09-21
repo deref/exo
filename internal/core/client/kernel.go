@@ -65,3 +65,13 @@ func (c *Kernel) DescribeTasks(ctx context.Context, input *api.DescribeTasksInpu
 	err = c.client.Invoke(ctx, "describe-tasks", input, &output)
 	return
 }
+
+func (c *Kernel) GetUserHomeDir(ctx context.Context, input *api.GetUserHomeDirInput) (output *api.GetUserHomeDirOutput, err error) {
+	err = c.client.Invoke(ctx, "get-user-home-dir", input, &output)
+	return
+}
+
+func (c *Kernel) ReadDir(ctx context.Context, input *api.ReadDirInput) (output *api.ReadDirOutput, err error) {
+	err = c.client.Invoke(ctx, "read-dir", input, &output)
+	return
+}

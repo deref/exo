@@ -24,6 +24,8 @@ type Kernel interface {
 	// Gracefully shutdown the exo daemon.
 	Exit(context.Context, *ExitInput) (*ExitOutput, error)
 	DescribeTasks(context.Context, *DescribeTasksInput) (*DescribeTasksOutput, error)
+	GetUserHomeDir(context.Context, *GetUserHomeDirInput) (*GetUserHomeDirOutput, error)
+	ReadDir(context.Context, *ReadDirInput) (*ReadDirOutput, error)
 }
 
 type CreateWorkspaceInput struct {
@@ -93,6 +95,21 @@ type DescribeTasksOutput struct {
 	Tasks []TaskDescription `json:"tasks"`
 }
 
+type GetUserHomeDirInput struct {
+}
+
+type GetUserHomeDirOutput struct {
+	Path string `json:"path"`
+}
+
+type ReadDirInput struct {
+	Path string `json:"path"`
+}
+
+type ReadDirOutput struct {
+	Entries []DirectoryEntry `json:"entries"`
+}
+
 func BuildKernelMux(b *josh.MuxBuilder, factory func(req *http.Request) Kernel) {
 	b.AddMethod("create-workspace", func(req *http.Request) interface{} {
 		return factory(req).CreateWorkspace
@@ -121,6 +138,18 @@ func BuildKernelMux(b *josh.MuxBuilder, factory func(req *http.Request) Kernel) 
 	b.AddMethod("describe-tasks", func(req *http.Request) interface{} {
 		return factory(req).DescribeTasks
 	})
+	b.AddMethod("get-user-home-dir", func(req *http.Request) interface{} {
+		return factory(req).GetUserHomeDir
+	})
+	b.AddMethod("read-dir", func(req *http.Request) interface{} {
+		return factory(req).ReadDir
+	})
+}
+
+type DirectoryEntry struct {
+	Name         string `json:"name"`
+	AbsolutePath string `json:"absolutePath"`
+	IsDirectory  bool   `json:"isDirectory"`
 }
 
 type TaskDescription struct {
