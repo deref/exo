@@ -31,8 +31,10 @@
     padding: 16px 24px;
     position: relative;
     display: grid;
+    width: 100%;
     grid-template-columns: max-content 2fr;
     align-items: center;
+    text-align: left;
     gap: 12px;
     margin-top: 12px;
   }
