@@ -62,7 +62,7 @@ interface "kernel" {
 
 struct "directory-entry" {
   field "name" "string" {}
-  field "absolute-path" "string" {}
+  field "path" "string" {}
   field "is-directory" "bool" {}
 }
 

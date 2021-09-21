@@ -223,9 +223,9 @@ func (kern *Kernel) ReadDir(ctx context.Context, input *api.ReadDirInput) (*api.
 	results := make([]api.DirectoryEntry, len(entries))
 	for i, e := range entries {
 		results[i] = api.DirectoryEntry{
-			Name:         e.Name(),
-			IsDirectory:  e.IsDir(),
-			AbsolutePath: filepath.Join(input.Path, e.Name()),
+			Name:        e.Name(),
+			IsDirectory: e.IsDir(),
+			Path:        filepath.Join(input.Path, e.Name()),
 		}
 	}
 	return &api.ReadDirOutput{Entries: results}, nil

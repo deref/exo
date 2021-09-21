@@ -147,9 +147,9 @@ func BuildKernelMux(b *josh.MuxBuilder, factory func(req *http.Request) Kernel) 
 }
 
 type DirectoryEntry struct {
-	Name         string `json:"name"`
-	AbsolutePath string `json:"absolutePath"`
-	IsDirectory  bool   `json:"isDirectory"`
+	Name        string `json:"name"`
+	Path        string `json:"path"`
+	IsDirectory bool   `json:"isDirectory"`
 }
 
 type TaskDescription struct {
