@@ -192,7 +192,14 @@ export interface DescribeTasksInput {
   jobIds?: string[];
 }
 
+export interface DirectoryEntry {
+  name: string;
+  isDirectory: boolean;
+}
+
 export interface KernelApi {
+  getUserHomeDir(): Promise<string>;
+  readDir(path: string): Promise<DirectoryEntry[]>;
   describeWorkspaces(): Promise<WorkspaceDescription[]>;
   createWorkspace(root: string): Promise<string>;
   getVersion(): Promise<GetVersionResponse>;
@@ -251,6 +258,14 @@ export const api = (() => {
     const invoke = (method: string, data?: unknown) =>
       rpc(`/kernel/${method}`, {}, data);
     return {
+      async getUserHomeDir(): Promise<string> {
+        const { path } = (await invoke('get-user-home-dir', {})) as any;
+        return path;
+      },
+      async readDir(path: string): Promise<DirectoryEntry[]> {
+        const { entries } = (await invoke('read-dir', { path })) as any;
+        return entries;
+      },
       async describeWorkspaces(): Promise<WorkspaceDescription[]> {
         const { workspaces } = (await invoke('describe-workspaces', {})) as any;
         return workspaces;
