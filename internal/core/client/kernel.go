@@ -26,6 +26,11 @@ func (c *Kernel) CreateProject(ctx context.Context, input *api.CreateProjectInpu
 	return
 }
 
+func (c *Kernel) ListTemplates(ctx context.Context, input *api.ListTemplatesInput) (output *api.ListTemplatesOutput, err error) {
+	err = c.client.Invoke(ctx, "list-templates", input, &output)
+	return
+}
+
 func (c *Kernel) CreateWorkspace(ctx context.Context, input *api.CreateWorkspaceInput) (output *api.CreateWorkspaceOutput, err error) {
 	err = c.client.Invoke(ctx, "create-workspace", input, &output)
 	return

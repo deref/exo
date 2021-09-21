@@ -54,6 +54,59 @@ func GetTemplateFiles(ctx context.Context, templateName string) (string, error) 
 	return templateDir, nil
 }
 
+func (kern *Kernel) ListTemplates(ctx context.Context, input *api.ListTemplatesInput) (*api.ListTemplatesOutput, error) {
+	// This list is the set of directories here: https://github.com/railwayapp/starters/tree/master/examples
+	// TODO: make this dynamic
+	return &api.ListTemplatesOutput{
+		TemplateNames: []string{
+			"ackee",
+			"blitzjs",
+			"calendso",
+			"code-server",
+			"cusdis",
+			"deno",
+			"discordjs-typescript",
+			"discordjs",
+			"discordpy",
+			"djangopy",
+			"elixir-phoenix",
+			"eris",
+			"expressjs-mongoose",
+			"expressjs-postgres",
+			"expressjs-prisma",
+			"expressjs",
+			"fastapi",
+			"fastify",
+			"flask",
+			"ghost",
+			"gin",
+			"hapi",
+			"hasura",
+			"http-nodejs",
+			"laravel",
+			"n8n",
+			"next-notion-blog",
+			"nextjs-auth-mongo",
+			"nextjs-prisma",
+			"nocodb",
+			"node_modules",
+			"nuxtjs",
+			"rails-blog",
+			"rails-starter",
+			"rocket",
+			"rust-wasm",
+			"shiori",
+			"sinatra",
+			"slack-webhook",
+			"starlette",
+			"strapi",
+			"svelte-kit",
+			"telegram-bot",
+			"umami",
+		},
+	}, nil
+}
+
 func (kern *Kernel) CreateProject(ctx context.Context, input *api.CreateProjectInput) (*api.CreateProjectOutput, error) {
 	projectDir := input.Root
 	if !path.IsAbs(projectDir) {
@@ -61,9 +114,9 @@ func (kern *Kernel) CreateProject(ctx context.Context, input *api.CreateProjectI
 	}
 
 	var templateDir string
-	if input.TemplateID != nil {
+	if input.TemplateName != nil {
 		var err error
-		templateDir, err = GetTemplateFiles(ctx, *input.TemplateID)
+		templateDir, err = GetTemplateFiles(ctx, *input.TemplateName)
 		if err != nil {
 			return &api.CreateProjectOutput{}, fmt.Errorf("getting template files: %w", err)
 		}

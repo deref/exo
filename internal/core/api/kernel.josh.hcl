@@ -2,8 +2,12 @@ interface "kernel" {
 
   method "create-project" {
     input "root" "string" {}
-    input "template-id" "*string" {}
+    input "template-name" "*string" {}
     output "workspace-id" "string" {}
+  }
+
+  method "list-templates" {
+    output "template-names" "[]string" {}
   }
 
   method "create-workspace" {

@@ -11,6 +11,7 @@ import (
 
 type Kernel interface {
 	CreateProject(context.Context, *CreateProjectInput) (*CreateProjectOutput, error)
+	ListTemplates(context.Context, *ListTemplatesInput) (*ListTemplatesOutput, error)
 	CreateWorkspace(context.Context, *CreateWorkspaceInput) (*CreateWorkspaceOutput, error)
 	DescribeWorkspaces(context.Context, *DescribeWorkspacesInput) (*DescribeWorkspacesOutput, error)
 	ResolveWorkspace(context.Context, *ResolveWorkspaceInput) (*ResolveWorkspaceOutput, error)
@@ -28,12 +29,19 @@ type Kernel interface {
 }
 
 type CreateProjectInput struct {
-	Root       string  `json:"root"`
-	TemplateID *string `json:"templateId"`
+	Root         string  `json:"root"`
+	TemplateName *string `json:"templateName"`
 }
 
 type CreateProjectOutput struct {
 	WorkspaceID string `json:"workspaceId"`
+}
+
+type ListTemplatesInput struct {
+}
+
+type ListTemplatesOutput struct {
+	TemplateNames []string `json:"templateNames"`
 }
 
 type CreateWorkspaceInput struct {
@@ -106,6 +114,9 @@ type DescribeTasksOutput struct {
 func BuildKernelMux(b *josh.MuxBuilder, factory func(req *http.Request) Kernel) {
 	b.AddMethod("create-project", func(req *http.Request) interface{} {
 		return factory(req).CreateProject
+	})
+	b.AddMethod("list-templates", func(req *http.Request) interface{} {
+		return factory(req).ListTemplates
 	})
 	b.AddMethod("create-workspace", func(req *http.Request) interface{} {
 		return factory(req).CreateWorkspace
