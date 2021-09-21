@@ -256,10 +256,13 @@ export const api = (() => {
         const { workspaces } = (await invoke('describe-workspaces', {})) as any;
         return workspaces;
       },
-      async createProject(root: string, templateId?: string): Promise<string> {
+      async createProject(
+        root: string,
+        templateName?: string,
+      ): Promise<string> {
         const { id } = (await invoke('create-project', {
           root,
-          templateId,
+          templateName,
         })) as any;
         return id;
       },
