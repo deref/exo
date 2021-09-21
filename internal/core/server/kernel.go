@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"syscall"
 	"time"
 
@@ -149,18 +150,18 @@ func restart(ctx context.Context) {
 	// Since the exo process is likely a specific version that `exo` is linked to,
 	// we check to see if there is an `exo` symlink in the same directory as the
 	// current executable, and if so, we run that instead.
-	dir := path.Dir(cmd)
-	symlinkPath := path.Join(dir, "exo")
+	dir := filepath.Dir(cmd)
+	symlinkPath := filepath.Join(dir, "exo")
 	if isSymlink, _ := osutil.IsSymlink(symlinkPath); isSymlink {
 		dest, err := os.Readlink(symlinkPath)
 		if err != nil {
 			exitWithError(fmt.Errorf("following exo symlink: %w", err))
 		}
-		if !path.IsAbs(dest) {
-			dest = path.Join(dir, dest)
+		if !filepath.IsAbs(dest) {
+			dest = filepath.Join(dir, dest)
 		}
 
-		cmd = path.Clean(dest)
+		cmd = filepath.Clean(dest)
 	}
 
 	if err := syscall.Exec(cmd, append([]string{cmd}, os.Args[1:]...), os.Environ()); err != nil {
@@ -224,7 +225,7 @@ func (kern *Kernel) ReadDir(ctx context.Context, input *api.ReadDirInput) (*api.
 		results[i] = api.DirectoryEntry{
 			Name:         e.Name(),
 			IsDirectory:  e.IsDir(),
-			AbsolutePath: path.Join(input.Path, e.Name()),
+			AbsolutePath: filepath.Join(input.Path, e.Name()),
 		}
 	}
 	return &api.ReadDirOutput{Entries: results}, nil
