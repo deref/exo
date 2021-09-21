@@ -197,9 +197,14 @@ export interface DirectoryEntry {
   isDirectory: boolean;
 }
 
+export interface ReadDirResult {
+  directory: DirectoryEntry;
+  entries: DirectoryEntry[];
+}
+
 export interface KernelApi {
   getUserHomeDir(): Promise<string>;
-  readDir(path: string): Promise<DirectoryEntry[]>;
+  readDir(path: string): Promise<ReadDirResult>;
   describeWorkspaces(): Promise<WorkspaceDescription[]>;
   createWorkspace(root: string): Promise<string>;
   getVersion(): Promise<GetVersionResponse>;
@@ -262,9 +267,8 @@ export const api = (() => {
         const { path } = (await invoke('get-user-home-dir', {})) as any;
         return path;
       },
-      async readDir(path: string): Promise<DirectoryEntry[]> {
-        const { entries } = (await invoke('read-dir', { path })) as any;
-        return entries;
+      async readDir(path: string): Promise<ReadDirResult> {
+        return (await invoke('read-dir', { path })) as any;
       },
       async describeWorkspaces(): Promise<WorkspaceDescription[]> {
         const { workspaces } = (await invoke('describe-workspaces', {})) as any;

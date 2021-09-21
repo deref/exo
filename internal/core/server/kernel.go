@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path"
 	"path/filepath"
 	"syscall"
 	"time"
@@ -211,7 +210,7 @@ func (kern *Kernel) GetUserHomeDir(ctx context.Context, input *api.GetUserHomeDi
 }
 
 func (kern *Kernel) ReadDir(ctx context.Context, input *api.ReadDirInput) (*api.ReadDirOutput, error) {
-	if !path.IsAbs(input.Path) {
+	if !filepath.IsAbs(input.Path) {
 		return &api.ReadDirOutput{}, fmt.Errorf("path not absolute: %q", input.Path)
 	}
 
@@ -228,5 +227,12 @@ func (kern *Kernel) ReadDir(ctx context.Context, input *api.ReadDirInput) (*api.
 			Path:        filepath.Join(input.Path, e.Name()),
 		}
 	}
-	return &api.ReadDirOutput{Entries: results}, nil
+	return &api.ReadDirOutput{
+		Entries: results,
+		Directory: api.DirectoryEntry{
+			Name:        filepath.Base(input.Path),
+			IsDirectory: true,
+			Path:        input.Path,
+		},
+	}, nil
 }

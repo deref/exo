@@ -56,6 +56,7 @@ interface "kernel" {
   }
   method "read-dir" {
     input "path" "string" {}
+    output "directory" "DirectoryEntry" {}
     output "entries" "[]DirectoryEntry" {}
   }
 }

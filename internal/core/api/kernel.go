@@ -107,7 +107,8 @@ type ReadDirInput struct {
 }
 
 type ReadDirOutput struct {
-	Entries []DirectoryEntry `json:"entries"`
+	Directory DirectoryEntry   `json:"directory"`
+	Entries   []DirectoryEntry `json:"entries"`
 }
 
 func BuildKernelMux(b *josh.MuxBuilder, factory func(req *http.Request) Kernel) {
