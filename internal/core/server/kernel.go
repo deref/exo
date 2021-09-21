@@ -37,7 +37,6 @@ func GetTemplateFiles(ctx context.Context, templateName string) (string, error) 
 	if err != nil {
 		return "", fmt.Errorf("making temp dir: %w", err)
 	}
-	defer os.RemoveAll(dir)
 
 	_, err = git.PlainCloneContext(ctx, dir, false, &git.CloneOptions{
 		URL:          "https://github.com/railwayapp/starters",
