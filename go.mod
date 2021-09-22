@@ -39,7 +39,6 @@ require (
 	golang.org/x/sys v0.0.0-20210806184541-e5e7981a1069
 	gopkg.in/alessio/shellescape.v1 v1.0.0-20170105083845-52074bc9df61
 	gopkg.in/natefinch/lumberjack.v2 v2.0.0
-	gopkg.in/yaml.v3 v3.0.0-20200313102051-9f266ea9e77c
 	mvdan.cc/sh/v3 v3.3.1
 )
 
