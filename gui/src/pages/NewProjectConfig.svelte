@@ -11,6 +11,7 @@
   export let params = { starter: '' };
 
   const { starter } = params;
+  const isEmptyProject = starter === 'empty'; // XXX Use this with the `createProject` api to avoid a second (template URL) parameter if the project is empty.
 
   let name = starter;
   let error: Error | null = null;

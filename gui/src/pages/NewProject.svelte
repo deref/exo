@@ -9,11 +9,6 @@
     kernel: {
       describeTemplates: async () => [
         {
-          name: 'empty-project',
-          displayName: 'Empty project',
-          url: 'https://github.com/deref/exo-starters/empty-project',
-        },
-        {
           name: 'nextjs-prisma',
           displayName: 'NextJS Prisma',
           url: 'https://github.com/railwayapp/starters/tree/master/examples/nextjs-prisma',
@@ -37,6 +32,15 @@
   <CenterFormPanel title="New project" backRoute="/">
     <h1>New project</h1>
     <p>Select a starter for your new project:</p>
+
+    <button
+      on:click={() => {
+        router.push('#/new-project/empty');
+      }}
+    >
+      Empty project
+    </button>
+
     {#await api.kernel.describeTemplates()}
       <Spinner />
     {:then templates}
@@ -44,8 +48,10 @@
         <button
           on:click={() => {
             router.push(`#/new-project/${template.name}`);
-          }}>{template.displayName}</button
+          }}
         >
+          {template.displayName}
+        </button>
       {/each}
     {:catch error}
       <ErrorLabel value={error} />
