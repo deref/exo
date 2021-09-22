@@ -11,9 +11,9 @@
   export let params = { starter: '' };
 
   const { starter } = params;
-  const isEmptyProject = starter === 'empty'; // XXX Use this with the `createProject` api to avoid a second (template URL) parameter if the project is empty.
 
   let name = starter;
+  let templateUrl: string | null = null;
   let error: Error | null = null;
 
   let workingDirectory: string | null = null;
@@ -24,6 +24,13 @@
 
   (async () => {
     setWorkingDirectory(await api.kernel.getUserHomeDir());
+
+    if (starter !== 'empty') {
+      templateUrl = String(
+        (await api.kernel.describeTemplates()).find((x) => x.name === starter)
+          ?.url,
+      );
+    }
   })();
 </script>
 
@@ -33,10 +40,11 @@
       on:submit|preventDefault={async () => {
         error = null;
         let workspaceId;
-        // XXX Replace this old createWorkspace with templated createProject
+
         try {
-          workspaceId = await api.kernel.createWorkspace(
-            workingDirectory, // Currently this doesn't actually create the new directory, see XXX note above
+          workspaceId = await api.kernel.createProject(
+            `${workingDirectory}/${name}`,
+            templateUrl,
           );
           router.push(`/workspaces/${encodeURIComponent(workspaceId)}`);
         } catch (ex) {
@@ -44,13 +52,6 @@
             throw ex;
           }
           error = ex;
-        }
-        // XXX Hack to address lack of GUI for applying procfiles, etc.
-        try {
-          await api.workspace(workspaceId).apply();
-        } catch (ex) {
-          // Swallow error.
-          console.error(ex);
         }
       }}
     >
