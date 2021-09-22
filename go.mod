@@ -8,6 +8,7 @@ require (
 	github.com/alessio/shellescape v1.4.1
 	github.com/aybabtme/rgbterm v0.0.0-20170906152045-cc83f3b3ce59
 	github.com/containerd/containerd v1.5.4 // indirect
+	github.com/deref/inflect-go v0.0.0-20210922215725-28c4e8c11b16
 	github.com/dgraph-io/badger/v3 v3.2103.1
 	github.com/docker/docker v20.10.7+incompatible
 	github.com/docker/go-connections v0.4.0
