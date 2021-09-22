@@ -1,26 +1,33 @@
 <script lang="ts">
+  import Layout from '../components/Layout.svelte';
+  import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
   import * as router from 'svelte-spa-router';
-  import type { WorkspaceDescription } from '../lib/api';
 
-  export let workspaces: WorkspaceDescription[];
+  const starters = [
+    {
+      displayName: 'Empty project',
+      name: 'empty-project',
+    },
+    {
+      displayName: 'Next.js Prisma Postgres App',
+      name: 'next-prisma-postgres',
+    },
+  ];
 </script>
 
-<button on:click={() => router.push('#/new-project')}> Add new project </button>
-
-<button on:click={() => router.push('#/new-workspace')}>
-  Add new project (old)
-</button>
-
-{#each workspaces as workspace}
-  <button
-    on:click={() => {
-      router.push(`/workspaces/${encodeURIComponent(workspace.id)}`);
-    }}
-  >
-    <b>{workspace.id}</b>
-    <span title={workspace.root}>{workspace.root}</span>
-  </button>
-{/each}
+<Layout>
+  <CenterFormPanel title="New project" backRoute="/">
+    <h1>New project</h1>
+    <p>Select a starter for your new project:</p>
+    {#each starters as starter}
+      <button
+        on:click={() => {
+          router.push(`#/new-project/${starter.name}`);
+        }}>{starter.displayName}</button
+      >
+    {/each}
+  </CenterFormPanel>
+</Layout>
 
 <style>
   button {
@@ -34,7 +41,6 @@
     width: 100%;
     grid-template-columns: max-content 2fr;
     align-items: center;
-    text-align: left;
     gap: 12px;
     margin-top: 12px;
   }
