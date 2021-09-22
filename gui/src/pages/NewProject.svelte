@@ -66,16 +66,6 @@
     margin-top: 8px;
   }
 
-  button > b {
-    max-width: 6em;
-  }
-
-  button > * {
-    overflow: hidden;
-    white-space: nowrap;
-    text-overflow: ellipsis;
-  }
-
   button:hover {
     background: var(--button-hover-background);
     box-shadow: var(--button-hover-shadow);
