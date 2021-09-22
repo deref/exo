@@ -80,6 +80,7 @@ struct "directory-entry" {
 
 struct "template-description" {
   field "name" "string" {}
+  field "display-name" "string" {}
   field "url" "string" {}
 }
 

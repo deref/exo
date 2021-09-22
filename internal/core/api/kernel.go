@@ -179,8 +179,9 @@ type DirectoryEntry struct {
 }
 
 type TemplateDescription struct {
-	Name string `json:"name"`
-	Url  string `json:"url"`
+	Name        string `json:"name"`
+	DisplayName string `json:"displayName"`
+	Url         string `json:"url"`
 }
 
 type TaskDescription struct {
