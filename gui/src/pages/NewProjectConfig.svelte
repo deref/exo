@@ -86,6 +86,8 @@
             >
               ..
             </button>
+          {:else}
+            <button disabled> .. </button>
           {/if}
           <div class="directories">
             {#each dir.entries
@@ -146,12 +148,17 @@
     margin-top: 1px;
   }
 
-  button:hover {
+  button:disabled {
+    cursor: default;
+    opacity: 0.5;
+  }
+
+  button:not(:disabled):hover {
     background: var(--grey-e-color);
     box-shadow: var(--button-hover-shadow);
   }
 
-  button:active {
+  button:not(:disabled):active {
     background: var(--grey-c-color);
     box-shadow: var(--button-active-shadow);
   }
