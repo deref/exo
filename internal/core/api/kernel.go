@@ -29,8 +29,8 @@ type Kernel interface {
 }
 
 type CreateProjectInput struct {
-	Root         string  `json:"root"`
-	TemplateName *string `json:"templateName"`
+	Root        string  `json:"root"`
+	TemplateUrl *string `json:"templateUrl"`
 }
 
 type CreateProjectOutput struct {

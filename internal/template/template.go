@@ -13,12 +13,14 @@ var tarName = archiveFolderName + ".tar.gz"
 
 // GetTemplateFiles returns the path to a directory that contains the intial
 // project template.
-func GetTemplateFiles(ctx context.Context, templateName string) (string, error) {
+func GetTemplateFiles(ctx context.Context, templateURL string) (string, error) {
 	dir, err := os.MkdirTemp("", "exo-template-clone-")
 	if err != nil {
 		return "", fmt.Errorf("making temp dir: %w", err)
 	}
-	url := fmt.Sprintf("https://exo-starter-templates.s3.us-west-2.amazonaws.com/%s/%s", templateName, tarName)
+	defer os.RemoveAll(dir)
+
+	url := fmt.Sprintf("%s/%s", templateURL, tarName)
 
 	resp, err := http.Get(url)
 	if err != nil {

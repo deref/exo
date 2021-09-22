@@ -90,9 +90,9 @@ func (kern *Kernel) CreateProject(ctx context.Context, input *api.CreateProjectI
 	}
 
 	var templateDir string
-	if input.TemplateName != nil {
+	if input.TemplateUrl != nil {
 		var err error
-		templateDir, err = template.GetTemplateFiles(ctx, *input.TemplateName)
+		templateDir, err = template.GetTemplateFiles(ctx, *input.TemplateUrl)
 		if err != nil {
 			return &api.CreateProjectOutput{}, fmt.Errorf("getting template files: %w", err)
 		}

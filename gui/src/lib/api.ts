@@ -261,13 +261,10 @@ export const api = (() => {
         const { workspaces } = (await invoke('describe-workspaces', {})) as any;
         return workspaces;
       },
-      async createProject(
-        root: string,
-        templateName?: string,
-      ): Promise<string> {
+      async createProject(root: string, templateUrl?: string): Promise<string> {
         const { id } = (await invoke('create-project', {
           root,
-          templateName,
+          templateUrl,
         })) as any;
         return id;
       },

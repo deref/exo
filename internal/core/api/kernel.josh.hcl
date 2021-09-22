@@ -2,7 +2,7 @@ interface "kernel" {
 
   method "create-project" {
     input "root" "string" {}
-    input "template-name" "*string" {}
+    input "template-url" "*string" {}
     output "workspace-id" "string" {}
   }
 
