@@ -35,7 +35,7 @@
 </script>
 
 <Layout>
-  <CenterFormPanel title={`New project: ${starter}`} backRoute="#/new-project">
+  <CenterFormPanel title={`New ${starter} project`} backRoute="#/new-project">
     <form
       on:submit|preventDefault={async () => {
         error = null;
@@ -55,7 +55,7 @@
         }
       }}
     >
-      <h1>New project</h1>
+      <h1>New {starter} project</h1>
 
       <label for="name">Name:</label>
       <Textbox
