@@ -294,7 +294,7 @@ export const api = (() => {
       ): Promise<string> {
         const { id } = (await invoke('create-project', {
           root,
-          templateUrl: templateUrl !== null ? templateUrl : undefined,
+          templateUrl,
         })) as any;
         return id;
       },
