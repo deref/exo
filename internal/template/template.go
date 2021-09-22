@@ -18,7 +18,6 @@ func GetTemplateFiles(ctx context.Context, templateURL string) (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("making temp dir: %w", err)
 	}
-	defer os.RemoveAll(dir)
 
 	url := fmt.Sprintf("%s/%s", templateURL, tarName)
 
