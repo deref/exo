@@ -1,5 +1,4 @@
 import Home from './pages/Home.svelte';
-import NewWorkspace from './pages/NewWorkspace.svelte'; // Delete this after New Project flow is ready
 import NewProject from './pages/NewProject.svelte';
 import NewProjectConfig from './pages/NewProjectConfig.svelte';
 import Workspace from './pages/Workspace.svelte';
@@ -20,7 +19,6 @@ import NotFound from './pages/NotFound.svelte';
 
 export default {
   '/': Home,
-  '/new-workspace': NewWorkspace, // Delete this after New Project flow is ready
   '/new-project': NewProject,
   '/new-project/:starter': NewProjectConfig,
   '/workspaces/:workspace': Workspace,
