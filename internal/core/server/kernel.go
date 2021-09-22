@@ -30,57 +30,64 @@ type Kernel struct {
 	TaskTracker *task.TaskTracker
 }
 
-func (kern *Kernel) ListTemplates(ctx context.Context, input *api.ListTemplatesInput) (*api.ListTemplatesOutput, error) {
-	// This list is the set of directories here: https://github.com/railwayapp/starters/tree/master/examples
+var bucketURL = "https://exo-starter-templates.s3.us-west-2.amazonaws.com"
+
+func (kern *Kernel) DescribeTemplates(ctx context.Context, input *api.DescribeTemplatesInput) (*api.DescribeTemplatesOutput, error) {
 	// TODO: make this dynamic
-	return &api.ListTemplatesOutput{
-		TemplateNames: []string{
-			"ackee",
-			"blitzjs",
-			"calendso",
-			"code-server",
-			"cusdis",
-			"deno",
-			"discordjs-typescript",
-			"discordjs",
-			"discordpy",
-			"djangopy",
-			"elixir-phoenix",
-			"eris",
-			"expressjs-mongoose",
-			"expressjs-postgres",
-			"expressjs-prisma",
-			"expressjs",
-			"fastapi",
-			"fastify",
-			"flask",
-			"ghost",
-			"gin",
-			"hapi",
-			"hasura",
-			"http-nodejs",
-			"laravel",
-			"n8n",
-			"next-notion-blog",
-			"nextjs-auth-mongo",
-			"nextjs-prisma",
-			"nocodb",
-			"node_modules",
-			"nuxtjs",
-			"rails-blog",
-			"rails-starter",
-			"rocket",
-			"rust-wasm",
-			"shiori",
-			"sinatra",
-			"slack-webhook",
-			"starlette",
-			"strapi",
-			"svelte-kit",
-			"telegram-bot",
-			"umami",
-		},
-	}, nil
+	templateNames := []string{
+		"ackee",
+		"blitzjs",
+		"calendso",
+		"code-server",
+		"cusdis",
+		"deno",
+		"discordjs-typescript",
+		"discordjs",
+		"discordpy",
+		"djangopy",
+		"elixir-phoenix",
+		"eris",
+		"expressjs-mongoose",
+		"expressjs-postgres",
+		"expressjs-prisma",
+		"expressjs",
+		"fastapi",
+		"fastify",
+		"flask",
+		"ghost",
+		"gin",
+		"hapi",
+		"hasura",
+		"http-nodejs",
+		"laravel",
+		"n8n",
+		"next-notion-blog",
+		"nextjs-auth-mongo",
+		"nextjs-prisma",
+		"nocodb",
+		"nuxtjs",
+		"rails-blog",
+		"rails-starter",
+		"rocket",
+		"rust-wasm",
+		"shiori",
+		"sinatra",
+		"slack-webhook",
+		"starlette",
+		"strapi",
+		"svelte-kit",
+		"telegram-bot",
+		"umami",
+	}
+
+	templates := make([]api.TemplateDescription, len(templateNames))
+	for i, name := range templateNames {
+		templates[i] = api.TemplateDescription{
+			Name: name,
+			Url:  fmt.Sprintf("%s/%s", bucketURL, name),
+		}
+	}
+	return &api.DescribeTemplatesOutput{Templates: templates}, nil
 }
 
 func (kern *Kernel) CreateProject(ctx context.Context, input *api.CreateProjectInput) (*api.CreateProjectOutput, error) {

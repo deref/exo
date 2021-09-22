@@ -26,8 +26,8 @@ func (c *Kernel) CreateProject(ctx context.Context, input *api.CreateProjectInpu
 	return
 }
 
-func (c *Kernel) ListTemplates(ctx context.Context, input *api.ListTemplatesInput) (output *api.ListTemplatesOutput, err error) {
-	err = c.client.Invoke(ctx, "list-templates", input, &output)
+func (c *Kernel) DescribeTemplates(ctx context.Context, input *api.DescribeTemplatesInput) (output *api.DescribeTemplatesOutput, err error) {
+	err = c.client.Invoke(ctx, "describe-templates", input, &output)
 	return
 }
 

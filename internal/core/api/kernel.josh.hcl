@@ -6,8 +6,8 @@ interface "kernel" {
     output "workspace-id" "string" {}
   }
 
-  method "list-templates" {
-    output "template-names" "[]string" {}
+  method "describe-templates" {
+    output "templates" "[]TemplateDescription" {}
   }
 
   method "create-workspace" {
@@ -60,6 +60,11 @@ interface "kernel" {
 
     output "tasks" "[]TaskDescription" {}
   }
+}
+
+struct "template-description" {
+  field "name" "string" {}
+  field "url" "string" {}
 }
 
 struct "task-description" {

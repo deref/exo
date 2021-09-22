@@ -192,9 +192,14 @@ export interface DescribeTasksInput {
   jobIds?: string[];
 }
 
+export interface TemplateDescription {
+  name: string;
+  url: string;
+}
+
 export interface KernelApi {
   describeWorkspaces(): Promise<WorkspaceDescription[]>;
-  listTemplates(): Promise<string[]>;
+  describeTemplates(): Promise<TemplateDescription[]>;
   createProject(root: string, templateId?: string): Promise<string>;
   createWorkspace(root: string): Promise<string>;
   getVersion(): Promise<GetVersionResponse>;
@@ -253,9 +258,9 @@ export const api = (() => {
     const invoke = (method: string, data?: unknown) =>
       rpc(`/kernel/${method}`, {}, data);
     return {
-      async listTemplates(): Promise<string[]> {
-        const { templateNames } = (await invoke('list-templates', {})) as any;
-        return templateNames;
+      async describeTemplates(): Promise<TemplateDescription[]> {
+        const { templates } = (await invoke('describe-templates', {})) as any;
+        return templates;
       },
       async describeWorkspaces(): Promise<WorkspaceDescription[]> {
         const { workspaces } = (await invoke('describe-workspaces', {})) as any;
