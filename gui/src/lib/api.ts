@@ -176,6 +176,7 @@ export interface ProcessSpec {
 export interface WorkspaceDescription {
   id: string;
   root: string;
+  displayName: string;
 }
 
 export interface ComponentDescription {
@@ -214,7 +215,7 @@ export interface KernelApi {
   readDir(path: string): Promise<ReadDirResult>;
   describeWorkspaces(): Promise<WorkspaceDescription[]>;
   describeTemplates(): Promise<TemplateDescription[]>;
-  createProject(root: string, templateUrl?: string): Promise<string>;
+  createProject(root: string, templateUrl: string | null): Promise<string>;
   createWorkspace(root: string): Promise<string>;
   getVersion(): Promise<GetVersionResponse>;
   upgrade(): Promise<void>;
@@ -287,7 +288,10 @@ export const api = (() => {
         const { workspaces } = (await invoke('describe-workspaces', {})) as any;
         return workspaces;
       },
-      async createProject(root: string, templateUrl?: string): Promise<string> {
+      async createProject(
+        root: string,
+        templateUrl: string | null,
+      ): Promise<string> {
         const { id } = (await invoke('create-project', {
           root,
           templateUrl,

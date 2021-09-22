@@ -1,5 +1,6 @@
 import Home from './pages/Home.svelte';
-import NewWorkspace from './pages/NewWorkspace.svelte';
+import NewProject from './pages/NewProject.svelte';
+import NewProjectConfig from './pages/NewProjectConfig.svelte';
 import Workspace from './pages/Workspace.svelte';
 import WorkspaceComponents from './pages/WorkspaceComponents.svelte';
 import WorkspaceVariables from './pages/WorkspaceVariables.svelte';
@@ -18,7 +19,8 @@ import NotFound from './pages/NotFound.svelte';
 
 export default {
   '/': Home,
-  '/new-workspace': NewWorkspace,
+  '/new-project': NewProject,
+  '/new-project/:starter': NewProjectConfig,
   '/workspaces/:workspace': Workspace,
   '/workspaces/:workspace/components': WorkspaceComponents,
   '/workspaces/:workspace/variables': WorkspaceVariables,
