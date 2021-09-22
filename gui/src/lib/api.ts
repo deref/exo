@@ -199,6 +199,7 @@ export interface TemplateDescription {
 }
 export interface DirectoryEntry {
   name: string;
+  path: string;
   isDirectory: boolean;
 }
 
@@ -213,7 +214,7 @@ export interface KernelApi {
   readDir(path: string): Promise<ReadDirResult>;
   describeWorkspaces(): Promise<WorkspaceDescription[]>;
   describeTemplates(): Promise<TemplateDescription[]>;
-  createProject(root: string, templateId?: string): Promise<string>;
+  createProject(root: string, templateUrl?: string): Promise<string>;
   createWorkspace(root: string): Promise<string>;
   getVersion(): Promise<GetVersionResponse>;
   upgrade(): Promise<void>;
