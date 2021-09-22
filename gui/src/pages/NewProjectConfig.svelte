@@ -1,9 +1,23 @@
 <script lang="ts">
+  import type { ReadDirResult } from '../lib/api';
   import Layout from '../components/Layout.svelte';
   import Textbox from '../components/Textbox.svelte';
   import ErrorLabel from '../components/ErrorLabel.svelte';
   import SubmitButton from '../components/form/SubmitButton.svelte';
   import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
+  import { api } from '../lib/api';
+
+  let workingDirectory = '/';
+  const setWorkingDirectory = (dir: string) => {
+    workingDirectory = dir;
+    currentPromise = api.kernel.readDir(workingDirectory);
+  };
+  let currentPromise: Promise<ReadDirResult> = api.kernel
+    .getUserHomeDir()
+    .then((dir) => {
+      setWorkingDirectory(dir);
+      return currentPromise;
+    });
 
   export let params = { starter: '' };
 
@@ -11,34 +25,6 @@
 
   let name = starter;
   let error = 'ee';
-
-  let workingDirectory = '~';
-
-  const setWorkingDirectory = (dir: string) => {
-    workingDirectory = dir;
-  };
-
-  const describeWorkingDirectory = (dir: string) => ({
-    children: directories[dir],
-    parent: dir
-      .split('/')
-      .filter((_, j) => j !== dir.split('/').length - 1)
-      .join('/'),
-  });
-
-  const directories = {
-    '~': ['john', 'os', 'bin'],
-    '~/john': ['dev', 'downloads', 'music', 'docs'],
-    '~/john/dev': [
-      'myorg',
-      'calculator-app',
-      'exo',
-      'exo-website',
-      'rust-wallet',
-      'todo-app',
-    ],
-    '~/john/dev/myorg': [],
-  };
 </script>
 
 <Layout>
@@ -55,20 +41,39 @@
       />
       <div style="height:32px" />
       <label for="root">Root:</label>
-      <h2><span>{workingDirectory}<span>/{name}</span></span></h2>
-      <button
-        on:click={() =>
-          setWorkingDirectory(
-            describeWorkingDirectory(workingDirectory).parent,
-          )}>..</button
-      >
-      <div class="directories">
-        {#each describeWorkingDirectory(workingDirectory).children as child}
+      <h2>
+        <span
+          >{workingDirectory.slice(-1) === '/'
+            ? workingDirectory
+            : workingDirectory + '/'}<span>{name}</span></span
+        >
+      </h2>
+      <div>
+        {#await currentPromise then current}
           <button
-            on:click={() => setWorkingDirectory(workingDirectory + '/' + child)}
-            >{child}</button
+            disabled={workingDirectory === '/'}
+            on:click={async () => {
+              if (current.parent) {
+                setWorkingDirectory(current.parent.path);
+              }
+            }}>..</button
           >
-        {/each}
+          <div class="directories">
+            {#each current.entries as entry}
+              {#if entry.isDirectory}
+                <button
+                  on:click={() => {
+                    workingDirectory = entry.path;
+                    currentPromise = api.kernel.readDir(workingDirectory);
+                  }}>{entry.name}</button
+                >
+              {/if}
+            {/each}
+          </div>
+        {:catch error}
+          <!-- TODO better error handling -->
+          <p>Error {error}</p>
+        {/await}
       </div>
       <SubmitButton>Create project</SubmitButton>
     </form>

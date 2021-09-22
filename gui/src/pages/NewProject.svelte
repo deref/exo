@@ -2,30 +2,28 @@
   import Layout from '../components/Layout.svelte';
   import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
   import * as router from 'svelte-spa-router';
+  import { api } from '../lib/api';
 
-  const starters = [
-    {
-      displayName: 'Empty project',
-      name: 'empty-project',
-    },
-    {
-      displayName: 'Next.js Prisma Postgres App',
-      name: 'next-prisma-postgres',
-    },
-  ];
+  const starters = api.kernel.describeTemplates();
 </script>
 
 <Layout>
   <CenterFormPanel title="New project" backRoute="/">
     <h1>New project</h1>
     <p>Select a starter for your new project:</p>
-    {#each starters as starter}
-      <button
-        on:click={() => {
-          router.push(`#/new-project/${starter.name}`);
-        }}>{starter.displayName}</button
-      >
-    {/each}
+    {#await starters}
+      loading templates...
+    {:then starters}
+      {#each starters as starter}
+        <button
+          on:click={() => {
+            router.push(`#/new-project/${starter.name}`);
+          }}>{starter.displayName}</button
+        >
+      {/each}
+    {:catch error}
+      <p style="color: red">{error.message}</p>
+    {/await}
   </CenterFormPanel>
 </Layout>
 
