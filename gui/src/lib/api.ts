@@ -196,8 +196,20 @@ export interface TemplateDescription {
   name: string;
   url: string;
 }
+export interface DirectoryEntry {
+  name: string;
+  isDirectory: boolean;
+}
+
+export interface ReadDirResult {
+  directory: DirectoryEntry;
+  parent: null | DirectoryEntry;
+  entries: DirectoryEntry[];
+}
 
 export interface KernelApi {
+  getUserHomeDir(): Promise<string>;
+  readDir(path: string): Promise<ReadDirResult>;
   describeWorkspaces(): Promise<WorkspaceDescription[]>;
   describeTemplates(): Promise<TemplateDescription[]>;
   createProject(root: string, templateId?: string): Promise<string>;
@@ -261,6 +273,13 @@ export const api = (() => {
       async describeTemplates(): Promise<TemplateDescription[]> {
         const { templates } = (await invoke('describe-templates', {})) as any;
         return templates;
+      },
+      async getUserHomeDir(): Promise<string> {
+        const { path } = (await invoke('get-user-home-dir', {})) as any;
+        return path;
+      },
+      async readDir(path: string): Promise<ReadDirResult> {
+        return (await invoke('read-dir', { path })) as any;
       },
       async describeWorkspaces(): Promise<WorkspaceDescription[]> {
         const { workspaces } = (await invoke('describe-workspaces', {})) as any;

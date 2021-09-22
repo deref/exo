@@ -60,6 +60,22 @@ interface "kernel" {
 
     output "tasks" "[]TaskDescription" {}
   }
+
+  method "get-user-home-dir" {
+    output "path" "string" {}
+  }
+  method "read-dir" {
+    input "path" "string" {}
+    output "directory" "DirectoryEntry" {}
+    output "parent" "*DirectoryEntry" {}
+    output "entries" "[]DirectoryEntry" {}
+  }
+}
+
+struct "directory-entry" {
+  field "name" "string" {}
+  field "path" "string" {}
+  field "is-directory" "bool" {}
 }
 
 struct "template-description" {
