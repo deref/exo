@@ -1,5 +1,15 @@
 interface "kernel" {
 
+  method "create-project" {
+    input "root" "string" {}
+    input "template-url" "*string" {}
+    output "workspace-id" "string" {}
+  }
+
+  method "describe-templates" {
+    output "templates" "[]TemplateDescription" {}
+  }
+
   method "create-workspace" {
     input "root" "string" {}
 
@@ -66,6 +76,12 @@ struct "directory-entry" {
   field "name" "string" {}
   field "path" "string" {}
   field "is-directory" "bool" {}
+}
+
+struct "template-description" {
+  field "name" "string" {}
+  field "display-name" "string" {}
+  field "url" "string" {}
 }
 
 struct "task-description" {

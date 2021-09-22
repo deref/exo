@@ -17,15 +17,56 @@ import (
 	"github.com/deref/exo/internal/task"
 	taskapi "github.com/deref/exo/internal/task/api"
 	"github.com/deref/exo/internal/telemetry"
+	"github.com/deref/exo/internal/template"
 	"github.com/deref/exo/internal/upgrade"
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/osutil"
+	"github.com/otiai10/copy"
 )
 
 type Kernel struct {
 	VarDir      string
 	Store       state.Store
 	TaskTracker *task.TaskTracker
+}
+
+func (kern *Kernel) DescribeTemplates(ctx context.Context, input *api.DescribeTemplatesInput) (*api.DescribeTemplatesOutput, error) {
+	return &api.DescribeTemplatesOutput{Templates: template.GetTemplateDescriptions()}, nil
+}
+
+func (kern *Kernel) CreateProject(ctx context.Context, input *api.CreateProjectInput) (*api.CreateProjectOutput, error) {
+	projectDir := input.Root
+	if !filepath.IsAbs(projectDir) {
+		return &api.CreateProjectOutput{}, errors.New("path must be absolute")
+	}
+
+	var templateDir string
+	if input.TemplateUrl != nil {
+		var err error
+		templateDir, err = template.GetTemplateFiles(ctx, *input.TemplateUrl)
+		if err != nil {
+			return &api.CreateProjectOutput{}, fmt.Errorf("getting template files: %w", err)
+		}
+	}
+
+	err := os.Mkdir(projectDir, 0750)
+	if err != nil {
+		return &api.CreateProjectOutput{}, fmt.Errorf("making project dir: %w", err)
+	}
+
+	if templateDir != "" {
+		copy.Copy(templateDir, projectDir, copy.Options{
+			OnSymlink: func(string) copy.SymlinkAction {
+				return copy.Deep
+			},
+		})
+	}
+
+	result, err := kern.CreateWorkspace(ctx, &api.CreateWorkspaceInput{Root: projectDir})
+	if err != nil {
+		return &api.CreateProjectOutput{}, fmt.Errorf("creating workspace: %w", err)
+	}
+	return &api.CreateProjectOutput{WorkspaceID: result.ID}, err
 }
 
 func (kern *Kernel) CreateWorkspace(ctx context.Context, input *api.CreateWorkspaceInput) (*api.CreateWorkspaceOutput, error) {

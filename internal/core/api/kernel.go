@@ -10,6 +10,8 @@ import (
 )
 
 type Kernel interface {
+	CreateProject(context.Context, *CreateProjectInput) (*CreateProjectOutput, error)
+	DescribeTemplates(context.Context, *DescribeTemplatesInput) (*DescribeTemplatesOutput, error)
 	CreateWorkspace(context.Context, *CreateWorkspaceInput) (*CreateWorkspaceOutput, error)
 	DescribeWorkspaces(context.Context, *DescribeWorkspacesInput) (*DescribeWorkspacesOutput, error)
 	ResolveWorkspace(context.Context, *ResolveWorkspaceInput) (*ResolveWorkspaceOutput, error)
@@ -26,6 +28,22 @@ type Kernel interface {
 	DescribeTasks(context.Context, *DescribeTasksInput) (*DescribeTasksOutput, error)
 	GetUserHomeDir(context.Context, *GetUserHomeDirInput) (*GetUserHomeDirOutput, error)
 	ReadDir(context.Context, *ReadDirInput) (*ReadDirOutput, error)
+}
+
+type CreateProjectInput struct {
+	Root        string  `json:"root"`
+	TemplateUrl *string `json:"templateUrl"`
+}
+
+type CreateProjectOutput struct {
+	WorkspaceID string `json:"workspaceId"`
+}
+
+type DescribeTemplatesInput struct {
+}
+
+type DescribeTemplatesOutput struct {
+	Templates []TemplateDescription `json:"templates"`
 }
 
 type CreateWorkspaceInput struct {
@@ -113,6 +131,12 @@ type ReadDirOutput struct {
 }
 
 func BuildKernelMux(b *josh.MuxBuilder, factory func(req *http.Request) Kernel) {
+	b.AddMethod("create-project", func(req *http.Request) interface{} {
+		return factory(req).CreateProject
+	})
+	b.AddMethod("describe-templates", func(req *http.Request) interface{} {
+		return factory(req).DescribeTemplates
+	})
 	b.AddMethod("create-workspace", func(req *http.Request) interface{} {
 		return factory(req).CreateWorkspace
 	})
@@ -152,6 +176,12 @@ type DirectoryEntry struct {
 	Name        string `json:"name"`
 	Path        string `json:"path"`
 	IsDirectory bool   `json:"isDirectory"`
+}
+
+type TemplateDescription struct {
+	Name        string `json:"name"`
+	DisplayName string `json:"displayName"`
+	Url         string `json:"url"`
 }
 
 type TaskDescription struct {
