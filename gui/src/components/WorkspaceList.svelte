@@ -7,10 +7,6 @@
 
 <button on:click={() => router.push('#/new-project')}> Add new project </button>
 
-<button on:click={() => router.push('#/new-workspace')}>
-  Add new project (old)
-</button>
-
 {#each workspaces as workspace}
   <button
     on:click={() => {
