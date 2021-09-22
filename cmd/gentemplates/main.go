@@ -14,11 +14,11 @@ import (
 
 func main() {
 	if len(os.Args) > 1 {
-		fmt.Println(`You probably want to run ./scripts/update-templates.sh instead of this.
+		fmt.Fprintln(os.Stderr, `You probably want to run ./scripts/update-templates.sh instead of this.
 
 gentemplates outputs a directory with the Railway templates converted to exo
 starter templates.`)
-		return
+		os.Exit(1)
 	}
 	if err := genTemplates(); err != nil {
 		panic(err)
