@@ -176,6 +176,7 @@ export interface ProcessSpec {
 export interface WorkspaceDescription {
   id: string;
   root: string;
+  displayName: string;
 }
 
 export interface ComponentDescription {

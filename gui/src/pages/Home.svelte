@@ -15,6 +15,7 @@
 
 <Layout>
   <CenterFormPanel title="Workspaces">
+    <h1>Workspaces</h1>
     <div>
       {#await workspaces}
         loading workspaces...

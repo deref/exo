@@ -7,16 +7,19 @@
 
 <button on:click={() => router.push('#/new-project')}> Add new project </button>
 
-{#each workspaces as workspace}
-  <button
-    on:click={() => {
-      router.push(`/workspaces/${encodeURIComponent(workspace.id)}`);
-    }}
-  >
-    <b>{workspace.id}</b>
-    <span title={workspace.root}>{workspace.root}</span>
-  </button>
-{/each}
+<div>
+  {#each workspaces as workspace}
+    <button
+      on:click={() => {
+        router.push(`/workspaces/${encodeURIComponent(workspace.id)}`);
+      }}
+      title={workspace.root}
+    >
+      <b>{workspace.displayName}</b>
+      <span>{workspace.root}</span>
+    </button>
+  {/each}
+</div>
 
 <style>
   button {
@@ -31,18 +34,21 @@
     grid-template-columns: max-content 2fr;
     align-items: center;
     text-align: left;
-    gap: 12px;
+    gap: 24px;
     margin-top: 12px;
   }
 
   button > b {
-    max-width: 6em;
+    font-weight: 550;
   }
 
-  button > * {
+  button > span {
     overflow: hidden;
-    white-space: nowrap;
     text-overflow: ellipsis;
+    white-space: nowrap;
+    text-align: right;
+    font-size: 0.875em;
+    color: var(--grey-5-color);
   }
 
   button:hover {
