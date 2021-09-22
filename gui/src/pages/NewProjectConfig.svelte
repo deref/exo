@@ -5,6 +5,7 @@
   import ErrorLabel from '../components/ErrorLabel.svelte';
   import SubmitButton from '../components/form/SubmitButton.svelte';
   import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
+  import type { ReadDirResult } from '../lib/api';
   import { api, isClientError } from '../lib/api';
   import * as router from 'svelte-spa-router';
 
@@ -20,18 +21,15 @@
 
   const setWorkingDirectory = (dir: string) => {
     workingDirectory = dir;
+    dirPromise = api.kernel.readDir(workingDirectory);
   };
 
-  (async () => {
-    setWorkingDirectory(await api.kernel.getUserHomeDir());
-
-    if (starter !== 'empty') {
-      templateUrl = String(
-        (await api.kernel.describeTemplates()).find((x) => x.name === starter)
-          ?.url,
-      );
-    }
-  })();
+  let dirPromise: Promise<ReadDirResult> = api.kernel
+    .getUserHomeDir()
+    .then((dir) => {
+      setWorkingDirectory(dir);
+      return dirPromise;
+    });
 </script>
 
 <Layout>
@@ -40,6 +38,14 @@
       on:submit|preventDefault={async () => {
         error = null;
         let workspaceId;
+
+        if (starter !== 'empty') {
+          templateUrl = String(
+            (await api.kernel.describeTemplates()).find(
+              (x) => x.name === starter,
+            )?.url,
+          );
+        }
 
         try {
           workspaceId = await api.kernel.createProject(
@@ -69,18 +75,18 @@
       {#if workingDirectory}
         <label for="root">Root:</label>
         <h2><span>{workingDirectory}<span>/{name}</span></span></h2>
-        {#await api.kernel.readDir(workingDirectory)}
+        {#await dirPromise}
           <Spinner />
-        {:then readdir}
-          {#if readdir.parent !== null}
+        {:then dir}
+          {#if dir.parent !== null}
             <button
-              on:click={() => setWorkingDirectory(String(readdir.parent?.path))}
+              on:click={() => setWorkingDirectory(String(dir.parent?.path))}
             >
               ..
             </button>
           {/if}
           <div class="directories">
-            {#each readdir.entries
+            {#each dir.entries
               .filter((x) => x.isDirectory)
               .sort((x, y) => (x.name[0] > y.name[0] ? 1 : -1)) as entry}
               <button on:click={() => setWorkingDirectory(entry.path)}
