@@ -192,6 +192,11 @@ export interface DescribeTasksInput {
   jobIds?: string[];
 }
 
+export interface TemplateDescription {
+  name: string;
+  displayName: string;
+  url: string;
+}
 export interface DirectoryEntry {
   name: string;
   path: string;
@@ -208,6 +213,8 @@ export interface KernelApi {
   getUserHomeDir(): Promise<string>;
   readDir(path: string): Promise<ReadDirResult>;
   describeWorkspaces(): Promise<WorkspaceDescription[]>;
+  describeTemplates(): Promise<TemplateDescription[]>;
+  createProject(root: string, templateUrl?: string): Promise<string>;
   createWorkspace(root: string): Promise<string>;
   getVersion(): Promise<GetVersionResponse>;
   upgrade(): Promise<void>;
@@ -265,6 +272,10 @@ export const api = (() => {
     const invoke = (method: string, data?: unknown) =>
       rpc(`/kernel/${method}`, {}, data);
     return {
+      async describeTemplates(): Promise<TemplateDescription[]> {
+        const { templates } = (await invoke('describe-templates', {})) as any;
+        return templates;
+      },
       async getUserHomeDir(): Promise<string> {
         const { path } = (await invoke('get-user-home-dir', {})) as any;
         return path;
@@ -275,6 +286,13 @@ export const api = (() => {
       async describeWorkspaces(): Promise<WorkspaceDescription[]> {
         const { workspaces } = (await invoke('describe-workspaces', {})) as any;
         return workspaces;
+      },
+      async createProject(root: string, templateUrl?: string): Promise<string> {
+        const { id } = (await invoke('create-project', {
+          root,
+          templateUrl,
+        })) as any;
+        return id;
       },
       async createWorkspace(root: string): Promise<string> {
         const { id } = (await invoke('create-workspace', { root })) as any;
