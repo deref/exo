@@ -92,7 +92,7 @@
           <div class="directories">
             {#each dir.entries
               .filter((x) => x.isDirectory)
-              .sort((x, y) => (x.name[0] > y.name[0] ? 1 : -1)) as entry}
+              .sort((x, y) => x.name.localeCompare(y.name)) as entry}
               <button on:click={() => setWorkingDirectory(entry.path)}
                 >{entry.name}</button
               >
