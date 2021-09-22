@@ -257,6 +257,9 @@ func (kern *Kernel) ReadDir(ctx context.Context, input *api.ReadDirInput) (*api.
 
 	entries, err := os.ReadDir(input.Path)
 	if err != nil {
+		if os.IsPermission(err) {
+			return &api.ReadDirOutput{}, errutil.NewHTTPError(403, "Permission denied")
+		}
 		return nil, fmt.Errorf("reading directory: %w", err)
 	}
 
