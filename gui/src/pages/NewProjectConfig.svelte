@@ -86,6 +86,8 @@
               >
             {/each}
           </div>
+        {:catch awaitError}
+          <ErrorLabel value={awaitError} />
         {/await}
       {:else}
         <Spinner />

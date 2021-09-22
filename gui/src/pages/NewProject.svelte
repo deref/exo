@@ -1,6 +1,7 @@
 <script lang="ts">
   import Layout from '../components/Layout.svelte';
   import Spinner from '../components/Spinner.svelte';
+  import ErrorLabel from '../components/ErrorLabel.svelte';
   import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
   import * as router from 'svelte-spa-router';
 
@@ -46,6 +47,8 @@
           }}>{template.displayName}</button
         >
       {/each}
+    {:catch error}
+      <ErrorLabel value={error} />
     {/await}
   </CenterFormPanel>
 </Layout>

@@ -1,6 +1,7 @@
 <script lang="ts">
   import Code from '../components/Code.svelte';
   import Layout from '../components/Layout.svelte';
+  import ErrorLabel from '../components/ErrorLabel.svelte';
   import WorkspaceList from '../components/WorkspaceList.svelte';
   import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
   import { api } from '../lib/api';
@@ -20,7 +21,7 @@
       {:then workspaces}
         <WorkspaceList {workspaces} />
       {:catch error}
-        <p style="color: red">{error.message}</p>
+        <ErrorLabel value={error} />
       {/await}
     </div>
     <hr />
