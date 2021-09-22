@@ -199,6 +199,7 @@ export interface DirectoryEntry {
 
 export interface ReadDirResult {
   directory: DirectoryEntry;
+  parent: null | DirectoryEntry;
   entries: DirectoryEntry[];
 }
 

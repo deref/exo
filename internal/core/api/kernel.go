@@ -108,6 +108,7 @@ type ReadDirInput struct {
 
 type ReadDirOutput struct {
 	Directory DirectoryEntry   `json:"directory"`
+	Parent    *DirectoryEntry  `json:"parent"`
 	Entries   []DirectoryEntry `json:"entries"`
 }
 

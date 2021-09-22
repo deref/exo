@@ -227,8 +227,17 @@ func (kern *Kernel) ReadDir(ctx context.Context, input *api.ReadDirInput) (*api.
 			Path:        filepath.Join(input.Path, e.Name()),
 		}
 	}
+	var parent *api.DirectoryEntry
+	if input.Path != "/" {
+		parent = &api.DirectoryEntry{
+			Name:        filepath.Base(filepath.Dir(input.Path)),
+			Path:        filepath.Dir(input.Path),
+			IsDirectory: true,
+		}
+	}
 	return &api.ReadDirOutput{
 		Entries: results,
+		Parent:  parent,
 		Directory: api.DirectoryEntry{
 			Name:        filepath.Base(input.Path),
 			IsDirectory: true,
