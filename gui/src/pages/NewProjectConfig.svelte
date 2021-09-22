@@ -30,6 +30,8 @@
       setWorkingDirectory(dir);
       return dirPromise;
     });
+
+  const withSlash = (wd: string) => (wd.slice(-1) === '/' ? wd : wd + '/');
 </script>
 
 <Layout>
@@ -49,7 +51,7 @@
 
         try {
           workspaceId = await api.kernel.createProject(
-            `${workingDirectory}/${name}`,
+            `${withSlash(String(workingDirectory))}${name}`,
             templateUrl,
           );
           router.push(`/workspaces/${encodeURIComponent(workspaceId)}`);
@@ -74,7 +76,7 @@
       <div style="height:32px" />
       {#if workingDirectory}
         <label for="root">Root:</label>
-        <h2><span>{workingDirectory}<span>/{name}</span></span></h2>
+        <h2><span>{withSlash(workingDirectory)}<span>{name}</span></span></h2>
         {#await dirPromise}
           <Spinner />
         {:then dir}
