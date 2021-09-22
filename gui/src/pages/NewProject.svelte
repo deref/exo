@@ -3,29 +3,8 @@
   import Spinner from '../components/Spinner.svelte';
   import ErrorLabel from '../components/ErrorLabel.svelte';
   import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
+  import { api } from '../lib/api';
   import * as router from 'svelte-spa-router';
-
-  const api = {
-    kernel: {
-      describeTemplates: async () => [
-        {
-          name: 'nextjs-prisma',
-          displayName: 'NextJS Prisma',
-          url: 'https://github.com/railwayapp/starters/tree/master/examples/nextjs-prisma',
-        },
-        {
-          name: 'http-nodejs',
-          displayName: 'HTTP Module',
-          url: 'https://github.com/railwayapp/starters/tree/master/examples/http-nodejs',
-        },
-        {
-          name: 'laravel',
-          displayName: 'Laravel Starter',
-          url: 'https://github.com/railwayapp/starters/tree/master/examples/laravel',
-        },
-      ],
-    },
-  };
 </script>
 
 <Layout>
@@ -73,6 +52,10 @@
     align-items: center;
     gap: 8px;
     margin-top: 8px;
+  }
+
+  button:not(:first-of-type) {
+    padding: 6px 18px;
   }
 
   button:hover {
