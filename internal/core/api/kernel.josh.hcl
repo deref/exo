@@ -1,21 +1,21 @@
 interface "kernel" {
-  
+
   method "create-workspace" {
     input "root" "string" {}
-    
+
     output "id" "string" {}
   }
-  
+
   method "describe-workspaces" {
     output "workspaces" "[]WorkspaceDescription" {}
   }
-  
+
   method "resolve-workspace" {
     input "ref" "string" {}
 
     output "id" "*string" {}
   }
-  
+
   method "panic" {
     doc = "Debug method to test what happens when the service panics."
 
@@ -50,6 +50,22 @@ interface "kernel" {
 
     output "tasks" "[]TaskDescription" {}
   }
+
+  method "get-user-home-dir" {
+    output "path" "string" {}
+  }
+  method "read-dir" {
+    input "path" "string" {}
+    output "directory" "DirectoryEntry" {}
+    output "parent" "*DirectoryEntry" {}
+    output "entries" "[]DirectoryEntry" {}
+  }
+}
+
+struct "directory-entry" {
+  field "name" "string" {}
+  field "path" "string" {}
+  field "is-directory" "bool" {}
 }
 
 struct "task-description" {

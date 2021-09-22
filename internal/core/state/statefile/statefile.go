@@ -94,8 +94,11 @@ func (sto *Store) DescribeWorkspaces(ctx context.Context, input *state.DescribeW
 		ids[id] = true
 	}
 
+	dnb := newDisplayNameBuilder(string(filepath.Separator))
+
 	var output state.DescribeWorkspacesOutput
 	for id, workspace := range root.Workspaces {
+		dnb.AddPath(workspace.Root)
 		if ids == nil || ids[id] {
 			output.Workspaces = append(output.Workspaces, state.WorkspaceDescription{
 				ID:   id,
@@ -103,6 +106,11 @@ func (sto *Store) DescribeWorkspaces(ctx context.Context, input *state.DescribeW
 			})
 		}
 	}
+
+	for i := range output.Workspaces {
+		output.Workspaces[i].DisplayName = dnb.GetDisplayName(output.Workspaces[i].Root)
+	}
+
 	return &output, nil
 }
 

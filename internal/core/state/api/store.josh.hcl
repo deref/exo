@@ -67,6 +67,7 @@ interface "store" {
 struct "workspace-description" {
   field "id" "string" {}
   field "root" "string" {}
+  field "display-name" "string" {}
 }
 
 struct "component-description" {
