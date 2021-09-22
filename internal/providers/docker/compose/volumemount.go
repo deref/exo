@@ -70,6 +70,8 @@ func (vm *VolumeMount) fromShortSyntax(in string) error {
 			vm.ReadOnly = true
 		case "rw":
 			// Do nothing - va.ReadOnly is already false.
+		case "cached", "delegated":
+			// Legacy read/write modes that no longer have any effect.
 		default:
 			return fmt.Errorf(`invalid access mode; expected "ro" or "rw" but got %q`, accessMode)
 		}
