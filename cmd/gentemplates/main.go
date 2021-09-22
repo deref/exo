@@ -13,6 +13,13 @@ import (
 )
 
 func main() {
+	if len(os.Args) > 1 {
+		fmt.Println(`You probably want to run ./scripts/update-templates.sh instead of this.
+
+gentemplates outputs a directory with the Railway templates converted to exo
+starter templates.`)
+		return
+	}
 	if err := genTemplates(); err != nil {
 		panic(err)
 	}
