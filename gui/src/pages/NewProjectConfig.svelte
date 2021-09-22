@@ -56,10 +56,12 @@
           );
           router.push(`/workspaces/${encodeURIComponent(workspaceId)}`);
         } catch (ex) {
-          if (!isClientError(ex)) {
-            throw ex;
+          if (ex instanceof Error) {
+            if (!isClientError(ex)) {
+              throw ex;
+            }
+            error = ex;
           }
-          error = ex;
         }
       }}
     >
