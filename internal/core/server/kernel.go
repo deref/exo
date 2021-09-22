@@ -17,10 +17,10 @@ import (
 	"github.com/deref/exo/internal/task"
 	taskapi "github.com/deref/exo/internal/task/api"
 	"github.com/deref/exo/internal/telemetry"
+	"github.com/deref/exo/internal/template"
 	"github.com/deref/exo/internal/upgrade"
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/osutil"
-	"github.com/go-git/go-git/v5"
 	"github.com/otiai10/copy"
 )
 
@@ -28,29 +28,6 @@ type Kernel struct {
 	VarDir      string
 	Store       state.Store
 	TaskTracker *task.TaskTracker
-}
-
-// GetTemplateFiles returns the path to a directory that contains the intial
-// project template.
-func GetTemplateFiles(ctx context.Context, templateName string) (string, error) {
-	dir, err := os.MkdirTemp("", "exo-template-clone-")
-	if err != nil {
-		return "", fmt.Errorf("making temp dir: %w", err)
-	}
-
-	_, err = git.PlainCloneContext(ctx, dir, false, &git.CloneOptions{
-		URL:          "https://github.com/railwayapp/starters",
-		SingleBranch: true,
-		Tags:         git.NoTags,
-		Depth:        1,
-		//Progress:     os.Stderr,
-	})
-	if err != nil {
-		return "", fmt.Errorf("cloning repo: %w", err)
-	}
-
-	templateDir := path.Join(dir, "examples", templateName)
-	return templateDir, nil
 }
 
 func (kern *Kernel) ListTemplates(ctx context.Context, input *api.ListTemplatesInput) (*api.ListTemplatesOutput, error) {
@@ -115,7 +92,7 @@ func (kern *Kernel) CreateProject(ctx context.Context, input *api.CreateProjectI
 	var templateDir string
 	if input.TemplateName != nil {
 		var err error
-		templateDir, err = GetTemplateFiles(ctx, *input.TemplateName)
+		templateDir, err = template.GetTemplateFiles(ctx, *input.TemplateName)
 		if err != nil {
 			return &api.CreateProjectOutput{}, fmt.Errorf("getting template files: %w", err)
 		}
