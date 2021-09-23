@@ -78,10 +78,13 @@ func (handler *MethodHandler) ServeHTTP(w http.ResponseWriter, req *http.Request
 	httputil.WriteJSON(w, req, http.StatusOK, output)
 }
 
+type MiddlewareMethod func(h http.Handler) http.Handler
+
 type MuxBuilder struct {
-	prefix  string
-	mux     *http.ServeMux
-	methods []string
+	prefix     string
+	mux        *http.ServeMux
+	methods    []string
+	middleware []MiddlewareMethod
 }
 
 func NewMuxBuilder(prefix string) *MuxBuilder {
@@ -89,6 +92,10 @@ func NewMuxBuilder(prefix string) *MuxBuilder {
 		prefix: prefix,
 		mux:    http.NewServeMux(),
 	}
+}
+
+func (b *MuxBuilder) AddMiddleware(m MiddlewareMethod) {
+	b.middleware = append(b.middleware, m)
 }
 
 func (b *MuxBuilder) Build() *http.ServeMux {
@@ -99,10 +106,16 @@ func (b *MuxBuilder) Build() *http.ServeMux {
 }
 
 func (b *MuxBuilder) AddMethod(name string, factory func(req *http.Request) interface{}) {
-	b.mux.Handle(path.Join(b.prefix, name), &MethodHandler{
+	joinedMiddleware := func(h http.Handler) http.Handler { return h } // Identity function
+	for _, m := range b.middleware {
+		joinedMiddleware = func(h http.Handler) http.Handler {
+			return m(h)
+		}
+	}
+	b.mux.Handle(path.Join(b.prefix, name), joinedMiddleware(&MethodHandler{
 		Factory: factory,
 		Name:    name,
-	})
+	}))
 	b.methods = append(b.methods, name)
 }
 

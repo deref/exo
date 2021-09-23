@@ -31,6 +31,7 @@ type Config struct {
 	VarDir       string
 	RunDir       string
 	RunStateFile string
+	TokenFile    string
 
 	HTTPPort uint `toml:"httpPort"`
 
@@ -94,6 +95,9 @@ func setDefaults(cfg *Config) {
 	}
 	if cfg.RunStateFile == "" {
 		cfg.RunStateFile = filepath.Join(cfg.RunDir, "exod.json")
+	}
+	if cfg.TokenFile == "" {
+		cfg.TokenFile = filepath.Join(cfg.HomeDir, "token")
 	}
 
 	if cfg.HTTPPort == 0 {

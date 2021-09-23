@@ -2,12 +2,16 @@ package server
 
 import (
 	"net/http"
+	"strings"
 
 	"github.com/deref/exo/internal/core/api"
 	state "github.com/deref/exo/internal/core/state/api"
 	josh "github.com/deref/exo/internal/josh/server"
 	"github.com/deref/exo/internal/task"
 	taskapi "github.com/deref/exo/internal/task/api"
+	"github.com/deref/exo/internal/token"
+	"github.com/deref/exo/internal/util/errutil"
+	"github.com/deref/exo/internal/util/httputil"
 	"github.com/deref/exo/internal/util/logging"
 	docker "github.com/docker/docker/client"
 )
@@ -21,8 +25,26 @@ type Config struct {
 	TaskTracker *task.TaskTracker
 }
 
-func BuildRootMux(prefix string, cfg *Config) *http.ServeMux {
+func BuildRootMux(prefix string, cfg *Config, tokenClient token.TokenClient) *http.ServeMux {
+	authMiddleware := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			token := strings.TrimPrefix(req.Header.Get("Authorization"), "Bearer ")
+			cookie, err := req.Cookie("token")
+			if token == "" && err == nil {
+				token = cookie.Value
+			}
+
+			authed := tokenClient.CheckToken(token)
+			if !authed {
+				httputil.WriteError(w, req, errutil.NewHTTPError(http.StatusUnauthorized, "Bad or no token"))
+				return
+			}
+			next.ServeHTTP(w, req)
+		})
+	}
+
 	b := josh.NewMuxBuilder(prefix)
+	b.AddMiddleware(authMiddleware)
 
 	endKernel := b.Begin("kernel")
 	api.BuildKernelMux(b, func(req *http.Request) api.Kernel {

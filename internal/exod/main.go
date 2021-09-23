@@ -23,6 +23,7 @@ import (
 	"github.com/deref/exo/internal/task/api"
 	taskserver "github.com/deref/exo/internal/task/server"
 	"github.com/deref/exo/internal/telemetry"
+	"github.com/deref/exo/internal/token"
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/deref/exo/internal/util/httputil"
 	"github.com/deref/exo/internal/util/logging"
@@ -48,6 +49,11 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	cfg := &config.Config{}
 	config.MustLoadDefault(cfg)
 	MustMakeDirectories(cfg)
+
+	tokenClient, err := token.EnsureTokenFile(cfg.TokenFile)
+	if err != nil {
+		cmdutil.Fatalf("ensuring token file: %w", err)
+	}
 
 	tel.StartSession(ctx)
 
@@ -131,7 +137,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	}
 	ctx = log.ContextWithLogCollector(ctx, &logd.LogCollector)
 
-	mux := server.BuildRootMux("/_exo/", kernelCfg)
+	mux := server.BuildRootMux("/_exo/", kernelCfg, tokenClient)
 	mux.Handle("/", gui.NewHandler(ctx, cfg.GUI))
 
 	{

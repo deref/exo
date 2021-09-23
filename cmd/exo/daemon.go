@@ -11,6 +11,7 @@ import (
 
 	"github.com/deref/exo/internal/core/client"
 	"github.com/deref/exo/internal/exod"
+	"github.com/deref/exo/internal/token"
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/deref/exo/internal/util/osutil"
@@ -126,6 +127,14 @@ func loadRunState() error {
 	return jsonutil.UnmarshalFile(cfg.RunStateFile, &runState)
 }
 
+func mustGetToken() string {
+	tokenClient, err := token.NewFileTokenClient(cfg.TokenFile)
+	if err != nil {
+		cmdutil.Fatalf("getting token client: %w", err)
+	}
+	return tokenClient.GetToken()
+}
+
 func newClient() *client.Root {
 	url := cfg.Client.URL
 	if url == "" {
@@ -135,7 +144,8 @@ func newClient() *client.Root {
 	url = strings.TrimSuffix(url, "/") + "/_exo/"
 
 	return &client.Root{
-		HTTP: http.DefaultClient,
-		URL:  url,
+		HTTP:  http.DefaultClient,
+		URL:   url,
+		Token: mustGetToken(),
 	}
 }

@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"net/url"
 	"os"
 
 	"github.com/deref/exo/internal/core/api"
@@ -42,6 +43,16 @@ If the current directory is part of a workspace, navigates to it.`,
 		} else {
 			endpoint = routes.WorkspaceURL(*output.ID)
 		}
+
+		// Add a token to auth.
+		u, err := url.Parse(endpoint)
+		if err != nil {
+			return fmt.Errorf("parsing endpoint: %w", err)
+		}
+		query := u.Query()
+		query.Add("token", mustGetToken())
+		u.RawQuery = query.Encode()
+		endpoint = u.String()
 
 		fmt.Println("Opening GUI:", endpoint)
 
