@@ -49,8 +49,10 @@ func (kern *Kernel) CreateProject(ctx context.Context, input *api.CreateProjectI
 		}
 	}
 
-	err := os.Mkdir(projectDir, 0750)
-	if err != nil {
+	if err := os.Mkdir(projectDir, 0750); err != nil {
+		if os.IsExist(err) {
+			return nil, errutil.HTTPErrorf(409, "Directory already exists.")
+		}
 		return &api.CreateProjectOutput{}, fmt.Errorf("making project dir: %w", err)
 	}
 
