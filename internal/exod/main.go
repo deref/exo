@@ -15,10 +15,10 @@ import (
 	kernel "github.com/deref/exo/internal/core/server"
 	"github.com/deref/exo/internal/core/state/statefile"
 	"github.com/deref/exo/internal/gensym"
-	"github.com/deref/exo/internal/logd"
 	logdserver "github.com/deref/exo/internal/logd/server"
 	"github.com/deref/exo/internal/logd/store/badger"
 	"github.com/deref/exo/internal/providers/core/components/log"
+	"github.com/deref/exo/internal/syslogd"
 	"github.com/deref/exo/internal/task"
 	"github.com/deref/exo/internal/task/api"
 	taskserver "github.com/deref/exo/internal/task/server"
@@ -121,7 +121,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	}
 	defer logStore.Close()
 
-	logd := &logd.Service{
+	syslogServer := &syslogd.Service{
 		SyslogPort: kernelCfg.SyslogPort,
 		Logger:     logger,
 		LogCollector: logdserver.LogCollector{
@@ -129,7 +129,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 			Store: logStore,
 		},
 	}
-	ctx = log.ContextWithLogCollector(ctx, &logd.LogCollector)
+	ctx = log.ContextWithLogCollector(ctx, &syslogServer.LogCollector)
 
 	mux := server.BuildRootMux("/_exo/", kernelCfg)
 	mux.Handle("/", gui.NewHandler(ctx, cfg.GUI))
@@ -139,7 +139,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 		defer shutdown()
 
 		go func() {
-			if err := logd.Run(ctx); err != nil {
+			if err := syslogServer.Run(ctx); err != nil {
 				cmdutil.Fatalf("log collector error: %w", err)
 			}
 		}()

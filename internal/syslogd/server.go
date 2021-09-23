@@ -1,4 +1,4 @@
-package logd
+package syslogd
 
 import (
 	"context"
@@ -16,19 +16,20 @@ import (
 	"github.com/influxdata/go-syslog/v3/rfc5424"
 )
 
-type Service struct {
+// Server implements a UDP-based Syslog server backed by a log collector store.
+type Server struct {
 	Logger     logging.Logger
 	SyslogPort uint
 	server.LogCollector
 }
 
-func (svc *Service) Run(ctx context.Context) error {
-	addr := fmt.Sprintf(":%d", svc.SyslogPort)
+func (svr *Server) Run(ctx context.Context) error {
+	addr := fmt.Sprintf(":%d", svr.SyslogPort)
 	conn, err := net.ListenPacket("udp", addr)
 	if err != nil {
 		return fmt.Errorf("listening: %w", err)
 	}
-	svc.Logger.Infof("listening for syslog at udp %s", addr)
+	svr.Logger.Infof("listening for syslog at udp %s", addr)
 
 	errC := make(chan error, 1)
 	go func() {
@@ -43,15 +44,15 @@ func (svc *Service) Run(ctx context.Context) error {
 			}
 			syslogMessage, err := syslogMachine.Parse(buffer[:packetSize])
 			if err != nil {
-				svc.Logger.Infof("parsing syslog message: %v", err)
+				svr.Logger.Infof("parsing syslog message: %v", err)
 				continue
 			}
 			event, err := syslogToEvent(syslogMessage)
 			if err != nil {
-				svc.Logger.Infof("interpreting syslog message: %v", err)
+				svr.Logger.Infof("interpreting syslog message: %v", err)
 				continue
 			}
-			if _, err := svc.AddEvent(ctx, event); err != nil {
+			if _, err := svr.AddEvent(ctx, event); err != nil {
 				errC <- fmt.Errorf("adding event: %w", err)
 				return
 			}
@@ -65,7 +66,7 @@ func (svc *Service) Run(ctx context.Context) error {
 		case err := <-errC:
 			return err
 		case <-time.After(5 * time.Second):
-			if _, err := svc.RemoveOldEvents(ctx, &api.RemoveOldEventsInput{}); err != nil {
+			if _, err := svr.RemoveOldEvents(ctx, &api.RemoveOldEventsInput{}); err != nil {
 				return fmt.Errorf("removing old events: %w", err)
 			}
 		}
