@@ -12,7 +12,7 @@ import (
 
 // From https://gist.github.com/mimoo/25fc9716e0f1353791f5908f94d6e726
 
-func compress(src string, buf io.Writer) error {
+func compress(buf io.Writer, src string) error {
 
 	// tar > gzip > buf
 	zr := gzip.NewWriter(buf)
@@ -65,7 +65,7 @@ func validRelPath(p string) bool {
 	return true
 }
 
-func uncompress(src io.Reader, dst string) (err error) {
+func uncompress(dst string, src io.Reader) (err error) {
 	// ungzip
 	zr, err := gzip.NewReader(src)
 	if err != nil {

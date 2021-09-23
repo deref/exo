@@ -11,8 +11,9 @@ import (
 var archiveFolderName = "files"
 var tarName = archiveFolderName + ".tar.gz"
 
-// GetTemplateFiles returns the path to a directory that contains the intial
-// project template.
+// GetTemplateFiles returns the path to a new temporary directory that contains
+// the intial project template. It is expected that the caller will move or copy the
+// directory to a more permanent location.
 func GetTemplateFiles(ctx context.Context, templateURL string) (string, error) {
 	dir, err := os.MkdirTemp("", "exo-template-clone-")
 	if err != nil {
@@ -27,7 +28,7 @@ func GetTemplateFiles(ctx context.Context, templateURL string) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	err = uncompress(resp.Body, dir)
+	err = uncompress(dir, resp.Body)
 	if err != nil {
 		return "", fmt.Errorf("untarring template: %w", err)
 	}
@@ -40,11 +41,11 @@ func MakeTemplateFiles(ctx context.Context, inputDir, outputDir string) error {
 	tarFile := filepath.Join(outputDir, tarName)
 	f, err := os.Create(tarFile)
 	if err != nil {
-		return fmt.Errorf("failed to create file %q: %w", tarFile, err)
+		return fmt.Errorf("creating file: %w", err)
 	}
 	defer f.Close()
 
-	if err := compress(inputDir, f); err != nil {
+	if err := compress(f, inputDir); err != nil {
 		return fmt.Errorf("compressing template files: %w", err)
 	}
 	return nil

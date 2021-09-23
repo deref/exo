@@ -9,7 +9,6 @@ import (
 
 	"github.com/deref/exo/internal/template"
 	"github.com/go-git/go-git/v5"
-	"golang.org/x/sync/errgroup"
 )
 
 func main() {
@@ -55,7 +54,6 @@ func genTemplates() error {
 	}
 
 	ctx := context.Background()
-	var eg errgroup.Group
 	for _, e := range entries {
 		if e.Name() == "node_modules" {
 			continue
@@ -70,14 +68,11 @@ func genTemplates() error {
 				return fmt.Errorf("creating template dir: %w", err)
 			}
 
-			eg.Go(func() error {
-				if err := template.MakeTemplateFiles(ctx, templateDir, tmplOutDir); err != nil {
-					return fmt.Errorf("making template files: %w", err)
-				}
-				return nil
-			})
+			if err := template.MakeTemplateFiles(ctx, templateDir, tmplOutDir); err != nil {
+				return fmt.Errorf("making %q template files: %w", templateDir, err)
+			}
 		}
 	}
 
-	return eg.Wait()
+	return nil
 }
