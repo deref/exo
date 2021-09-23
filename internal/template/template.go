@@ -27,7 +27,7 @@ func GetTemplateFiles(ctx context.Context, templateURL string) (string, error) {
 	}
 	defer resp.Body.Close()
 
-	err = uncompress(resp.Body, dir)
+	err = uncompress(dir, resp.Body)
 	if err != nil {
 		return "", fmt.Errorf("untarring template: %w", err)
 	}
@@ -44,7 +44,7 @@ func MakeTemplateFiles(ctx context.Context, inputDir, outputDir string) error {
 	}
 	defer f.Close()
 
-	if err := compress(inputDir, f); err != nil {
+	if err := compress(f, inputDir); err != nil {
 		return fmt.Errorf("compressing template files: %w", err)
 	}
 	return nil
