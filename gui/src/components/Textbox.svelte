@@ -17,5 +17,11 @@
     color: var(--strong-color);
     box-shadow: var(--text-input-shadow);
     width: var(--input-width);
+    outline: none;
+  }
+
+  input:focus,
+  input:focus-within {
+    box-shadow: var(--text-input-shadow-focus);
   }
 </style>

@@ -122,6 +122,11 @@ const themeVariables = {
     "0 -0.33px 0 1px #ffffff26, 0 6px 9px -4px #0000001a inset, 0 0.4px 0 0.8px #0000001a inset",
     "0 -0.33px 0 1px #ffffff26, 0 6px 9px -4px #0000001a inset, 0 0.4px 0 0.8px #0000001a inset",
   ],
+  "text-input-shadow-focus": [
+    "0 0.33px 0 1px #aaccff26, 0 6px 9px -4px #0022cc33 inset, 0 0.4px 0 0.8px #0022cc33 inset",
+    "0 -0.33px 0 1px #aaccff26, 0 6px 9px -4px #0022cc33 inset, 0 0.4px 0 0.8px #0022cc33 inset",
+    "0 -0.33px 0 1px #aaccff26, 0 6px 9px -4px #0022cc33 inset, 0 0.4px 0 0.8px #0022cc33 inset",
+  ],
   "dropdown-shadow": [
     "0 0.33px 0 1px #ffffff26, 0 12px 12px -4px #00000033, 0 0.4px 0 0.8px #00000059",
     "0 -0.33px 0 1px #ffffff55, 0 12px 12px -4px #00000033, 0 0.4px 0 0.8px #00000059",

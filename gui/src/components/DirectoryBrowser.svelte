@@ -39,7 +39,7 @@
 <style>
   .toolbar {
     display: grid;
-    grid-template-columns: 60px 60px auto;
+    grid-template-columns: repeat(2, 48px) auto;
     gap: 12px;
   }
 
