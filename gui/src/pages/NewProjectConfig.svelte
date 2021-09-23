@@ -19,6 +19,7 @@
   let error: Error | null = null;
 
   let workingDirectory: string | null = null;
+  let homeDirectory: string = '/';
 
   const setWorkingDirectory = (dir: string) => {
     workingDirectory = dir;
@@ -29,6 +30,7 @@
     .getUserHomeDir()
     .then((dir) => {
       setWorkingDirectory(dir);
+      homeDirectory = dir;
       return dirPromise;
     });
 
@@ -81,7 +83,11 @@
         {#await dirPromise}
           <Spinner />
         {:then dir}
-          <DirectoryBrowser {dir} handleClick={setWorkingDirectory} />
+          <DirectoryBrowser
+            {dir}
+            homePath={homeDirectory}
+            handleClick={setWorkingDirectory}
+          />
         {:catch awaitError}
           <ErrorLabel value={awaitError} />
         {/await}

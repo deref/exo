@@ -1,24 +1,66 @@
 <script lang="ts">
   import type { ReadDirResult } from '../lib/api';
+  import ResetSVG from './mono/ResetSVG.svelte';
+  import Textbox from './Textbox.svelte';
 
   export let dir: ReadDirResult;
+  export let homePath: string;
   export let handleClick: (path: string) => void;
+  let search: string = '';
 </script>
 
-{#if dir.parent !== null}
-  <button on:click={() => handleClick(String(dir.parent?.path))}> .. </button>
-{:else}
-  <button disabled> .. </button>
-{/if}
+<div class="toolbar">
+  {#if dir.parent !== null}
+    <button
+      title="Parent directory"
+      on:click={() => handleClick(String(dir.parent?.path))}
+    >
+      ..
+    </button>
+  {:else}
+    <button disabled> .. </button>
+  {/if}
+  <button title="Home directory" on:click={() => handleClick(homePath)}
+    ><ResetSVG /></button
+  >
+  <Textbox placeholder="Search..." bind:value={search} --input-width="100%" />
+</div>
 <div class="directories">
   {#each dir.entries
     .filter((x) => x.isDirectory)
+    .filter((x) => x.name.slice(0, search.length) === search)
     .sort((x, y) => x.name.localeCompare(y.name)) as entry}
-    <button on:click={() => handleClick(entry.path)}>{entry.name}</button>
+    <button title={entry.path} on:click={() => handleClick(entry.path)}>
+      {entry.name}
+    </button>
   {/each}
 </div>
 
 <style>
+  .toolbar {
+    display: grid;
+    grid-template-columns: 60px 60px auto;
+    gap: 12px;
+  }
+
+  .toolbar button:nth-child(2) {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+  }
+
+  * :global(input) {
+    height: 36px !important;
+  }
+
+  * :global(svg) {
+    height: 16px;
+  }
+
+  * :global(svg *) {
+    fill: currentColor !important;
+  }
+
   .directories {
     margin: 12px 0;
   }
