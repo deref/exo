@@ -15,8 +15,8 @@ import (
 	"github.com/deref/exo/internal/core/api"
 	state "github.com/deref/exo/internal/core/state/api"
 	"github.com/deref/exo/internal/deps"
+	eventd "github.com/deref/exo/internal/eventd/api"
 	"github.com/deref/exo/internal/gensym"
-	logd "github.com/deref/exo/internal/logd/api"
 	"github.com/deref/exo/internal/manifest"
 	"github.com/deref/exo/internal/manifest/procfile"
 	"github.com/deref/exo/internal/providers/core"
@@ -648,7 +648,7 @@ func (ws *Workspace) SetComponentState(ctx context.Context, input *api.SetCompon
 	return &api.SetComponentStateOutput{}, nil
 }
 
-func (ws *Workspace) DescribeLogs(ctx context.Context, input *api.DescribeLogsInput) (*api.DescribeLogsOutput, error) {
+func (ws *Workspace) DescribeStreams(ctx context.Context, input *api.DescribeStreamsInput) (*api.DescribeStreamsOutput, error) {
 	describe := allProcessQuery().describeComponentsInput(ws)
 	components, err := ws.DescribeComponents(ctx, describe)
 	if err != nil {
@@ -677,30 +677,30 @@ func (ws *Workspace) DescribeLogs(ctx context.Context, input *api.DescribeLogsIn
 	}
 
 	// Initialize output and index by log group name.
-	logs := make([]api.LogDescription, len(logGroups))
+	streams := make([]api.StreamDescription, len(logGroups))
 	for i, logGroup := range logGroups {
-		logs[i] = api.LogDescription{
+		streams[i] = api.StreamDescription{
 			Name: logGroup,
 		}
 	}
 
-	// Decorate output with information from the log collector.
-	collector := log.CurrentLogCollector(ctx)
-	collectorLogs, err := collector.DescribeLogs(ctx, &logd.DescribeLogsInput{
+	// Decorate output with information from the event store.
+	eventStore := log.CurrentEventStore(ctx)
+	collectorLogs, err := eventStore.DescribeStreams(ctx, &eventd.DescribeStreamsInput{
 		Names: logStreams,
 	})
 	if err != nil {
 		return nil, err
 	}
-	for _, collectorLog := range collectorLogs.Logs {
-		groupIndex, ok := streamToGroup[collectorLog.Name]
+	for _, stream := range collectorLogs.Streams {
+		groupIndex, ok := streamToGroup[stream.Name]
 		if !ok {
 			continue
 		}
-		group := &logs[groupIndex]
-		group.LastEventAt = combineLastEventAt(group.LastEventAt, collectorLog.LastEventAt)
+		group := &streams[groupIndex]
+		group.LastEventAt = combineLastEventAt(group.LastEventAt, stream.LastEventAt)
 	}
-	return &api.DescribeLogsOutput{Logs: logs}, nil
+	return &api.DescribeStreamsOutput{Streams: streams}, nil
 }
 
 func combineLastEventAt(a, b *string) *string {
@@ -718,15 +718,15 @@ func combineLastEventAt(a, b *string) *string {
 }
 
 func (ws *Workspace) GetEvents(ctx context.Context, input *api.GetEventsInput) (*api.GetEventsOutput, error) {
-	logGroups := input.Logs
+	logGroups := input.Streams
 	if logGroups == nil {
 		// No filter specified, use all streams.
-		logDescriptions, err := ws.DescribeLogs(ctx, &api.DescribeLogsInput{})
+		streamDescriptions, err := ws.DescribeStreams(ctx, &api.DescribeStreamsInput{})
 		if err != nil {
-			return nil, fmt.Errorf("enumerating logs: %w", err)
+			return nil, fmt.Errorf("enumerating streams: %w", err)
 		}
-		logGroups = make([]string, len(logDescriptions.Logs))
-		for i, group := range logDescriptions.Logs {
+		logGroups = make([]string, len(streamDescriptions.Streams))
+		for i, group := range streamDescriptions.Streams {
 			logGroups[i] = group.Name
 		}
 	}
@@ -741,9 +741,9 @@ func (ws *Workspace) GetEvents(ctx context.Context, input *api.GetEventsInput) (
 		}
 	}
 
-	collector := log.CurrentLogCollector(ctx)
-	collectorOutput, err := collector.GetEvents(ctx, &logd.GetEventsInput{
-		Logs:      logStreams,
+	eventStore := log.CurrentEventStore(ctx)
+	collectorOutput, err := eventStore.GetEvents(ctx, &eventd.GetEventsInput{
+		Streams:   logStreams,
 		Cursor:    input.Cursor,
 		FilterStr: input.FilterStr,
 		Prev:      input.Prev,
@@ -760,7 +760,7 @@ func (ws *Workspace) GetEvents(ctx context.Context, input *api.GetEventsInput) (
 	for i, collectorEvent := range collectorOutput.Items {
 		output.Items[i] = api.Event{
 			ID:        collectorEvent.ID,
-			Log:       collectorEvent.Log,
+			Stream:    collectorEvent.Stream,
 			Timestamp: collectorEvent.Timestamp,
 			Message:   collectorEvent.Message,
 		}

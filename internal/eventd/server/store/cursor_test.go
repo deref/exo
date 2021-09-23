@@ -3,7 +3,7 @@ package store_test
 import (
 	"testing"
 
-	"github.com/deref/exo/internal/logd/server/store"
+	"github.com/deref/exo/internal/eventd/server/store"
 	"github.com/stretchr/testify/assert"
 )
 

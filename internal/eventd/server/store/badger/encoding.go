@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/deref/exo/internal/chrono"
-	"github.com/deref/exo/internal/logd/api"
+	"github.com/deref/exo/internal/eventd/api"
 	"github.com/oklog/ulid/v2"
 )
 
@@ -25,9 +25,9 @@ const (
 	messageOffset   = timestampOffset + timestampLen
 )
 
-func eventFromEntry(log string, key, val []byte) (api.Event, error) {
+func eventFromEntry(stream string, key, val []byte) (api.Event, error) {
 	// Parse key as (logName, null, id).
-	id, err := idFromKey(log, key)
+	id, err := idFromKey(stream, key)
 	if err != nil {
 		return api.Event{}, err
 	}
@@ -43,7 +43,7 @@ func eventFromEntry(log string, key, val []byte) (api.Event, error) {
 
 	return api.Event{
 		ID:        id,
-		Log:       log,
+		Stream:    stream,
 		Timestamp: chrono.NanoToIso(int64(tsNano)),
 		Message:   message,
 	}, nil

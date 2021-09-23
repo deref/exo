@@ -14,10 +14,10 @@ import (
 	"github.com/deref/exo/internal/core/server"
 	kernel "github.com/deref/exo/internal/core/server"
 	"github.com/deref/exo/internal/core/state/statefile"
+	eventdapi "github.com/deref/exo/internal/eventd/api"
+	eventdserver "github.com/deref/exo/internal/eventd/server"
+	"github.com/deref/exo/internal/eventd/server/store/badger"
 	"github.com/deref/exo/internal/gensym"
-	logdapi "github.com/deref/exo/internal/logd/api"
-	logdserver "github.com/deref/exo/internal/logd/server"
-	"github.com/deref/exo/internal/logd/server/store/badger"
 	"github.com/deref/exo/internal/providers/core/components/log"
 	"github.com/deref/exo/internal/syslogd"
 	"github.com/deref/exo/internal/task"
@@ -122,17 +122,17 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	}
 	defer logStore.Close()
 
-	logCollector := logdserver.LogCollector{
+	eventStore := &eventdserver.LogCollector{
 		IDGen: gensym.NewULIDGenerator(ctx),
 		Store: logStore,
 	}
 
 	syslogServer := &syslogd.Server{
-		SyslogPort:   kernelCfg.SyslogPort,
-		Logger:       logger,
-		LogCollector: logCollector,
+		SyslogPort: kernelCfg.SyslogPort,
+		Logger:     logger,
+		Store:      eventStore,
 	}
-	ctx = log.ContextWithLogCollector(ctx, &syslogServer.LogCollector)
+	ctx = log.ContextWithEventStore(ctx, eventStore)
 
 	mux := server.BuildRootMux("/_exo/", kernelCfg)
 	mux.Handle("/", gui.NewHandler(ctx, cfg.GUI))
@@ -147,7 +147,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 				case <-ctx.Done():
 					return
 				case <-time.After(5 * time.Second):
-					if _, err := logCollector.RemoveOldEvents(ctx, &logdapi.RemoveOldEventsInput{}); err != nil {
+					if _, err := eventStore.RemoveOldEvents(ctx, &eventdapi.RemoveOldEventsInput{}); err != nil {
 						logger.Infof("error removing old events: %v", err)
 					}
 				}

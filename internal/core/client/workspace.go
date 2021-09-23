@@ -155,8 +155,8 @@ func (c *Workspace) SetComponentState(ctx context.Context, input *api.SetCompone
 	return
 }
 
-func (c *Workspace) DescribeLogs(ctx context.Context, input *api.DescribeLogsInput) (output *api.DescribeLogsOutput, err error) {
-	err = c.client.Invoke(ctx, "describe-logs", input, &output)
+func (c *Workspace) DescribeStreams(ctx context.Context, input *api.DescribeStreamsInput) (output *api.DescribeStreamsOutput, err error) {
+	err = c.client.Invoke(ctx, "describe-streams", input, &output)
 	return
 }
 

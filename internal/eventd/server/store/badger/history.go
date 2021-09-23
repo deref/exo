@@ -6,8 +6,8 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/deref/exo/internal/logd/api"
-	"github.com/deref/exo/internal/logd/server/store"
+	"github.com/deref/exo/internal/eventd/api"
+	"github.com/deref/exo/internal/eventd/server/store"
 	"github.com/deref/exo/internal/util/binaryutil"
 	"github.com/dgraph-io/badger/v3"
 )

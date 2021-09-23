@@ -10,9 +10,9 @@ import (
 	"sort"
 
 	"github.com/deref/exo/internal/chrono"
+	"github.com/deref/exo/internal/eventd/api"
+	"github.com/deref/exo/internal/eventd/server/store"
 	"github.com/deref/exo/internal/gensym"
-	"github.com/deref/exo/internal/logd/api"
-	"github.com/deref/exo/internal/logd/server/store"
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/mathutil"
 	"github.com/oklog/ulid/v2"
@@ -76,18 +76,18 @@ func validLogName(s string) bool {
 }
 
 func (lc *LogCollector) ClearEvents(ctx context.Context, input *api.ClearEventsInput) (output *api.ClearEventsOutput, err error) {
-	for _, logName := range input.Logs {
-		log := lc.Store.GetLog(logName)
+	for _, streamName := range input.Streams {
+		log := lc.Store.GetLog(streamName)
 		if err := log.ClearEvents(ctx); err != nil {
-			return nil, fmt.Errorf("log %q: %w", logName, err)
+			return nil, fmt.Errorf("log %q: %w", streamName, err)
 		}
 	}
 	return &api.ClearEventsOutput{}, nil
 }
 
-func (lc *LogCollector) DescribeLogs(ctx context.Context, input *api.DescribeLogsInput) (*api.DescribeLogsOutput, error) {
-	var output api.DescribeLogsOutput
-	output.Logs = []api.LogDescription{}
+func (lc *LogCollector) DescribeStreams(ctx context.Context, input *api.DescribeStreamsInput) (*api.DescribeStreamsOutput, error) {
+	var output api.DescribeStreamsOutput
+	output.Streams = []api.StreamDescription{}
 	for _, name := range input.Names {
 		var lastEventAt *string
 		lastEvent, err := lc.Store.GetLog(name).GetLastEvent(ctx)
@@ -98,7 +98,7 @@ func (lc *LogCollector) DescribeLogs(ctx context.Context, input *api.DescribeLog
 			lastEventAt = &lastEvent.Timestamp
 		}
 
-		output.Logs = append(output.Logs, api.LogDescription{
+		output.Streams = append(output.Streams, api.StreamDescription{
 			Name:        name,
 			LastEventAt: lastEventAt,
 		})
@@ -127,7 +127,7 @@ func (lc *LogCollector) GetEvents(ctx context.Context, input *api.GetEventsInput
 	var cursor *store.Cursor
 	var err error
 	if input.Cursor == nil {
-		if cursor, err = lc.getLatestCursor(ctx, input.Logs); err != nil {
+		if cursor, err = lc.getLatestCursor(ctx, input.Streams); err != nil {
 			return nil, fmt.Errorf("finding latest cursor: %w", err)
 		}
 	} else {
@@ -140,7 +140,7 @@ func (lc *LogCollector) GetEvents(ctx context.Context, input *api.GetEventsInput
 
 	// TODO: Merge sort.
 	eventsWithCursors := make([]store.EventWithCursors, 0, limit)
-	for _, logName := range input.Logs {
+	for _, logName := range input.Streams {
 		log := lc.Store.GetLog(logName)
 
 		logEventsWithCursors, err := log.GetEvents(ctx, cursor, limit, direction, input.FilterStr)

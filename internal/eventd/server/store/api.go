@@ -3,7 +3,7 @@ package store
 import (
 	"context"
 
-	"github.com/deref/exo/internal/logd/api"
+	"github.com/deref/exo/internal/eventd/api"
 )
 
 type Store interface {
