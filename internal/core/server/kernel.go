@@ -37,7 +37,7 @@ func (kern *Kernel) DescribeTemplates(ctx context.Context, input *api.DescribeTe
 func (kern *Kernel) CreateProject(ctx context.Context, input *api.CreateProjectInput) (*api.CreateProjectOutput, error) {
 	projectDir := input.Root
 	if !filepath.IsAbs(projectDir) {
-		return &api.CreateProjectOutput{}, errors.New("path must be absolute")
+		return nil, errors.New("path must be absolute")
 	}
 
 	var templateDir string
@@ -45,7 +45,7 @@ func (kern *Kernel) CreateProject(ctx context.Context, input *api.CreateProjectI
 		var err error
 		templateDir, err = template.GetTemplateFiles(ctx, *input.TemplateUrl)
 		if err != nil {
-			return &api.CreateProjectOutput{}, fmt.Errorf("getting template files: %w", err)
+			return nil, fmt.Errorf("getting template files: %w", err)
 		}
 	}
 
@@ -53,7 +53,7 @@ func (kern *Kernel) CreateProject(ctx context.Context, input *api.CreateProjectI
 		if os.IsExist(err) {
 			return nil, errutil.HTTPErrorf(409, "Directory already exists.")
 		}
-		return &api.CreateProjectOutput{}, fmt.Errorf("making project dir: %w", err)
+		return nil, fmt.Errorf("making project dir: %w", err)
 	}
 
 	if templateDir != "" {
@@ -69,7 +69,7 @@ func (kern *Kernel) CreateProject(ctx context.Context, input *api.CreateProjectI
 
 	result, err := kern.CreateWorkspace(ctx, &api.CreateWorkspaceInput{Root: projectDir})
 	if err != nil {
-		return &api.CreateProjectOutput{}, fmt.Errorf("creating workspace: %w", err)
+		return nil, fmt.Errorf("creating workspace: %w", err)
 	}
 	return &api.CreateProjectOutput{WorkspaceID: result.ID}, err
 }
@@ -250,20 +250,20 @@ func (kern *Kernel) DescribeTasks(ctx context.Context, input *api.DescribeTasksI
 func (kern *Kernel) GetUserHomeDir(ctx context.Context, input *api.GetUserHomeDirInput) (*api.GetUserHomeDirOutput, error) {
 	path, err := os.UserHomeDir()
 	if err != nil {
-		return &api.GetUserHomeDirOutput{}, fmt.Errorf("getting user home directory: %w", err)
+		return nil, fmt.Errorf("getting user home directory: %w", err)
 	}
 	return &api.GetUserHomeDirOutput{Path: path}, nil
 }
 
 func (kern *Kernel) ReadDir(ctx context.Context, input *api.ReadDirInput) (*api.ReadDirOutput, error) {
 	if !filepath.IsAbs(input.Path) {
-		return &api.ReadDirOutput{}, fmt.Errorf("path not absolute: %q", input.Path)
+		return nil, fmt.Errorf("path not absolute: %q", input.Path)
 	}
 
 	entries, err := os.ReadDir(input.Path)
 	if err != nil {
 		if os.IsPermission(err) {
-			return &api.ReadDirOutput{}, errutil.NewHTTPError(403, "Permission denied")
+			return nil, errutil.NewHTTPError(403, "Permission denied")
 		}
 		return nil, fmt.Errorf("reading directory: %w", err)
 	}
