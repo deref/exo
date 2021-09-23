@@ -57,11 +57,14 @@ func (kern *Kernel) CreateProject(ctx context.Context, input *api.CreateProjectI
 	}
 
 	if templateDir != "" {
-		copy.Copy(templateDir, projectDir, copy.Options{
+		err := copy.Copy(templateDir, projectDir, copy.Options{
 			OnSymlink: func(string) copy.SymlinkAction {
 				return copy.Deep
 			},
 		})
+		if err != nil {
+			return nil, fmt.Errorf("copying directory: %w", err)
+		}
 	}
 
 	result, err := kern.CreateWorkspace(ctx, &api.CreateWorkspaceInput{Root: projectDir})
