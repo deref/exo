@@ -34,7 +34,7 @@
       return dirPromise;
     });
 
-  const withSlash = (wd: string) => (wd.slice(-1) === '/' ? wd : wd + '/');
+  const withSlash = (wd: string) => (wd.endsWith('/') ? wd : wd + '/');
 </script>
 
 <Layout>
