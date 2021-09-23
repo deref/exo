@@ -21,8 +21,9 @@ import (
 	"github.com/deref/exo/internal/upgrade"
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/osutil"
-	"github.com/otiai10/copy"
 )
+
+var dirExistsErr = errutil.HTTPErrorf(409, "Directory already exists.")
 
 type Kernel struct {
 	VarDir      string
@@ -49,21 +50,20 @@ func (kern *Kernel) CreateProject(ctx context.Context, input *api.CreateProjectI
 		}
 	}
 
-	if err := os.Mkdir(projectDir, 0750); err != nil {
-		if os.IsExist(err) {
-			return nil, errutil.HTTPErrorf(409, "Directory already exists.")
-		}
-		return nil, fmt.Errorf("making project dir: %w", err)
-	}
-
 	if templateDir != "" {
-		err := copy.Copy(templateDir, projectDir, copy.Options{
-			OnSymlink: func(string) copy.SymlinkAction {
-				return copy.Deep
-			},
-		})
+		err := os.Rename(templateDir, projectDir)
 		if err != nil {
-			return nil, fmt.Errorf("copying directory: %w", err)
+			if os.IsExist(err) {
+				return nil, dirExistsErr
+			}
+			return nil, fmt.Errorf("moving project dir: %w", err)
+		}
+	} else {
+		if err := os.Mkdir(projectDir, 0750); err != nil {
+			if os.IsExist(err) {
+				return nil, dirExistsErr
+			}
+			return nil, fmt.Errorf("making project dir: %w", err)
 		}
 	}
 
