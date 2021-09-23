@@ -69,7 +69,7 @@ func genTemplates() error {
 			}
 
 			if err := template.MakeTemplateFiles(ctx, templateDir, tmplOutDir); err != nil {
-				return fmt.Errorf("making template files: %w", err)
+				return fmt.Errorf("making %q template files: %w", templateDir, err)
 			}
 		}
 	}
