@@ -40,7 +40,7 @@ func MakeTemplateFiles(ctx context.Context, inputDir, outputDir string) error {
 	tarFile := filepath.Join(outputDir, tarName)
 	f, err := os.Create(tarFile)
 	if err != nil {
-		return fmt.Errorf("failed to create file %q: %w", tarFile, err)
+		return fmt.Errorf("creating file: %w", err)
 	}
 	defer f.Close()
 
