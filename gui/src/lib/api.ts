@@ -292,11 +292,11 @@ export const api = (() => {
         root: string,
         templateUrl: string | null,
       ): Promise<string> {
-        const { id } = (await invoke('create-project', {
+        const { workspaceId } = (await invoke('create-project', {
           root,
           templateUrl,
         })) as any;
-        return id;
+        return workspaceId;
       },
       async createWorkspace(root: string): Promise<string> {
         const { id } = (await invoke('create-workspace', { root })) as any;
