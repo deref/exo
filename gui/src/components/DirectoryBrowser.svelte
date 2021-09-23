@@ -11,24 +11,21 @@
 </script>
 
 <div class="toolbar">
-  {#if dir.parent !== null}
-    <button
-      title="Parent directory"
-      on:click={() => handleClick(String(dir.parent?.path))}
-    >
-      <LeftUpSVG />
-    </button>
-  {:else}
-    <button disabled> <LeftUpSVG /> </button>
-  {/if}
+  <button
+    title="Parent directory"
+    on:click={() => handleClick(String(dir.parent?.path))}
+    disabled={dir.parent === null}
+  >
+    <LeftUpSVG />
+  </button>
 
-  {#if dir.directory.path !== homePath}
-    <button title="Home directory" on:click={() => handleClick(homePath)}>
-      <HomeSVG />
-    </button>
-  {:else}
-    <button disabled> <HomeSVG /> </button>
-  {/if}
+  <button
+    title="Home directory"
+    on:click={() => handleClick(homePath)}
+    disabled={dir.directory.path === homePath}
+  >
+    <HomeSVG />
+  </button>
 
   <Textbox
     placeholder="Search..."
@@ -109,7 +106,6 @@
   }
 
   button:disabled {
-    cursor: default;
     opacity: 0.5;
   }
 
