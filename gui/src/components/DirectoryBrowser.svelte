@@ -1,6 +1,7 @@
 <script lang="ts">
   import type { ReadDirResult } from '../lib/api';
-  import ResetSVG from './mono/ResetSVG.svelte';
+  import HomeSVG from './mono/HomeSVG.svelte';
+  import LeftUpSVG from './mono/LeftUpSVG.svelte';
   import Textbox from './Textbox.svelte';
 
   export let dir: ReadDirResult;
@@ -15,16 +16,28 @@
       title="Parent directory"
       on:click={() => handleClick(String(dir.parent?.path))}
     >
-      ..
+      <LeftUpSVG />
     </button>
   {:else}
-    <button disabled> .. </button>
+    <button disabled> <LeftUpSVG /> </button>
   {/if}
-  <button title="Home directory" on:click={() => handleClick(homePath)}
-    ><ResetSVG /></button
-  >
-  <Textbox placeholder="Search..." bind:value={search} --input-width="100%" />
+
+  {#if dir.directory.path !== homePath}
+    <button title="Home directory" on:click={() => handleClick(homePath)}>
+      <HomeSVG />
+    </button>
+  {:else}
+    <button disabled> <HomeSVG /> </button>
+  {/if}
+
+  <Textbox
+    placeholder="Search..."
+    bind:value={search}
+    --input-width="100%"
+    autofocus
+  />
 </div>
+
 <div class="directories">
   {#each dir.entries
     .filter((x) => x.isDirectory)
@@ -43,7 +56,7 @@
     gap: 12px;
   }
 
-  .toolbar button:nth-child(2) {
+  .toolbar button {
     display: flex;
     justify-content: center;
     align-items: center;
