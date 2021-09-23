@@ -12,7 +12,7 @@ interface "store" {
   }
   
   method "add-event" {
-    input "log" "string" {}
+    input "stream" "string" {}
     input "timestamp" "string" {}
     input "message" "string" {}
   }
@@ -24,7 +24,7 @@ interface "store" {
     input "streams" "[]string" {}
 
     input "cursor" "*string" {}
-    input "filterStr" "*string" {}
+    input "filter-str" "string" {}
     input "prev" "*int" {}
     input "next" "*int" {}
 

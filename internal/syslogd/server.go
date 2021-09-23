@@ -84,15 +84,15 @@ func syslogToEvent(syslogMessage syslog.Message) (*api.AddEventInput, error) {
 	appname := *rfc5425Message.Appname
 	msgID := *rfc5425Message.MsgID
 
-	var logName string
+	var streamName string
 	switch msgID {
 	case "out", "err":
 		// provider=unix
-		logName = fmt.Sprintf("%s:%s", appname, msgID) // See note: [LOG_COMPONENTS].
+		streamName = fmt.Sprintf("%s:%s", appname, msgID) // See note: [LOG_COMPONENTS].
 	default:
 		if msgID == appname {
 			// provider=docker
-			logName = appname
+			streamName = appname
 		} else {
 			return nil, fmt.Errorf("unexpected MSGID: %q", msgID)
 		}
@@ -104,7 +104,7 @@ func syslogToEvent(syslogMessage syslog.Message) (*api.AddEventInput, error) {
 	}
 
 	return &api.AddEventInput{
-		Log:       logName,
+		Stream:    streamName,
 		Timestamp: rfc5425Message.Timestamp.Format(chrono.RFC3339MicroUTC),
 		Message:   message,
 	}, nil

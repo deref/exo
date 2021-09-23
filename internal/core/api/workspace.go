@@ -250,7 +250,7 @@ type DescribeStreamsOutput struct {
 type GetEventsInput struct {
 	Streams   []string `json:"streams"`
 	Cursor    *string  `json:"cursor"`
-	FilterStr *string  `json:"filterStr"`
+	FilterStr string   `json:"filterStr"`
 	Prev      *int     `json:"prev"`
 	Next      *int     `json:"next"`
 }

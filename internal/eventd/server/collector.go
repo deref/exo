@@ -36,10 +36,10 @@ func (lc *LogCollector) debugf(format string, v ...interface{}) {
 }
 
 func (lc *LogCollector) AddEvent(ctx context.Context, input *api.AddEventInput) (*api.AddEventOutput, error) {
-	if input.Log == "" {
-		return nil, errutil.NewHTTPError(http.StatusBadRequest, "log is required")
+	if input.Stream == "" {
+		return nil, errutil.NewHTTPError(http.StatusBadRequest, "stream is required")
 	}
-	log := lc.Store.GetLog(input.Log)
+	log := lc.Store.GetLog(input.Stream)
 	timestamp, err := chrono.ParseIsoToNano(input.Timestamp)
 	if err != nil {
 		return nil, errutil.HTTPErrorf(http.StatusBadRequest, "invalid timestamp: %w", err)
@@ -143,7 +143,7 @@ func (lc *LogCollector) GetEvents(ctx context.Context, input *api.GetEventsInput
 	for _, logName := range input.Streams {
 		log := lc.Store.GetLog(logName)
 
-		logEventsWithCursors, err := log.GetEvents(ctx, cursor, limit, direction, input.FilterStr)
+		logEventsWithCursors, err := log.GetEvents(ctx, cursor, limit, direction, &input.FilterStr)
 		if err != nil {
 			return nil, fmt.Errorf("getting %q events: %w", logName, err)
 		}

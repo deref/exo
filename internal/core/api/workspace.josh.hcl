@@ -160,7 +160,7 @@ interface "workspace" {
     input "streams" "[]string" {}
 
     input "cursor" "*string" {}
-    input "filterStr" "*string" {}
+    input "filter-str" "string" {}
     input "prev" "*int" {}
     input "next" "*int" {}
 

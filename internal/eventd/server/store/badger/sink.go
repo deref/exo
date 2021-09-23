@@ -14,15 +14,19 @@ func (log *Log) AddEvent(ctx context.Context, timestamp int64, message []byte) e
 	if err != nil {
 		return fmt.Errorf("generating id: %w", err)
 	}
+	idBytes, err := id.MarshalBinary()
+	if err != nil {
+		panic(err)
+	}
 
 	// Create key as (name, null, id).
 	logNameLen := len(log.name)
 	idOffset := logNameOffset + logNameLen + 1 // +1 is for null terminator.
-	idLen := len(id)                           // Assume that ID the trailing segment and does not need a terminator.
+	idLen := len(idBytes)                      // Assume that ID the trailing segment and does not need a terminator.
 
 	key := make([]byte, idOffset+idLen)
 	copy(key[logNameOffset:logNameOffset+logNameLen], []byte(log.name))
-	copy(key[idOffset:idOffset+idLen], id)
+	copy(key[idOffset:idOffset+idLen], idBytes)
 
 	// Create value as (version, timestamp, message).
 	// Version is used so that we can change the value format without rebuilding the database.

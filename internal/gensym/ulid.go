@@ -24,14 +24,14 @@ func NewULIDGenerator(ctx context.Context) *ULIDGenerator {
 	}
 }
 
-func (gen *ULIDGenerator) NextID(ctx context.Context) ([]byte, error) {
+func (gen *ULIDGenerator) NextID(ctx context.Context) (ulid.ULID, error) {
 	// The math/rand generator is not thread-safe, so we have to guard access with a mutex.
 	gen.mu.Lock()
 	defer gen.mu.Unlock()
 	ts := ulid.Timestamp(chrono.Now(ctx))
 	id, err := ulid.New(ts, gen.entropy)
 	if err != nil {
-		return nil, err
+		return ulid.ULID{}, err
 	}
-	return id.MarshalBinary()
+	return id, nil
 }

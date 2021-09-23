@@ -15,8 +15,7 @@ import (
 	kernel "github.com/deref/exo/internal/core/server"
 	"github.com/deref/exo/internal/core/state/statefile"
 	eventdapi "github.com/deref/exo/internal/eventd/api"
-	eventdserver "github.com/deref/exo/internal/eventd/server"
-	"github.com/deref/exo/internal/eventd/server/store/badger"
+	eventdsqlite "github.com/deref/exo/internal/eventd/sqlite"
 	"github.com/deref/exo/internal/gensym"
 	"github.com/deref/exo/internal/providers/core/components/log"
 	"github.com/deref/exo/internal/syslogd"
@@ -29,6 +28,7 @@ import (
 	"github.com/deref/exo/internal/util/logging"
 	"github.com/deref/exo/internal/util/sysutil"
 	docker "github.com/docker/docker/client"
+	"github.com/jmoiron/sqlx"
 	"github.com/mattn/go-isatty"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
@@ -96,6 +96,17 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	statePath := filepath.Join(cfg.VarDir, "state.json")
 	store := statefile.New(statePath)
 
+	dbPath := filepath.Join(cfg.VarDir, "exo.sqlite3")
+	db, err := sqlx.Open("sqlite3", dbPath)
+	if err != nil {
+		cmdutil.Fatalf("opening sqlite db: %v", err)
+	}
+	defer func() {
+		if err := db.Close(); err != nil {
+			logger.Infof("error closing sqlite db: %v", err)
+		}
+	}()
+
 	dockerClient, err := docker.NewClientWithOpts()
 	if err != nil {
 		cmdutil.Fatalf("failed to create docker client: %v", err)
@@ -115,16 +126,22 @@ func RunServer(ctx context.Context, flags map[string]string) {
 		TaskTracker: taskTracker,
 	}
 
+	// As a one-time migration, simply delete all logs in the old Badger format.
+	// TODO: Remove after a reasonable amount of time passes since October 2021.
 	logsDir := filepath.Join(cfg.VarDir, "logs")
-	logStore, err := badger.Open(ctx, logger, logsDir)
-	if err != nil {
-		cmdutil.Fatalf("opening logs store: %w", err)
+	if err := os.RemoveAll(logsDir); err != nil {
+		if !os.IsNotExist(err) {
+			logger.Infof("error removing badger-based logs: %v", logsDir)
+		}
 	}
-	defer logStore.Close()
 
-	eventStore := &eventdserver.LogCollector{
+	eventStore := &eventdsqlite.Store{
+		DB:    db,
 		IDGen: gensym.NewULIDGenerator(ctx),
-		Store: logStore,
+	}
+
+	if err := eventStore.Migrate(ctx); err != nil {
+		cmdutil.Fatalf("migrating event store: %v", err)
 	}
 
 	syslogServer := &syslogd.Server{

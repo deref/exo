@@ -35,7 +35,7 @@ type DescribeStreamsOutput struct {
 }
 
 type AddEventInput struct {
-	Log       string `json:"log"`
+	Stream    string `json:"stream"`
 	Timestamp string `json:"timestamp"`
 	Message   string `json:"message"`
 }
@@ -46,7 +46,7 @@ type AddEventOutput struct {
 type GetEventsInput struct {
 	Streams   []string `json:"streams"`
 	Cursor    *string  `json:"cursor"`
-	FilterStr *string  `json:"filterStr"`
+	FilterStr string   `json:"filterStr"`
 	Prev      *int     `json:"prev"`
 	Next      *int     `json:"next"`
 }
