@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net"
 	"strings"
-	"time"
 
 	"github.com/deref/exo/internal/chrono"
 	"github.com/deref/exo/internal/logd/api"
@@ -59,17 +58,11 @@ func (svr *Server) Run(ctx context.Context) error {
 		}
 	}()
 
-	for {
-		select {
-		case <-ctx.Done():
-			return nil
-		case err := <-errC:
-			return err
-		case <-time.After(5 * time.Second):
-			if _, err := svr.RemoveOldEvents(ctx, &api.RemoveOldEventsInput{}); err != nil {
-				return fmt.Errorf("removing old events: %w", err)
-			}
-		}
+	select {
+	case <-ctx.Done():
+		return nil
+	case err := <-errC:
+		return err
 	}
 }
 

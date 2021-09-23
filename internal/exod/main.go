@@ -15,6 +15,7 @@ import (
 	kernel "github.com/deref/exo/internal/core/server"
 	"github.com/deref/exo/internal/core/state/statefile"
 	"github.com/deref/exo/internal/gensym"
+	logdapi "github.com/deref/exo/internal/logd/api"
 	logdserver "github.com/deref/exo/internal/logd/server"
 	"github.com/deref/exo/internal/logd/store/badger"
 	"github.com/deref/exo/internal/providers/core/components/log"
@@ -121,13 +122,15 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	}
 	defer logStore.Close()
 
-	syslogServer := &syslogd.Service{
-		SyslogPort: kernelCfg.SyslogPort,
-		Logger:     logger,
-		LogCollector: logdserver.LogCollector{
-			IDGen: gensym.NewULIDGenerator(ctx),
-			Store: logStore,
-		},
+	logCollector := logdserver.LogCollector{
+		IDGen: gensym.NewULIDGenerator(ctx),
+		Store: logStore,
+	}
+
+	syslogServer := &syslogd.Server{
+		SyslogPort:   kernelCfg.SyslogPort,
+		Logger:       logger,
+		LogCollector: logCollector,
 	}
 	ctx = log.ContextWithLogCollector(ctx, &syslogServer.LogCollector)
 
@@ -137,6 +140,19 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	{
 		ctx, shutdown := context.WithCancel(ctx)
 		defer shutdown()
+
+		go func() {
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-time.After(5 * time.Second):
+					if _, err := logCollector.RemoveOldEvents(ctx, &logdapi.RemoveOldEventsInput{}); err != nil {
+						logger.Infof("error removing old events: %v", err)
+					}
+				}
+			}
+		}()
 
 		go func() {
 			if err := syslogServer.Run(ctx); err != nil {
