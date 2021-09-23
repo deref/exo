@@ -9,7 +9,6 @@ import (
 
 	"github.com/deref/exo/internal/chrono"
 	"github.com/deref/exo/internal/logd/api"
-	"github.com/deref/exo/internal/logd/server"
 	"github.com/deref/exo/internal/util/logging"
 	"github.com/influxdata/go-syslog/v3"
 	"github.com/influxdata/go-syslog/v3/rfc5424"
@@ -19,7 +18,7 @@ import (
 type Server struct {
 	Logger     logging.Logger
 	SyslogPort uint
-	server.LogCollector
+	api.LogCollector
 }
 
 func (svr *Server) Run(ctx context.Context) error {
