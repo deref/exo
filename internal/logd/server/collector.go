@@ -12,7 +12,7 @@ import (
 	"github.com/deref/exo/internal/chrono"
 	"github.com/deref/exo/internal/gensym"
 	"github.com/deref/exo/internal/logd/api"
-	"github.com/deref/exo/internal/logd/store"
+	"github.com/deref/exo/internal/logd/server/store"
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/mathutil"
 	"github.com/oklog/ulid/v2"

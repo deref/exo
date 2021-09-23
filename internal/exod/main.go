@@ -17,7 +17,7 @@ import (
 	"github.com/deref/exo/internal/gensym"
 	logdapi "github.com/deref/exo/internal/logd/api"
 	logdserver "github.com/deref/exo/internal/logd/server"
-	"github.com/deref/exo/internal/logd/store/badger"
+	"github.com/deref/exo/internal/logd/server/store/badger"
 	"github.com/deref/exo/internal/providers/core/components/log"
 	"github.com/deref/exo/internal/syslogd"
 	"github.com/deref/exo/internal/task"
