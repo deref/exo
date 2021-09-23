@@ -105,6 +105,7 @@
     align-items: center;
     gap: 12px;
     margin-top: 1px;
+    outline: none;
   }
 
   button:disabled {
@@ -120,5 +121,10 @@
   button:not(:disabled):active {
     background: var(--grey-c-color);
     box-shadow: var(--button-active-shadow);
+  }
+
+  button:focus,
+  button:focus-within {
+    background: var(--grey-d-color);
   }
 </style>
