@@ -32,6 +32,6 @@
 
   input:focus,
   input:focus-within {
-    box-shadow: var(--text-input-shadow-focus);
+    box-shadow: var(--text-input-shadow-focus) !important;
   }
 </style>

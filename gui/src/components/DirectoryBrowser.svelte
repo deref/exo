@@ -121,6 +121,6 @@
 
   button:focus,
   button:focus-within {
-    background: var(--grey-d-color);
+    box-shadow: var(--shadow-focus) !important;
   }
 </style>
