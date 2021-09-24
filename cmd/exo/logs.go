@@ -4,15 +4,20 @@ import (
 	"context"
 	"crypto/md5"
 	"fmt"
+	"os"
 	"time"
 
+	"github.com/Nerdmaster/terminal"
 	"github.com/aybabtme/rgbterm"
 	"github.com/deref/exo/internal/chrono"
 	"github.com/deref/exo/internal/core/api"
 	"github.com/deref/exo/internal/providers/core/components/log"
 	"github.com/deref/exo/internal/util/cmdutil"
+	"github.com/deref/exo/internal/util/term"
 	"github.com/lucasb-eyer/go-colorful"
+	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
+	"golang.org/x/sync/errgroup"
 )
 
 func init() {
@@ -31,13 +36,73 @@ If refs are provided, filters for the logs of those processes.`,
 		checkOrEnsureServer()
 		cl := newClient()
 		workspace := requireCurrentWorkspace(ctx, cl)
-
 		stopOnError := false
 		return tailLogs(ctx, workspace, args, stopOnError)
 	},
 }
 
 func tailLogs(ctx context.Context, workspace api.Workspace, logRefs []string, stopOnError bool) error {
+	ctx, cancel := context.WithCancel(ctx)
+	var eg errgroup.Group
+	eg.Go(func() error {
+		return runTailLogsReader(ctx, cancel)
+	})
+	eg.Go(func() error {
+		return runTailLogsWriter(ctx, workspace, logRefs, stopOnError)
+	})
+	return eg.Wait()
+}
+
+func runTailLogsReader(ctx context.Context, cancel func()) error {
+	stdin := os.Stdin.Fd()
+	if !isatty.IsTerminal(stdin) {
+		return nil
+	}
+
+	raw := &term.RawMode{
+		FD: stdin,
+	}
+	raw.Enter()
+	defer func() {
+		if err := raw.Exit(); err != nil {
+			cmdutil.Fatalf("restoring terminal state: %w", err)
+		}
+	}()
+
+	r := terminal.NewKeyReader(os.Stdin)
+
+	for {
+		press, err := r.ReadKeypress()
+		if err != nil {
+			return fmt.Errorf("reading terminal keypress: %w", err)
+		}
+
+		switch press.Key {
+		// Clear screen.
+		case terminal.KeyCtrlL:
+			fmt.Print("\033[2J")
+
+		// Quit.
+		case terminal.KeyCtrlC, 'q':
+			cancel()
+			return nil
+
+		// Append blank lines.
+		// Simulates the common readline behavior to allow people to insert
+		// a visual separator in their logs output.
+		case '\r':
+			fmt.Print("\r\n")
+
+		// Suspend.
+		case terminal.KeyCtrlZ:
+			if err := raw.Suspend(); err != nil {
+				cmdutil.Fatalf("suspending: %w", err)
+			}
+		}
+	}
+}
+
+func runTailLogsWriter(ctx context.Context, workspace api.Workspace, logRefs []string, stopOnError bool) error {
 	colors := NewColorCache()
 
 	showName := len(logRefs) != 1
@@ -114,7 +179,7 @@ func tailLogs(ctx context.Context, workspace api.Workspace, logRefs []string, st
 				prefix = timestamp
 			}
 
-			fmt.Printf("%s %s%s\n", prefix, event.Message, termReset)
+			fmt.Printf("%s %s%s\r\n", prefix, event.Message, termReset)
 		}
 		in.Cursor = &output.NextCursor
 		in.Prev = nil
