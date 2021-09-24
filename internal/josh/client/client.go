@@ -37,7 +37,9 @@ func (c *Client) Invoke(ctx context.Context, method string, input interface{}, o
 		return fmt.Errorf("forming request: %w", err)
 	}
 	req.Header.Add("Content-Type", "application/json")
-	req.Header.Add("Authorization", "Bearer "+c.Token)
+	if c.Token != "" {
+		req.Header.Add("Authorization", "Bearer "+c.Token)
+	}
 
 	resp, err := c.HTTP.Do(req)
 	if err != nil {
