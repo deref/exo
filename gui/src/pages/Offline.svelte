@@ -4,6 +4,7 @@
   import Panel from '../components/Panel.svelte';
   import { api } from '../lib/api';
   import { onDestroy, onMount } from 'svelte';
+  import { isRunning } from '../lib/global/server-status';
 
   let pingInterval: null | ReturnType<typeof setInterval> = null;
   onMount(() => {
@@ -19,12 +20,19 @@
 <Layout>
   <Panel>
     <div>
-      <h3>
-        <Code>exo</Code> server is offline
-      </h3>
-      <p>
-        Run <Code>exo daemon</Code> in your terminal to start.
-      </p>
+      {#if !$isRunning}
+        <h3>
+          <Code>exo</Code> server is offline
+        </h3>
+        <p>
+          Run <Code>exo daemon</Code> in your terminal to start.
+        </p>
+      {:else}
+        <h3>Not authenticated</h3>
+        <p>
+          Run <Code>exo gui</Code> in your terminal to start.
+        </p>
+      {/if}
     </div>
   </Panel>
 </Layout>

@@ -126,6 +126,14 @@ func loadRunState() error {
 	return jsonutil.UnmarshalFile(cfg.RunStateFile, &runState)
 }
 
+func mustGetToken() string {
+	token, err := cfg.GetTokenClient().GetToken()
+	if err != nil {
+		cmdutil.Fatalf("getting token client: %w", err)
+	}
+	return token
+}
+
 func newClient() *client.Root {
 	url := cfg.Client.URL
 	if url == "" {
@@ -135,7 +143,8 @@ func newClient() *client.Root {
 	url = strings.TrimSuffix(url, "/") + "/_exo/"
 
 	return &client.Root{
-		HTTP: http.DefaultClient,
-		URL:  url,
+		HTTP:  http.DefaultClient,
+		URL:   url,
+		Token: mustGetToken(),
 	}
 }

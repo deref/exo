@@ -1,4 +1,4 @@
-import { isRunning } from './global/server-status';
+import { isAuthenticated, isRunning } from './global/server-status';
 import type { GetVersionResponse } from './kernel/types';
 import type {
   ExportProcfileResponse,
@@ -157,7 +157,8 @@ const rpc = async (
     throw err;
   }
 
-  isRunning.update(() => true);
+  isRunning.set(true);
+  isAuthenticated.set(res.status !== 401);
 
   const err = await responseToError(res);
   if (err !== null) {

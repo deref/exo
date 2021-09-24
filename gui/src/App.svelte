@@ -2,10 +2,10 @@
   import routes from './routes';
   import Router from 'svelte-spa-router';
   import Offline from './pages/Offline.svelte';
-  import { isRunning } from './lib/global/server-status';
+  import { isRunning, isAuthenticated } from './lib/global/server-status';
 </script>
 
-{#if $isRunning}
+{#if $isRunning && $isAuthenticated}
   <Router {routes} />
 {:else}
   <Offline />
