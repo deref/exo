@@ -9,8 +9,8 @@
   if (urlToken) {
     document.cookie = `token=${urlToken}`;
     params.delete('token');
+    window.location.search = params.toString();
   }
-  window.location.search = params.toString();
 </script>
 
 {#if $isRunning}
