@@ -1,16 +1,18 @@
-<script>
+<script lang="ts">
   import Code from '../components/Code.svelte';
   import Layout from '../components/Layout.svelte';
   import Panel from '../components/Panel.svelte';
   import { api } from '../lib/api';
   import { onDestroy, onMount } from 'svelte';
 
-  let pingInterval = null;
+  let pingInterval: null | ReturnType<typeof setInterval> = null;
   onMount(() => {
     pingInterval = setInterval(() => api.kernel.ping(), 1000);
   });
   onDestroy(() => {
-    clearInterval(pingInterval);
+    if (pingInterval) {
+      clearInterval(pingInterval);
+    }
   });
 </script>
 
