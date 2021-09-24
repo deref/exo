@@ -3,6 +3,7 @@ package token
 import (
 	"bufio"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"strings"
 
@@ -66,23 +67,11 @@ func genToken() string {
 }
 
 func EnsureTokenFile(path string) (*fileTokenClient, error) {
-	tokenFile, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
-	if os.IsExist(err) {
-		return NewFileTokenClient(path)
+	if _, err := os.Stat(path); os.IsNotExist(err) {
+		token := genToken()
+		if err := ioutil.WriteFile(path, []byte(token), 0600); err != nil {
+			return nil, fmt.Errorf("writing token file: %w", err)
+		}
 	}
-	if err != nil {
-		return nil, fmt.Errorf("opening token file: %w", err)
-	}
-
-	token := genToken()
-	_, err = tokenFile.WriteString(token + "\n")
-	if err != nil {
-		return nil, fmt.Errorf("writing token: %w", err)
-	}
-
-	if err := tokenFile.Close(); err != nil {
-		return nil, fmt.Errorf("closing token file: %w", err)
-	}
-
 	return NewFileTokenClient(path)
 }
