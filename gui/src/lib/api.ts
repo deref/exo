@@ -256,7 +256,7 @@ export interface WorkspaceApi {
   refreshAllProcesses(): Promise<void>;
 
   getEvents(
-    logs: string[],
+    streams: string[],
     filterStr: string | null,
     pagination?: PaginationParams,
   ): Promise<LogsResponse>;
@@ -399,12 +399,12 @@ export const api = (() => {
       },
 
       async getEvents(
-        logs: string[],
+        streams: string[],
         filterStr: string | null,
         pagination?: PaginationParams,
       ): Promise<LogsResponse> {
         return (await invoke('get-events', {
-          logs,
+          streams,
           filterStr,
           ...pagination,
         })) as LogsResponse;
