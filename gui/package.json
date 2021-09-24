@@ -36,6 +36,7 @@
     "jest": "^27.0.6",
     "prettier": "^2.3.2",
     "prettier-plugin-svelte": "^2.3.1",
+    "storybook-dark-mode": "^1.0.8",
     "svelte": "^3.41.0",
     "svelte-check": "^2.2.4",
     "svelte-loader": "^3.1.2",
