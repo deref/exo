@@ -2,11 +2,11 @@ package token
 
 import (
 	"bufio"
-	"crypto/rand"
-	"encoding/hex"
 	"fmt"
 	"os"
 	"strings"
+
+	"github.com/deref/exo/internal/gensym"
 )
 
 type TokenClient interface {
@@ -61,12 +61,8 @@ func (c *fileTokenClient) CheckToken(token string) bool {
 
 var tokenLength = 20
 
-func genToken() (string, error) {
-	buff := make([]byte, 20)
-	if _, err := rand.Read(buff); err != nil {
-		return "", fmt.Errorf("getting randomness: %w", err)
-	}
-	return hex.EncodeToString(buff), nil
+func genToken() string {
+	return gensym.RandomBase32()
 }
 
 func EnsureTokenFile(path string) (*fileTokenClient, error) {
@@ -78,11 +74,7 @@ func EnsureTokenFile(path string) (*fileTokenClient, error) {
 		return nil, fmt.Errorf("opening token file: %w", err)
 	}
 
-	token, err := genToken()
-	if err != nil {
-		return nil, fmt.Errorf("generating token: %w", err)
-	}
-
+	token := genToken()
 	_, err = tokenFile.WriteString(token + "\n")
 	if err != nil {
 		return nil, fmt.Errorf("writing token: %w", err)
