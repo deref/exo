@@ -1,8 +1,7 @@
 <script lang="ts">
-  import type { LogEvent } from './types';
+  import type { LogEvent } from '../../lib/logs/types';
   import ErrorLabel from '../ErrorLabel.svelte';
   import type { WorkspaceApi } from '../../lib/api';
-  import { formatLogs } from './util';
   import { onDestroy } from 'svelte';
 
   const maxEvents = 1000;
@@ -15,7 +14,6 @@
 
   export let filterStr: string | null = null;
   export let logs: string[] = [];
-  export let processIdToName: Record<string, string> = {};
 
   let pollRefreshTimer: ReturnType<typeof setTimeout> | null = null;
   const scheduleNextPoll = async () => {
@@ -29,7 +27,7 @@
       next: maxEvents,
     });
     cursor = res.nextCursor;
-    events = [...events, ...formatLogs(res.items, processIdToName)].slice(-maxEvents);
+    events = events.slice(-maxEvents);
 
     pollRefreshTimer = setTimeout(() => {
       pollRefreshTimer = null;
@@ -55,7 +53,7 @@
       prev: maxEvents,
     });
     cursor = res.nextCursor;
-    events = formatLogs(res.items, processIdToName);
+    events = res.items;
     scheduleNextPoll();
   };
 

@@ -1,23 +1,35 @@
 <script lang="ts">
   import FormattedLogMessage from './FormattedLogMessage.svelte';
-  import type { LogEvent } from './types';
+  import { shortTime } from '../../lib/time';
+  import type { LogEvent } from '../../lib/logs/types';
+  import { logStyleFromHash } from '../../lib/color';
 
+  export let processIdToName: Record<string, string>;
   export let event: LogEvent;
 
-  // SEE NOTE [LOG_COMPONENTS]
+  // SEE NOTE [LOG_COMPONENTS].
+  const friendlyName = (log: string): string => {
+    const [procId, stream] = log.split(':');
+    const procName = processIdToName[procId];
+    return procName ? (stream ? `${procName}:${stream}` : procName) : log;
+  };
+
+  // SEE NOTE [LOG_COMPONENTS].
   const trimLabel = (name: string) => name.replace(/(:err$)|(:out$)/g, '');
 </script>
 
-<tr style={event.style}>
+<tr style={logStyleFromHash(event.stream)}>
   <td
     class="time"
     on:click={() => {
-      window.alert(`Full timestamp: ${event.time.full}`);
+      window.alert(`Full timestamp: ${event.timestamp}`);
     }}
   >
-    {event.time.short}
+    {shortTime(event.timestamp)}
   </td>
-  <td class="name" title={event.name}>{trimLabel(event.name)}</td>
+  <td class="name" title={friendlyName(event.stream)}>
+    {trimLabel(event.stream)}
+  </td>
   <td>
     <FormattedLogMessage message={event.message} />
   </td>
