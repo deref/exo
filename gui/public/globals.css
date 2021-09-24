@@ -51,8 +51,8 @@ a {
 
 a,
 a *,
-button,
-button * {
+button:not(:disabled),
+button:not(:disabled) * {
   cursor: pointer;
 }
 

@@ -18,5 +18,11 @@
     width: 100%;
     height: 120px;
     resize: vertical;
+    outline: none;
+  }
+
+  textarea:focus,
+  textarea:focus-within {
+    box-shadow: var(--text-input-shadow-focus) !important;
   }
 </style>
