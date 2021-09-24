@@ -9,33 +9,33 @@ import (
 	josh "github.com/deref/exo/internal/josh/server"
 )
 
-// Manages a set of logs. Collects and stores events from them.
-type LogCollector interface {
+// Database of events organized into streams.
+type Store interface {
 	ClearEvents(context.Context, *ClearEventsInput) (*ClearEventsOutput, error)
-	DescribeLogs(context.Context, *DescribeLogsInput) (*DescribeLogsOutput, error)
+	DescribeStreams(context.Context, *DescribeStreamsInput) (*DescribeStreamsOutput, error)
 	AddEvent(context.Context, *AddEventInput) (*AddEventOutput, error)
-	// Returns pages of log events for some set of logs. If `cursor` is specified, standard pagination behavior is used. Otherwise the cursor is assumed to represent the current tail of the log.
+	// Returns pages of events for some set of streams. If `cursor` is specified, standard pagination behavior is used. Otherwise the cursor is assumed to represent the current tail of the stream.
 	GetEvents(context.Context, *GetEventsInput) (*GetEventsOutput, error)
 	RemoveOldEvents(context.Context, *RemoveOldEventsInput) (*RemoveOldEventsOutput, error)
 }
 
 type ClearEventsInput struct {
-	Logs []string `json:"logs"`
+	Streams []string `json:"streams"`
 }
 
 type ClearEventsOutput struct {
 }
 
-type DescribeLogsInput struct {
+type DescribeStreamsInput struct {
 	Names []string `json:"names"`
 }
 
-type DescribeLogsOutput struct {
-	Logs []LogDescription `json:"logs"`
+type DescribeStreamsOutput struct {
+	Streams []StreamDescription `json:"streams"`
 }
 
 type AddEventInput struct {
-	Log       string `json:"log"`
+	Stream    string `json:"stream"`
 	Timestamp string `json:"timestamp"`
 	Message   string `json:"message"`
 }
@@ -44,9 +44,9 @@ type AddEventOutput struct {
 }
 
 type GetEventsInput struct {
-	Logs      []string `json:"logs"`
+	Streams   []string `json:"streams"`
 	Cursor    *string  `json:"cursor"`
-	FilterStr *string  `json:"filterStr"`
+	FilterStr string   `json:"filterStr"`
 	Prev      *int     `json:"prev"`
 	Next      *int     `json:"next"`
 }
@@ -63,12 +63,12 @@ type RemoveOldEventsInput struct {
 type RemoveOldEventsOutput struct {
 }
 
-func BuildLogCollectorMux(b *josh.MuxBuilder, factory func(req *http.Request) LogCollector) {
+func BuildStoreMux(b *josh.MuxBuilder, factory func(req *http.Request) Store) {
 	b.AddMethod("clear-events", func(req *http.Request) interface{} {
 		return factory(req).ClearEvents
 	})
-	b.AddMethod("describe-logs", func(req *http.Request) interface{} {
-		return factory(req).DescribeLogs
+	b.AddMethod("describe-streams", func(req *http.Request) interface{} {
+		return factory(req).DescribeStreams
 	})
 	b.AddMethod("add-event", func(req *http.Request) interface{} {
 		return factory(req).AddEvent
@@ -81,14 +81,14 @@ func BuildLogCollectorMux(b *josh.MuxBuilder, factory func(req *http.Request) Lo
 	})
 }
 
-type LogDescription struct {
+type StreamDescription struct {
 	Name        string  `json:"name"`
 	LastEventAt *string `json:"lastEventAt"`
 }
 
 type Event struct {
 	ID        string `json:"id"`
-	Log       string `json:"log"`
+	Stream    string `json:"stream"`
 	Timestamp string `json:"timestamp"`
 	Message   string `json:"message"`
 }

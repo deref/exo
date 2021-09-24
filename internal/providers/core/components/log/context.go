@@ -5,17 +5,17 @@ package log
 import (
 	"context"
 
-	"github.com/deref/exo/internal/logd/api"
+	"github.com/deref/exo/internal/eventd/api"
 )
 
 type contextKey int
 
-const logCollectorKey contextKey = 1
+const eventStoreKey contextKey = 1
 
-func ContextWithLogCollector(ctx context.Context, collector api.LogCollector) context.Context {
-	return context.WithValue(ctx, logCollectorKey, collector)
+func ContextWithEventStore(ctx context.Context, sto api.Store) context.Context {
+	return context.WithValue(ctx, eventStoreKey, sto)
 }
 
-func CurrentLogCollector(ctx context.Context) api.LogCollector {
-	return ctx.Value(logCollectorKey).(api.LogCollector)
+func CurrentEventStore(ctx context.Context) api.Store {
+	return ctx.Value(eventStoreKey).(api.Store)
 }

@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/deref/exo/internal/chrono"
-	"github.com/deref/exo/internal/logd/api"
+	"github.com/deref/exo/internal/eventd/api"
 	"github.com/deref/exo/internal/util/osutil"
 	"github.com/deref/exo/internal/util/sysutil"
 	"github.com/influxdata/go-syslog/v3/rfc5424"

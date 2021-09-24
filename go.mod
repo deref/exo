@@ -9,7 +9,7 @@ require (
 	github.com/aybabtme/rgbterm v0.0.0-20170906152045-cc83f3b3ce59
 	github.com/containerd/containerd v1.5.4 // indirect
 	github.com/deref/inflect-go v0.0.0-20210922215725-28c4e8c11b16
-	github.com/dgraph-io/badger/v3 v3.2103.1
+	github.com/deref/pier v0.0.0-20210620044641-0f71544154e7
 	github.com/docker/docker v20.10.7+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.4.0
@@ -20,9 +20,11 @@ require (
 	github.com/gofrs/flock v0.8.1
 	github.com/hashicorp/hcl/v2 v2.10.0
 	github.com/influxdata/go-syslog/v3 v3.0.0
+	github.com/jmoiron/sqlx v1.2.1-0.20190826204134-d7d95172beb5
 	github.com/joho/godotenv v1.3.0
 	github.com/lucasb-eyer/go-colorful v1.2.0
 	github.com/mattn/go-isatty v0.0.13
+	github.com/mattn/go-sqlite3 v1.14.8
 	github.com/moby/buildkit v0.9.0 // indirect
 	github.com/moby/moby v20.10.8+incompatible
 	github.com/natefinch/atomic v1.0.1
@@ -34,6 +36,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/timewasted/go-accept-headers v0.0.0-20130320203746-c78f304b1b09
 	github.com/zclconf/go-cty v1.8.0
+	go.opencensus.io v0.22.5 // indirect
 	golang.org/x/net v0.0.0-20210726213435-c6fcb2dbf985 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20210806184541-e5e7981a1069

@@ -104,8 +104,8 @@ type Workspace interface {
 	DeleteComponents(context.Context, *DeleteComponentsInput) (*DeleteComponentsOutput, error)
 	GetComponentState(context.Context, *GetComponentStateInput) (*GetComponentStateOutput, error)
 	SetComponentState(context.Context, *SetComponentStateInput) (*SetComponentStateOutput, error)
-	DescribeLogs(context.Context, *DescribeLogsInput) (*DescribeLogsOutput, error)
-	// Returns pages of log events for some set of logs. If `cursor` is specified, standard pagination behavior is used. Otherwise the cursor is assumed to represent the current tail of the log.
+	DescribeStreams(context.Context, *DescribeStreamsInput) (*DescribeStreamsOutput, error)
+	// Returns pages of events for some set of streams. If `cursor` is specified, standard pagination behavior is used. Otherwise the cursor is assumed to represent the current tail of the stream.
 	GetEvents(context.Context, *GetEventsInput) (*GetEventsOutput, error)
 	StartComponents(context.Context, *StartComponentsInput) (*StartComponentsOutput, error)
 	StopComponents(context.Context, *StopComponentsInput) (*StopComponentsOutput, error)
@@ -239,18 +239,18 @@ type SetComponentStateInput struct {
 type SetComponentStateOutput struct {
 }
 
-type DescribeLogsInput struct {
+type DescribeStreamsInput struct {
 	Refs []string `json:"refs"`
 }
 
-type DescribeLogsOutput struct {
-	Logs []LogDescription `json:"logs"`
+type DescribeStreamsOutput struct {
+	Streams []StreamDescription `json:"streams"`
 }
 
 type GetEventsInput struct {
-	Logs      []string `json:"logs"`
+	Streams   []string `json:"streams"`
 	Cursor    *string  `json:"cursor"`
-	FilterStr *string  `json:"filterStr"`
+	FilterStr string   `json:"filterStr"`
 	Prev      *int     `json:"prev"`
 	Next      *int     `json:"next"`
 }
@@ -412,8 +412,8 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	b.AddMethod("set-component-state", func(req *http.Request) interface{} {
 		return factory(req).SetComponentState
 	})
-	b.AddMethod("describe-logs", func(req *http.Request) interface{} {
-		return factory(req).DescribeLogs
+	b.AddMethod("describe-streams", func(req *http.Request) interface{} {
+		return factory(req).DescribeStreams
 	})
 	b.AddMethod("get-events", func(req *http.Request) interface{} {
 		return factory(req).GetEvents
@@ -474,14 +474,14 @@ type ComponentDescription struct {
 	DependsOn   []string `json:"dependsOn"`
 }
 
-type LogDescription struct {
+type StreamDescription struct {
 	Name        string  `json:"name"`
 	LastEventAt *string `json:"lastEventAt"`
 }
 
 type Event struct {
 	ID        string `json:"id"`
-	Log       string `json:"log"`
+	Stream    string `json:"stream"`
 	Timestamp string `json:"timestamp"`
 	Message   string `json:"message"`
 }

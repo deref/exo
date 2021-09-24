@@ -20,7 +20,7 @@ type Telemetry interface {
 
 func New(ctx context.Context, cfg *config.TelemetryConfig) Telemetry {
 	if cfg.Disable {
-		return &noOpTelemetry{}
+		return &Nop{}
 	}
 
 	t := &defaultTelemetry{

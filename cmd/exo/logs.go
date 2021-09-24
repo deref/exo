@@ -78,8 +78,8 @@ func tailLogs(ctx context.Context, workspace api.Workspace, logRefs []string, st
 
 	limit := 500
 	in := &api.GetEventsInput{
-		Logs: logIDs,
-		Prev: &limit,
+		Streams: logIDs,
+		Prev:    &limit,
 	}
 	for {
 		output, err := workspace.GetEvents(ctx, in)
@@ -97,8 +97,8 @@ func tailLogs(ctx context.Context, workspace api.Workspace, logRefs []string, st
 
 			var prefix string
 			if showName {
-				label := event.Log
-				if componentName := logToComponent[event.Log]; componentName != "" {
+				label := event.Stream
+				if componentName := logToComponent[event.Stream]; componentName != "" {
 					label = componentName
 				} else if labelWidth < len(label) {
 					labelWidth = len(label)

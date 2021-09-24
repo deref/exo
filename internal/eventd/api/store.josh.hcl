@@ -1,31 +1,30 @@
-// TODO: This is now a misnomer, as it receives inbound events instead of polling for them.
-interface "log-collector" {
+interface "store" {
 
-  doc = "Manages a set of logs. Collects and stores events from them."
+  doc = "Database of events organized into streams."
 
   method "clear-events" {
-    input "logs" "[]string" {}
+    input "streams" "[]string" {}
   }
 
-  method "describe-logs" {
+  method "describe-streams" {
     input "names" "[]string" {}
-    output "logs" "[]LogDescription" {}
+    output "streams" "[]StreamDescription" {}
   }
   
   method "add-event" {
-    input "log" "string" {}
+    input "stream" "string" {}
     input "timestamp" "string" {}
     input "message" "string" {}
   }
 
   method "get-events" {
-    doc = "Returns pages of log events for some set of logs. If `cursor` is specified, standard pagination behavior is used. Otherwise the cursor is assumed to represent the current tail of the log."
+    doc = "Returns pages of events for some set of streams. If `cursor` is specified, standard pagination behavior is used. Otherwise the cursor is assumed to represent the current tail of the stream."
 
     # TODO: Replace this with some filter expression.
-    input "logs" "[]string" {}
+    input "streams" "[]string" {}
 
     input "cursor" "*string" {}
-    input "filterStr" "*string" {}
+    input "filter-str" "string" {}
     input "prev" "*int" {}
     input "next" "*int" {}
 
@@ -38,14 +37,14 @@ interface "log-collector" {
 
 }
 
-struct "log-description" {
+struct "stream-description" {
   field "name" "string" {}
   field "last-event-at" "*string" {}
 }
 
 struct "event" {
   field "id" "string" {}
-  field "log" "string" {}
+  field "stream" "string" {}
   field "timestamp" "string" {}
   field "message" "string" {}
 }
