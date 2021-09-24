@@ -10,7 +10,6 @@ require (
 	github.com/containerd/containerd v1.5.4 // indirect
 	github.com/deref/inflect-go v0.0.0-20210922215725-28c4e8c11b16
 	github.com/deref/pier v0.0.0-20210620044641-0f71544154e7
-	github.com/dgraph-io/badger/v3 v3.2103.1
 	github.com/docker/docker v20.10.7+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.4.0
@@ -37,6 +36,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/timewasted/go-accept-headers v0.0.0-20130320203746-c78f304b1b09
 	github.com/zclconf/go-cty v1.8.0
+	go.opencensus.io v0.22.5 // indirect
 	golang.org/x/net v0.0.0-20210726213435-c6fcb2dbf985 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20210806184541-e5e7981a1069
