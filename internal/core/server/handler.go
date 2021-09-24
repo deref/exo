@@ -29,9 +29,12 @@ type Config struct {
 func BuildRootMux(prefix string, cfg *Config) *http.ServeMux {
 	authMiddleware := func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			token := strings.TrimPrefix(req.Header.Get("Authorization"), "Bearer ")
-			cookie, err := req.Cookie("token")
-			if token == "" && err == nil {
+			token := ""
+			bearerSuffix := "Bearer "
+			authHeader := req.Header.Get("Authorization")
+			if strings.HasPrefix(authHeader, bearerSuffix) {
+				token = strings.TrimPrefix(authHeader, bearerSuffix)
+			} else if cookie, err := req.Cookie("token"); err == nil {
 				token = cookie.Value
 			}
 

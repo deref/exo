@@ -46,6 +46,10 @@ func (c *FileTokenClient) GetToken() (string, error) {
 }
 
 func (c *FileTokenClient) CheckToken(tokenToCheck string) (bool, error) {
+	if tokenToCheck == "" {
+		return false, nil
+	}
+
 	tokens, err := readTokenFile(c.Path)
 	if err != nil {
 		return false, fmt.Errorf("reading token file: %w", err)
