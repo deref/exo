@@ -49,14 +49,11 @@ var makeHostHeaderMiddleware = func(validHosts []string) func(next http.Handler)
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 			for _, validHost := range validHosts {
 				if req.Host == validHost {
-
 					next.ServeHTTP(w, req)
 					return
 				}
 			}
-
 			httputil.WriteError(w, req, errutil.NewHTTPError(http.StatusUnauthorized, "Invalid host header"))
-			return
 		})
 	}
 }
