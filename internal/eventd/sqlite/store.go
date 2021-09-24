@@ -81,14 +81,15 @@ func (sto *Store) AddEvent(ctx context.Context, input *api.AddEventInput) (*api.
 	}
 
 	// Generate an id that is guaranteed to be monotonically increasing within this process.
-	id, err := sto.IDGen.NextID(ctx)
+	lid, err := sto.IDGen.NextID(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("generating id: %w", err)
 	}
-	idText, err := id.MarshalText()
+	lidBytes, err := lid.MarshalText()
 	if err != nil {
 		panic(err)
 	}
+	id := string(lidBytes)
 
 	timestamp, err := chrono.ParseIsoToNano(input.Timestamp)
 	if err != nil {
@@ -98,7 +99,7 @@ func (sto *Store) AddEvent(ctx context.Context, input *api.AddEventInput) (*api.
 	if _, err := sto.DB.ExecContext(ctx, `
 		INSERT INTO event ( stream, id, timestamp, message )
 		VALUES ( ?, ?, ?, ? )
-	`, input.Stream, idText, timestamp, input.Message); err != nil {
+	`, input.Stream, id, timestamp, input.Message); err != nil {
 		return nil, fmt.Errorf("inserting: %w", err)
 	}
 	return &api.AddEventOutput{}, nil
@@ -131,7 +132,7 @@ func (sto *Store) GetEvents(ctx context.Context, input *api.GetEventsInput) (*ap
 			SELECT stream, id, timestamp, message
 			FROM event
 			WHERE stream IN (?)
-			AND cast(id as blob) < cast(? as blob)
+			AND id < ?
 			AND instr(lower(message), ?) <> 0
 			ORDER BY id DESC
 			LIMIT ?
@@ -141,7 +142,7 @@ func (sto *Store) GetEvents(ctx context.Context, input *api.GetEventsInput) (*ap
 			SELECT stream, id, timestamp, message
 			FROM event
 			WHERE stream IN (?)
-			AND cast(? as blob) < cast(id as blob)
+			AND ? < id
 			AND instr(lower(message), ?) <> 0
 			ORDER BY id ASC
 			LIMIT ?
