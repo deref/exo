@@ -29,9 +29,5 @@ func (gen *ULIDGenerator) NextID(ctx context.Context) (ulid.ULID, error) {
 	gen.mu.Lock()
 	defer gen.mu.Unlock()
 	ts := ulid.Timestamp(chrono.Now(ctx))
-	id, err := ulid.New(ts, gen.entropy)
-	if err != nil {
-		return ulid.ULID{}, err
-	}
-	return id, nil
+	return ulid.New(ts, gen.entropy)
 }

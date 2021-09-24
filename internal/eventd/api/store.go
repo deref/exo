@@ -9,7 +9,7 @@ import (
 	josh "github.com/deref/exo/internal/josh/server"
 )
 
-// Database of event organized into streams.
+// Database of events organized into streams.
 type Store interface {
 	ClearEvents(context.Context, *ClearEventsInput) (*ClearEventsOutput, error)
 	DescribeStreams(context.Context, *DescribeStreamsInput) (*DescribeStreamsOutput, error)

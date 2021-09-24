@@ -1,6 +1,6 @@
 interface "store" {
 
-  doc = "Database of event organized into streams."
+  doc = "Database of events organized into streams."
 
   method "clear-events" {
     input "streams" "[]string" {}
