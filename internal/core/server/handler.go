@@ -23,9 +23,10 @@ type Config struct {
 	Docker      *docker.Client
 	Logger      logging.Logger
 	TaskTracker *task.TaskTracker
+	TokenClient token.TokenClient
 }
 
-func BuildRootMux(prefix string, cfg *Config, tokenClient token.TokenClient) *http.ServeMux {
+func BuildRootMux(prefix string, cfg *Config) *http.ServeMux {
 	authMiddleware := func(next http.Handler) http.Handler {
 		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 			token := strings.TrimPrefix(req.Header.Get("Authorization"), "Bearer ")
@@ -34,7 +35,11 @@ func BuildRootMux(prefix string, cfg *Config, tokenClient token.TokenClient) *ht
 				token = cookie.Value
 			}
 
-			authed := tokenClient.CheckToken(token)
+			authed, err := cfg.TokenClient.CheckToken(token)
+			if err != nil {
+				httputil.WriteError(w, req, errutil.NewHTTPError(http.StatusInternalServerError, "Could not validate token"))
+				return
+			}
 			if !authed {
 				httputil.WriteError(w, req, errutil.NewHTTPError(http.StatusUnauthorized, "Bad or no token"))
 				return

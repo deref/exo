@@ -11,7 +11,6 @@ import (
 
 	"github.com/deref/exo/internal/core/client"
 	"github.com/deref/exo/internal/exod"
-	"github.com/deref/exo/internal/token"
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/deref/exo/internal/util/osutil"
@@ -128,11 +127,11 @@ func loadRunState() error {
 }
 
 func mustGetToken() string {
-	tokenClient, err := token.NewFileTokenClient(cfg.TokenFile)
+	token, err := cfg.GetTokenClient().GetToken()
 	if err != nil {
 		cmdutil.Fatalf("getting token client: %w", err)
 	}
-	return tokenClient.GetToken()
+	return token
 }
 
 func newClient() *client.Root {

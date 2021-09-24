@@ -1,7 +1,7 @@
 package token
 
 import (
-	"bufio"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -11,67 +11,60 @@ import (
 )
 
 type TokenClient interface {
-	GetToken() string
-	CheckToken(token string) bool
+	GetToken() (string, error)
+	CheckToken(token string) (bool, error)
 }
-
-type fileTokenClient struct {
-	path   string
-	tokens []string
-}
-
-var _ TokenClient = &fileTokenClient{}
-
-func NewFileTokenClient(path string) (*fileTokenClient, error) {
-	tokenFile, err := os.Open(path)
-	if err != nil {
-		return nil, fmt.Errorf("reading token file: %w", err)
-	}
-
-	scanner := bufio.NewScanner(tokenFile)
-	tokens := []string{}
-	for scanner.Scan() {
-		line := strings.TrimSpace(scanner.Text())
-		if line != "" {
-			tokens = append(tokens, line)
-		}
-	}
-
-	if len(tokens) == 0 {
-		return nil, fmt.Errorf("no tokens in file: %q", path)
-	}
-
-	return &fileTokenClient{
-		path:   path,
-		tokens: tokens,
-	}, nil
-}
-
-func (c *fileTokenClient) GetToken() string {
-	return c.tokens[0]
-}
-
-func (c *fileTokenClient) CheckToken(token string) bool {
-	for _, t := range c.tokens {
-		if t == token {
-			return true
-		}
-	}
-	return false
-}
-
-var tokenLength = 20
 
 func genToken() string {
 	return gensym.RandomBase32()
 }
 
-func EnsureTokenFile(path string) (*fileTokenClient, error) {
+type FileTokenClient struct {
+	Path string
+}
+
+var _ TokenClient = &FileTokenClient{}
+
+func readTokenFile(path string) ([]string, error) {
+	data, err := ioutil.ReadFile(path)
+	if err != nil {
+		return nil, fmt.Errorf("reading token file: %w", err)
+	}
+	return strings.Fields(string(data)), nil
+}
+
+func (c *FileTokenClient) GetToken() (string, error) {
+	tokens, err := readTokenFile(c.Path)
+	if err != nil {
+		return "", fmt.Errorf("reading token file: %w", err)
+	}
+
+	if len(tokens) == 0 {
+		return "", errors.New("no token in tokens file")
+	}
+	return tokens[0], nil
+}
+
+func (c *FileTokenClient) CheckToken(tokenToCheck string) (bool, error) {
+	tokens, err := readTokenFile(c.Path)
+	if err != nil {
+		return false, fmt.Errorf("reading token file: %w", err)
+	}
+
+	for _, token := range tokens {
+		if tokenToCheck == token {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+func EnsureTokenFile(path string) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		token := genToken()
 		if err := ioutil.WriteFile(path, []byte(token), 0600); err != nil {
-			return nil, fmt.Errorf("writing token file: %w", err)
+			return fmt.Errorf("writing token file: %w", err)
 		}
 	}
-	return NewFileTokenClient(path)
+	return nil
 }

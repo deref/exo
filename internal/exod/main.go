@@ -50,8 +50,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	config.MustLoadDefault(cfg)
 	MustMakeDirectories(cfg)
 
-	tokenClient, err := token.EnsureTokenFile(cfg.TokenFile)
-	if err != nil {
+	if err := token.EnsureTokenFile(cfg.TokensFile); err != nil {
 		cmdutil.Fatalf("ensuring token file: %w", err)
 	}
 
@@ -118,6 +117,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 		Docker:      dockerClient,
 		Logger:      logger,
 		TaskTracker: taskTracker,
+		TokenClient: cfg.GetTokenClient(),
 	}
 
 	logsDir := filepath.Join(cfg.VarDir, "logs")
@@ -137,7 +137,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	}
 	ctx = log.ContextWithLogCollector(ctx, &logd.LogCollector)
 
-	mux := server.BuildRootMux("/_exo/", kernelCfg, tokenClient)
+	mux := server.BuildRootMux("/_exo/", kernelCfg)
 	mux.Handle("/", gui.NewHandler(ctx, cfg.GUI))
 
 	{
