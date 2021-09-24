@@ -97,7 +97,7 @@ func setDefaults(cfg *Config) {
 		cfg.RunStateFile = filepath.Join(cfg.RunDir, "exod.json")
 	}
 	if cfg.TokenFile == "" {
-		cfg.TokenFile = filepath.Join(cfg.HomeDir, "token")
+		cfg.TokenFile = filepath.Join(cfg.VarDir, "token")
 	}
 
 	if cfg.HTTPPort == 0 {
