@@ -21,8 +21,9 @@ import (
 	"github.com/deref/exo/internal/upgrade"
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/osutil"
-	"github.com/otiai10/copy"
 )
+
+var dirExistsErr = errutil.HTTPErrorf(409, "Directory already exists.")
 
 type Kernel struct {
 	VarDir      string
@@ -37,7 +38,7 @@ func (kern *Kernel) DescribeTemplates(ctx context.Context, input *api.DescribeTe
 func (kern *Kernel) CreateProject(ctx context.Context, input *api.CreateProjectInput) (*api.CreateProjectOutput, error) {
 	projectDir := input.Root
 	if !filepath.IsAbs(projectDir) {
-		return &api.CreateProjectOutput{}, errors.New("path must be absolute")
+		return nil, errors.New("path must be absolute")
 	}
 
 	var templateDir string
@@ -45,26 +46,30 @@ func (kern *Kernel) CreateProject(ctx context.Context, input *api.CreateProjectI
 		var err error
 		templateDir, err = template.GetTemplateFiles(ctx, *input.TemplateUrl)
 		if err != nil {
-			return &api.CreateProjectOutput{}, fmt.Errorf("getting template files: %w", err)
+			return nil, fmt.Errorf("getting template files: %w", err)
 		}
 	}
 
-	err := os.Mkdir(projectDir, 0750)
-	if err != nil {
-		return &api.CreateProjectOutput{}, fmt.Errorf("making project dir: %w", err)
-	}
-
 	if templateDir != "" {
-		copy.Copy(templateDir, projectDir, copy.Options{
-			OnSymlink: func(string) copy.SymlinkAction {
-				return copy.Deep
-			},
-		})
+		err := os.Rename(templateDir, projectDir)
+		if err != nil {
+			if os.IsExist(err) {
+				return nil, dirExistsErr
+			}
+			return nil, fmt.Errorf("moving project dir: %w", err)
+		}
+	} else {
+		if err := os.Mkdir(projectDir, 0750); err != nil {
+			if os.IsExist(err) {
+				return nil, dirExistsErr
+			}
+			return nil, fmt.Errorf("making project dir: %w", err)
+		}
 	}
 
 	result, err := kern.CreateWorkspace(ctx, &api.CreateWorkspaceInput{Root: projectDir})
 	if err != nil {
-		return &api.CreateProjectOutput{}, fmt.Errorf("creating workspace: %w", err)
+		return nil, fmt.Errorf("creating workspace: %w", err)
 	}
 	return &api.CreateProjectOutput{WorkspaceID: result.ID}, err
 }
@@ -245,20 +250,20 @@ func (kern *Kernel) DescribeTasks(ctx context.Context, input *api.DescribeTasksI
 func (kern *Kernel) GetUserHomeDir(ctx context.Context, input *api.GetUserHomeDirInput) (*api.GetUserHomeDirOutput, error) {
 	path, err := os.UserHomeDir()
 	if err != nil {
-		return &api.GetUserHomeDirOutput{}, fmt.Errorf("getting user home directory: %w", err)
+		return nil, fmt.Errorf("getting user home directory: %w", err)
 	}
 	return &api.GetUserHomeDirOutput{Path: path}, nil
 }
 
 func (kern *Kernel) ReadDir(ctx context.Context, input *api.ReadDirInput) (*api.ReadDirOutput, error) {
 	if !filepath.IsAbs(input.Path) {
-		return &api.ReadDirOutput{}, fmt.Errorf("path not absolute: %q", input.Path)
+		return nil, fmt.Errorf("path not absolute: %q", input.Path)
 	}
 
 	entries, err := os.ReadDir(input.Path)
 	if err != nil {
 		if os.IsPermission(err) {
-			return &api.ReadDirOutput{}, errutil.NewHTTPError(403, "Permission denied")
+			return nil, errutil.NewHTTPError(403, "Permission denied")
 		}
 		return nil, fmt.Errorf("reading directory: %w", err)
 	}

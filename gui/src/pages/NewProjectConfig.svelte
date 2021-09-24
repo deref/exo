@@ -15,7 +15,6 @@
   const { starter } = params;
 
   let name = starter;
-  let templateUrl: string | null = null;
   let error: Error | null = null;
 
   let workingDirectory: string | null = null;
@@ -35,37 +34,46 @@
     });
 
   const withSlash = (wd: string) => (wd.endsWith('/') ? wd : wd + '/');
+
+  const submitForm = async () => {
+    error = null;
+
+    let templateUrl: string | null = null;
+    if (starter !== 'empty') {
+      const templates = await api.kernel.describeTemplates();
+      const template = templates.find((x) => x.name === starter);
+      if (!template) {
+        error = new Error(`Could not find template with name ${starter}`);
+        return;
+      }
+      templateUrl = template.url;
+    }
+
+    // Shouldn't really be possible since the form shouldn't be visible if the
+    // working directory isn't set.
+    if (!workingDirectory) {
+      error = new Error('Working directory not set');
+      return;
+    }
+
+    try {
+      const workspaceId = await api.kernel.createProject(
+        `${withSlash(workingDirectory)}${name}`,
+        templateUrl,
+      );
+      await router.push(`/workspaces/${encodeURIComponent(workspaceId)}`);
+    } catch (ex) {
+      if (!(ex instanceof Error) || !isClientError(ex)) {
+        throw ex;
+      }
+      error = ex;
+    }
+  };
 </script>
 
 <Layout>
   <CenterFormPanel title={`New ${starter} project`} backRoute="#/new-project">
-    <form
-      on:submit|preventDefault={async () => {
-        error = null;
-        let workspaceId;
-
-        if (starter !== 'empty') {
-          templateUrl = String(
-            (await api.kernel.describeTemplates()).find(
-              (x) => x.name === starter,
-            )?.url,
-          );
-        }
-
-        try {
-          workspaceId = await api.kernel.createProject(
-            `${withSlash(String(workingDirectory))}${name}`,
-            templateUrl,
-          );
-          router.push(`/workspaces/${encodeURIComponent(workspaceId)}`);
-        } catch (ex) {
-          if (!(ex instanceof Error) || !isClientError(ex)) {
-            throw ex;
-          }
-          error = ex;
-        }
-      }}
-    >
+    <form on:submit|preventDefault={submitForm}>
       <h1>New {starter} project</h1>
 
       <label for="name">Name:</label>
