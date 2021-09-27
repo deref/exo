@@ -31,8 +31,8 @@ See 'exo help apply' for details on the manifest arguments.
 If a workspace does not exist, one will be created in the current directory.
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		checkOrEnsureServer()
 		ctx := newContext()
-		ensureDaemon()
 		cl := newClient()
 		kernel := cl.Kernel()
 		logger := logging.CurrentLogger(ctx)
