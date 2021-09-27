@@ -3,8 +3,9 @@
   import CheckboxButton from '../CheckboxButton.svelte';
   import ProcessRunControls from './ProcessRunControls.svelte';
   import DeleteSVG from '../mono/DeleteSVG.svelte';
+  import DetailsSVG from '../mono/DetailsSVG.svelte';
   import EllipsisSVG from '../mono/EllipsisSVG.svelte';
-  import { link } from 'svelte-spa-router';
+  import * as router from 'svelte-spa-router';
   import {
     startProcess,
     stopProcess,
@@ -16,6 +17,8 @@
   } from '../../lib/logs/visible-logs';
   import type { ProcessDescription } from '../../lib/process/types';
   import type { WorkspaceApi } from '../../lib/api';
+
+  const { link } = router;
 
   export let data: ProcessDescription[];
   export let workspace: WorkspaceApi;
@@ -81,12 +84,24 @@
       <div class="dropdown">
         <button
           on:click={() => {
+            router.push(
+              `/workspaces/${encodeURIComponent(
+                workspaceId,
+              )}/processes/${encodeURIComponent(id)}`,
+            );
+          }}
+        >
+          <DetailsSVG />
+          View details
+        </button>
+        <button
+          on:click={() => {
             void deleteProcess(workspace, id);
             setProcLogs(id, false);
           }}
         >
           <DeleteSVG />
-          Remove {name}
+          Remove <b>{name}</b>
         </button>
       </div>
     </div>
@@ -150,6 +165,12 @@
     color: var(--grey-5-color);
   }
 
+  .actions button b {
+    font-weight: 500;
+    color: currentColor;
+    color: var(--grey-3-color);
+  }
+
   .actions button :global(*) {
     fill: currentColor;
   }
@@ -159,7 +180,8 @@
     margin-left: -8px;
   }
 
-  .actions button:hover {
+  .actions button:hover,
+  .actions button:hover b {
     color: var(--strong-color);
     background: var(--grey-e-color);
   }
