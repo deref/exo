@@ -76,7 +76,7 @@
 
         <div class="dropdown">
           <span>{displayName}</span>
-          <button
+          <!-- <button
             on:click={() => {
               router.push(
                 `/workspaces/${encodeURIComponent(workspaceId)}/details`,
@@ -85,7 +85,7 @@
           >
             <Icon glyph="Details" />
             View details
-          </button>
+          </button> -->
           <button
             on:click={() => {
               router.push(
