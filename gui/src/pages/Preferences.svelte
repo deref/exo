@@ -14,9 +14,11 @@
 <Layout>
   <CenterFormPanel title="Preferences">
     <div slot="actions">
-      <IconButton tooltip="Reset to defaults" on:click={resetAllPreferences}>
-        <Icon glyph="Reset" />
-      </IconButton>
+      <IconButton
+        glyph="Reset"
+        tooltip="Reset to defaults"
+        on:click={resetAllPreferences}
+      />
     </div>
     <div>
       <div class="group">

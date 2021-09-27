@@ -77,9 +77,7 @@
     </div>
 
     <div class="actions">
-      <IconButton>
-        <Icon glyph="Ellipsis" />
-      </IconButton>
+      <IconButton glyph="Ellipsis" />
       <div class="dropdown">
         <span>{name}</span>
         <button

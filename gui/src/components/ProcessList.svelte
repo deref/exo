@@ -68,9 +68,11 @@
     <div class="actions" slot="actions">
       <span>Logs</span>
       <div class="menu">
-        <IconButton tooltip="Workspace actions..." on:click={() => {}}>
-          <Icon glyph="Ellipsis" />
-        </IconButton>
+        <IconButton
+          glyph="Ellipsis"
+          tooltip="Workspace actions..."
+          on:click={() => {}}
+        />
 
         <div class="dropdown">
           <span>{displayName}</span>

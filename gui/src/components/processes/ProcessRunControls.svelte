@@ -15,16 +15,20 @@
   {:else if running}
     <div class="running unhover-only" />
     <div class="control hover-only">
-      <IconButton tooltip="Stop process" on:click={() => setProcRun(id, false)}>
-        <Icon glyph="Pause" />
-      </IconButton>
+      <IconButton
+        glyph="Pause"
+        tooltip="Stop process"
+        on:click={() => setProcRun(id, false)}
+      />
     </div>
   {:else}
     <div class="stopped unhover-only" />
     <div class="control hover-only">
-      <IconButton tooltip="Run process" on:click={() => setProcRun(id, true)}>
-        <Icon glyph="Play" />
-      </IconButton>
+      <IconButton
+        glyph="Play"
+        tooltip="Run process"
+        on:click={() => setProcRun(id, true)}
+      />
     </div>
   {/if}
 </div>

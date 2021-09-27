@@ -12,13 +12,12 @@
     <div class="header-title">
       {#if backRoute}
         <IconButton
+          glyph="Back"
           tooltip="Go back"
           on:click={() => {
             router.push(backRoute ?? '');
           }}
-        >
-          <Icon glyph="Back" />
-        </IconButton>
+        />
       {/if}
 
       {#if title}
