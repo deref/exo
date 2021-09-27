@@ -171,7 +171,6 @@
     border-radius: 4px;
   }
 
-  .actions:hover .dropdown,
   .actions:focus .dropdown,
   .actions:focus-within .dropdown {
     display: block;
