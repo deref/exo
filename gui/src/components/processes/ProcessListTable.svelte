@@ -16,6 +16,7 @@
     setLogVisibility,
     visibleLogsStore,
   } from '../../lib/logs/visible-logs';
+  import { logStyleFromHash } from '../../lib/color';
   import type { ProcessDescription } from '../../lib/process/types';
   import type { WorkspaceApi } from '../../lib/api';
 
@@ -51,7 +52,7 @@
 </script>
 
 {#each data as { id, name, running } (id)}
-  <div class="card">
+  <div class="card" style={logStyleFromHash(name + ':out')}>
     <div>
       <ProcessRunControls {setProcRun} {statusPending} {id} {running} />
     </div>
@@ -130,7 +131,7 @@
     margin: 0px -4px;
     border-radius: 4px;
     margin-bottom: 8px;
-    border-left: 2px solid var(--grey-c-color);
+    border-left: 2px solid var(--log-color);
   }
 
   .card:hover {
@@ -169,20 +170,16 @@
     line-height: 1;
     font-size: 16px;
     font-weight: 550;
-    padding: 6px 9px;
+    padding: 4px 7px;
     border-radius: 3px;
-    color: var(--grey-5-color);
-    background: var(--grey-e-color);
+    color: var(--log-color);
     outline: none;
   }
 
-  .process-name:hover {
-    color: var(--strong-color);
-    background: var(--grey-d-color);
-  }
-
+  .process-name:hover,
   .process-name:focus {
-    background: var(--grey-d-color);
+    color: var(--log-hover-color);
+    background: var(--log-bg-hover-color);
   }
 
   .dropdown {
