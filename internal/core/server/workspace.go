@@ -411,29 +411,43 @@ func (ws *Workspace) DescribeEnvironment(ctx context.Context, input *api.Describ
 func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]string, error) {
 	envPath, err := ws.resolveWorkspacePath(ctx, ".env")
 	if err != nil {
-		return nil, fmt.Errorf("could not resolve path to .env file: %w", err)
+		return nil, fmt.Errorf("resolving env file path: %w", err)
 	}
 
-	_, err = os.Stat(envPath)
+	env := map[string]string{}
+
+	// Encourage programs to log with colors enabled.  The closest thing to a
+	// standard for this is <https://bixense.com/clicolors/#bug-reports>, but
+	// support is spotty. This may grow if there are other popular enviornment
+	// variables to include. If we grow PTY support, this may become unnecessary.
+	env["CLICOLOR"] = "1"
+	env["CLICOLOR_FORCE"] = "1"
+	env["FORCE_COLOR"] = "3" // https://github.com/chalk/chalk/tree/9d5b9a133c3f8aa9f24de283660de3f732964aaa#supportscolor
+
+	// Apply user's environment.
+	// TODO: This should probably somehow shell-out to get the user's current
+	// environment, otherwise changes to shell profiles won't take effect until
+	// the exo daemon is exited and restarted.
+	for _, assign := range os.Environ() {
+		parts := strings.SplitN(assign, "=", 2)
+		key := parts[0]
+		val := parts[1]
+		env[key] = val
+	}
+
+	// Apply .env file, if one exists.
+	dotEnvMap, err := godotenv.Read(envPath)
 	if os.IsNotExist(err) {
-		env := make(map[string]string)
-		for _, assign := range os.Environ() {
-			parts := strings.SplitN(assign, "=", 2)
-			key := parts[0]
-			val := parts[1]
-			env[key] = val
-		}
-		return env, nil
+		err = nil
 	}
 	if err != nil {
-		return nil, fmt.Errorf("could not read .env file: %w", err)
+		return nil, fmt.Errorf("processing .env file: %w", err)
+	}
+	for name, value := range dotEnvMap {
+		env[name] = value
 	}
 
-	envMap, err := godotenv.Read(envPath)
-	if err != nil {
-		return nil, fmt.Errorf("could not process env file: %w", err)
-	}
-	return envMap, nil
+	return env, nil
 }
 
 func (ws *Workspace) CreateComponent(ctx context.Context, input *api.CreateComponentInput) (*api.CreateComponentOutput, error) {
