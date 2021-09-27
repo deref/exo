@@ -7,7 +7,7 @@ const iconNames = fs
   .readdirSync(`./gui/src/components/${iconDirectory}`)
   .map((x) => x.substr(0, x.length - "SVG.svelte".length));
 
-// Format the entire theme file using the above helpers.
+// Use maps to format the file.
 const out = `<script lang="ts" context="module">
   // GENERATED FILE. DO NOT EDIT.
 
