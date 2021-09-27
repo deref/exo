@@ -25,7 +25,7 @@ const themeVariables = {
   "grey-e7-color": ["#e7e7e7", "#0c0c0c", "#0c0c0c"],
   "grey-f9-color": ["#f9f9f9", "#070707", "#070707"],
   "layout-bg-color": ["#cccccc", "#222222", "#222222"],
-  "secondary-bg-color": ["#f5f5f5", "#0a0a0a", "#0a0a0a"],
+  "secondary-bg-color": ["#f5f5f5", "#050505", "#050505"],
   "primary-bg-color": ["#ffffff", "#000000", "#000000"],
 
   // Contextual color
@@ -136,6 +136,16 @@ const themeVariables = {
     "0 0.33px 0 1px #ffffff26, 0 12px 12px -4px #00000033, 0 0.4px 0 0.8px #00000059",
     "0 -0.33px 0 1px #ffffff55, 0 12px 12px -4px #00000033, 0 0.4px 0 0.8px #00000059",
     "0 -0.33px 0 1px #ffffff55, 0 12px 12px -4px #00000033, 0 0.4px 0 0.8px #00000059",
+  ],
+  "card-shadow": [
+    "0.25px 0.25px 0 0.75px #ffffff26, 0 4px 8px -3px #00000022, 0.2px 0.3px 0 0.7px #00000033",
+    "0.25px -0.25px 0 0.75px #ffffff33, 0 4px 8px -3px #00000022, 0.2px 0.3px 0 0.7px #00000033",
+    "0.25px -0.25px 0 0.75px #ffffff33, 0 4px 8px -3px #00000022, 0.2px 0.3px 0 0.7px #00000033",
+  ],
+  "card-hover-shadow": [
+    "0.25px 0.25px 0 1px #ffffff26, 0 6px 8px -4px #00000044, 0.2px 0.25px 0 0.85px #00000055",
+    "0.25px -0.25px 0 1px #ffffff55, 0 6px 8px -4px #00000044, 0.2px 0.25px 0 0.85px #00000055",
+    "0.25px -0.25px 0 1px #ffffff55, 0 6px 8px -4px #00000044, 0.2px 0.25px 0 0.85px #00000055",
   ],
 };
 

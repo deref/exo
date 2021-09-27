@@ -1,7 +1,6 @@
 <script lang="ts">
   import type { ReadDirResult } from '../lib/api';
-  import HomeSVG from './mono/HomeSVG.svelte';
-  import LeftUpSVG from './mono/LeftUpSVG.svelte';
+  import Icon from './Icon.svelte';
   import Textbox from './Textbox.svelte';
 
   export let dir: ReadDirResult;
@@ -16,7 +15,7 @@
     on:click={() => handleClick(String(dir.parent?.path))}
     disabled={dir.parent === null}
   >
-    <LeftUpSVG />
+    <Icon glyph="LeftUp" />
   </button>
 
   <button
@@ -24,7 +23,7 @@
     on:click={() => handleClick(homePath)}
     disabled={dir.directory.path === homePath}
   >
-    <HomeSVG />
+    <Icon glyph="Home" />
   </button>
 
   <Textbox

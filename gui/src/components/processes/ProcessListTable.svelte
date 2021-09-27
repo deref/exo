@@ -1,9 +1,9 @@
 <script lang="ts">
+  import Icon from '../Icon.svelte';
   import IconButton from '../IconButton.svelte';
   import CheckboxButton from '../CheckboxButton.svelte';
   import ProcessRunControls from './ProcessRunControls.svelte';
-  import DeleteSVG from '../mono/DeleteSVG.svelte';
-  import { link } from 'svelte-spa-router';
+  import * as router from 'svelte-spa-router';
   import {
     startProcess,
     stopProcess,
@@ -13,8 +13,11 @@
     setLogVisibility,
     visibleLogsStore,
   } from '../../lib/logs/visible-logs';
+  import { logStyleFromHash } from '../../lib/color';
   import type { ProcessDescription } from '../../lib/process/types';
   import type { WorkspaceApi } from '../../lib/api';
+
+  const { link } = router;
 
   export let data: ProcessDescription[];
   export let workspace: WorkspaceApi;
@@ -45,131 +48,195 @@
   }
 </script>
 
-<table>
-  <thead>
-    <th />
-    <th>Process</th>
-    <th>Logs</th>
-    <th />
-  </thead>
-  {#each data as { id, name, running } (id)}
-    <tr>
-      <td>
-        <ProcessRunControls {setProcRun} {statusPending} {id} {running} />
-      </td>
+{#each data as { id, name, running } (id)}
+  <div class="card" style={logStyleFromHash(name + ':out')}>
+    <div>
+      <ProcessRunControls {setProcRun} {statusPending} {id} {running} />
+    </div>
 
-      <td
-        ><a
-          class="process-name"
-          use:link
-          href={`/workspaces/${encodeURIComponent(
-            workspaceId,
-          )}/processes/${encodeURIComponent(id)}`}>{name}</a
-        ></td
+    <div>
+      <a
+        class="process-name"
+        use:link
+        href={`/workspaces/${encodeURIComponent(
+          workspaceId,
+        )}/processes/${encodeURIComponent(id)}`}
       >
+        {name}
+      </a>
+    </div>
 
-      <td>
-        <CheckboxButton
-          tooltip={$visibleLogsStore.has(id) ? 'Hide logs' : 'Show logs'}
+    <div class="checkbox">
+      <CheckboxButton
+        tooltip={$visibleLogsStore.has(id) ? 'Hide logs' : 'Show logs'}
+        on:click={() => {
+          setProcLogs(id, $visibleLogsStore.has(id) ? false : true);
+        }}
+        active={$visibleLogsStore.has(id)}
+      />
+    </div>
+
+    <div class="actions">
+      <IconButton glyph="Ellipsis" />
+      <div class="dropdown">
+        <span>{name}</span>
+        <button
+          on:click={() => {
+            router.push(
+              `/workspaces/${encodeURIComponent(
+                workspaceId,
+              )}/processes/${encodeURIComponent(id)}`,
+            );
+          }}
+        >
+          <Icon glyph="Details" />
+          View details
+        </button>
+        <button
           on:click={() => {
             setProcLogs(id, $visibleLogsStore.has(id) ? false : true);
           }}
-          active={$visibleLogsStore.has(id)}
-        />
-      </td>
-
-      <td>
-        <div class="hover-only-visibility">
-          <IconButton
-            tooltip="Delete process"
-            on:click={() => {
-              void deleteProcess(workspace, id);
-              setProcLogs(id, false);
-            }}
-          >
-            <DeleteSVG />
-          </IconButton>
-        </div>
-      </td>
-    </tr>
-  {:else}
-    <i>No processes yet.</i>
-  {/each}
-</table>
+        >
+          <Icon glyph="Logs" />
+          Toggle logs visibility
+        </button>
+        <button
+          on:click={() => {
+            void deleteProcess(workspace, id);
+            setProcLogs(id, false);
+          }}
+        >
+          <Icon glyph="Delete" />
+          Remove from <b>exo</b>
+        </button>
+      </div>
+    </div>
+  </div>
+{:else}
+  <i>No components yet.</i>
+{/each}
 
 <style>
-  table {
-    width: 100%;
-    border-collapse: collapse;
+  .card {
+    box-shadow: var(--card-shadow);
+    display: grid;
+    grid-template-columns: max-content auto max-content max-content;
+    align-items: center;
+    padding: 4px;
+    margin: 0px -4px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    border-left: 2px solid var(--log-color);
   }
 
-  th {
-    padding: 12px 0;
-    color: var(--grey-7-color);
+  .card:hover {
+    box-shadow: var(--card-hover-shadow);
   }
 
-  td,
-  th {
+  .card > * {
     font-size: inherit;
     font-weight: inherit;
     align-items: center;
     justify-content: center;
   }
 
-  td:nth-child(2),
-  th:nth-child(2) {
+  .card .checkbox {
+    margin-right: 18px;
+  }
+
+  .card > *:nth-child(2) {
     text-align: left;
   }
 
-  td:not(:last-child):not(:first-child),
-  th:not(:last-child):not(:first-child) {
-    border-right: 16px solid transparent;
-  }
-
-  td:nth-child(2) {
-    width: 99%;
-  }
-
-  td:not(:nth-child(2)) {
+  .card > *:not(:nth-child(2)) {
     white-space: nowrap;
   }
 
-  table,
-  thead,
-  th,
-  td,
-  tr {
-    border: none;
-  }
-
-  tr:not(:last-child) {
-    border-bottom: 8px solid transparent;
-  }
-
-  tr:not(:hover):not(:focus-within) .hover-only-visibility {
-    visibility: hidden;
+  .card:not(:hover):not(:focus-within) .actions {
+    opacity: 0.333;
   }
 
   .process-name {
     display: inline-block;
     text-decoration: none;
     margin: 0;
+    margin-left: 6px;
+    margin-right: 12px;
     line-height: 1;
     font-size: 16px;
     font-weight: 550;
-    padding: 4px 8px;
-    border-radius: 4px;
-    color: var(--grey-5-color);
-    background: var(--grey-d-color);
+    padding: 4px 7px;
+    border-radius: 3px;
+    color: var(--log-color);
     outline: none;
   }
 
-  .process-name:hover {
-    color: var(--strong-color);
-    background: var(--grey-c-color);
+  .process-name:hover,
+  .process-name:focus {
+    color: var(--log-hover-color);
+    background: var(--log-bg-hover-color);
   }
 
-  .process-name:focus {
-    background: var(--grey-b-color);
+  .dropdown {
+    display: none;
+    position: absolute;
+    right: 0;
+    background: var(--primary-bg-color);
+    box-shadow: var(--dropdown-shadow);
+    border-radius: 5px;
+    padding: 4px 0;
+    margin: -6px;
+    z-index: 2;
+  }
+
+  .dropdown > span {
+    display: block;
+    padding: 4px 12px;
+    font-size: 0.8em;
+    color: var(--grey-7-color);
+  }
+
+  .dropdown button {
+    background: none;
+    border: none;
+    display: flex;
+    align-items: center;
+    font-size: 0.9em;
+    gap: 4px;
+    border-radius: 2px;
+    padding: 6px 18px;
+    width: 100%;
+    white-space: nowrap;
+    color: var(--grey-5-color);
+  }
+
+  .dropdown button b {
+    font-weight: 500;
+    color: currentColor;
+    color: var(--grey-3-color);
+  }
+
+  .dropdown button :global(*) {
+    fill: currentColor;
+  }
+
+  .dropdown button :global(svg) {
+    height: 16px;
+    margin-left: -8px;
+  }
+
+  .dropdown button:hover,
+  .dropdown button:hover b {
+    color: var(--strong-color);
+    background: var(--grey-e-color);
+  }
+
+  .actions {
+    position: relative;
+  }
+
+  .actions:focus .dropdown,
+  .actions:focus-within .dropdown {
+    display: block;
   }
 </style>
