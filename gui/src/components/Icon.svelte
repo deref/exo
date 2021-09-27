@@ -1,7 +1,7 @@
 <script lang="ts" context="module">
-  // Note, these are internal named SVG icons. Dynamic SVGs should be handled separately.
+  // GENERATED FILE. DO NOT EDIT.
 
-  // This file should be generated in a similar fashion to the way the theme file is generated.
+  // Note, these are internal named SVG icons. Dynamic SVGs should be handled separately.
 
   export type IconGlyph =
     | 'Add'
