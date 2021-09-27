@@ -146,7 +146,7 @@
     font-size: 0.9em;
     gap: 4px;
     padding: 6px 12px;
-    color: var(--grey-7-color);
+    color: var(--grey-5-color);
   }
 
   .actions button :global(*) {
