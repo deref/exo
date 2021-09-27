@@ -19,5 +19,5 @@ func NewHandler(ctx context.Context, cfg config.GUIConfig) http.Handler {
 	if err != nil {
 		panic(err)
 	}
-	return http.FileServer(http.FS(content))
+	return tokenCookieMiddleware(http.FileServer(http.FS(content)))
 }
