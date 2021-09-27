@@ -6,6 +6,9 @@ import (
 	"github.com/deref/exo/internal/util/errutil"
 )
 
+// HostAllowListHandler is an http handler designed to guard against DNS
+// rebinding by rejecting requests that do not come with a whitelisted Host
+// header.
 type HostAllowListHandler struct {
 	Hosts []string
 	Next  http.Handler
