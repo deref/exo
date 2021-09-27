@@ -16,6 +16,9 @@ var exitCmd = &cobra.Command{
 	Long:  `Stop the exo daemon process.`,
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if cfg.NoDaemon {
+			cmdutil.Fatalf("daemon disabled by config")
+		}
 		ctx := newContext()
 		checkOrEnsureServer()
 		cl := newClient()

@@ -30,6 +30,9 @@ Since most commands implicitly start the exo daemon, users generally do not
 have to invoke this themselves.`,
 	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
+		if cfg.NoDaemon {
+			cmdutil.Fatalf("daemon disabled by config")
+		}
 		ensureDaemon()
 		return nil
 	},
@@ -52,6 +55,9 @@ var runState struct {
 func checkOrEnsureServer() {
 	if checkHealthy() {
 		return
+	}
+	if cfg.NoDaemon {
+		cmdutil.Fatalf("daemon at %q is not healthy\ndeamonization disabled by config", effectiveServerURL())
 	}
 	if cfg.Client.URL == "" {
 		ensureDaemon()
