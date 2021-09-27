@@ -3,6 +3,7 @@
   import CheckboxButton from '../CheckboxButton.svelte';
   import ProcessRunControls from './ProcessRunControls.svelte';
   import DeleteSVG from '../mono/DeleteSVG.svelte';
+  import EllipsisSVG from '../mono/EllipsisSVG.svelte';
   import { link } from 'svelte-spa-router';
   import {
     startProcess,
@@ -73,7 +74,7 @@
       </td>
 
       <td>
-        <div class="hover-only-visibility">
+        <div class="hover-half-visibility">
           <IconButton
             tooltip="Delete process"
             on:click={() => {
@@ -81,7 +82,7 @@
               setProcLogs(id, false);
             }}
           >
-            <DeleteSVG />
+            <EllipsisSVG />
           </IconButton>
         </div>
       </td>
@@ -95,7 +96,6 @@
   table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 12px;
   }
 
   td {
@@ -131,8 +131,8 @@
     border-bottom: 8px solid transparent;
   }
 
-  tr:not(:hover):not(:focus-within) .hover-only-visibility {
-    visibility: hidden;
+  tr:not(:hover):not(:focus-within) .hover-half-visibility {
+    opacity: 0.333;
   }
 
   .process-name {

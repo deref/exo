@@ -4,6 +4,7 @@
   import ProcfileChecker from './processes/ProcfileChecker.svelte';
   import ProcessListTable from './processes/ProcessListTable.svelte';
   import AddSVG from './mono/AddSVG.svelte';
+  import EllipsisSVG from './mono/EllipsisSVG.svelte';
   import { onDestroy, onMount } from 'svelte';
   import type { RequestLifecycle, WorkspaceApi } from '../lib/api';
   import type { ProcessDescription } from '../lib/process/types';
@@ -67,18 +68,21 @@
   <Panel title={displayName} backRoute="/" --panel-padding="0 1rem">
     <div class="actions" slot="actions">
       <span>Logs</span>
-      <IconButton
-        tooltip="Add new component"
+      <IconButton tooltip="Workspace actions..." on:click={() => {}}>
+        <EllipsisSVG />
+      </IconButton>
+    </div>
+    <section>
+      <button
+        id="add-component"
         on:click={() => {
           router.push(
             `#/workspaces/${encodeURIComponent(workspaceId)}/new-component`,
           );
         }}
       >
-        <AddSVG />
-      </IconButton>
-    </div>
-    <section>
+        <AddSVG /> Add component
+      </button>
       <RemoteData data={processList} let:data let:error>
         <div slot="success">
           <ProcessListTable {data} {workspace} {workspaceId} />
@@ -105,10 +109,41 @@
 {/await}
 
 <style>
+  #add-component {
+    background: none;
+    font-size: 0.9em;
+    color: var(--grey-5-color);
+    border: 1px dashed var(--grey-b-color);
+    width: 100%;
+    display: flex;
+    align-items: center;
+    border-radius: 4px;
+    gap: 6px;
+    height: 40px;
+    margin: 12px 0;
+    padding: 0 8px;
+  }
+
+  #add-component:hover,
+  #add-component:focus,
+  #add-component:focus-within {
+    border: 1px solid transparent;
+    background: var(--grey-d-color);
+    color: var(--strong-color);
+  }
+
+  #add-component :global(svg) {
+    height: 16px;
+  }
+
+  #add-component :global(*) {
+    fill: currentColor;
+  }
   .actions {
     display: flex;
     align-items: center;
-    gap: 28px;
+    gap: 9px;
+    margin-right: 18px;
   }
   .actions span {
     color: var(--grey-7-color);
