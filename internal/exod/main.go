@@ -24,6 +24,7 @@ import (
 	"github.com/deref/exo/internal/task/api"
 	taskserver "github.com/deref/exo/internal/task/server"
 	"github.com/deref/exo/internal/telemetry"
+	"github.com/deref/exo/internal/token"
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/httputil"
@@ -65,6 +66,10 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	cfg := &config.Config{}
 	config.MustLoadDefault(cfg)
 	MustMakeDirectories(cfg)
+
+	if err := token.EnsureTokenFile(cfg.TokensFile); err != nil {
+		cmdutil.Fatalf("ensuring token file: %w", err)
+	}
 
 	tel.StartSession(ctx)
 
@@ -140,6 +145,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 		Docker:      dockerClient,
 		Logger:      logger,
 		TaskTracker: taskTracker,
+		TokenClient: cfg.GetTokenClient(),
 	}
 
 	// As a one-time migration, simply delete all logs in the old Badger format.

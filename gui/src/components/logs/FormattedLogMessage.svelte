@@ -63,6 +63,12 @@
 </span>
 
 <style>
+  span {
+    font-family: var(--font-mono);
+    font-variant-ligatures: var(--preferred-ligatures-logs);
+    white-space: pre-wrap;
+  }
+
   :global(.exo-message-blink) {
     animation: blink 1s steps(1) infinite;
   }

@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/BurntSushi/toml"
+	"github.com/deref/exo/internal/token"
 )
 
 type ClientConfig struct {
@@ -31,6 +32,7 @@ type Config struct {
 	VarDir       string
 	RunDir       string
 	RunStateFile string
+	TokensFile   string
 
 	HTTPPort uint `toml:"httpPort"`
 
@@ -38,6 +40,10 @@ type Config struct {
 	GUI       GUIConfig `toml:"gui"`
 	Log       LogConfig
 	Telemetry TelemetryConfig
+}
+
+func (c *Config) GetTokenClient() token.TokenClient {
+	return &token.FileTokenClient{Path: c.TokensFile}
 }
 
 func LoadDefault(cfg *Config) error {
@@ -94,6 +100,9 @@ func setDefaults(cfg *Config) {
 	}
 	if cfg.RunStateFile == "" {
 		cfg.RunStateFile = filepath.Join(cfg.RunDir, "exod.json")
+	}
+	if cfg.TokensFile == "" {
+		cfg.TokensFile = filepath.Join(cfg.VarDir, "token")
 	}
 
 	if cfg.HTTPPort == 0 {
