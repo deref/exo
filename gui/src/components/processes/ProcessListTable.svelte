@@ -76,7 +76,7 @@
 
     <div class="hover-half-visibility">
       <IconButton
-        tooltip="Delete process"
+        tooltip="Component actions..."
         on:click={() => {
           // void deleteProcess(workspace, id);
           // setProcLogs(id, false);
