@@ -2,6 +2,7 @@ import Home from './pages/Home.svelte';
 import NewProject from './pages/NewProject.svelte';
 import NewProjectConfig from './pages/NewProjectConfig.svelte';
 import Workspace from './pages/Workspace.svelte';
+import WorkspaceInfo from './pages/WorkspaceInfo.svelte';
 import WorkspaceComponents from './pages/WorkspaceComponents.svelte';
 import WorkspaceVariables from './pages/WorkspaceVariables.svelte';
 import WorkspaceStorage from './pages/WorkspaceStorage.svelte';
@@ -22,6 +23,7 @@ export default {
   '/new-project': NewProject,
   '/new-project/:starter': NewProjectConfig,
   '/workspaces/:workspace': Workspace,
+  '/workspaces/:workspace/info': WorkspaceInfo,
   '/workspaces/:workspace/components': WorkspaceComponents,
   '/workspaces/:workspace/variables': WorkspaceVariables,
   '/workspaces/:workspace/storage': WorkspaceStorage,
