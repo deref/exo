@@ -15,10 +15,9 @@
 <Layout>
   <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
   <CenterFormPanel title="New component" backRoute={workspaceRoute}>
-    <!-- Generic components, no heading. -->
-
     <div>
       <section>
+        <!-- Generic components, no heading. -->
         <button
           on:click={() => {
             router.push(
@@ -29,9 +28,9 @@
           <LayersSVG />
           <b>Process</b>
         </button>
+        <!-- Timer, External Link, etc. -->
       </section>
 
-      <!-- Timer, External Link, etc. -->
       <section>
         <h2>Docker</h2>
 
