@@ -1,9 +1,8 @@
 <script lang="ts">
+  import Icon from './Icon.svelte';
   import VersionInfo from './VersionInfo.svelte';
   import NavbarRoute from './nav/NavbarRoute.svelte';
   import NavbarButton from './nav/NavbarButton.svelte';
-  import FeedbackSVG from './mono/FeedbackSVG.svelte';
-  import PreferencesSVG from './mono/PreferencesSVG.svelte';
   import { theme, themeOptions } from '../lib/theme';
 
   $: {
@@ -29,7 +28,7 @@
     </div>
     <footer>
       <NavbarRoute title="Preferences" href="#/preferences">
-        <PreferencesSVG />
+        <Icon glyph="Preferences" />
       </NavbarRoute>
       <NavbarButton
         title="Give feedback on GitHub"
@@ -37,7 +36,7 @@
           window.location.href = 'https://github.com/deref/exo/discussions';
         }}
       >
-        <FeedbackSVG />
+        <Icon glyph="Feedback" />
       </NavbarButton>
       <VersionInfo />
     </footer>

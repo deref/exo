@@ -1,6 +1,6 @@
 <script lang="ts">
+  import Icon from './Icon.svelte';
   import IconButton from './IconButton.svelte';
-  import BackSVG from './mono/BackSVG.svelte';
   import * as router from 'svelte-spa-router';
 
   export let title: string = '';
@@ -17,7 +17,7 @@
             router.push(backRoute ?? '');
           }}
         >
-          <BackSVG />
+          <Icon glyph="Back" />
         </IconButton>
       {/if}
 

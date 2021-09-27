@@ -1,11 +1,9 @@
 <script lang="ts">
+  import Icon from './Icon.svelte';
   import Panel from './Panel.svelte';
   import IconButton from './IconButton.svelte';
   import ProcfileChecker from './processes/ProcfileChecker.svelte';
   import ProcessListTable from './processes/ProcessListTable.svelte';
-  import AddSVG from './mono/AddSVG.svelte';
-  import DetailsSVG from './mono/DetailsSVG.svelte';
-  import EllipsisSVG from './mono/EllipsisSVG.svelte';
   import { onDestroy, onMount } from 'svelte';
   import type { RequestLifecycle, WorkspaceApi } from '../lib/api';
   import type { ProcessDescription } from '../lib/process/types';
@@ -71,7 +69,7 @@
       <span>Logs</span>
       <div class="menu">
         <IconButton tooltip="Workspace actions..." on:click={() => {}}>
-          <EllipsisSVG />
+          <Icon glyph="Ellipsis" />
         </IconButton>
 
         <div class="dropdown">
@@ -83,7 +81,7 @@
               );
             }}
           >
-            <DetailsSVG />
+            <Icon glyph="Details" />
             View details
           </button>
           <button
@@ -93,7 +91,7 @@
               );
             }}
           >
-            <AddSVG />
+            <Icon glyph="Add" />
             Add component
           </button>
         </div>
@@ -108,7 +106,7 @@
           );
         }}
       >
-        <AddSVG /> Add component
+        <Icon glyph="Add" /> Add component
       </button>
       <RemoteData data={processList} let:data let:error>
         <div slot="success">

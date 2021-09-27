@@ -1,10 +1,9 @@
 <script lang="ts">
+  import Icon from '../components/Icon.svelte';
   import Button from '../components/Button.svelte';
   import Layout from '../components/Layout.svelte';
   import IconButton from '../components/IconButton.svelte';
   import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
-  import PreferencesSectionsConfig from '../components/form/PreferencesSectionsConfig.svelte';
-  import ResetSVG from '../components/mono/ResetSVG.svelte';
   import { theme } from '../lib/theme';
 
   const resetAllPreferences = () => {
@@ -16,7 +15,7 @@
   <CenterFormPanel title="Preferences">
     <div slot="actions">
       <IconButton tooltip="Reset to defaults" on:click={resetAllPreferences}>
-        <ResetSVG />
+        <Icon glyph="Reset" />
       </IconButton>
     </div>
     <div>
@@ -59,7 +58,6 @@
           </Button>
         </div>
       </div>
-      <!-- <PreferencesSectionsConfig /> -->
     </div>
   </CenterFormPanel>
 </Layout>

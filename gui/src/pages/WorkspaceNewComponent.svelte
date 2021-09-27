@@ -1,9 +1,8 @@
 <script lang="ts">
+  import Icon from '../components/Icon.svelte';
   import Layout from '../components/Layout.svelte';
   import WorkspaceNav from '../components/WorkspaceNav.svelte';
   import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
-  import LayersSVG from '../components/mono/LayersSVG.svelte';
-  import DockerSVG from '../components/mono/DockerSVG.svelte';
   import * as router from 'svelte-spa-router';
 
   export let params = { workspace: '' };
@@ -25,7 +24,7 @@
           );
         }}
       >
-        <LayersSVG />
+        <Icon glyph="Layers" />
         <b>Process</b>
       </button>
 
@@ -42,7 +41,7 @@
           );
         }}
       >
-        <DockerSVG />
+        <Icon glyph="Docker" />
         <b>Container</b>
       </button>
 
@@ -53,7 +52,7 @@
           );
         }}
       >
-        <DockerSVG />
+        <Icon glyph="Docker" />
         <b>Volume</b>
       </button>
 
@@ -64,7 +63,7 @@
           );
         }}
       >
-        <DockerSVG />
+        <Icon glyph="Docker" />
         <b>Network</b>
       </button>
     </section>

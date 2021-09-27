@@ -1,10 +1,6 @@
 <script lang="ts">
+  import Icon from './Icon.svelte';
   import NavbarRoute from './nav/NavbarRoute.svelte';
-  import HomeSVG from './mono/HomeSVG.svelte';
-  import LayersSVG from './mono/LayersSVG.svelte';
-  import StorageSVG from './mono/StorageSVG.svelte';
-  import VariableSVG from './mono/VariableSVG.svelte';
-  import NetworkingSVG from './mono/NetworkingSVG.svelte';
 
   export let workspaceId: string;
   export let active: string;
@@ -12,7 +8,7 @@
 
 <aside>
   <NavbarRoute title="Dashboard" href={`#/workspaces/${workspaceId}`} {active}>
-    <HomeSVG />
+    <Icon glyph="Home" />
   </NavbarRoute>
 
   <NavbarRoute
@@ -20,7 +16,7 @@
     href={`#/workspaces/${workspaceId}/components`}
     {active}
   >
-    <LayersSVG />
+    <Icon glyph="Layers" />
   </NavbarRoute>
 
   <NavbarRoute
@@ -28,7 +24,7 @@
     href={`#/workspaces/${workspaceId}/variables`}
     {active}
   >
-    <VariableSVG />
+    <Icon glyph="Variable" />
   </NavbarRoute>
 
   <NavbarRoute
@@ -36,7 +32,7 @@
     href={`#/workspaces/${workspaceId}/storage`}
     {active}
   >
-    <StorageSVG />
+    <Icon glyph="Storage" />
   </NavbarRoute>
 
   <NavbarRoute
@@ -44,6 +40,6 @@
     href={`#/workspaces/${workspaceId}/networking`}
     {active}
   >
-    <NetworkingSVG />
+    <Icon glyph="Networking" />
   </NavbarRoute>
 </aside>

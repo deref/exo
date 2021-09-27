@@ -5,6 +5,7 @@
 </script>
 
 <script lang="ts">
+  import Icon from '../components/Icon.svelte';
   import Layout from '../components/Layout.svelte';
   import Textbox from '../components/Textbox.svelte';
   import EditAs from '../components/form/EditAs.svelte';
@@ -12,7 +13,6 @@
   import TextEditor from '../components/TextEditor.svelte';
   import SubmitButton from '../components/form/SubmitButton.svelte';
   import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
-  import DockerSVG from '../components/mono/DockerSVG.svelte';
   import { api, isClientError } from '../lib/api';
   import { setLogVisibility } from '../lib/logs/visible-logs';
   import * as router from 'svelte-spa-router';
@@ -52,7 +52,7 @@
     title={`New ${displayType}`}
     backRoute={workspaceNewComponentRoute}
   >
-    <h1><DockerSVG /> New {displayType}</h1>
+    <h1><Icon glyph="Docker" /> New {displayType}</h1>
     <form
       on:submit|preventDefault={async () => {
         try {
