@@ -3,6 +3,7 @@
   import Layout from '../components/Layout.svelte';
   import WorkspaceNav from '../components/WorkspaceNav.svelte';
   import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
+  import type { IconGlyph } from '../components/Icon.svelte';
   import * as router from 'svelte-spa-router';
 
   export let params = { workspace: '' };
@@ -10,7 +11,18 @@
   const workspaceId = params.workspace;
   const workspaceRoute = `/workspaces/${encodeURIComponent(workspaceId)}`;
 
-  const categories = [
+  interface ComponentType {
+    displayName: string;
+    name: string;
+    glyph: IconGlyph;
+  }
+
+  interface Category {
+    title?: string;
+    componentTypes: ComponentType[];
+  }
+
+  const categories: Category[] = [
     {
       componentTypes: [
         // Generic components...

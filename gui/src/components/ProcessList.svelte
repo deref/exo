@@ -2,6 +2,7 @@
   import Icon from './Icon.svelte';
   import Panel from './Panel.svelte';
   import IconButton from './IconButton.svelte';
+  import ContextMenu from './ContextMenu.svelte';
   import ProcfileChecker from './processes/ProcfileChecker.svelte';
   import ProcessListTable from './processes/ProcessListTable.svelte';
   import { onDestroy, onMount } from 'svelte';
@@ -73,30 +74,31 @@
           tooltip="Workspace actions..."
           on:click={() => {}}
         />
-
-        <div class="dropdown">
-          <span>{displayName}</span>
-          <!-- <button
-            on:click={() => {
-              router.push(
-                `/workspaces/${encodeURIComponent(workspaceId)}/details`,
-              );
-            }}
-          >
-            <Icon glyph="Details" />
-            View details
-          </button> -->
-          <button
-            on:click={() => {
-              router.push(
-                `#/workspaces/${encodeURIComponent(workspaceId)}/new-component`,
-              );
-            }}
-          >
-            <Icon glyph="Add" />
-            Add component
-          </button>
-        </div>
+        <ContextMenu
+          title={displayName}
+          actions={[
+            {
+              name: 'View details',
+              glyph: 'Details',
+              execute(event) {
+                router.push(
+                  `/workspaces/${encodeURIComponent(workspaceId)}/details`,
+                );
+              },
+            },
+            {
+              name: 'Add component',
+              glyph: 'Add',
+              execute(event) {
+                router.push(
+                  `#/workspaces/${encodeURIComponent(
+                    workspaceId,
+                  )}/new-component`,
+                );
+              },
+            },
+          ]}
+        />
       </div>
     </div>
     <section>
@@ -175,59 +177,12 @@
     color: var(--grey-7-color);
   }
 
-  .dropdown {
-    display: none;
-    position: absolute;
-    right: 0;
-    background: var(--primary-bg-color);
-    box-shadow: var(--dropdown-shadow);
-    border-radius: 5px;
-    padding: 4px 0;
-    margin: -6px;
-    z-index: 2;
-  }
-
-  .dropdown > span {
-    display: block;
-    padding: 4px 12px;
-    font-size: 0.8em;
-    color: var(--grey-7-color);
-  }
-
-  .dropdown button {
-    background: none;
-    border: none;
-    display: flex;
-    align-items: center;
-    font-size: 0.9em;
-    gap: 4px;
-    border-radius: 2px;
-    padding: 6px 18px;
-    width: 100%;
-    white-space: nowrap;
-    color: var(--grey-5-color);
-  }
-
-  .dropdown button :global(*) {
-    fill: currentColor;
-  }
-
-  .dropdown button :global(svg) {
-    height: 16px;
-    margin-left: -8px;
-  }
-
-  .dropdown button:hover {
-    color: var(--strong-color);
-    background: var(--grey-e-color);
-  }
-
   .menu {
     position: relative;
   }
 
-  .menu:focus .dropdown,
-  .menu:focus-within .dropdown {
+  .menu:focus :global(nav),
+  .menu:focus-within :global(nav) {
     display: block;
   }
 </style>

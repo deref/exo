@@ -1,6 +1,32 @@
-<script lang="ts">
+<script lang="ts" context="module">
+  // GENERATED FILE. DO NOT EDIT.
+
   // Note, these are internal named SVG icons. Dynamic SVGs should be handled separately.
 
+  export type IconGlyph =
+    | 'Add'
+    | 'Back'
+    | 'Check'
+    | 'Delete'
+    | 'Details'
+    | 'Docker'
+    | 'Ellipsis'
+    | 'Feedback'
+    | 'Home'
+    | 'Layers'
+    | 'LeftUp'
+    | 'Logs'
+    | 'Networking'
+    | 'Pause'
+    | 'Play'
+    | 'Preferences'
+    | 'Reset'
+    | 'Storage'
+    | 'Variable'
+    | 'Warning';
+</script>
+
+<script lang="ts">
   import AddSVG from './mono/AddSVG.svelte';
   import BackSVG from './mono/BackSVG.svelte';
   import CheckSVG from './mono/CheckSVG.svelte';
@@ -22,7 +48,7 @@
   import VariableSVG from './mono/VariableSVG.svelte';
   import WarningSVG from './mono/WarningSVG.svelte';
 
-  export let glyph: string;
+  export let glyph: IconGlyph;
 </script>
 
 {#if glyph === 'Add'}

@@ -1,6 +1,6 @@
 <script lang="ts">
-  import Icon from '../Icon.svelte';
   import IconButton from '../IconButton.svelte';
+  import ContextMenu from '../ContextMenu.svelte';
   import CheckboxButton from '../CheckboxButton.svelte';
   import ProcessRunControls from './ProcessRunControls.svelte';
   import * as router from 'svelte-spa-router';
@@ -78,38 +78,38 @@
 
     <div class="actions">
       <IconButton glyph="Ellipsis" />
-      <div class="dropdown">
-        <span>{name}</span>
-        <button
-          on:click={() => {
-            router.push(
-              `/workspaces/${encodeURIComponent(
-                workspaceId,
-              )}/processes/${encodeURIComponent(id)}`,
-            );
-          }}
-        >
-          <Icon glyph="Details" />
-          View details
-        </button>
-        <button
-          on:click={() => {
-            setProcLogs(id, $visibleLogsStore.has(id) ? false : true);
-          }}
-        >
-          <Icon glyph="Logs" />
-          Toggle logs visibility
-        </button>
-        <button
-          on:click={() => {
-            void deleteProcess(workspace, id);
-            setProcLogs(id, false);
-          }}
-        >
-          <Icon glyph="Delete" />
-          Remove from <b>exo</b>
-        </button>
-      </div>
+
+      <ContextMenu
+        title={name}
+        actions={[
+          {
+            name: 'View details',
+            glyph: 'Details',
+            execute(event) {
+              router.push(
+                `/workspaces/${encodeURIComponent(
+                  workspaceId,
+                )}/processes/${encodeURIComponent(id)}`,
+              );
+            },
+          },
+          {
+            name: 'Toggle logs visibility',
+            glyph: 'Logs',
+            execute(event) {
+              setProcLogs(id, $visibleLogsStore.has(id) ? false : true);
+            },
+          },
+          {
+            name: 'Remove from exo',
+            glyph: 'Delete',
+            execute(event) {
+              void deleteProcess(workspace, id);
+              setProcLogs(id, false);
+            },
+          },
+        ]}
+      />
     </div>
   </div>
 {:else}
@@ -177,66 +177,12 @@
     background: var(--log-bg-hover-color);
   }
 
-  .dropdown {
-    display: none;
-    position: absolute;
-    right: 0;
-    background: var(--primary-bg-color);
-    box-shadow: var(--dropdown-shadow);
-    border-radius: 5px;
-    padding: 4px 0;
-    margin: -6px;
-    z-index: 2;
-  }
-
-  .dropdown > span {
-    display: block;
-    padding: 4px 12px;
-    font-size: 0.8em;
-    color: var(--grey-7-color);
-  }
-
-  .dropdown button {
-    background: none;
-    border: none;
-    display: flex;
-    align-items: center;
-    font-size: 0.9em;
-    gap: 4px;
-    border-radius: 2px;
-    padding: 6px 18px;
-    width: 100%;
-    white-space: nowrap;
-    color: var(--grey-5-color);
-  }
-
-  .dropdown button b {
-    font-weight: 500;
-    color: currentColor;
-    color: var(--grey-3-color);
-  }
-
-  .dropdown button :global(*) {
-    fill: currentColor;
-  }
-
-  .dropdown button :global(svg) {
-    height: 16px;
-    margin-left: -8px;
-  }
-
-  .dropdown button:hover,
-  .dropdown button:hover b {
-    color: var(--strong-color);
-    background: var(--grey-e-color);
-  }
-
   .actions {
     position: relative;
   }
 
-  .actions:focus .dropdown,
-  .actions:focus-within .dropdown {
+  .actions:focus :global(nav),
+  .actions:focus-within :global(nav) {
     display: block;
   }
 </style>
