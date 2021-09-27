@@ -2,6 +2,7 @@ package exod
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -196,11 +197,17 @@ func RunServer(ctx context.Context, flags map[string]string) {
 		}()
 	}
 
+	validHosts := []string{fmt.Sprintf("localhost:%d", cfg.HTTPPort)}
+	handler := httputil.HandlerWithContext(ctx, &httputil.HostAllowListHandler{
+		Hosts: validHosts,
+		Next:  mux,
+	})
+
 	addr := cmdutil.GetAddr(cfg)
 	logger.Infof("listening for API calls at %s", addr)
 	cmdutil.ListenAndServe(ctx, &http.Server{
 		Addr:    addr,
-		Handler: httputil.HandlerWithContext(ctx, mux),
+		Handler: handler,
 	})
 }
 
