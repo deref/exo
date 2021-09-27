@@ -145,7 +145,8 @@
     align-items: center;
     font-size: 0.9em;
     gap: 4px;
-    padding: 6px 12px;
+    border-radius: 2px;
+    padding: 6px 18px;
     color: var(--grey-5-color);
   }
 
@@ -155,11 +156,12 @@
 
   .actions button :global(svg) {
     height: 16px;
-    margin-left: -4px;
+    margin-left: -8px;
   }
 
   .actions button:hover {
     color: var(--strong-color);
+    background: var(--grey-e-color);
   }
 
   .actions .dropdown {
@@ -168,7 +170,9 @@
     right: 0;
     background: var(--primary-bg-color);
     box-shadow: var(--dropdown-shadow);
-    border-radius: 4px;
+    border-radius: 5px;
+    padding: 4px 0;
+    z-index: 2;
   }
 
   .actions:focus .dropdown,
