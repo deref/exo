@@ -7,8 +7,10 @@
   interface Action {
     name: string;
     glyph: IconGlyph;
-    function: any;
+    execute(event: ExecuteEvent): void;
   }
+
+  interface ExecuteEvent {}
 
   export let actions: Action[];
 </script>
@@ -16,7 +18,7 @@
 <nav>
   {#if title}<span>{title}</span>{/if}
   {#each actions as action}
-    <button on:click={action.function}>
+    <button on:click={action.execute}>
       <Icon glyph={action.glyph} />
       {action.name}
     </button>

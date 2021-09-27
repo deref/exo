@@ -85,7 +85,7 @@
           {
             name: 'View details',
             glyph: 'Details',
-            function: () => {
+            execute(event) {
               router.push(
                 `/workspaces/${encodeURIComponent(
                   workspaceId,
@@ -96,14 +96,14 @@
           {
             name: 'Toggle logs visibility',
             glyph: 'Logs',
-            function: () => {
+            execute(event) {
               setProcLogs(id, $visibleLogsStore.has(id) ? false : true);
             },
           },
           {
             name: 'Remove from exo',
             glyph: 'Delete',
-            function: () => {
+            execute(event) {
               void deleteProcess(workspace, id);
               setProcLogs(id, false);
             },

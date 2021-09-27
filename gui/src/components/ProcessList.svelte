@@ -80,7 +80,7 @@
             {
               name: 'View details',
               glyph: 'Details',
-              function: () => {
+              execute(event) {
                 router.push(
                   `/workspaces/${encodeURIComponent(workspaceId)}/details`,
                 );
@@ -89,7 +89,7 @@
             {
               name: 'Add component',
               glyph: 'Add',
-              function: () => {
+              execute(event) {
                 router.push(
                   `#/workspaces/${encodeURIComponent(
                     workspaceId,
