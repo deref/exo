@@ -1,7 +1,7 @@
 <script lang="ts">
+  import Icon from './Icon.svelte';
   import Button from './Button.svelte';
   import Spinner from './Spinner.svelte';
-  import EllipsisSVG from './mono/EllipsisSVG.svelte';
   import NavbarButton from './nav/NavbarButton.svelte';
   import { onDestroy } from 'svelte';
   import { api } from '../lib/api';
@@ -44,7 +44,7 @@
     {#if latestVersion !== null}
       <div class="upgrade-available" />
     {:else}
-      <EllipsisSVG />
+      <Icon glyph="Ellipsis" />
     {/if}
   </NavbarButton>
   <div class="dropdown version">

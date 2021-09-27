@@ -1,6 +1,5 @@
 <script lang="ts">
   import IconButton from './IconButton.svelte';
-  import BackSVG from './mono/BackSVG.svelte';
   import * as router from 'svelte-spa-router';
 
   export let title: string = '';
@@ -12,13 +11,12 @@
     <div class="header-title">
       {#if backRoute}
         <IconButton
+          glyph="Back"
           tooltip="Go back"
           on:click={() => {
             router.push(backRoute ?? '');
           }}
-        >
-          <BackSVG />
-        </IconButton>
+        />
       {/if}
 
       {#if title}

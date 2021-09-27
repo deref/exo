@@ -1,8 +1,6 @@
 <script lang="ts">
-  import IconButton from '../IconButton.svelte';
   import Spinner from '../Spinner.svelte';
-  import PlaySVG from '../mono/PlaySVG.svelte';
-  import PauseSVG from '../mono/PauseSVG.svelte';
+  import IconButton from '../IconButton.svelte';
 
   export let setProcRun: (id: string, run: boolean) => void;
   export let statusPending: Set<string>;
@@ -16,16 +14,20 @@
   {:else if running}
     <div class="running unhover-only" />
     <div class="control hover-only">
-      <IconButton tooltip="Stop process" on:click={() => setProcRun(id, false)}>
-        <PauseSVG />
-      </IconButton>
+      <IconButton
+        glyph="Pause"
+        tooltip="Stop process"
+        on:click={() => setProcRun(id, false)}
+      />
     </div>
   {:else}
     <div class="stopped unhover-only" />
     <div class="control hover-only">
-      <IconButton tooltip="Run process" on:click={() => setProcRun(id, true)}>
-        <PlaySVG />
-      </IconButton>
+      <IconButton
+        glyph="Play"
+        tooltip="Run process"
+        on:click={() => setProcRun(id, true)}
+      />
     </div>
   {/if}
 </div>

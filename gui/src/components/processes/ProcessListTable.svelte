@@ -1,11 +1,8 @@
 <script lang="ts">
+  import Icon from '../Icon.svelte';
   import IconButton from '../IconButton.svelte';
   import CheckboxButton from '../CheckboxButton.svelte';
   import ProcessRunControls from './ProcessRunControls.svelte';
-  import LogsSVG from '../mono/LogsSVG.svelte';
-  import DeleteSVG from '../mono/DeleteSVG.svelte';
-  import DetailsSVG from '../mono/DetailsSVG.svelte';
-  import EllipsisSVG from '../mono/EllipsisSVG.svelte';
   import * as router from 'svelte-spa-router';
   import {
     startProcess,
@@ -80,9 +77,7 @@
     </div>
 
     <div class="actions">
-      <IconButton>
-        <EllipsisSVG />
-      </IconButton>
+      <IconButton glyph="Ellipsis" />
       <div class="dropdown">
         <span>{name}</span>
         <button
@@ -94,7 +89,7 @@
             );
           }}
         >
-          <DetailsSVG />
+          <Icon glyph="Details" />
           View details
         </button>
         <button
@@ -102,7 +97,7 @@
             setProcLogs(id, $visibleLogsStore.has(id) ? false : true);
           }}
         >
-          <LogsSVG />
+          <Icon glyph="Logs" />
           Toggle logs visibility
         </button>
         <button
@@ -111,7 +106,7 @@
             setProcLogs(id, false);
           }}
         >
-          <DeleteSVG />
+          <Icon glyph="Delete" />
           Remove from <b>exo</b>
         </button>
       </div>
