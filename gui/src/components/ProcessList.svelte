@@ -127,8 +127,8 @@
   #add-component:hover,
   #add-component:focus,
   #add-component:focus-within {
-    border: 1px solid transparent;
-    background: var(--grey-d-color);
+    border: 1px solid var(--grey-c-color);
+    background: var(--grey-e-color);
     color: var(--strong-color);
   }
 

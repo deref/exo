@@ -78,8 +78,8 @@
           <IconButton
             tooltip="Delete process"
             on:click={() => {
-              void deleteProcess(workspace, id);
-              setProcLogs(id, false);
+              // void deleteProcess(workspace, id);
+              // setProcLogs(id, false);
             }}
           >
             <EllipsisSVG />
