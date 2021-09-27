@@ -26,7 +26,6 @@ import (
 	"github.com/deref/exo/internal/telemetry"
 	"github.com/deref/exo/internal/token"
 	"github.com/deref/exo/internal/util/cmdutil"
-	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/httputil"
 	"github.com/deref/exo/internal/util/logging"
 	"github.com/deref/exo/internal/util/sysutil"
@@ -43,20 +42,6 @@ func Main(ctx context.Context) {
 	}
 
 	RunServer(ctx, cmd.Flags)
-}
-
-var makeHostHeaderMiddleware = func(validHosts []string) func(next http.Handler) http.Handler {
-	return func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			for _, validHost := range validHosts {
-				if req.Host == validHost {
-					next.ServeHTTP(w, req)
-					return
-				}
-			}
-			httputil.WriteError(w, req, errutil.NewHTTPError(http.StatusUnauthorized, "Invalid host header"))
-		})
-	}
 }
 
 func RunServer(ctx context.Context, flags map[string]string) {
@@ -213,16 +198,16 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	}
 
 	validHosts := []string{fmt.Sprintf("localhost:%d", cfg.HTTPPort)}
-	hostHeaderMiddleware := makeHostHeaderMiddleware(validHosts)
+	handler := httputil.HandlerWithContext(ctx, &httputil.HostAllowListHandler{
+		Hosts: validHosts,
+		Next:  mux,
+	})
 
 	addr := cmdutil.GetAddr(cfg)
 	logger.Infof("listening for API calls at %s", addr)
 	cmdutil.ListenAndServe(ctx, &http.Server{
-		Addr: addr,
-		Handler: httputil.HandlerWithContext(
-			ctx,
-			hostHeaderMiddleware(mux),
-		),
+		Addr:    addr,
+		Handler: handler,
 	})
 }
 
