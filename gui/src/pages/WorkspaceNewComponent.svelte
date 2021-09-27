@@ -15,9 +15,9 @@
 <Layout>
   <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
   <CenterFormPanel title="New component" backRoute={workspaceRoute}>
-    <section>
-      <!-- Generic components, no heading. -->
+    <!-- Generic components, no heading. -->
 
+    <div>
       <button
         on:click={() => {
           router.push(
@@ -30,9 +30,6 @@
       </button>
 
       <!-- Timer, External Link, etc. -->
-    </section>
-
-    <section>
       <h2>Docker</h2>
 
       <button
@@ -67,15 +64,21 @@
         <DockerSVG />
         <b>Network</b>
       </button>
-    </section>
+    </div>
 
     <!-- Databases, Apps, cloud services, etc. -->
   </CenterFormPanel>
 </Layout>
 
 <style>
-  section {
-    margin-bottom: 24px;
+  div {
+    display: flex;
+    flex-direction: column;
+    max-width: 250px;
+  }
+
+  h2 {
+    margin-top: 24px;
   }
 
   button {
