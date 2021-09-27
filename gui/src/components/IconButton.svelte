@@ -1,8 +1,9 @@
 <script lang="ts">
+  import type { IconGlyph } from './Icon.svelte';
   import Icon from './Icon.svelte';
 
   export let tooltip: string | undefined = undefined;
-  export let glyph: string;
+  export let glyph: IconGlyph;
 </script>
 
 <button on:click title={tooltip}>

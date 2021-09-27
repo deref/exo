@@ -1,9 +1,10 @@
 <script lang="ts">
+  import type { IconGlyph } from './Icon.svelte';
   import Icon from './Icon.svelte';
 
   export let title: string | undefined;
 
-  export let actions: { name: string; glyph: string; function: any }[];
+  export let actions: { name: string; glyph: IconGlyph; function: any }[];
 </script>
 
 <nav>
