@@ -74,16 +74,21 @@
       />
     </div>
 
-    <div class="hover-half-visibility">
-      <IconButton
-        tooltip="Component actions..."
-        on:click={() => {
-          // void deleteProcess(workspace, id);
-          // setProcLogs(id, false);
-        }}
-      >
+    <div class="actions">
+      <IconButton>
         <EllipsisSVG />
       </IconButton>
+      <div class="dropdown">
+        <button
+          on:click={() => {
+            void deleteProcess(workspace, id);
+            setProcLogs(id, false);
+          }}
+        >
+          <DeleteSVG />
+          Remove {name}
+        </button>
+      </div>
     </div>
   </div>
 {:else}
@@ -125,8 +130,51 @@
     white-space: nowrap;
   }
 
-  .card:not(:hover):not(:focus-within) .hover-half-visibility {
+  .card:not(:hover):not(:focus-within) .actions {
     opacity: 0.333;
+  }
+
+  .actions {
+    position: relative;
+  }
+
+  .actions button {
+    background: none;
+    border: none;
+    display: flex;
+    align-items: center;
+    font-size: 0.9em;
+    gap: 4px;
+    padding: 6px 12px;
+    color: var(--grey-7-color);
+  }
+
+  .actions button :global(*) {
+    fill: currentColor;
+  }
+
+  .actions button :global(svg) {
+    height: 16px;
+    margin-left: -4px;
+  }
+
+  .actions button:hover {
+    color: var(--strong-color);
+  }
+
+  .actions .dropdown {
+    display: none;
+    position: absolute;
+    right: 0;
+    background: var(--primary-bg-color);
+    box-shadow: var(--dropdown-shadow);
+    border-radius: 4px;
+  }
+
+  .actions:hover .dropdown,
+  .actions:focus .dropdown,
+  .actions:focus-within .dropdown {
+    display: block;
   }
 
   .process-name {
