@@ -4,6 +4,7 @@
   import ProcfileChecker from './processes/ProcfileChecker.svelte';
   import ProcessListTable from './processes/ProcessListTable.svelte';
   import AddSVG from './mono/AddSVG.svelte';
+  import DetailsSVG from './mono/DetailsSVG.svelte';
   import EllipsisSVG from './mono/EllipsisSVG.svelte';
   import { onDestroy, onMount } from 'svelte';
   import type { RequestLifecycle, WorkspaceApi } from '../lib/api';
@@ -68,9 +69,34 @@
   <Panel title={displayName} backRoute="/" --panel-padding="0 1rem">
     <div class="actions" slot="actions">
       <span>Logs</span>
-      <IconButton tooltip="Workspace actions..." on:click={() => {}}>
-        <EllipsisSVG />
-      </IconButton>
+      <div class="menu">
+        <IconButton tooltip="Workspace actions..." on:click={() => {}}>
+          <EllipsisSVG />
+        </IconButton>
+
+        <div class="dropdown">
+          <button
+            on:click={() => {
+              router.push(
+                `/workspaces/${encodeURIComponent(workspaceId)}/details`,
+              );
+            }}
+          >
+            <DetailsSVG />
+            View details
+          </button>
+          <button
+            on:click={() => {
+              router.push(
+                `#/workspaces/${encodeURIComponent(workspaceId)}/new-component`,
+              );
+            }}
+          >
+            <AddSVG />
+            Add component
+          </button>
+        </div>
+      </div>
     </div>
     <section>
       <button
@@ -146,5 +172,54 @@
   }
   .actions span {
     color: var(--grey-7-color);
+  }
+
+  .dropdown {
+    display: none;
+    position: absolute;
+    right: 0;
+    background: var(--primary-bg-color);
+    box-shadow: var(--dropdown-shadow);
+    border-radius: 5px;
+    padding: 4px 0;
+    margin: 0 -6px;
+    z-index: 2;
+  }
+
+  .dropdown button {
+    background: none;
+    border: none;
+    display: flex;
+    align-items: center;
+    font-size: 0.9em;
+    gap: 4px;
+    border-radius: 2px;
+    padding: 6px 18px;
+    width: 100%;
+    white-space: nowrap;
+    color: var(--grey-5-color);
+  }
+
+  .dropdown button :global(*) {
+    fill: currentColor;
+  }
+
+  .dropdown button :global(svg) {
+    height: 16px;
+    margin-left: -8px;
+  }
+
+  .dropdown button:hover {
+    color: var(--strong-color);
+    background: var(--grey-e-color);
+  }
+
+  .menu {
+    position: relative;
+  }
+
+  .menu:focus .dropdown,
+  .menu:focus-within .dropdown {
+    display: block;
   }
 </style>

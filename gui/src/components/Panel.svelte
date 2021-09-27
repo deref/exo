@@ -62,7 +62,6 @@
 
   header {
     border-bottom: 1px solid var(--layout-bg-color);
-    overflow: hidden;
     display: grid;
     grid-template-columns: 1fr max-content;
     gap: 8px;
@@ -88,6 +87,5 @@
   .header-actions {
     display: flex;
     align-items: center;
-    overflow: hidden;
   }
 </style>

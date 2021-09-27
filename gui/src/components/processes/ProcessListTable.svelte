@@ -150,59 +150,6 @@
     opacity: 0.333;
   }
 
-  .actions {
-    position: relative;
-  }
-
-  .actions button {
-    background: none;
-    border: none;
-    display: flex;
-    align-items: center;
-    font-size: 0.9em;
-    gap: 4px;
-    border-radius: 2px;
-    padding: 6px 18px;
-    color: var(--grey-5-color);
-  }
-
-  .actions button b {
-    font-weight: 500;
-    color: currentColor;
-    color: var(--grey-3-color);
-  }
-
-  .actions button :global(*) {
-    fill: currentColor;
-  }
-
-  .actions button :global(svg) {
-    height: 16px;
-    margin-left: -8px;
-  }
-
-  .actions button:hover,
-  .actions button:hover b {
-    color: var(--strong-color);
-    background: var(--grey-e-color);
-  }
-
-  .actions .dropdown {
-    display: none;
-    position: absolute;
-    right: 0;
-    background: var(--primary-bg-color);
-    box-shadow: var(--dropdown-shadow);
-    border-radius: 5px;
-    padding: 4px 0;
-    z-index: 2;
-  }
-
-  .actions:focus .dropdown,
-  .actions:focus-within .dropdown {
-    display: block;
-  }
-
   .process-name {
     display: inline-block;
     text-decoration: none;
@@ -226,5 +173,61 @@
 
   .process-name:focus {
     background: var(--grey-d-color);
+  }
+
+  .dropdown {
+    display: none;
+    position: absolute;
+    right: 0;
+    background: var(--primary-bg-color);
+    box-shadow: var(--dropdown-shadow);
+    border-radius: 5px;
+    padding: 4px 0;
+    margin: 0 -6px;
+    z-index: 2;
+  }
+
+  .dropdown button {
+    background: none;
+    border: none;
+    display: flex;
+    align-items: center;
+    font-size: 0.9em;
+    gap: 4px;
+    border-radius: 2px;
+    padding: 6px 18px;
+    width: 100%;
+    white-space: nowrap;
+    color: var(--grey-5-color);
+  }
+
+  .dropdown button b {
+    font-weight: 500;
+    color: currentColor;
+    color: var(--grey-3-color);
+  }
+
+  .dropdown button :global(*) {
+    fill: currentColor;
+  }
+
+  .dropdown button :global(svg) {
+    height: 16px;
+    margin-left: -8px;
+  }
+
+  .dropdown button:hover,
+  .dropdown button:hover b {
+    color: var(--strong-color);
+    background: var(--grey-e-color);
+  }
+
+  .actions {
+    position: relative;
+  }
+
+  .actions:focus .dropdown,
+  .actions:focus-within .dropdown {
+    display: block;
   }
 </style>
