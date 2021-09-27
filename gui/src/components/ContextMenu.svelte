@@ -1,6 +1,6 @@
 <script lang="ts">
-  import type { IconGlyph } from './Icon.svelte';
   import Icon from './Icon.svelte';
+  import type { IconGlyph } from './Icon.svelte';
 
   export let title: string | undefined;
 
