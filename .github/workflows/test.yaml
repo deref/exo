@@ -21,4 +21,4 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
       - name: Perform tests
-        run: go test ./...
+        run: script/ci-test.sh

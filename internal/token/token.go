@@ -28,7 +28,7 @@ var _ TokenClient = &FileTokenClient{}
 func readTokenFile(path string) ([]string, error) {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("reading token file: %w", err)
+		return nil, err
 	}
 	return strings.Fields(string(data)), nil
 }
@@ -66,7 +66,7 @@ func (c *FileTokenClient) CheckToken(tokenToCheck string) (bool, error) {
 func EnsureTokenFile(path string) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		token := genToken()
-		if err := ioutil.WriteFile(path, []byte(token), 0600); err != nil {
+		if err := ioutil.WriteFile(path, []byte(token+"\n"), 0600); err != nil {
 			return fmt.Errorf("writing token file: %w", err)
 		}
 	}

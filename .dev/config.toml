@@ -1,4 +1,5 @@
 httpPort = 4001
+noDaemon = true
 
 [client]
 url = "http://localhost:4001"

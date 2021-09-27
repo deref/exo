@@ -1,4 +1,5 @@
 <script lang="ts">
+  import Icon from '../components/Icon.svelte';
   import Layout from '../components/Layout.svelte';
   import Textbox from '../components/Textbox.svelte';
   import EditAs from '../components/form/EditAs.svelte';
@@ -10,7 +11,6 @@
   import SubmitButton from '../components/form/SubmitButton.svelte';
   import EnvironmentInput from '../components/EnvironmentInput.svelte';
   import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
-  import LayersSVG from '../components/mono/LayersSVG.svelte';
   import { api, isClientError } from '../lib/api';
   import * as router from 'svelte-spa-router';
   import { parseScript, generateScript } from '../lib/process/script';
@@ -80,7 +80,7 @@ my-app --port 4000
 <Layout>
   <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
   <CenterFormPanel title="New Process" backRoute={workspaceNewComponentRoute}>
-    <h1><LayersSVG /> New Process</h1>
+    <h1><Icon glyph="Layers" /> New Process</h1>
     <form
       on:submit|preventDefault={async () => {
         updateFields();

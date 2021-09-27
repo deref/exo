@@ -80,16 +80,7 @@ func (sto *Store) AddEvent(ctx context.Context, input *api.AddEventInput) (*api.
 		return nil, errutil.NewHTTPError(http.StatusBadRequest, "stream is required")
 	}
 
-	// Generate an id that is guaranteed to be monotonically increasing within this process.
-	lid, err := sto.IDGen.NextID(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("generating id: %w", err)
-	}
-	lidBytes, err := lid.MarshalText()
-	if err != nil {
-		panic(err)
-	}
-	id := string(lidBytes)
+	id := sto.nextID(ctx)
 
 	timestamp, err := chrono.ParseIsoToNano(input.Timestamp)
 	if err != nil {
@@ -105,12 +96,46 @@ func (sto *Store) AddEvent(ctx context.Context, input *api.AddEventInput) (*api.
 	return &api.AddEventOutput{}, nil
 }
 
+// Generate an id that is guaranteed to be monotonically increasing within this process.
+func (sto *Store) nextID(ctx context.Context) string {
+	lid, err := sto.IDGen.NextID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	lidBytes, err := lid.MarshalText()
+	if err != nil {
+		panic(err)
+	}
+	return string(lidBytes)
+}
+
 const (
 	defaultNextLimit = 500
 	maxLimit         = 10000
 )
 
 func (sto *Store) GetEvents(ctx context.Context, input *api.GetEventsInput) (*api.GetEventsOutput, error) {
+	output := api.GetEventsOutput{
+		Items: []api.Event{},
+	}
+
+	var cursor string
+	if input.Cursor == nil {
+		var err error
+		cursor, err = sto.getLatestCursor(ctx, input.Streams)
+		if err != nil {
+			return nil, fmt.Errorf("getting latest cursor: %w", err)
+		}
+	} else {
+		cursor = *input.Cursor
+	}
+
+	if len(input.Streams) == 0 {
+		output.PrevCursor = cursor
+		output.NextCursor = cursor
+		return &output, nil
+	}
+
 	limit := defaultNextLimit
 	reverse := false
 	if input.Next != nil {
@@ -148,16 +173,6 @@ func (sto *Store) GetEvents(ctx context.Context, input *api.GetEventsInput) (*ap
 			LIMIT ?
 		`
 	}
-	var cursor string
-	if input.Cursor == nil {
-		var err error
-		cursor, err = sto.getLatestCursor(ctx, input.Streams)
-		if err != nil {
-			return nil, fmt.Errorf("getting latest cursor: %w", err)
-		}
-	} else {
-		cursor = *input.Cursor
-	}
 	query, args, err := sqlx.In(query, input.Streams, cursor, input.FilterStr, limit)
 	if err != nil {
 		panic(err)
@@ -168,10 +183,6 @@ func (sto *Store) GetEvents(ctx context.Context, input *api.GetEventsInput) (*ap
 		return nil, fmt.Errorf("querying: %w", err)
 	}
 	defer rows.Close()
-
-	output := api.GetEventsOutput{
-		Items: []api.Event{},
-	}
 
 	for rows.Next() {
 		var event api.Event
@@ -209,6 +220,9 @@ func (sto *Store) GetEvents(ctx context.Context, input *api.GetEventsInput) (*ap
 }
 
 func (sto *Store) getLatestCursor(ctx context.Context, streams []string) (string, error) {
+	if len(streams) == 0 {
+		return sto.nextID(ctx), nil
+	}
 	query, args, err := sqlx.In(`
 		SELECT COALESCE(MAX(id), "")
 		FROM event
