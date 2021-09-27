@@ -46,12 +46,6 @@
 </script>
 
 <table>
-  <thead>
-    <th />
-    <th>Process</th>
-    <th>Logs</th>
-    <th />
-  </thead>
   {#each data as { id, name, running } (id)}
     <tr>
       <td>
@@ -101,28 +95,21 @@
   table {
     width: 100%;
     border-collapse: collapse;
+    margin-top: 12px;
   }
 
-  th {
-    padding: 12px 0;
-    color: var(--grey-7-color);
-  }
-
-  td,
-  th {
+  td {
     font-size: inherit;
     font-weight: inherit;
     align-items: center;
     justify-content: center;
   }
 
-  td:nth-child(2),
-  th:nth-child(2) {
+  td:nth-child(2) {
     text-align: left;
   }
 
-  td:not(:last-child):not(:first-child),
-  th:not(:last-child):not(:first-child) {
+  td:not(:last-child):not(:first-child) {
     border-right: 16px solid transparent;
   }
 
@@ -135,8 +122,6 @@
   }
 
   table,
-  thead,
-  th,
   td,
   tr {
     border: none;

@@ -65,7 +65,8 @@
   <Panel title="" backRoute="/" />
 {:then displayName}
   <Panel title={displayName} backRoute="/" --panel-padding="0 1rem">
-    <div slot="actions">
+    <div class="actions" slot="actions">
+      <span>Logs</span>
       <IconButton
         tooltip="Add new component"
         on:click={() => {
@@ -102,3 +103,14 @@
     </section>
   </Panel>
 {/await}
+
+<style>
+  .actions {
+    display: flex;
+    align-items: center;
+    gap: 28px;
+  }
+  .actions span {
+    color: var(--grey-7-color);
+  }
+</style>
