@@ -11,10 +11,14 @@
   const workspaceId = params.workspace;
   const workspaceRoute = `/workspaces/${encodeURIComponent(workspaceId)}`;
 
-  const categories: {
+  type ComponentType = { displayName: string; name: string; glyph: IconGlyph };
+
+  type Category = {
     title?: string;
-    componentTypes: { displayName: string; name: string; glyph: IconGlyph }[];
-  }[] = [
+    componentTypes: ComponentType[];
+  };
+
+  const categories: Category[] = [
     {
       componentTypes: [
         // Generic components...

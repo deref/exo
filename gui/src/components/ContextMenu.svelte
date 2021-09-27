@@ -4,7 +4,9 @@
 
   export let title: string | undefined;
 
-  export let actions: { name: string; glyph: IconGlyph; function: any }[];
+  type Action = { name: string; glyph: IconGlyph; function: any };
+
+  export let actions: Action[];
 </script>
 
 <nav>

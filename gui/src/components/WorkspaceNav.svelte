@@ -6,7 +6,9 @@
   export let workspaceId: string;
   export let active: string;
 
-  const routes: { title: string; href: string; glyph: IconGlyph }[] = [
+  type NavRoute = { title: string; href: string; glyph: IconGlyph };
+
+  const routes: NavRoute[] = [
     {
       title: 'Dashboard',
       href: `#/workspaces/${workspaceId}`,
