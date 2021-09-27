@@ -80,7 +80,7 @@ func runTailLogsReader(ctx context.Context, cancel func()) error {
 		switch press.Key {
 		// Clear screen.
 		case terminal.KeyCtrlL:
-			fmt.Print("\033[2J")
+			fmt.Print("\033[2J\033[1;1H")
 
 		// Quit.
 		case terminal.KeyCtrlC, 'q':
