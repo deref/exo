@@ -66,7 +66,7 @@ func (c *FileTokenClient) CheckToken(tokenToCheck string) (bool, error) {
 func EnsureTokenFile(path string) error {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		token := genToken()
-		if err := ioutil.WriteFile(path, []byte(token), 0600); err != nil {
+		if err := ioutil.WriteFile(path, []byte(token+"\n"), 0600); err != nil {
 			return fmt.Errorf("writing token file: %w", err)
 		}
 	}
