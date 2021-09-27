@@ -20,7 +20,7 @@ func NewHandler(ctx context.Context, cfg config.GUIConfig) http.Handler {
 	if err != nil {
 		panic(err)
 	}
-	return &tokenCookieMiddleware{
+	return &guiMiddleware{
 		URL:  fmt.Sprintf("http://localhost:%d/", cfg.Port),
 		Next: http.FileServer(http.FS(content)),
 	}

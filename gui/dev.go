@@ -25,7 +25,7 @@ func NewHandler(ctx context.Context, cfg config.GUIConfig) http.Handler {
 		err = errutil.NewHTTPError(http.StatusBadGateway, err.Error())
 		exoutil.WriteError(w, req, err)
 	}
-	return &tokenCookieMiddleware{
+	return &guiMiddleware{
 		URL:  urlStr,
 		Next: proxy,
 	}
