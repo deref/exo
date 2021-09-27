@@ -1,7 +1,9 @@
 <script lang="ts">
   import Icon from './Icon.svelte';
   import Panel from './Panel.svelte';
+  import IfEnabled from './IfEnabled.svelte';
   import IconButton from './IconButton.svelte';
+  import RemoteData from './RemoteData.svelte';
   import ContextMenu from './ContextMenu.svelte';
   import ProcfileChecker from './processes/ProcfileChecker.svelte';
   import ProcessListTable from './processes/ProcessListTable.svelte';
@@ -15,9 +17,6 @@
   } from '../lib/process/store';
   import { api } from '../lib/api';
   import * as router from 'svelte-spa-router';
-  import RemoteData from './RemoteData.svelte';
-  import IfEnabled from './IfEnabled.svelte';
-  import PreferencesSvg from './mono/PreferencesSVG.svelte';
 
   export let workspace: WorkspaceApi;
   export let workspaceId: string;
