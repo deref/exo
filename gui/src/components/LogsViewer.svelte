@@ -58,8 +58,8 @@
 </script>
 
 <Panel title="Logs" --panel-padding="0" --panel-overflow-y="hidden">
-  <LocalLogProvider {workspace} {processIdToName} {filterStr} {logs} let:events>
-    <Logs {events} />
+  <LocalLogProvider {workspace} {filterStr} {logs} let:events>
+    <Logs {processIdToName} {events} />
   </LocalLogProvider>
 
   <div slot="bottom">

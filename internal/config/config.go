@@ -35,6 +35,7 @@ type Config struct {
 	TokensFile   string
 
 	HTTPPort uint `toml:"httpPort"`
+	NoDaemon bool `toml:"noDaemon"`
 
 	Client    ClientConfig
 	GUI       GUIConfig `toml:"gui"`

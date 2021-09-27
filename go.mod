@@ -5,6 +5,7 @@ go 1.16
 require (
 	code.cloudfoundry.org/bytefmt v0.0.0-20210608160410-67692ebc98de
 	github.com/BurntSushi/toml v0.3.1
+	github.com/Nerdmaster/terminal v0.12.1
 	github.com/alessio/shellescape v1.4.1
 	github.com/aybabtme/rgbterm v0.0.0-20170906152045-cc83f3b3ce59
 	github.com/containerd/containerd v1.5.4 // indirect
