@@ -24,12 +24,20 @@
       return;
     }
 
+    if (logs.length === 0) {
+      cursor = null;
+      events = [];
+      return;
+    }
+
     const res = await workspace.getEvents(logs, filterStr, {
       cursor,
       next: maxEvents,
     });
     cursor = res.nextCursor;
-    events = [...events, ...formatLogs(res.items, processIdToName)].slice(-maxEvents);
+    events = [...events, ...formatLogs(res.items, processIdToName)].slice(
+      -maxEvents,
+    );
 
     pollRefreshTimer = setTimeout(() => {
       pollRefreshTimer = null;

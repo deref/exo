@@ -111,6 +111,10 @@ const (
 )
 
 func (sto *Store) GetEvents(ctx context.Context, input *api.GetEventsInput) (*api.GetEventsOutput, error) {
+	if len(input.Streams) == 0 {
+		return nil, errors.New("no event streams specified")
+	}
+
 	limit := defaultNextLimit
 	reverse := false
 	if input.Next != nil {
