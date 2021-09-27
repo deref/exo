@@ -18,52 +18,56 @@
     <!-- Generic components, no heading. -->
 
     <div>
-      <button
-        on:click={() => {
-          router.push(
-            `/workspaces/${encodeURIComponent(workspaceId)}/new-process`,
-          );
-        }}
-      >
-        <LayersSVG />
-        <b>Process</b>
-      </button>
+      <section>
+        <button
+          on:click={() => {
+            router.push(
+              `/workspaces/${encodeURIComponent(workspaceId)}/new-process`,
+            );
+          }}
+        >
+          <LayersSVG />
+          <b>Process</b>
+        </button>
+      </section>
 
       <!-- Timer, External Link, etc. -->
-      <h2>Docker</h2>
+      <section>
+        <h2>Docker</h2>
 
-      <button
-        on:click={() => {
-          router.push(
-            `/workspaces/${encodeURIComponent(workspaceId)}/new-container`,
-          );
-        }}
-      >
-        <DockerSVG />
-        <b>Container</b>
-      </button>
+        <button
+          on:click={() => {
+            router.push(
+              `/workspaces/${encodeURIComponent(workspaceId)}/new-container`,
+            );
+          }}
+        >
+          <DockerSVG />
+          <b>Container</b>
+        </button>
 
-      <button
-        on:click={() => {
-          router.push(
-            `/workspaces/${encodeURIComponent(workspaceId)}/new-volume`,
-          );
-        }}
-      >
-        <DockerSVG />
-        <b>Volume</b>
-      </button>
+        <button
+          on:click={() => {
+            router.push(
+              `/workspaces/${encodeURIComponent(workspaceId)}/new-volume`,
+            );
+          }}
+        >
+          <DockerSVG />
+          <b>Volume</b>
+        </button>
 
-      <button
-        on:click={() => {
-          router.push(
-            `/workspaces/${encodeURIComponent(workspaceId)}/new-network`,
-          );
-        }}
-      >
-        <DockerSVG />
-        <b>Network</b>
-      </button>
+        <button
+          on:click={() => {
+            router.push(
+              `/workspaces/${encodeURIComponent(workspaceId)}/new-network`,
+            );
+          }}
+        >
+          <DockerSVG />
+          <b>Network</b>
+        </button>
+      </section>
     </div>
 
     <!-- Databases, Apps, cloud services, etc. -->
@@ -71,14 +75,14 @@
 </Layout>
 
 <style>
-  div {
-    display: flex;
+  div,
+  section {
+    display: inline-flex;
     flex-direction: column;
-    max-width: 250px;
   }
 
-  h2 {
-    margin-top: 24px;
+  section {
+    margin-bottom: 24px;
   }
 
   button {
