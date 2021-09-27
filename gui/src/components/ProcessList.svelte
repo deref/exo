@@ -15,6 +15,7 @@
   import * as router from 'svelte-spa-router';
   import RemoteData from './RemoteData.svelte';
   import IfEnabled from './IfEnabled.svelte';
+  import PreferencesSvg from './mono/PreferencesSVG.svelte';
 
   export let workspace: WorkspaceApi;
   export let workspaceId: string;
@@ -60,6 +61,14 @@
 >
   <div slot="actions">
     <IconButton
+      tooltip="Workspace details"
+      on:click={() => {
+        router.push(`#/workspaces/${encodeURIComponent(workspaceId)}/info`);
+      }}
+    >
+      <PreferencesSvg />
+    </IconButton>
+    <IconButton
       tooltip="Add new component"
       on:click={() => {
         router.push(
@@ -94,3 +103,10 @@
     </IfEnabled>
   </section>
 </Panel>
+
+<style>
+  div[slot='actions'] {
+    display: flex;
+    flex-direction: row;
+  }
+</style>
