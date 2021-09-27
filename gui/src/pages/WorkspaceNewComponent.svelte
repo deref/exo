@@ -15,65 +15,73 @@
 <Layout>
   <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
   <CenterFormPanel title="New component" backRoute={workspaceRoute}>
-    <section>
-      <!-- Generic components, no heading. -->
+    <div>
+      <section>
+        <!-- Generic components, no heading. -->
 
-      <button
-        on:click={() => {
-          router.push(
-            `/workspaces/${encodeURIComponent(workspaceId)}/new-process`,
-          );
-        }}
-      >
-        <LayersSVG />
-        <b>Process</b>
-      </button>
+        <button
+          on:click={() => {
+            router.push(
+              `/workspaces/${encodeURIComponent(workspaceId)}/new-process`,
+            );
+          }}
+        >
+          <LayersSVG />
+          <b>Process</b>
+        </button>
 
-      <!-- Timer, External Link, etc. -->
-    </section>
+        <!-- Timer, External Link, etc. -->
+      </section>
 
-    <section>
-      <h2>Docker</h2>
+      <section>
+        <h2>Docker</h2>
 
-      <button
-        on:click={() => {
-          router.push(
-            `/workspaces/${encodeURIComponent(workspaceId)}/new-container`,
-          );
-        }}
-      >
-        <DockerSVG />
-        <b>Container</b>
-      </button>
+        <button
+          on:click={() => {
+            router.push(
+              `/workspaces/${encodeURIComponent(workspaceId)}/new-container`,
+            );
+          }}
+        >
+          <DockerSVG />
+          <b>Container</b>
+        </button>
 
-      <button
-        on:click={() => {
-          router.push(
-            `/workspaces/${encodeURIComponent(workspaceId)}/new-volume`,
-          );
-        }}
-      >
-        <DockerSVG />
-        <b>Volume</b>
-      </button>
+        <button
+          on:click={() => {
+            router.push(
+              `/workspaces/${encodeURIComponent(workspaceId)}/new-volume`,
+            );
+          }}
+        >
+          <DockerSVG />
+          <b>Volume</b>
+        </button>
 
-      <button
-        on:click={() => {
-          router.push(
-            `/workspaces/${encodeURIComponent(workspaceId)}/new-network`,
-          );
-        }}
-      >
-        <DockerSVG />
-        <b>Network</b>
-      </button>
-    </section>
+        <button
+          on:click={() => {
+            router.push(
+              `/workspaces/${encodeURIComponent(workspaceId)}/new-network`,
+            );
+          }}
+        >
+          <DockerSVG />
+          <b>Network</b>
+        </button>
+      </section>
+    </div>
 
     <!-- Databases, Apps, cloud services, etc. -->
   </CenterFormPanel>
 </Layout>
 
 <style>
+  div,
+  section {
+    display: inline-flex;
+    flex-direction: column;
+  }
+
   section {
     margin-bottom: 24px;
   }
