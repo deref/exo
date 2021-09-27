@@ -6,7 +6,11 @@
   export let workspaceId: string;
   export let active: string;
 
-  type NavRoute = { title: string; href: string; glyph: IconGlyph };
+  interface NavRoute {
+    title: string;
+    href: string;
+    glyph: IconGlyph;
+  }
 
   const routes: NavRoute[] = [
     {

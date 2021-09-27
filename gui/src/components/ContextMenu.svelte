@@ -4,7 +4,11 @@
 
   export let title: string | undefined;
 
-  type Action = { name: string; glyph: IconGlyph; function: any };
+  interface Action {
+    name: string;
+    glyph: IconGlyph;
+    function: any;
+  }
 
   export let actions: Action[];
 </script>
