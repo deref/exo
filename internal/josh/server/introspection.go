@@ -12,9 +12,6 @@ type IntrospectionHandler struct {
 }
 
 func (h *IntrospectionHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
-	if handleOptions(w, req) {
-		return
-	}
 	if req.Method != "GET" {
 		err := errutil.HTTPErrorf(http.StatusMethodNotAllowed, "method not allowed: %q", req.Method)
 		httputil.WriteError(w, req, err)
