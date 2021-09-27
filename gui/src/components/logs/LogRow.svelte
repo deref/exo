@@ -8,17 +8,19 @@
   export let event: LogEvent;
 
   // SEE NOTE [LOG_COMPONENTS].
-  const friendlyName = (log: string): string => {
+  const streamToFriendlyName = (log: string): string => {
     const [procId, stream] = log.split(':');
     const procName = processIdToName[procId];
     return procName ? (stream ? `${procName}:${stream}` : procName) : log;
   };
 
+  const friendlyName = streamToFriendlyName(event.stream);
+
   // SEE NOTE [LOG_COMPONENTS].
   const trimLabel = (name: string) => name.replace(/(:err$)|(:out$)/g, '');
 </script>
 
-<tr style={logStyleFromHash(event.stream)}>
+<tr style={logStyleFromHash(friendlyName)}>
   <td
     class="time"
     on:click={() => {
@@ -27,8 +29,8 @@
   >
     {shortTime(event.timestamp)}
   </td>
-  <td class="name" title={friendlyName(event.stream)}>
-    {trimLabel(event.stream)}
+  <td class="name" title={event.stream}>
+    {trimLabel(friendlyName)}
   </td>
   <td>
     <FormattedLogMessage message={event.message} />
