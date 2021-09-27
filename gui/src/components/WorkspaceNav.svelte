@@ -4,42 +4,40 @@
 
   export let workspaceId: string;
   export let active: string;
+
+  const routes = [
+    {
+      title: 'Dashboard',
+      href: `#/workspaces/${workspaceId}`,
+      glyph: 'Home',
+    },
+    {
+      title: 'Components',
+      href: `#/workspaces/${workspaceId}/components`,
+      glyph: 'Layers',
+    },
+    {
+      title: 'Variables',
+      href: `#/workspaces/${workspaceId}/variables`,
+      glyph: 'Variable',
+    },
+    {
+      title: 'Storage',
+      href: `#/workspaces/${workspaceId}/storage`,
+      glyph: 'Storage',
+    },
+    {
+      title: 'Networking',
+      href: `#/workspaces/${workspaceId}/networking`,
+      glyph: 'Networking',
+    },
+  ];
 </script>
 
 <aside>
-  <NavbarRoute title="Dashboard" href={`#/workspaces/${workspaceId}`} {active}>
-    <Icon glyph="Home" />
-  </NavbarRoute>
-
-  <NavbarRoute
-    title="Components"
-    href={`#/workspaces/${workspaceId}/components`}
-    {active}
-  >
-    <Icon glyph="Layers" />
-  </NavbarRoute>
-
-  <NavbarRoute
-    title="Variables"
-    href={`#/workspaces/${workspaceId}/variables`}
-    {active}
-  >
-    <Icon glyph="Variable" />
-  </NavbarRoute>
-
-  <NavbarRoute
-    title="Storage"
-    href={`#/workspaces/${workspaceId}/storage`}
-    {active}
-  >
-    <Icon glyph="Storage" />
-  </NavbarRoute>
-
-  <NavbarRoute
-    title="Networking"
-    href={`#/workspaces/${workspaceId}/networking`}
-    {active}
-  >
-    <Icon glyph="Networking" />
-  </NavbarRoute>
+  {#each routes as route}
+    <NavbarRoute title={route.title} href={route.href} {active}>
+      <Icon glyph={route.glyph} />
+    </NavbarRoute>
+  {/each}
 </aside>
