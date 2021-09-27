@@ -12,12 +12,20 @@
     processes,
     refreshAllProcesses,
   } from '../lib/process/store';
+  import { api } from '../lib/api';
   import * as router from 'svelte-spa-router';
   import RemoteData from './RemoteData.svelte';
   import IfEnabled from './IfEnabled.svelte';
 
   export let workspace: WorkspaceApi;
   export let workspaceId: string;
+
+  const workspaceName = api.kernel
+    .describeWorkspaces()
+    .then(
+      (workspaces) =>
+        workspaces.find((ws) => ws.id === workspaceId)?.displayName,
+    );
 
   let processList: RequestLifecycle<ProcessDescription[]> = {
     stage: 'pending',
@@ -53,44 +61,44 @@
   });
 </script>
 
-<Panel
-  title={`Workspace ${workspaceId}`}
-  backRoute="/"
-  --panel-padding="0 1rem"
->
-  <div slot="actions">
-    <IconButton
-      tooltip="Add new component"
-      on:click={() => {
-        router.push(
-          `#/workspaces/${encodeURIComponent(workspaceId)}/new-component`,
-        );
-      }}
-    >
-      <AddSVG />
-    </IconButton>
-  </div>
-  <section>
-    <RemoteData data={processList} let:data let:error>
-      <div slot="success">
-        <ProcessListTable {data} {workspace} {workspaceId} />
-      </div>
-
-      <div slot="error">
-        Error fetching process list: {error}
-      </div>
-    </RemoteData>
-    <IfEnabled feature="export procfile">
-      <ProcfileChecker
-        {procfileExport}
-        clickHandler={async () => {
-          if (procfileExport == null) {
-            return;
-          }
-          await workspace.writeFile('Procfile', procfileExport);
-          checkProcfile();
+{#await workspaceName}
+  <Panel title="" backRoute="/" />
+{:then displayName}
+  <Panel title={displayName} backRoute="/" --panel-padding="0 1rem">
+    <div slot="actions">
+      <IconButton
+        tooltip="Add new component"
+        on:click={() => {
+          router.push(
+            `#/workspaces/${encodeURIComponent(workspaceId)}/new-component`,
+          );
         }}
-      />
-    </IfEnabled>
-  </section>
-</Panel>
+      >
+        <AddSVG />
+      </IconButton>
+    </div>
+    <section>
+      <RemoteData data={processList} let:data let:error>
+        <div slot="success">
+          <ProcessListTable {data} {workspace} {workspaceId} />
+        </div>
+
+        <div slot="error">
+          Error fetching process list: {error}
+        </div>
+      </RemoteData>
+      <IfEnabled feature="export procfile">
+        <ProcfileChecker
+          {procfileExport}
+          clickHandler={async () => {
+            if (procfileExport == null) {
+              return;
+            }
+            await workspace.writeFile('Procfile', procfileExport);
+            checkProcfile();
+          }}
+        />
+      </IfEnabled>
+    </section>
+  </Panel>
+{/await}
