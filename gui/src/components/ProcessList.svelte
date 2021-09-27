@@ -75,6 +75,7 @@
         </IconButton>
 
         <div class="dropdown">
+          <span>{displayName}</span>
           <button
             on:click={() => {
               router.push(
@@ -182,8 +183,15 @@
     box-shadow: var(--dropdown-shadow);
     border-radius: 5px;
     padding: 4px 0;
-    margin: 0 -6px;
+    margin: -6px;
     z-index: 2;
+  }
+
+  .dropdown > span {
+    display: block;
+    padding: 4px 12px;
+    font-size: 0.8em;
+    color: var(--grey-7-color);
   }
 
   .dropdown button {
