@@ -1,9 +1,10 @@
 <script lang="ts">
+  import Panel from '../components/Panel.svelte';
   import Layout from '../components/Layout.svelte';
-  import WorkspaceNav from '../components/WorkspaceNav.svelte';
-  import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
-  import { api } from '../lib/api';
   import Spinner from '../components/Spinner.svelte';
+  import WorkspaceNav from '../components/WorkspaceNav.svelte';
+  import CheckeredTableWrapper from '../components/CheckeredTableWrapper.svelte';
+  import { api } from '../lib/api';
 
   export let params = { workspace: '' };
 
@@ -14,38 +15,38 @@
 
 <Layout>
   <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
-  <CenterFormPanel title="Workspace details" backRoute={workspaceRoute}>
+  <Panel title="Workspace details" backRoute={workspaceRoute}>
     {#await workspace.describeSelf()}
       <Spinner />
     {:then description}
-      <table>
-        <tr>
-          <th>ID</th>
-          <td>{description.id}</td>
-        </tr>
-        <tr>
-          <th>Display name</th>
-          <td>{description.displayName}</td>
-        </tr>
-        <tr>
-          <th>Root directory</th>
-          <td>{description.root}</td>
-        </tr>
-      </table>
+      <CheckeredTableWrapper>
+        <table>
+          <tbody>
+            <tr>
+              <td class="label">ID</td>
+              <td>{description.id}</td>
+            </tr>
+            <tr>
+              <td class="label">Display name</td>
+              <td>{description.displayName}</td>
+            </tr>
+            <tr>
+              <td class="label">Root directory</td>
+              <td>{description.root}</td>
+            </tr>
+          </tbody>
+        </table>
+      </CheckeredTableWrapper>
     {/await}
 
     <!-- Databases, Apps, cloud services, etc. -->
-  </CenterFormPanel>
+  </Panel>
 </Layout>
 
 <style>
-  th {
-    text-align: left;
-  }
-
-  td {
-    padding-left: 2em;
-    padding-top: 0.3em;
-    padding-bottom: 0.3em;
+  .label {
+    font-size: 0.8em;
+    font-weight: 450;
+    color: var(--grey-5-color);
   }
 </style>
