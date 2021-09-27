@@ -225,6 +225,7 @@ export interface KernelApi {
 }
 
 export interface WorkspaceApi {
+  describeSelf(): Promise<WorkspaceDescription>;
   describeComponents(): Promise<ComponentDescription[]>;
 
   describeEnvironment(): Promise<Record<string, string>>;
@@ -329,6 +330,10 @@ export const api = (() => {
     const invoke = (method: string, data?: unknown) =>
       rpc(`/workspace/${method}`, { id }, data);
     return {
+      async describeSelf(): Promise<WorkspaceDescription> {
+        const { description } = (await invoke('describe')) as any;
+        return description;
+      },
       async describeComponents(): Promise<ComponentDescription[]> {
         const { components } = (await invoke('describe-components')) as any;
         return components;

@@ -1,7 +1,9 @@
 <script lang="ts">
   import Icon from './Icon.svelte';
   import Panel from './Panel.svelte';
+  import IfEnabled from './IfEnabled.svelte';
   import IconButton from './IconButton.svelte';
+  import RemoteData from './RemoteData.svelte';
   import ContextMenu from './ContextMenu.svelte';
   import ProcfileChecker from './processes/ProcfileChecker.svelte';
   import ProcessListTable from './processes/ProcessListTable.svelte';
@@ -13,20 +15,10 @@
     processes,
     refreshAllProcesses,
   } from '../lib/process/store';
-  import { api } from '../lib/api';
   import * as router from 'svelte-spa-router';
-  import RemoteData from './RemoteData.svelte';
-  import IfEnabled from './IfEnabled.svelte';
 
   export let workspace: WorkspaceApi;
   export let workspaceId: string;
-
-  const workspaceName = api.kernel
-    .describeWorkspaces()
-    .then(
-      (workspaces) =>
-        workspaces.find((ws) => ws.id === workspaceId)?.displayName,
-    );
 
   let processList: RequestLifecycle<ProcessDescription[]> = {
     stage: 'pending',
@@ -62,10 +54,10 @@
   });
 </script>
 
-{#await workspaceName}
+{#await workspace.describeSelf()}
   <Panel title="" backRoute="/" />
-{:then displayName}
-  <Panel title={displayName} backRoute="/" --panel-padding="0 1rem">
+{:then description}
+  <Panel title={description.displayName} backRoute="/" --panel-padding="0 1rem">
     <div class="actions" slot="actions">
       <span>Logs</span>
       <div class="menu">
@@ -75,7 +67,7 @@
           on:click={() => {}}
         />
         <ContextMenu
-          title={displayName}
+          title={description.displayName}
           actions={[
             {
               name: 'View details',
