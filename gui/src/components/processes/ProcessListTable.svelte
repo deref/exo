@@ -2,6 +2,7 @@
   import IconButton from '../IconButton.svelte';
   import CheckboxButton from '../CheckboxButton.svelte';
   import ProcessRunControls from './ProcessRunControls.svelte';
+  import LogsSVG from '../mono/LogsSVG.svelte';
   import DeleteSVG from '../mono/DeleteSVG.svelte';
   import DetailsSVG from '../mono/DetailsSVG.svelte';
   import EllipsisSVG from '../mono/EllipsisSVG.svelte';
@@ -94,6 +95,14 @@
         >
           <DetailsSVG />
           View details
+        </button>
+        <button
+          on:click={() => {
+            setProcLogs(id, $visibleLogsStore.has(id) ? false : true);
+          }}
+        >
+          <LogsSVG />
+          Toggle logs visibility
         </button>
         <button
           on:click={() => {
