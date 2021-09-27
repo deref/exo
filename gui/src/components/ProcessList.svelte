@@ -142,8 +142,8 @@
   .actions {
     display: flex;
     align-items: center;
-    gap: 9px;
-    margin-right: 18px;
+    gap: 12px;
+    margin-right: 16px;
   }
   .actions span {
     color: var(--grey-7-color);
