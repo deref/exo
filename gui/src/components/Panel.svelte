@@ -1,5 +1,4 @@
 <script lang="ts">
-  import Icon from './Icon.svelte';
   import IconButton from './IconButton.svelte';
   import * as router from 'svelte-spa-router';
 

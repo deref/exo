@@ -1,5 +1,4 @@
 <script lang="ts">
-  import Icon from '../Icon.svelte';
   import Spinner from '../Spinner.svelte';
   import IconButton from '../IconButton.svelte';
 

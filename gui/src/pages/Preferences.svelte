@@ -1,5 +1,4 @@
 <script lang="ts">
-  import Icon from '../components/Icon.svelte';
   import Button from '../components/Button.svelte';
   import Layout from '../components/Layout.svelte';
   import IconButton from '../components/IconButton.svelte';
