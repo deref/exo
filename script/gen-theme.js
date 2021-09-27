@@ -25,7 +25,7 @@ const themeVariables = {
   "grey-e7-color": ["#e7e7e7", "#0c0c0c", "#0c0c0c"],
   "grey-f9-color": ["#f9f9f9", "#070707", "#070707"],
   "layout-bg-color": ["#cccccc", "#222222", "#222222"],
-  "secondary-bg-color": ["#f5f5f5", "#0a0a0a", "#0a0a0a"],
+  "secondary-bg-color": ["#f5f5f5", "#050505", "#050505"],
   "primary-bg-color": ["#ffffff", "#000000", "#000000"],
 
   // Contextual color

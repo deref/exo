@@ -46,92 +46,86 @@
   }
 </script>
 
-<table>
-  {#each data as { id, name, running } (id)}
-    <tr>
-      <td>
-        <ProcessRunControls {setProcRun} {statusPending} {id} {running} />
-      </td>
+{#each data as { id, name, running } (id)}
+  <div class="card">
+    <div>
+      <ProcessRunControls {setProcRun} {statusPending} {id} {running} />
+    </div>
 
-      <td
-        ><a
-          class="process-name"
-          use:link
-          href={`/workspaces/${encodeURIComponent(
-            workspaceId,
-          )}/processes/${encodeURIComponent(id)}`}>{name}</a
-        ></td
+    <div>
+      <a
+        class="process-name"
+        use:link
+        href={`/workspaces/${encodeURIComponent(
+          workspaceId,
+        )}/processes/${encodeURIComponent(id)}`}
       >
+        {name}
+      </a>
+    </div>
 
-      <td>
-        <CheckboxButton
-          tooltip={$visibleLogsStore.has(id) ? 'Hide logs' : 'Show logs'}
-          on:click={() => {
-            setProcLogs(id, $visibleLogsStore.has(id) ? false : true);
-          }}
-          active={$visibleLogsStore.has(id)}
-        />
-      </td>
+    <div class="checkbox">
+      <CheckboxButton
+        tooltip={$visibleLogsStore.has(id) ? 'Hide logs' : 'Show logs'}
+        on:click={() => {
+          setProcLogs(id, $visibleLogsStore.has(id) ? false : true);
+        }}
+        active={$visibleLogsStore.has(id)}
+      />
+    </div>
 
-      <td>
-        <div class="hover-half-visibility">
-          <IconButton
-            tooltip="Delete process"
-            on:click={() => {
-              // void deleteProcess(workspace, id);
-              // setProcLogs(id, false);
-            }}
-          >
-            <EllipsisSVG />
-          </IconButton>
-        </div>
-      </td>
-    </tr>
-  {:else}
-    <i>No processes yet.</i>
-  {/each}
-</table>
+    <div class="hover-half-visibility">
+      <IconButton
+        tooltip="Delete process"
+        on:click={() => {
+          // void deleteProcess(workspace, id);
+          // setProcLogs(id, false);
+        }}
+      >
+        <EllipsisSVG />
+      </IconButton>
+    </div>
+  </div>
+{:else}
+  <i>No components yet.</i>
+{/each}
 
 <style>
-  table {
-    width: 100%;
-    border-collapse: collapse;
+  .card {
+    box-shadow: var(--button-shadow);
+    display: grid;
+    grid-template-columns: max-content auto max-content max-content;
+    align-items: center;
+    padding: 4px;
+    margin: 0px -4px;
+    border-radius: 4px;
+    margin-bottom: 8px;
   }
 
-  td {
+  .card:hover {
+    box-shadow: var(--button-hover-shadow);
+  }
+
+  .card > * {
     font-size: inherit;
     font-weight: inherit;
     align-items: center;
     justify-content: center;
   }
 
-  td:nth-child(2) {
+  .card .checkbox {
+    margin-right: 18px;
+  }
+
+  .card > *:nth-child(2) {
     text-align: left;
   }
 
-  td:not(:last-child):not(:first-child) {
-    border-right: 16px solid transparent;
-  }
-
-  td:nth-child(2) {
-    width: 99%;
-  }
-
-  td:not(:nth-child(2)) {
+  .card > *:not(:nth-child(2)) {
     white-space: nowrap;
   }
 
-  table,
-  td,
-  tr {
-    border: none;
-  }
-
-  tr:not(:last-child) {
-    border-bottom: 8px solid transparent;
-  }
-
-  tr:not(:hover):not(:focus-within) .hover-half-visibility {
+  .card:not(:hover):not(:focus-within) .hover-half-visibility {
     opacity: 0.333;
   }
 
@@ -139,22 +133,24 @@
     display: inline-block;
     text-decoration: none;
     margin: 0;
+    margin-left: 6px;
+    margin-right: 12px;
     line-height: 1;
     font-size: 16px;
     font-weight: 550;
-    padding: 4px 8px;
-    border-radius: 4px;
+    padding: 6px 9px;
+    border-radius: 3px;
     color: var(--grey-5-color);
-    background: var(--grey-d-color);
+    background: var(--grey-e-color);
     outline: none;
   }
 
   .process-name:hover {
     color: var(--strong-color);
-    background: var(--grey-c-color);
+    background: var(--grey-d-color);
   }
 
   .process-name:focus {
-    background: var(--grey-b-color);
+    background: var(--grey-d-color);
   }
 </style>

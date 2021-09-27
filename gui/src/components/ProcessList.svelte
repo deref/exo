@@ -114,13 +114,13 @@
     font-size: 0.9em;
     color: var(--grey-5-color);
     border: 1px dashed var(--grey-b-color);
-    width: 100%;
+    width: calc(100% + 8px);
     display: flex;
     align-items: center;
     border-radius: 4px;
     gap: 6px;
     height: 40px;
-    margin: 12px 0;
+    margin: 12px -4px;
     padding: 0 8px;
   }
 

@@ -31,12 +31,14 @@
 </div>
 
 <style>
-  :global(tr:not(:hover):not(:focus-within) > td) > .run-controls .hover-only {
+  :global(div:not(:hover):not(:focus-within) > div)
+    > .run-controls
+    .hover-only {
     display: none;
   }
 
-  :global(tr:hover > td) > .run-controls .unhover-only,
-  :global(tr:focus-within > td) > .run-controls .unhover-only {
+  :global(div:hover > div) > .run-controls .unhover-only,
+  :global(div:focus-within > div) > .run-controls .unhover-only {
     display: none;
   }
 
@@ -47,7 +49,6 @@
     justify-content: center;
     width: 32px;
     height: 32px;
-    margin-right: 8px;
   }
 
   .stopped {
