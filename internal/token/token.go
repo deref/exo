@@ -28,7 +28,7 @@ var _ TokenClient = &FileTokenClient{}
 func readTokenFile(path string) ([]string, error) {
 	data, err := ioutil.ReadFile(path)
 	if err != nil {
-		return nil, fmt.Errorf("reading token file: %w", err)
+		return nil, err
 	}
 	return strings.Fields(string(data)), nil
 }
