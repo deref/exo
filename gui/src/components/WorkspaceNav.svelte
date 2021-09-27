@@ -1,11 +1,12 @@
 <script lang="ts">
   import Icon from './Icon.svelte';
   import NavbarRoute from './nav/NavbarRoute.svelte';
+  import type { IconGlyph } from './Icon.svelte';
 
   export let workspaceId: string;
   export let active: string;
 
-  const routes = [
+  const routes: { title: string; href: string; glyph: IconGlyph }[] = [
     {
       title: 'Dashboard',
       href: `#/workspaces/${workspaceId}`,
