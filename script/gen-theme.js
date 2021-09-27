@@ -137,6 +137,16 @@ const themeVariables = {
     "0 -0.33px 0 1px #ffffff55, 0 12px 12px -4px #00000033, 0 0.4px 0 0.8px #00000059",
     "0 -0.33px 0 1px #ffffff55, 0 12px 12px -4px #00000033, 0 0.4px 0 0.8px #00000059",
   ],
+  "card-shadow": [
+    "0.25px 0.25px 0 0.75px #ffffff26, 0 4px 8px -3px #00000022, 0.2px 0.3px 0 0.7px #00000033",
+    "0.25px -0.25px 0 0.75px #ffffff33, 0 4px 8px -3px #00000022, 0.2px 0.3px 0 0.7px #00000033",
+    "0.25px -0.25px 0 0.75px #ffffff33, 0 4px 8px -3px #00000022, 0.2px 0.3px 0 0.7px #00000033",
+  ],
+  "card-hover-shadow": [
+    "0.25px 0.25px 0 1px #ffffff26, 0 6px 8px -4px #00000044, 0.2px 0.25px 0 0.85px #00000055",
+    "0.25px -0.25px 0 1px #ffffff55, 0 6px 8px -4px #00000044, 0.2px 0.25px 0 0.85px #00000055",
+    "0.25px -0.25px 0 1px #ffffff55, 0 6px 8px -4px #00000044, 0.2px 0.25px 0 0.85px #00000055",
+  ],
 };
 
 const childVariables = {

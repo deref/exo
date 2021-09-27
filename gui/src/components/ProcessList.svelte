@@ -113,7 +113,7 @@
     background: none;
     font-size: 0.9em;
     color: var(--grey-5-color);
-    border: 1px dashed var(--grey-b-color);
+    border: 1px dashed var(--grey-c-color);
     width: calc(100% + 8px);
     display: flex;
     align-items: center;
@@ -127,7 +127,6 @@
   #add-component:hover,
   #add-component:focus,
   #add-component:focus-within {
-    border: 1px solid var(--grey-c-color);
     background: var(--grey-e-color);
     color: var(--strong-color);
   }

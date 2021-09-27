@@ -112,7 +112,7 @@
 
 <style>
   .card {
-    box-shadow: var(--button-shadow);
+    box-shadow: var(--card-shadow);
     display: grid;
     grid-template-columns: max-content auto max-content max-content;
     align-items: center;
@@ -120,10 +120,11 @@
     margin: 0px -4px;
     border-radius: 4px;
     margin-bottom: 8px;
+    border-left: 2px solid var(--grey-c-color);
   }
 
   .card:hover {
-    box-shadow: var(--button-hover-shadow);
+    box-shadow: var(--card-hover-shadow);
   }
 
   .card > * {
