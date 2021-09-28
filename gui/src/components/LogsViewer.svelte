@@ -37,6 +37,8 @@
     }
   });
 
+  const getComponentName = (id: string) => processIdToName[id] ?? null;
+
   // Update filterStr when the input state changes (debounced).
   let filterStr = '';
   const setFilterStrDebounced = debounce((s: string) => {
@@ -59,7 +61,7 @@
 
 <Panel title="Logs" --panel-padding="0" --panel-overflow-y="hidden">
   <LocalLogProvider {workspace} {filterStr} {logs} let:events>
-    <Logs {processIdToName} {events} />
+    <Logs {getComponentName} {events} />
   </LocalLogProvider>
 
   <div slot="bottom">

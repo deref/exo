@@ -11,7 +11,6 @@ import (
 	"github.com/aybabtme/rgbterm"
 	"github.com/deref/exo/internal/chrono"
 	"github.com/deref/exo/internal/core/api"
-	"github.com/deref/exo/internal/providers/core/components/log"
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/deref/exo/internal/util/term"
 	"github.com/lucasb-eyer/go-colorful"
@@ -133,11 +132,9 @@ func runTailLogsWriter(ctx context.Context, workspace api.Workspace, logRefs []s
 		if len(logRefs) == 0 {
 			logIDs = append(logIDs, process.ID)
 		}
-		for _, logName := range log.ComponentLogNames(process.Provider, process.ID) {
-			logToComponent[logName] = process.Name
-			if labelWidth < len(process.Name) {
-				labelWidth = len(process.Name)
-			}
+		logToComponent[process.ID] = process.Name
+		if labelWidth < len(process.Name) {
+			labelWidth = len(process.Name)
 		}
 	}
 
@@ -192,8 +189,6 @@ func runTailLogsWriter(ctx context.Context, workspace api.Workspace, logRefs []s
 
 			for _, proc := range descriptions.Processes {
 				for _, id := range logIDs {
-					// TODO: Compare some metadata on the log, not the log itself.
-					// SEE NOTE [LOG_COMPONENTS].
 					if proc.ID == id && !proc.Running {
 						return fmt.Errorf("process stopped running: %q", proc.Name)
 					}

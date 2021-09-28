@@ -669,50 +669,35 @@ func (ws *Workspace) DescribeStreams(ctx context.Context, input *api.DescribeStr
 		return nil, fmt.Errorf("describing components: %w", err)
 	}
 
-	// Find all logs in component hierarchy.
-	// TODO: More general handling of log groups, subcomponents, etc.
-	var logGroups []string
-	var logStreams []string
-	streamToGroup := make(map[string]int)
-	for _, component := range components.Components {
-		// XXX Janky provider inference. See note: [LOG_COMPONENTS].
-		var provider string
-		switch component.Type {
-		case "process":
-			provider = "unix"
-		case "container":
-			provider = "docker"
-		}
-		for _, streamName := range log.ComponentLogNames(provider, component.ID) {
-			streamToGroup[streamName] = len(logGroups)
-			logStreams = append(logStreams, streamName)
-		}
-		logGroups = append(logGroups, component.ID)
-	}
-
-	// Initialize output and index by log group name.
-	streams := make([]api.StreamDescription, len(logGroups))
-	for i, logGroup := range logGroups {
+	// Create one log stream for each component.
+	numStreams := len(components.Components)
+	streamNames := make([]string, numStreams)
+	streams := make([]api.StreamDescription, numStreams)
+	nameToIndex := make(map[string]int)
+	for i, component := range components.Components {
+		name := component.ID
+		nameToIndex[name] = i
+		streamNames[i] = name
 		streams[i] = api.StreamDescription{
-			Name: logGroup,
+			Name: name,
 		}
 	}
 
 	// Decorate output with information from the event store.
 	eventStore := log.CurrentEventStore(ctx)
 	storeLogs, err := eventStore.DescribeStreams(ctx, &eventd.DescribeStreamsInput{
-		Names: logStreams,
+		Names: streamNames,
 	})
 	if err != nil {
 		return nil, err
 	}
 	for _, stream := range storeLogs.Streams {
-		groupIndex, ok := streamToGroup[stream.Name]
+		streamIndex, ok := nameToIndex[stream.Name]
 		if !ok {
 			continue
 		}
-		group := &streams[groupIndex]
-		group.LastEventAt = combineLastEventAt(group.LastEventAt, stream.LastEventAt)
+		stream := &streams[streamIndex]
+		stream.LastEventAt = combineLastEventAt(stream.LastEventAt, stream.LastEventAt)
 	}
 	return &api.DescribeStreamsOutput{Streams: streams}, nil
 }
@@ -732,32 +717,21 @@ func combineLastEventAt(a, b *string) *string {
 }
 
 func (ws *Workspace) GetEvents(ctx context.Context, input *api.GetEventsInput) (*api.GetEventsOutput, error) {
-	logGroups := input.Streams
-	if logGroups == nil {
+	streamNames := input.Streams
+	if streamNames == nil {
 		// No filter specified, use all streams.
 		streamDescriptions, err := ws.DescribeStreams(ctx, &api.DescribeStreamsInput{})
 		if err != nil {
 			return nil, fmt.Errorf("enumerating streams: %w", err)
 		}
-		logGroups = make([]string, len(streamDescriptions.Streams))
-		for i, group := range streamDescriptions.Streams {
-			logGroups[i] = group.Name
+		streamNames = make([]string, len(streamDescriptions.Streams))
+		for i, stream := range streamDescriptions.Streams {
+			streamNames[i] = stream.Name
 		}
 	}
-	logStreams := make([]string, 0, 2*len(logGroups))
-	// Expand log groups in to streams.
-	for _, group := range logGroups {
-		// Each process acts as a log group combining both stdout and stderr.
-		// XXX See note [LOG_COMPONENTS].
-		for _, suffix := range []string{"", ":out", ":err"} {
-			stream := group + suffix
-			logStreams = append(logStreams, stream)
-		}
-	}
-
 	eventStore := log.CurrentEventStore(ctx)
 	storeOutput, err := eventStore.GetEvents(ctx, &eventd.GetEventsInput{
-		Streams:   logStreams,
+		Streams:   streamNames,
 		Cursor:    input.Cursor,
 		FilterStr: input.FilterStr,
 		Prev:      input.Prev,
