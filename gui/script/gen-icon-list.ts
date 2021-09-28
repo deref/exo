@@ -1,6 +1,6 @@
 import fs from 'fs';
 
-const iconDirectory = 'mono';
+const iconDirectory = 'icon/glyphs';
 const iconNames = fs
   .readdirSync(`./src/components/${iconDirectory}`)
   .map((x) => x.substr(0, x.length - '.svelte'.length));
