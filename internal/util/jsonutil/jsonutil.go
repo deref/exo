@@ -15,19 +15,6 @@ func UnmarshalString(s string, v interface{}) error {
 	return json.Unmarshal([]byte(s), v)
 }
 
-func MarshalString(v interface{}) (string, error) {
-	bs, err := json.Marshal(v)
-	return string(bs), err
-}
-
-func MustMarshalString(v interface{}) string {
-	s, err := MarshalString(v)
-	if err != nil {
-		panic(err)
-	}
-	return s
-}
-
 func UnmarshalReader(r io.Reader, v interface{}) error {
 	bs, err := ioutil.ReadAll(r)
 	if err != nil {

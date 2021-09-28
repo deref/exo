@@ -3,7 +3,7 @@ package volume
 import (
 	"fmt"
 
-	"github.com/deref/exo/internal/util/jsonutil"
+	"github.com/deref/util-go/jsonutil"
 	"github.com/goccy/go-yaml"
 )
 
