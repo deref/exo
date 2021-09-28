@@ -266,6 +266,7 @@ struct "event" {
   field "stream" "string" {}
   field "timestamp" "string" {}
   field "message" "string" {}
+  field "tags" "map[string]string" {}
 }
 
 struct "process-description" {

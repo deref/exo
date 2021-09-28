@@ -15,6 +15,7 @@ interface "store" {
     input "stream" "string" {}
     input "timestamp" "string" {}
     input "message" "string" {}
+    input "tags" "map[string]string" {}
   }
 
   method "get-events" {
@@ -47,4 +48,5 @@ struct "event" {
   field "stream" "string" {}
   field "timestamp" "string" {}
   field "message" "string" {}
+  field "tags" "map[string]string" {}
 }

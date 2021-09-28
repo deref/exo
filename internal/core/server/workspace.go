@@ -777,6 +777,7 @@ func (ws *Workspace) GetEvents(ctx context.Context, input *api.GetEventsInput) (
 			Stream:    storeEvent.Stream,
 			Timestamp: storeEvent.Timestamp,
 			Message:   storeEvent.Message,
+			Tags:      storeEvent.Tags,
 		}
 	}
 	return &output, nil
