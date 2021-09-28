@@ -34,34 +34,35 @@
         --input-width="100%"
         autofocus
       />
-    </div>
 
-    {#await api.kernel.describeTemplates()}
-      <Spinner />
-    {:then templates}
-      {#each templates
-        .sort((_, y) => (y.iconGlyph ? 1 : -1))
-        .filter((x) => x.displayName
-              .toLocaleLowerCase()
-              .slice(0, search.length) === search.toLocaleLowerCase()) as template}
-        <button
-          on:click={() => {
-            router.push(`#/new-project/${template.name}`);
-          }}
-        >
-          <Icon glyph={logoGlyph(template.iconGlyph)} />
-          {template.displayName}
-        </button>
-      {/each}
-    {:catch error}
-      <ErrorLabel value={error} />
-    {/await}
+      {#await api.kernel.describeTemplates()}
+        <Spinner />
+      {:then templates}
+        {#each templates
+          .sort((_, y) => (y.iconGlyph ? 1 : -1))
+          .filter((x) => x.displayName
+                .toLocaleLowerCase()
+                .slice(0, search.length) === search.toLocaleLowerCase()) as template}
+          <button
+            on:click={() => {
+              router.push(`#/new-project/${template.name}`);
+            }}
+          >
+            <Icon glyph={logoGlyph(template.iconGlyph)} />
+            {template.displayName}
+          </button>
+        {/each}
+      {:catch error}
+        <ErrorLabel value={error} />
+      {/await}
+    </div>
   </CenterFormPanel>
 </Layout>
 
 <style>
   .search {
     display: grid;
+    width: 100%;
     grid-template-columns: repeat(2, 1fr);
     gap: 12px;
     align-items: center;
@@ -90,11 +91,13 @@
     align-items: center;
     text-align: left;
     gap: 12px;
-    margin-top: 8px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
   }
 
-  button:not(:first-of-type) {
-    padding: 10px 12px;
+  .search button {
+    padding: 16px;
   }
 
   button:hover {
