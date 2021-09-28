@@ -7,8 +7,11 @@
   import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
   import { api } from '../lib/api';
   import * as router from 'svelte-spa-router';
+  import type { IconGlyph } from '../components/Icon.svelte';
 
   let search: string = '';
+
+  const logoGlyph = (ig: string) => (ig || 'Doc') as IconGlyph;
 </script>
 
 <Layout>
@@ -36,15 +39,17 @@
     {#await api.kernel.describeTemplates()}
       <Spinner />
     {:then templates}
-      {#each templates.filter((x) => x.displayName
-            .toLocaleLowerCase()
-            .slice(0, search.length) === search.toLocaleLowerCase()) as template}
+      {#each templates
+        .sort((_, y) => (y.iconGlyph ? 1 : -1))
+        .filter((x) => x.displayName
+              .toLocaleLowerCase()
+              .slice(0, search.length) === search.toLocaleLowerCase()) as template}
         <button
           on:click={() => {
             router.push(`#/new-project/${template.name}`);
           }}
         >
-          <Icon glyph={template.glyph} />
+          <Icon glyph={logoGlyph(template.iconGlyph)} />
           {template.displayName}
         </button>
       {/each}
@@ -67,6 +72,11 @@
     height: 36px !important;
   }
 
+  button :global(svg) {
+    height: 18px;
+    width: 18px;
+  }
+
   button {
     background: var(--button-background);
     box-shadow: var(--button-shadow);
@@ -79,12 +89,12 @@
     grid-template-columns: max-content 2fr;
     align-items: center;
     text-align: left;
-    gap: 8px;
+    gap: 12px;
     margin-top: 8px;
   }
 
   button:not(:first-of-type) {
-    padding: 8px 12px;
+    padding: 10px 12px;
   }
 
   button:hover {

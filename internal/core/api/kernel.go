@@ -181,6 +181,7 @@ type DirectoryEntry struct {
 type TemplateDescription struct {
 	Name        string `json:"name"`
 	DisplayName string `json:"displayName"`
+	IconGlyph   string `json:"iconGlyph"`
 	Url         string `json:"url"`
 }
 
