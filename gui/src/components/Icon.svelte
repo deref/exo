@@ -17,8 +17,11 @@
     | 'LeftUp'
     | 'LogoDeno'
     | 'LogoDiscord'
+    | 'LogoDjango'
     | 'LogoDocker'
+    | 'LogoElixir'
     | 'LogoExpress'
+    | 'LogoFastify'
     | 'LogoFlask'
     | 'LogoGhost'
     | 'LogoHasura'
@@ -57,8 +60,11 @@
   import LeftUpGlyph from './icon/glyphs/LeftUp.svelte';
   import LogoDenoGlyph from './icon/glyphs/LogoDeno.svelte';
   import LogoDiscordGlyph from './icon/glyphs/LogoDiscord.svelte';
+  import LogoDjangoGlyph from './icon/glyphs/LogoDjango.svelte';
   import LogoDockerGlyph from './icon/glyphs/LogoDocker.svelte';
+  import LogoElixirGlyph from './icon/glyphs/LogoElixir.svelte';
   import LogoExpressGlyph from './icon/glyphs/LogoExpress.svelte';
+  import LogoFastifyGlyph from './icon/glyphs/LogoFastify.svelte';
   import LogoFlaskGlyph from './icon/glyphs/LogoFlask.svelte';
   import LogoGhostGlyph from './icon/glyphs/LogoGhost.svelte';
   import LogoHasuraGlyph from './icon/glyphs/LogoHasura.svelte';
@@ -111,10 +117,16 @@
   <LogoDenoGlyph />
 {:else if glyph === 'LogoDiscord'}
   <LogoDiscordGlyph />
+{:else if glyph === 'LogoDjango'}
+  <LogoDjangoGlyph />
 {:else if glyph === 'LogoDocker'}
   <LogoDockerGlyph />
+{:else if glyph === 'LogoElixir'}
+  <LogoElixirGlyph />
 {:else if glyph === 'LogoExpress'}
   <LogoExpressGlyph />
+{:else if glyph === 'LogoFastify'}
+  <LogoFastifyGlyph />
 {:else if glyph === 'LogoFlask'}
   <LogoFlaskGlyph />
 {:else if glyph === 'LogoGhost'}
