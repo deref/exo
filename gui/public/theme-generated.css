@@ -21,7 +21,8 @@ body.auto {
   --layout-bg-color: #cccccc;
   --secondary-bg-color: #f5f5f5;
   --primary-bg-color: #ffffff;
-  --error-color: #e00000;
+  --error-color: #d00000;
+  --error-color-faded: #ff1111;
   --link-color: #0066ee;
   --online-green-color: #00c220;
   --nav-bg-color: #e7e7e7;
@@ -91,7 +92,8 @@ body.auto {
   --layout-bg-color: #222222;
   --secondary-bg-color: #050505;
   --primary-bg-color: #000000;
-  --error-color: #e00000;
+  --error-color: #ff1111;
+  --error-color-faded: #d00000;
   --link-color: #22aaff;
   --online-green-color: #00c220;
   --nav-bg-color: #050505;
@@ -160,7 +162,8 @@ body.light {
   --layout-bg-color: #cccccc;
   --secondary-bg-color: #f5f5f5;
   --primary-bg-color: #ffffff;
-  --error-color: #e00000;
+  --error-color: #d00000;
+  --error-color-faded: #ff1111;
   --link-color: #0066ee;
   --online-green-color: #00c220;
   --nav-bg-color: #e7e7e7;
@@ -229,7 +232,8 @@ body.dark {
   --layout-bg-color: #222222;
   --secondary-bg-color: #050505;
   --primary-bg-color: #000000;
-  --error-color: #e00000;
+  --error-color: #ff1111;
+  --error-color-faded: #d00000;
   --link-color: #22aaff;
   --online-green-color: #00c220;
   --nav-bg-color: #050505;
@@ -298,7 +302,8 @@ body.black {
   --layout-bg-color: #222222;
   --secondary-bg-color: #050505;
   --primary-bg-color: #000000;
-  --error-color: #e00000;
+  --error-color: #ff1111;
+  --error-color-faded: #d00000;
   --link-color: #22aaff;
   --online-green-color: #00c220;
   --nav-bg-color: #050505;

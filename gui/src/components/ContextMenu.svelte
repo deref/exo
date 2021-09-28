@@ -74,7 +74,9 @@
     background: var(--grey-e-color);
   }
 
-  .danger,
+  .danger {
+    color: var(--error-color-faded);
+  }
   .danger:hover {
     color: var(--error-color);
   }
