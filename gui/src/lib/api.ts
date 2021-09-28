@@ -226,6 +226,7 @@ export interface KernelApi {
 
 export interface WorkspaceApi {
   describeSelf(): Promise<WorkspaceDescription>;
+
   describeComponents(): Promise<ComponentDescription[]>;
 
   describeEnvironment(): Promise<Record<string, string>>;
@@ -235,6 +236,8 @@ export interface WorkspaceApi {
   describeVolumes(): Promise<VolumeDescription[]>;
 
   describeNetworks(): Promise<NetworkDescription[]>;
+
+  destroySelf(): Promise<void>;
 
   apply(): Promise<void>;
 
@@ -334,6 +337,7 @@ export const api = (() => {
         const { description } = (await invoke('describe')) as any;
         return description;
       },
+
       async describeComponents(): Promise<ComponentDescription[]> {
         const { components } = (await invoke('describe-components')) as any;
         return components;
@@ -359,7 +363,11 @@ export const api = (() => {
         return networks;
       },
 
-      async apply() {
+      async destroySelf(): Promise<void> {
+        await invoke('destroy', {});
+      },
+
+      async apply(): Promise<void> {
         await invoke('apply', {});
       },
 

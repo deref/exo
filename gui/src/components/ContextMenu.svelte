@@ -7,6 +7,7 @@
   interface Action {
     name: string;
     glyph: IconGlyph;
+    danger?: boolean;
     execute(event: ExecuteEvent): void;
   }
 
@@ -18,7 +19,7 @@
 <nav>
   {#if title}<span>{title}</span>{/if}
   {#each actions as action}
-    <button on:click={action.execute}>
+    <button on:click={action.execute} class:danger={action.danger}>
       <Icon glyph={action.glyph} />
       {action.name}
     </button>
@@ -71,5 +72,10 @@
   button:hover {
     color: var(--strong-color);
     background: var(--grey-e-color);
+  }
+
+  .danger,
+  .danger:hover {
+    color: var(--error-color);
   }
 </style>

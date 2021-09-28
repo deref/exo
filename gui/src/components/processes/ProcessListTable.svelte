@@ -103,6 +103,7 @@
           {
             name: 'Remove from exo',
             glyph: 'Delete',
+            danger: true,
             execute(event) {
               void deleteProcess(workspace, id);
               setProcLogs(id, false);

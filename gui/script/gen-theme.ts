@@ -27,7 +27,7 @@ const themeVariables = {
   'primary-bg-color': ['#ffffff', '#000000', '#000000'],
 
   // Contextual color
-  'error-color': ['#ee0000', '#ee0000', '#ee0000'],
+  'error-color': ['#e00000', '#e00000', '#e00000'],
   'link-color': ['#0066ee', '#22aaff', '#22aaff'],
   'online-green-color': ['#00c220', '#00c220', '#00c220'],
 

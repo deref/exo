@@ -89,6 +89,15 @@
                 );
               },
             },
+            {
+              name: 'Destroy workspace',
+              glyph: 'Delete',
+              danger: true,
+              execute(event) {
+                workspace.destroySelf();
+                router.push('/');
+              },
+            },
           ]}
         />
       </div>
