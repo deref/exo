@@ -19,28 +19,39 @@ var envCmd = &cobra.Command{
 	Long:  `Prints the workspace's environment variables in .env format.`,
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		ctx := newContext()
-		checkOrEnsureServer()
-		cl := newClient()
-		workspace := requireCurrentWorkspace(ctx, cl)
-		output, err := workspace.DescribeEnvironment(ctx, &api.DescribeEnvironmentInput{})
+		envv, err := getEnvv()
 		if err != nil {
 			return err
 		}
-
-		keys := make([]string, len(output.Variables))
-		i := 0
-		for key := range output.Variables {
-			keys[i] = key
-			i++
+		for _, kvp := range envv {
+			fmt.Println(kvp)
 		}
-		sort.Strings(keys)
-
-		for _, key := range keys {
-			value := output.Variables[key]
-			fmt.Printf("%s=%s\n", key, shellescape.Quote(value))
-		}
-
 		return nil
 	},
+}
+
+func getEnvv() ([]string, error) {
+	ctx := newContext()
+	checkOrEnsureServer()
+	cl := newClient()
+	workspace := requireCurrentWorkspace(ctx, cl)
+	output, err := workspace.DescribeEnvironment(ctx, &api.DescribeEnvironmentInput{})
+	if err != nil {
+		return nil, err
+	}
+
+	keys := make([]string, len(output.Variables))
+	i := 0
+	for key := range output.Variables {
+		keys[i] = key
+		i++
+	}
+	sort.Strings(keys)
+
+	envv := make([]string, i)
+	for i, key := range keys {
+		value := output.Variables[key]
+		envv[i] = fmt.Sprintf("%s=%s", key, shellescape.Quote(value))
+	}
+	return envv, nil
 }
