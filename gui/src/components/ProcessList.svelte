@@ -94,7 +94,7 @@
               glyph: 'Delete',
               danger: true,
               execute(event) {
-                workspace.destroySelf();
+                workspace.destroy();
                 router.push('/');
               },
             },

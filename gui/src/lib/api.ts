@@ -237,7 +237,7 @@ export interface WorkspaceApi {
 
   describeNetworks(): Promise<NetworkDescription[]>;
 
-  destroySelf(): Promise<void>;
+  destroy(): Promise<void>;
 
   apply(): Promise<void>;
 
@@ -363,7 +363,7 @@ export const api = (() => {
         return networks;
       },
 
-      async destroySelf(): Promise<void> {
+      async destroy(): Promise<void> {
         await invoke('destroy', {});
       },
 
