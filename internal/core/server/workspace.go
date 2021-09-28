@@ -700,13 +700,13 @@ func (ws *Workspace) DescribeStreams(ctx context.Context, input *api.DescribeStr
 
 	// Decorate output with information from the event store.
 	eventStore := log.CurrentEventStore(ctx)
-	collectorLogs, err := eventStore.DescribeStreams(ctx, &eventd.DescribeStreamsInput{
+	storeLogs, err := eventStore.DescribeStreams(ctx, &eventd.DescribeStreamsInput{
 		Names: logStreams,
 	})
 	if err != nil {
 		return nil, err
 	}
-	for _, stream := range collectorLogs.Streams {
+	for _, stream := range storeLogs.Streams {
 		groupIndex, ok := streamToGroup[stream.Name]
 		if !ok {
 			continue
@@ -756,7 +756,7 @@ func (ws *Workspace) GetEvents(ctx context.Context, input *api.GetEventsInput) (
 	}
 
 	eventStore := log.CurrentEventStore(ctx)
-	collectorOutput, err := eventStore.GetEvents(ctx, &eventd.GetEventsInput{
+	storeOutput, err := eventStore.GetEvents(ctx, &eventd.GetEventsInput{
 		Streams:   logStreams,
 		Cursor:    input.Cursor,
 		FilterStr: input.FilterStr,
@@ -767,16 +767,16 @@ func (ws *Workspace) GetEvents(ctx context.Context, input *api.GetEventsInput) (
 		return nil, err
 	}
 	output := api.GetEventsOutput{
-		Items:      make([]api.Event, len(collectorOutput.Items)),
-		PrevCursor: collectorOutput.PrevCursor,
-		NextCursor: collectorOutput.NextCursor,
+		Items:      make([]api.Event, len(storeOutput.Items)),
+		PrevCursor: storeOutput.PrevCursor,
+		NextCursor: storeOutput.NextCursor,
 	}
-	for i, collectorEvent := range collectorOutput.Items {
+	for i, storeEvent := range storeOutput.Items {
 		output.Items[i] = api.Event{
-			ID:        collectorEvent.ID,
-			Stream:    collectorEvent.Stream,
-			Timestamp: collectorEvent.Timestamp,
-			Message:   collectorEvent.Message,
+			ID:        storeEvent.ID,
+			Stream:    storeEvent.Stream,
+			Timestamp: storeEvent.Timestamp,
+			Message:   storeEvent.Message,
 		}
 	}
 	return &output, nil

@@ -1,4 +1,4 @@
-// TODO: Delete this file & pass LogCollector around like state.Store.
+// TODO: Can we avoid putting the event store in to context?
 
 package log
 
