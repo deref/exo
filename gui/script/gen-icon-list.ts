@@ -3,7 +3,7 @@ import fs from 'fs';
 const iconDirectory = 'mono';
 const iconNames = fs
   .readdirSync(`./src/components/${iconDirectory}`)
-  .map((x) => x.substr(0, x.length - 'SVG.svelte'.length));
+  .map((x) => x.substr(0, x.length - '.svelte'.length));
 
 // Use maps to format the file.
 const out = `<script lang="ts" context="module">
@@ -17,17 +17,17 @@ ${iconNames.map((x) => `    | '${x}'`).join('\n')};
 
 <script lang="ts">
 ${iconNames
-  .map((x) => `  import ${x}SVG from './${iconDirectory}/${x}SVG.svelte';`)
+  .map((x) => `  import ${x}Glyph from './${iconDirectory}/${x}.svelte';`)
   .join('\n')}
 
   export let glyph: IconGlyph;
 </script>
 
 {#${iconNames
-  .map((x) => `if glyph === '${x}'}\n  <${x}SVG />`)
+  .map((x) => `if glyph === '${x}'}\n  <${x}Glyph />`)
   .join('\n{:else ')}
 {:else}
-  <LayersSVG />
+  <LayersGlyph />
 {/if}
 `;
 

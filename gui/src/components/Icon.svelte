@@ -44,121 +44,121 @@
 </script>
 
 <script lang="ts">
-  import AddSVG from './mono/AddSVG.svelte';
-  import BackSVG from './mono/BackSVG.svelte';
-  import CheckSVG from './mono/CheckSVG.svelte';
-  import DeleteSVG from './mono/DeleteSVG.svelte';
-  import DetailsSVG from './mono/DetailsSVG.svelte';
-  import DocSVG from './mono/DocSVG.svelte';
-  import EllipsisSVG from './mono/EllipsisSVG.svelte';
-  import FeedbackSVG from './mono/FeedbackSVG.svelte';
-  import HomeSVG from './mono/HomeSVG.svelte';
-  import LayersSVG from './mono/LayersSVG.svelte';
-  import LeftUpSVG from './mono/LeftUpSVG.svelte';
-  import LogoDenoSVG from './mono/LogoDenoSVG.svelte';
-  import LogoDiscordSVG from './mono/LogoDiscordSVG.svelte';
-  import LogoDockerSVG from './mono/LogoDockerSVG.svelte';
-  import LogoExpressSVG from './mono/LogoExpressSVG.svelte';
-  import LogoFlaskSVG from './mono/LogoFlaskSVG.svelte';
-  import LogoGhostSVG from './mono/LogoGhostSVG.svelte';
-  import LogoHasuraSVG from './mono/LogoHasuraSVG.svelte';
-  import LogoLaravelSVG from './mono/LogoLaravelSVG.svelte';
-  import LogoNextSVG from './mono/LogoNextSVG.svelte';
-  import LogoNodeSVG from './mono/LogoNodeSVG.svelte';
-  import LogoNuxtSVG from './mono/LogoNuxtSVG.svelte';
-  import LogoRubySVG from './mono/LogoRubySVG.svelte';
-  import LogoRustSVG from './mono/LogoRustSVG.svelte';
-  import LogoSlackSVG from './mono/LogoSlackSVG.svelte';
-  import LogoStrapiSVG from './mono/LogoStrapiSVG.svelte';
-  import LogoSvelteSVG from './mono/LogoSvelteSVG.svelte';
-  import LogoTelegramSVG from './mono/LogoTelegramSVG.svelte';
-  import LogsSVG from './mono/LogsSVG.svelte';
-  import NetworkingSVG from './mono/NetworkingSVG.svelte';
-  import PauseSVG from './mono/PauseSVG.svelte';
-  import PlaySVG from './mono/PlaySVG.svelte';
-  import PreferencesSVG from './mono/PreferencesSVG.svelte';
-  import ResetSVG from './mono/ResetSVG.svelte';
-  import StorageSVG from './mono/StorageSVG.svelte';
-  import VariableSVG from './mono/VariableSVG.svelte';
-  import WarningSVG from './mono/WarningSVG.svelte';
+  import AddGlyph from './mono/Add.svelte';
+  import BackGlyph from './mono/Back.svelte';
+  import CheckGlyph from './mono/Check.svelte';
+  import DeleteGlyph from './mono/Delete.svelte';
+  import DetailsGlyph from './mono/Details.svelte';
+  import DocGlyph from './mono/Doc.svelte';
+  import EllipsisGlyph from './mono/Ellipsis.svelte';
+  import FeedbackGlyph from './mono/Feedback.svelte';
+  import HomeGlyph from './mono/Home.svelte';
+  import LayersGlyph from './mono/Layers.svelte';
+  import LeftUpGlyph from './mono/LeftUp.svelte';
+  import LogoDenoGlyph from './mono/LogoDeno.svelte';
+  import LogoDiscordGlyph from './mono/LogoDiscord.svelte';
+  import LogoDockerGlyph from './mono/LogoDocker.svelte';
+  import LogoExpressGlyph from './mono/LogoExpress.svelte';
+  import LogoFlaskGlyph from './mono/LogoFlask.svelte';
+  import LogoGhostGlyph from './mono/LogoGhost.svelte';
+  import LogoHasuraGlyph from './mono/LogoHasura.svelte';
+  import LogoLaravelGlyph from './mono/LogoLaravel.svelte';
+  import LogoNextGlyph from './mono/LogoNext.svelte';
+  import LogoNodeGlyph from './mono/LogoNode.svelte';
+  import LogoNuxtGlyph from './mono/LogoNuxt.svelte';
+  import LogoRubyGlyph from './mono/LogoRuby.svelte';
+  import LogoRustGlyph from './mono/LogoRust.svelte';
+  import LogoSlackGlyph from './mono/LogoSlack.svelte';
+  import LogoStrapiGlyph from './mono/LogoStrapi.svelte';
+  import LogoSvelteGlyph from './mono/LogoSvelte.svelte';
+  import LogoTelegramGlyph from './mono/LogoTelegram.svelte';
+  import LogsGlyph from './mono/Logs.svelte';
+  import NetworkingGlyph from './mono/Networking.svelte';
+  import PauseGlyph from './mono/Pause.svelte';
+  import PlayGlyph from './mono/Play.svelte';
+  import PreferencesGlyph from './mono/Preferences.svelte';
+  import ResetGlyph from './mono/Reset.svelte';
+  import StorageGlyph from './mono/Storage.svelte';
+  import VariableGlyph from './mono/Variable.svelte';
+  import WarningGlyph from './mono/Warning.svelte';
 
   export let glyph: IconGlyph;
 </script>
 
 {#if glyph === 'Add'}
-  <AddSVG />
+  <AddGlyph />
 {:else if glyph === 'Back'}
-  <BackSVG />
+  <BackGlyph />
 {:else if glyph === 'Check'}
-  <CheckSVG />
+  <CheckGlyph />
 {:else if glyph === 'Delete'}
-  <DeleteSVG />
+  <DeleteGlyph />
 {:else if glyph === 'Details'}
-  <DetailsSVG />
+  <DetailsGlyph />
 {:else if glyph === 'Doc'}
-  <DocSVG />
+  <DocGlyph />
 {:else if glyph === 'Ellipsis'}
-  <EllipsisSVG />
+  <EllipsisGlyph />
 {:else if glyph === 'Feedback'}
-  <FeedbackSVG />
+  <FeedbackGlyph />
 {:else if glyph === 'Home'}
-  <HomeSVG />
+  <HomeGlyph />
 {:else if glyph === 'Layers'}
-  <LayersSVG />
+  <LayersGlyph />
 {:else if glyph === 'LeftUp'}
-  <LeftUpSVG />
+  <LeftUpGlyph />
 {:else if glyph === 'LogoDeno'}
-  <LogoDenoSVG />
+  <LogoDenoGlyph />
 {:else if glyph === 'LogoDiscord'}
-  <LogoDiscordSVG />
+  <LogoDiscordGlyph />
 {:else if glyph === 'LogoDocker'}
-  <LogoDockerSVG />
+  <LogoDockerGlyph />
 {:else if glyph === 'LogoExpress'}
-  <LogoExpressSVG />
+  <LogoExpressGlyph />
 {:else if glyph === 'LogoFlask'}
-  <LogoFlaskSVG />
+  <LogoFlaskGlyph />
 {:else if glyph === 'LogoGhost'}
-  <LogoGhostSVG />
+  <LogoGhostGlyph />
 {:else if glyph === 'LogoHasura'}
-  <LogoHasuraSVG />
+  <LogoHasuraGlyph />
 {:else if glyph === 'LogoLaravel'}
-  <LogoLaravelSVG />
+  <LogoLaravelGlyph />
 {:else if glyph === 'LogoNext'}
-  <LogoNextSVG />
+  <LogoNextGlyph />
 {:else if glyph === 'LogoNode'}
-  <LogoNodeSVG />
+  <LogoNodeGlyph />
 {:else if glyph === 'LogoNuxt'}
-  <LogoNuxtSVG />
+  <LogoNuxtGlyph />
 {:else if glyph === 'LogoRuby'}
-  <LogoRubySVG />
+  <LogoRubyGlyph />
 {:else if glyph === 'LogoRust'}
-  <LogoRustSVG />
+  <LogoRustGlyph />
 {:else if glyph === 'LogoSlack'}
-  <LogoSlackSVG />
+  <LogoSlackGlyph />
 {:else if glyph === 'LogoStrapi'}
-  <LogoStrapiSVG />
+  <LogoStrapiGlyph />
 {:else if glyph === 'LogoSvelte'}
-  <LogoSvelteSVG />
+  <LogoSvelteGlyph />
 {:else if glyph === 'LogoTelegram'}
-  <LogoTelegramSVG />
+  <LogoTelegramGlyph />
 {:else if glyph === 'Logs'}
-  <LogsSVG />
+  <LogsGlyph />
 {:else if glyph === 'Networking'}
-  <NetworkingSVG />
+  <NetworkingGlyph />
 {:else if glyph === 'Pause'}
-  <PauseSVG />
+  <PauseGlyph />
 {:else if glyph === 'Play'}
-  <PlaySVG />
+  <PlayGlyph />
 {:else if glyph === 'Preferences'}
-  <PreferencesSVG />
+  <PreferencesGlyph />
 {:else if glyph === 'Reset'}
-  <ResetSVG />
+  <ResetGlyph />
 {:else if glyph === 'Storage'}
-  <StorageSVG />
+  <StorageGlyph />
 {:else if glyph === 'Variable'}
-  <VariableSVG />
+  <VariableGlyph />
 {:else if glyph === 'Warning'}
-  <WarningSVG />
+  <WarningGlyph />
 {:else}
-  <LayersSVG />
+  <LayersGlyph />
 {/if}
