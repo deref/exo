@@ -197,6 +197,7 @@ export interface DescribeTasksInput {
 export interface TemplateDescription {
   name: string;
   displayName: string;
+  iconGlyph: string;
   url: string;
 }
 export interface DirectoryEntry {
