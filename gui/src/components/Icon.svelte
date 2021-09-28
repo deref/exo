@@ -9,12 +9,12 @@
     | 'Check'
     | 'Delete'
     | 'Details'
-    | 'Docker'
     | 'Ellipsis'
     | 'Feedback'
     | 'Home'
     | 'Layers'
     | 'LeftUp'
+    | 'LogoDocker'
     | 'Logs'
     | 'Networking'
     | 'Pause'
@@ -32,12 +32,12 @@
   import CheckSVG from './mono/CheckSVG.svelte';
   import DeleteSVG from './mono/DeleteSVG.svelte';
   import DetailsSVG from './mono/DetailsSVG.svelte';
-  import DockerSVG from './mono/DockerSVG.svelte';
   import EllipsisSVG from './mono/EllipsisSVG.svelte';
   import FeedbackSVG from './mono/FeedbackSVG.svelte';
   import HomeSVG from './mono/HomeSVG.svelte';
   import LayersSVG from './mono/LayersSVG.svelte';
   import LeftUpSVG from './mono/LeftUpSVG.svelte';
+  import LogoDockerSVG from './mono/LogoDockerSVG.svelte';
   import LogsSVG from './mono/LogsSVG.svelte';
   import NetworkingSVG from './mono/NetworkingSVG.svelte';
   import PauseSVG from './mono/PauseSVG.svelte';
@@ -61,8 +61,6 @@
   <DeleteSVG />
 {:else if glyph === 'Details'}
   <DetailsSVG />
-{:else if glyph === 'Docker'}
-  <DockerSVG />
 {:else if glyph === 'Ellipsis'}
   <EllipsisSVG />
 {:else if glyph === 'Feedback'}
@@ -73,6 +71,8 @@
   <LayersSVG />
 {:else if glyph === 'LeftUp'}
   <LeftUpSVG />
+{:else if glyph === 'LogoDocker'}
+  <LogoDockerSVG />
 {:else if glyph === 'Logs'}
   <LogsSVG />
 {:else if glyph === 'Networking'}

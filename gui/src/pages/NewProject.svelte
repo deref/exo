@@ -1,16 +1,19 @@
 <script lang="ts">
+  import Icon from '../components/Icon.svelte';
   import Layout from '../components/Layout.svelte';
   import Spinner from '../components/Spinner.svelte';
+  import Textbox from '../components/Textbox.svelte';
   import ErrorLabel from '../components/ErrorLabel.svelte';
   import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
   import { api } from '../lib/api';
   import * as router from 'svelte-spa-router';
+
+  let search: string = '';
 </script>
 
 <Layout>
   <CenterFormPanel title="New project" backRoute="/">
     <h1>New project</h1>
-    <p>Select a starter for your new project:</p>
 
     <button
       on:click={() => {
@@ -20,15 +23,28 @@
       Empty project
     </button>
 
+    <div class="search">
+      <p>Select a starter for your new project:</p>
+      <Textbox
+        placeholder="Search..."
+        bind:value={search}
+        --input-width="100%"
+        autofocus
+      />
+    </div>
+
     {#await api.kernel.describeTemplates()}
       <Spinner />
     {:then templates}
-      {#each templates as template}
+      {#each templates.filter((x) => x.displayName
+            .toLocaleLowerCase()
+            .slice(0, search.length) === search.toLocaleLowerCase()) as template}
         <button
           on:click={() => {
             router.push(`#/new-project/${template.name}`);
           }}
         >
+          <Icon glyph={template.glyph} />
           {template.displayName}
         </button>
       {/each}
@@ -39,6 +55,18 @@
 </Layout>
 
 <style>
+  .search {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    align-items: center;
+    margin-top: 24px;
+  }
+
+  .search :global(input) {
+    height: 36px !important;
+  }
+
   button {
     background: var(--button-background);
     box-shadow: var(--button-shadow);
@@ -50,12 +78,13 @@
     width: 100%;
     grid-template-columns: max-content 2fr;
     align-items: center;
+    text-align: left;
     gap: 8px;
     margin-top: 8px;
   }
 
   button:not(:first-of-type) {
-    padding: 6px 18px;
+    padding: 8px 12px;
   }
 
   button:hover {
