@@ -14,6 +14,11 @@ import (
 
 func init() {
 	rootCmd.AddCommand(guiCmd)
+	guiCmd.Flags().BoolVar(&guiFlags.Print, "print", false, "prints the GUI URL to stdout without launching a browser")
+}
+
+var guiFlags struct {
+	Print bool
 }
 
 var guiCmd = &cobra.Command{
@@ -54,7 +59,12 @@ If the current directory is part of a workspace, navigates to it.`,
 		u.RawQuery = query.Encode()
 		endpoint = u.String()
 
-		fmt.Println("Opening GUI:", endpoint)
+		if guiFlags.Print {
+			fmt.Println(endpoint)
+			return nil
+		}
+
+		fmt.Fprintf(os.Stderr, "Opening GUI: %s", endpoint)
 
 		browser.Stdout = os.Stderr
 		return browser.OpenURL(endpoint)
