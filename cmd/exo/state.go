@@ -6,9 +6,8 @@ import (
 	"os"
 
 	"github.com/deref/exo/internal/core/api"
-	exojsonutil "github.com/deref/exo/internal/util/jsonutil"
+	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/deref/exo/internal/util/term"
-	"github.com/deref/util-go/jsonutil"
 	"github.com/spf13/cobra"
 )
 
@@ -47,7 +46,7 @@ var stateGetCmd = &cobra.Command{
 			return err
 		}
 
-		return exojsonutil.PrettyPrintJSONString(os.Stdout, output.State)
+		return jsonutil.PrettyPrintJSONString(os.Stdout, output.State)
 	},
 }
 

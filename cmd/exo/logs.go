@@ -11,7 +11,7 @@ import (
 	"github.com/aybabtme/rgbterm"
 	"github.com/deref/exo/internal/chrono"
 	"github.com/deref/exo/internal/core/api"
-	"github.com/deref/exo/internal/providers/core/components/log"
+	"github.com/deref/exo/internal/core/client"
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/deref/exo/internal/util/term"
 	"github.com/lucasb-eyer/go-colorful"
@@ -22,15 +22,23 @@ import (
 
 func init() {
 	rootCmd.AddCommand(logsCmd)
+	logsCmd.Flags().BoolVarP(&logFlags.System, "system", "", false, "if specified, filter includes workspace system events")
+}
+
+var logFlags struct {
+	System bool
 }
 
 var logsCmd = &cobra.Command{
 	Hidden: true,
-	Use:    "logs [refs...]",
+	Use:    "logs [flags] [refs...]",
 	Short:  "Tails process logs",
 	Long: `Tails process logs.
 
-If refs are provided, filters for the logs of those processes.`,
+If refs are provided, filters for the logs of those processes.
+
+When filtering, system events are omitted unless --system is given.`,
+	DisableFlagsInUseLine: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := newContext()
 		checkOrEnsureServer()
@@ -41,14 +49,14 @@ If refs are provided, filters for the logs of those processes.`,
 	},
 }
 
-func tailLogs(ctx context.Context, workspace api.Workspace, logRefs []string, stopOnError bool) error {
+func tailLogs(ctx context.Context, workspace *client.Workspace, streamRefs []string, stopOnError bool) error {
 	ctx, cancel := context.WithCancel(ctx)
 	var eg errgroup.Group
 	eg.Go(func() error {
 		return runTailLogsReader(ctx, cancel)
 	})
 	eg.Go(func() error {
-		return runTailLogsWriter(ctx, workspace, logRefs, stopOnError)
+		return runTailLogsWriter(ctx, workspace, streamRefs, stopOnError)
 	})
 	return eg.Wait()
 }
@@ -102,23 +110,28 @@ func runTailLogsReader(ctx context.Context, cancel func()) error {
 	}
 }
 
-func runTailLogsWriter(ctx context.Context, workspace api.Workspace, logRefs []string, stopOnError bool) error {
+func runTailLogsWriter(ctx context.Context, workspace *client.Workspace, streamRefs []string, stopOnError bool) error {
+	workspaceID := workspace.ID()
+
 	colors := NewColorCache()
 
-	showName := len(logRefs) != 1
+	showName := len(streamRefs) != 1
 
 	resolved, err := workspace.Resolve(ctx, &api.ResolveInput{
-		Refs: logRefs,
+		Refs: streamRefs,
 	})
 	if err != nil {
 		return fmt.Errorf("resolving refs: %w", err)
 	}
-	var logIDs []string
-	if len(logRefs) > 0 {
-		logIDs = make([]string, 0, len(logRefs))
+	var streamNames []string
+	if logFlags.System || len(streamRefs) > 0 {
+		streamNames = make([]string, 0, 1+len(streamRefs))
+		if logFlags.System {
+			streamNames = append(streamNames, workspaceID)
+		}
 		for _, logID := range resolved.IDs {
 			if logID != nil {
-				logIDs = append(logIDs, *logID)
+				streamNames = append(streamNames, *logID)
 			}
 		}
 	}
@@ -128,22 +141,18 @@ func runTailLogsWriter(ctx context.Context, workspace api.Workspace, logRefs []s
 		return fmt.Errorf("describing processes: %w", err)
 	}
 	labelWidth := 0
-	logToComponent := make(map[string]string, len(descriptions.Processes))
+	streamToLabel := make(map[string]string, len(descriptions.Processes))
+	streamToLabel[workspaceID] = "EXO"
 	for _, process := range descriptions.Processes {
-		if len(logRefs) == 0 {
-			logIDs = append(logIDs, process.ID)
-		}
-		for _, logName := range log.ComponentLogNames(process.Provider, process.ID) {
-			logToComponent[logName] = process.Name
-			if labelWidth < len(process.Name) {
-				labelWidth = len(process.Name)
-			}
+		streamToLabel[process.ID] = process.Name
+		if labelWidth < len(process.Name) {
+			labelWidth = len(process.Name)
 		}
 	}
 
 	limit := 500
 	in := &api.GetEventsInput{
-		Streams: logIDs,
+		Streams: streamNames,
 		Prev:    &limit,
 	}
 	for {
@@ -163,13 +172,13 @@ func runTailLogsWriter(ctx context.Context, workspace api.Workspace, logRefs []s
 			var prefix string
 			if showName {
 				label := event.Stream
-				if componentName := logToComponent[event.Stream]; componentName != "" {
+				if componentName := streamToLabel[event.Stream]; componentName != "" {
 					label = componentName
 				} else if labelWidth < len(label) {
 					labelWidth = len(label)
 				}
 				label = fmt.Sprintf("%*s", labelWidth, label)
-				color := colors.Color(label)
+				color := colors.Color(event.Stream)
 				r, g, b := color.RGB255()
 				prefix = rgbterm.FgString(
 					fmt.Sprintf("%s %s", timestamp, label),
@@ -191,9 +200,7 @@ func runTailLogsWriter(ctx context.Context, workspace api.Workspace, logRefs []s
 			}
 
 			for _, proc := range descriptions.Processes {
-				for _, id := range logIDs {
-					// TODO: Compare some metadata on the log, not the log itself.
-					// SEE NOTE [LOG_COMPONENTS].
+				for _, id := range streamNames {
 					if proc.ID == id && !proc.Running {
 						return fmt.Errorf("process stopped running: %q", proc.Name)
 					}

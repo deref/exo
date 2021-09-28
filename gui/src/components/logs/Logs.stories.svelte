@@ -1,14 +1,12 @@
 <script lang="ts">
   import { Meta, Template, Story } from '@storybook/addon-svelte-csf';
   import Logs from './Logs.svelte';
-
-  const processIdToName = {};
 </script>
 
 <Meta title="Logs" component={Logs} />
 
 <Template let:args>
-  <Logs {processIdToName} {...args} />
+  <Logs {...args} />
 </Template>
 
 <Story

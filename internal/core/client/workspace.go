@@ -155,11 +155,6 @@ func (c *Workspace) SetComponentState(ctx context.Context, input *api.SetCompone
 	return
 }
 
-func (c *Workspace) DescribeStreams(ctx context.Context, input *api.DescribeStreamsInput) (output *api.DescribeStreamsOutput, err error) {
-	err = c.client.Invoke(ctx, "describe-streams", input, &output)
-	return
-}
-
 func (c *Workspace) GetEvents(ctx context.Context, input *api.GetEventsInput) (output *api.GetEventsOutput, err error) {
 	err = c.client.Invoke(ctx, "get-events", input, &output)
 	return

@@ -6,6 +6,9 @@ import (
 	"io"
 	"io/ioutil"
 	"os"
+	"strings"
+
+	"github.com/deref/util-go/jsonutil"
 )
 
 func UnmarshalString(s string, v interface{}) error {
@@ -13,6 +16,17 @@ func UnmarshalString(s string, v interface{}) error {
 		s = "null"
 	}
 	return json.Unmarshal([]byte(s), v)
+}
+
+var MarshalString = jsonutil.MarshalString
+var MustMarshalString = jsonutil.MustMarshalString
+
+func UnmarshalStringOrEmpty(s string, v interface{}) error {
+	s = strings.TrimSpace(s)
+	if s == "" {
+		s = "{}"
+	}
+	return UnmarshalString(s, v)
 }
 
 func UnmarshalReader(r io.Reader, v interface{}) error {
