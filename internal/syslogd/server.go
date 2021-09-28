@@ -14,7 +14,7 @@ import (
 	"github.com/influxdata/go-syslog/v3/rfc5424"
 )
 
-// Server implements a UDP-based Syslog server backed by a log collector store.
+// Server implements a UDP-based Syslog server.
 type Server struct {
 	Logger     logging.Logger
 	SyslogPort uint

@@ -5,7 +5,7 @@ package process
 import (
 	"fmt"
 
-	"github.com/deref/exo/internal/util/jsonutil"
+	"github.com/deref/util-go/jsonutil"
 )
 
 func (p *Process) InitResource() error {

@@ -7,7 +7,7 @@ import (
 
 	"github.com/deref/exo/internal/manifest"
 	"github.com/deref/exo/internal/providers/unix/components/process"
-	"github.com/deref/exo/internal/util/jsonutil"
+	"github.com/deref/util-go/jsonutil"
 )
 
 type loader struct{}

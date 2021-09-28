@@ -15,6 +15,7 @@ import (
 	"github.com/deref/exo/internal/gensym"
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/mathutil"
+	"github.com/deref/util-go/jsonutil"
 )
 
 type Store struct {
@@ -87,10 +88,15 @@ func (sto *Store) AddEvent(ctx context.Context, input *api.AddEventInput) (*api.
 		return nil, fmt.Errorf("parsing timestamp: %w", err)
 	}
 
+	tags := "{}"
+	if input.Tags != nil {
+		tags = jsonutil.MustMarshalString(input.Tags)
+	}
+
 	if _, err := sto.DB.ExecContext(ctx, `
-		INSERT INTO event ( stream, id, timestamp, message )
-		VALUES ( ?, ?, ?, ? )
-	`, input.Stream, id, timestamp, input.Message); err != nil {
+		INSERT INTO event ( stream, id, timestamp, message, tags )
+		VALUES ( ?, ?, ?, ?, ? )
+	`, input.Stream, id, timestamp, input.Message, tags); err != nil {
 		return nil, fmt.Errorf("inserting: %w", err)
 	}
 	return &api.AddEventOutput{}, nil
@@ -154,7 +160,7 @@ func (sto *Store) GetEvents(ctx context.Context, input *api.GetEventsInput) (*ap
 	var query string
 	if reverse {
 		query = `
-			SELECT stream, id, timestamp, message
+			SELECT stream, id, timestamp, message, tags
 			FROM event
 			WHERE stream IN (?)
 			AND id < ?
@@ -164,7 +170,7 @@ func (sto *Store) GetEvents(ctx context.Context, input *api.GetEventsInput) (*ap
 		`
 	} else {
 		query = `
-			SELECT stream, id, timestamp, message
+			SELECT stream, id, timestamp, message, tags
 			FROM event
 			WHERE stream IN (?)
 			AND ? < id
@@ -187,10 +193,14 @@ func (sto *Store) GetEvents(ctx context.Context, input *api.GetEventsInput) (*ap
 	for rows.Next() {
 		var event api.Event
 		var timestampNano int64
-		if err := rows.Scan(&event.Stream, &event.ID, &timestampNano, &event.Message); err != nil {
+		var tags string
+		if err := rows.Scan(&event.Stream, &event.ID, &timestampNano, &event.Message, &tags); err != nil {
 			return nil, fmt.Errorf("scanning: %w", err)
 		}
 		event.Timestamp = chrono.NanoToIso(timestampNano)
+		if err := jsonutil.UnmarshalString(tags, &event.Tags); err != nil {
+			return nil, fmt.Errorf("unmarshalling event %q tags: %w", event.ID, err)
+		}
 		output.Items = append(output.Items, event)
 	}
 	if rows.Err() != nil {

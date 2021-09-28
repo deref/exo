@@ -480,10 +480,11 @@ type StreamDescription struct {
 }
 
 type Event struct {
-	ID        string `json:"id"`
-	Stream    string `json:"stream"`
-	Timestamp string `json:"timestamp"`
-	Message   string `json:"message"`
+	ID        string            `json:"id"`
+	Stream    string            `json:"stream"`
+	Timestamp string            `json:"timestamp"`
+	Message   string            `json:"message"`
+	Tags      map[string]string `json:"tags"`
 }
 
 type ProcessDescription struct {
