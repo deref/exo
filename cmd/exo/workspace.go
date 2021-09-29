@@ -15,7 +15,7 @@ import (
 func init() {
 	rootCmd.AddCommand(workspaceCmd)
 
-	workspaceCmd.AddCommand(helpSubcmd)
+	stateCmd.AddCommand(makeHelpSubcmd())
 }
 
 var workspaceCmd = &cobra.Command{

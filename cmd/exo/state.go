@@ -18,7 +18,7 @@ func init() {
 	stateCmd.AddCommand(stateClearCmd)
 	stateCmd.AddCommand(stateEditCmd)
 
-	stateCmd.AddCommand(helpSubcmd)
+	stateCmd.AddCommand(makeHelpSubcmd())
 }
 
 var stateCmd = &cobra.Command{
