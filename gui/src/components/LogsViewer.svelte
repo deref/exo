@@ -24,7 +24,10 @@
 
   // Maintain a mapping of process id to name. This can be removed once log streams are
   // tagged with a process name.
-  let processIdToName: Record<string, string> = {};
+  const initProcessIdToName: Record<string, string> = {
+    [workspace.id]: 'EXO',
+  };
+  let processIdToName = initProcessIdToName;
   const unsubscribeProcessStore = processes.subscribe((processData) => {
     if (processData.stage === 'success' || processData.stage === 'refetching') {
       processIdToName = processData.data.reduce(
@@ -32,10 +35,12 @@
           ...acc,
           [processDescription.id]: processDescription.name,
         }),
-        {},
+        initProcessIdToName,
       );
     }
   });
+
+  const getComponentName = (id: string) => processIdToName[id] ?? null;
 
   // Update filterStr when the input state changes (debounced).
   let filterStr = '';
@@ -58,8 +63,13 @@
 </script>
 
 <Panel title="Logs" --panel-padding="0" --panel-overflow-y="hidden">
-  <LocalLogProvider {workspace} {filterStr} {logs} let:events>
-    <Logs {processIdToName} {events} />
+  <LocalLogProvider
+    {workspace}
+    {filterStr}
+    streams={[workspace.id, ...logs]}
+    let:events
+  >
+    <Logs {getComponentName} {events} />
   </LocalLogProvider>
 
   <div slot="bottom">

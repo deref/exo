@@ -14,8 +14,8 @@ import (
 	"github.com/deref/exo/internal/eventd/api"
 	"github.com/deref/exo/internal/gensym"
 	"github.com/deref/exo/internal/util/errutil"
+	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/deref/exo/internal/util/mathutil"
-	"github.com/deref/util-go/jsonutil"
 )
 
 type Store struct {

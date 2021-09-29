@@ -53,6 +53,8 @@ var withDependents = componentQueryUpdate(func(q *componentQuery) {
 	q.IncludeDependents = true
 })
 
+var allComponentsQuery = makeComponentQuery()
+
 func allProcessQuery(updates ...componentQueryUpdate) componentQuery {
 	updates = append([]componentQueryUpdate{withTypes("process", "container")}, updates...)
 	return makeComponentQuery(updates...)

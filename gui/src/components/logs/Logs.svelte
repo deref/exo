@@ -2,9 +2,10 @@
   import { afterUpdate, beforeUpdate } from 'svelte';
 
   import LogRow from './LogRow.svelte';
+  import type { GetComponentNameFunc } from './LogRow.svelte';
   import type { LogEvent } from '../../lib/logs/types';
 
-  export let processIdToName: Record<string, string> = {};
+  export let getComponentName: GetComponentNameFunc | undefined;
   export let events: LogEvent[] = [];
 
   // Automatically scroll on new logs if the user is already scrolled close to the bottom of the content.
@@ -33,7 +34,7 @@
 <div class="logs-container" bind:this={logViewport}>
   <table>
     {#each events as event (event.id)}
-      <LogRow {processIdToName} {event} />
+      <LogRow {getComponentName} {event} />
     {/each}
   </table>
 </div>

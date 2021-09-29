@@ -3,6 +3,7 @@ package client
 import (
 	"net/http"
 	"net/url"
+	"regexp"
 
 	josh "github.com/deref/exo/internal/josh/client"
 )
@@ -28,4 +29,10 @@ func (root *Root) GetWorkspace(id string) *Workspace {
 		URL:   root.URL + "workspace?id=" + url.QueryEscape(id),
 		Token: root.Token,
 	})
+}
+
+// TODO: Avoid this regex game. Can a synchronous, error-free ID() method be
+// baked in to the Workspace API somehow?
+func (ws *Workspace) ID() string {
+	return regexp.MustCompile("id=(.*)").FindStringSubmatch(ws.client.URL)[1]
 }
