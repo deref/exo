@@ -18,7 +18,7 @@
       return;
     }
 
-    const threshold = 150;
+    const threshold = 20;
     const currentPosition = logViewport.scrollTop + logViewport.offsetHeight;
     const height = logViewport.scrollHeight;
     wasScrolledCloseToBottom = currentPosition > height - threshold;
