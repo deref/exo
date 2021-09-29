@@ -1,6 +1,6 @@
 <script lang="ts">
   import Panel from './Panel.svelte';
-  import Button from './Button.svelte';
+  import { shortcuts } from '../lib/actions/shortcut';
   import Logs from './logs/Logs.svelte';
   import LocalLogProvider from './logs/LocalLogProvider.svelte';
   import type { WorkspaceApi } from '../lib/api';
@@ -72,15 +72,27 @@
 >
   <Panel title="Logs" --panel-padding="0" --panel-overflow-y="hidden">
     <Logs {getComponentName} {events} />
-    <div slot="bottom">
+    <div class="bottom" slot="bottom">
       <input type="text" placeholder="Filter..." bind:value={filterInput} />
-      <Button
+      <button
+        use:shortcuts={{
+          chords: [
+            {
+              meta: true,
+              code: 'KeyK',
+            },
+            {
+              control: true,
+              code: 'KeyL',
+            },
+          ],
+        }}
         on:click={(e) => {
-          console.log(events);
           clearEvents();
-          console.log(events);
-        }}>Clear Logs</Button
+        }}
       >
+        Clear Logs
+      </button>
     </div>
   </Panel>
 </LocalLogProvider>
@@ -94,5 +106,14 @@
     font-size: 16px;
     padding: 8px 12px;
     outline: none;
+  }
+
+  .bottom {
+    display: flex;
+  }
+
+  button {
+    font-size: 80%;
+    width: 100px;
   }
 </style>
