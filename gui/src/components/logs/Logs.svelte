@@ -24,9 +24,13 @@
     wasScrolledCloseToBottom = currentPosition > height - threshold;
   });
 
+  const scrollToBottom = () => {
+    logViewport.scrollTop = logViewport.scrollHeight;
+  };
+
   afterUpdate(async () => {
     if (wasScrolledCloseToBottom && logViewport) {
-      logViewport.scrollTop = logViewport.scrollHeight;
+      scrollToBottom();
     }
   });
 </script>
@@ -37,6 +41,15 @@
       <LogRow {getComponentName} {event} />
     {/each}
   </table>
+  <button
+    class="latest"
+    class:show={!wasScrolledCloseToBottom}
+    on:click={(e) => {
+      scrollToBottom();
+    }}
+  >
+    ↓ Latest events
+  </button>
 </div>
 
 <style>
@@ -58,5 +71,26 @@
   table {
     border: none;
     border-collapse: collapse;
+  }
+
+  .latest {
+    display: none;
+    position: absolute;
+    right: 12px;
+    bottom: 6px;
+    background: lightgrey;
+    border-radius: 20px;
+    font-size: 12px;
+    padding: 4px 6px;
+    cursor: pointer;
+    border: none;
+  }
+
+  .latest:hover {
+    color: white;
+  }
+
+  .show {
+    display: block;
   }
 </style>
