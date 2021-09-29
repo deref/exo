@@ -55,8 +55,17 @@
   $: {
     resetStreams(streams, filterStr);
   }
+
+  // This is not ideal, since any change to the set of displayed logs will
+  // reset the streams and the cursor, effectively "unclearing" events.
+  // However, even this simple implementation should suffice for a while to
+  // satisfy the use case of clearing scrollback to make it easier to see only
+  // recent events while debugging.
+  export const clearEvents = () => {
+    events = [];
+  };
 </script>
 
-<slot {events}>
+<slot {events} {clearEvents}>
   <ErrorLabel value="Please provide a logs component" />
 </slot>

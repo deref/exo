@@ -1,5 +1,6 @@
 <script lang="ts">
   import Panel from './Panel.svelte';
+  import Button from './Button.svelte';
   import Logs from './logs/Logs.svelte';
   import LocalLogProvider from './logs/LocalLogProvider.svelte';
   import type { WorkspaceApi } from '../lib/api';
@@ -62,20 +63,27 @@
   });
 </script>
 
-<Panel title="Logs" --panel-padding="0" --panel-overflow-y="hidden">
-  <LocalLogProvider
-    {workspace}
-    {filterStr}
-    streams={[workspace.id, ...logs]}
-    let:events
-  >
+<LocalLogProvider
+  {workspace}
+  {filterStr}
+  streams={[workspace.id, ...logs]}
+  let:events
+  let:clearEvents
+>
+  <Panel title="Logs" --panel-padding="0" --panel-overflow-y="hidden">
     <Logs {getComponentName} {events} />
-  </LocalLogProvider>
-
-  <div slot="bottom">
-    <input type="text" placeholder="Filter..." bind:value={filterInput} />
-  </div>
-</Panel>
+    <div slot="bottom">
+      <input type="text" placeholder="Filter..." bind:value={filterInput} />
+      <Button
+        on:click={(e) => {
+          console.log(events);
+          clearEvents();
+          console.log(events);
+        }}>Clear Logs</Button
+      >
+    </div>
+  </Panel>
+</LocalLogProvider>
 
 <style>
   input {
