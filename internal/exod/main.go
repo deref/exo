@@ -113,6 +113,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 		cmdutil.Fatalf("opening sqlite db: %v", err)
 	}
 	defer func() {
+		// XXX Can't close this until all async tasks have completed.
 		if err := db.Close(); err != nil {
 			logger.Infof("error closing sqlite db: %v", err)
 		}
