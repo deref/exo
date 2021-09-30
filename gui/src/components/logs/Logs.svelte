@@ -19,7 +19,7 @@
       return;
     }
 
-    const threshold = 20;
+    const threshold = 20; // Approximate minimum height of line log line.
     const currentPosition = logViewport.scrollTop + logViewport.offsetHeight;
     const height = logViewport.scrollHeight;
     wasScrolledCloseToBottom = currentPosition > height - threshold;
