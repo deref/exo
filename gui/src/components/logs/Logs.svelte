@@ -2,6 +2,7 @@
   import { afterUpdate, beforeUpdate } from 'svelte';
 
   import LogRow from './LogRow.svelte';
+  import Tooltip from '../Tooltip.svelte';
   import type { GetComponentNameFunc } from './LogRow.svelte';
   import type { LogEvent } from '../../lib/logs/types';
 
@@ -43,12 +44,12 @@
   </table>
   <button
     class="latest"
-    class:show={!wasScrolledCloseToBottom}
+    class:showLatest={!wasScrolledCloseToBottom}
     on:click={(e) => {
       scrollToBottom();
     }}
   >
-    ↓ Latest events
+    <Tooltip>↓ Latest events</Tooltip>
   </button>
 </div>
 
@@ -76,21 +77,16 @@
   .latest {
     display: none;
     position: absolute;
-    right: 12px;
-    bottom: 6px;
-    background: lightgrey;
-    border-radius: 20px;
-    font-size: 12px;
-    padding: 4px 6px;
+    right: 16px;
+    bottom: 12px;
     cursor: pointer;
+    margin: 0;
+    padding: 0;
     border: none;
+    background: none;
   }
 
-  .latest:hover {
-    color: white;
-  }
-
-  .show {
+  .showLatest {
     display: block;
   }
 </style>

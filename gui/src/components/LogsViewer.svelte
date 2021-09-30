@@ -101,19 +101,35 @@
   input {
     width: 100%;
     border: none;
-    border-top: 1px solid var(--layout-bg-color);
-    background: var(--primary-bg-color);
     font-size: 16px;
+    background: var(--primary-bg-color);
     padding: 8px 12px;
-    outline: none;
   }
 
   .bottom {
     display: flex;
   }
 
+  input,
   button {
-    font-size: 80%;
-    width: 100px;
+    border: none;
+    white-space: nowrap;
+    border-top: 1px solid var(--layout-bg-color);
+    outline: none;
+  }
+
+  button {
+    font-size: 0.85em;
+    padding: 8px 16px;
+    border-left: 1px solid var(--layout-bg-color);
+    background: var(--primary-bg-color);
+  }
+
+  button:hover {
+    background: var(--grey-e-color);
+  }
+
+  button:active {
+    background: var(--grey-c-color);
   }
 </style>
