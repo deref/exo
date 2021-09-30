@@ -2,6 +2,7 @@
   import { afterUpdate, beforeUpdate } from 'svelte';
 
   import LogRow from './LogRow.svelte';
+  import Tooltip from '../Tooltip.svelte';
   import type { GetComponentNameFunc } from './LogRow.svelte';
   import type { LogEvent } from '../../lib/logs/types';
 
@@ -18,15 +19,19 @@
       return;
     }
 
-    const threshold = 150;
+    const threshold = 20; // Approximate minimum height of line log line.
     const currentPosition = logViewport.scrollTop + logViewport.offsetHeight;
     const height = logViewport.scrollHeight;
     wasScrolledCloseToBottom = currentPosition > height - threshold;
   });
 
+  const scrollToBottom = () => {
+    logViewport.scrollTop = logViewport.scrollHeight;
+  };
+
   afterUpdate(async () => {
     if (wasScrolledCloseToBottom && logViewport) {
-      logViewport.scrollTop = logViewport.scrollHeight;
+      scrollToBottom();
     }
   });
 </script>
@@ -37,6 +42,15 @@
       <LogRow {getComponentName} {event} />
     {/each}
   </table>
+  <button
+    class="latest"
+    class:showLatest={!wasScrolledCloseToBottom}
+    on:click={(e) => {
+      scrollToBottom();
+    }}
+  >
+    <Tooltip>↓ Latest events</Tooltip>
+  </button>
 </div>
 
 <style>
@@ -58,5 +72,21 @@
   table {
     border: none;
     border-collapse: collapse;
+  }
+
+  .latest {
+    display: none;
+    position: absolute;
+    right: 16px;
+    bottom: 12px;
+    cursor: pointer;
+    margin: 0;
+    padding: 0;
+    border: none;
+    background: none;
+  }
+
+  .showLatest {
+    display: block;
   }
 </style>
