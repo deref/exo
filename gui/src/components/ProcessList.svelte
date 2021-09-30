@@ -16,6 +16,7 @@
     refreshAllProcesses,
   } from '../lib/process/store';
   import * as router from 'svelte-spa-router';
+  import Button from './Button.svelte';
 
   export let workspace: WorkspaceApi;
   export let workspaceId: string;
@@ -52,7 +53,21 @@
     clearInterval(refreshInterval);
     unsubscribeProcesses();
   });
+
+  let modalOpen = false;
+
+  const handleKeyDown = (ev: KeyboardEvent) => {
+    if (ev.key === 'Escape') {
+      modalOpen = false;
+    }
+  };
+
+  const handleWrapClick = (_ev: MouseEvent) => {
+    modalOpen = false;
+  };
 </script>
+
+<svelte:window on:keydown={handleKeyDown} />
 
 {#await workspace.describeSelf()}
   <Panel title="" backRoute="/" />
@@ -66,6 +81,7 @@
           tooltip="Workspace actions..."
           on:click={() => {}}
         />
+
         <ContextMenu
           title={description.displayName}
           actions={[
@@ -94,14 +110,42 @@
               glyph: 'Delete',
               danger: true,
               execute(event) {
-                workspace.destroy();
-                router.push('/');
+                modalOpen = true;
               },
             },
           ]}
         />
       </div>
     </div>
+
+    {#if modalOpen}
+      <div class="modal-wrap" on:click={handleWrapClick}>
+        <div class="confirm" on:click|stopPropagation={() => {}}>
+          <h3>Delete workspace?</h3>
+          <p>
+            Are you sure you want to delete {description.displayName}?<br />
+            This is irreversible, but will only delete the workspace in exo, not
+            the files.
+          </p>
+          <div class="buttons">
+            <Button
+              on:click={() => {
+                modalOpen = false;
+              }}>Cancel</Button
+            >
+            <Button
+              danger
+              on:click={() => {
+                workspace.destroy();
+                router.push('/');
+                modalOpen = false;
+              }}>Yes, delete</Button
+            >
+          </div>
+        </div>
+      </div>
+    {/if}
+
     <section>
       <button
         id="add-component"
@@ -139,6 +183,40 @@
 {/await}
 
 <style>
+  .modal-wrap {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: rgba(0, 0, 0, 0.25);
+    z-index: 100;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+
+  .confirm {
+    position: absolute;
+    width: 480px;
+    background: var(--primary-bg-color);
+    box-shadow: var(--dropdown-shadow);
+    border-radius: 6px;
+    padding: 30px 36px;
+  }
+
+  .confirm p {
+    margin: 0;
+    margin-bottom: 24px;
+  }
+
+  .buttons {
+    display: flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: 12px;
+  }
+
   #add-component {
     background: none;
     font-size: 0.9em;

@@ -3,12 +3,14 @@
 
   export let small: boolean = false;
 
+  export let danger: boolean = false;
+
   export let inset: boolean = false;
 
   export let disabled = false;
 </script>
 
-<button {disabled} class:small class:inset on:click {type}>
+<button {disabled} class:small class:danger class:inset on:click {type}>
   <slot />
 </button>
 
@@ -16,7 +18,7 @@
   button {
     border: none;
     border-radius: 5px;
-    padding: 12px 18px;
+    padding: 9px 18px;
     background: var(--button-background);
     box-shadow: var(--button-shadow);
   }
@@ -34,6 +36,22 @@
   button:active {
     background: var(--button-active-background);
     box-shadow: var(--button-active-shadow);
+  }
+
+  .danger {
+    color: var(--danger-button-color);
+    background: var(--danger-button-background);
+    box-shadow: var(--danger-button-shadow);
+  }
+
+  .danger:hover {
+    background: var(--danger-button-hover-background);
+    box-shadow: var(--danger-button-hover-shadow);
+  }
+
+  .danger:active {
+    background: var(--danger-button-active-background);
+    box-shadow: var(--danger-button-active-shadow);
   }
 
   .inset,

@@ -58,6 +58,7 @@
     width: 100%;
     white-space: nowrap;
     color: var(--grey-5-color);
+    outline: none;
   }
 
   button :global(*) {
@@ -69,7 +70,9 @@
     margin-left: -8px;
   }
 
-  button:hover {
+  button:hover,
+  button:focus,
+  button:focus-within {
     color: var(--strong-color);
     background: var(--grey-e-color);
   }
