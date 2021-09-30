@@ -336,15 +336,13 @@ func (ws *Workspace) DescribeComponents(ctx context.Context, input *api.Describe
 	}
 	for i, component := range stateOutput.Components {
 		output.Components[i] = api.ComponentDescription{
-			ID:          component.ID,
-			Name:        component.Name,
-			Type:        component.Type,
-			Spec:        component.Spec,
-			State:       component.State,
-			Created:     component.Created,
-			Initialized: component.Initialized,
-			Disposed:    component.Disposed,
-			DependsOn:   component.DependsOn,
+			ID:        component.ID,
+			Name:      component.Name,
+			Type:      component.Type,
+			Spec:      component.Spec,
+			State:     component.State,
+			Created:   component.Created,
+			DependsOn: component.DependsOn,
 		}
 	}
 	return output, nil
@@ -519,15 +517,6 @@ func (ws *Workspace) createComponent(ctx context.Context, component manifest.Com
 		}); err != nil {
 			ws.logEventf(ctx, "error creating %s: %v", component.Name, err)
 			job.Fail(err)
-			return
-		}
-
-		// XXX this now double-patches the component to set Initialized timestamp. Optimize?
-		if _, err := ws.Store.PatchComponent(ctx, &state.PatchComponentInput{
-			ID:          id,
-			Initialized: chrono.NowString(ctx),
-		}); err != nil {
-			job.Fail(fmt.Errorf("modifying component after initialization: %w", err)) // XXX this message seems incorrect.
 			return
 		}
 

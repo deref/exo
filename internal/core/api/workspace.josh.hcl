@@ -245,8 +245,6 @@ struct "component-description" {
   field "spec" "string" {}
   field "state" "string" {}
   field "created" "string" {}
-  field "initialized" "*string" {}
-  field "disposed" "*string" {}
   field "depends-on" "[]string" {}
 }
 
