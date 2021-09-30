@@ -103,7 +103,12 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	store := statefile.New(statePath)
 
 	dbPath := filepath.Join(cfg.VarDir, "exo.sqlite3")
-	db, err := sqlx.Open("sqlite3", dbPath)
+	// Fully serialize transactions. Hurts performance, but reasonable for
+	// an embedded database, as long as transactions are kept small.
+	// Helps dramatically with simplicity and correctness.
+	txMode := "exclusive"
+	connStr := dbPath + "?_txlock=" + txMode
+	db, err := sqlx.Open("sqlite3", connStr)
 	if err != nil {
 		cmdutil.Fatalf("opening sqlite db: %v", err)
 	}
