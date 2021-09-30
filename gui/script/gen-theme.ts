@@ -27,9 +27,43 @@ const themeVariables = {
   'primary-bg-color': ['#ffffff', '#000000', '#000000'],
 
   // Contextual color
-  'error-color': ['#ee0000', '#ee0000', '#ee0000'],
+  'error-color': ['#d00000', '#ff1111', '#ff1111'],
+  'error-color-faded': ['#ff1111', '#d00000', '#d00000'],
   'link-color': ['#0066ee', '#22aaff', '#22aaff'],
   'online-green-color': ['#00c220', '#00c220', '#00c220'],
+
+  // Danger buttons
+  'danger-button-color': ['#ffffff', '#ffffff', '#ffffff'],
+  'danger-button-background': [
+    'linear-gradient(#ff0000, #cc0000)',
+    'linear-gradient(#dd0000, #aa0000)',
+    'linear-gradient(#dd0000, #aa0000)',
+  ],
+  'danger-button-hover-background': [
+    'linear-gradient(#dd0000, #aa0000)',
+    'linear-gradient(#bb0000, #880000)',
+    'linear-gradient(#bb0000, #880000)',
+  ],
+  'danger-button-active-background': [
+    'linear-gradient(#cc0000, #880000)',
+    'linear-gradient(#aa0000, #660000)',
+    'linear-gradient(#aa0000, #660000)',
+  ],
+  'danger-button-shadow': [
+    '0 0.33px 0 1px #ff555526, 0 4px 8px -3px #00000026, 0 0.4px 0 0.8px #880000ff',
+    '0 -0.33px 0 1px #ff555533, 0 4px 8px -3px #00000026, 0 0.4px 0 0.8px #660000ff',
+    '0 -0.33px 0 1px #ff555533, 0 4px 8px -3px #00000026, 0 0.4px 0 0.8px #660000ff',
+  ],
+  'danger-button-hover-shadow': [
+    '0 0.33px 0 1px #ff555526, 0 6px 8px -4px #00000033, 0 0.4px 0 0.8px #660000ff',
+    '0 -0.33px 0 1px #ff555555, 0 6px 8px -4px #00000033, 0 0.4px 0 0.8px #440000ff',
+    '0 -0.33px 0 1px #ff555555, 0 6px 8px -4px #00000033, 0 0.4px 0 0.8px #440000ff',
+  ],
+  'danger-button-active-shadow': [
+    '0 0.33px 0 1px #ff555526, 0 4px 6px -3px #00000026, 0 0.4px 0 0.8px #660000ff',
+    '0 -0.33px 0 1px #ff555544, 0 4px 6px -3px #00000026, 0 0.4px 0 0.8px #440000ff',
+    '0 -0.33px 0 1px #ff555544, 0 4px 6px -3px #00000026, 0 0.4px 0 0.8px #440000ff',
+  ],
 
   // Nav
   'nav-bg-color': ['#e7e7e7', '#050505', '#050505'],
