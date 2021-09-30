@@ -11,7 +11,8 @@ func (sto *Store) Migrate(ctx context.Context) error {
 			stream TEXT NOT NULL,
 			id TEXT NOT NULL,
 			timestamp INTEGER NOT NULL,
-			message TEXT NOT NULL
+			message TEXT NOT NULL,
+			tags TEXT NOT NULL
 		);`); err != nil {
 		return fmt.Errorf("creating event table: %w", err)
 	}

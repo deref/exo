@@ -5,7 +5,7 @@
   import { onDestroy } from 'svelte';
 
   const maxEvents = 1000;
-  const logsPollInterval = 1000;
+  const pollInterval = 1000;
 
   let cursor: string | null = null;
   let events: LogEvent[];
@@ -13,7 +13,7 @@
   export let workspace: WorkspaceApi;
 
   export let filterStr: string | null = null;
-  export let logs: string[] = [];
+  export let streams: string[] = [];
 
   let pollRefreshTimer: ReturnType<typeof setTimeout> | null = null;
   const scheduleNextPoll = async () => {
@@ -22,17 +22,17 @@
       return;
     }
 
-    const res = await workspace.getEvents(logs, filterStr, {
+    const res = await workspace.getEvents(streams, filterStr, {
       cursor,
       next: maxEvents,
     });
     cursor = res.nextCursor;
-    events = events.slice(-maxEvents);
+    events = [...events, ...res.items].slice(-maxEvents);
 
     pollRefreshTimer = setTimeout(() => {
       pollRefreshTimer = null;
       scheduleNextPoll();
-    }, logsPollInterval);
+    }, pollInterval);
   };
 
   onDestroy(() => {
@@ -41,14 +41,8 @@
     }
   });
 
-  const resetLogs = async (logs: string[], filterStr: string | null) => {
-    if (logs.length === 0) {
-      cursor = null;
-      events = [];
-      return;
-    }
-
-    const res = await workspace.getEvents(logs, filterStr, {
+  const resetStreams = async (streams: string[], filterStr: string | null) => {
+    const res = await workspace.getEvents(streams, filterStr, {
       cursor: null,
       prev: maxEvents,
     });
@@ -57,9 +51,9 @@
     scheduleNextPoll();
   };
 
-  // Reset log events entirely when filter or logs change.
+  // Reset log events entirely when filter or streams change.
   $: {
-    resetLogs(logs, filterStr);
+    resetStreams(streams, filterStr);
   }
 </script>
 

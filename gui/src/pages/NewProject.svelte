@@ -1,16 +1,22 @@
 <script lang="ts">
+  import Icon from '../components/Icon.svelte';
   import Layout from '../components/Layout.svelte';
   import Spinner from '../components/Spinner.svelte';
+  import Textbox from '../components/Textbox.svelte';
   import ErrorLabel from '../components/ErrorLabel.svelte';
   import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
   import { api } from '../lib/api';
   import * as router from 'svelte-spa-router';
+  import type { IconGlyph } from '../components/Icon.svelte';
+
+  let search: string = '';
+
+  const logoGlyph = (ig: string) => (ig || 'Doc') as IconGlyph;
 </script>
 
 <Layout>
   <CenterFormPanel title="New project" backRoute="/">
     <h1>New project</h1>
-    <p>Select a starter for your new project:</p>
 
     <button
       on:click={() => {
@@ -20,25 +26,58 @@
       Empty project
     </button>
 
-    {#await api.kernel.describeTemplates()}
-      <Spinner />
-    {:then templates}
-      {#each templates as template}
-        <button
-          on:click={() => {
-            router.push(`#/new-project/${template.name}`);
-          }}
-        >
-          {template.displayName}
-        </button>
-      {/each}
-    {:catch error}
-      <ErrorLabel value={error} />
-    {/await}
+    <div class="search">
+      <p>Select a starter for your new project:</p>
+      <Textbox
+        placeholder="Search..."
+        bind:value={search}
+        --input-width="100%"
+        autofocus
+      />
+
+      {#await api.kernel.describeTemplates()}
+        <Spinner />
+      {:then templates}
+        {#each templates
+          .sort((_, y) => (y.iconGlyph ? 1 : -1))
+          .filter((x) => x.displayName
+                .toLocaleLowerCase()
+                .slice(0, search.length) === search.toLocaleLowerCase()) as template}
+          <button
+            on:click={() => {
+              router.push(`#/new-project/${template.name}`);
+            }}
+          >
+            <Icon glyph={logoGlyph(template.iconGlyph)} />
+            {template.displayName}
+          </button>
+        {/each}
+      {:catch error}
+        <ErrorLabel value={error} />
+      {/await}
+    </div>
   </CenterFormPanel>
 </Layout>
 
 <style>
+  .search {
+    display: grid;
+    width: 100%;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    align-items: center;
+    margin-top: 24px;
+  }
+
+  .search :global(input) {
+    height: 36px !important;
+  }
+
+  button :global(svg) {
+    height: 18px;
+    width: 18px;
+  }
+
   button {
     background: var(--button-background);
     box-shadow: var(--button-shadow);
@@ -50,12 +89,15 @@
     width: 100%;
     grid-template-columns: max-content 2fr;
     align-items: center;
-    gap: 8px;
-    margin-top: 8px;
+    text-align: left;
+    gap: 12px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    overflow: hidden;
   }
 
-  button:not(:first-of-type) {
-    padding: 6px 18px;
+  .search button {
+    padding: 16px;
   }
 
   button:hover {

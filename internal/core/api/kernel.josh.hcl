@@ -81,6 +81,7 @@ struct "directory-entry" {
 struct "template-description" {
   field "name" "string" {}
   field "display-name" "string" {}
+  field "icon-glyph" "string" {}
   field "url" "string" {}
 }
 

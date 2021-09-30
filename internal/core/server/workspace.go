@@ -48,6 +48,18 @@ type Workspace struct {
 	TaskTracker *task.TaskTracker
 }
 
+func (ws *Workspace) logEventf(ctx context.Context, format string, v ...interface{}) {
+	eventStore := log.CurrentEventStore(ctx)
+	_, err := eventStore.AddEvent(ctx, &eventd.AddEventInput{
+		Stream:    ws.ID,
+		Timestamp: chrono.NowString(ctx),
+		Message:   fmt.Sprintf(format, v...),
+	})
+	if err != nil {
+		ws.Logger.Infof("error adding workspace event: %v", err)
+	}
+}
+
 func (ws *Workspace) Describe(ctx context.Context, input *api.DescribeInput) (*api.DescribeOutput, error) {
 	description, err := ws.describe(ctx)
 	if err != nil {
@@ -78,6 +90,7 @@ func (ws *Workspace) describe(ctx context.Context) (*api.WorkspaceDescription, e
 
 func (ws *Workspace) Destroy(ctx context.Context, input *api.DestroyInput) (*api.DestroyOutput, error) {
 	job := ws.TaskTracker.StartTask(ctx, "destroying")
+	ws.logEventf(ctx, "destroying workspace... %s", job.JobID())
 	query := makeComponentQuery(withReversedDependencies)
 
 	go func() {
@@ -123,6 +136,7 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 
 	// TODO: Handle partial failures.
 	job := ws.TaskTracker.StartTask(ctx, "applying")
+	ws.logEventf(ctx, "applying manifest... %s", job.JobID())
 
 	// The algorithm for applying a new manifest is as follows:
 	// 1. Build dependency graph for the new manifest, allComponents.
@@ -461,6 +475,7 @@ func (ws *Workspace) CreateComponent(ctx context.Context, input *api.CreateCompo
 		return nil, err
 	}
 
+	ws.logEventf(ctx, "new component: %s", input.Name)
 	return &api.CreateComponentOutput{
 		ID:    id,
 		JobID: jobID,
@@ -501,6 +516,7 @@ func (ws *Workspace) createComponent(ctx context.Context, component manifest.Com
 			_, err := lifecycle.Initialize(ctx, &api.InitializeInput{})
 			return err
 		}); err != nil {
+			ws.logEventf(ctx, "error creating %s: %v", component.Name, err)
 			job.Fail(err)
 			return
 		}
@@ -534,6 +550,7 @@ func (ws *Workspace) UpdateComponent(ctx context.Context, input *api.UpdateCompo
 		dependsOn = input.DependsOn
 	}
 
+	ws.logEventf(ctx, "updating %s", oldComponent.Name)
 	if err := ws.updateComponent(ctx, oldComponent, manifest.Component{
 		Type:      oldComponent.Type,
 		Name:      oldComponent.Name,
@@ -605,6 +622,7 @@ func (ws *Workspace) resolveRefs(ctx context.Context, refs []string) ([]string, 
 }
 
 func (ws *Workspace) DeleteComponents(ctx context.Context, input *api.DeleteComponentsInput) (*api.DeleteComponentsOutput, error) {
+	ws.logEventf(ctx, "deleting components: %s", input.Refs)
 	query := makeComponentQuery(withRefs(input.Refs...), withReversedDependencies)
 	jobID := ws.controlEachComponent(ctx, "deleting", query, func(ctx context.Context, lifecycle api.Lifecycle) error {
 		return ws.deleteComponent(ctx, lifecycle)
@@ -662,61 +680,6 @@ func (ws *Workspace) SetComponentState(ctx context.Context, input *api.SetCompon
 	return &api.SetComponentStateOutput{}, nil
 }
 
-func (ws *Workspace) DescribeStreams(ctx context.Context, input *api.DescribeStreamsInput) (*api.DescribeStreamsOutput, error) {
-	describe := allProcessQuery().describeComponentsInput(ws)
-	components, err := ws.DescribeComponents(ctx, describe)
-	if err != nil {
-		return nil, fmt.Errorf("describing components: %w", err)
-	}
-
-	// Find all logs in component hierarchy.
-	// TODO: More general handling of log groups, subcomponents, etc.
-	var logGroups []string
-	var logStreams []string
-	streamToGroup := make(map[string]int)
-	for _, component := range components.Components {
-		// XXX Janky provider inference. See note: [LOG_COMPONENTS].
-		var provider string
-		switch component.Type {
-		case "process":
-			provider = "unix"
-		case "container":
-			provider = "docker"
-		}
-		for _, streamName := range log.ComponentLogNames(provider, component.ID) {
-			streamToGroup[streamName] = len(logGroups)
-			logStreams = append(logStreams, streamName)
-		}
-		logGroups = append(logGroups, component.ID)
-	}
-
-	// Initialize output and index by log group name.
-	streams := make([]api.StreamDescription, len(logGroups))
-	for i, logGroup := range logGroups {
-		streams[i] = api.StreamDescription{
-			Name: logGroup,
-		}
-	}
-
-	// Decorate output with information from the event store.
-	eventStore := log.CurrentEventStore(ctx)
-	collectorLogs, err := eventStore.DescribeStreams(ctx, &eventd.DescribeStreamsInput{
-		Names: logStreams,
-	})
-	if err != nil {
-		return nil, err
-	}
-	for _, stream := range collectorLogs.Streams {
-		groupIndex, ok := streamToGroup[stream.Name]
-		if !ok {
-			continue
-		}
-		group := &streams[groupIndex]
-		group.LastEventAt = combineLastEventAt(group.LastEventAt, stream.LastEventAt)
-	}
-	return &api.DescribeStreamsOutput{Streams: streams}, nil
-}
-
 func combineLastEventAt(a, b *string) *string {
 	if a == nil {
 		return b
@@ -732,32 +695,22 @@ func combineLastEventAt(a, b *string) *string {
 }
 
 func (ws *Workspace) GetEvents(ctx context.Context, input *api.GetEventsInput) (*api.GetEventsOutput, error) {
-	logGroups := input.Streams
-	if logGroups == nil {
-		// No filter specified, use all streams.
-		streamDescriptions, err := ws.DescribeStreams(ctx, &api.DescribeStreamsInput{})
+	streamNames := input.Streams
+	if streamNames == nil {
+		describe := allComponentsQuery.describeComponentsInput(ws)
+		components, err := ws.DescribeComponents(ctx, describe)
 		if err != nil {
-			return nil, fmt.Errorf("enumerating streams: %w", err)
+			return nil, fmt.Errorf("describing components: %w", err)
 		}
-		logGroups = make([]string, len(streamDescriptions.Streams))
-		for i, group := range streamDescriptions.Streams {
-			logGroups[i] = group.Name
-		}
-	}
-	logStreams := make([]string, 0, 2*len(logGroups))
-	// Expand log groups in to streams.
-	for _, group := range logGroups {
-		// Each process acts as a log group combining both stdout and stderr.
-		// XXX See note [LOG_COMPONENTS].
-		for _, suffix := range []string{"", ":out", ":err"} {
-			stream := group + suffix
-			logStreams = append(logStreams, stream)
+		streamNames = make([]string, 1+len(components.Components))
+		streamNames[0] = ws.ID
+		for i, component := range components.Components {
+			streamNames[i+1] = component.ID
 		}
 	}
-
 	eventStore := log.CurrentEventStore(ctx)
-	collectorOutput, err := eventStore.GetEvents(ctx, &eventd.GetEventsInput{
-		Streams:   logStreams,
+	storeOutput, err := eventStore.GetEvents(ctx, &eventd.GetEventsInput{
+		Streams:   streamNames,
 		Cursor:    input.Cursor,
 		FilterStr: input.FilterStr,
 		Prev:      input.Prev,
@@ -767,25 +720,30 @@ func (ws *Workspace) GetEvents(ctx context.Context, input *api.GetEventsInput) (
 		return nil, err
 	}
 	output := api.GetEventsOutput{
-		Items:      make([]api.Event, len(collectorOutput.Items)),
-		PrevCursor: collectorOutput.PrevCursor,
-		NextCursor: collectorOutput.NextCursor,
+		Items:      make([]api.Event, len(storeOutput.Items)),
+		PrevCursor: storeOutput.PrevCursor,
+		NextCursor: storeOutput.NextCursor,
 	}
-	for i, collectorEvent := range collectorOutput.Items {
+	for i, storeEvent := range storeOutput.Items {
 		output.Items[i] = api.Event{
-			ID:        collectorEvent.ID,
-			Stream:    collectorEvent.Stream,
-			Timestamp: collectorEvent.Timestamp,
-			Message:   collectorEvent.Message,
+			ID:        storeEvent.ID,
+			Stream:    storeEvent.Stream,
+			Timestamp: storeEvent.Timestamp,
+			Message:   storeEvent.Message,
+			Tags:      storeEvent.Tags,
 		}
 	}
 	return &output, nil
 }
 
 func (ws *Workspace) Start(ctx context.Context, input *api.StartInput) (*api.StartOutput, error) {
+	ws.logEventf(ctx, "starting...")
 	jobID := ws.controlEachComponent(ctx, "starting", allProcessQuery(withDependencies), func(ctx context.Context, thing interface{}) error {
 		if process, ok := thing.(api.Process); ok {
 			_, err := process.Start(ctx, &api.StartInput{})
+			if err != nil {
+				ws.logEventf(ctx, "error starting %s: %v", thing.(core.Component).GetComponentName(), err)
+			}
 			return err
 		}
 		if lifecycle, ok := thing.(api.Lifecycle); ok {
@@ -800,12 +758,16 @@ func (ws *Workspace) Start(ctx context.Context, input *api.StartInput) (*api.Sta
 }
 
 func (ws *Workspace) StartComponents(ctx context.Context, input *api.StartComponentsInput) (*api.StartComponentsOutput, error) {
+	ws.logEventf(ctx, "starting: %s", input.Refs)
 	// Note that we are only querying Process component types specifically because they are the only
 	// things that are "startable".
 	query := allProcessQuery(withRefs(input.Refs...), withDependencies)
 	jobID := ws.controlEachComponent(ctx, "starting", query, func(ctx context.Context, thing interface{}) error {
 		if process, ok := thing.(api.Process); ok {
 			_, err := process.Start(ctx, &api.StartInput{})
+			if err != nil {
+				ws.logEventf(ctx, "error starting %s: %v", thing.(core.Component).GetComponentName(), err)
+			}
 			return err
 		}
 		if lifecycle, ok := thing.(api.Lifecycle); ok {
@@ -820,6 +782,7 @@ func (ws *Workspace) StartComponents(ctx context.Context, input *api.StartCompon
 }
 
 func (ws *Workspace) Stop(ctx context.Context, input *api.StopInput) (*api.StopOutput, error) {
+	ws.logEventf(ctx, "stopping...")
 	query := allProcessQuery(withReversedDependencies, withDependents)
 	jobID := ws.controlEachComponent(ctx, "stopping", query, func(ctx context.Context, thing interface{}) error {
 		if process, ok := thing.(api.Process); ok {
@@ -834,6 +797,7 @@ func (ws *Workspace) Stop(ctx context.Context, input *api.StopInput) (*api.StopO
 }
 
 func (ws *Workspace) StopComponents(ctx context.Context, input *api.StopComponentsInput) (*api.StopComponentsOutput, error) {
+	ws.logEventf(ctx, "stopping: %s", input.Refs)
 	query := allProcessQuery(
 		withRefs(input.Refs...),
 		withReversedDependencies,
@@ -852,6 +816,7 @@ func (ws *Workspace) StopComponents(ctx context.Context, input *api.StopComponen
 }
 
 func (ws *Workspace) Signal(ctx context.Context, input *api.SignalInput) (*api.SignalOutput, error) {
+	ws.logEventf(ctx, "signalling %s...", input.Signal)
 	query := allProcessQuery(withReversedDependencies, withDependents)
 	jobID := ws.controlEachComponent(ctx, "signalling", query, func(ctx context.Context, thing interface{}) error {
 		if process, ok := thing.(api.Process); ok {
@@ -866,6 +831,7 @@ func (ws *Workspace) Signal(ctx context.Context, input *api.SignalInput) (*api.S
 }
 
 func (ws *Workspace) SignalComponents(ctx context.Context, input *api.SignalComponentsInput) (*api.SignalComponentsOutput, error) {
+	ws.logEventf(ctx, "signalling %s to ", input.Refs)
 	query := allProcessQuery(
 		withRefs(input.Refs...),
 		withReversedDependencies,
@@ -886,10 +852,14 @@ func (ws *Workspace) SignalComponents(ctx context.Context, input *api.SignalComp
 }
 
 func (ws *Workspace) Restart(ctx context.Context, input *api.RestartInput) (*api.RestartOutput, error) {
+	ws.logEventf(ctx, "restarting...")
 	query := makeComponentQuery(withDependencies)
 	jobID := ws.controlEachComponent(ctx, "restarting", query, func(ctx context.Context, thing interface{}) error {
 		if process, ok := thing.(api.Process); ok {
 			_, err := process.Restart(ctx, input)
+			if err != nil {
+				ws.logEventf(ctx, "error restarting %s: %v", thing.(core.Component).GetComponentName(), err)
+			}
 			return err
 		}
 		return nil
@@ -900,6 +870,7 @@ func (ws *Workspace) Restart(ctx context.Context, input *api.RestartInput) (*api
 }
 
 func (ws *Workspace) RestartComponents(ctx context.Context, input *api.RestartComponentsInput) (*api.RestartComponentsOutput, error) {
+	ws.logEventf(ctx, "restarting %s", input.Refs)
 	// Restart currently restarts the component and everything that depends on it in the same order as start. There
 	// are likely 3 different restart "modes" that we will eventually want to support:
 	// 1. Restart only the component(s) requested. Do not cascade restarts to any other components.
@@ -910,6 +881,9 @@ func (ws *Workspace) RestartComponents(ctx context.Context, input *api.RestartCo
 	jobID := ws.controlEachComponent(ctx, "restart", query, func(ctx context.Context, thing interface{}) error {
 		if process, ok := thing.(api.Process); ok {
 			_, err := process.Restart(ctx, &api.RestartInput{TimeoutSeconds: input.TimeoutSeconds})
+			if err != nil {
+				ws.logEventf(ctx, "error restarting %s: %v", thing.(core.Component).GetComponentName(), err)
+			}
 			return err
 		}
 		return nil
@@ -1002,7 +976,7 @@ func (ws *Workspace) ExportProcfile(ctx context.Context, input *api.ExportProcfi
 	for _, proc := range procs.Processes {
 		if proc.Provider == "unix" {
 			var spec process.Spec
-			if err := jsonutil.UnmarshalString(proc.Spec, &spec); err != nil {
+			if err := jsonutil.UnmarshalStringOrEmpty(proc.Spec, &spec); err != nil {
 				logger.Infof("unmarshalling process spec: %v\n", err)
 				continue
 			}
@@ -1177,6 +1151,7 @@ func (ws *Workspace) control(ctx context.Context, desc api.ComponentDescription,
 }
 
 func (ws *Workspace) Build(ctx context.Context, input *api.BuildInput) (*api.BuildOutput, error) {
+	ws.logEventf(ctx, "building...")
 	jobID := ws.controlEachComponent(ctx, "building", allBuildableQuery(), func(ctx context.Context, builder api.Builder) error {
 		_, err := builder.Build(ctx, &api.BuildInput{})
 		return err
@@ -1187,6 +1162,7 @@ func (ws *Workspace) Build(ctx context.Context, input *api.BuildInput) (*api.Bui
 }
 
 func (ws *Workspace) BuildComponents(ctx context.Context, input *api.BuildComponentsInput) (*api.BuildComponentsOutput, error) {
+	ws.logEventf(ctx, "building: %s", input.Refs)
 	query := allBuildableQuery(withRefs(input.Refs...))
 	jobID := ws.controlEachComponent(ctx, "building", query, func(ctx context.Context, builder api.Builder) error {
 		_, err := builder.Build(ctx, &api.BuildInput{})

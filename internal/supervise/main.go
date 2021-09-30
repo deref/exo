@@ -189,7 +189,7 @@ func pipeToSyslog(ctx context.Context, conn net.Conn, componentID string, name s
 			sm.SetTimestamp(chrono.Now(ctx).Format(chrono.RFC3339MicroUTC))
 			sm.SetAppname(componentID)
 			sm.SetProcID(procID)
-			sm.SetMsgID(name) // See note: [LOG_COMPONENTS].
+			sm.SetMsgID(name) // See note: [SYSLOG_MSG_ID].
 			sm.SetMessage(message)
 			packet, err := sm.String()
 			if err != nil {

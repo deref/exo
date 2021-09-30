@@ -180,7 +180,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 
 		go func() {
 			if err := syslogServer.Run(ctx); err != nil {
-				cmdutil.Fatalf("log collector error: %w", err)
+				cmdutil.Fatalf("syslog server error: %w", err)
 			}
 		}()
 

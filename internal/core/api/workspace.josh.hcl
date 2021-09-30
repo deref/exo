@@ -147,12 +147,6 @@ interface "workspace" {
     input "state" "string" {}
   }
 
-  method "describe-streams" {
-    input "refs" "[]string" {}
-
-    output "streams" "[]StreamDescription" {}
-  }
-
   method "get-events" {
     doc = "Returns pages of events for some set of streams. If `cursor` is specified, standard pagination behavior is used. Otherwise the cursor is assumed to represent the current tail of the stream."
 
@@ -266,6 +260,7 @@ struct "event" {
   field "stream" "string" {}
   field "timestamp" "string" {}
   field "message" "string" {}
+  field "tags" "map[string]string" {}
 }
 
 struct "process-description" {

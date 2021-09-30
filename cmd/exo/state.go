@@ -18,7 +18,7 @@ func init() {
 	stateCmd.AddCommand(stateClearCmd)
 	stateCmd.AddCommand(stateEditCmd)
 
-	stateCmd.AddCommand(helpSubcmd)
+	stateCmd.AddCommand(makeHelpSubcmd())
 }
 
 var stateCmd = &cobra.Command{
@@ -30,10 +30,9 @@ var stateCmd = &cobra.Command{
 }
 
 var stateGetCmd = &cobra.Command{
-	Use:    "get <component>",
-	Short:  "Print component state",
-	Hidden: true,
-	Args:   cobra.ExactArgs(1),
+	Use:   "get <component>",
+	Short: "Print component state",
+	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		componentRef := args[0]
 		ctx := newContext()
@@ -51,11 +50,10 @@ var stateGetCmd = &cobra.Command{
 }
 
 var stateSetCmd = &cobra.Command{
-	Use:    "set <component>",
-	Short:  "Set component state",
-	Long:   "Set component state to the JSON received on stdin.",
-	Hidden: true,
-	Args:   cobra.ExactArgs(1),
+	Use:   "set <component>",
+	Short: "Set component state",
+	Long:  "Set component state to the JSON received on stdin.",
+	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		componentRef := args[0]
 		ctx := newContext()
@@ -77,10 +75,9 @@ var stateSetCmd = &cobra.Command{
 }
 
 var stateClearCmd = &cobra.Command{
-	Use:    "clear <component>",
-	Short:  "Clear component state",
-	Hidden: true,
-	Args:   cobra.ExactArgs(1),
+	Use:   "clear <component>",
+	Short: "Clear component state",
+	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		componentRef := args[0]
 		ctx := newContext()
@@ -97,11 +94,10 @@ var stateClearCmd = &cobra.Command{
 }
 
 var stateEditCmd = &cobra.Command{
-	Use:    "edit <component>",
-	Short:  "Edit component state",
-	Long:   "Edit component state using your preferred editor.",
-	Hidden: true,
-	Args:   cobra.ExactArgs(1),
+	Use:   "edit <component>",
+	Short: "Edit component state",
+	Long:  "Edit component state using your preferred editor.",
+	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		componentRef := args[0]
 		ctx := newContext()

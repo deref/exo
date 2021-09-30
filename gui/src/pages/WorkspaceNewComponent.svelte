@@ -40,17 +40,17 @@
         {
           displayName: 'Container',
           name: 'container',
-          glyph: 'Docker',
+          glyph: 'LogoDocker',
         },
         {
           displayName: 'Volume',
           name: 'volume',
-          glyph: 'Docker',
+          glyph: 'LogoDocker',
         },
         {
           displayName: 'Network',
           name: 'network',
-          glyph: 'Docker',
+          glyph: 'LogoDocker',
         },
       ],
     },

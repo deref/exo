@@ -197,6 +197,7 @@ export interface DescribeTasksInput {
 export interface TemplateDescription {
   name: string;
   displayName: string;
+  iconGlyph: string;
   url: string;
 }
 export interface DirectoryEntry {
@@ -225,6 +226,8 @@ export interface KernelApi {
 }
 
 export interface WorkspaceApi {
+  id: string;
+
   describeSelf(): Promise<WorkspaceDescription>;
 
   describeComponents(): Promise<ComponentDescription[]>;
@@ -333,6 +336,8 @@ export const api = (() => {
     const invoke = (method: string, data?: unknown) =>
       rpc(`/workspace/${method}`, { id }, data);
     return {
+      id,
+
       async describeSelf(): Promise<WorkspaceDescription> {
         const { description } = (await invoke('describe')) as any;
         return description;

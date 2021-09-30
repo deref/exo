@@ -15,7 +15,7 @@ import (
 func init() {
 	rootCmd.AddCommand(workspaceCmd)
 
-	workspaceCmd.AddCommand(helpSubcmd)
+	workspaceCmd.AddCommand(makeHelpSubcmd())
 }
 
 var workspaceCmd = &cobra.Command{
@@ -48,7 +48,7 @@ If no subcommand is given, describes the current workspace.`,
 	},
 }
 
-func requireCurrentWorkspace(ctx context.Context, cl *client.Root) api.Workspace {
+func requireCurrentWorkspace(ctx context.Context, cl *client.Root) *client.Workspace {
 	workspace := mustResolveCurrentWorkspace(ctx, cl)
 	if workspace == nil {
 		cmdutil.Fatalf("no workspace for current directory")
@@ -56,7 +56,7 @@ func requireCurrentWorkspace(ctx context.Context, cl *client.Root) api.Workspace
 	return workspace
 }
 
-func mustResolveCurrentWorkspace(ctx context.Context, cl *client.Root) api.Workspace {
+func mustResolveCurrentWorkspace(ctx context.Context, cl *client.Root) *client.Workspace {
 	workspace, err := resolveCurrentWorkspace(ctx, cl)
 	if err != nil {
 		cmdutil.Fatalf("error resolving workspace: %v", err)
@@ -64,7 +64,7 @@ func mustResolveCurrentWorkspace(ctx context.Context, cl *client.Root) api.Works
 	return workspace
 }
 
-func resolveCurrentWorkspace(ctx context.Context, cl *client.Root) (api.Workspace, error) {
+func resolveCurrentWorkspace(ctx context.Context, cl *client.Root) (*client.Workspace, error) {
 	cwd, err := os.Getwd()
 	if err != nil {
 		return nil, fmt.Errorf("getwd: %w", err)
@@ -72,14 +72,14 @@ func resolveCurrentWorkspace(ctx context.Context, cl *client.Root) (api.Workspac
 	return resolveWorkspace(ctx, cl, cwd)
 }
 
-func resolveWorkspace(ctx context.Context, cl *client.Root, ref string) (api.Workspace, error) {
+func resolveWorkspace(ctx context.Context, cl *client.Root, ref string) (*client.Workspace, error) {
 	output, err := cl.Kernel().ResolveWorkspace(ctx, &api.ResolveWorkspaceInput{
 		Ref: ref,
 	})
 	if err != nil {
 		return nil, err
 	}
-	var workspace api.Workspace
+	var workspace *client.Workspace
 	if output.ID != nil {
 		workspace = cl.GetWorkspace(*output.ID)
 	}

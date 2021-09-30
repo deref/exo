@@ -9,6 +9,7 @@ import (
 
 type Component interface {
 	GetComponentID() string
+	GetComponentName() string
 
 	// TODO: Rethink these.
 	IsDeleted() bool
@@ -29,6 +30,10 @@ type ComponentBase struct {
 
 func (c ComponentBase) GetComponentID() string {
 	return c.ComponentID
+}
+
+func (c ComponentBase) GetComponentName() string {
+	return c.ComponentName
 }
 
 func (c *ComponentBase) IsDeleted() bool {

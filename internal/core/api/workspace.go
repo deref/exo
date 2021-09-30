@@ -104,7 +104,6 @@ type Workspace interface {
 	DeleteComponents(context.Context, *DeleteComponentsInput) (*DeleteComponentsOutput, error)
 	GetComponentState(context.Context, *GetComponentStateInput) (*GetComponentStateOutput, error)
 	SetComponentState(context.Context, *SetComponentStateInput) (*SetComponentStateOutput, error)
-	DescribeStreams(context.Context, *DescribeStreamsInput) (*DescribeStreamsOutput, error)
 	// Returns pages of events for some set of streams. If `cursor` is specified, standard pagination behavior is used. Otherwise the cursor is assumed to represent the current tail of the stream.
 	GetEvents(context.Context, *GetEventsInput) (*GetEventsOutput, error)
 	StartComponents(context.Context, *StartComponentsInput) (*StartComponentsOutput, error)
@@ -237,14 +236,6 @@ type SetComponentStateInput struct {
 }
 
 type SetComponentStateOutput struct {
-}
-
-type DescribeStreamsInput struct {
-	Refs []string `json:"refs"`
-}
-
-type DescribeStreamsOutput struct {
-	Streams []StreamDescription `json:"streams"`
 }
 
 type GetEventsInput struct {
@@ -412,9 +403,6 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	b.AddMethod("set-component-state", func(req *http.Request) interface{} {
 		return factory(req).SetComponentState
 	})
-	b.AddMethod("describe-streams", func(req *http.Request) interface{} {
-		return factory(req).DescribeStreams
-	})
 	b.AddMethod("get-events", func(req *http.Request) interface{} {
 		return factory(req).GetEvents
 	})
@@ -480,10 +468,11 @@ type StreamDescription struct {
 }
 
 type Event struct {
-	ID        string `json:"id"`
-	Stream    string `json:"stream"`
-	Timestamp string `json:"timestamp"`
-	Message   string `json:"message"`
+	ID        string            `json:"id"`
+	Stream    string            `json:"stream"`
+	Timestamp string            `json:"timestamp"`
+	Message   string            `json:"message"`
+	Tags      map[string]string `json:"tags"`
 }
 
 type ProcessDescription struct {

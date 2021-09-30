@@ -14,7 +14,7 @@ import (
 	"github.com/influxdata/go-syslog/v3/rfc5424"
 )
 
-// Server implements a UDP-based Syslog server backed by a log collector store.
+// Server implements a UDP-based Syslog server.
 type Server struct {
 	Logger     logging.Logger
 	SyslogPort uint
@@ -81,19 +81,20 @@ func syslogToEvent(syslogMessage syslog.Message) (*api.AddEventInput, error) {
 		return nil, errors.New("expected TIMESTAMP")
 	}
 
-	appname := *rfc5425Message.Appname
+	streamName := *rfc5425Message.Appname
 	msgID := *rfc5425Message.MsgID
+	tags := make(map[string]string)
 
-	var streamName string
+	// NOTE [SYSLOG_MSG_ID]: For messages from our unix process supervisor, we
+	// expect the MsgId field to signify which stdio stream the message comes
+	// from.  Docker, on the other hand, simply provides the appname again, which
+	// should be a random component ID that will be disjoint from any keywords we
+	// use here.
 	switch msgID {
 	case "out", "err":
-		// provider=unix
-		streamName = fmt.Sprintf("%s:%s", appname, msgID) // See note: [LOG_COMPONENTS].
+		tags["stdio"] = msgID
 	default:
-		if msgID == appname {
-			// provider=docker
-			streamName = appname
-		} else {
+		if msgID != streamName {
 			return nil, fmt.Errorf("unexpected MSGID: %q", msgID)
 		}
 	}
@@ -107,5 +108,6 @@ func syslogToEvent(syslogMessage syslog.Message) (*api.AddEventInput, error) {
 		Stream:    streamName,
 		Timestamp: rfc5425Message.Timestamp.Format(chrono.RFC3339MicroUTC),
 		Message:   message,
+		Tags:      tags,
 	}, nil
 }

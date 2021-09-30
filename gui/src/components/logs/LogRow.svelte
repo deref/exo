@@ -1,26 +1,20 @@
+<script lang="ts" context="module">
+  export type GetComponentNameFunc = (id: string) => string | null;
+</script>
+
 <script lang="ts">
   import FormattedLogMessage from './FormattedLogMessage.svelte';
   import { shortTime } from '../../lib/time';
   import type { LogEvent } from '../../lib/logs/types';
   import { logStyleFromHash } from '../../lib/color';
 
-  export let processIdToName: Record<string, string>;
+  export let getComponentName: GetComponentNameFunc = (id) => null;
   export let event: LogEvent;
 
-  // SEE NOTE [LOG_COMPONENTS].
-  const streamToFriendlyName = (log: string): string => {
-    const [procId, stream] = log.split(':');
-    const procName = processIdToName[procId];
-    return procName ? (stream ? `${procName}:${stream}` : procName) : log;
-  };
-
-  const friendlyName = streamToFriendlyName(event.stream);
-
-  // SEE NOTE [LOG_COMPONENTS].
-  const trimLabel = (name: string) => name.replace(/(:err$)|(:out$)/g, '');
+  const componentName = getComponentName(event.stream) ?? event.stream;
 </script>
 
-<tr style={logStyleFromHash(friendlyName)}>
+<tr style={logStyleFromHash(componentName)}>
   <td
     class="time"
     on:click={() => {
@@ -30,7 +24,7 @@
     {shortTime(event.timestamp)}
   </td>
   <td class="name" title={event.stream}>
-    {trimLabel(friendlyName)}
+    {componentName}
   </td>
   <td>
     <FormattedLogMessage message={event.message} />
