@@ -5,30 +5,36 @@ import (
 	"fmt"
 
 	core "github.com/deref/exo/internal/core/api"
+	"github.com/deref/exo/internal/util/yamlutil"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/volume"
 	dockerclient "github.com/docker/docker/client"
 )
 
 func (v *Volume) Initialize(ctx context.Context, input *core.InitializeInput) (output *core.InitializeOutput, err error) {
+	var spec Spec
+	if err := yamlutil.UnmarshalString(input.Spec, &spec); err != nil {
+		return nil, fmt.Errorf("unmarshalling spec: %w", err)
+	}
+
 	// See NOTE: [ADOPT COMPOSE RESOURCES].
-	if existing, err := v.findExistingVolume(ctx); err != nil {
+	if existing, err := v.findExistingVolume(ctx, spec.Name); err != nil {
 		return nil, fmt.Errorf("looking up existing volume: %w", err)
 	} else if existing != nil {
 		// TODO: Determine whether the existing volume is compatible with the spec.
 		return &core.InitializeOutput{}, nil
 	}
 
-	labels := v.Spec.Labels.WithoutNils()
+	labels := spec.Labels.WithoutNils()
 	for k, v := range v.GetExoLabels() {
 		labels[k] = v
 	}
 
 	opts := volume.VolumeCreateBody{
-		Driver:     v.Driver,
-		DriverOpts: v.DriverOpts,
+		Driver:     spec.Driver,
+		DriverOpts: spec.DriverOpts,
 		Labels:     labels,
-		Name:       v.Spec.Name,
+		Name:       spec.Name,
 	}
 	createdBody, err := v.Docker.VolumeCreate(ctx, opts)
 	if err != nil {
@@ -61,8 +67,8 @@ func (v *Volume) Dispose(ctx context.Context, input *core.DisposeInput) (*core.D
 	return &core.DisposeOutput{}, nil
 }
 
-func (v *Volume) findExistingVolume(ctx context.Context) (*types.Volume, error) {
-	volume, err := v.Docker.VolumeInspect(ctx, v.Spec.Name)
+func (v *Volume) findExistingVolume(ctx context.Context, name string) (*types.Volume, error) {
+	volume, err := v.Docker.VolumeInspect(ctx, name)
 	if err == nil {
 		return &volume, nil
 	}

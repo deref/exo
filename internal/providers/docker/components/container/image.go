@@ -1,3 +1,5 @@
+// SEE NOTE: [IMAGE_SUBCOMPONENT].
+
 package container
 
 import (
@@ -5,20 +7,26 @@ import (
 	"encoding/json"
 	"fmt"
 
+	"github.com/deref/exo/internal/providers/docker/components/image"
 	"github.com/deref/exo/internal/task"
 	"github.com/docker/docker/api/types"
 	docker "github.com/docker/docker/client"
 )
 
-func (c *Container) ensureImage(ctx context.Context) error {
-	if c.State.Image.ID != "" && c.Spec.PullPolicy != "build" {
+func (c *Container) ensureImage(ctx context.Context, spec *Spec) error {
+	if c.State.Image.ID != "" && spec.PullPolicy != "build" {
 		return nil
+	}
+
+	imageSpec := &image.Spec{
+		Platform: spec.Platform,
+		Build:    spec.Build,
 	}
 
 	var inspection types.ImageInspect
 	var err error
-	if c.canBuild() {
-		if err := c.buildImage(ctx); err != nil {
+	if c.canBuild(imageSpec) {
+		if err := c.buildImage(ctx, imageSpec); err != nil {
 			return fmt.Errorf("building image: %w", err)
 		}
 		inspection, _, err = c.Docker.ImageInspectWithRaw(ctx, c.State.Image.ID)
@@ -26,21 +34,21 @@ func (c *Container) ensureImage(ctx context.Context) error {
 			return fmt.Errorf("inspecting built image: %w", err)
 		}
 	} else {
-		if c.Spec.PullPolicy != "always" {
-			inspection, _, err = c.Docker.ImageInspectWithRaw(ctx, c.Spec.Image)
+		if spec.PullPolicy != "always" {
+			inspection, _, err = c.Docker.ImageInspectWithRaw(ctx, spec.Image)
 			if docker.IsErrNotFound(err) {
-				if c.Spec.PullPolicy == "never" {
-					return fmt.Errorf("pull policy for %q set to \"never\", no image %q found in local cache, and no build specification provided", c.ComponentName, c.Spec.Image)
+				if spec.PullPolicy == "never" {
+					return fmt.Errorf("pull policy for %q set to \"never\", no image %q found in local cache, and no build specification provided", c.ComponentName, spec.Image)
 				}
 			} else if err != nil {
 				return fmt.Errorf("inspecting image: %w", err)
 			}
 		}
 		if inspection.ID == "" {
-			if err := c.pullImage(ctx); err != nil {
+			if err := c.pullImage(ctx, spec); err != nil {
 				return fmt.Errorf("pulling image: %w", err)
 			}
-			inspection, _, err = c.Docker.ImageInspectWithRaw(ctx, c.Spec.Image)
+			inspection, _, err = c.Docker.ImageInspectWithRaw(ctx, spec.Image)
 			if err != nil {
 				return fmt.Errorf("inspecting pulled image: %w", err)
 			}
@@ -74,13 +82,13 @@ type dockerPullStatus struct {
 	} `json:"progressDetail"`
 }
 
-func (c *Container) pullImage(ctx context.Context) error {
+func (c *Container) pullImage(ctx context.Context, spec *Spec) error {
 	pullTask := task.CurrentTask(ctx)
 	if pullTask == nil {
 		panic("No build task")
 	}
 
-	image, err := c.Docker.ImagePull(ctx, c.Spec.Image, types.ImagePullOptions{
+	image, err := c.Docker.ImagePull(ctx, spec.Image, types.ImagePullOptions{
 		//All           bool
 		//RegistryAuth  string // RegistryAuth is the base64 encoded credentials for the registry
 		//PrivilegeFunc RequestPrivilegeFunc

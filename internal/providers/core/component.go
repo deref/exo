@@ -19,7 +19,6 @@ type Component interface {
 type ComponentBase struct {
 	ComponentID          string
 	ComponentName        string
-	ComponentSpec        string
 	ComponentState       string
 	WorkspaceID          string
 	WorkspaceRoot        string

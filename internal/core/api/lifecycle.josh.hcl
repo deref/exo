@@ -1,8 +1,12 @@
 interface "lifecycle" {
 
-  method "initialize" {}
+  method "initialize" {
+    input "spec" "string" {}
+  }
 
-  method "refresh" {}
+  method "refresh" {
+    input "spec" "string" {}
+  }
 
   method "dispose" {
     // TODO: output promise for awaiting synchronous deletes.
