@@ -38,8 +38,7 @@ interface "workspace" {
   }
 
   method "destroy" {
-    doc = "Asynchronously deletes all components in the workspace, then deletes the workspace itself."
-
+    doc = "Dispose resources, then delete the record of it."
     output "job-id" "string" {}
   }
 

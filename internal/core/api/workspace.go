@@ -84,7 +84,7 @@ type Workspace interface {
 	Builder
 	// Describes this workspace.
 	Describe(context.Context, *DescribeInput) (*DescribeOutput, error)
-	// Asynchronously deletes all components in the workspace, then deletes the workspace itself.
+	// Dispose resources, then delete the record of it.
 	Destroy(context.Context, *DestroyInput) (*DestroyOutput, error)
 	// Performs creates, updates, refreshes, disposes, as needed.
 	Apply(context.Context, *ApplyInput) (*ApplyOutput, error)
