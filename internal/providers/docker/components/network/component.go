@@ -7,7 +7,6 @@ import (
 
 type Network struct {
 	docker.ComponentBase
-	Spec
 	State
 }
 

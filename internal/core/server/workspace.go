@@ -366,7 +366,6 @@ func (ws *Workspace) newController(ctx context.Context, desc api.ComponentDescri
 	base := core.ComponentBase{
 		ComponentID:          desc.ID,
 		ComponentName:        desc.Name,
-		ComponentSpec:        desc.Spec,
 		ComponentState:       desc.State,
 		WorkspaceID:          ws.ID,
 		WorkspaceRoot:        description.Root,
@@ -513,7 +512,9 @@ func (ws *Workspace) createComponent(ctx context.Context, component manifest.Com
 			Spec:      component.Spec,
 			DependsOn: component.DependsOn,
 		}, func(ctx context.Context, lifecycle api.Lifecycle) error {
-			_, err := lifecycle.Initialize(ctx, &api.InitializeInput{})
+			_, err := lifecycle.Initialize(ctx, &api.InitializeInput{
+				Spec: component.Spec,
+			})
 			return err
 		}); err != nil {
 			ws.logEventf(ctx, "error creating %s: %v", component.Name, err)
@@ -578,8 +579,10 @@ func (ws *Workspace) updateComponent(ctx context.Context, oldComponent api.Compo
 
 func (ws *Workspace) RefreshComponents(ctx context.Context, input *api.RefreshComponentsInput) (*api.RefreshComponentsOutput, error) {
 	query := makeComponentQuery(withRefs(input.Refs...))
-	jobID := ws.controlEachComponent(ctx, "refreshing", query, func(ctx context.Context, lifecycle api.Lifecycle) error {
-		_, err := lifecycle.Refresh(ctx, &api.RefreshInput{})
+	jobID := ws.controlEachComponent(ctx, "refreshing", query, func(ctx context.Context, lifecycle api.Lifecycle, desc *api.ComponentDescription) error {
+		_, err := lifecycle.Refresh(ctx, &api.RefreshInput{
+			Spec: desc.Spec,
+		})
 		return err
 	})
 	return &api.RefreshComponentsOutput{
@@ -746,10 +749,6 @@ func (ws *Workspace) Start(ctx context.Context, input *api.StartInput) (*api.Sta
 			}
 			return err
 		}
-		if lifecycle, ok := thing.(api.Lifecycle); ok {
-			_, err := lifecycle.Initialize(ctx, &api.InitializeInput{})
-			return err
-		}
 		return nil
 	})
 	return &api.StartOutput{
@@ -768,10 +767,6 @@ func (ws *Workspace) StartComponents(ctx context.Context, input *api.StartCompon
 			if err != nil {
 				ws.logEventf(ctx, "error starting %s: %v", thing.(core.Component).GetComponentName(), err)
 			}
-			return err
-		}
-		if lifecycle, ok := thing.(api.Lifecycle); ok {
-			_, err := lifecycle.Initialize(ctx, &api.InitializeInput{})
 			return err
 		}
 		return nil
@@ -1126,7 +1121,13 @@ func (ws *Workspace) control(ctx context.Context, desc api.ComponentDescription,
 	if !ctrlV.Type().AssignableTo(argT) {
 		return fmt.Errorf("%q controller does not implement %s", desc.Type, argT)
 	}
-	results := fV.Call([]reflect.Value{ctxV, ctrlV})
+	args := []reflect.Value{ctxV, ctrlV}
+	if fV.Type().NumIn() > 2 {
+		// Optional extra argument to pass component description back to callers.
+		// TODO: This is too clever. Update all the call sites.
+		args = append(args, reflect.ValueOf(&desc))
+	}
+	results := fV.Call(args)
 	fErr, _ := results[0].Interface().(error)
 	// Try to save state even if f fails.
 	newState, err := ctrl.MarshalState()

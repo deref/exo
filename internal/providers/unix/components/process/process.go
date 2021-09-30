@@ -35,7 +35,11 @@ func (p *Process) Start(ctx context.Context, input *core.StartInput) (*core.Star
 }
 
 func (p *Process) start(ctx context.Context) error {
-	p.State.clear()
+	if p.Program == "" {
+		// SEE NOTE [PROCESS_STATE_MIGRATION].
+		return errors.New("refresh needed")
+	}
+	p.State.reset()
 
 	whichQ := which.Query{
 		Program: p.Program,
@@ -140,6 +144,10 @@ func (p *Process) start(ctx context.Context) error {
 }
 
 func (p *Process) Stop(ctx context.Context, input *core.StopInput) (*core.StopOutput, error) {
+	if p.Program == "" {
+		// SEE NOTE [PROCESS_STATE_MIGRATION].
+		return nil, errors.New("refresh needed")
+	}
 	p.stop(input.TimeoutSeconds)
 	return &core.StopOutput{}, nil
 }
@@ -163,10 +171,14 @@ func (p *Process) stop(timeoutSeconds *uint) {
 		p.Logger.Infof("terminating process: %w", err)
 	}
 
-	p.State.clear()
+	p.State.reset()
 }
 
 func (p *Process) Restart(ctx context.Context, input *core.RestartInput) (*core.RestartOutput, error) {
+	if p.Program == "" {
+		// SEE NOTE [PROCESS_STATE_MIGRATION].
+		return nil, errors.New("refresh needed")
+	}
 	p.stop(input.TimeoutSeconds)
 	err := p.start(ctx)
 	if err != nil {

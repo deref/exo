@@ -12,7 +12,6 @@ import (
 type Container struct {
 	docker.ComponentBase
 
-	Spec  Spec
 	State State
 
 	SyslogPort uint
@@ -34,6 +33,7 @@ type State struct {
 
 type ImageState struct {
 	ID         string            `json:"id"`
+	Spec       string            `json:"spec"`
 	Command    strslice.StrSlice `json:"command"`
 	WorkingDir string            `json:"workingDir"`
 	Entrypoint strslice.StrSlice `json:"entrypoint"`

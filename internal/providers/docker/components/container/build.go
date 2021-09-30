@@ -1,3 +1,5 @@
+// SEE NOTE: [IMAGE_SUBCOMPONENT].
+
 package container
 
 import (
@@ -12,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/deref/exo/internal/core/api"
+	"github.com/deref/exo/internal/providers/docker/components/image"
 	"github.com/deref/exo/internal/task"
 	"github.com/deref/exo/internal/util/pathutil"
 	"github.com/docker/docker/api/types"
@@ -22,31 +25,37 @@ import (
 )
 
 func (c *Container) Build(ctx context.Context, input *api.BuildInput) (*api.BuildOutput, error) {
-	if c.canBuild() {
-		if err := c.buildImage(ctx); err != nil {
+	if c.State.Image.Spec == "" {
+		// SEE NOTE: [MIGRATE_CONTAINER_STATE].
+		return nil, errors.New("refresh needed")
+	}
+	spec, err := image.UnmarshalSpec(c.State.Image.Spec)
+	if err != nil {
+		return nil, fmt.Errorf("unmarshalling image spec: %w", err)
+	}
+	if c.canBuild(spec) {
+		if err := c.buildImage(ctx, spec); err != nil {
 			return nil, err
 		}
 	}
 	return &api.BuildOutput{}, nil
 }
 
-func (c *Container) canBuild() bool {
-	return c.Spec.Build.Context != ""
+func (c *Container) canBuild(spec *image.Spec) bool {
+	return spec.Build.Context != ""
 }
 
-func (c *Container) buildImage(ctx context.Context) error {
+func (c *Container) buildImage(ctx context.Context, spec *image.Spec) error {
 	buildTask := task.CurrentTask(ctx)
 	if buildTask == nil {
 		panic("No build task")
 	}
 
-	spec := c.Spec
-
 	contextPath := filepath.Join(c.WorkspaceRoot, spec.Build.Context)
 	if !pathutil.HasFilePathPrefix(contextPath, c.WorkspaceRoot) {
 		return errors.New("docker container build context path must be in exo workspace root")
 	}
-	dockerfile := c.Spec.Build.Dockerfile
+	dockerfile := spec.Build.Dockerfile
 	if dockerfile == "" {
 		dockerfile = "Dockerfile"
 	}

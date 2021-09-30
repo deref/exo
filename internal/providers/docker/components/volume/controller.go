@@ -4,13 +4,9 @@ import (
 	"fmt"
 
 	"github.com/deref/exo/internal/util/jsonutil"
-	"github.com/goccy/go-yaml"
 )
 
 func (v *Volume) InitResource() error {
-	if err := yaml.Unmarshal([]byte(v.ComponentSpec), &v.Spec); err != nil {
-		return fmt.Errorf("unmarshalling spec: %w", err)
-	}
 	if err := jsonutil.UnmarshalStringOrEmpty(v.ComponentState, &v.State); err != nil {
 		return fmt.Errorf("unmarshalling state: %w", err)
 	}

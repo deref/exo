@@ -16,12 +16,14 @@ type Lifecycle interface {
 }
 
 type InitializeInput struct {
+	Spec string `json:"spec"`
 }
 
 type InitializeOutput struct {
 }
 
 type RefreshInput struct {
+	Spec string `json:"spec"`
 }
 
 type RefreshOutput struct {
