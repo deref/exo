@@ -6,9 +6,8 @@ import (
 	"context"
 	"net/http"
 
-	"github.com/deref/exo/internal/eventd/api"
-	"github.com/deref/exo/internal/eventd/sqlite"
-	"github.com/deref/exo/internal/gensym"
+	"github.com/deref/exo/internal/compstate/api"
+	"github.com/deref/exo/internal/compstate/sqlite"
 	josh "github.com/deref/exo/internal/josh/server"
 	"github.com/deref/exo/internal/telemetry"
 	"github.com/deref/exo/internal/util/cmdutil"
@@ -20,13 +19,11 @@ import (
 func main() {
 	ctx := context.Background()
 
-	// NOTE [JOSH_CONTEXT]: These should not be necessary, the Josh machinery
-	// should not be dependent on these, but rather should have some kind of
-	// middleware.
+	// SEE NOTE: [JOSH_CONTEXT].
 	ctx = logging.ContextWithLogger(ctx, logging.Default())
 	ctx = telemetry.ContextWithTelemetry(ctx, &telemetry.Nop{})
 
-	dbPath := "/tmp/exo-dev-eventd.sqlite3"
+	dbPath := "/tmp/exo-dev-compstate.sqlite3"
 	db, err := sqlx.Open("sqlite3", dbPath)
 	if err != nil {
 		cmdutil.Fatalf("error opening sqlite db: %v", err)
@@ -34,8 +31,7 @@ func main() {
 	defer db.Close()
 
 	store := &sqlite.Store{
-		DB:    db,
-		IDGen: gensym.NewULIDGenerator(ctx),
+		DB: db,
 	}
 
 	if err := store.Migrate(ctx); err != nil {
