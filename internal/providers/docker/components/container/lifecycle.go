@@ -34,7 +34,7 @@ var _ core.Lifecycle = (*Container)(nil)
 
 func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput) (output *core.InitializeOutput, err error) {
 	var spec Spec
-	if err := yamlutil.UnmarshalString(input.Spec, spec); err != nil {
+	if err := yamlutil.UnmarshalString(input.Spec, &spec); err != nil {
 		return nil, fmt.Errorf("unmarshalling spec: %w", err)
 	}
 
