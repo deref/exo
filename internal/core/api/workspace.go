@@ -84,7 +84,7 @@ type Workspace interface {
 	Builder
 	// Describes this workspace.
 	Describe(context.Context, *DescribeInput) (*DescribeOutput, error)
-	// Asynchronously deletes all components in the workspace, then deletes the workspace itself.
+	// Dispose resources, then delete the record of it.
 	Destroy(context.Context, *DestroyInput) (*DestroyOutput, error)
 	// Performs creates, updates, refreshes, disposes, as needed.
 	Apply(context.Context, *ApplyInput) (*ApplyOutput, error)
@@ -451,15 +451,13 @@ type WorkspaceDescription struct {
 }
 
 type ComponentDescription struct {
-	ID          string   `json:"id"`
-	Name        string   `json:"name"`
-	Type        string   `json:"type"`
-	Spec        string   `json:"spec"`
-	State       string   `json:"state"`
-	Created     string   `json:"created"`
-	Initialized *string  `json:"initialized"`
-	Disposed    *string  `json:"disposed"`
-	DependsOn   []string `json:"dependsOn"`
+	ID        string   `json:"id"`
+	Name      string   `json:"name"`
+	Type      string   `json:"type"`
+	Spec      string   `json:"spec"`
+	State     string   `json:"state"`
+	Created   string   `json:"created"`
+	DependsOn []string `json:"dependsOn"`
 }
 
 type StreamDescription struct {
