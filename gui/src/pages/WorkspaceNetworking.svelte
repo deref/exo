@@ -30,6 +30,7 @@
           getValue: (network) => network.name,
         },
       ]}
+      actions={[]}
     />
   </Panel>
 </Layout>
