@@ -3,10 +3,12 @@ package config
 import (
 	_ "embed"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 
 	"github.com/BurntSushi/toml"
+	"github.com/deref/exo/internal/esv"
 	"github.com/deref/exo/internal/token"
 )
 
@@ -33,6 +35,7 @@ type Config struct {
 	RunDir       string
 	RunStateFile string
 	TokensFile   string
+	EsvTokenFile string
 
 	HTTPPort uint `toml:"httpPort"`
 	NoDaemon bool `toml:"noDaemon"`
@@ -45,6 +48,17 @@ type Config struct {
 
 func (c *Config) GetTokenClient() token.TokenClient {
 	return &token.FileTokenClient{Path: c.TokensFile}
+}
+
+func (c *Config) GetEsvClient() (*esv.EsvClient, error) {
+	token, err := ioutil.ReadFile(c.EsvTokenFile)
+	if os.IsNotExist(err) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("getting ESV client: %w", err)
+	}
+	return &esv.EsvClient{AccessKey: string(token)}, nil
 }
 
 func LoadDefault(cfg *Config) error {
@@ -104,6 +118,9 @@ func setDefaults(cfg *Config) {
 	}
 	if cfg.TokensFile == "" {
 		cfg.TokensFile = filepath.Join(cfg.VarDir, "token")
+	}
+	if cfg.EsvTokenFile == "" {
+		cfg.EsvTokenFile = filepath.Join(cfg.VarDir, "esv-token")
 	}
 
 	if cfg.HTTPPort == 0 {

@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"os"
 	"path"
-	"path/filepath"
 	"reflect"
 	"strings"
 	"sync"
@@ -49,6 +48,7 @@ type Workspace struct {
 	Logger      logging.Logger // TODO: Embed in context, so it can be annotated with request info.
 	Docker      *dockerclient.Client
 	TaskTracker *task.TaskTracker
+	EsvClient   *esv.EsvClient
 }
 
 func (ws *Workspace) logEventf(ctx context.Context, format string, v ...interface{}) {
@@ -432,34 +432,25 @@ func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]string, err
 
 	env := map[string]string{}
 
-	// TODO: store this in the state.
-	secretConfigPath, err := ws.resolveWorkspacePath(ctx, "exo-secrets-url")
-	if err != nil {
-		return nil, fmt.Errorf("resolving secrets config file path: %w", err)
-	}
-	secretsUrl, err := ioutil.ReadFile(secretConfigPath)
-	if err == nil {
-		// TODO: pass this in through the config.
-		secretsTokenPath := filepath.Join(ws.VarDir, "secret-token")
-		secretsToken, err := ioutil.ReadFile(secretsTokenPath)
+	if ws.EsvClient != nil {
+		// TODO: store this in the state.
+		secretConfigPath, err := ws.resolveWorkspacePath(ctx, "exo-secrets-url")
 		if err != nil {
-			return nil, fmt.Errorf("reading secrets token: %w", err)
+			return nil, fmt.Errorf("resolving secrets config file path: %w", err)
 		}
+		secretsUrl, err := ioutil.ReadFile(secretConfigPath)
+		if err == nil {
+			secrets, err := ws.EsvClient.GetWorkspaceSecrets(strings.TrimSpace(string(secretsUrl)))
+			if err != nil {
+				return nil, fmt.Errorf("getting workspace secrets: %w", err)
+			}
 
-		esvClient := esv.EsvClient{
-			AccessKey: strings.TrimSpace(string(secretsToken)),
+			for k, v := range secrets {
+				env[k] = v
+			}
+		} else if !os.IsNotExist(err) {
+			return nil, fmt.Errorf("reading secrets config: %w", err)
 		}
-
-		secrets, err := esvClient.GetWorkspaceSecrets(strings.TrimSpace(string(secretsUrl)))
-		if err != nil {
-			return nil, fmt.Errorf("getting workspace secrets: %w", err)
-		}
-
-		for k, v := range secrets {
-			env[k] = v
-		}
-	} else if !os.IsNotExist(err) {
-		return nil, fmt.Errorf("reading secrets config: %w", err)
 	}
 
 	// Encourage programs to log with colors enabled.  The closest thing to a

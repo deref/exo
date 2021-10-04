@@ -129,6 +129,11 @@ func RunServer(ctx context.Context, flags map[string]string) {
 		Logger: logger,
 	}
 
+	esvClient, err := cfg.GetEsvClient()
+	if err != nil {
+		cmdutil.Fatalf("failed to get ESV client: %w", err)
+	}
+
 	kernelCfg := &kernel.Config{
 		VarDir:      cfg.VarDir,
 		Store:       store,
@@ -137,6 +142,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 		Logger:      logger,
 		TaskTracker: taskTracker,
 		TokenClient: cfg.GetTokenClient(),
+		EsvClient:   esvClient,
 	}
 
 	// As a one-time migration, simply delete all logs in the old Badger format.

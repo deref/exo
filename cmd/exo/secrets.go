@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"net/url"
 	"os"
-	"path/filepath"
 	"strings"
 	"time"
 
@@ -144,9 +143,7 @@ var secretsCmd = &cobra.Command{
 					return fmt.Errorf("getting tokens: %w", err)
 				}
 
-				fmt.Printf("tokens: %+v\n", tokens)
-
-				err = ioutil.WriteFile(filepath.Join(cfg.VarDir, "secret-token"), []byte(tokens.AccessToken), 0600)
+				err = ioutil.WriteFile(cfg.EsvTokenFile, []byte(tokens.AccessToken), 0600)
 				if err != nil {
 					return fmt.Errorf("writing secrets: %w", err)
 				}
