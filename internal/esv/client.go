@@ -49,6 +49,7 @@ func (c *EsvClient) GetWorkspaceSecrets(projectURL string) (map[string]string, e
 		Secrets     []struct {
 			ID          string `json:"id"`
 			DisplayName string `json:"displayName"`
+			Value       string `json:"value"`
 		} `json:"secrets"`
 	}
 
@@ -73,7 +74,7 @@ func (c *EsvClient) GetWorkspaceSecrets(projectURL string) (map[string]string, e
 	}
 	secrets := map[string]string{}
 	for _, secret := range resp.Secrets {
-		secrets[secret.DisplayName] = secret.ID
+		secrets[secret.DisplayName] = secret.Value
 	}
 	return secrets, nil
 }
