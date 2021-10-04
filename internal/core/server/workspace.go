@@ -4,9 +4,11 @@ import (
 	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
+	"path/filepath"
 	"reflect"
 	"strings"
 	"sync"
@@ -15,6 +17,7 @@ import (
 	"github.com/deref/exo/internal/core/api"
 	state "github.com/deref/exo/internal/core/state/api"
 	"github.com/deref/exo/internal/deps"
+	"github.com/deref/exo/internal/esv"
 	eventd "github.com/deref/exo/internal/eventd/api"
 	"github.com/deref/exo/internal/gensym"
 	"github.com/deref/exo/internal/manifest"
@@ -428,6 +431,36 @@ func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]string, err
 	}
 
 	env := map[string]string{}
+
+	// TODO: store this in the state.
+	secretConfigPath, err := ws.resolveWorkspacePath(ctx, "exo-secrets-url")
+	if err != nil {
+		return nil, fmt.Errorf("resolving secrets config file path: %w", err)
+	}
+	secretsUrl, err := ioutil.ReadFile(secretConfigPath)
+	if err == nil {
+		// TODO: pass this in through the config.
+		secretsTokenPath := filepath.Join(ws.VarDir, "secret-token")
+		secretsToken, err := ioutil.ReadFile(secretsTokenPath)
+		if err != nil {
+			return nil, fmt.Errorf("reading secrets token: %w", err)
+		}
+
+		esvClient := esv.EsvClient{
+			AccessKey: strings.TrimSpace(string(secretsToken)),
+		}
+
+		secrets, err := esvClient.GetWorkspaceSecrets(strings.TrimSpace(string(secretsUrl)))
+		if err != nil {
+			return nil, fmt.Errorf("getting workspace secrets: %w", err)
+		}
+
+		for k, v := range secrets {
+			env[k] = v
+		}
+	} else if !os.IsNotExist(err) {
+		return nil, fmt.Errorf("reading secrets config: %w", err)
+	}
 
 	// Encourage programs to log with colors enabled.  The closest thing to a
 	// standard for this is <https://bixense.com/clicolors/#bug-reports>, but
