@@ -8,6 +8,7 @@ import WorkspaceVariables from './pages/WorkspaceVariables.svelte';
 import WorkspaceStorage from './pages/WorkspaceStorage.svelte';
 import WorkspaceNetworking from './pages/WorkspaceNetworking.svelte';
 import WorkspaceNewComponent from './pages/WorkspaceNewComponent.svelte';
+import EditComponent from './pages/EditComponent.svelte';
 import NewProcess from './pages/NewProcess.svelte';
 import NewDockerContainer from './pages/NewDockerContainer.svelte';
 import NewDockerNetwork from './pages/NewDockerNetwork.svelte';
@@ -29,6 +30,7 @@ export default {
   '/workspaces/:workspace/storage': WorkspaceStorage,
   '/workspaces/:workspace/networking': WorkspaceNetworking,
   '/workspaces/:workspace/new-component': WorkspaceNewComponent,
+  '/workspaces/:workspace/components/:component/edit': EditComponent,
   '/workspaces/:workspace/new-process': NewProcess,
   '/workspaces/:workspace/new-container': NewDockerContainer,
   '/workspaces/:workspace/new-volume': NewDockerVolume,
