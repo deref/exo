@@ -12,6 +12,7 @@ func TestInterpolate(t *testing.T) {
 		"foo": uint64(123),
 		"bar": "i",
 		"array": []interface{}{
+			nil,
 			"foo",
 			"v",
 			"bar",
@@ -31,6 +32,7 @@ func TestInterpolate(t *testing.T) {
 foo: 123
 bar: $one
 array:
+  - null
   - foo
   - $five
   - bar
