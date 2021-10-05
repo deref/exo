@@ -1,29 +1,26 @@
-<script context="module" lang="ts">
-  export interface Params {
-    workspace: string;
-  }
-</script>
-
 <script lang="ts">
   import Icon from '../components/Icon.svelte';
   import Layout from '../components/Layout.svelte';
+  import Spinner from '../components/Spinner.svelte';
   import Textbox from '../components/Textbox.svelte';
   import EditAs from '../components/form/EditAs.svelte';
   import ErrorLabel from '../components/ErrorLabel.svelte';
   import TextEditor from '../components/TextEditor.svelte';
+  import WorkspaceNav from '../components/WorkspaceNav.svelte';
   import SubmitButton from '../components/form/SubmitButton.svelte';
   import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
-  import { api, isClientError } from '../lib/api';
-  import { setLogVisibility } from '../lib/logs/visible-logs';
-  import * as router from 'svelte-spa-router';
+  import type { ComponentDescription } from '../lib/api';
+  import { api } from '../lib/api';
 
-  export let params: Params;
+  export let params = { workspace: '', component: '' };
 
   const workspaceId = params.workspace;
   const workspace = api.workspace(workspaceId);
   const workspaceComponentsRoute = `/workspaces/${encodeURIComponent(
     workspaceId,
   )}/components`;
+
+  const componentId = params.component;
 
   let error: Error | null = null;
 
@@ -42,40 +39,58 @@
   let name: string = '';
   let spec: string = '';
 
-  let componentType = 'process';
-  let componentName = 'test-name';
+  const getComponent = async () =>
+    (await workspace.describeComponents()).find((c) => c.id === componentId);
 
-  export let displayType: string;
-
-  $: pageTitle = `Edit ${componentType} ${componentName}`;
+  const pageTitle = (component: ComponentDescription) =>
+    `Edit ${component.type} ${component.name}`;
 </script>
 
 <Layout>
-  <CenterFormPanel title={pageTitle} backRoute={workspaceComponentsRoute}>
-    <h1><Icon glyph="LogoDocker" />{pageTitle}</h1>
-    <form on:submit|preventDefault={async () => {}}>
-      <div class="group">
-        <label for="name">Name:</label>
-        <Textbox id="name" name="name" bind:value={name} --input-width="100%" />
-      </div>
+  <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
+  {#await getComponent()}
+    <CenterFormPanel title="Loading..." backRoute={workspaceComponentsRoute}>
+      <Spinner />
+    </CenterFormPanel>
+  {:then component}
+    {#if component !== undefined}
+      <CenterFormPanel
+        title={pageTitle(component)}
+        backRoute={workspaceComponentsRoute}
+      >
+        <h1>
+          <Icon glyph="LogoDocker" />{pageTitle(component)}
+        </h1>
+        <form on:submit|preventDefault={async () => {}}>
+          <div class="group">
+            <label for="name">Name:</label>
+            <Textbox
+              id="name"
+              name="name"
+              value={component.name}
+              --input-width="100%"
+            />
+          </div>
 
-      <EditAs bind:mode {editorModes} />
-      {#if mode === 'compose'}
-        <div class="group">
-          <label for="spec">Spec:</label>
-          <TextEditor id="spec" bind:value={spec} language="yaml" />
-        </div>
-        <details>
-          <summary>Show/hide example</summary>
-          <slot />
-        </details>
-      {:else}
-        <!-- GUI form edit mode -->
-      {/if}
-      <SubmitButton>Create {displayType}</SubmitButton>
-      <div style="margin: 24px 0;">
-        <ErrorLabel value={error} />
-      </div>
-    </form>
-  </CenterFormPanel>
+          <EditAs bind:mode {editorModes} />
+          {#if mode === 'compose'}
+            <div class="group">
+              <label for="spec">Spec:</label>
+              <TextEditor id="spec" bind:value={spec} language="yaml" />
+            </div>
+            <details>
+              <summary>Show/hide example</summary>
+              <slot />
+            </details>
+          {:else}
+            <!-- GUI form edit mode -->
+          {/if}
+          <SubmitButton>Save changes</SubmitButton>
+          <div style="margin: 24px 0;">
+            <ErrorLabel value={error} />
+          </div>
+        </form>
+      </CenterFormPanel>
+    {/if}
+  {/await}
 </Layout>
