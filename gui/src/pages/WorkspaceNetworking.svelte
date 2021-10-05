@@ -35,7 +35,7 @@
         {
           tooltip: 'Edit network',
           glyph: 'Edit',
-          execute: async (network) => {
+          execute: (network) => {
             router.push(
               `#/workspaces/${encodeURIComponent(
                 workspaceId,

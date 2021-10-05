@@ -40,7 +40,7 @@
         {
           tooltip: 'Edit component',
           glyph: 'Edit',
-          execute: async (component) => {
+          execute: (component) => {
             router.push(
               `#/workspaces/${encodeURIComponent(
                 workspaceId,

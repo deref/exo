@@ -35,7 +35,7 @@
         {
           tooltip: 'Edit volume',
           glyph: 'Edit',
-          execute: async (volume) => {
+          execute: (volume) => {
             router.push(
               `#/workspaces/${encodeURIComponent(
                 workspaceId,
