@@ -194,6 +194,10 @@ export interface DescribeTasksInput {
   jobIds?: string[];
 }
 
+export interface DescribeComponentsInput {
+  refs?: string[];
+}
+
 export interface TemplateDescription {
   name: string;
   displayName: string;
@@ -230,7 +234,9 @@ export interface WorkspaceApi {
 
   describeSelf(): Promise<WorkspaceDescription>;
 
-  describeComponents(): Promise<ComponentDescription[]>;
+  describeComponents(
+    input?: DescribeComponentsInput,
+  ): Promise<ComponentDescription[]>;
 
   describeEnvironment(): Promise<Record<string, string>>;
 
@@ -343,8 +349,11 @@ export const api = (() => {
         return description;
       },
 
-      async describeComponents(): Promise<ComponentDescription[]> {
-        const { components } = (await invoke('describe-components')) as any;
+      async describeComponents(input = {}): Promise<ComponentDescription[]> {
+        const { components } = (await invoke(
+          'describe-components',
+          input,
+        )) as any;
         return components;
       },
 

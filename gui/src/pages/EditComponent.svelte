@@ -40,7 +40,7 @@
   let spec: string = '';
 
   const getComponent = async () =>
-    (await workspace.describeComponents()).find((c) => c.id === componentId);
+    (await workspace.describeComponents({ refs: [componentId] }))[0];
 
   const pageTitle = (component: ComponentDescription) =>
     `Edit ${component.type} “${component.name}”`;
