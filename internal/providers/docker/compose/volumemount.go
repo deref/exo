@@ -98,14 +98,14 @@ func (vm *VolumeMount) setSource(src string) {
 }
 
 type VolumeOptions struct {
-	Nocopy bool `yaml:"nocopy"`
+	Nocopy bool `yaml:"nocopy,omitempty"`
 }
 
 type BindOptions struct {
-	Propagation    string `yaml:"propagation"`
-	CreateHostPath bool   `yaml:"create_host_path"`
+	Propagation    string `yaml:"propagation,omitempty"`
+	CreateHostPath bool   `yaml:"create_host_path,omitempty"`
 }
 
 type TmpfsOptions struct {
-	Size int64 `yaml:"size"`
+	Size int64 `yaml:"size,omitempty"`
 }
