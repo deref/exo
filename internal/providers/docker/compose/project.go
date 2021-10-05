@@ -16,11 +16,11 @@ import (
 	"github.com/goccy/go-yaml"
 )
 
-func Parse(r io.Reader) (*Compose, error) {
+func Parse(r io.Reader) (*Project, error) {
 	dec := yaml.NewDecoder(r,
 		yaml.DisallowDuplicateKey(),
 	)
-	var comp Compose
+	var comp Project
 	if err := dec.Decode(&comp); err != nil {
 		return nil, err
 	}
@@ -40,7 +40,7 @@ func Parse(r io.Reader) (*Compose, error) {
 	return &comp, nil
 }
 
-type Compose struct {
+type Project struct {
 	Version  string             `yaml:"version,omitempty"`
 	Services map[string]Service `yaml:"services,omitempty"`
 	Networks map[string]Network `yaml:"networks,omitempty"`
