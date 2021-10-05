@@ -24,7 +24,7 @@ func (r *interpolator) errorf(format string, v ...interface{}) error {
 
 func (r *interpolator) interpolate(v interface{}) (interface{}, error) {
 	switch v := v.(type) {
-	case bool, int, uint, int32, uint32, int64, uint64, float32, float64:
+	case nil, bool, int, uint, int32, uint32, int64, uint64, float32, float64:
 		return v, nil
 
 	case string:
