@@ -94,6 +94,17 @@
             },
           },
           {
+            name: 'Edit component',
+            glyph: 'Edit',
+            execute(event) {
+              router.push(
+                `/workspaces/${encodeURIComponent(
+                  workspaceId,
+                )}/components/${encodeURIComponent(id)}/edit`,
+              );
+            },
+          },
+          {
             name: 'Toggle logs visibility',
             glyph: 'Logs',
             execute(event) {
