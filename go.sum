@@ -414,6 +414,8 @@ github.com/deref/pier v0.0.0-20211004204221-0b2adc6e4f6c h1:vtWNpGGUHzosClvoXH3W
 github.com/deref/pier v0.0.0-20211004204221-0b2adc6e4f6c/go.mod h1:ht6ede/cpN2wuY823vX/F+isslxcRIc4eC/WwxylNqs=
 github.com/deref/util-go v0.0.0-20210922232622-f6f9aa9d157d h1:FBk6FpOdBCir8+g6Fbo7kzRJhkOrX6lrruGc38w5d8k=
 github.com/deref/util-go v0.0.0-20210922232622-f6f9aa9d157d/go.mod h1:qWY9JpUbfLtuKnXHapBYewRn5oCQuYKqpzK2PHyDtlY=
+github.com/deref/util-go v0.0.0-20211005205322-c425b1d73580 h1:c/+npVe+/PWgLzdz5sSGoXF5AzcDKl/u7ASlj+GboJk=
+github.com/deref/util-go v0.0.0-20211005205322-c425b1d73580/go.mod h1:qWY9JpUbfLtuKnXHapBYewRn5oCQuYKqpzK2PHyDtlY=
 github.com/devigned/tab v0.1.1/go.mod h1:XG9mPq0dFghrYvoBF3xdRrJzSTX1b7IQrvaL9mzjeJY=
 github.com/dgrijalva/jwt-go v0.0.0-20170104182250-a601269ab70c/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
