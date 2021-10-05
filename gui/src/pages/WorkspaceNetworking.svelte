@@ -35,19 +35,19 @@
         {
           tooltip: 'Edit network',
           glyph: 'Edit',
-          callback: async (component) => {
+          execute: async (network) => {
             router.push(
               `#/workspaces/${encodeURIComponent(
                 workspaceId,
-              )}/components/${encodeURIComponent(component.id)}/edit`,
+              )}/components/${encodeURIComponent(network.id)}/edit`,
             );
           },
         },
         {
           tooltip: 'Delete network',
           glyph: 'Delete',
-          callback: async (component) => {
-            await workspace.deleteComponent(component.id);
+          execute: async (network) => {
+            await workspace.deleteComponent(network.id);
             window.location.reload();
           },
         },

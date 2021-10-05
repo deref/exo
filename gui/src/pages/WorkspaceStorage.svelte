@@ -35,19 +35,19 @@
         {
           tooltip: 'Edit volume',
           glyph: 'Edit',
-          callback: async (component) => {
+          execute: async (volume) => {
             router.push(
               `#/workspaces/${encodeURIComponent(
                 workspaceId,
-              )}/components/${encodeURIComponent(component.id)}/edit`,
+              )}/components/${encodeURIComponent(volume.id)}/edit`,
             );
           },
         },
         {
           tooltip: 'Delete volume',
           glyph: 'Delete',
-          callback: async (component) => {
-            await workspace.deleteComponent(component.id);
+          execute: async (volume) => {
+            await workspace.deleteComponent(volume.id);
             window.location.reload();
           },
         },

@@ -40,7 +40,7 @@
         {
           tooltip: 'Edit component',
           glyph: 'Edit',
-          callback: async (component) => {
+          execute: async (component) => {
             router.push(
               `#/workspaces/${encodeURIComponent(
                 workspaceId,
@@ -51,7 +51,7 @@
         {
           tooltip: 'Delete component',
           glyph: 'Delete',
-          callback: async (component) => {
+          execute: async (component) => {
             await workspace.deleteComponent(component.id);
             window.location.reload();
           },

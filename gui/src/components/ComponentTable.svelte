@@ -14,16 +14,16 @@
     getValue: (item: Item) => T;
   }
 
-  interface Action<T> {
+  interface Action {
     tooltip: string;
     glyph: IconGlyph;
-    callback(component: any): any;
+    execute(component: any): any;
   }
 
   export let load: () => Promise<Item[]>;
 
   export let columns: Column<any>[];
-  export let actions: Action<any>[] | undefined;
+  export let actions: Action[] | undefined;
 
   let componentsPromise = load();
 </script>
@@ -67,7 +67,7 @@
                         tooltip={action.tooltip}
                         glyph={action.glyph}
                         on:click={() => {
-                          action.callback(component);
+                          action.execute(component);
                         }}
                       />
                     {/each}
