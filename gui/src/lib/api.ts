@@ -184,6 +184,7 @@ export interface ComponentDescription {
   id: string;
   name: string;
   type: string;
+  spec: string;
 }
 
 export interface CreateComponentResponse {

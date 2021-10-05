@@ -36,9 +36,6 @@
     // },
   ];
 
-  let name: string = '';
-  let spec: string = '';
-
   const getComponent = async () =>
     (await workspace.describeComponents({ refs: [componentId] }))[0];
 
@@ -85,7 +82,7 @@
           {#if mode === 'compose'}
             <div class="group">
               <label for="spec">Spec:</label>
-              <TextEditor id="spec" bind:value={spec} language="yaml" />
+              <TextEditor id="spec" value={component.spec} language="yaml" />
             </div>
             <details>
               <summary>Show/hide example</summary>
