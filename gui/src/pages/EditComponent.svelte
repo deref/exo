@@ -43,7 +43,16 @@
     (await workspace.describeComponents()).find((c) => c.id === componentId);
 
   const pageTitle = (component: ComponentDescription) =>
-    `Edit ${component.type} ${component.name}`;
+    `Edit ${component.type} “${component.name}”`;
+
+  const componentGlyph = (cType: string) => {
+    switch (cType) {
+      case 'process':
+        return 'Layers';
+      default:
+        return 'LogoDocker';
+    }
+  };
 </script>
 
 <Layout>
@@ -59,7 +68,7 @@
         backRoute={workspaceComponentsRoute}
       >
         <h1>
-          <Icon glyph="LogoDocker" />{pageTitle(component)}
+          <Icon glyph={componentGlyph(component.type)} />{pageTitle(component)}
         </h1>
         <form on:submit|preventDefault={async () => {}}>
           <div class="group">
