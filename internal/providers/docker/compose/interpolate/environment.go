@@ -1,4 +1,4 @@
-package template
+package interpolate
 
 type Environment interface {
 	Lookup(key string) (value string, found bool)
