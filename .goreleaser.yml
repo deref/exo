@@ -1,32 +1,61 @@
-# This is an example .goreleaser.yml file with some sensible defaults.
-# Make sure to check the documentation at https://goreleaser.com
+# Documentation for .goreleaser.yml can be found at <https://goreleaser.com>.
+
 before:
   hooks:
-    # You may remove this if you don't use go modules.
     - go mod tidy
-    # you may remove this if you don't need go generate
-    - go generate ./...
+    - make codegen
+    #- make -C gui
+    #
 builds:
-  - env:
+  - main: ./cmd/exo
+    env:
       - CGO_ENABLED=0
     goos:
       - linux
-      - windows
+      #- windows # TODO: Enable Windows support.
       - darwin
-archives:
-  - replacements:
-      darwin: Darwin
-      linux: Linux
-      windows: Windows
-      386: i386
-      amd64: x86_64
+    tags:
+      - bundle
+      - managed
+
+# TODO: Re-enable these after testing Homebrew stuff.
+#archives:
+#  - wrap_in_directory: true
+#    replacements:
+#      darwin: Darwin
+#      linux: Linux
+#      windows: Windows
+#      386: i386
+#      amd64: x86_64
+#    files:
+#      - LICENSE
+#      - NOTICES.md
+#      - VERSION
+#      - README.md
+#      - doc/*
+
 checksum:
   name_template: "checksums.txt"
+
 snapshot:
   name_template: "{{ incpatch .Version }}-next"
+
 changelog:
   sort: asc
   filters:
     exclude:
       - "^docs:"
       - "^test:"
+
+brews:
+  - name: exo
+    tap:
+      owner: deref
+      name: homebrew-tap
+    commit_author:
+      name: derefbot
+      email: bot@deref.io
+    homepage: "https://exo.deref.io"
+    folder: Formula
+    test: |
+      system "#{bin}/exo version"
