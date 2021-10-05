@@ -14,7 +14,7 @@ type VolumeMount struct {
 	Bind        *BindOptions
 	Volume      *VolumeOptions
 	Tmpfs       *TmpfsOptions
-	Consistency *IgnoredField
+	Consistency *Ignored
 }
 
 // extendedVolumeMount is a private struct that is structurally identical to VolumeAttachment but
@@ -27,7 +27,7 @@ type extendedVolumeMount struct {
 	Bind        *BindOptions   `yaml:"bind,omitempty"`
 	Volume      *VolumeOptions `yaml:"volume,omitempty"`
 	Tmpfs       *TmpfsOptions  `yaml:"tmpfs,omitempty"`
-	Consistency *IgnoredField  `yaml:"consistency,omitempty"`
+	Consistency *Ignored       `yaml:"consistency,omitempty"`
 }
 
 func (vm *VolumeMount) UnmarshalYAML(unmarshal func(interface{}) error) error {
