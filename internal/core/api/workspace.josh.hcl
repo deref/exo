@@ -38,8 +38,7 @@ interface "workspace" {
   }
 
   method "destroy" {
-    doc = "Asynchronously deletes all components in the workspace, then deletes the workspace itself."
-
+    doc = "Dispose resources, then delete the record of it."
     output "job-id" "string" {}
   }
 
@@ -245,8 +244,6 @@ struct "component-description" {
   field "spec" "string" {}
   field "state" "string" {}
   field "created" "string" {}
-  field "initialized" "*string" {}
-  field "disposed" "*string" {}
   field "depends-on" "[]string" {}
 }
 

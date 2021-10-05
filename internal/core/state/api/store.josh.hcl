@@ -53,8 +53,6 @@ interface "store" {
   method "patch-component" {
 	  input "id" "string" {}
 	  input "state" "string" {}
-	  input "initialized" "string" {}
-	  input "disposed" "string" {}
 	  input "depends-on" "*[]string" {}
   }
 
@@ -78,7 +76,5 @@ struct "component-description" {
 	field "spec" "string" {}
 	field "state" "string" {}
 	field "created" "string" {}
-	field "initialized" "*string" {}
-	field "disposed" "*string" {}
 	field "depends-on" "[]string" {}
 }
