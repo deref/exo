@@ -551,13 +551,11 @@ pids_limit: 5280`,
     hard: 40000`,
 			expected: compose.Service{
 				Ulimits: compose.Ulimits{
-					{
-						Name: "nproc",
+					"nproc": {
 						Soft: 65535,
 						Hard: 65535,
 					},
-					{
-						Name: "nofile",
+					"nofile": {
 						Soft: 20000,
 						Hard: 40000,
 					},

@@ -552,12 +552,14 @@ func convertUlimits(in compose.Ulimits) []*units.Ulimit {
 	}
 
 	out := make([]*units.Ulimit, len(in))
-	for i, ulimit := range in {
+	i := 0
+	for name, ulimit := range in {
 		out[i] = &units.Ulimit{
-			Name: ulimit.Name,
+			Name: name,
 			Hard: ulimit.Hard,
 			Soft: ulimit.Soft,
 		}
+		i++
 	}
 
 	return out
