@@ -34,7 +34,7 @@ var _ core.Lifecycle = (*Container)(nil)
 
 func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput) (output *core.InitializeOutput, err error) {
 	var spec Spec
-	if err := yamlutil.UnmarshalString(input.Spec, &spec); err != nil {
+	if err := c.UnmarshalSpec(input.Spec, &spec); err != nil {
 		return nil, fmt.Errorf("unmarshalling spec: %w", err)
 	}
 
@@ -429,7 +429,7 @@ func (c *Container) Refresh(ctx context.Context, input *core.RefreshInput) (*cor
 		// has passed from October 2021, or when the [IMAGE_SUBCOMPONENT] note has
 		// been resolved.
 		var spec Spec
-		if err := yamlutil.UnmarshalString(input.Spec, &spec); err != nil {
+		if err := c.UnmarshalSpec(input.Spec, &spec); err != nil {
 			return nil, fmt.Errorf("unmarshalling spec: %w", err)
 		}
 		c.State.Image.Spec = yamlutil.MustMarshalString(image.Spec{

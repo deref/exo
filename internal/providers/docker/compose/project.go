@@ -9,35 +9,14 @@
 package compose
 
 import (
-	"fmt"
-	"io"
-	"strings"
-
 	"github.com/goccy/go-yaml"
 )
 
-func Parse(r io.Reader) (*Project, error) {
-	dec := yaml.NewDecoder(r,
-		yaml.DisallowDuplicateKey(),
-	)
-	var comp Project
-	if err := dec.Decode(&comp); err != nil {
-		return nil, err
-	}
-
-	// Validate.
-	for key := range comp.Raw {
-		switch key {
-		case "version", "services", "networks", "volumes", "configs", "secrets":
-			// Ok.
-		default:
-			if !strings.HasPrefix(key, "x-") {
-				return nil, fmt.Errorf("unsupported top-level key in compose file: %q", key)
-			}
-		}
-	}
-
-	return &comp, nil
+type ProjectTemplate struct {
+	Services map[string]ServiceTemplate `yaml:"services,omitempty"`
+	Volumes  map[string]VolumeTemplate  `yaml:"volumes,omitempty"`
+	Networks map[string]NetworkTemplate `yaml:"networks,omitempty"`
+	MapSlice yaml.MapSlice              `yaml:",inline"`
 }
 
 type Project struct {
@@ -50,4 +29,5 @@ type Project struct {
 
 	Raw map[string]interface{} `yaml:",inline"`
 	// TODO: extensions with "x-" prefix.
+	// TODO: Validate set of top-level keys.
 }

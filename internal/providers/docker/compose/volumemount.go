@@ -4,22 +4,28 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	"github.com/goccy/go-yaml"
 )
 
-type VolumeMount struct {
-	Type        string
-	Source      string
-	Target      string
-	ReadOnly    bool
-	Bind        *BindOptions
-	Volume      *VolumeOptions
-	Tmpfs       *TmpfsOptions
-	Consistency *Ignored
+type VolumeMountTemplate struct {
+	IsShortForm bool
+	VolumeMountTemplateLongForm
 }
 
-// extendedVolumeMount is a private struct that is structurally identical to VolumeAttachment but
-// is only used for YAML unmarshalling where we do not need to consider the short string-based syntax.
-type extendedVolumeMount struct {
+type VolumeMountTemplateLongForm struct {
+	Type     string        `yaml:"type,omitempty"`
+	Source   string        `yaml:"source,omitempty"`
+	MapSlice yaml.MapSlice `yaml:",inline"`
+}
+
+type VolumeMount struct {
+	IsShortForm bool
+	VolumeMountLongForm
+}
+
+// SEE NOTE [COMPOSE_AST].
+type VolumeMountLongForm struct {
 	Type        string         `yaml:"type,omitempty"`
 	Source      string         `yaml:"source,omitempty"`
 	Target      string         `yaml:"target,omitempty"`
@@ -30,25 +36,41 @@ type extendedVolumeMount struct {
 	Consistency *Ignored       `yaml:"consistency,omitempty"`
 }
 
+func (vm VolumeMountTemplate) MarshalYAML() (interface{}, error) {
+	return vm.VolumeMountTemplateLongForm, nil
+}
+
+func (vm *VolumeMountTemplate) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var asString string
+	if err := unmarshal(&asString); err == nil {
+		return vm.fromShortSyntax(asString)
+	}
+	return unmarshal(&vm.VolumeMountTemplateLongForm)
+}
+
 func (vm *VolumeMount) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var asString string
 	if err := unmarshal(&asString); err == nil {
 		return vm.fromShortSyntax(asString)
 	}
+	return unmarshal(&vm.VolumeMountLongForm)
+}
 
-	asExtended := extendedVolumeMount{}
-	if err := unmarshal(&asExtended); err != nil {
-		return err
+func (vm *VolumeMountTemplate) fromShortSyntax(in string) error {
+	parts := strings.Split(in, ":")
+	switch len(parts) {
+	case 1:
+		vm.Type = "volume"
+	case 2, 3:
+		vm.Source = parts[0]
+		if localPathRe.MatchString(vm.Source) {
+			vm.Type = "bind"
+		} else {
+			vm.Type = "volume"
+		}
+	default:
+		return fmt.Errorf(`invalid volume specification; expected "VOLUME:CONTAINER_PATH" or "VOLUME:CONTAINER_PATH:ACCESS_MODE" but got %q`, in)
 	}
-	vm.Type = asExtended.Type
-	vm.Source = asExtended.Source
-	vm.Target = asExtended.Target
-	vm.ReadOnly = asExtended.ReadOnly
-	vm.Bind = asExtended.Bind
-	vm.Volume = asExtended.Volume
-	vm.Tmpfs = asExtended.Tmpfs
-	vm.Consistency = asExtended.Consistency
-
 	return nil
 }
 

@@ -22,8 +22,10 @@ func TestMakeMount(t *testing.T) {
 		Type:   mount.TypeVolume,
 		Target: "/home/node/app",
 	}, makeMount(compose.VolumeMount{
-		Type:   "volume",
-		Target: "/home/node/app",
+		VolumeMountLongForm: compose.VolumeMountLongForm{
+			Type:   "volume",
+			Target: "/home/node/app",
+		},
 	}))
 
 	assert.Equal(t, mount.Mount{
@@ -31,9 +33,11 @@ func TestMakeMount(t *testing.T) {
 		Source: workspaceRoot + "/testing",
 		Target: "/home/node/app",
 	}, makeMount(compose.VolumeMount{
-		Type:   "bind",
-		Source: "./testing",
-		Target: "/home/node/app",
+		VolumeMountLongForm: compose.VolumeMountLongForm{
+			Type:   "bind",
+			Source: "./testing",
+			Target: "/home/node/app",
+		},
 	}))
 
 	assert.Equal(t, mount.Mount{
@@ -41,9 +45,11 @@ func TestMakeMount(t *testing.T) {
 		Source: "/testing",
 		Target: "/home/node/app",
 	}, makeMount(compose.VolumeMount{
-		Type:   "bind",
-		Source: "/testing",
-		Target: "/home/node/app",
+		VolumeMountLongForm: compose.VolumeMountLongForm{
+			Type:   "bind",
+			Source: "/testing",
+			Target: "/home/node/app",
+		},
 	}))
 
 	assert.Equal(t, mount.Mount{
@@ -51,9 +57,11 @@ func TestMakeMount(t *testing.T) {
 		Source: path.Join(homeDir, "testing"),
 		Target: "/home/node/app",
 	}, makeMount(compose.VolumeMount{
-		Type:   "bind",
-		Source: "~/testing",
-		Target: "/home/node/app",
+		VolumeMountLongForm: compose.VolumeMountLongForm{
+			Type:   "bind",
+			Source: "~/testing",
+			Target: "/home/node/app",
+		},
 	}))
 
 	assert.Equal(t, mount.Mount{
@@ -61,8 +69,10 @@ func TestMakeMount(t *testing.T) {
 		Source: "testing",
 		Target: "/home/node/app",
 	}, makeMount(compose.VolumeMount{
-		Type:   "volume",
-		Source: "testing",
-		Target: "/home/node/app",
+		VolumeMountLongForm: compose.VolumeMountLongForm{
+			Type:   "volume",
+			Source: "testing",
+			Target: "/home/node/app",
+		},
 	}))
 }

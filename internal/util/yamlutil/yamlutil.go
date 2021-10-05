@@ -1,6 +1,10 @@
 package yamlutil
 
-import "github.com/goccy/go-yaml"
+import (
+	"io"
+
+	"github.com/goccy/go-yaml"
+)
 
 func MarshalString(v interface{}) (string, error) {
 	bs, err := yaml.Marshal(v)
@@ -23,4 +27,9 @@ func MustUnmarshalString(s string, v interface{}) {
 	if err := UnmarshalString(s, v); err != nil {
 		panic(err)
 	}
+}
+
+func UnmarshalReader(r io.Reader, v interface{}) error {
+	dec := yaml.NewDecoder(r)
+	return dec.Decode(v)
 }

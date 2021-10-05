@@ -1,5 +1,19 @@
 package compose
 
+import "github.com/goccy/go-yaml"
+
+type ServiceTemplate struct {
+	Name          string                      `yaml:"name,omitempty"`
+	Build         BuildTemplate               `yaml:"build,omitempty"`
+	ContainerName string                      `yaml:"containerName,omitempty"`
+	Labels        Dictionary                  `yaml:"labels,omitempty"`
+	Links         []string                    `yaml:"links,omitempty"`
+	Networks      ServiceNetworksTemplate     `yaml:"networks,omitempty"`
+	Volumes       []VolumeMountTemplate       `yaml:"volumes,omitempty"`
+	DependsOn     ServiceDependenciesTemplate `yaml:"depends_on,omitempty"`
+	MapSlice      yaml.MapSlice               `yaml:",inline"`
+}
+
 type Service struct {
 	// Note that these two are only applicable to Windows.
 	CPUCount   int64 `yaml:"cpu_count,omitempty"`

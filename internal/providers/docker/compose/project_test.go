@@ -1,3 +1,16 @@
+// NOTE [COMPOSE_AST]: The compose package is pretty gnarly right now because
+// there are two isomorphic sets of types: "*Template" types, which represent
+// ASTs that contain expressions, long-form syntax support, etc. As well as
+// types with unsuffixed names that represent an interpolated, loaded, abstract
+// model. Right now, both support a subtle and broken subset of YAML
+// marshalling and unmarshalling, but the model should not support
+// serialization except by conversion through the template AST. This would
+// dramatically simplify things, but it is labor intensive to create all the
+// distinct AST types and all their conversions. However, if and when we
+// support multi-file compose projects and the "extends" construct, we'll need
+// to write manual visits of the entire AST anyway, and so will need to incur
+// that labor cost.
+
 package compose_test
 
 import (
@@ -7,6 +20,7 @@ import (
 	"time"
 
 	"github.com/deref/exo/internal/providers/docker/compose"
+	"github.com/deref/exo/internal/util/yamlutil"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -38,28 +52,34 @@ func TestParseService(t *testing.T) {
 			expected: compose.Service{
 				Volumes: []compose.VolumeMount{
 					{
-						Type:     "volume",
-						Source:   "mydata",
-						Target:   "/data",
-						ReadOnly: true,
-						Volume: &compose.VolumeOptions{
-							Nocopy: true,
+						VolumeMountLongForm: compose.VolumeMountLongForm{
+							Type:     "volume",
+							Source:   "mydata",
+							Target:   "/data",
+							ReadOnly: true,
+							Volume: &compose.VolumeOptions{
+								Nocopy: true,
+							},
 						},
 					},
 					{
-						Type:   "bind",
-						Source: "/path/a",
-						Target: "/path/b",
-						Bind: &compose.BindOptions{
-							Propagation:    "rshared",
-							CreateHostPath: true,
+						VolumeMountLongForm: compose.VolumeMountLongForm{
+							Type:   "bind",
+							Source: "/path/a",
+							Target: "/path/b",
+							Bind: &compose.BindOptions{
+								Propagation:    "rshared",
+								CreateHostPath: true,
+							},
 						},
 					},
 					{
-						Type:   "tmpfs",
-						Target: "/data/buffer",
-						Tmpfs: &compose.TmpfsOptions{
-							Size: 208666624,
+						VolumeMountLongForm: compose.VolumeMountLongForm{
+							Type:   "tmpfs",
+							Target: "/data/buffer",
+							Tmpfs: &compose.TmpfsOptions{
+								Size: 208666624,
+							},
 						},
 					},
 				},
@@ -77,38 +97,48 @@ func TestParseService(t *testing.T) {
 			expected: compose.Service{
 				Volumes: []compose.VolumeMount{
 					{
-						Type:   "volume",
-						Target: "/var/myapp",
-					},
-					{
-						Type:   "bind",
-						Source: "./data",
-						Target: "/data",
-						Bind: &compose.BindOptions{
-							CreateHostPath: true,
+						VolumeMountLongForm: compose.VolumeMountLongForm{
+							Type:   "volume",
+							Target: "/var/myapp",
 						},
 					},
 					{
-						Type:     "bind",
-						Source:   "/home/fred/.ssh",
-						Target:   "/root/.ssh",
-						ReadOnly: true,
-						Bind: &compose.BindOptions{
-							CreateHostPath: true,
+						VolumeMountLongForm: compose.VolumeMountLongForm{
+							Type:   "bind",
+							Source: "./data",
+							Target: "/data",
+							Bind: &compose.BindOptions{
+								CreateHostPath: true,
+							},
 						},
 					},
 					{
-						Type:   "bind",
-						Source: "~/util",
-						Target: "/usr/bin/util",
-						Bind: &compose.BindOptions{
-							CreateHostPath: true,
+						VolumeMountLongForm: compose.VolumeMountLongForm{
+							Type:     "bind",
+							Source:   "/home/fred/.ssh",
+							Target:   "/root/.ssh",
+							ReadOnly: true,
+							Bind: &compose.BindOptions{
+								CreateHostPath: true,
+							},
 						},
 					},
 					{
-						Type:   "volume",
-						Source: "my-log-volume",
-						Target: "/var/log/xyzzy",
+						VolumeMountLongForm: compose.VolumeMountLongForm{
+							Type:   "bind",
+							Source: "~/util",
+							Target: "/usr/bin/util",
+							Bind: &compose.BindOptions{
+								CreateHostPath: true,
+							},
+						},
+					},
+					{
+						VolumeMountLongForm: compose.VolumeMountLongForm{
+							Type:   "volume",
+							Source: "my-log-volume",
+							Target: "/var/log/xyzzy",
+						},
 					},
 				},
 			},
@@ -121,16 +151,13 @@ func TestParseService(t *testing.T) {
 - messages`,
 			expected: compose.Service{
 				DependsOn: compose.ServiceDependencies{
-					IsShortSyntax: true,
-					Services: []compose.ServiceDependency{
-						{
-							Service:   "db",
-							Condition: "service_started",
-						},
-						{
-							Service:   "messages",
-							Condition: "service_started",
-						},
+					{
+						Service:   "db",
+						Condition: "service_started",
+					},
+					{
+						Service:   "messages",
+						Condition: "service_started",
 					},
 				},
 			},
@@ -144,15 +171,13 @@ func TestParseService(t *testing.T) {
     condition: service_healthy`,
 			expected: compose.Service{
 				DependsOn: compose.ServiceDependencies{
-					Services: []compose.ServiceDependency{
-						{
-							Service:   "db",
-							Condition: "service_started",
-						},
-						{
-							Service:   "messages",
-							Condition: "service_healthy",
-						},
+					{
+						Service:   "db",
+						Condition: "service_started",
+					},
+					{
+						Service:   "messages",
+						Condition: "service_healthy",
 					},
 				},
 			},
@@ -447,12 +472,14 @@ cap_drop:
 						Network: "net1",
 					},
 					{
-						Network:      "net2",
-						Aliases:      []string{"foo", "bar"},
-						IPV4Address:  "172.16.238.10",
-						IPV6Address:  "2001:3984:3989::10",
-						LinkLocalIPs: []string{"57.123.22.11", "57.123.22.13"},
-						Priority:     1000,
+						Network: "net2",
+						ServiceNetworkLongForm: compose.ServiceNetworkLongForm{
+							Aliases:      []string{"foo", "bar"},
+							IPV4Address:  "172.16.238.10",
+							IPV6Address:  "2001:3984:3989::10",
+							LinkLocalIPs: []string{"57.123.22.11", "57.123.22.13"},
+							Priority:     1000,
+						},
 					},
 				},
 			},
@@ -594,14 +621,33 @@ pids_limit: 5280`,
 				content.WriteString(line)
 				content.WriteByte('\n')
 			}
+			src := content.String()
 
-			comp, err := compose.Parse(&content)
-			if !assert.NoError(t, err) {
-				return
+			{
+				var projectTemplate compose.ProjectTemplate
+				err := yamlutil.UnmarshalString(src, &compose.Interpolated{
+					Environment: compose.MapEnvironment{},
+					Value:       &projectTemplate,
+				})
+				if !assert.NoError(t, err) {
+					return
+				}
+				// TODO: Validate parsing of compose templates. SEE NOTE: [COMPOSE_AST].
 			}
 
-			svc := comp.Services["test-svc"]
-			assert.Equal(t, expected, svc)
+			{
+				var project compose.Project
+				err := yamlutil.UnmarshalString(src, &compose.Interpolated{
+					Environment: compose.MapEnvironment{},
+					Value:       &project,
+				})
+				if !assert.NoError(t, err) {
+					return
+				}
+
+				svc := project.Services["test-svc"]
+				assert.Equal(t, expected, svc)
+			}
 		})
 	}
 }

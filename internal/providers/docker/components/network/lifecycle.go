@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	core "github.com/deref/exo/internal/core/api"
-	"github.com/deref/exo/internal/util/yamlutil"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	docker "github.com/docker/docker/client"
@@ -14,7 +13,7 @@ import (
 
 func (n *Network) Initialize(ctx context.Context, input *core.InitializeInput) (output *core.InitializeOutput, err error) {
 	var spec Spec
-	if err := yamlutil.UnmarshalString(input.Spec, &spec); err != nil {
+	if err := n.UnmarshalSpec(input.Spec, &spec); err != nil {
 		return nil, fmt.Errorf("unmarshalling spec: %w", err)
 	}
 

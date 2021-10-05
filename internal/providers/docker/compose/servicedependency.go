@@ -2,37 +2,31 @@ package compose
 
 import (
 	"fmt"
-	"sort"
-	"strings"
 
 	"github.com/goccy/go-yaml"
 )
 
-// ServiceDependencies represents either the short (list) form of `depends_on` or the full
-// form that indicates the condition under which this service can start. Since there are two
-// mutally exclusive representations of this structure, custom marshaling and unmarshing is
-// implemented.
-type ServiceDependencies struct {
-	Services      []ServiceDependency
-	IsShortSyntax bool
-}
+// ServiceDependenciesTemplate represents either the short (list) form of
+// `depends_on` or the full form that indicates the condition under which this
+// service can start. Since there are two mutally exclusive representations of
+// this structure, custom marshaling and unmarshing is implemented.
+type ServiceDependenciesTemplate []ServiceDependencyTemplate
 
-type ServiceDependency struct {
+type ServiceDependencies []ServiceDependency
+
+type ServiceDependencyTemplate struct {
 	Service   string
 	Condition string
 }
 
-func (sd ServiceDependencies) MarshalYAML() (interface{}, error) {
-	if sd.IsShortSyntax {
-		services := make([]string, len(sd.Services))
-		for i, service := range sd.Services {
-			services[i] = service.Service
-		}
-		return services, nil
-	}
+type ServiceDependency struct {
+	Service   string
+	Condition string // TODO: validation.
+}
 
-	services := make(map[string]interface{}, len(sd.Services))
-	for _, service := range sd.Services {
+func (sd ServiceDependenciesTemplate) MarshalYAML() (interface{}, error) {
+	services := make(map[string]interface{}, len(sd))
+	for _, service := range sd {
 		services[service.Service] = map[string]interface{}{
 			"condition": service.Condition,
 		}
@@ -40,13 +34,13 @@ func (sd ServiceDependencies) MarshalYAML() (interface{}, error) {
 	return services, nil
 }
 
-func (sd *ServiceDependencies) UnmarshalYAML(unmarshal func(interface{}) error) error {
+func (sd *ServiceDependenciesTemplate) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var asStrings []string
-	if err := unmarshal(&asStrings); err == nil {
-		sd.IsShortSyntax = true
-		sd.Services = make([]ServiceDependency, len(asStrings))
+	err := unmarshal(&asStrings)
+	if err == nil {
+		*sd = make([]ServiceDependencyTemplate, len(asStrings))
 		for i, service := range asStrings {
-			sd.Services[i] = ServiceDependency{
+			(*sd)[i] = ServiceDependencyTemplate{
 				Service:   service,
 				Condition: "service_started",
 			}
@@ -54,51 +48,52 @@ func (sd *ServiceDependencies) UnmarshalYAML(unmarshal func(interface{}) error) 
 		return nil
 	}
 
-	var asMap yaml.MapSlice
-	if err := unmarshal(&asMap); err != nil {
+	var slice yaml.MapSlice
+	if err := unmarshal(&slice); err != nil {
+		return err
+	}
+	var m map[string]struct {
+		Condition string `yaml:"condition,omitempty"`
+	}
+	if err := unmarshal(&m); err != nil {
 		return err
 	}
 
-	sd.Services = make([]ServiceDependency, 0, len(asMap))
-	for _, item := range asMap {
-		service := item.Key.(string)
-		condition := "service_started"
-		if spec, ok := item.Value.(map[string]interface{}); ok {
-			if specCondition, ok := spec["condition"]; ok {
-				condition = specCondition.(string)
-			}
+	*sd = make([]ServiceDependencyTemplate, len(slice))
+	for i, item := range slice {
+		name, ok := item.Key.(string)
+		if !ok {
+			return fmt.Errorf("expected key to be string, got %T", item.Key)
 		}
-
-		switch condition {
-		case "service_started", "service_healthy", "service_completed_successfully":
-			// Ok.
-		default:
-			return fmt.Errorf("invalid condition %q for service dependency %q", condition, service)
+		dependency := m[name]
+		(*sd)[i] = ServiceDependencyTemplate{
+			Service:   name,
+			Condition: dependency.Condition,
 		}
-		sd.Services = append(sd.Services, ServiceDependency{
-			Service:   service,
-			Condition: condition,
-		})
 	}
-	sort.Sort(serviceDependenciesSort{sd.Services})
 
 	return nil
 }
 
-type serviceDependenciesSort struct {
-	dependencies []ServiceDependency
-}
-
-func (iface serviceDependenciesSort) Len() int {
-	return len(iface.dependencies)
-}
-
-func (iface serviceDependenciesSort) Less(i, j int) bool {
-	return strings.Compare(iface.dependencies[i].Service, iface.dependencies[j].Service) < 0
-}
-
-func (iface serviceDependenciesSort) Swap(i, j int) {
-	tmp := iface.dependencies[i]
-	iface.dependencies[i] = iface.dependencies[j]
-	iface.dependencies[j] = tmp
+func (sd *ServiceDependencies) UnmarshalYAML(unmarshal func(interface{}) error) error {
+	var dependencies ServiceDependenciesTemplate
+	if err := unmarshal(&dependencies); err != nil {
+		return err
+	}
+	*sd = make([]ServiceDependency, len(dependencies))
+	for i, dependency := range dependencies {
+		switch dependency.Condition {
+		case "":
+			dependency.Condition = "service_started"
+		case "service_started", "service_healthy", "service_completed_successfully":
+			// Ok.
+		default:
+			return fmt.Errorf("invalid condition %q for service dependency %q", dependency.Condition, dependency.Service)
+		}
+		(*sd)[i] = ServiceDependency{
+			Service:   dependency.Service,
+			Condition: dependency.Condition,
+		}
+	}
+	return nil
 }

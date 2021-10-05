@@ -1,0 +1,30 @@
+services:
+  frontend:
+    image: awesome/webapp
+    ports:
+      - "443:${FRONTEND_PORT}"
+    networks:
+      - front-tier
+      - back-tier
+    configs:
+      - httpd-config
+    secrets:
+      - server-certificate
+
+  backend:
+    image: awesome/database
+    volumes:
+      - db-data:/etc/data
+    networks:
+      - back-tier
+
+volumes:
+  db-data:
+    read_only: "${VOLUME_READONLY}"
+    driver: flocker
+    driver_opts:
+      size: "10GiB"
+
+networks:
+  front-tier: {}
+  back-tier: {}
