@@ -16,13 +16,13 @@
   import type { RequestLifecycle } from '../lib/api';
   import type { ProcessDescription } from '../lib/process/types';
 
-  export let params = { workspace: '', process: '' };
+  export let params = { workspace: '', component: '' };
 
   const workspaceId = params.workspace;
   const workspace = api.workspace(workspaceId);
   const workspaceRoute = `/workspaces/${encodeURIComponent(workspaceId)}`;
 
-  const processId = params.process;
+  const componentId = params.component;
 
   let processList: RequestLifecycle<ProcessDescription[]> = {
     stage: 'pending',
@@ -45,7 +45,7 @@
     refreshInterval = setInterval(() => {
       refreshAllProcesses(workspace);
       if (processList.stage === 'success') {
-        process = processList.data.filter((p) => p.id === processId)[0];
+        process = processList.data.filter((p) => p.id === componentId)[0];
       }
       if (process && process.running) {
         if (process.cpuPercent !== null) {

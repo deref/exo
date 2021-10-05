@@ -60,7 +60,7 @@
         use:link
         href={`/workspaces/${encodeURIComponent(
           workspaceId,
-        )}/processes/${encodeURIComponent(id)}`}
+        )}/components/${encodeURIComponent(id)}`}
       >
         {name}
       </a>
@@ -89,7 +89,7 @@
               router.push(
                 `/workspaces/${encodeURIComponent(
                   workspaceId,
-                )}/processes/${encodeURIComponent(id)}`,
+                )}/components/${encodeURIComponent(id)}`,
               );
             },
           },
