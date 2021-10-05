@@ -52,8 +52,8 @@ type Service struct {
 	MemorySwappiness *int64          `yaml:"mem_swappiness,omitempty"`
 	// MemoryLimit and MemoryReservation can be specified either as strings or integers.
 	// TODO: Deprecate these fields once we support `deploy.limits.memory` and `deploy.reservations.memory`.
-	MemoryLimit       Memory `yaml:"mem_limit,omitempty"`
-	MemoryReservation Memory `yaml:"mem_reservation,omitempty"`
+	MemoryLimit       Bytes `yaml:"mem_limit,omitempty"`
+	MemoryReservation Bytes `yaml:"mem_reservation,omitempty"`
 
 	MemswapLimit   Bytes        `yaml:"memswap_limit,omitempty"`
 	OomKillDisable *bool        `yaml:"oom_kill_disable,omitempty"`
