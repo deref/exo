@@ -11,6 +11,7 @@
   import EditAs from '../components/form/EditAs.svelte';
   import ErrorLabel from '../components/ErrorLabel.svelte';
   import TextEditor from '../components/TextEditor.svelte';
+  import WorkspaceNav from '../components/WorkspaceNav.svelte';
   import SubmitButton from '../components/form/SubmitButton.svelte';
   import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
   import { api, isClientError } from '../lib/api';
@@ -48,6 +49,7 @@
 </script>
 
 <Layout>
+  <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
   <CenterFormPanel
     title={`New ${displayType}`}
     backRoute={workspaceNewComponentRoute}
