@@ -4,6 +4,43 @@ All notable changes to this project will be documented in this file.
 
 This project adhears to [CalVer](./doc/versioning.md).
 
+## Unreleased
+
+### Added
+
+- Project templates
+
+
+## 2021.10.06
+
+### Added
+
+- Ability to create new projects in the GUI.
+- GUI for deleting components.
+- `exo edit` command for editing component specs.
+- `exo rename` command to rename components.
+- Commands to clear log scrollback in CLI and GUI.
+- Workspace log stream for system events in log viewer.
+- The `exo gui` command learned the `--print` flag.
+- `exo exec` command runs one-off processes in the workspace Environment.
+- Workspace information view in GUI.
+
+### Fixed
+
+- Numerous issues applying modified manifests.
+- Various error reporting improvements.
+- Migrated log storage from BadgerDB to Sqlite.
+- Secured CORS policy and daemon request authorization.
+- Secured iframe embedding against click-jacking attacks.
+- Secured against DNS rebinding attacks.
+- Workspaces with the same last directory path component are no longer
+  ambiguous.
+- Enhanced appearance of process list.
+- Unintended disabling of colored logging with popular JavaScript and other
+  libraries.
+- Unbounded growth of log storage.
+
+
 ## 2021.09.14
 
 ### Added
