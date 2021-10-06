@@ -199,6 +199,7 @@ type UpdateComponentInput struct {
 }
 
 type UpdateComponentOutput struct {
+	JobID string `json:"jobId"`
 }
 
 type RenameComponentInput struct {
