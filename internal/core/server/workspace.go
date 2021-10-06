@@ -757,7 +757,10 @@ func (ws *Workspace) StartComponents(ctx context.Context, input *api.StartCompon
 	// Note that we are only querying Process component types specifically because they are the only
 	// things that are "startable".
 	query := allProcessQuery(withRefs(input.Refs...), withDependencies)
-	jobID := ws.controlEachComponent(ctx, "starting", query, func(*api.ComponentDescription) interface{} {
+	jobID := ws.controlEachComponent(ctx, "starting", query, func(desc *api.ComponentDescription) interface{} {
+		if !isRunnableType(desc.Type) {
+			return nil
+		}
 		return &api.StartInput{}
 	}, func(desc *api.ComponentDescription, err error) {
 		ws.logEventf(ctx, "error starting %s: %v", desc.Name, err)
@@ -785,7 +788,10 @@ func (ws *Workspace) StopComponents(ctx context.Context, input *api.StopComponen
 		withReversedDependencies,
 		withDependents,
 	)
-	jobID := ws.controlEachComponent(ctx, "stopping", query, func(*api.ComponentDescription) interface{} {
+	jobID := ws.controlEachComponent(ctx, "stopping", query, func(desc *api.ComponentDescription) interface{} {
+		if !isRunnableType(desc.Type) {
+			return nil
+		}
 		return &api.StopInput{TimeoutSeconds: input.TimeoutSeconds}
 	})
 	return &api.StopComponentsOutput{
@@ -843,7 +849,10 @@ func (ws *Workspace) RestartComponents(ctx context.Context, input *api.RestartCo
 	//    then restart the dependents in normal order again.
 	// 3. Ensure that all dependendencies are started (in normal order), then restart these components (current behaviour).
 	query := allProcessQuery(withRefs(input.Refs...), withDependencies)
-	jobID := ws.controlEachComponent(ctx, "restart", query, func(*api.ComponentDescription) interface{} {
+	jobID := ws.controlEachComponent(ctx, "restart", query, func(desc *api.ComponentDescription) interface{} {
+		if !isRunnableType(desc.Type) {
+			return nil
+		}
 		return &api.RestartInput{TimeoutSeconds: input.TimeoutSeconds}
 	}, func(desc *api.ComponentDescription, err error) {
 		ws.logEventf(ctx, "error restarting %s: %v", desc.Name, err)
@@ -1042,7 +1051,11 @@ func (ws *Workspace) goControlComponents(t *task.Task, query componentQuery, mak
 			name: component.Name,
 			task: t.CreateChild(component.Name),
 			run: func(t *task.Task) error {
-				err := ws.control(t, component, makeMessage(&component))
+				msg := makeMessage(&component)
+				if msg == nil {
+					return nil
+				}
+				err := ws.control(t, component, msg)
 				if err != nil {
 					for _, f := range onErr {
 						f(&component, err)
