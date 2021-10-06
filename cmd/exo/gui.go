@@ -64,7 +64,7 @@ If the current directory is part of a workspace, navigates to it.`,
 			return nil
 		}
 
-		fmt.Fprintf(os.Stderr, "Opening GUI: %s", endpoint)
+		fmt.Fprintf(os.Stderr, "Opening GUI: %s\n", endpoint)
 
 		browser.Stdout = os.Stderr
 		return browser.OpenURL(endpoint)
