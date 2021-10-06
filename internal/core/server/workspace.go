@@ -49,13 +49,15 @@ type Workspace struct {
 
 func (ws *Workspace) logEventf(ctx context.Context, format string, v ...interface{}) {
 	eventStore := log.CurrentEventStore(ctx)
-	_, err := eventStore.AddEvent(ctx, &eventd.AddEventInput{
+	input := &eventd.AddEventInput{
 		Stream:    ws.ID,
 		Timestamp: chrono.NowString(ctx),
 		Message:   fmt.Sprintf(format, v...),
-	})
+	}
+	_, err := eventStore.AddEvent(ctx, input)
 	if err != nil {
 		ws.Logger.Infof("error adding workspace event: %v", err)
+		ws.Logger.Infof("event message was: %s", input.Message)
 	}
 }
 
