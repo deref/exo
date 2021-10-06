@@ -223,8 +223,7 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 			task: job.CreateChild("re-creating " + name),
 			run: func(t *task.Task) error {
 				// Should the replacement component get the old component's ID?
-				_, err := ws.createComponent(t, newComponent, gensym.RandomBase32())
-				return err
+				return ws.createComponent(t, newComponent, gensym.RandomBase32())
 			},
 		})
 		for _, dependency := range newComponent.DependsOn {
@@ -255,9 +254,7 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 				name: name,
 				task: job.CreateChild("adding " + name),
 				run: func(t *task.Task) error {
-					id := gensym.RandomBase32()
-					_, err := ws.createComponent(t, newComponent, id)
-					return err
+					return ws.createComponent(t, newComponent, gensym.RandomBase32())
 				},
 			})
 			for _, dependency := range newComponent.DependsOn {
@@ -461,25 +458,33 @@ func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]string, err
 
 func (ws *Workspace) CreateComponent(ctx context.Context, input *api.CreateComponentInput) (*api.CreateComponentOutput, error) {
 	id := gensym.RandomBase32()
-	jobID, err := ws.createComponent(ctx, manifest.Component{
-		Name: input.Name,
-		Type: input.Type,
-		Spec: input.Spec,
-	}, id)
-	if err != nil {
-		return nil, err
-	}
+
+	job := ws.TaskTracker.StartTask(ctx, "creating "+input.Name)
+	go func() {
+		defer job.Finish()
+
+		err := ws.createComponent(ctx, manifest.Component{
+			Name: input.Name,
+			Type: input.Type,
+			Spec: input.Spec,
+		}, id)
+		if err != nil {
+			ws.logEventf(ctx, "error creating %s: %v", input.Name, err)
+			job.Fail(err)
+			return
+		}
+	}()
 
 	ws.logEventf(ctx, "new component: %s", input.Name)
 	return &api.CreateComponentOutput{
 		ID:    id,
-		JobID: jobID,
+		JobID: job.ID(),
 	}, nil
 }
 
-func (ws *Workspace) createComponent(ctx context.Context, component manifest.Component, id string) (string, error) {
+func (ws *Workspace) createComponent(ctx context.Context, component manifest.Component, id string) error {
 	if err := manifest.ValidateName(component.Name); err != nil {
-		return "", errutil.HTTPErrorf(http.StatusBadRequest, "component name %q invalid: %w", component.Name, err)
+		return errutil.HTTPErrorf(http.StatusBadRequest, "component name %q invalid: %w", component.Name, err)
 	}
 
 	if _, err := ws.Store.AddComponent(ctx, &state.AddComponentInput{
@@ -491,37 +496,22 @@ func (ws *Workspace) createComponent(ctx context.Context, component manifest.Com
 		Created:     chrono.NowString(ctx),
 		DependsOn:   component.DependsOn,
 	}); err != nil {
-		return "", fmt.Errorf("adding component: %w", err)
+		return fmt.Errorf("adding component: %w", err)
 	}
 
-	job := ws.TaskTracker.StartTask(ctx, "creating "+component.Name)
-	go func() {
-		defer job.Finish()
-
-		// Construct a synthetic component description to avoid re-reading after
-		// the add. Only the fields needed by control are included.
-		// TODO: Store.AddComponent could return a component description?
-		desc := api.ComponentDescription{
-			ID:        id,
-			Name:      component.Name,
-			Type:      component.Type,
-			Spec:      component.Spec,
-			DependsOn: component.DependsOn,
-		}
-		if err := ws.control(job, desc, &api.InitializeInput{
-			Spec: component.Spec,
-		}); err != nil {
-			ws.logEventf(ctx, "error creating %s: %v", component.Name, err)
-			job.Fail(err)
-			return
-		}
-
-		if err := job.Wait(); err != nil {
-			return
-		}
-	}()
-
-	return job.ID(), nil
+	// Construct a synthetic component description to avoid re-reading after
+	// the add. Only the fields needed by control are included.
+	// TODO: Store.AddComponent could return a component description?
+	desc := api.ComponentDescription{
+		ID:        id,
+		Name:      component.Name,
+		Type:      component.Type,
+		Spec:      component.Spec,
+		DependsOn: component.DependsOn,
+	}
+	return ws.control(ctx, desc, &api.InitializeInput{
+		Spec: component.Spec,
+	})
 }
 
 func (ws *Workspace) UpdateComponent(ctx context.Context, input *api.UpdateComponentInput) (*api.UpdateComponentOutput, error) {
