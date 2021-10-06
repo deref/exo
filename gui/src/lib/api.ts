@@ -262,11 +262,13 @@ export interface WorkspaceApi {
     spec: string,
   ): Promise<CreateComponentResponse>;
 
+  updateComponent(ref: string, spec: string): Promise<void>;
+
+  deleteComponent(ref: string): Promise<void>;
+
   startProcess(ref: string): Promise<void>;
 
   stopProcess(ref: string): Promise<void>;
-
-  deleteComponent(ref: string): Promise<void>;
 
   refreshAllProcesses(): Promise<void>;
 
@@ -409,7 +411,16 @@ export const api = (() => {
         })) as CreateComponentResponse;
       },
 
-      // TODO: Add updateComponent once fully working in backend
+      async updateComponent(ref: string, spec: string): Promise<void> {
+        await invoke('update-component', {
+          ref,
+          spec,
+        });
+      },
+
+      async deleteComponent(ref: string): Promise<void> {
+        await invoke('delete-components', { refs: [ref] });
+      },
 
       async startProcess(ref: string): Promise<void> {
         await invoke('start-components', { refs: [ref] });
@@ -417,10 +428,6 @@ export const api = (() => {
 
       async stopProcess(ref: string): Promise<void> {
         await invoke('stop-components', { refs: [ref] });
-      },
-
-      async deleteComponent(ref: string): Promise<void> {
-        await invoke('delete-components', { refs: [ref] });
       },
 
       async refreshAllProcesses(): Promise<void> {
