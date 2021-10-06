@@ -36,6 +36,8 @@ var editCmd = &cobra.Command{
 		}
 		component := description.Components[0]
 
+		// TODO: add textprotocol.Headers to create a mime-message with appropriate
+		// content-type, to allow editing of name, etc.
 		oldSpec := component.Spec
 		newSpec, err := term.EditString("spec.*", oldSpec) // TODO: Correct file extension.
 
