@@ -30,6 +30,16 @@
           getValue: (volume) => volume.name,
         },
       ]}
+      actions={[
+        {
+          tooltip: 'Delete volume',
+          glyph: 'Delete',
+          callback: async (component) => {
+            await workspace.deleteComponent(component.id);
+            window.location.reload();
+          },
+        },
+      ]}
     />
   </Panel>
 </Layout>

@@ -30,6 +30,16 @@
           getValue: (network) => network.name,
         },
       ]}
+      actions={[
+        {
+          tooltip: 'Delete network',
+          glyph: 'Delete',
+          callback: async (component) => {
+            await workspace.deleteComponent(component.id);
+            window.location.reload();
+          },
+        },
+      ]}
     />
   </Panel>
 </Layout>
