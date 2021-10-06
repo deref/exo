@@ -406,6 +406,9 @@ func (sto *Store) PatchComponent(ctx context.Context, input *state.PatchComponen
 		if input.DependsOn != nil {
 			component.DependsOn = *input.DependsOn
 		}
+		if input.Spec != "" {
+			component.Spec = input.Spec
+		}
 		if input.State != "" {
 			component.State = input.State
 		}

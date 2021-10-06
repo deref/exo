@@ -113,7 +113,7 @@ interface "workspace" {
     input "spec" "string" {}
     input "depends-on" "[]string" {}
 
-    # TODO: output "job-id" "string" {}
+    output "job-id" "string" {}
   }
 
   method "rename-component" {

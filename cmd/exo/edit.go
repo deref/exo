@@ -22,6 +22,7 @@ var editCmd = &cobra.Command{
 		ctx := newContext()
 		checkOrEnsureServer()
 		cl := newClient()
+		kernel := cl.Kernel()
 
 		workspace := requireCurrentWorkspace(ctx, cl)
 		description, err := workspace.DescribeComponents(ctx, &api.DescribeComponentsInput{
@@ -38,11 +39,11 @@ var editCmd = &cobra.Command{
 		oldSpec := component.Spec
 		newSpec, err := term.EditString("spec.*", oldSpec) // TODO: Correct file extension.
 
-		_, err = workspace.UpdateComponent(ctx, &api.UpdateComponentInput{
+		output, err := workspace.UpdateComponent(ctx, &api.UpdateComponentInput{
 			Ref:  component.ID,
 			Spec: newSpec,
 		})
 		// TODO: This should handle a job id for the update step.
-		return err
+		return watchJob(ctx, kernel, output.JobID)
 	},
 }

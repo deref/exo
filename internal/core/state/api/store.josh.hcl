@@ -57,6 +57,9 @@ interface "store" {
 	  input "name" "string" {
       doc = "If provided, renames component."
     }
+    input "spec" "string" {
+      doc = "If provided, replaces component spec."
+    }
 	  input "state" "string" {}
 	  input "depends-on" "*[]string" {}
   }
