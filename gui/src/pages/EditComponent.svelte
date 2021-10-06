@@ -34,8 +34,15 @@
     },
   ];
 
-  const getComponent = async () =>
-    (await workspace.describeComponents({ refs: [componentId] }))[0];
+  let spec = '';
+
+  const getComponent = async () => {
+    const component = (
+      await workspace.describeComponents({ refs: [componentId] })
+    )[0];
+    spec = component.spec;
+    return component;
+  };
 
   const pageTitle = (component: ComponentDescription) =>
     `Edit ${component.type} “${component.name}”`;
@@ -93,7 +100,7 @@ environment:
         <form
           on:submit|preventDefault={async () => {
             try {
-              await workspace.updateComponent(component.id, component.spec);
+              await workspace.updateComponent(component.id, spec);
 
               router.push(workspaceComponentsRoute);
             } catch (ex) {
@@ -117,7 +124,7 @@ environment:
           <EditAs bind:mode {editorModes} />
           <div class="group">
             <label for="spec">Spec:</label>
-            <TextEditor id="spec" value={component.spec} language="yaml" />
+            <TextEditor id="spec" bind:value={spec} language="yaml" />
           </div>
           <details>
             <summary>Show/hide example</summary>
