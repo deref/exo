@@ -67,7 +67,7 @@ before the program name.
 		output, err := workspace.CreateComponent(ctx, &api.CreateComponentInput{
 			Name: name,
 			Type: "process",
-			Spec: jsonutil.MustMarshalString(processSpec),
+			Spec: jsonutil.MustMarshalIndentString(processSpec),
 		})
 		if err != nil {
 			return err

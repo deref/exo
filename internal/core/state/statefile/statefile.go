@@ -35,14 +35,12 @@ type Root struct {
 }
 
 type Component struct {
-	Name        string   `json:"name"`
-	Type        string   `json:"type"`
-	Spec        string   `json:"spec"`
-	State       string   `json:"state"`
-	Created     string   `json:"created"`
-	Initialized *string  `json:"initialized"`
-	Disposed    *string  `json:"disposed"`
-	DependsOn   []string `json:"dependsOn"`
+	Name      string   `json:"name"`
+	Type      string   `json:"type"`
+	Spec      string   `json:"spec"`
+	State     string   `json:"state"`
+	Created   string   `json:"created"`
+	DependsOn []string `json:"dependsOn"`
 }
 
 func (c *Component) getDescription(id, workspaceID string) state.ComponentDescription {
@@ -54,8 +52,6 @@ func (c *Component) getDescription(id, workspaceID string) state.ComponentDescri
 		Spec:        c.Spec,
 		State:       c.State,
 		Created:     c.Created,
-		Initialized: c.Initialized,
-		Disposed:    c.Disposed,
 		DependsOn:   c.DependsOn,
 	}
 }
@@ -399,11 +395,13 @@ func (sto *Store) PatchComponent(ctx context.Context, input *state.PatchComponen
 		if component == nil {
 			return errors.New("corrupt state: component not in workspace")
 		}
-		if input.Initialized != "" {
-			component.Initialized = &input.Initialized // TODO: Validate iso8601.
-		}
-		if input.Disposed != "" {
-			component.Disposed = &input.Disposed // TODO: Validate iso8601.
+		if input.Name != "" {
+			component.Name = input.Name
+			if workspace.Names == nil {
+				return errors.New("corrupt state: names missing in workspace")
+			}
+			delete(workspace.Components, component.Name)
+			workspace.Names[input.Name] = input.ID
 		}
 		if input.DependsOn != nil {
 			component.DependsOn = *input.DependsOn

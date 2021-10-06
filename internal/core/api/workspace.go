@@ -84,7 +84,7 @@ type Workspace interface {
 	Builder
 	// Describes this workspace.
 	Describe(context.Context, *DescribeInput) (*DescribeOutput, error)
-	// Asynchronously deletes all components in the workspace, then deletes the workspace itself.
+	// Dispose resources, then delete the record of it.
 	Destroy(context.Context, *DestroyInput) (*DestroyOutput, error)
 	// Performs creates, updates, refreshes, disposes, as needed.
 	Apply(context.Context, *ApplyInput) (*ApplyOutput, error)
@@ -96,6 +96,7 @@ type Workspace interface {
 	CreateComponent(context.Context, *CreateComponentInput) (*CreateComponentOutput, error)
 	// Replaces the spec on a component and triggers an update lifecycle event.
 	UpdateComponent(context.Context, *UpdateComponentInput) (*UpdateComponentOutput, error)
+	RenameComponent(context.Context, *RenameComponentInput) (*RenameComponentOutput, error)
 	// Asycnhronously refreshes component state.
 	RefreshComponents(context.Context, *RefreshComponentsInput) (*RefreshComponentsOutput, error)
 	// Asynchronously runs dispose lifecycle methods on each component.
@@ -188,12 +189,27 @@ type CreateComponentOutput struct {
 }
 
 type UpdateComponentInput struct {
-	Ref       string   `json:"ref"`
+
+	// Refers to the component to be updated.
+	Ref string `json:"ref"`
+	// If provided, renames the component.
+	Name      string   `json:"name"`
 	Spec      string   `json:"spec"`
 	DependsOn []string `json:"dependsOn"`
 }
 
 type UpdateComponentOutput struct {
+}
+
+type RenameComponentInput struct {
+
+	// Refers to the component to be renamed.
+	Ref string `json:"ref"`
+	// New name to give to the component.
+	Name string `json:"name"`
+}
+
+type RenameComponentOutput struct {
 }
 
 type RefreshComponentsInput struct {
@@ -388,6 +404,9 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	b.AddMethod("update-component", func(req *http.Request) interface{} {
 		return factory(req).UpdateComponent
 	})
+	b.AddMethod("rename-component", func(req *http.Request) interface{} {
+		return factory(req).RenameComponent
+	})
 	b.AddMethod("refresh-components", func(req *http.Request) interface{} {
 		return factory(req).RefreshComponents
 	})
@@ -451,15 +470,13 @@ type WorkspaceDescription struct {
 }
 
 type ComponentDescription struct {
-	ID          string   `json:"id"`
-	Name        string   `json:"name"`
-	Type        string   `json:"type"`
-	Spec        string   `json:"spec"`
-	State       string   `json:"state"`
-	Created     string   `json:"created"`
-	Initialized *string  `json:"initialized"`
-	Disposed    *string  `json:"disposed"`
-	DependsOn   []string `json:"dependsOn"`
+	ID        string   `json:"id"`
+	Name      string   `json:"name"`
+	Type      string   `json:"type"`
+	Spec      string   `json:"spec"`
+	State     string   `json:"state"`
+	Created   string   `json:"created"`
+	DependsOn []string `json:"dependsOn"`
 }
 
 type StreamDescription struct {

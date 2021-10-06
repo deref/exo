@@ -38,8 +38,7 @@ interface "workspace" {
   }
 
   method "destroy" {
-    doc = "Asynchronously deletes all components in the workspace, then deletes the workspace itself."
-
+    doc = "Dispose resources, then delete the record of it."
     output "job-id" "string" {}
   }
 
@@ -105,9 +104,25 @@ interface "workspace" {
   method "update-component" {
     doc = "Replaces the spec on a component and triggers an update lifecycle event."
 
-    input "ref" "string" {}
+    input "ref" "string" {
+      doc = "Refers to the component to be updated."
+    }
+    input "name" "string" {
+      doc = "If provided, renames the component."
+    }
     input "spec" "string" {}
     input "depends-on" "[]string" {}
+
+    # TODO: output "job-id" "string" {}
+  }
+
+  method "rename-component" {
+    input "ref" "string" {
+      doc = "Refers to the component to be renamed."
+    }
+    input "name" "string" {
+      doc = "New name to give to the component."
+    }
   }
 
   method "refresh-components" {
@@ -245,8 +260,6 @@ struct "component-description" {
   field "spec" "string" {}
   field "state" "string" {}
   field "created" "string" {}
-  field "initialized" "*string" {}
-  field "disposed" "*string" {}
   field "depends-on" "[]string" {}
 }
 

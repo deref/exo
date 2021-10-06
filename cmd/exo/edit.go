@@ -42,6 +42,7 @@ var editCmd = &cobra.Command{
 			Ref:  component.ID,
 			Spec: newSpec,
 		})
+		// TODO: This should handle a job id for the update step.
 		return err
 	},
 }

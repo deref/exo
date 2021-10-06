@@ -1,4 +1,4 @@
-package template
+package interpolate
 
 import (
 	"testing"
@@ -40,7 +40,7 @@ func TestTemplate(t *testing.T) {
 		{"prefix${ten}suffix", "prefix10suffix", map[string]string{"ten": "10"}},
 	}
 	for _, test := range okTests {
-		tmpl, err := New(test.Template)
+		tmpl, err := NewTemplate(test.Template)
 		assert.NoError(t, err)
 		actual, err := Substitute(tmpl, MapEnvironment(test.Env))
 		assert.NoError(t, err)
@@ -56,7 +56,7 @@ func TestTemplate(t *testing.T) {
 		{"${x:?some error}", "some error", map[string]string{"x": ""}},
 	}
 	for _, test := range errTests {
-		tmpl, err := New(test.Template)
+		tmpl, err := NewTemplate(test.Template)
 		assert.NoError(t, err)
 		_, err = Substitute(tmpl, MapEnvironment(test.Env))
 		assert.EqualError(t, err, test.Message, "test=%#v", test)
