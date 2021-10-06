@@ -15,30 +15,34 @@ This project adhears to [CalVer](./doc/versioning.md).
 
 ### Added
 
-- Ability to create new projects in the GUI.
-- GUI for deleting components.
-- `exo edit` command for editing component specs.
-- `exo rename` command to rename components.
-- Commands to clear log scrollback in CLI and GUI.
-- Workspace log stream for system events in log viewer.
-- The `exo gui` command learned the `--print` flag.
-- `exo exec` command runs one-off processes in the workspace Environment.
-- Workspace information view in GUI.
+- [#337](https://github.com/deref/exo/pull/337) Ability to create new projects in the GUI.
+- [#392](https://github.com/deref/exo/pull/392) GUI for deleting components.
+- [#321](https://github.com/deref/exo/pull/321) `exo edit` command for editing component specs.
+- [#400](https://github.com/deref/exo/pull/400) `exo rename` command to rename components.
+- [#347](https://github.com/deref/exo/issues/347) Commands to clear log scrollback in CLI and GUI.
+- [#98](https://github.com/deref/exo/issues/98) Workspace log stream for system events in log viewer.
+- [#382](https://github.com/deref/exo/pull/382) The `exo gui` command learned the `--print` flag.
+- [#371](https://github.com/deref/exo/pull/371) `exo exec` command runs one-off
+  processes in the workspace Environment.
+- [#369](https://github.com/deref/exo/pull/369) Workspace information view in GUI.
 
 ### Fixed
 
 - Numerous issues applying modified manifests.
 - Various error reporting improvements.
-- Migrated log storage from BadgerDB to Sqlite.
-- Secured CORS policy and daemon request authorization.
-- Secured iframe embedding against click-jacking attacks.
-- Secured against DNS rebinding attacks.
-- Workspaces with the same last directory path component are no longer
-  ambiguous.
-- Enhanced appearance of process list.
-- Unintended disabling of colored logging with popular JavaScript and other
-  libraries.
-- Unbounded growth of log storage.
+- [#358](https://github.com/deref/exo/pull/358) Migrated log storage from
+  BadgerDB to Sqlite.
+- [#360](https://github.com/deref/exo/issues/360) Secured CORS policy and
+  daemon request authorization.
+- [#377](https://github.com/deref/exo/pull/377) Secured iframe embedding
+  against click-jacking attacks.
+- [#361](https://github.com/deref/exo/pull/361) Secured against DNS rebinding attacks.
+- [#339](https://github.com/deref/exo/pull/339) Workspaces with the same last
+  directory path component are no longer ambiguous.
+- [#335](https://github.com/deref/exo/pull/335) Enhanced appearance of process list.
+- [#365](https://github.com/deref/exo/pull/365) Unintended disabling of colored
+  logging with popular JavaScript and other libraries.
+- [#336](https://github.com/deref/exo/issues/336) Unbounded growth of log storage.
 
 
 ## 2021.09.14
