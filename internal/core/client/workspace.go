@@ -130,6 +130,11 @@ func (c *Workspace) UpdateComponent(ctx context.Context, input *api.UpdateCompon
 	return
 }
 
+func (c *Workspace) RenameComponent(ctx context.Context, input *api.RenameComponentInput) (output *api.RenameComponentOutput, err error) {
+	err = c.client.Invoke(ctx, "rename-component", input, &output)
+	return
+}
+
 func (c *Workspace) RefreshComponents(ctx context.Context, input *api.RefreshComponentsInput) (output *api.RefreshComponentsOutput, err error) {
 	err = c.client.Invoke(ctx, "refresh-components", input, &output)
 	return

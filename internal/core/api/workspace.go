@@ -96,6 +96,7 @@ type Workspace interface {
 	CreateComponent(context.Context, *CreateComponentInput) (*CreateComponentOutput, error)
 	// Replaces the spec on a component and triggers an update lifecycle event.
 	UpdateComponent(context.Context, *UpdateComponentInput) (*UpdateComponentOutput, error)
+	RenameComponent(context.Context, *RenameComponentInput) (*RenameComponentOutput, error)
 	// Asycnhronously refreshes component state.
 	RefreshComponents(context.Context, *RefreshComponentsInput) (*RefreshComponentsOutput, error)
 	// Asynchronously runs dispose lifecycle methods on each component.
@@ -194,6 +195,17 @@ type UpdateComponentInput struct {
 }
 
 type UpdateComponentOutput struct {
+}
+
+type RenameComponentInput struct {
+
+	// Refers to the component to be renamed.
+	Ref string `json:"ref"`
+	// New name to give to the component.
+	Name string `json:"name"`
+}
+
+type RenameComponentOutput struct {
 }
 
 type RefreshComponentsInput struct {
@@ -387,6 +399,9 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	})
 	b.AddMethod("update-component", func(req *http.Request) interface{} {
 		return factory(req).UpdateComponent
+	})
+	b.AddMethod("rename-component", func(req *http.Request) interface{} {
+		return factory(req).RenameComponent
 	})
 	b.AddMethod("refresh-components", func(req *http.Request) interface{} {
 		return factory(req).RefreshComponents

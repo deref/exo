@@ -104,11 +104,25 @@ interface "workspace" {
   method "update-component" {
     doc = "Replaces the spec on a component and triggers an update lifecycle event."
 
-    input "ref" "string" {}
+    input "ref" "string" {
+      doc = "Refers to the component to be updated."
+    }
+    input "name" "string" {
+      doc = "If provided, renames the component."
+    }
     input "spec" "string" {}
     input "depends-on" "[]string" {}
 
     # TODO: output "job-id" "string" {}
+  }
+
+  method "rename-component" {
+    input "ref" "string" {
+      doc = "Refers to the component to be renamed."
+    }
+    input "name" "string" {
+      doc = "New name to give to the component."
+    }
   }
 
   method "refresh-components" {

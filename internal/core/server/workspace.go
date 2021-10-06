@@ -556,6 +556,31 @@ func (ws *Workspace) updateComponent(ctx context.Context, oldComponent api.Compo
 	return nil
 }
 
+func (ws *Workspace) RenameComponent(ctx context.Context, input *api.RenameComponentInput) (*api.RenameComponentOutput, error) {
+	describeOutput, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{Refs: []string{input.Ref}})
+	if err != nil {
+		return nil, fmt.Errorf("describing components: %w", err)
+	}
+	if len(describeOutput.Components) == 0 {
+		return nil, errutil.HTTPErrorf(http.StatusNotFound, "component not found: %q", input.Ref)
+	}
+
+	component := describeOutput.Components[0]
+
+	if err := manifest.ValidateName(input.Name); err != nil {
+		return nil, errutil.HTTPErrorf(http.StatusBadRequest, "new component name %q is invalid: %w", input.Name, err)
+	}
+
+	if _, err := ws.Store.PatchComponent(ctx, &state.PatchComponentInput{
+		ID:   component.ID,
+		Name: input.Name,
+	}); err != nil {
+		return nil, err
+	}
+
+	return &api.RenameComponentOutput{}, nil
+}
+
 func (ws *Workspace) RefreshComponents(ctx context.Context, input *api.RefreshComponentsInput) (*api.RefreshComponentsOutput, error) {
 	query := makeComponentQuery(withRefs(input.Refs...))
 	jobID := ws.controlEachComponent(ctx, "refreshing", query, func(desc *api.ComponentDescription) interface{} {
