@@ -75,14 +75,14 @@
         }
       }}
     >
-      <div class="group">
+      <div>
         <label for="name">Name:</label>
         <Textbox id="name" name="name" bind:value={name} --input-width="100%" />
       </div>
 
       <EditAs bind:mode {editorModes} />
       {#if mode === 'compose'}
-        <div class="group">
+        <div>
           <label for="spec">Spec:</label>
           <TextEditor id="spec" bind:value={spec} language="yaml" />
         </div>

@@ -2,6 +2,7 @@
   import Icon from '../components/Icon.svelte';
   import Layout from '../components/Layout.svelte';
   import Spinner from '../components/Spinner.svelte';
+  import Textbox from '../components/Textbox.svelte';
   import EditAs from '../components/form/EditAs.svelte';
   import CodeBlock from '../components/CodeBlock.svelte';
   import ErrorLabel from '../components/ErrorLabel.svelte';
@@ -34,13 +35,17 @@
     },
   ];
 
-  let spec = '';
+  let name: string = '';
+  let spec: string = '';
 
   const getComponent = async () => {
     const component = (
       await workspace.describeComponents({ refs: [componentId] })
     )[0];
+
+    name = component.name;
     spec = component.spec;
+
     return component;
   };
 
@@ -100,7 +105,7 @@ environment:
         <form
           on:submit|preventDefault={async () => {
             try {
-              await workspace.updateComponent(component.id, spec);
+              await workspace.updateComponent(component.id, name, spec);
 
               router.push(workspaceComponentsRoute);
             } catch (ex) {
@@ -111,18 +116,18 @@ environment:
             }
           }}
         >
-          <!-- <div class="group">
+          <div>
             <label for="name">Name:</label>
             <Textbox
               id="name"
               name="name"
-              value={component.name}
+              bind:value={name}
               --input-width="100%"
             />
-          </div> -->
+          </div>
 
           <EditAs bind:mode {editorModes} />
-          <div class="group">
+          <div>
             <label for="spec">Spec:</label>
             <TextEditor id="spec" bind:value={spec} language="yaml" />
           </div>

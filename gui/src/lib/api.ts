@@ -262,7 +262,7 @@ export interface WorkspaceApi {
     spec: string,
   ): Promise<CreateComponentResponse>;
 
-  updateComponent(ref: string, spec: string): Promise<void>;
+  updateComponent(ref: string, name: string, spec: string): Promise<void>;
 
   deleteComponent(ref: string): Promise<void>;
 
@@ -414,6 +414,7 @@ export const api = (() => {
       async updateComponent(ref: string, spec: string): Promise<void> {
         await invoke('update-component', {
           ref,
+          name,
           spec,
         });
       },

@@ -20,7 +20,7 @@
       />
     </div>
     <div>
-      <div class="group">
+      <div>
         <div class="group-header">
           <h2>Theme &amp; GUI</h2>
         </div>
