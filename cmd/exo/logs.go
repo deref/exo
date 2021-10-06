@@ -136,6 +136,7 @@ func runTailLogsWriter(ctx context.Context, workspace *client.Workspace, streamR
 		}
 	}
 
+	// TODO: Listen to change events to handle renames, new processes, etc.
 	descriptions, err := workspace.DescribeProcesses(ctx, &api.DescribeProcessesInput{})
 	if err != nil {
 		return fmt.Errorf("describing processes: %w", err)
