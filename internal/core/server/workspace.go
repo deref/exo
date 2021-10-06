@@ -28,7 +28,6 @@ import (
 	"github.com/deref/exo/internal/providers/docker/components/volume"
 	"github.com/deref/exo/internal/providers/unix/components/process"
 	"github.com/deref/exo/internal/task"
-	"github.com/deref/exo/internal/util/contextutil"
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/deref/exo/internal/util/logging"
@@ -493,7 +492,7 @@ func (ws *Workspace) createComponent(ctx context.Context, component manifest.Com
 		return "", fmt.Errorf("adding component: %w", err)
 	}
 
-	job := ws.TaskTracker.StartTask(contextutil.WithoutCancel(ctx), "creating "+component.Name)
+	job := ws.TaskTracker.StartTask(ctx, "creating "+component.Name)
 	go func() {
 		defer job.Finish()
 
