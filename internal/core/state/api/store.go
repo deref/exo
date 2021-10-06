@@ -88,7 +88,11 @@ type AddComponentOutput struct {
 }
 
 type PatchComponentInput struct {
-	ID        string    `json:"id"`
+
+	// ID of component to be patched.
+	ID string `json:"id"`
+	// If provided, renames component.
+	Name      string    `json:"name"`
 	State     string    `json:"state"`
 	DependsOn *[]string `json:"dependsOn"`
 }

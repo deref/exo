@@ -395,6 +395,14 @@ func (sto *Store) PatchComponent(ctx context.Context, input *state.PatchComponen
 		if component == nil {
 			return errors.New("corrupt state: component not in workspace")
 		}
+		if input.Name != "" {
+			component.Name = input.Name
+			if workspace.Names == nil {
+				return errors.New("corrupt state: names missing in workspace")
+			}
+			delete(workspace.Components, component.Name)
+			workspace.Names[input.Name] = input.ID
+		}
 		if input.DependsOn != nil {
 			component.DependsOn = *input.DependsOn
 		}

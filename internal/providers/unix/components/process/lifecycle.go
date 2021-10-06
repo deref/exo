@@ -70,10 +70,8 @@ func (p *Process) refresh() {
 }
 
 func (p *Process) Dispose(ctx context.Context, input *core.DisposeInput) (*core.DisposeOutput, error) {
-	if p.Program == "" {
-		// SEE NOTE [PROCESS_STATE_MIGRATION].
-		return nil, errors.New("refresh needed")
+	if err := p.stop(nil); err != nil {
+		return nil, err
 	}
-	p.stop(nil)
 	return &core.DisposeOutput{}, nil
 }

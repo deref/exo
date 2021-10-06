@@ -514,10 +514,14 @@ func (ws *Workspace) createComponent(ctx context.Context, component manifest.Com
 	})
 }
 
+// TODO: This should use controlEachComponent to be able to return a job id.
 func (ws *Workspace) UpdateComponent(ctx context.Context, input *api.UpdateComponentInput) (*api.UpdateComponentOutput, error) {
 	describeOutput, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{Refs: []string{input.Ref}})
 	if err != nil {
 		return nil, fmt.Errorf("describing components: %w", err)
+	}
+	if len(describeOutput.Components) == 0 {
+		return nil, errutil.HTTPErrorf(http.StatusNotFound, "component not found: %q", input.Ref)
 	}
 
 	oldComponent := describeOutput.Components[0]
@@ -526,10 +530,18 @@ func (ws *Workspace) UpdateComponent(ctx context.Context, input *api.UpdateCompo
 		dependsOn = input.DependsOn
 	}
 
+	newName := input.Name
+	if newName == "" {
+		newName = oldComponent.Name
+	}
+	if err := manifest.ValidateName(newName); err != nil {
+		return nil, errutil.HTTPErrorf(http.StatusBadRequest, "new component name %q is invalid: %w", newName, err)
+	}
+
 	ws.logEventf(ctx, "updating %s", oldComponent.Name)
 	if err := ws.updateComponent(ctx, oldComponent, manifest.Component{
 		Type:      oldComponent.Type,
-		Name:      oldComponent.Name,
+		Name:      newName,
 		Spec:      input.Spec,
 		DependsOn: dependsOn,
 	}, oldComponent.ID); err != nil {
@@ -544,12 +556,37 @@ func (ws *Workspace) updateComponent(ctx context.Context, oldComponent api.Compo
 	if err := ws.control(ctx, oldComponent, &api.DisposeInput{}); err != nil {
 		return fmt.Errorf("disposing %q for replacement: %w", oldComponent.Name, err)
 	}
-	if err := ws.control(ctx, oldComponent, api.InitializeInput{
+	if err := ws.control(ctx, oldComponent, &api.InitializeInput{
 		Spec: newComponent.Spec,
 	}); err != nil {
 		return fmt.Errorf("initializing replacement %q: %w", newComponent.Name, err)
 	}
 	return nil
+}
+
+func (ws *Workspace) RenameComponent(ctx context.Context, input *api.RenameComponentInput) (*api.RenameComponentOutput, error) {
+	describeOutput, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{Refs: []string{input.Ref}})
+	if err != nil {
+		return nil, fmt.Errorf("describing components: %w", err)
+	}
+	if len(describeOutput.Components) == 0 {
+		return nil, errutil.HTTPErrorf(http.StatusNotFound, "component not found: %q", input.Ref)
+	}
+
+	component := describeOutput.Components[0]
+
+	if err := manifest.ValidateName(input.Name); err != nil {
+		return nil, errutil.HTTPErrorf(http.StatusBadRequest, "new component name %q is invalid: %w", input.Name, err)
+	}
+
+	if _, err := ws.Store.PatchComponent(ctx, &state.PatchComponentInput{
+		ID:   component.ID,
+		Name: input.Name,
+	}); err != nil {
+		return nil, err
+	}
+
+	return &api.RenameComponentOutput{}, nil
 }
 
 func (ws *Workspace) RefreshComponents(ctx context.Context, input *api.RefreshComponentsInput) (*api.RefreshComponentsOutput, error) {
