@@ -107,6 +107,8 @@ interface "workspace" {
     input "ref" "string" {}
     input "spec" "string" {}
     input "depends-on" "[]string" {}
+
+    # TODO: output "job-id" "string" {}
   }
 
   method "refresh-components" {

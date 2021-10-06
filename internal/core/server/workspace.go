@@ -514,10 +514,14 @@ func (ws *Workspace) createComponent(ctx context.Context, component manifest.Com
 	})
 }
 
+// TODO: This should use controlEachComponent to be able to return a job id.
 func (ws *Workspace) UpdateComponent(ctx context.Context, input *api.UpdateComponentInput) (*api.UpdateComponentOutput, error) {
 	describeOutput, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{Refs: []string{input.Ref}})
 	if err != nil {
 		return nil, fmt.Errorf("describing components: %w", err)
+	}
+	if len(describeOutput.Components) == 0 {
+		return nil, errutil.HTTPErrorf(http.StatusNotFound, "component not found: %q", input.Ref)
 	}
 
 	oldComponent := describeOutput.Components[0]
@@ -544,7 +548,7 @@ func (ws *Workspace) updateComponent(ctx context.Context, oldComponent api.Compo
 	if err := ws.control(ctx, oldComponent, &api.DisposeInput{}); err != nil {
 		return fmt.Errorf("disposing %q for replacement: %w", oldComponent.Name, err)
 	}
-	if err := ws.control(ctx, oldComponent, api.InitializeInput{
+	if err := ws.control(ctx, oldComponent, &api.InitializeInput{
 		Spec: newComponent.Spec,
 	}); err != nil {
 		return fmt.Errorf("initializing replacement %q: %w", newComponent.Name, err)
