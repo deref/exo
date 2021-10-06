@@ -189,7 +189,11 @@ type CreateComponentOutput struct {
 }
 
 type UpdateComponentInput struct {
-	Ref       string   `json:"ref"`
+
+	// Refers to the component to be updated.
+	Ref string `json:"ref"`
+	// If provided, renames the component.
+	Name      string   `json:"name"`
 	Spec      string   `json:"spec"`
 	DependsOn []string `json:"dependsOn"`
 }

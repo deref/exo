@@ -530,10 +530,18 @@ func (ws *Workspace) UpdateComponent(ctx context.Context, input *api.UpdateCompo
 		dependsOn = input.DependsOn
 	}
 
+	newName := input.Name
+	if newName == "" {
+		newName = oldComponent.Name
+	}
+	if err := manifest.ValidateName(newName); err != nil {
+		return nil, errutil.HTTPErrorf(http.StatusBadRequest, "new component name %q is invalid: %w", newName, err)
+	}
+
 	ws.logEventf(ctx, "updating %s", oldComponent.Name)
 	if err := ws.updateComponent(ctx, oldComponent, manifest.Component{
 		Type:      oldComponent.Type,
-		Name:      oldComponent.Name,
+		Name:      newName,
 		Spec:      input.Spec,
 		DependsOn: dependsOn,
 	}, oldComponent.ID); err != nil {
