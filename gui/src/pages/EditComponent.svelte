@@ -2,13 +2,14 @@
   import Icon from '../components/Icon.svelte';
   import Layout from '../components/Layout.svelte';
   import Spinner from '../components/Spinner.svelte';
-  import Textbox from '../components/Textbox.svelte';
   import EditAs from '../components/form/EditAs.svelte';
+  import CodeBlock from '../components/CodeBlock.svelte';
   import ErrorLabel from '../components/ErrorLabel.svelte';
   import TextEditor from '../components/TextEditor.svelte';
   import WorkspaceNav from '../components/WorkspaceNav.svelte';
   import SubmitButton from '../components/form/SubmitButton.svelte';
   import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
+  import type { IconGlyph } from '../components/Icon.svelte';
   import type { ComponentDescription } from '../lib/api';
   import { api } from '../lib/api';
 
@@ -24,16 +25,12 @@
 
   let error: Error | null = null;
 
-  let mode = 'compose';
+  let mode = 'raw';
   const editorModes = [
     {
-      id: 'compose',
-      name: 'Compose YAML',
+      id: 'raw',
+      name: 'Raw Spec',
     },
-    // {
-    //   id: 'form',
-    //   name: 'Form',
-    // },
   ];
 
   const getComponent = async () =>
@@ -42,13 +39,36 @@
   const pageTitle = (component: ComponentDescription) =>
     `Edit ${component.type} “${component.name}”`;
 
-  const componentGlyph = (cType: string) => {
-    switch (cType) {
-      case 'process':
-        return 'Layers';
-      default:
-        return 'LogoDocker';
-    }
+  interface ComponentType {
+    glyph: IconGlyph;
+    example: string;
+  }
+
+  const componentTypes: Record<string, ComponentType> = {
+    process: {
+      glyph: 'Layers',
+      example: `{
+  "directory": "/",
+  "environment": {},
+  "program": "npm",
+  "arguments": ["run", "dev"]
+}`,
+    },
+    container: {
+      glyph: 'LogoDocker',
+      example: `image: postgres:9.4
+environment:
+    POSTGRES_USER: "postgres"
+    POSTGRES_PASSWORD: "postgres"`,
+    },
+    network: {
+      glyph: 'LogoDocker',
+      example: `name: mynetwork`,
+    },
+    volume: {
+      glyph: 'LogoDocker',
+      example: `# An empty YAML is a valid volume.`,
+    },
   };
 </script>
 
@@ -65,10 +85,12 @@
         backRoute={workspaceComponentsRoute}
       >
         <h1>
-          <Icon glyph={componentGlyph(component.type)} />{pageTitle(component)}
+          <Icon glyph={componentTypes[component.type].glyph} />{pageTitle(
+            component,
+          )}
         </h1>
         <form on:submit|preventDefault={async () => {}}>
-          <div class="group">
+          <!-- <div class="group">
             <label for="name">Name:</label>
             <Textbox
               id="name"
@@ -76,21 +98,17 @@
               value={component.name}
               --input-width="100%"
             />
-          </div>
+          </div> -->
 
           <EditAs bind:mode {editorModes} />
-          {#if mode === 'compose'}
-            <div class="group">
-              <label for="spec">Spec:</label>
-              <TextEditor id="spec" value={component.spec} language="yaml" />
-            </div>
-            <details>
-              <summary>Show/hide example</summary>
-              <slot />
-            </details>
-          {:else}
-            <!-- GUI form edit mode -->
-          {/if}
+          <div class="group">
+            <label for="spec">Spec:</label>
+            <TextEditor id="spec" value={component.spec} language="yaml" />
+          </div>
+          <details>
+            <summary>Show/hide example</summary>
+            <CodeBlock code={componentTypes[component.type].example} />
+          </details>
           <SubmitButton>Save changes</SubmitButton>
           <div style="margin: 24px 0;">
             <ErrorLabel value={error} />
