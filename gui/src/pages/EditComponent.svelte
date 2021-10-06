@@ -11,7 +11,8 @@
   import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
   import type { IconGlyph } from '../components/Icon.svelte';
   import type { ComponentDescription } from '../lib/api';
-  import { api } from '../lib/api';
+  import { api, isClientError } from '../lib/api';
+  import * as router from 'svelte-spa-router';
 
   export let params = { workspace: '', component: '' };
 
@@ -89,7 +90,20 @@ environment:
             component,
           )}
         </h1>
-        <form on:submit|preventDefault={async () => {}}>
+        <form
+          on:submit|preventDefault={async () => {
+            try {
+              await workspace.updateComponent(component.id, component.spec);
+
+              router.push(workspaceComponentsRoute);
+            } catch (ex) {
+              if (!(ex instanceof Error) || !isClientError(ex)) {
+                throw ex;
+              }
+              error = ex;
+            }
+          }}
+        >
           <!-- <div class="group">
             <label for="name">Name:</label>
             <Textbox
