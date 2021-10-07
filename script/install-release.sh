@@ -33,6 +33,6 @@ EXO_LINK="${BIN_DIR}/exo"
 if [[ ! $skip_build_gui ]]; then
   build_gui
 fi
-go build -tags bundle -o "$DEV_BIN" ./cmd/exo
+go build -tags bundle -o "$DEV_BIN"
 ln -sf "$DEV_BIN" "$EXO_LINK"
 

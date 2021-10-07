@@ -20,6 +20,8 @@ func UnmarshalString(s string, v interface{}) error {
 
 var MarshalString = jsonutil.MarshalString
 var MustMarshalString = jsonutil.MustMarshalString
+var MarshalIndentString = jsonutil.MarshalIndentString
+var MustMarshalIndentString = jsonutil.MustMarshalIndentString
 
 func UnmarshalStringOrEmpty(s string, v interface{}) error {
 	s = strings.TrimSpace(s)

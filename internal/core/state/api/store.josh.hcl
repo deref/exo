@@ -51,7 +51,15 @@ interface "store" {
   }
 
   method "patch-component" {
-	  input "id" "string" {}
+	  input "id" "string" {
+      doc = "ID of component to be patched."
+    }
+	  input "name" "string" {
+      doc = "If provided, renames component."
+    }
+    input "spec" "string" {
+      doc = "If provided, replaces component spec."
+    }
 	  input "state" "string" {}
 	  input "depends-on" "*[]string" {}
   }

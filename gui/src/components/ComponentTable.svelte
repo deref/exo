@@ -1,8 +1,10 @@
 <script lang="ts">
-  import type { SvelteConstructor } from '../lib/svelte';
-  import CheckeredTableWrapper from './CheckeredTableWrapper.svelte';
-  import ErrorLabel from './ErrorLabel.svelte';
   import Spinner from './Spinner.svelte';
+  import ErrorLabel from './ErrorLabel.svelte';
+  import IconButton from './IconButton.svelte';
+  import CheckeredTableWrapper from './CheckeredTableWrapper.svelte';
+  import type { IconGlyph } from './Icon.svelte';
+  import type { SvelteConstructor } from '../lib/svelte';
 
   type Item = $$Generic;
 
@@ -12,14 +14,21 @@
     getValue: (item: Item) => T;
   }
 
+  interface Action<T> {
+    tooltip: string;
+    glyph: IconGlyph;
+    callback(component: any): any;
+  }
+
   export let load: () => Promise<Item[]>;
 
   export let columns: Column<any>[];
+  export let actions: Action<any>[] | undefined;
 
-  const components = load();
+  let componentsPromise = load();
 </script>
 
-{#await components}
+{#await componentsPromise}
   <Spinner />
 {:then components}
   {#if components.length === 0}
@@ -34,6 +43,9 @@
                 {column.title}
               </th>
             {/each}
+            {#if actions && actions.length > 0}
+              <th />
+            {/if}
           </tr>
         </thead>
         <tbody>
@@ -47,6 +59,19 @@
                   />
                 </td>
               {/each}
+              {#if actions && actions.length > 0}
+                <td class="actions">
+                  {#each actions as action}
+                    <IconButton
+                      tooltip={action.tooltip}
+                      glyph={action.glyph}
+                      on:click={() => {
+                        action.callback(component);
+                      }}
+                    />
+                  {/each}
+                </td>
+              {/if}
             </tr>
           {/each}
         </tbody>
@@ -56,3 +81,9 @@
 {:catch ex}
   <ErrorLabel value={ex} />
 {/await}
+
+<style>
+  td.actions {
+    padding: 4px 8px;
+  }
+</style>

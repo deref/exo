@@ -24,6 +24,9 @@ func (c *Container) start(ctx context.Context) error {
 }
 
 func (c *Container) Stop(ctx context.Context, input *core.StopInput) (*core.StopOutput, error) {
+	if c.State.ContainerID == "" {
+		return &core.StopOutput{}, nil
+	}
 	if err := c.stop(ctx, input.TimeoutSeconds); err != nil {
 		return nil, err
 	}

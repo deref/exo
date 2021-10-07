@@ -35,6 +35,16 @@
           getValue: (component) => component.type,
         },
       ]}
+      actions={[
+        {
+          tooltip: 'Delete component',
+          glyph: 'Delete',
+          callback: async (component) => {
+            await workspace.deleteComponent(component.id);
+            window.location.reload();
+          },
+        },
+      ]}
     />
   </Panel>
 </Layout>

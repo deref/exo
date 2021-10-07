@@ -9,7 +9,7 @@ build: bin/exo
 
 .PHONY:
 bin/exo:
-	go build -o ./bin/exo ./cmd/exo
+	go build -o ./bin/exo
 
 .PHONY: codegen
 codegen:

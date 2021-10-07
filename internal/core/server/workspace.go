@@ -30,7 +30,6 @@ import (
 	"github.com/deref/exo/internal/providers/docker/components/volume"
 	"github.com/deref/exo/internal/providers/unix/components/process"
 	"github.com/deref/exo/internal/task"
-	"github.com/deref/exo/internal/util/contextutil"
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/deref/exo/internal/util/logging"
@@ -53,13 +52,15 @@ type Workspace struct {
 
 func (ws *Workspace) logEventf(ctx context.Context, format string, v ...interface{}) {
 	eventStore := log.CurrentEventStore(ctx)
-	_, err := eventStore.AddEvent(ctx, &eventd.AddEventInput{
+	input := &eventd.AddEventInput{
 		Stream:    ws.ID,
 		Timestamp: chrono.NowString(ctx),
 		Message:   fmt.Sprintf(format, v...),
-	})
+	}
+	_, err := eventStore.AddEvent(ctx, input)
 	if err != nil {
 		ws.Logger.Infof("error adding workspace event: %v", err)
+		ws.Logger.Infof("event message was: %s", input.Message)
 	}
 }
 
@@ -225,8 +226,7 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 			task: job.CreateChild("re-creating " + name),
 			run: func(t *task.Task) error {
 				// Should the replacement component get the old component's ID?
-				_, err := ws.createComponent(t, newComponent, gensym.RandomBase32())
-				return err
+				return ws.createComponent(t, newComponent, gensym.RandomBase32())
 			},
 		})
 		for _, dependency := range newComponent.DependsOn {
@@ -257,9 +257,7 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 				name: name,
 				task: job.CreateChild("adding " + name),
 				run: func(t *task.Task) error {
-					id := gensym.RandomBase32()
-					_, err := ws.createComponent(t, newComponent, id)
-					return err
+					return ws.createComponent(t, newComponent, gensym.RandomBase32())
 				},
 			})
 			for _, dependency := range newComponent.DependsOn {
@@ -484,25 +482,33 @@ func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]string, err
 
 func (ws *Workspace) CreateComponent(ctx context.Context, input *api.CreateComponentInput) (*api.CreateComponentOutput, error) {
 	id := gensym.RandomBase32()
-	jobID, err := ws.createComponent(ctx, manifest.Component{
-		Name: input.Name,
-		Type: input.Type,
-		Spec: input.Spec,
-	}, id)
-	if err != nil {
-		return nil, err
-	}
+
+	job := ws.TaskTracker.StartTask(ctx, "creating "+input.Name)
+	go func() {
+		defer job.Finish()
+
+		err := ws.createComponent(ctx, manifest.Component{
+			Name: input.Name,
+			Type: input.Type,
+			Spec: input.Spec,
+		}, id)
+		if err != nil {
+			ws.logEventf(ctx, "error creating %s: %v", input.Name, err)
+			job.Fail(err)
+			return
+		}
+	}()
 
 	ws.logEventf(ctx, "new component: %s", input.Name)
 	return &api.CreateComponentOutput{
 		ID:    id,
-		JobID: jobID,
+		JobID: job.ID(),
 	}, nil
 }
 
-func (ws *Workspace) createComponent(ctx context.Context, component manifest.Component, id string) (string, error) {
+func (ws *Workspace) createComponent(ctx context.Context, component manifest.Component, id string) error {
 	if err := manifest.ValidateName(component.Name); err != nil {
-		return "", errutil.HTTPErrorf(http.StatusBadRequest, "component name %q invalid: %w", component.Name, err)
+		return errutil.HTTPErrorf(http.StatusBadRequest, "component name %q invalid: %w", component.Name, err)
 	}
 
 	if _, err := ws.Store.AddComponent(ctx, &state.AddComponentInput{
@@ -514,37 +520,22 @@ func (ws *Workspace) createComponent(ctx context.Context, component manifest.Com
 		Created:     chrono.NowString(ctx),
 		DependsOn:   component.DependsOn,
 	}); err != nil {
-		return "", fmt.Errorf("adding component: %w", err)
+		return fmt.Errorf("adding component: %w", err)
 	}
 
-	job := ws.TaskTracker.StartTask(contextutil.WithoutCancel(ctx), "creating "+component.Name)
-	go func() {
-		defer job.Finish()
-
-		// Construct a synthetic component description to avoid re-reading after
-		// the add. Only the fields needed by control are included.
-		// TODO: Store.AddComponent could return a component description?
-		desc := api.ComponentDescription{
-			ID:        id,
-			Name:      component.Name,
-			Type:      component.Type,
-			Spec:      component.Spec,
-			DependsOn: component.DependsOn,
-		}
-		if err := ws.control(job, desc, &api.InitializeInput{
-			Spec: component.Spec,
-		}); err != nil {
-			ws.logEventf(ctx, "error creating %s: %v", component.Name, err)
-			job.Fail(err)
-			return
-		}
-
-		if err := job.Wait(); err != nil {
-			return
-		}
-	}()
-
-	return job.ID(), nil
+	// Construct a synthetic component description to avoid re-reading after
+	// the add. Only the fields needed by control are included.
+	// TODO: Store.AddComponent could return a component description?
+	desc := api.ComponentDescription{
+		ID:        id,
+		Name:      component.Name,
+		Type:      component.Type,
+		Spec:      component.Spec,
+		DependsOn: component.DependsOn,
+	}
+	return ws.control(ctx, desc, &api.InitializeInput{
+		Spec: component.Spec,
+	})
 }
 
 func (ws *Workspace) UpdateComponent(ctx context.Context, input *api.UpdateComponentInput) (*api.UpdateComponentOutput, error) {
@@ -552,37 +543,74 @@ func (ws *Workspace) UpdateComponent(ctx context.Context, input *api.UpdateCompo
 	if err != nil {
 		return nil, fmt.Errorf("describing components: %w", err)
 	}
+	if len(describeOutput.Components) == 0 {
+		return nil, errutil.HTTPErrorf(http.StatusNotFound, "component not found: %q", input.Ref)
+	}
 
 	oldComponent := describeOutput.Components[0]
-	dependsOn := oldComponent.DependsOn
+
+	newComponent := oldComponent
+
+	if input.Name != "" {
+		if err := manifest.ValidateName(input.Name); err != nil {
+			return nil, errutil.HTTPErrorf(http.StatusBadRequest, "new component name %q is invalid: %w", input.Name, err)
+		}
+		newComponent.Name = input.Name
+	}
+	if input.Spec != "" {
+		newComponent.Spec = input.Spec
+	}
 	if input.DependsOn != nil {
-		dependsOn = input.DependsOn
+		newComponent.DependsOn = input.DependsOn
 	}
 
 	ws.logEventf(ctx, "updating %s", oldComponent.Name)
-	if err := ws.updateComponent(ctx, oldComponent, manifest.Component{
-		Type:      oldComponent.Type,
-		Name:      oldComponent.Name,
-		Spec:      input.Spec,
-		DependsOn: dependsOn,
-	}, oldComponent.ID); err != nil {
+	job := ws.TaskTracker.StartTask(ctx, "updating")
+	go func() {
+		defer job.Finish()
+		// TODO: Most updates should be accomplished without a full replacement; especially when there are no spec changes!
+		job.Go("dispose old", func(disposeTask *task.Task) error {
+			// TODO: Fix this really awkward way of encoding a waterfall of async steps.
+			job.Go("initialize new", func(initializeTask *task.Task) error {
+				if err := disposeTask.Wait(); err != nil {
+					return context.Canceled
+				}
+				return ws.control(ctx, newComponent, &api.InitializeInput{
+					Spec: newComponent.Spec,
+				})
+			})
+			return ws.control(ctx, oldComponent, &api.DisposeInput{})
+		})
+	}()
+
+	return &api.UpdateComponentOutput{
+		JobID: job.ID(),
+	}, nil
+}
+
+func (ws *Workspace) RenameComponent(ctx context.Context, input *api.RenameComponentInput) (*api.RenameComponentOutput, error) {
+	describeOutput, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{Refs: []string{input.Ref}})
+	if err != nil {
+		return nil, fmt.Errorf("describing components: %w", err)
+	}
+	if len(describeOutput.Components) == 0 {
+		return nil, errutil.HTTPErrorf(http.StatusNotFound, "component not found: %q", input.Ref)
+	}
+
+	component := describeOutput.Components[0]
+
+	if err := manifest.ValidateName(input.Name); err != nil {
+		return nil, errutil.HTTPErrorf(http.StatusBadRequest, "new component name %q is invalid: %w", input.Name, err)
+	}
+
+	if _, err := ws.Store.PatchComponent(ctx, &state.PatchComponentInput{
+		ID:   component.ID,
+		Name: input.Name,
+	}); err != nil {
 		return nil, err
 	}
 
-	return &api.UpdateComponentOutput{}, nil
-}
-
-func (ws *Workspace) updateComponent(ctx context.Context, oldComponent api.ComponentDescription, newComponent manifest.Component, id string) error {
-	// TODO: Most updates should be accomplished without a full replacement; especially when there are no spec changes!
-	if err := ws.control(ctx, oldComponent, &api.DisposeInput{}); err != nil {
-		return fmt.Errorf("disposing %q for replacement: %w", oldComponent.Name, err)
-	}
-	if err := ws.control(ctx, oldComponent, api.InitializeInput{
-		Spec: newComponent.Spec,
-	}); err != nil {
-		return fmt.Errorf("initializing replacement %q: %w", newComponent.Name, err)
-	}
-	return nil
+	return &api.RenameComponentOutput{}, nil
 }
 
 func (ws *Workspace) RefreshComponents(ctx context.Context, input *api.RefreshComponentsInput) (*api.RefreshComponentsOutput, error) {
@@ -753,7 +781,10 @@ func (ws *Workspace) StartComponents(ctx context.Context, input *api.StartCompon
 	// Note that we are only querying Process component types specifically because they are the only
 	// things that are "startable".
 	query := allProcessQuery(withRefs(input.Refs...), withDependencies)
-	jobID := ws.controlEachComponent(ctx, "starting", query, func(*api.ComponentDescription) interface{} {
+	jobID := ws.controlEachComponent(ctx, "starting", query, func(desc *api.ComponentDescription) interface{} {
+		if !isRunnableType(desc.Type) {
+			return nil
+		}
 		return &api.StartInput{}
 	}, func(desc *api.ComponentDescription, err error) {
 		ws.logEventf(ctx, "error starting %s: %v", desc.Name, err)
@@ -781,7 +812,10 @@ func (ws *Workspace) StopComponents(ctx context.Context, input *api.StopComponen
 		withReversedDependencies,
 		withDependents,
 	)
-	jobID := ws.controlEachComponent(ctx, "stopping", query, func(*api.ComponentDescription) interface{} {
+	jobID := ws.controlEachComponent(ctx, "stopping", query, func(desc *api.ComponentDescription) interface{} {
+		if !isRunnableType(desc.Type) {
+			return nil
+		}
 		return &api.StopInput{TimeoutSeconds: input.TimeoutSeconds}
 	})
 	return &api.StopComponentsOutput{
@@ -839,7 +873,10 @@ func (ws *Workspace) RestartComponents(ctx context.Context, input *api.RestartCo
 	//    then restart the dependents in normal order again.
 	// 3. Ensure that all dependendencies are started (in normal order), then restart these components (current behaviour).
 	query := allProcessQuery(withRefs(input.Refs...), withDependencies)
-	jobID := ws.controlEachComponent(ctx, "restart", query, func(*api.ComponentDescription) interface{} {
+	jobID := ws.controlEachComponent(ctx, "restart", query, func(desc *api.ComponentDescription) interface{} {
+		if !isRunnableType(desc.Type) {
+			return nil
+		}
 		return &api.RestartInput{TimeoutSeconds: input.TimeoutSeconds}
 	}, func(desc *api.ComponentDescription, err error) {
 		ws.logEventf(ctx, "error restarting %s: %v", desc.Name, err)
@@ -1038,7 +1075,11 @@ func (ws *Workspace) goControlComponents(t *task.Task, query componentQuery, mak
 			name: component.Name,
 			task: t.CreateChild(component.Name),
 			run: func(t *task.Task) error {
-				err := ws.control(t, component, makeMessage(&component))
+				msg := makeMessage(&component)
+				if msg == nil {
+					return nil
+				}
+				err := ws.control(t, component, msg)
 				if err != nil {
 					for _, f := range onErr {
 						f(&component, err)
@@ -1101,6 +1142,7 @@ func (ws *Workspace) control(ctx context.Context, desc api.ComponentDescription,
 		} else {
 			_, err = ws.Store.PatchComponent(ctx, &state.PatchComponentInput{
 				ID:    desc.ID,
+				Spec:  desc.Spec,
 				State: newState,
 			})
 		}

@@ -6,6 +6,7 @@ import (
 
 	"github.com/deref/exo/internal/chrono"
 	"github.com/deref/exo/internal/task/api"
+	"github.com/deref/exo/internal/util/contextutil"
 	"github.com/deref/exo/internal/util/logging"
 	"golang.org/x/sync/errgroup"
 )
@@ -35,10 +36,6 @@ func (t *Task) ID() string {
 // Job ID associated with this task. Might be empty string if task tracking failed.
 func (t *Task) JobID() string {
 	return t.jobID
-}
-
-func (t *Task) Err() error {
-	return t.err
 }
 
 // Creates a task in the Pending state. Call task.Start() on it, or use
@@ -75,7 +72,7 @@ func (tt *TaskTracker) createTask(ctx context.Context, parent *Task, name string
 // Creates and starts a task. See `Task.Start()` for usage instructions.
 func (tt *TaskTracker) StartTask(ctx context.Context, name string) *Task {
 	var parent *Task
-	return tt.startTask(ctx, parent, name)
+	return tt.startTask(contextutil.WithoutCancel(ctx), parent, name)
 }
 
 func (tt *TaskTracker) startTask(ctx context.Context, parent *Task, name string) *Task {
