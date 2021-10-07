@@ -437,11 +437,11 @@ func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]string, err
 		if err == nil {
 			secrets, err := ws.EsvClient.GetWorkspaceSecrets(strings.TrimSpace(string(secretsUrl)))
 			if err != nil {
-				return nil, fmt.Errorf("getting workspace secrets: %w", err)
-			}
-
-			for k, v := range secrets {
-				env[k] = v
+				ws.logEventf(ctx, "getting workspace secrets: %v", err)
+			} else {
+				for k, v := range secrets {
+					env[k] = v
+				}
 			}
 		} else if !os.IsNotExist(err) {
 			return nil, fmt.Errorf("reading secrets config: %w", err)

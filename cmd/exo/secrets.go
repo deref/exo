@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
 )
 
@@ -36,13 +37,17 @@ type tokenResponse struct {
 }
 
 var clientId = "LNPi71pWh6trIbZOGxxGi5eilI5DakWE"
+var derefAuth0Domain = "https://deref.us.auth0.com"
 
 func requestDeviceCode() (deviceCodeResponse, error) {
-	url := "https://deref.us.auth0.com/oauth/device/code"
+	uri := derefAuth0Domain + "/oauth/device/code"
 
-	payloadString := fmt.Sprintf("client_id=%s&scope=profile&audience=cli-client", clientId)
-	payload := strings.NewReader(payloadString)
-	req, _ := http.NewRequest("POST", url, payload)
+	values := url.Values{}
+	values.Set("audience", "cli-client")
+	values.Set("scope", "profile offline_access")
+	values.Set("client_id", clientId)
+	payload := strings.NewReader(values.Encode())
+	req, _ := http.NewRequest("POST", uri, payload)
 
 	req.Header.Add("content-type", "application/x-www-form-urlencoded")
 
@@ -70,7 +75,7 @@ func requestDeviceCode() (deviceCodeResponse, error) {
 }
 
 func requestTokens(deviceCode string, interval int) (tokenResponse, error) {
-	uri := "https://deref.us.auth0.com/oauth/token"
+	uri := derefAuth0Domain + "/oauth/token"
 	values := url.Values{}
 	values.Set("grant_type", "urn:ietf:params:oauth:grant-type:device_code")
 	values.Set("device_code", deviceCode)
@@ -123,6 +128,26 @@ func requestTokens(deviceCode string, interval int) (tokenResponse, error) {
 	}
 }
 
+func getNewAccessToken(refreshToken string) (string, error) {
+	uri := derefAuth0Domain + "/oauth/token"
+
+	payload := strings.NewReader("grant_type=refresh_token&client_id=%24%7Baccount.clientId%7D&client_secret=%24%7Baccount.clientSecret%7D&refresh_token=YOUR_REFRESH_TOKEN")
+
+	req, _ := http.NewRequest("POST", uri, payload)
+
+	req.Header.Add("content-type", "application/x-www-form-urlencoded")
+
+	res, _ := http.DefaultClient.Do(req)
+
+	defer res.Body.Close()
+	body, _ := ioutil.ReadAll(res.Body)
+
+	fmt.Println(res)
+	fmt.Println(string(body))
+
+	return "", nil
+}
+
 var secretsCmd = &cobra.Command{
 	Use:  "secrets",
 	Args: cobra.NoArgs,
@@ -137,13 +162,14 @@ var secretsCmd = &cobra.Command{
 
 				fmt.Println("Open the following URL to authenticate:")
 				fmt.Println(codeResponse.VerificationURIComplete)
+				browser.OpenURL(codeResponse.VerificationURIComplete)
 
 				tokens, err := requestTokens(codeResponse.DeviceCode, codeResponse.Interval)
 				if err != nil {
 					return fmt.Errorf("getting tokens: %w", err)
 				}
 
-				err = ioutil.WriteFile(cfg.EsvTokenFile, []byte(tokens.AccessToken), 0600)
+				err = ioutil.WriteFile(cfg.EsvTokenFile, []byte(tokens.RefreshToken), 0600)
 				if err != nil {
 					return fmt.Errorf("writing secrets: %w", err)
 				}
