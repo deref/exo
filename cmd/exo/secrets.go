@@ -11,7 +11,6 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
 )
 
@@ -131,28 +130,43 @@ func requestTokens(deviceCode string, interval int) (tokenResponse, error) {
 func getNewAccessToken(refreshToken string) (string, error) {
 	uri := derefAuth0Domain + "/oauth/token"
 
-	payload := strings.NewReader("grant_type=refresh_token&client_id=%24%7Baccount.clientId%7D&client_secret=%24%7Baccount.clientSecret%7D&refresh_token=YOUR_REFRESH_TOKEN")
+	values := url.Values{}
+	values.Set("client_id", clientId)
+	values.Set("refresh_token", refreshToken)
+	values.Set("grant_type", "refresh_token")
+	payloadString := values.Encode()
 
-	req, _ := http.NewRequest("POST", uri, payload)
+	req, err := http.NewRequest("POST", uri, strings.NewReader(payloadString))
+	if err != nil {
+		return "", fmt.Errorf("building refresh token request: %w", err)
+	}
 
 	req.Header.Add("content-type", "application/x-www-form-urlencoded")
 
-	res, _ := http.DefaultClient.Do(req)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		return "", fmt.Errorf("performing refresh token request: %w", err)
+	}
 
 	defer res.Body.Close()
 	body, _ := ioutil.ReadAll(res.Body)
 
-	fmt.Println(res)
-	fmt.Println(string(body))
+	if res.StatusCode == 200 {
+		tokens := tokenResponse{}
+		if err := json.Unmarshal(body, &tokens); err != nil {
+			return "", fmt.Errorf("unmarshalling auth token response: %w", err)
+		}
+		return tokens.AccessToken, nil
+	}
 
-	return "", nil
+	return "", fmt.Errorf("unexpected status: %q", res.Status)
 }
 
 var secretsCmd = &cobra.Command{
 	Use:  "secrets",
 	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		accessToken, err := ioutil.ReadFile("exo-secrets.json")
+		refreshToken, err := ioutil.ReadFile("exo-secrets.json")
 		if err != nil {
 			if os.IsNotExist(err) {
 				codeResponse, err := requestDeviceCode()
@@ -160,22 +174,27 @@ var secretsCmd = &cobra.Command{
 					return fmt.Errorf("getting device code: %w", err)
 				}
 
+				// This link is opened automatically because it's single use only. That
+				// means if we open it in the wrong browser it becomes worthless.
 				fmt.Println("Open the following URL to authenticate:")
 				fmt.Println(codeResponse.VerificationURIComplete)
-				browser.OpenURL(codeResponse.VerificationURIComplete)
 
 				tokens, err := requestTokens(codeResponse.DeviceCode, codeResponse.Interval)
 				if err != nil {
 					return fmt.Errorf("getting tokens: %w", err)
 				}
 
+				refreshToken = []byte(tokens.RefreshToken)
 				err = ioutil.WriteFile(cfg.EsvTokenFile, []byte(tokens.RefreshToken), 0600)
 				if err != nil {
 					return fmt.Errorf("writing secrets: %w", err)
 				}
-
-				accessToken = []byte(tokens.AccessToken)
 			}
+		}
+
+		accessToken, err := getNewAccessToken(string(refreshToken))
+		if err != nil {
+			return fmt.Errorf("getting refresh token: %w", err)
 		}
 
 		req, _ := http.NewRequest("POST", "http://localhost:5000/api/_exo/describe-me", bytes.NewBufferString(""))
