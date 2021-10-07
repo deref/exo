@@ -142,7 +142,7 @@ jobs:
           CXX: ${{ matrix.cxx }}
         run: |
           mkdir -p "${{ env.artifact_dir }}"
-          go build -tags bundle -o "${{ env.binary_path }}" ./cmd/exo
+          go build -tags bundle -o "${{ env.binary_path }}"
           sha256sum "${{ env.binary_path }}" | cut -d ' ' -f 1 > "${{ env.binary_path }}.sha256"
       - name: Set upload URL
         id: get_release_info
