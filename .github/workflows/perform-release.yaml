@@ -91,17 +91,27 @@ jobs:
         include:
           - goos: darwin
             goarch: amd64
-            cc: o64-clang
-            cxx: o64-clang++
+            target: x86_64-macos
           - goos: darwin
             goarch: arm64
-            cc: oa64-clang
-            cxx: oa64-clang++
+            target: aarch64-macos
           - goos: linux
             goarch: amd64
-            cc: gcc
-            cxx: g++
+            target: x86_64-linux
     steps:
+      # TODO: Is it possible to use https://github.com/marketplace/actions/setup-zig instead?
+      - name: Install Zig for Cross Compilation
+        run: |
+          export DEBIAN_FRONTEND="noninteractive"
+          apt update
+          apt install -y \
+            wget \
+            xz-utils
+          cd /opt
+          zig_build=zig-linux-x86_64-0.9.0-dev.1324+598db831f
+          wget --quiet https://ziglang.org/builds/${zig_build}.tar.xz
+          tar -xvf $PWD/${zig_build}.tar.xz
+          ln -s $PWD/${zig_build} zig
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
         with:
@@ -111,10 +121,14 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: 15.x
-      - run: npm ci
-        working-directory: gui
-      - run: npm run build
-        working-directory: gui
+      - name: Jank some crap in to gui
+        run: |
+          mkdir gui/dist
+          echo 'FIXME' > gui/dist/junk
+      #- run: npm ci
+      #  working-directory: gui
+      #- run: npm run build
+      #  working-directory: gui
 
       - name: Get version from VERSION file
         id: get_version
@@ -138,10 +152,19 @@ jobs:
           CGO_ENABLED: 1
           GOOS: ${{ matrix.goos }}
           GOARCH: ${{ matrix.goarch }}
-          CC: ${{ matrix.cc }}
-          CXX: ${{ matrix.cxx }}
+          CC: zcc
+          CXX: zxx
         run: |
           mkdir -p "${{ env.artifact_dir }}"
+          cat <<! > /bin/zcc
+          #!/bin/sh
+          ZIG_LOCAL_CACHE_DIR="\$HOME/tmp" /opt/zig/zig cc -target ${{ matrix.target }} \$@
+          !
+          cat <<! > /bin/zxx
+          #!/bin/sh
+          ZIG_LOCAL_CACHE_DIR="\$HOME/tmp" /opt/zig/zig c++ -target ${{ matrix.target }} \$@
+          !
+          chmod +x /bin/zcc /bin/zxx
           go build -tags bundle -o "${{ env.binary_path }}"
           sha256sum "${{ env.binary_path }}" | cut -d ' ' -f 1 > "${{ env.binary_path }}.sha256"
       - name: Set upload URL

@@ -4,14 +4,14 @@ All notable changes to this project will be documented in this file.
 
 This project adhears to [CalVer](./doc/versioning.md).
 
-## Unreleased
+## Unreleased + 1
 
 ### Added
 
 - Project templates
 
 
-## 2021.10.06
+## Unreleased
 
 ### Added
 
