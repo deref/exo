@@ -10,7 +10,7 @@ import (
 
 func init() {
 	rootCmd.AddCommand(versionCmd)
-	versionCmd.Flags().BoolVar(&versionFlags.Verbose, "verbose", false, "Prints version information for all dependencies too.")
+	versionCmd.Flags().BoolVarP(&versionFlags.Verbose, "verbose", "v", false, "Prints version information for all dependencies too.")
 }
 
 var versionFlags struct {
@@ -27,14 +27,11 @@ var versionCmd = &cobra.Command{
 		if !ok {
 			panic("debug.ReadBuildInfo() failed")
 		}
-		printInfo := func(mod debug.Module) {
-			if versionFlags.Verbose {
-				fmt.Println(mod.Path, exo.Version)
-			} else {
-				fmt.Println(exo.Version)
-			}
+		if versionFlags.Verbose {
+			fmt.Println(buildInfo.Main.Path, exo.Version)
+		} else {
+			fmt.Println(exo.Version)
 		}
-		printInfo(buildInfo.Main)
 		if versionFlags.Verbose {
 			for _, dep := range buildInfo.Deps {
 				fmt.Println(dep.Path, dep.Version)
