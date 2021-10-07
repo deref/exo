@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/deref/exo"
+	"github.com/deref/exo/internal/about"
 	"github.com/spf13/cobra"
 )
 
@@ -18,7 +18,7 @@ var licenseCmd = &cobra.Command{
 	Short: "Display license and legal notices",
 	Long:  `Displays license and required legal notices.`,
 	Run: func(cmd *cobra.Command, args []string) {
-		entries, err := exo.Notices.ReadDir(".")
+		entries, err := about.Notices.ReadDir(".")
 		if err != nil {
 			panic(err)
 		}
@@ -33,7 +33,7 @@ var licenseCmd = &cobra.Command{
 			fmt.Println(entry.Name())
 			fmt.Println(hr)
 			fmt.Println()
-			bs, err := exo.Notices.ReadFile(name)
+			bs, err := about.Notices.ReadFile(name)
 			if err != nil {
 				panic(err)
 			}

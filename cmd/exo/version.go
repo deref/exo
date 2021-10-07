@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"runtime/debug"
 
-	"github.com/deref/exo"
+	"github.com/deref/exo/internal/about"
 	"github.com/spf13/cobra"
 )
 
@@ -28,9 +28,9 @@ var versionCmd = &cobra.Command{
 			panic("debug.ReadBuildInfo() failed")
 		}
 		if versionFlags.Verbose {
-			fmt.Println(buildInfo.Main.Path, exo.Version)
+			fmt.Println(buildInfo.Main.Path, about.Version)
 		} else {
-			fmt.Println(exo.Version)
+			fmt.Println(about.Version)
 		}
 		if versionFlags.Verbose {
 			for _, dep := range buildInfo.Deps {

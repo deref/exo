@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/deref/exo"
+	"github.com/deref/exo/internal/about"
 	"github.com/deref/exo/internal/telemetry"
 	"github.com/deref/exo/internal/upgrade"
 	"github.com/spf13/cobra"
@@ -32,7 +32,7 @@ var upgradeCmd = &cobra.Command{
 			}
 			return nil
 		}
-		current := exo.Version
+		current := about.Version
 		latest, err := tel.LatestVersion(ctx)
 		if err != nil {
 			return err

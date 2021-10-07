@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 
+	_ "github.com/deref/exo" // SEE NOTE [ABOUT_EMBEDS].
 	"github.com/deref/exo/internal/config"
 	"github.com/deref/exo/internal/telemetry"
 	"github.com/deref/exo/internal/util/cmdutil"
