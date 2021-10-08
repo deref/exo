@@ -3,6 +3,7 @@
   import type { IconGlyph } from './Icon.svelte';
   import * as router from 'svelte-spa-router';
   import { createEventDispatcher } from 'svelte';
+  import { getMenuContext } from '../lib/menu';
 
   export let glyph: IconGlyph;
   export let href: string | undefined = undefined;
@@ -10,7 +11,10 @@
 
   const dispatch = createEventDispatcher();
 
+  const menu = getMenuContext();
+
   const handleClick = (e: MouseEvent) => {
+    menu?.close();
     if (href) {
       router.push(href);
       return;

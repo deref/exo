@@ -1,8 +1,21 @@
 <script lang="ts">
+  import { setMenuContext } from '../lib/menu';
+
   export let title: string | undefined;
+
+  let nav: HTMLElement | undefined;
+
+  setMenuContext({
+    close() {
+      const active = document?.activeElement as HTMLElement | undefined;
+      if (active) {
+        active.blur();
+      }
+    },
+  });
 </script>
 
-<nav>
+<nav bind:this={nav}>
   {#if title}<span>{title}</span>{/if}
   <slot />
 </nav>
