@@ -524,20 +524,30 @@ func (ws *Workspace) UpdateComponent(ctx context.Context, input *api.UpdateCompo
 	}
 
 	oldComponent := describeOutput.Components[0]
-
 	newComponent := oldComponent
+	patch := state.PatchComponentInput{
+		ID: oldComponent.ID,
+	}
 
 	if input.Name != "" {
 		if err := manifest.ValidateName(input.Name); err != nil {
 			return nil, errutil.HTTPErrorf(http.StatusBadRequest, "new component name %q is invalid: %w", input.Name, err)
 		}
 		newComponent.Name = input.Name
+		patch.Name = input.Name
 	}
 	if input.Spec != "" {
 		newComponent.Spec = input.Spec
+		patch.Spec = input.Spec
 	}
 	if input.DependsOn != nil {
 		newComponent.DependsOn = input.DependsOn
+		patch.DependsOn = &input.DependsOn
+	}
+
+	_, err = ws.Store.PatchComponent(ctx, &patch)
+	if err != nil {
+		return nil, fmt.Errorf("patching component: %w", err)
 	}
 
 	ws.logEventf(ctx, "updating %s", oldComponent.Name)
@@ -1118,7 +1128,6 @@ func (ws *Workspace) control(ctx context.Context, desc api.ComponentDescription,
 		} else {
 			_, err = ws.Store.PatchComponent(ctx, &state.PatchComponentInput{
 				ID:    desc.ID,
-				Spec:  desc.Spec,
 				State: newState,
 			})
 		}
