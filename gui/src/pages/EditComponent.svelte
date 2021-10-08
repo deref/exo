@@ -57,6 +57,7 @@
     example: string;
   }
 
+  // TODO: Extract these to a registry.
   const componentTypes: Record<string, ComponentType> = {
     process: {
       glyph: 'Layers',
