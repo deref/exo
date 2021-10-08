@@ -117,7 +117,7 @@ func (ws *Workspace) loadManifest(rootDir string, input *api.ApplyInput) manifes
 		projectName = manifest.MangleName(projectName)
 		loader = &compose.Loader{ProjectName: projectName}
 	case "exo":
-		loader = manifest.Loader
+		loader = &manifest.Loader{}
 	default:
 		return manifest.LoadResult{
 			Err: fmt.Errorf("unknown manifest format: %q", format),
