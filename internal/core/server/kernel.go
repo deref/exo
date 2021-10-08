@@ -10,7 +10,7 @@ import (
 	"syscall"
 	"time"
 
-	"github.com/deref/exo"
+	"github.com/deref/exo/internal/about"
 	"github.com/deref/exo/internal/core/api"
 	state "github.com/deref/exo/internal/core/state/api"
 	"github.com/deref/exo/internal/gensym"
@@ -120,7 +120,7 @@ func (kern *Kernel) ResolveWorkspace(ctx context.Context, input *api.ResolveWork
 
 func (kern *Kernel) GetVersion(ctx context.Context, input *api.GetVersionInput) (*api.GetVersionOutput, error) {
 	tel := telemetry.FromContext(ctx)
-	installed := exo.Version
+	installed := about.Version
 	current := true
 	var latest *string
 	if tel.IsEnabled() {

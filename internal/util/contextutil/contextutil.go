@@ -27,6 +27,12 @@ func (c noCancel) Value(key interface{}) interface{} {
 
 // WithoutCancel creates a new context from `ctx` that is never cancelled
 // and never times out.
+// XXX This is an anti-pattern. It is used for background work, but that
+// should always be indirected through some kind of background worker
+// where the context must be explicitly propegated.
 func WithoutCancel(ctx context.Context) context.Context {
+	if res, ok := ctx.(noCancel); ok {
+		return res
+	}
 	return noCancel{ctx: ctx}
 }

@@ -87,10 +87,7 @@ jobs:
     strategy:
       matrix:
         goos: [linux, darwin]
-        goarch: ["386", amd64, arm64]
-        exclude:
-          - goarch: "386"
-            goos: darwin
+        goarch: [amd64, arm64]
     steps:
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
@@ -126,7 +123,18 @@ jobs:
       - name: Build
         run: |
           mkdir -p "${{ env.artifact_dir }}"
-          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -tags bundle -o "${{ env.binary_path }}" ./cmd/exo
+          go build  .
+          docker run \
+            -e GOOS=${{ matrix.goos }} \
+            -e GOARCH=${{ matrix.goarch }} \
+            --mount "type=bind,source=${PWD},target=/go/src/exo" \
+            --mount "type=bind,source=${HOME}/go/pkg/mod,target=/go/pkg/mod" \
+            -w /go/src/exo \
+            ghcr.io/deref/golang-cross \
+            go build \
+              -tags bundle \
+              -o "${{ env.binary_path }}" \
+              .
           sha256sum "${{ env.binary_path }}" | cut -d ' ' -f 1 > "${{ env.binary_path }}.sha256"
       - name: Set upload URL
         id: get_release_info

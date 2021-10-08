@@ -144,19 +144,21 @@ func (p *Process) start(ctx context.Context) error {
 }
 
 func (p *Process) Stop(ctx context.Context, input *core.StopInput) (*core.StopOutput, error) {
-	if p.Program == "" {
-		// SEE NOTE [PROCESS_STATE_MIGRATION].
-		return nil, errors.New("refresh needed")
+	if err := p.stop(input.TimeoutSeconds); err != nil {
+		return nil, err
 	}
-	p.stop(input.TimeoutSeconds)
 	return &core.StopOutput{}, nil
 }
 
 const DefaultShutdownGracePeriod = 5 * time.Second
 
-func (p *Process) stop(timeoutSeconds *uint) {
+func (p *Process) stop(timeoutSeconds *uint) error {
 	if p.zeroPids() {
-		return
+		return nil
+	}
+	if p.Program == "" {
+		// SEE NOTE [PROCESS_STATE_MIGRATION].
+		return errors.New("refresh needed")
 	}
 
 	timeout := DefaultShutdownGracePeriod
@@ -172,14 +174,13 @@ func (p *Process) stop(timeoutSeconds *uint) {
 	}
 
 	p.State.reset()
+	return nil
 }
 
 func (p *Process) Restart(ctx context.Context, input *core.RestartInput) (*core.RestartOutput, error) {
-	if p.Program == "" {
-		// SEE NOTE [PROCESS_STATE_MIGRATION].
-		return nil, errors.New("refresh needed")
+	if err := p.stop(input.TimeoutSeconds); err != nil {
+		return nil, err
 	}
-	p.stop(input.TimeoutSeconds)
 	err := p.start(ctx)
 	if err != nil {
 		return nil, err
