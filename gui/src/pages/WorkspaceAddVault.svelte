@@ -12,6 +12,9 @@
   const workspace = api.workspace(workspaceId);
   const workspaceRoute = `/workspaces/${encodeURIComponent(workspaceId)}`;
 
+  // FIXME: inject this.
+  const esvUrl = 'http://localhost:5000/organizations';
+
   let vaultUrl: string = '';
 </script>
 
@@ -33,5 +36,8 @@
       <Textbox bind:value={vaultUrl} --input-width="100%" autofocus />
       <button type="submit">Add</button>
     </form>
+
+    <h2>Need a vault?</h2>
+    <a href="${esvUrl}">Create one with Exo Secrets</a>
   </Panel>
 </Layout>
