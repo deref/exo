@@ -415,7 +415,11 @@ export const api = (() => {
         })) as CreateComponentResponse;
       },
 
-      async updateComponent(ref: string, spec: string): Promise<void> {
+      async updateComponent(
+        ref: string,
+        name: string,
+        spec: string,
+      ): Promise<void> {
         await invoke('update-component', {
           ref,
           name,

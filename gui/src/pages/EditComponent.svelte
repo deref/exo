@@ -98,9 +98,8 @@ environment:
         backRoute={workspaceComponentsRoute}
       >
         <h1>
-          <Icon glyph={componentTypes[component.type].glyph} />{pageTitle(
-            component,
-          )}
+          <Icon glyph={componentTypes[component.type].glyph} />
+          {pageTitle(component)}
         </h1>
         <form
           on:submit|preventDefault={async () => {
