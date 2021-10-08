@@ -95,7 +95,7 @@ my-app --port 4000
 
           router.push(workspaceRoute);
         } catch (ex) {
-          if (!(ex instanceof Error) || !isClientError(ex)) {
+          if (!isClientError(ex)) {
             throw ex;
           }
           error = ex;

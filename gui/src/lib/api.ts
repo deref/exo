@@ -114,8 +114,8 @@ export class APIError extends Error {
   }
 }
 
-export const isClientError = (err: Error): err is APIError =>
-  err instanceof APIError && 400 <= err.httpStatus && err.httpStatus < 500;
+export const isClientError = (x: unknown): x is APIError =>
+  x instanceof APIError && 400 <= x.httpStatus && x.httpStatus < 500;
 
 const responseToError = async (res: Response): Promise<Error | null> => {
   if (200 <= res.status && res.status < 300) {
