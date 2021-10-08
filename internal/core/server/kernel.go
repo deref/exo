@@ -13,6 +13,7 @@ import (
 	"github.com/deref/exo/internal/about"
 	"github.com/deref/exo/internal/core/api"
 	state "github.com/deref/exo/internal/core/state/api"
+	"github.com/deref/exo/internal/esv"
 	"github.com/deref/exo/internal/gensym"
 	"github.com/deref/exo/internal/task"
 	taskapi "github.com/deref/exo/internal/task/api"
@@ -29,10 +30,25 @@ type Kernel struct {
 	VarDir      string
 	Store       state.Store
 	TaskTracker *task.TaskTracker
+	EsvClient   *esv.EsvClient
 }
+
+var _ api.Kernel = &Kernel{}
 
 func (kern *Kernel) DescribeTemplates(ctx context.Context, input *api.DescribeTemplatesInput) (*api.DescribeTemplatesOutput, error) {
 	return &api.DescribeTemplatesOutput{Templates: template.GetTemplateDescriptions()}, nil
+}
+
+func (kern *Kernel) AuthEsv(ctx context.Context, input *api.AuthEsvInput) (*api.AuthEsvOutput, error) {
+	authResponse, err := kern.EsvClient.StartAuthFlow(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("starting auth flow: %w", err)
+	}
+
+	return &api.AuthEsvOutput{
+		AuthCode: authResponse.DeviceCode,
+		AuthUrl:  authResponse.AuthURL,
+	}, nil
 }
 
 func (kern *Kernel) CreateProject(ctx context.Context, input *api.CreateProjectInput) (*api.CreateProjectOutput, error) {

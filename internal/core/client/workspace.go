@@ -95,6 +95,11 @@ func (c *Workspace) Build(ctx context.Context, input *api.BuildInput) (output *a
 	return
 }
 
+func (c *Workspace) DescribeVaults(ctx context.Context, input *api.DescribeVaultsInput) (output *api.DescribeVaultsOutput, err error) {
+	err = c.client.Invoke(ctx, "describe-vaults", input, &output)
+	return
+}
+
 func (c *Workspace) Describe(ctx context.Context, input *api.DescribeInput) (output *api.DescribeOutput, err error) {
 	err = c.client.Invoke(ctx, "describe", input, &output)
 	return

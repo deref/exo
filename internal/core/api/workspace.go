@@ -82,6 +82,7 @@ func BuildBuilderMux(b *josh.MuxBuilder, factory func(req *http.Request) Builder
 type Workspace interface {
 	Process
 	Builder
+	DescribeVaults(context.Context, *DescribeVaultsInput) (*DescribeVaultsOutput, error)
 	// Describes this workspace.
 	Describe(context.Context, *DescribeInput) (*DescribeOutput, error)
 	// Dispose resources, then delete the record of it.
@@ -121,6 +122,13 @@ type Workspace interface {
 	WriteFile(context.Context, *WriteFileInput) (*WriteFileOutput, error)
 	BuildComponents(context.Context, *BuildComponentsInput) (*BuildComponentsOutput, error)
 	DescribeEnvironment(context.Context, *DescribeEnvironmentInput) (*DescribeEnvironmentOutput, error)
+}
+
+type DescribeVaultsInput struct {
+}
+
+type DescribeVaultsOutput struct {
+	Vaults []VaultDescription `json:"vaults"`
 }
 
 type DescribeInput struct {
@@ -384,6 +392,9 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	b.AddMethod("build", func(req *http.Request) interface{} {
 		return factory(req).Build
 	})
+	b.AddMethod("describe-vaults", func(req *http.Request) interface{} {
+		return factory(req).DescribeVaults
+	})
 	b.AddMethod("describe", func(req *http.Request) interface{} {
 		return factory(req).Describe
 	})
@@ -515,4 +526,10 @@ type VolumeDescription struct {
 type NetworkDescription struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
+}
+
+type VaultDescription struct {
+	Name      string `json:"name"`
+	Url       string `json:"url"`
+	NeedsAuth bool   `json:"needsAuth"`
 }

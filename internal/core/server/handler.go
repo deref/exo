@@ -62,6 +62,7 @@ func BuildRootMux(prefix string, cfg *Config) *http.ServeMux {
 			VarDir:      cfg.VarDir,
 			Store:       cfg.Store,
 			TaskTracker: cfg.TaskTracker,
+			EsvClient:   cfg.EsvClient,
 		}
 	})
 	endKernel()

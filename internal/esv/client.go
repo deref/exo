@@ -2,16 +2,75 @@ package esv
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/deref/exo/internal/util/logging"
 )
 
 type EsvClient struct {
-	AccessKey string
+	refreshToken string
+	TokenFile    string
+}
+
+type AuthResponse struct {
+	DeviceCode string
+	AuthURL    string
+}
+
+func (c *EsvClient) StartAuthFlow(ctx context.Context) (AuthResponse, error) {
+	codeResponse, err := requestDeviceCode()
+	if err != nil {
+		return AuthResponse{}, fmt.Errorf("requesting device code: %w", err)
+	}
+
+	go func() {
+		logger := logging.CurrentLogger(ctx)
+
+		tokens, err := requestTokens(codeResponse.DeviceCode, codeResponse.Interval)
+		if err != nil {
+			logger.Infof("got error requesting tokens: %s", err)
+			return
+		}
+
+		c.refreshToken = tokens.RefreshToken
+
+		err = ioutil.WriteFile(c.TokenFile, []byte(tokens.RefreshToken), 0600)
+		if err != nil {
+			logger.Infof("writing esv secret: %s", err)
+			return
+		}
+	}()
+
+	return AuthResponse{
+		AuthURL:    codeResponse.VerificationURIComplete,
+		DeviceCode: codeResponse.DeviceCode,
+	}, nil
+}
+
+func (c *EsvClient) getAccessToken() (string, error) {
+	if c.TokenFile == "" {
+		return "", fmt.Errorf("token file not set")
+	}
+	if c.refreshToken == "" {
+		tokenBytes, err := ioutil.ReadFile(c.TokenFile)
+		if err != nil {
+			return "", fmt.Errorf("reading token file: %w", err)
+		}
+		c.refreshToken = strings.TrimSpace(string(tokenBytes))
+	}
+
+	// FIXME: don't refresh access token on every request.
+	accessToken, err := getNewAccessToken(c.refreshToken)
+	if err != nil {
+		return "", fmt.Errorf("getting access token: %w", err)
+	}
+	return accessToken, nil
 }
 
 func (c *EsvClient) runCommand(output interface{}, host, commandName string, body interface{}) error {
@@ -20,9 +79,14 @@ func (c *EsvClient) runCommand(output interface{}, host, commandName string, bod
 		return fmt.Errorf("marshalling command body: %w", err)
 	}
 
+	accessToken, err := c.getAccessToken()
+	if err != nil {
+		return fmt.Errorf("getting access token: %w", err)
+	}
+
 	req, _ := http.NewRequest("POST", host+"/api/_exo/"+commandName, bytes.NewBuffer(marshalledBody))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+c.AccessKey)
+	req.Header.Set("Authorization", "Bearer "+accessToken)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {

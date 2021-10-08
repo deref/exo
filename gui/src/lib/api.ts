@@ -174,6 +174,12 @@ export interface ProcessSpec {
   environment?: Record<string, string>;
 }
 
+export interface VaultDescription {
+  name: string;
+  url: string;
+  needsAuth: boolean;
+}
+
 export interface WorkspaceDescription {
   id: string;
   root: string;
@@ -212,6 +218,11 @@ export interface ReadDirResult {
   entries: DirectoryEntry[];
 }
 
+export interface AuthEsvResult {
+  authUrl: string;
+  authCode: string;
+}
+
 export interface KernelApi {
   getUserHomeDir(): Promise<string>;
   readDir(path: string): Promise<ReadDirResult>;
@@ -222,22 +233,18 @@ export interface KernelApi {
   getVersion(): Promise<GetVersionResponse>;
   upgrade(): Promise<void>;
   ping(): Promise<void>;
+  authEsv(): Promise<AuthEsvResult>;
   describeTasks(input?: DescribeTasksInput): Promise<TaskDescription[]>;
 }
 
 export interface WorkspaceApi {
   id: string;
-
   describeSelf(): Promise<WorkspaceDescription>;
-
   describeComponents(): Promise<ComponentDescription[]>;
-
   describeEnvironment(): Promise<Record<string, string>>;
-
+  describeVaults(): Promise<VaultDescription[]>;
   describeProcesses(): Promise<ProcessDescription[]>;
-
   describeVolumes(): Promise<VolumeDescription[]>;
-
   describeNetworks(): Promise<NetworkDescription[]>;
 
   destroy(): Promise<void>;
@@ -329,6 +336,10 @@ export const api = (() => {
         const { tasks } = (await invoke('describe-tasks', {})) as any;
         return tasks as TaskDescription[];
       },
+
+      async authEsv(): Promise<AuthEsvResult> {
+        return (await invoke('auth-esv', {})) as any;
+      },
     };
   })();
 
@@ -346,6 +357,11 @@ export const api = (() => {
       async describeComponents(): Promise<ComponentDescription[]> {
         const { components } = (await invoke('describe-components')) as any;
         return components;
+      },
+
+      async describeVaults(): Promise<VaultDescription[]> {
+        const { vaults } = (await invoke('describe-vaults')) as any;
+        return vaults;
       },
 
       async describeEnvironment(): Promise<Record<string, string>> {

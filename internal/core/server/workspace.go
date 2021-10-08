@@ -50,6 +50,43 @@ type Workspace struct {
 	EsvClient   *esv.EsvClient
 }
 
+var _ api.Workspace = &Workspace{}
+
+func (ws *Workspace) getVaults(ctx context.Context) ([]api.VaultDescription, error) {
+	// Right now getVaults relies on an exo-secrets-url file in the workspace root
+	// to provide the vault. At the moment only one is supported. Instead we
+	// should add this to the state of the workspace and support multiple vaults.
+
+	secretConfigPath, err := ws.resolveWorkspacePath(ctx, "exo-secrets-url")
+	if err != nil {
+		return nil, fmt.Errorf("resolving secrets config file path: %w", err)
+	}
+	secretsUrlBytes, err := ioutil.ReadFile(secretConfigPath)
+	if err != nil && !os.IsNotExist(err) {
+		return nil, fmt.Errorf("reading secrets config: %w", err)
+	}
+	secretsUrl := strings.TrimSpace(string(secretsUrlBytes))
+
+	// TODO: add a status command.
+	_, err = ws.EsvClient.GetWorkspaceSecrets(secretsUrl)
+
+	return []api.VaultDescription{
+		{
+			Name:      "esv-vault",
+			Url:       secretsUrl,
+			NeedsAuth: err != nil,
+		},
+	}, nil
+}
+
+func (ws *Workspace) DescribeVaults(ctx context.Context, input *api.DescribeVaultsInput) (*api.DescribeVaultsOutput, error) {
+	vaults, err := ws.getVaults(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting vaults: %w", err)
+	}
+	return &api.DescribeVaultsOutput{Vaults: vaults}, nil
+}
+
 func (ws *Workspace) logEventf(ctx context.Context, format string, v ...interface{}) {
 	eventStore := log.CurrentEventStore(ctx)
 	input := &eventd.AddEventInput{
@@ -426,14 +463,12 @@ func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]string, err
 	env := map[string]string{}
 
 	if ws.EsvClient != nil {
-		// TODO: store this in the state.
-		secretConfigPath, err := ws.resolveWorkspacePath(ctx, "exo-secrets-url")
+		vaults, err := ws.getVaults(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("resolving secrets config file path: %w", err)
+			return nil, fmt.Errorf("getting vaults: %w", err)
 		}
-		secretsUrl, err := ioutil.ReadFile(secretConfigPath)
-		if err == nil {
-			secrets, err := ws.EsvClient.GetWorkspaceSecrets(strings.TrimSpace(string(secretsUrl)))
+		for _, v := range vaults {
+			secrets, err := ws.EsvClient.GetWorkspaceSecrets(v.Url)
 			if err != nil {
 				ws.logEventf(ctx, "getting workspace secrets: %v", err)
 			} else {
@@ -441,8 +476,6 @@ func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]string, err
 					env[k] = v
 				}
 			}
-		} else if !os.IsNotExist(err) {
-			return nil, fmt.Errorf("reading secrets config: %w", err)
 		}
 	}
 

@@ -1,5 +1,10 @@
 interface "kernel" {
 
+  method "auth-esv" {
+    output "auth-url" "string" {}
+    output "auth-code" "string" {}
+  }
+
   method "create-project" {
     input "root" "string" {}
     input "template-url" "*string" {}
