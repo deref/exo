@@ -4,8 +4,7 @@
   type Item = $$Generic;
   interface $$Slots {
     pending: {};
-    success: { data: Item };
-    refetching: { data: Item };
+    success: { data: Item; loading: boolean };
     error: { error: string };
     default: {
       data: Item;
@@ -21,13 +20,9 @@
 
 {#if data.stage === 'pending'}
   <slot name="pending">Loading...</slot>
-{:else if data.stage === 'success'}
-  <slot name="success" data={data.data}>Missing success slot!</slot>
-{:else if data.stage === 'refetching'}
-  <slot name="refetching" data={data.data}>
-    <slot name="success" data={data.data}>
-      Missing refetching and success slots!
-    </slot>
+{:else if data.stage === 'success' || data.stage === 'refetching'}
+  <slot name="success" data={data.data} loading={data.stage == 'refetching'}>
+    Missing success slot!
   </slot>
 {:else if data.stage === 'error'}
   <slot name="error" error={data.message}>
