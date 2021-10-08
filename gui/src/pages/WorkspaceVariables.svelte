@@ -20,9 +20,7 @@
   ]);
 
   const authEsv = async () => {
-    console.log('called auth esv');
     const result = await api.kernel.authEsv();
-    console.log('res', result);
     window.open(result.authUrl, '_blank')?.focus();
   };
 </script>
