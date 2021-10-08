@@ -514,7 +514,6 @@ func (ws *Workspace) createComponent(ctx context.Context, component manifest.Com
 	})
 }
 
-// TODO: This should use controlEachComponent to be able to return a job id.
 func (ws *Workspace) UpdateComponent(ctx context.Context, input *api.UpdateComponentInput) (*api.UpdateComponentOutput, error) {
 	describeOutput, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{Refs: []string{input.Ref}})
 	if err != nil {
@@ -525,43 +524,44 @@ func (ws *Workspace) UpdateComponent(ctx context.Context, input *api.UpdateCompo
 	}
 
 	oldComponent := describeOutput.Components[0]
-	dependsOn := oldComponent.DependsOn
-	if input.DependsOn != nil {
-		dependsOn = input.DependsOn
-	}
 
-	newName := input.Name
-	if newName == "" {
-		newName = oldComponent.Name
+	newComponent := oldComponent
+
+	if input.Name != "" {
+		if err := manifest.ValidateName(input.Name); err != nil {
+			return nil, errutil.HTTPErrorf(http.StatusBadRequest, "new component name %q is invalid: %w", input.Name, err)
+		}
+		newComponent.Name = input.Name
 	}
-	if err := manifest.ValidateName(newName); err != nil {
-		return nil, errutil.HTTPErrorf(http.StatusBadRequest, "new component name %q is invalid: %w", newName, err)
+	if input.Spec != "" {
+		newComponent.Spec = input.Spec
+	}
+	if input.DependsOn != nil {
+		newComponent.DependsOn = input.DependsOn
 	}
 
 	ws.logEventf(ctx, "updating %s", oldComponent.Name)
-	if err := ws.updateComponent(ctx, oldComponent, manifest.Component{
-		Type:      oldComponent.Type,
-		Name:      newName,
-		Spec:      input.Spec,
-		DependsOn: dependsOn,
-	}, oldComponent.ID); err != nil {
-		return nil, err
-	}
+	job := ws.TaskTracker.StartTask(ctx, "updating")
+	go func() {
+		defer job.Finish()
+		// TODO: Most updates should be accomplished without a full replacement; especially when there are no spec changes!
+		job.Go("dispose old", func(disposeTask *task.Task) error {
+			// TODO: Fix this really awkward way of encoding a waterfall of async steps.
+			job.Go("initialize new", func(initializeTask *task.Task) error {
+				if err := disposeTask.Wait(); err != nil {
+					return context.Canceled
+				}
+				return ws.control(ctx, newComponent, &api.InitializeInput{
+					Spec: newComponent.Spec,
+				})
+			})
+			return ws.control(ctx, oldComponent, &api.DisposeInput{})
+		})
+	}()
 
-	return &api.UpdateComponentOutput{}, nil
-}
-
-func (ws *Workspace) updateComponent(ctx context.Context, oldComponent api.ComponentDescription, newComponent manifest.Component, id string) error {
-	// TODO: Most updates should be accomplished without a full replacement; especially when there are no spec changes!
-	if err := ws.control(ctx, oldComponent, &api.DisposeInput{}); err != nil {
-		return fmt.Errorf("disposing %q for replacement: %w", oldComponent.Name, err)
-	}
-	if err := ws.control(ctx, oldComponent, &api.InitializeInput{
-		Spec: newComponent.Spec,
-	}); err != nil {
-		return fmt.Errorf("initializing replacement %q: %w", newComponent.Name, err)
-	}
-	return nil
+	return &api.UpdateComponentOutput{
+		JobID: job.ID(),
+	}, nil
 }
 
 func (ws *Workspace) RenameComponent(ctx context.Context, input *api.RenameComponentInput) (*api.RenameComponentOutput, error) {
@@ -757,7 +757,10 @@ func (ws *Workspace) StartComponents(ctx context.Context, input *api.StartCompon
 	// Note that we are only querying Process component types specifically because they are the only
 	// things that are "startable".
 	query := allProcessQuery(withRefs(input.Refs...), withDependencies)
-	jobID := ws.controlEachComponent(ctx, "starting", query, func(*api.ComponentDescription) interface{} {
+	jobID := ws.controlEachComponent(ctx, "starting", query, func(desc *api.ComponentDescription) interface{} {
+		if !isRunnableType(desc.Type) {
+			return nil
+		}
 		return &api.StartInput{}
 	}, func(desc *api.ComponentDescription, err error) {
 		ws.logEventf(ctx, "error starting %s: %v", desc.Name, err)
@@ -785,7 +788,10 @@ func (ws *Workspace) StopComponents(ctx context.Context, input *api.StopComponen
 		withReversedDependencies,
 		withDependents,
 	)
-	jobID := ws.controlEachComponent(ctx, "stopping", query, func(*api.ComponentDescription) interface{} {
+	jobID := ws.controlEachComponent(ctx, "stopping", query, func(desc *api.ComponentDescription) interface{} {
+		if !isRunnableType(desc.Type) {
+			return nil
+		}
 		return &api.StopInput{TimeoutSeconds: input.TimeoutSeconds}
 	})
 	return &api.StopComponentsOutput{
@@ -843,7 +849,10 @@ func (ws *Workspace) RestartComponents(ctx context.Context, input *api.RestartCo
 	//    then restart the dependents in normal order again.
 	// 3. Ensure that all dependendencies are started (in normal order), then restart these components (current behaviour).
 	query := allProcessQuery(withRefs(input.Refs...), withDependencies)
-	jobID := ws.controlEachComponent(ctx, "restart", query, func(*api.ComponentDescription) interface{} {
+	jobID := ws.controlEachComponent(ctx, "restart", query, func(desc *api.ComponentDescription) interface{} {
+		if !isRunnableType(desc.Type) {
+			return nil
+		}
 		return &api.RestartInput{TimeoutSeconds: input.TimeoutSeconds}
 	}, func(desc *api.ComponentDescription, err error) {
 		ws.logEventf(ctx, "error restarting %s: %v", desc.Name, err)
@@ -1042,7 +1051,11 @@ func (ws *Workspace) goControlComponents(t *task.Task, query componentQuery, mak
 			name: component.Name,
 			task: t.CreateChild(component.Name),
 			run: func(t *task.Task) error {
-				err := ws.control(t, component, makeMessage(&component))
+				msg := makeMessage(&component)
+				if msg == nil {
+					return nil
+				}
+				err := ws.control(t, component, msg)
 				if err != nil {
 					for _, f := range onErr {
 						f(&component, err)
@@ -1105,6 +1118,7 @@ func (ws *Workspace) control(ctx context.Context, desc api.ComponentDescription,
 		} else {
 			_, err = ws.Store.PatchComponent(ctx, &state.PatchComponentInput{
 				ID:    desc.ID,
+				Spec:  desc.Spec,
 				State: newState,
 			})
 		}

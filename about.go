@@ -1,14 +1,12 @@
-package exo
+package main
 
 import (
 	"embed"
+
+	"github.com/deref/exo/internal/about"
 )
 
-const (
-	CheckVersionEndpoint = "https://exo.deref.io/latest-version"
-	UpdateScriptEndpoint = "https://exo.deref.io/install"
-	TelemetryEndpoint    = "https://exo.deref.io/api/telemetry"
-)
+// SEE NOTE: [ABOUT_EMBEDS].
 
 //go:embed VERSION
 var Version string
@@ -17,3 +15,8 @@ var Version string
 //go:embed LICENSE
 //go:embed doc/licenses/ofl
 var Notices embed.FS
+
+func init() {
+	about.Version = Version
+	about.Notices = Notices
+}

@@ -35,6 +35,10 @@ interface RefetchingResponse<T> {
   data: T;
 }
 
+// TODO: This is an invalid enumeration of states. For example, this cannot
+// represent an error that is being retried. In practice, there are actually
+// three booleans for a total of nine states: (loading, !!data, and !!error).
+// Look up "SWR" for examples of how to do this better.
 export type RequestLifecycle<T> =
   | IdleRequest
   | PendingRequest

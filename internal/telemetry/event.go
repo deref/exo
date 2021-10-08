@@ -1,6 +1,6 @@
 package telemetry
 
-import "github.com/deref/exo"
+import "github.com/deref/exo/internal/about"
 
 type event interface {
 	ID() string
@@ -38,7 +38,7 @@ func (e *OperationsPerformed) ID() string {
 
 func (e *OperationsPerformed) Payload() map[string]interface{} {
 	return map[string]interface{}{
-		"exoVersion": exo.Version,
+		"exoVersion": about.Version,
 		"operation":  e.Operation,
 		"success":    e.Success,
 		"summary":    e.DurationSummary,
