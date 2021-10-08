@@ -76,7 +76,7 @@
       />
     </div>
 
-    <div class="actions">
+    <div class="actions" tabindex="0">
       <IconButton glyph="Ellipsis" />
 
       <ContextMenu
@@ -179,6 +179,7 @@
   }
 
   .actions {
+    outline: none;
     position: relative;
   }
 

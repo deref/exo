@@ -75,7 +75,7 @@
   <Panel title={description.displayName} backRoute="/" --panel-padding="0 1rem">
     <div class="actions" slot="actions">
       <span>Logs</span>
-      <div class="menu">
+      <div class="menu" tabindex="0">
         <IconButton
           glyph="Ellipsis"
           tooltip="Workspace actions..."
@@ -257,6 +257,7 @@
   }
 
   .menu {
+    outline: none;
     position: relative;
   }
 
