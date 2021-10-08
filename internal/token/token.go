@@ -70,7 +70,9 @@ func EnsureTokenFile(path string) error {
 	}
 	if !exists {
 		token := genToken()
-		if err := ioutil.WriteFile(path, []byte(token+"\n"), 0600); err != nil {
+		// Write file with an fsync, so that the CLI process can be sure to find
+		// this file after the server goes up.
+		if err := osutil.WriteFileSync(path, []byte(token+"\n"), 0600); err != nil {
 			return fmt.Errorf("writing token file: %w", err)
 		}
 	}
