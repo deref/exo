@@ -60,7 +60,7 @@
         use:link
         href={`/workspaces/${encodeURIComponent(
           workspaceId,
-        )}/processes/${encodeURIComponent(id)}`}
+        )}/components/${encodeURIComponent(id)}`}
       >
         {name}
       </a>
@@ -89,7 +89,18 @@
               router.push(
                 `/workspaces/${encodeURIComponent(
                   workspaceId,
-                )}/processes/${encodeURIComponent(id)}`,
+                )}/components/${encodeURIComponent(id)}`,
+              );
+            },
+          },
+          {
+            name: 'Edit component',
+            glyph: 'Edit',
+            execute(event) {
+              router.push(
+                `/workspaces/${encodeURIComponent(
+                  workspaceId,
+                )}/components/${encodeURIComponent(id)}/edit`,
               );
             },
           },

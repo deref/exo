@@ -14,16 +14,16 @@
     getValue: (item: Item) => T;
   }
 
-  interface Action<T> {
+  interface Action {
     tooltip: string;
     glyph: IconGlyph;
-    callback(component: any): any;
+    execute(component: any): any;
   }
 
   export let load: () => Promise<Item[]>;
 
   export let columns: Column<any>[];
-  export let actions: Action<any>[] | undefined;
+  export let actions: Action[] | undefined;
 
   let componentsPromise = load();
 </script>
@@ -61,15 +61,17 @@
               {/each}
               {#if actions && actions.length > 0}
                 <td class="actions">
-                  {#each actions as action}
-                    <IconButton
-                      tooltip={action.tooltip}
-                      glyph={action.glyph}
-                      on:click={() => {
-                        action.callback(component);
-                      }}
-                    />
-                  {/each}
+                  <div>
+                    {#each actions as action}
+                      <IconButton
+                        tooltip={action.tooltip}
+                        glyph={action.glyph}
+                        on:click={() => {
+                          action.execute(component);
+                        }}
+                      />
+                    {/each}
+                  </div>
                 </td>
               {/if}
             </tr>
@@ -84,6 +86,16 @@
 
 <style>
   td.actions {
-    padding: 4px 8px;
+    padding: 5px 8px;
+  }
+
+  td.actions div {
+    display: flex;
+    align-items: center;
+  }
+
+  td.actions :global(button) {
+    width: 30px;
+    height: 30px;
   }
 </style>

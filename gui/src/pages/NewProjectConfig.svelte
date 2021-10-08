@@ -63,7 +63,7 @@
       );
       await router.push(`/workspaces/${encodeURIComponent(workspaceId)}`);
     } catch (ex) {
-      if (!(ex instanceof Error) || !isClientError(ex)) {
+      if (!isClientError(ex)) {
         throw ex;
       }
       error = ex;

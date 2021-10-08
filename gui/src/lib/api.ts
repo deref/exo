@@ -114,8 +114,8 @@ export class APIError extends Error {
   }
 }
 
-export const isClientError = (err: Error): err is APIError =>
-  err instanceof APIError && 400 <= err.httpStatus && err.httpStatus < 500;
+export const isClientError = (x: unknown): x is APIError =>
+  x instanceof APIError && 400 <= x.httpStatus && x.httpStatus < 500;
 
 const responseToError = async (res: Response): Promise<Error | null> => {
   if (200 <= res.status && res.status < 300) {
@@ -188,6 +188,7 @@ export interface ComponentDescription {
   id: string;
   name: string;
   type: string;
+  spec: string;
 }
 
 export interface CreateComponentResponse {
@@ -196,6 +197,10 @@ export interface CreateComponentResponse {
 
 export interface DescribeTasksInput {
   jobIds?: string[];
+}
+
+export interface DescribeComponentsInput {
+  refs?: string[];
 }
 
 export interface TemplateDescription {
@@ -234,7 +239,9 @@ export interface WorkspaceApi {
 
   describeSelf(): Promise<WorkspaceDescription>;
 
-  describeComponents(): Promise<ComponentDescription[]>;
+  describeComponents(
+    input?: DescribeComponentsInput,
+  ): Promise<ComponentDescription[]>;
 
   describeEnvironment(): Promise<Record<string, string>>;
 
@@ -259,11 +266,13 @@ export interface WorkspaceApi {
     spec: string,
   ): Promise<CreateComponentResponse>;
 
+  updateComponent(ref: string, name: string, spec: string): Promise<void>;
+
+  deleteComponent(ref: string): Promise<void>;
+
   startProcess(ref: string): Promise<void>;
 
   stopProcess(ref: string): Promise<void>;
-
-  deleteComponent(ref: string): Promise<void>;
 
   refreshAllProcesses(): Promise<void>;
 
@@ -347,8 +356,11 @@ export const api = (() => {
         return description;
       },
 
-      async describeComponents(): Promise<ComponentDescription[]> {
-        const { components } = (await invoke('describe-components')) as any;
+      async describeComponents(input = {}): Promise<ComponentDescription[]> {
+        const { components } = (await invoke(
+          'describe-components',
+          input,
+        )) as any;
         return components;
       },
 
@@ -403,7 +415,21 @@ export const api = (() => {
         })) as CreateComponentResponse;
       },
 
-      // TODO: Add updateComponent once fully working in backend
+      async updateComponent(
+        ref: string,
+        name: string,
+        spec: string,
+      ): Promise<void> {
+        await invoke('update-component', {
+          ref,
+          name,
+          spec,
+        });
+      },
+
+      async deleteComponent(ref: string): Promise<void> {
+        await invoke('delete-components', { refs: [ref] });
+      },
 
       async startProcess(ref: string): Promise<void> {
         await invoke('start-components', { refs: [ref] });
@@ -411,10 +437,6 @@ export const api = (() => {
 
       async stopProcess(ref: string): Promise<void> {
         await invoke('stop-components', { refs: [ref] });
-      },
-
-      async deleteComponent(ref: string): Promise<void> {
-        await invoke('delete-components', { refs: [ref] });
       },
 
       async refreshAllProcesses(): Promise<void> {
