@@ -167,6 +167,11 @@ const rpc = async (
   return await res.json();
 };
 
+export interface AddVaultInput {
+  name: string;
+  url: string;
+}
+
 export interface ProcessSpec {
   directory?: string;
   program: string;
@@ -246,6 +251,7 @@ export interface WorkspaceApi {
   describeProcesses(): Promise<ProcessDescription[]>;
   describeVolumes(): Promise<VolumeDescription[]>;
   describeNetworks(): Promise<NetworkDescription[]>;
+  addVault(input: AddVaultInput): Promise<void>;
 
   destroy(): Promise<void>;
 
@@ -348,6 +354,10 @@ export const api = (() => {
       rpc(`/workspace/${method}`, { id }, data);
     return {
       id,
+
+      async addVault(input: AddVaultInput) {
+        await invoke('add-vault', input);
+      },
 
       async describeSelf(): Promise<WorkspaceDescription> {
         const { description } = (await invoke('describe')) as any;

@@ -1,4 +1,5 @@
 <script lang="ts">
+  import * as router from 'svelte-spa-router';
   import Panel from '../components/Panel.svelte';
   import Layout from '../components/Layout.svelte';
   import Spinner from '../components/Spinner.svelte';
@@ -61,6 +62,13 @@
                 </td>
               </tr>
             {/each}
+            <tr>
+              <button
+                on:click={() => router.push(`${workspaceRoute}/add-vault`)}
+              >
+                Add vault
+              </button>
+            </tr>
           </tbody>
         </table>
       </CheckeredTableWrapper>

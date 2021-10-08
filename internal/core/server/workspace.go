@@ -52,17 +52,22 @@ type Workspace struct {
 
 var _ api.Workspace = &Workspace{}
 
+var secretsUrlFile = "exo-secrets-url"
+
 func (ws *Workspace) getVaults(ctx context.Context) ([]api.VaultDescription, error) {
 	// Right now getVaults relies on an exo-secrets-url file in the workspace root
 	// to provide the vault. At the moment only one is supported. Instead we
 	// should add this to the state of the workspace and support multiple vaults.
 
-	secretConfigPath, err := ws.resolveWorkspacePath(ctx, "exo-secrets-url")
+	secretConfigPath, err := ws.resolveWorkspacePath(ctx, secretsUrlFile)
 	if err != nil {
 		return nil, fmt.Errorf("resolving secrets config file path: %w", err)
 	}
 	secretsUrlBytes, err := ioutil.ReadFile(secretConfigPath)
-	if err != nil && !os.IsNotExist(err) {
+	if os.IsNotExist(err) {
+		return []api.VaultDescription{}, nil
+	}
+	if err != nil {
 		return nil, fmt.Errorf("reading secrets config: %w", err)
 	}
 	secretsUrl := strings.TrimSpace(string(secretsUrlBytes))
@@ -77,6 +82,19 @@ func (ws *Workspace) getVaults(ctx context.Context) ([]api.VaultDescription, err
 			NeedsAuth: err != nil,
 		},
 	}, nil
+}
+
+func (ws *Workspace) AddVault(ctx context.Context, input *api.AddVaultInput) (*api.AddVaultOutput, error) {
+	secretConfigPath, err := ws.resolveWorkspacePath(ctx, secretsUrlFile)
+	if err != nil {
+		return nil, fmt.Errorf("resolving secrets config file path: %w", err)
+	}
+
+	if err := ioutil.WriteFile(secretConfigPath, []byte(input.Url), 0600); err != nil {
+		return nil, fmt.Errorf("writing secrets config file: %w", err)
+	}
+
+	return &api.AddVaultOutput{}, nil
 }
 
 func (ws *Workspace) DescribeVaults(ctx context.Context, input *api.DescribeVaultsInput) (*api.DescribeVaultsOutput, error) {

@@ -36,6 +36,11 @@ interface "workspace" {
     output "vaults" "[]VaultDescription" {}
   }
 
+  method "add-vault" {
+    input "name" "string" {}
+    input "url" "string" {}
+  }
+
   method "describe" {
     doc = "Describes this workspace."
     output "description" "WorkspaceDescription" {}
