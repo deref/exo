@@ -163,7 +163,6 @@ jobs:
           asset_content_type: text/plain
 
   update-version:
-    if: false # XXX Temporarily disable
     runs-on: ubuntu-latest
     needs:
       - publish-binaries
