@@ -82,36 +82,13 @@ jobs:
 
   publish-binaries:
     runs-on: ubuntu-latest
-    container:
-      image: troian/golang-cross
     needs:
       - create-release
     strategy:
       matrix:
-        include:
-          - goos: darwin
-            goarch: amd64
-            target: x86_64-macos
-          - goos: darwin
-            goarch: arm64
-            target: aarch64-macos
-          - goos: linux
-            goarch: amd64
-            target: x86_64-linux
+        goos: [linux, darwin]
+        goarch: [amd64, arm64]
     steps:
-      # TODO: Is it possible to use https://github.com/marketplace/actions/setup-zig instead?
-      - name: Install Zig for Cross Compilation
-        run: |
-          export DEBIAN_FRONTEND="noninteractive"
-          apt update
-          apt install -y \
-            wget \
-            xz-utils
-          cd /opt
-          zig_build=zig-linux-x86_64-0.9.0-dev.1324+598db831f
-          wget --quiet https://ziglang.org/builds/${zig_build}.tar.xz
-          tar -xvf $PWD/${zig_build}.tar.xz
-          ln -s $PWD/${zig_build} zig
       - uses: actions/checkout@v2
       - uses: actions/setup-go@v2
         with:
@@ -121,14 +98,10 @@ jobs:
         uses: actions/setup-node@v2
         with:
           node-version: 15.x
-      - name: Jank some crap in to gui
-        run: |
-          mkdir gui/dist
-          echo 'FIXME' > gui/dist/junk
-      #- run: npm ci
-      #  working-directory: gui
-      #- run: npm run build
-      #  working-directory: gui
+      - run: npm ci
+        working-directory: gui
+      - run: npm run build
+        working-directory: gui
 
       - name: Get version from VERSION file
         id: get_version
@@ -148,24 +121,20 @@ jobs:
           echo "artifact_dir=$ARTIFACT_DIR" >> $GITHUB_ENV
           echo "binary_path=${ARTIFACT_DIR}/${BINARY_NAME}" >> $GITHUB_ENV
       - name: Build
-        env:
-          CGO_ENABLED: 1
-          GOOS: ${{ matrix.goos }}
-          GOARCH: ${{ matrix.goarch }}
-          CC: zcc
-          CXX: zxx
         run: |
           mkdir -p "${{ env.artifact_dir }}"
-          cat <<! > /bin/zcc
-          #!/bin/sh
-          ZIG_LOCAL_CACHE_DIR="\$HOME/tmp" /opt/zig/zig cc -target ${{ matrix.target }} \$@
-          !
-          cat <<! > /bin/zxx
-          #!/bin/sh
-          ZIG_LOCAL_CACHE_DIR="\$HOME/tmp" /opt/zig/zig c++ -target ${{ matrix.target }} \$@
-          !
-          chmod +x /bin/zcc /bin/zxx
-          go build -tags bundle -o "${{ env.binary_path }}"
+          go build  .
+          docker run \
+            -e GOOS=${{ matrix.goos }} \
+            -e GOARCH=${{ matrix.goarch }} \
+            --mount "type=bind,source=${PWD},target=/go/src/exo" \
+            --mount "type=bind,source=${HOME}/go/pkg/mod,target=/go/pkg/mod" \
+            -w /go/src/exo \
+            ghcr.io/deref/golang-cross \
+            go build \
+              -tags bundle \
+              -o "${{ env.binary_path }}" \
+              .
           sha256sum "${{ env.binary_path }}" | cut -d ' ' -f 1 > "${{ env.binary_path }}.sha256"
       - name: Set upload URL
         id: get_release_info
@@ -194,7 +163,6 @@ jobs:
           asset_content_type: text/plain
 
   update-version:
-    if: false # XXX Temporarily disabled.
     runs-on: ubuntu-latest
     needs:
       - publish-binaries

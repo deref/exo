@@ -7,7 +7,7 @@ require (
 	github.com/Nerdmaster/terminal v0.12.1
 	github.com/alessio/shellescape v1.4.1
 	github.com/aybabtme/rgbterm v0.0.0-20170906152045-cc83f3b3ce59
-	github.com/containerd/containerd v1.5.4 // indirect
+	github.com/containerd/containerd v1.5.7 // indirect
 	github.com/deref/inflect-go v0.0.0-20210922215725-28c4e8c11b16
 	github.com/deref/pier v0.0.0-20210928181930-9ee844d69730
 	github.com/deref/util-go v0.0.0-20211005205322-c425b1d73580
@@ -27,7 +27,7 @@ require (
 	github.com/mattn/go-isatty v0.0.14
 	github.com/mattn/go-sqlite3 v1.14.8
 	github.com/moby/buildkit v0.9.0 // indirect
-	github.com/moby/moby v20.10.8+incompatible
+	github.com/moby/moby v20.10.9+incompatible
 	github.com/natefinch/atomic v1.0.1
 	github.com/oklog/ulid/v2 v2.0.2
 	github.com/opencontainers/image-spec v1.0.1

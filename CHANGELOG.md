@@ -4,14 +4,26 @@ All notable changes to this project will be documented in this file.
 
 This project adhears to [CalVer](./doc/versioning.md).
 
-## Unreleased + 1
+## Unreleased
 
 ### Added
 
 - Project templates
 
 
-## Unreleased
+## 2021.10.08_1
+
+### Added
+
+- [#401](https://github.com/deref/exo/pull/401) Ability to edit component specs from the GUI.
+
+### Fixed
+
+- Race condition in token handling.
+- Context menu behaviors.
+
+
+## 2021.10.08
 
 ### Added
 

@@ -10,6 +10,7 @@
     | 'Delete'
     | 'Details'
     | 'Doc'
+    | 'Edit'
     | 'Ellipsis'
     | 'Feedback'
     | 'Home'
@@ -53,6 +54,7 @@
   import DeleteGlyph from './icon/glyphs/Delete.svelte';
   import DetailsGlyph from './icon/glyphs/Details.svelte';
   import DocGlyph from './icon/glyphs/Doc.svelte';
+  import EditGlyph from './icon/glyphs/Edit.svelte';
   import EllipsisGlyph from './icon/glyphs/Ellipsis.svelte';
   import FeedbackGlyph from './icon/glyphs/Feedback.svelte';
   import HomeGlyph from './icon/glyphs/Home.svelte';
@@ -103,6 +105,8 @@
   <DetailsGlyph />
 {:else if glyph === 'Doc'}
   <DocGlyph />
+{:else if glyph === 'Edit'}
+  <EditGlyph />
 {:else if glyph === 'Ellipsis'}
   <EllipsisGlyph />
 {:else if glyph === 'Feedback'}

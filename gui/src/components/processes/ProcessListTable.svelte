@@ -1,6 +1,7 @@
 <script lang="ts">
   import IconButton from '../IconButton.svelte';
   import ContextMenu from '../ContextMenu.svelte';
+  import MenuItem from '../MenuItem.svelte';
   import CheckboxButton from '../CheckboxButton.svelte';
   import ProcessRunControls from './ProcessRunControls.svelte';
   import * as router from 'svelte-spa-router';
@@ -60,7 +61,7 @@
         use:link
         href={`/workspaces/${encodeURIComponent(
           workspaceId,
-        )}/processes/${encodeURIComponent(id)}`}
+        )}/components/${encodeURIComponent(id)}`}
       >
         {name}
       </a>
@@ -76,41 +77,42 @@
       />
     </div>
 
-    <div class="actions">
+    <div class="actions" tabindex="0">
       <IconButton glyph="Ellipsis" />
 
-      <ContextMenu
-        title={name}
-        actions={[
-          {
-            name: 'View details',
-            glyph: 'Details',
-            execute(event) {
-              router.push(
-                `/workspaces/${encodeURIComponent(
-                  workspaceId,
-                )}/processes/${encodeURIComponent(id)}`,
-              );
-            },
-          },
-          {
-            name: 'Toggle logs visibility',
-            glyph: 'Logs',
-            execute(event) {
-              setProcLogs(id, $visibleLogsStore.has(id) ? false : true);
-            },
-          },
-          {
-            name: 'Remove from exo',
-            glyph: 'Delete',
-            danger: true,
-            execute(event) {
-              void deleteProcess(workspace, id);
-              setProcLogs(id, false);
-            },
-          },
-        ]}
-      />
+      <ContextMenu title={name}>
+        <MenuItem
+          glyph="Details"
+          href={`/workspaces/${encodeURIComponent(
+            workspaceId,
+          )}/components/${encodeURIComponent(id)}`}>View details</MenuItem
+        >
+        <MenuItem
+          glyph="Edit"
+          href={`/workspaces/${encodeURIComponent(
+            workspaceId,
+          )}/components/${encodeURIComponent(id)}/edit`}
+          >Edit component</MenuItem
+        >
+        <MenuItem
+          glyph="Logs"
+          on:click={() => {
+            setProcLogs(id, $visibleLogsStore.has(id) ? false : true);
+          }}
+        >
+          Toggle logs visibility
+        </MenuItem>
+        <MenuItem
+          glyph="Delete"
+          danger
+          on:click={() => {
+            void deleteProcess(workspace, id);
+            setProcLogs(id, false);
+          }}
+        >
+          Delete component
+        </MenuItem>
+      </ContextMenu>
     </div>
   </div>
 {:else}
@@ -179,6 +181,7 @@
   }
 
   .actions {
+    outline: none;
     position: relative;
   }
 
