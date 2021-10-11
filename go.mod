@@ -23,6 +23,7 @@ require (
 	github.com/influxdata/go-syslog/v3 v3.0.0
 	github.com/jmoiron/sqlx v1.2.1-0.20190826204134-d7d95172beb5
 	github.com/joho/godotenv v1.3.0
+	github.com/kr/pretty v0.2.1
 	github.com/lucasb-eyer/go-colorful v1.2.0
 	github.com/mattn/go-isatty v0.0.14
 	github.com/mattn/go-sqlite3 v1.14.8
@@ -37,6 +38,7 @@ require (
 	github.com/stretchr/testify v1.7.0
 	github.com/timewasted/go-accept-headers v0.0.0-20130320203746-c78f304b1b09
 	github.com/zclconf/go-cty v1.8.0
+	github.com/zclconf/go-cty-yaml v1.0.2
 	go.opencensus.io v0.22.5 // indirect
 	golang.org/x/net v0.0.0-20210726213435-c6fcb2dbf985 // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
