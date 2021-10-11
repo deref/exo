@@ -1,7 +1,8 @@
 <script lang="ts">
+  import type { VariableDescription } from 'src/lib/api';
   import CheckeredTableWrapper from '../components/CheckeredTableWrapper.svelte';
 
-  export let variables: Record<string, string> = {};
+  export let variables: Record<string, VariableDescription> = {};
 </script>
 
 <CheckeredTableWrapper>
@@ -10,7 +11,8 @@
       {#each Object.keys(variables ?? []).sort() as name (name)}
         <tr>
           <td class="label">{name}</td>
-          <td><code><pre>{variables[name]}</pre></code></td>
+          <td><code><pre>{variables[name].value}</pre></code></td>
+          <td>{variables[name].source}</td>
         </tr>
       {/each}
     </table>

@@ -252,7 +252,7 @@ interface "workspace" {
   }
 
   method "describe-environment" {
-    output "variables" "map[string]string" {}
+    output "variables" "map[string]VariableDescription" {}
   }
 }
 
@@ -314,4 +314,9 @@ struct "vault-description" {
   field "url" "string" {}
   field "connected" "bool" {}
   field "needs-auth" "bool" {}
+}
+
+struct "variable-description" {
+  field "value" "string" {}
+  field "source" "string" {}
 }

@@ -416,13 +416,17 @@ func (ws *Workspace) newController(ctx context.Context, desc api.ComponentDescri
 			Err: fmt.Errorf("environment error: %w", err),
 		}
 	}
+	simpleEnv := map[string]string{}
+	for k, v := range env {
+		simpleEnv[k] = v.Value
+	}
 	base := core.ComponentBase{
 		ComponentID:          desc.ID,
 		ComponentName:        desc.Name,
 		ComponentState:       desc.State,
 		WorkspaceID:          ws.ID,
 		WorkspaceRoot:        description.Root,
-		WorkspaceEnvironment: env,
+		WorkspaceEnvironment: simpleEnv,
 		Logger:               ws.Logger,
 	}
 	switch desc.Type {
@@ -474,26 +478,29 @@ func (ws *Workspace) DescribeEnvironment(ctx context.Context, input *api.Describ
 	}, nil
 }
 
-func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]string, error) {
+func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]api.VariableDescription, error) {
 	envPath, err := ws.resolveWorkspacePath(ctx, ".env")
 	if err != nil {
 		return nil, fmt.Errorf("resolving env file path: %w", err)
 	}
 
-	env := map[string]string{}
+	env := map[string]api.VariableDescription{}
 
 	if ws.EsvClient != nil {
 		vaults, err := ws.getVaults(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("getting vaults: %w", err)
 		}
-		for _, v := range vaults {
-			secrets, err := ws.EsvClient.GetWorkspaceSecrets(v.Url)
+		for _, vault := range vaults {
+			secrets, err := ws.EsvClient.GetWorkspaceSecrets(vault.Url)
 			if err != nil {
 				ws.logEventf(ctx, "getting workspace secrets: %v", err)
 			} else {
-				for k, v := range secrets {
-					env[k] = v
+				for k, val := range secrets {
+					env[k] = api.VariableDescription{
+						Value:  val,
+						Source: vault.Name,
+					}
 				}
 			}
 		}
@@ -503,9 +510,9 @@ func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]string, err
 	// standard for this is <https://bixense.com/clicolors/#bug-reports>, but
 	// support is spotty. This may grow if there are other popular enviornment
 	// variables to include. If we grow PTY support, this may become unnecessary.
-	env["CLICOLOR"] = "1"
-	env["CLICOLOR_FORCE"] = "1"
-	env["FORCE_COLOR"] = "3" // https://github.com/chalk/chalk/tree/9d5b9a133c3f8aa9f24de283660de3f732964aaa#supportscolor
+	env["CLICOLOR"] = api.VariableDescription{Value: "1", Source: "exo"}
+	env["CLICOLOR_FORCE"] = api.VariableDescription{Value: "1", Source: "exo"}
+	env["FORCE_COLOR"] = api.VariableDescription{Value: "3", Source: "exo"} // https://github.com/chalk/chalk/tree/9d5b9a133c3f8aa9f24de283660de3f732964aaa#supportscolor
 
 	// Apply user's environment.
 	// TODO: This should probably somehow shell-out to get the user's current
@@ -515,7 +522,10 @@ func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]string, err
 		parts := strings.SplitN(assign, "=", 2)
 		key := parts[0]
 		val := parts[1]
-		env[key] = val
+		env[key] = api.VariableDescription{
+			Value:  val,
+			Source: "server environment",
+		}
 	}
 
 	// Apply .env file, if one exists.
@@ -527,7 +537,7 @@ func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]string, err
 		return nil, fmt.Errorf("processing .env file: %w", err)
 	}
 	for name, value := range dotEnvMap {
-		env[name] = value
+		env[name] = api.VariableDescription{Value: value, Source: "env file"}
 	}
 
 	return env, nil

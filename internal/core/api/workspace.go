@@ -382,7 +382,7 @@ type DescribeEnvironmentInput struct {
 }
 
 type DescribeEnvironmentOutput struct {
-	Variables map[string]string `json:"variables"`
+	Variables map[string]VariableDescription `json:"variables"`
 }
 
 func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Workspace) {
@@ -545,4 +545,9 @@ type VaultDescription struct {
 	Url       string `json:"url"`
 	Connected bool   `json:"connected"`
 	NeedsAuth bool   `json:"needsAuth"`
+}
+
+type VariableDescription struct {
+	Value  string `json:"value"`
+	Source string `json:"source"`
 }

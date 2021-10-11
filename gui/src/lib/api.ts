@@ -252,6 +252,11 @@ export interface KernelApi {
   describeTasks(input?: DescribeTasksInput): Promise<TaskDescription[]>;
 }
 
+export interface VariableDescription {
+  value: string;
+  source: string;
+}
+
 export interface WorkspaceApi {
   id: string;
   describeSelf(): Promise<WorkspaceDescription>;
@@ -260,7 +265,7 @@ export interface WorkspaceApi {
     input?: DescribeComponentsInput,
   ): Promise<ComponentDescription[]>;
 
-  describeEnvironment(): Promise<Record<string, string>>;
+  describeEnvironment(): Promise<Record<string, VariableDescription>>;
   describeVaults(): Promise<VaultDescription[]>;
   describeProcesses(): Promise<ProcessDescription[]>;
   describeVolumes(): Promise<VolumeDescription[]>;
@@ -355,7 +360,7 @@ export const api = (() => {
       async describeTasks(
         input: DescribeTasksInput = {},
       ): Promise<TaskDescription[]> {
-        const { tasks } = (await invoke('describe-tasks', {})) as any;
+        const { tasks } = (await invoke('describe-tasks', input)) as any;
         return tasks as TaskDescription[];
       },
 
@@ -393,7 +398,9 @@ export const api = (() => {
         return vaults;
       },
 
-      async describeEnvironment(): Promise<Record<string, string>> {
+      async describeEnvironment(): Promise<
+        Record<string, VariableDescription>
+      > {
         const { variables } = (await invoke('describe-environment')) as any;
         return variables;
       },
