@@ -230,7 +230,6 @@ func (l *Loader) parseComponents(block *hcl.Block) (components []Component) {
 }
 
 func (l *Loader) parseComponent(block *hclsyntax.Block) *Component {
-	// XXX parse full-form only now, then implement component-macros that compile to full-form.
 	if block.Type != "component" {
 		block = l.expandComponent(block)
 		if block == nil {
@@ -250,6 +249,25 @@ func (l *Loader) parseComponent(block *hclsyntax.Block) *Component {
 	l.appendDiags(diags...)
 
 	var component Component
+
+	switch len(block.Labels) {
+	case 0:
+		l.appendDiags(&hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "Expected component name",
+			Detail:   `A component block must have exactly one label, which is the name of the component.`,
+			Subject:  block.DefRange().Ptr(),
+		})
+	case 1:
+		component.Name = block.Labels[0]
+	default:
+		l.appendDiags(&hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "Unexpected label.",
+			Detail:   `A component block must have exactly one label, which is the name of the component.`,
+			Subject:  block.LabelRanges[1].Ptr(),
+		})
+	}
 
 	typeAttr := content.Attributes["type"]
 	if typeAttr != nil {
@@ -357,8 +375,86 @@ func (l *Loader) parseDependsOn(x hcl.Expression) []string {
 }
 
 func (l *Loader) expandComponent(block *hclsyntax.Block) *hclsyntax.Block {
-	// XXX handle macros for process, docker, etc.
-	return nil
+	body := block.Body
+	var encodefunc string
+	switch block.Type {
+	case "process":
+		encodefunc = "jsonencode"
+	case "container", "volume", "network":
+		encodefunc = "yamlencode"
+	default:
+		l.appendDiags(&hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "Unsupported component type",
+			Detail:   fmt.Sprintf(`The component type %q is not recognized.`, block.Type),
+			Subject:  block.DefRange().Ptr(),
+		})
+		return nil
+	}
+	if len(body.Blocks) > 0 {
+		l.appendDiags(&hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "Unexpected block",
+			Detail:   fmt.Sprintf(`Unexpected block in %q component.`, block.Type),
+			Subject:  body.Blocks[0].DefRange().Ptr(),
+		})
+	}
+	attrs := body.Attributes
+	specItems := make([]hclsyntax.ObjectConsItem, 0, len(attrs))
+	for _, attr := range attrs {
+		specItems = append(specItems, hclsyntax.ObjectConsItem{
+			KeyExpr:   newStringLit(attr.Name, attr.Range()),
+			ValueExpr: attr.Expr,
+		})
+	}
+	// sort.Sort(specItemsSorter{specItems}) // XXX sort specItems by attr range?
+	return &hclsyntax.Block{
+		Type:   "component",
+		Labels: block.Labels,
+		Body: &hclsyntax.Body{
+			Attributes: hclsyntax.Attributes{
+				"type": &hclsyntax.Attribute{
+					Name:        "type",
+					Expr:        newStringLit(block.Type, block.TypeRange),
+					SrcRange:    block.TypeRange,
+					NameRange:   block.TypeRange,
+					EqualsRange: block.TypeRange,
+				},
+				"spec": &hclsyntax.Attribute{
+					Name: "spec",
+					Expr: &hclsyntax.FunctionCallExpr{
+						Name: encodefunc,
+						Args: []hclsyntax.Expression{
+							&hclsyntax.ObjectConsExpr{
+								Items:     specItems,
+								SrcRange:  body.SrcRange,
+								OpenRange: block.OpenBraceRange,
+							},
+						},
+					},
+					SrcRange:    body.SrcRange,
+					NameRange:   block.TypeRange,
+					EqualsRange: block.TypeRange,
+				},
+			},
+		},
+		TypeRange:       block.TypeRange,
+		LabelRanges:     block.LabelRanges,
+		OpenBraceRange:  block.OpenBraceRange,
+		CloseBraceRange: block.CloseBraceRange,
+	}
+}
+
+func newStringLit(s string, rng hcl.Range) *hclsyntax.TemplateExpr {
+	return &hclsyntax.TemplateExpr{
+		Parts: []hclsyntax.Expression{
+			&hclsyntax.LiteralValueExpr{
+				Val:      cty.StringVal(s),
+				SrcRange: rng,
+			},
+		},
+		SrcRange: rng,
+	}
 }
 
 func Generate(w io.Writer, manifest *Manifest) error {

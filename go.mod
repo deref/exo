@@ -23,6 +23,7 @@ require (
 	github.com/influxdata/go-syslog/v3 v3.0.0
 	github.com/jmoiron/sqlx v1.2.1-0.20190826204134-d7d95172beb5
 	github.com/joho/godotenv v1.3.0
+	github.com/kr/pretty v0.2.1
 	github.com/lucasb-eyer/go-colorful v1.2.0
 	github.com/mattn/go-isatty v0.0.14
 	github.com/mattn/go-sqlite3 v1.14.8
