@@ -104,6 +104,10 @@ func (c *EsvClient) runCommand(output interface{}, host, commandName string, bod
 		return fmt.Errorf("running command %q: %w", commandName, AuthError)
 	}
 
+	if resp.StatusCode != 200 && resp.StatusCode != 204 {
+		return fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
 	result, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("reading command result: %w", err)
