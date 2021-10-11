@@ -90,6 +90,7 @@ type Workspace interface {
 	Apply(context.Context, *ApplyInput) (*ApplyOutput, error)
 	// Resolves a reference in to an ID.
 	Resolve(context.Context, *ResolveInput) (*ResolveOutput, error)
+	ResolveManifest(context.Context, *ResolveManifestInput) (*ResolveManifestOutput, error)
 	// Returns component descriptions.
 	DescribeComponents(context.Context, *DescribeComponentsInput) (*DescribeComponentsOutput, error)
 	// Creates a component and triggers an initialize lifecycle event.
@@ -140,7 +141,7 @@ type DestroyOutput struct {
 type ApplyInput struct {
 
 	// One of 'exo', 'compose', or 'procfile'.
-	Format *string `json:"format"`
+	Format string `json:"format"`
 	// Path of manifest file to load. May be relative to the workspace root. If format is not provided, will be inferred from path name.
 	ManifestPath *string `json:"manifestPath"`
 	// Contents of the manifest file. Not required if manifest-path is provided.
@@ -158,6 +159,14 @@ type ResolveInput struct {
 
 type ResolveOutput struct {
 	IDs []*string `json:"ids"`
+}
+
+type ResolveManifestInput struct {
+	Format string `json:"format"`
+}
+
+type ResolveManifestOutput struct {
+	Path string `json:"path"`
 }
 
 type DescribeComponentsInput struct {
@@ -395,6 +404,9 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	})
 	b.AddMethod("resolve", func(req *http.Request) interface{} {
 		return factory(req).Resolve
+	})
+	b.AddMethod("resolve-manifest", func(req *http.Request) interface{} {
+		return factory(req).ResolveManifest
 	})
 	b.AddMethod("describe-components", func(req *http.Request) interface{} {
 		return factory(req).DescribeComponents

@@ -15,8 +15,11 @@ func init() {
 var workspaceInitCmd = &cobra.Command{
 	Use:   "init [root]",
 	Short: "Creates a workspace",
-	Long: `Creates a workspace. If root is not provided, the new workspace
-will be rooted at the current working directory.`,
+	Long: `Creates an empty workspace.
+
+If root is not provided, the new workspace will be rooted at the current working directory.
+
+Prints the ID of the newly created workspace.`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := newContext()
