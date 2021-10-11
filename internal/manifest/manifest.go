@@ -22,6 +22,11 @@ var Latest = FormatVersion{
 	Minor: 0,
 }
 
+const Starter = `# See https://docs.deref.io/exo for details.
+
+exo = "1.0"
+`
+
 type Manifest struct {
 	FormatVersion FormatVersion
 	Components    []Component
