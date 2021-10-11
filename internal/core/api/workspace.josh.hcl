@@ -312,5 +312,6 @@ struct "network-description" {
 struct "vault-description" {
   field "name" "string" {}
   field "url" "string" {}
+  field "connected" "bool" {}
   field "needs-auth" "bool" {}
 }

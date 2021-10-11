@@ -4,14 +4,18 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"net/url"
+	"os"
 	"strings"
 
 	"github.com/deref/exo/internal/util/logging"
 )
+
+var AuthError = errors.New("auth error")
 
 type EsvClient struct {
 	refreshToken string
@@ -60,6 +64,9 @@ func (c *EsvClient) getAccessToken() (string, error) {
 	if c.refreshToken == "" {
 		tokenBytes, err := ioutil.ReadFile(c.TokenFile)
 		if err != nil {
+			if os.IsNotExist(err) {
+				return "", fmt.Errorf("%w: token file does not exist", AuthError)
+			}
 			return "", fmt.Errorf("reading token file: %w", err)
 		}
 		c.refreshToken = strings.TrimSpace(string(tokenBytes))
@@ -93,12 +100,16 @@ func (c *EsvClient) runCommand(output interface{}, host, commandName string, bod
 		return fmt.Errorf("making token request: %w", err)
 	}
 
+	if resp.StatusCode == 401 {
+		return fmt.Errorf("running command %q: %w", commandName, AuthError)
+	}
+
 	result, err := ioutil.ReadAll(resp.Body)
 	if err != nil {
 		return fmt.Errorf("reading command result: %w", err)
 	}
 
-	if err := json.Unmarshal([]byte(result), output); err != nil {
+	if err := json.Unmarshal(result, output); err != nil {
 		return fmt.Errorf("unmarshalling command result: %w", err)
 	}
 

@@ -187,6 +187,7 @@ export interface VaultDescription {
   name: string;
   url: string;
   needsAuth: boolean;
+  connected: boolean;
 }
 
 export interface WorkspaceDescription {

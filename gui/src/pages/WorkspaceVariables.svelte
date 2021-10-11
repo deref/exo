@@ -52,10 +52,12 @@
                 <td>{vault.name}</td>
                 <td>{vault.url}</td>
                 <td>
-                  {#if vault.needsAuth}
+                  {#if vault.connected}
+                    Connected
+                  {:else if vault.needsAuth}
                     <button on:click={authEsv}>Authenticate</button>
                   {:else}
-                    Connected
+                    Bad vault URL
                   {/if}
                 </td>
               </tr>

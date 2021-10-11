@@ -543,5 +543,6 @@ type NetworkDescription struct {
 type VaultDescription struct {
 	Name      string `json:"name"`
 	Url       string `json:"url"`
+	Connected bool   `json:"connected"`
 	NeedsAuth bool   `json:"needsAuth"`
 }

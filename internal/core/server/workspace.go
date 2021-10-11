@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -79,7 +80,8 @@ func (ws *Workspace) getVaults(ctx context.Context) ([]api.VaultDescription, err
 		{
 			Name:      "esv-vault",
 			Url:       secretsUrl,
-			NeedsAuth: err != nil,
+			Connected: err == nil,
+			NeedsAuth: errors.Is(err, esv.AuthError),
 		},
 	}, nil
 }
