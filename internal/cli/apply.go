@@ -58,7 +58,9 @@ var applyCmd = &cobra.Command{
 }
 
 func apply(ctx context.Context, kernel api.Kernel, workspace api.Workspace, args []string) error {
-	input := &api.ApplyInput{}
+	input := &api.ApplyInput{
+		Format: applyFlags.Format,
+	}
 	if len(args) > 0 {
 		manifestPath := args[0]
 		input.ManifestPath = &manifestPath
@@ -71,9 +73,6 @@ func apply(ctx context.Context, kernel api.Kernel, workspace api.Workspace, args
 		}
 		s := string(bs)
 		input.Manifest = &s
-	}
-	if applyFlags.Format != "" {
-		input.Format = &applyFlags.Format
 	}
 
 	output, err := workspace.Apply(ctx, input)

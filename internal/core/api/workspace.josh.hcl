@@ -45,7 +45,7 @@ interface "workspace" {
   method "apply" {
     doc = "Performs creates, updates, refreshes, disposes, as needed."
 
-    input "format" "*string" {
+    input "format" "string" {
       doc = "One of 'exo', 'compose', or 'procfile'."
     }
     input "manifest-path" "*string" {
@@ -65,6 +65,12 @@ interface "workspace" {
     input "refs" "[]string" {}
 
     output "ids" "[]*string" {}
+  }
+
+  method "resolve-manifest" {
+    input "format" "string" {}
+
+    output "path" "string" {}
   }
 
   method "describe-components" {

@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -41,21 +42,11 @@ func (ws *Workspace) loadManifest(rootDir string, input *api.ApplyInput) manifes
 	}
 	if input.Manifest == nil {
 		if input.ManifestPath == nil {
-			// Search for manifest.
-			for _, candidate := range manifestCandidates {
-				if input.Format != nil && *input.Format != candidate.Format {
-					continue
-				}
-				candidatePath := filepath.Join(rootDir, candidate.Filename)
-				exist, err := osutil.Exists(candidatePath)
-				if err != nil {
-					return manifest.LoadResult{
-						Err: fmt.Errorf("searching for manifest: %w", err),
-					}
-				}
-				if exist {
-					manifestPath = candidatePath
-					break
+			var err error
+			manifestPath, err = ws.resolveManifest(rootDir, input.Format)
+			if err != nil {
+				return manifest.LoadResult{
+					Err: err,
 				}
 			}
 			if manifestPath == "" {
@@ -83,7 +74,7 @@ func (ws *Workspace) loadManifest(rootDir string, input *api.ApplyInput) manifes
 	}
 
 	format := ""
-	if input.Format == nil {
+	if input.Format == "" {
 		// Guess format.
 		name := strings.ToLower(filepath.Base(manifestPath))
 		switch name {
@@ -103,7 +94,7 @@ func (ws *Workspace) loadManifest(rootDir string, input *api.ApplyInput) manifes
 			}
 		}
 	} else {
-		format = *input.Format
+		format = input.Format
 	}
 
 	var loader interface {
@@ -130,4 +121,35 @@ func (ws *Workspace) loadManifest(rootDir string, input *api.ApplyInput) manifes
 	}
 	// TODO: Validate manifest.
 	return res
+}
+
+func (ws *Workspace) ResolveManifest(ctx context.Context, input *api.ResolveManifestInput) (*api.ResolveManifestOutput, error) {
+	description, err := ws.describe(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("describing workspace: %w", err)
+	}
+	path, err := ws.resolveManifest(description.Root, input.Format)
+	if err != nil {
+		return nil, err
+	}
+	return &api.ResolveManifestOutput{
+		Path: path,
+	}, nil
+}
+
+func (ws *Workspace) resolveManifest(rootDir, format string) (string, error) {
+	for _, candidate := range manifestCandidates {
+		if format != "" && format != candidate.Format {
+			continue
+		}
+		candidatePath := filepath.Join(rootDir, candidate.Filename)
+		exist, err := osutil.Exists(candidatePath)
+		if err != nil {
+			return "", fmt.Errorf("searching for manifest: %w", err)
+		}
+		if exist {
+			return candidatePath, nil
+		}
+	}
+	return "", nil
 }
