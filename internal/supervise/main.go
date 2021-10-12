@@ -55,7 +55,7 @@ func Main() {
 
 	cmd := exec.Command(cfg.Program, cfg.Arguments...)
 	cmd.Dir = cfg.WorkingDirectory
-	cmd.Env = os.Environ() // TODO: Should we start with an empty env?
+	cmd.Env = []string{}
 	for key, val := range cfg.Environment {
 		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", key, val))
 	}
