@@ -6,7 +6,7 @@ import (
 	"io"
 	"os"
 
-	"github.com/deref/exo/internal/manifest"
+	"github.com/deref/exo/internal/manifest/exohcl"
 	"github.com/deref/exo/internal/util/term"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/cobra"
@@ -25,9 +25,9 @@ var manifestCmd = &cobra.Command{
 	Args:   cobra.NoArgs,
 }
 
-func loadManifest(name string) (*manifest.Manifest, error) {
+func loadManifest(name string) (*exohcl.Manifest, error) {
 	// TODO: Support other formats here too.
-	loader := &manifest.Loader{
+	loader := &exohcl.Loader{
 		Filename: name,
 	}
 	f, err := os.Open(name)

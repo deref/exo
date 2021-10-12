@@ -5,7 +5,7 @@ import (
 	"io"
 	"strconv"
 
-	"github.com/deref/exo/internal/manifest"
+	"github.com/deref/exo/internal/manifest/exohcl"
 	"github.com/deref/exo/internal/providers/unix/components/process"
 	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/hashicorp/hcl/v2"
@@ -15,7 +15,7 @@ type loader struct{}
 
 var Loader = loader{}
 
-func (l loader) Load(r io.Reader) (*manifest.Manifest, error) {
+func (l loader) Load(r io.Reader) (*exohcl.Manifest, error) {
 	procfile, err := Parse(r)
 	if err != nil {
 		return nil, fmt.Errorf("parsing: %w", err)
@@ -26,9 +26,9 @@ func (l loader) Load(r io.Reader) (*manifest.Manifest, error) {
 const BasePort = 5000
 const PortStep = 100
 
-func convert(procfile *Procfile) (*manifest.Manifest, error) {
+func convert(procfile *Procfile) (*exohcl.Manifest, error) {
 	var diags hcl.Diagnostics
-	m := &manifest.Manifest{}
+	m := &exohcl.Manifest{}
 	port := BasePort
 	for _, p := range procfile.Processes {
 		// Assign default PORT, merge in specified environment.
@@ -41,14 +41,14 @@ func convert(procfile *Procfile) (*manifest.Manifest, error) {
 		port += PortStep
 
 		// Get component name.
-		name := manifest.MangleName(p.Name)
+		name := exohcl.MangleName(p.Name)
 		if name != p.Name {
 			var subject *hcl.Range
-			diags = append(diags, manifest.NewRenameWarning(p.Name, name, subject))
+			diags = append(diags, exohcl.NewRenameWarning(p.Name, name, subject))
 		}
 
 		// Add component.
-		component := manifest.Component{
+		component := exohcl.Component{
 			Name: name,
 			Type: "process",
 			Spec: jsonutil.MustMarshalIndentString(process.Spec{

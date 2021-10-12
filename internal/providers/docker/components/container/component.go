@@ -3,7 +3,7 @@ package container
 import (
 	"path"
 
-	"github.com/deref/exo/internal/manifest"
+	"github.com/deref/exo/internal/manifest/exohcl"
 	"github.com/deref/exo/internal/providers/docker"
 	"github.com/deref/exo/internal/providers/docker/compose"
 	"github.com/docker/docker/api/types/strslice"
@@ -19,7 +19,7 @@ type Container struct {
 
 func (c *Container) ProjectName() string {
 	projectName := path.Base(c.WorkspaceRoot)
-	projectName = manifest.MangleName(projectName)
+	projectName = exohcl.MangleName(projectName)
 	return projectName
 }
 

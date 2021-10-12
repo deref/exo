@@ -5,7 +5,7 @@ import (
 	"io"
 	"strings"
 
-	"github.com/deref/exo/internal/manifest"
+	"github.com/deref/exo/internal/manifest/exohcl"
 	"github.com/deref/exo/internal/providers/docker/compose"
 	"github.com/deref/exo/internal/util/yamlutil"
 	"github.com/hashicorp/hcl/v2"
@@ -16,7 +16,7 @@ type Loader struct {
 	ProjectName string
 }
 
-func (i *Loader) Load(r io.Reader) (*manifest.Manifest, error) {
+func (i *Loader) Load(r io.Reader) (*exohcl.Manifest, error) {
 	composeProject, err := compose.Parse(r)
 	if err != nil {
 		return nil, fmt.Errorf("parsing: %w", err)
@@ -24,9 +24,9 @@ func (i *Loader) Load(r io.Reader) (*manifest.Manifest, error) {
 	return i.convert(composeProject)
 }
 
-func (i *Loader) convert(project *compose.Project) (*manifest.Manifest, error) {
+func (i *Loader) convert(project *compose.Project) (*exohcl.Manifest, error) {
 	var diags hcl.Diagnostics
-	m := &manifest.Manifest{}
+	m := &exohcl.Manifest{}
 
 	// Since containers reference networks and volumes by their docker-compose name, but the
 	// Docker components will have a namespaced name, so we need to keep track of which
@@ -35,10 +35,10 @@ func (i *Loader) convert(project *compose.Project) (*manifest.Manifest, error) {
 	volumesByComposeName := map[string]string{}
 
 	for originalName, volume := range project.Volumes {
-		name := manifest.MangleName(originalName)
+		name := exohcl.MangleName(originalName)
 		if originalName != name {
 			var subject *hcl.Range
-			diags = append(diags, manifest.NewRenameWarning(originalName, name, subject))
+			diags = append(diags, exohcl.NewRenameWarning(originalName, name, subject))
 		}
 
 		if volume.Name == "" {
@@ -46,7 +46,7 @@ func (i *Loader) convert(project *compose.Project) (*manifest.Manifest, error) {
 		}
 		volumesByComposeName[originalName] = volume.Name
 
-		m.Components = append(m.Components, manifest.Component{
+		m.Components = append(m.Components, exohcl.Component{
 			Name: name,
 			Type: "volume",
 			Spec: yamlutil.MustMarshalString(volume),
@@ -59,10 +59,10 @@ func (i *Loader) convert(project *compose.Project) (*manifest.Manifest, error) {
 		if originalName == "default" {
 			hasDefaultNetwork = true
 		}
-		name := manifest.MangleName(originalName)
+		name := exohcl.MangleName(originalName)
 		if originalName != name {
 			var subject *hcl.Range
-			diags = append(diags, manifest.NewRenameWarning(originalName, name, subject))
+			diags = append(diags, exohcl.NewRenameWarning(originalName, name, subject))
 		}
 
 		// If a `name` key is specified in the network configuration (usually used in conjunction with `external: true`),
@@ -77,7 +77,7 @@ func (i *Loader) convert(project *compose.Project) (*manifest.Manifest, error) {
 			network.Driver = "bridge"
 		}
 
-		m.Components = append(m.Components, manifest.Component{
+		m.Components = append(m.Components, exohcl.Component{
 			Name: name,
 			Type: "network",
 			Spec: yamlutil.MustMarshalString(network),
@@ -90,7 +90,7 @@ func (i *Loader) convert(project *compose.Project) (*manifest.Manifest, error) {
 		name := i.prefixedName(componentName, "")
 		networksByComposeName[componentName] = name
 
-		m.Components = append(m.Components, manifest.Component{
+		m.Components = append(m.Components, exohcl.Component{
 			Name: componentName,
 			Type: "network",
 			Spec: yamlutil.MustMarshalString(map[string]string{
@@ -101,12 +101,12 @@ func (i *Loader) convert(project *compose.Project) (*manifest.Manifest, error) {
 	}
 
 	for originalName, service := range project.Services {
-		name := manifest.MangleName(originalName)
+		name := exohcl.MangleName(originalName)
 		if originalName != name {
 			var subject *hcl.Range
-			diags = append(diags, manifest.NewRenameWarning(originalName, name, subject))
+			diags = append(diags, exohcl.NewRenameWarning(originalName, name, subject))
 		}
-		component := manifest.Component{
+		component := exohcl.Component{
 			Name: name,
 			Type: "container",
 		}
@@ -177,13 +177,13 @@ func (i *Loader) convert(project *compose.Project) (*manifest.Manifest, error) {
 		for _, dependency := range service.DependsOn.Services {
 			if dependency.Condition != "service_started" {
 				var subject *hcl.Range
-				diags = append(diags, manifest.NewUnsupportedFeatureWarning(
+				diags = append(diags, exohcl.NewUnsupportedFeatureWarning(
 					fmt.Sprintf("service condition %q", dependency.Service),
 					"only service_started is currently supported",
 					subject,
 				))
 			}
-			component.DependsOn = append(component.DependsOn, manifest.MangleName(dependency.Service))
+			component.DependsOn = append(component.DependsOn, exohcl.MangleName(dependency.Service))
 		}
 
 		for idx, link := range service.Links {
@@ -215,7 +215,7 @@ func (i *Loader) convert(project *compose.Project) (*manifest.Manifest, error) {
 
 			// See https://github.com/docker/compose/blob/v2.0.0-rc.3/compose/service.py#L836 for how compose configures
 			// links.
-			mangledServiceName := manifest.MangleName(linkService)
+			mangledServiceName := exohcl.MangleName(linkService)
 			containerName := i.prefixedName(mangledServiceName, "1")
 			service.Links[idx] = fmt.Sprintf("%s:%s", containerName, linkAlias)
 			component.DependsOn = append(component.DependsOn, mangledServiceName)

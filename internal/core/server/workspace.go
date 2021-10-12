@@ -18,7 +18,7 @@ import (
 	eventd "github.com/deref/exo/internal/eventd/api"
 	"github.com/deref/exo/internal/gensym"
 	josh "github.com/deref/exo/internal/josh/server"
-	"github.com/deref/exo/internal/manifest"
+	"github.com/deref/exo/internal/manifest/exohcl"
 	"github.com/deref/exo/internal/manifest/procfile"
 	"github.com/deref/exo/internal/providers/core"
 	"github.com/deref/exo/internal/providers/core/components/invalid"
@@ -210,7 +210,7 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 	// 5.
 	updateSet := make(map[string]struct{})
 
-	recreateComponentOnce := func(name string, oldComponent api.ComponentDescription, newComponent manifest.Component) {
+	recreateComponentOnce := func(name string, oldComponent api.ComponentDescription, newComponent exohcl.Component) {
 		// 6.1.1.
 		if _, alreadyUpdated := updateSet[name]; alreadyUpdated {
 			return
@@ -476,7 +476,7 @@ func (ws *Workspace) CreateComponent(ctx context.Context, input *api.CreateCompo
 	go func() {
 		defer job.Finish()
 
-		err := ws.createComponent(ctx, manifest.Component{
+		err := ws.createComponent(ctx, exohcl.Component{
 			Name: input.Name,
 			Type: input.Type,
 			Spec: input.Spec,
@@ -495,8 +495,8 @@ func (ws *Workspace) CreateComponent(ctx context.Context, input *api.CreateCompo
 	}, nil
 }
 
-func (ws *Workspace) createComponent(ctx context.Context, component manifest.Component, id string) error {
-	if err := manifest.ValidateName(component.Name); err != nil {
+func (ws *Workspace) createComponent(ctx context.Context, component exohcl.Component, id string) error {
+	if err := exohcl.ValidateName(component.Name); err != nil {
 		return errutil.HTTPErrorf(http.StatusBadRequest, "component name %q invalid: %w", component.Name, err)
 	}
 
@@ -543,7 +543,7 @@ func (ws *Workspace) UpdateComponent(ctx context.Context, input *api.UpdateCompo
 	}
 
 	if input.Name != "" {
-		if err := manifest.ValidateName(input.Name); err != nil {
+		if err := exohcl.ValidateName(input.Name); err != nil {
 			return nil, errutil.HTTPErrorf(http.StatusBadRequest, "new component name %q is invalid: %w", input.Name, err)
 		}
 		newComponent.Name = input.Name
@@ -598,7 +598,7 @@ func (ws *Workspace) RenameComponent(ctx context.Context, input *api.RenameCompo
 
 	component := describeOutput.Components[0]
 
-	if err := manifest.ValidateName(input.Name); err != nil {
+	if err := exohcl.ValidateName(input.Name); err != nil {
 		return nil, errutil.HTTPErrorf(http.StatusBadRequest, "new component name %q is invalid: %w", input.Name, err)
 	}
 
@@ -1183,7 +1183,7 @@ func (n *runTaskNode) ID() string {
 }
 
 type componentNode struct {
-	component manifest.Component
+	component exohcl.Component
 }
 
 func (n *componentNode) ID() string {

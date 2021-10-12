@@ -14,6 +14,7 @@ import (
 	"github.com/deref/exo/internal/core/api"
 	"github.com/deref/exo/internal/manifest"
 	"github.com/deref/exo/internal/manifest/compose"
+	"github.com/deref/exo/internal/manifest/exohcl"
 	"github.com/deref/exo/internal/manifest/procfile"
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/osutil"
@@ -34,7 +35,7 @@ var manifestCandidates = []manifestCandidate{
 	{"procfile", "Procfile"},
 }
 
-func (ws *Workspace) loadManifest(rootDir string, input *api.ApplyInput) (*manifest.Manifest, error) {
+func (ws *Workspace) loadManifest(rootDir string, input *api.ApplyInput) (*exohcl.Manifest, error) {
 	manifestString := ""
 	manifestPath := ""
 	if input.ManifestPath != nil {
@@ -80,17 +81,17 @@ func (ws *Workspace) loadManifest(rootDir string, input *api.ApplyInput) (*manif
 	}
 
 	var loader interface {
-		Load(r io.Reader) (*manifest.Manifest, error)
+		Load(r io.Reader) (*exohcl.Manifest, error)
 	}
 	switch format {
 	case "procfile":
 		loader = procfile.Loader
 	case "compose":
 		projectName := path.Base(rootDir)
-		projectName = manifest.MangleName(projectName)
+		projectName = exohcl.MangleName(projectName)
 		loader = &compose.Loader{ProjectName: projectName}
 	case "exo":
-		loader = &manifest.Loader{
+		loader = &exohcl.Loader{
 			Filename: manifestPath,
 		}
 	default:

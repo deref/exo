@@ -4,8 +4,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/deref/exo/internal/manifest"
 	"github.com/deref/exo/internal/manifest/compose"
+	"github.com/deref/exo/internal/manifest/exohcl"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -13,7 +13,7 @@ func TestConvert(t *testing.T) {
 	t.Skipf("Skipping convert test until we decide what strategy to use for converting compose files to component specs.")
 
 	projectName := "testproj"
-	defaultNetwork := manifest.Component{
+	defaultNetwork := exohcl.Component{
 		Name: "default",
 		Type: "network",
 		Spec: `driver: bridge
@@ -24,7 +24,7 @@ name: testproj_default
 	testCases := []struct {
 		name     string
 		in       string
-		expected manifest.Manifest
+		expected exohcl.Manifest
 	}{
 		{
 			name: "basic service",
@@ -35,8 +35,8 @@ services:
         volumes: ['./src:/srv']
         command: node /srv/index.js
 `,
-			expected: manifest.Manifest{
-				Components: []manifest.Component{
+			expected: exohcl.Manifest{
+				Components: []exohcl.Component{
 					defaultNetwork,
 					{
 						Name: "web",
@@ -72,8 +72,8 @@ networks:
   frontend:
   backend:
 `,
-			expected: manifest.Manifest{
-				Components: []manifest.Component{
+			expected: exohcl.Manifest{
+				Components: []exohcl.Component{
 					defaultNetwork,
 					{
 						Name: "frontend",
