@@ -3,11 +3,7 @@
   import Layout from '../components/Layout.svelte';
   import IconButton from '../components/IconButton.svelte';
   import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
-  import { theme } from '../lib/theme';
-
-  const resetAllPreferences = () => {
-    theme.apply('auto');
-  };
+  import { theme, themeOptions } from '../lib/theme';
 </script>
 
 <Layout>
@@ -16,7 +12,7 @@
       <IconButton
         glyph="Reset"
         tooltip="Reset to defaults"
-        on:click={resetAllPreferences}
+        on:click={() => theme.apply('auto')}
       />
     </div>
     <div>
@@ -25,38 +21,14 @@
           <h2>Theme &amp; GUI</h2>
         </div>
         <div class="button-row">
-          <Button
-            on:click={() => {
-              theme.apply('auto');
-            }}
-            inset={$theme === 'auto'}
-          >
-            Auto
-          </Button>
-          <Button
-            on:click={() => {
-              theme.apply('light');
-            }}
-            inset={$theme === 'light'}
-          >
-            Light
-          </Button>
-          <Button
-            on:click={() => {
-              theme.apply('dark');
-            }}
-            inset={$theme === 'dark'}
-          >
-            Dark
-          </Button>
-          <Button
-            on:click={() => {
-              theme.apply('black');
-            }}
-            inset={$theme === 'black'}
-          >
-            Black
-          </Button>
+          {#each themeOptions as option}
+            <Button
+              on:click={() => theme.apply(option)}
+              inset={$theme === option}
+            >
+              <code>{option}</code>
+            </Button>
+          {/each}
         </div>
       </div>
     </div>
