@@ -75,19 +75,11 @@ func (ws *Workspace) loadManifest(rootDir string, input *api.ApplyInput) manifes
 
 	format := ""
 	if input.Format == "" {
-		// Guess format.
-		name := strings.ToLower(filepath.Base(manifestPath))
-		switch name {
-		case "procfile":
-			format = "procfile"
-		case "compose.yaml", "compose.yml", "docker-compose.yaml", "docker-compose.yml":
-			format = "compose"
-		case "exo.hcl", "":
+		if manifestPath == "" {
 			format = "exo"
-		default:
-			if strings.HasPrefix(name, "procfile.") || strings.HasSuffix(name, ".procfile") {
-				format = "procfile"
-			} else {
+		} else {
+			format = manifest.GuessFormat(manifestPath)
+			if format == "" {
 				return manifest.LoadResult{
 					Err: errutil.NewHTTPError(http.StatusBadRequest, "cannot determine manifest format from file name"),
 				}
