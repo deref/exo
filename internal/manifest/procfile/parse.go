@@ -9,6 +9,7 @@ import (
 	"os"
 	"strings"
 
+	"github.com/hashicorp/hcl/v2"
 	"mvdan.cc/sh/v3/expand"
 	"mvdan.cc/sh/v3/syntax"
 )
@@ -22,19 +23,46 @@ type Process struct {
 	Program     string
 	Arguments   []string
 	Environment map[string]string
+	Range       hcl.Range
 }
 
+const MaxLineLen = 4096
+
 func Parse(r io.Reader) (*Procfile, error) {
+	var diags hcl.Diagnostics
 	var procfile Procfile
-	br := bufio.NewReaderSize(r, 4096)
+	br := bufio.NewReaderSize(r, MaxLineLen)
 	lineIndex := 0
+	start := 0
+	end := 0
 	for {
+		start = end
 		lineIndex++
 		line, isPrefix, err := br.ReadLine()
+		end += len(line) + 1 // 1 is for \n. TODO: Handle \r.
 		if io.EOF == err {
 			break
 		}
+		rng := hcl.Range{
+			// TODO: Filename
+			Start: hcl.Pos{
+				Line:   lineIndex,
+				Column: 0,
+				Byte:   start,
+			},
+			End: hcl.Pos{
+				Line:   lineIndex,
+				Column: len(line), // TODO: Count grapheme clusters.
+				Byte:   end,
+			},
+		}
 		if isPrefix {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "line is too long",
+				Detail:   fmt.Sprintf("line exceeds length limit of %d", MaxLineLen),
+				Subject:  &rng,
+			})
 			return nil, fmt.Errorf("line %d is too long", lineIndex)
 		}
 		line = bytes.TrimSpace(line)
@@ -44,7 +72,13 @@ func Parse(r io.Reader) (*Procfile, error) {
 		}
 		parts := bytes.SplitN(line, []byte(":"), 2)
 		if len(parts) != 2 {
-			return nil, fmt.Errorf("line %d is invalid", lineIndex)
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "invalid process line",
+				Detail:   `Invalid process line. The expected format is "<name>: <command> <args...>".`,
+				Subject:  &rng,
+			})
+			continue
 		}
 		for i, part := range parts {
 			parts[i] = bytes.TrimSpace(part)
@@ -52,12 +86,18 @@ func Parse(r io.Reader) (*Procfile, error) {
 		name := string(parts[0]) // TODO: Validate name is alphanumeric.
 		process, err := ParseCommand(bytes.NewReader(parts[1]))
 		if err != nil {
-			return nil, err
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  err.Error(),
+				Subject:  &rng, // TODO: Constrain to range after the colon.
+			})
+			continue
 		}
 		process.Name = name
+		process.Range = rng
 		procfile.Processes = append(procfile.Processes, *process)
 	}
-	return &procfile, nil
+	return &procfile, diags
 }
 
 func ParseCommand(r io.Reader) (*Process, error) {
