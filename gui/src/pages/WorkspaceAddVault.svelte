@@ -12,8 +12,8 @@
   const workspace = api.workspace(workspaceId);
   const workspaceRoute = `/workspaces/${encodeURIComponent(workspaceId)}`;
 
-  // FIXME: inject this.
-  const esvUrl = 'http://localhost:5000/organizations';
+  // TODO: inject this.
+  const esvUrl = 'https://secrets.deref.io/organizations';
 
   let vaultUrl: string = '';
 </script>
