@@ -63,27 +63,13 @@ func (ws *Workspace) loadManifest(rootDir string, input *api.ApplyInput) (*exohc
 		manifestString = *input.Manifest
 	}
 
-	format := ""
-	if input.Format == "" {
-		if manifestPath == "" {
-			format = "exo"
-		} else {
-			format = manifest.GuessFormat(manifestPath)
-			if format == "" {
-				return nil, errutil.NewHTTPError(http.StatusBadRequest, "cannot determine manifest format from file name")
-			}
-		}
-	} else {
-		format = input.Format
-	}
-
 	// TODO: Get official name from workspace description.
 	workspaceName := path.Base(rootDir)
 	workspaceName = exohcl.MangleName(workspaceName)
 
 	loader := &manifest.Loader{
 		WorkspaceName: workspaceName,
-		Format:        format,
+		Format:        input.Format,
 		Filename:      manifestPath,
 		Reader:        strings.NewReader(manifestString),
 	}

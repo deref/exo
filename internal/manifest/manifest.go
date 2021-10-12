@@ -3,12 +3,14 @@ package manifest
 import (
 	"fmt"
 	"io"
+	"net/http"
 	"path/filepath"
 	"strings"
 
 	"github.com/deref/exo/internal/manifest/compose"
 	"github.com/deref/exo/internal/manifest/exohcl"
 	"github.com/deref/exo/internal/manifest/procfile"
+	"github.com/deref/exo/internal/util/errutil"
 )
 
 func GuessFormat(path string) string {
@@ -36,10 +38,22 @@ type Loader struct {
 }
 
 func (l *Loader) Load() (*exohcl.Manifest, error) {
+	format := l.Format
+	if format == "" {
+		if l.Filename == "" || l.Filename == "/dev/stdin" {
+			format = "exo"
+		} else {
+			format = GuessFormat(l.Filename)
+			if format == "" {
+				return nil, errutil.NewHTTPError(http.StatusBadRequest, "cannot determine manifest format from file name")
+			}
+		}
+	}
+
 	var formatLoader interface {
 		Load(r io.Reader) (*exohcl.Manifest, error)
 	}
-	switch l.Format {
+	switch format {
 	case "procfile":
 		formatLoader = procfile.Loader
 	case "compose":
