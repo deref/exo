@@ -125,6 +125,11 @@ func (c *Workspace) Resolve(ctx context.Context, input *api.ResolveInput) (outpu
 	return
 }
 
+func (c *Workspace) ResolveManifest(ctx context.Context, input *api.ResolveManifestInput) (output *api.ResolveManifestOutput, err error) {
+	err = c.client.Invoke(ctx, "resolve-manifest", input, &output)
+	return
+}
+
 func (c *Workspace) DescribeComponents(ctx context.Context, input *api.DescribeComponentsInput) (output *api.DescribeComponentsOutput, err error) {
 	err = c.client.Invoke(ctx, "describe-components", input, &output)
 	return

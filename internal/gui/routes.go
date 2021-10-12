@@ -10,7 +10,7 @@ type Routes struct {
 }
 
 func (r *Routes) NewWorkspaceURL(root string) string {
-	return fmt.Sprintf("%s/#/new-workspace?root=%s", r.URL, url.QueryEscape(root))
+	return fmt.Sprintf("%s/#/new-project?root=%s", r.URL, url.QueryEscape(root))
 }
 
 func (r *Routes) WorkspaceURL(id string) string {

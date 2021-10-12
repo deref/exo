@@ -35,6 +35,8 @@ func IsWritable(filePath string) (bool, error) {
 	return err == nil, err
 }
 
+// TODO: This might not actually help anything.
+// See <https://twitter.com/tomfaulhaber/status/1447376910531448832>.
 func WriteFileSync(name string, data []byte, perm fs.FileMode) error {
 	f, err := os.OpenFile(name, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, perm)
 	if err != nil {
