@@ -24,7 +24,7 @@ name: testproj_default
 	testCases := []struct {
 		name     string
 		in       string
-		expected manifest.LoadResult
+		expected manifest.Manifest
 	}{
 		{
 			name: "basic service",
@@ -35,14 +35,13 @@ services:
         volumes: ['./src:/srv']
         command: node /srv/index.js
 `,
-			expected: manifest.LoadResult{
-				Manifest: &manifest.Manifest{
-					Components: []manifest.Component{
-						defaultNetwork,
-						{
-							Name: "web",
-							Type: "container",
-							Spec: `command: node /srv/index.js
+			expected: manifest.Manifest{
+				Components: []manifest.Component{
+					defaultNetwork,
+					{
+						Name: "web",
+						Type: "container",
+						Spec: `command: node /srv/index.js
 container_name: testproj_web_1
 image: nodejs:14
 networks:
@@ -50,8 +49,7 @@ networks:
 volumes:
 - ./src:/srv
 `,
-							DependsOn: []string{"default"},
-						},
+						DependsOn: []string{"default"},
 					},
 				},
 			},
@@ -74,45 +72,43 @@ networks:
   frontend:
   backend:
 `,
-			expected: manifest.LoadResult{
-				Manifest: &manifest.Manifest{
-					Components: []manifest.Component{
-						defaultNetwork,
-						{
-							Name: "frontend",
-							Type: "network",
-							Spec: `driver: bridge
+			expected: manifest.Manifest{
+				Components: []manifest.Component{
+					defaultNetwork,
+					{
+						Name: "frontend",
+						Type: "network",
+						Spec: `driver: bridge
 name: testproj_frontend
 `,
-						},
-						{
-							Name: "backend",
-							Type: "network",
-							Spec: `driver: bridge
+					},
+					{
+						Name: "backend",
+						Type: "network",
+						Spec: `driver: bridge
 name: testproj_backend
 `,
-						},
-						{
-							Name: "proxy",
-							Type: "container",
-							Spec: `container_name: testproj_proxy_1
+					},
+					{
+						Name: "proxy",
+						Type: "container",
+						Spec: `container_name: testproj_proxy_1
 image: nginx
 networks:
 - testproj_backend
 - testproj_frontend
 `,
-							DependsOn: []string{"backend", "frontend"},
-						},
-						{
-							Name: "srv",
-							Type: "container",
-							Spec: `container_name: testproj_srv_1
+						DependsOn: []string{"backend", "frontend"},
+					},
+					{
+						Name: "srv",
+						Type: "container",
+						Spec: `container_name: testproj_srv_1
 image: myapp
 networks:
 - testproj_backend
 `,
-							DependsOn: []string{"backend"},
-						},
+						DependsOn: []string{"backend"},
 					},
 				},
 			},
@@ -125,11 +121,11 @@ networks:
 		in := strings.NewReader(testCase.in)
 		expected := testCase.expected
 		t.Run(name, func(t *testing.T) {
-			out := loader.Load(in)
-
-			assert.ElementsMatch(t, expected.Warnings, out.Warnings)
-			if len(expected.Manifest.Components) > 0 {
-				assert.ElementsMatch(t, expected.Manifest.Components, out.Manifest.Components)
+			out, err := loader.Load(in)
+			if assert.NoError(t, err) {
+				if len(expected.Components) > 0 {
+					assert.ElementsMatch(t, expected.Components, out.Components)
+				}
 			}
 		})
 	}

@@ -8,16 +8,17 @@ import (
 	"github.com/deref/exo/internal/manifest"
 	"github.com/deref/exo/internal/providers/unix/components/process"
 	"github.com/deref/exo/internal/util/jsonutil"
+	"github.com/hashicorp/hcl/v2"
 )
 
 type loader struct{}
 
 var Loader = loader{}
 
-func (l loader) Load(r io.Reader) manifest.LoadResult {
+func (l loader) Load(r io.Reader) (*manifest.Manifest, error) {
 	procfile, err := Parse(r)
 	if err != nil {
-		return manifest.LoadResult{Err: fmt.Errorf("parsing: %w", err)}
+		return nil, fmt.Errorf("parsing: %w", err)
 	}
 	return convert(procfile)
 }
@@ -25,9 +26,9 @@ func (l loader) Load(r io.Reader) manifest.LoadResult {
 const BasePort = 5000
 const PortStep = 100
 
-func convert(procfile *Procfile) manifest.LoadResult {
-	var res manifest.LoadResult
-	m := manifest.NewManifest()
+func convert(procfile *Procfile) (*manifest.Manifest, error) {
+	var diags hcl.Diagnostics
+	m := &manifest.Manifest{}
 	port := BasePort
 	for _, p := range procfile.Processes {
 		// Assign default PORT, merge in specified environment.
@@ -42,8 +43,8 @@ func convert(procfile *Procfile) manifest.LoadResult {
 		// Get component name.
 		name := manifest.MangleName(p.Name)
 		if name != p.Name {
-			warning := fmt.Sprintf("invalid name: %q, renamed to: %q", p.Name, name)
-			res.Warnings = append(res.Warnings, warning)
+			var subject *hcl.Range
+			diags = append(diags, manifest.NewRenameWarning(p.Name, name, subject))
 		}
 
 		// Add component.
@@ -58,6 +59,5 @@ func convert(procfile *Procfile) manifest.LoadResult {
 		}
 		m.Components = append(m.Components, component)
 	}
-	res.Manifest = m
-	return res
+	return m, diags
 }

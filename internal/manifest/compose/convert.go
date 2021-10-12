@@ -8,6 +8,7 @@ import (
 	"github.com/deref/exo/internal/manifest"
 	"github.com/deref/exo/internal/providers/docker/compose"
 	"github.com/deref/exo/internal/util/yamlutil"
+	"github.com/hashicorp/hcl/v2"
 )
 
 type Loader struct {
@@ -15,18 +16,17 @@ type Loader struct {
 	ProjectName string
 }
 
-func (i *Loader) Load(r io.Reader) manifest.LoadResult {
+func (i *Loader) Load(r io.Reader) (*manifest.Manifest, error) {
 	composeProject, err := compose.Parse(r)
 	if err != nil {
-		return manifest.LoadResult{Err: fmt.Errorf("parsing: %w", err)}
+		return nil, fmt.Errorf("parsing: %w", err)
 	}
 	return i.convert(composeProject)
 }
 
-func (i *Loader) convert(project *compose.Project) manifest.LoadResult {
-	res := manifest.LoadResult{
-		Manifest: &manifest.Manifest{},
-	}
+func (i *Loader) convert(project *compose.Project) (*manifest.Manifest, error) {
+	var diags hcl.Diagnostics
+	m := &manifest.Manifest{}
 
 	// Since containers reference networks and volumes by their docker-compose name, but the
 	// Docker components will have a namespaced name, so we need to keep track of which
@@ -37,7 +37,8 @@ func (i *Loader) convert(project *compose.Project) manifest.LoadResult {
 	for originalName, volume := range project.Volumes {
 		name := manifest.MangleName(originalName)
 		if originalName != name {
-			res = res.AddRenameWarning(originalName, name)
+			var subject *hcl.Range
+			diags = append(diags, manifest.NewRenameWarning(originalName, name, subject))
 		}
 
 		if volume.Name == "" {
@@ -45,7 +46,7 @@ func (i *Loader) convert(project *compose.Project) manifest.LoadResult {
 		}
 		volumesByComposeName[originalName] = volume.Name
 
-		res.Manifest.Components = append(res.Manifest.Components, manifest.Component{
+		m.Components = append(m.Components, manifest.Component{
 			Name: name,
 			Type: "volume",
 			Spec: yamlutil.MustMarshalString(volume),
@@ -60,7 +61,8 @@ func (i *Loader) convert(project *compose.Project) manifest.LoadResult {
 		}
 		name := manifest.MangleName(originalName)
 		if originalName != name {
-			res = res.AddRenameWarning(originalName, name)
+			var subject *hcl.Range
+			diags = append(diags, manifest.NewRenameWarning(originalName, name, subject))
 		}
 
 		// If a `name` key is specified in the network configuration (usually used in conjunction with `external: true`),
@@ -75,7 +77,7 @@ func (i *Loader) convert(project *compose.Project) manifest.LoadResult {
 			network.Driver = "bridge"
 		}
 
-		res.Manifest.Components = append(res.Manifest.Components, manifest.Component{
+		m.Components = append(m.Components, manifest.Component{
 			Name: name,
 			Type: "network",
 			Spec: yamlutil.MustMarshalString(network),
@@ -88,7 +90,7 @@ func (i *Loader) convert(project *compose.Project) manifest.LoadResult {
 		name := i.prefixedName(componentName, "")
 		networksByComposeName[componentName] = name
 
-		res.Manifest.Components = append(res.Manifest.Components, manifest.Component{
+		m.Components = append(m.Components, manifest.Component{
 			Name: componentName,
 			Type: "network",
 			Spec: yamlutil.MustMarshalString(map[string]string{
@@ -101,7 +103,8 @@ func (i *Loader) convert(project *compose.Project) manifest.LoadResult {
 	for originalName, service := range project.Services {
 		name := manifest.MangleName(originalName)
 		if originalName != name {
-			res = res.AddRenameWarning(originalName, name)
+			var subject *hcl.Range
+			diags = append(diags, manifest.NewRenameWarning(originalName, name, subject))
 		}
 		component := manifest.Component{
 			Name: name,
@@ -120,8 +123,11 @@ func (i *Loader) convert(project *compose.Project) manifest.LoadResult {
 		}
 		for k := range service.Labels {
 			if strings.HasPrefix(k, "com.docker.compose") {
-				res.Err = fmt.Errorf("service may not specify labels with prefix \"com.docker.compose\", but %q specified %q", originalName, k)
-				return res
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  fmt.Sprintf("service may not specify labels with prefix \"com.docker.compose\", but %q specified %q", originalName, k),
+				})
+				return nil, diags
 			}
 		}
 		service.Labels["com.docker.compose.project"] = &i.ProjectName
@@ -134,7 +140,10 @@ func (i *Loader) convert(project *compose.Project) manifest.LoadResult {
 			for i, network := range service.Networks {
 				networkName, ok := networksByComposeName[network.Network]
 				if !ok {
-					res.Err = fmt.Errorf("unknown network: %q", network)
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  fmt.Sprintf("unknown network: %q", network),
+					})
 					continue
 				}
 				mappedNetworks[i] = network
@@ -167,7 +176,12 @@ func (i *Loader) convert(project *compose.Project) manifest.LoadResult {
 
 		for _, dependency := range service.DependsOn.Services {
 			if dependency.Condition != "service_started" {
-				res = res.AddUnsupportedFeatureWarning(fmt.Sprintf("service condition %q", dependency.Service), "only service_started is currently supported")
+				var subject *hcl.Range
+				diags = append(diags, manifest.NewUnsupportedFeatureWarning(
+					fmt.Sprintf("service condition %q", dependency.Service),
+					"only service_started is currently supported",
+					subject,
+				))
 			}
 			component.DependsOn = append(component.DependsOn, manifest.MangleName(dependency.Service))
 		}
@@ -183,8 +197,11 @@ func (i *Loader) convert(project *compose.Project) manifest.LoadResult {
 				linkService = parts[0]
 				linkAlias = parts[1]
 			default:
-				res.Err = fmt.Errorf("expected SERVICE or SERVICE:ALIAS for link, but got: %q", link)
-				return res
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  fmt.Sprintf("expected SERVICE or SERVICE:ALIAS for link, but got: %q", link),
+				})
+				return nil, diags
 			}
 			// NOTE [RESOLVING SERVICE CONTAINERS]:
 			// There are several locations in a compose definition where a service may reference another service
@@ -205,10 +222,10 @@ func (i *Loader) convert(project *compose.Project) manifest.LoadResult {
 		}
 
 		component.Spec = yamlutil.MustMarshalString(service)
-		res.Manifest.Components = append(res.Manifest.Components, component)
+		m.Components = append(m.Components, component)
 	}
 
-	return res
+	return m, diags
 }
 
 func (i *Loader) prefixedName(name string, suffix string) string {

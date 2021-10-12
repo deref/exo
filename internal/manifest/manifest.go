@@ -48,43 +48,38 @@ type Component struct {
 	DependsOn []string
 }
 
-func NewManifest() *Manifest {
-	return &Manifest{}
+func NewRenameWarning(originalName, newName string, subject *hcl.Range) *hcl.Diagnostic {
+	return &hcl.Diagnostic{
+		Severity: hcl.DiagWarning,
+		Summary:  fmt.Sprintf("invalid name: %s, renamed to %q", originalName, newName),
+		Subject:  subject,
+	}
 }
 
-// TODO: Do something more similar to hcl.Diagnostics.
-type LoadResult struct {
-	Manifest *Manifest
-	Warnings []string
-	Err      error
-}
-
-func (lr LoadResult) AddRenameWarning(originalName, newName string) LoadResult {
-	warning := fmt.Sprintf("invalid name: %q, renamed to: %q", originalName, newName)
-	lr.Warnings = append(lr.Warnings, warning)
-	return lr
-}
-
-func (lr LoadResult) AddUnsupportedFeatureWarning(featureName, explanation string) LoadResult {
-	warning := fmt.Sprintf("unsupported feature %s: %s", featureName, explanation)
-	lr.Warnings = append(lr.Warnings, warning)
-	return lr
+func NewUnsupportedFeatureWarning(featureName, explanation string, subject *hcl.Range) *hcl.Diagnostic {
+	return &hcl.Diagnostic{
+		Severity: hcl.DiagWarning,
+		Summary:  fmt.Sprintf("unsupported feature: %s", featureName),
+		Detail:   fmt.Sprintf("The %s feature is unsupported. %s", featureName, explanation),
+		Subject:  subject,
+	}
 }
 
 type Loader struct {
-	diags   hcl.Diagnostics
-	evalCtx *hcl.EvalContext
+	Filename string
+	diags    hcl.Diagnostics
+	evalCtx  *hcl.EvalContext
 }
 
-func (l *Loader) Load(r io.Reader) LoadResult {
+func (l *Loader) Load(r io.Reader) (*Manifest, error) {
 	bs, err := ioutil.ReadAll(r)
 	if err != nil {
-		return LoadResult{Err: err}
+		return nil, err
 	}
 	return l.LoadBytes(bs)
 }
 
-func (l *Loader) LoadBytes(bs []byte) LoadResult {
+func (l *Loader) LoadBytes(bs []byte) (*Manifest, error) {
 	l.evalCtx = &hcl.EvalContext{
 		Functions: map[string]function.Function{
 			"jsonencode": stdlib.JSONEncodeFunc,
@@ -93,16 +88,12 @@ func (l *Loader) LoadBytes(bs []byte) LoadResult {
 	}
 
 	var file *hcl.File
-	file, l.diags = hclsyntax.ParseConfig(bs, "", hcl.Pos{Line: 1, Column: 1})
+	file, l.diags = hclsyntax.ParseConfig(bs, l.Filename, hcl.Pos{Line: 1, Column: 1})
 	manifest := l.parseManifest(file)
 	if len(l.diags) > 0 {
-		return LoadResult{
-			Err: l.diags,
-		}
+		return nil, l.diags
 	}
-	return LoadResult{
-		Manifest: &manifest,
-	}
+	return &manifest, l.diags
 }
 
 func (l *Loader) appendDiags(diags ...*hcl.Diagnostic) {

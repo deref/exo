@@ -1,11 +1,14 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
+	"io"
 	"os"
 
 	"github.com/deref/exo/internal/manifest"
-	"github.com/deref/exo/internal/util/cmdutil"
+	"github.com/deref/exo/internal/util/term"
+	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/cobra"
 )
 
@@ -24,15 +27,25 @@ var manifestCmd = &cobra.Command{
 
 func loadManifest(name string) (*manifest.Manifest, error) {
 	// TODO: Support other formats here too.
-	loader := &manifest.Loader{}
+	loader := &manifest.Loader{
+		Filename: name,
+	}
 	f, err := os.Open(name)
 	if err != nil {
 		return nil, fmt.Errorf("opening: %w", err)
 	}
 	defer f.Close()
-	res := loader.Load(f)
-	for _, warning := range res.Warnings {
-		cmdutil.Warnf("%s\n", warning)
+	return loader.Load(f)
+}
+
+func writeManifestError(w io.Writer, err error) error {
+	var diags hcl.Diagnostics
+	if !errors.As(err, &diags) {
+		return err
 	}
-	return res.Manifest, res.Err
+	files := map[string]*hcl.File{} // TODO: Populate map for .hcl input files.
+	width, _ := term.GetSize()
+	enableColor := true // https://github.com/deref/exo/issues/179
+	diagWr := hcl.NewDiagnosticTextWriter(w, files, uint(width), enableColor)
+	return diagWr.WriteDiagnostics(diags)
 }

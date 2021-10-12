@@ -34,7 +34,7 @@ var manifestCandidates = []manifestCandidate{
 	{"procfile", "Procfile"},
 }
 
-func (ws *Workspace) loadManifest(rootDir string, input *api.ApplyInput) manifest.LoadResult {
+func (ws *Workspace) loadManifest(rootDir string, input *api.ApplyInput) (*manifest.Manifest, error) {
 	manifestString := ""
 	manifestPath := ""
 	if input.ManifestPath != nil {
@@ -45,28 +45,20 @@ func (ws *Workspace) loadManifest(rootDir string, input *api.ApplyInput) manifes
 			var err error
 			manifestPath, err = ws.resolveManifest(rootDir, input.Format)
 			if err != nil {
-				return manifest.LoadResult{
-					Err: err,
-				}
+				return nil, err
 			}
 			if manifestPath == "" {
-				return manifest.LoadResult{
-					Err: errutil.NewHTTPError(http.StatusBadRequest, "could not find manifest file"),
-				}
+				return nil, errutil.NewHTTPError(http.StatusBadRequest, "could not find manifest file")
 			}
 		}
 
 		if !pathutil.HasFilePathPrefix(manifestPath, rootDir) {
-			return manifest.LoadResult{
-				Err: errors.New("cannot read manifest outside of workspace root"),
-			}
+			return nil, errors.New("cannot read manifest outside of workspace root")
 		}
 
 		bs, err := ioutil.ReadFile(manifestPath)
 		if err != nil {
-			return manifest.LoadResult{
-				Err: fmt.Errorf("reading manifest file: %w", err),
-			}
+			return nil, fmt.Errorf("reading manifest file: %w", err)
 		}
 		manifestString = string(bs)
 	} else {
@@ -80,9 +72,7 @@ func (ws *Workspace) loadManifest(rootDir string, input *api.ApplyInput) manifes
 		} else {
 			format = manifest.GuessFormat(manifestPath)
 			if format == "" {
-				return manifest.LoadResult{
-					Err: errutil.NewHTTPError(http.StatusBadRequest, "cannot determine manifest format from file name"),
-				}
+				return nil, errutil.NewHTTPError(http.StatusBadRequest, "cannot determine manifest format from file name")
 			}
 		}
 	} else {
@@ -90,7 +80,7 @@ func (ws *Workspace) loadManifest(rootDir string, input *api.ApplyInput) manifes
 	}
 
 	var loader interface {
-		Load(r io.Reader) manifest.LoadResult
+		Load(r io.Reader) (*manifest.Manifest, error)
 	}
 	switch format {
 	case "procfile":
@@ -100,19 +90,14 @@ func (ws *Workspace) loadManifest(rootDir string, input *api.ApplyInput) manifes
 		projectName = manifest.MangleName(projectName)
 		loader = &compose.Loader{ProjectName: projectName}
 	case "exo":
-		loader = &manifest.Loader{}
-	default:
-		return manifest.LoadResult{
-			Err: fmt.Errorf("unknown manifest format: %q", format),
+		loader = &manifest.Loader{
+			Filename: manifestPath,
 		}
+	default:
+		return nil, fmt.Errorf("unknown manifest format: %q", format)
 	}
 
-	res := loader.Load(strings.NewReader(manifestString))
-	if res.Err != nil {
-		res.Err = errutil.WithHTTPStatus(http.StatusBadRequest, res.Err)
-	}
-	// TODO: Validate manifest.
-	return res
+	return loader.Load(strings.NewReader(manifestString))
 }
 
 func (ws *Workspace) ResolveManifest(ctx context.Context, input *api.ResolveManifestInput) (*api.ResolveManifestOutput, error) {

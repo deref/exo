@@ -3,6 +3,7 @@ package server
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
 	"net/http"
 	"os"
@@ -33,6 +34,7 @@ import (
 	"github.com/deref/exo/internal/util/logging"
 	"github.com/deref/exo/internal/util/pathutil"
 	dockerclient "github.com/docker/docker/client"
+	"github.com/hashicorp/hcl/v2"
 	"github.com/joho/godotenv"
 	"golang.org/x/sync/errgroup"
 )
@@ -119,11 +121,18 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 	if err != nil {
 		return nil, fmt.Errorf("describing workspace: %w", err)
 	}
-	res := ws.loadManifest(description.Root, input)
-	if res.Err != nil {
-		return nil, res.Err
+	m, err := ws.loadManifest(description.Root, input)
+
+	var diags hcl.Diagnostics
+	invalidManifest := false
+	if errors.As(err, &diags) {
+		invalidManifest = diags.HasErrors()
+	} else {
+		invalidManifest = err != nil
 	}
-	m := res.Manifest
+	if invalidManifest {
+		return nil, errutil.WithHTTPStatus(http.StatusBadRequest, err)
+	}
 
 	describeOutput, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{})
 	if err != nil {
@@ -271,10 +280,14 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 		executeRunTasks(createGraph)
 	}()
 
-	return &api.ApplyOutput{
-		Warnings: res.Warnings,
+	output := api.ApplyOutput{
+		Warnings: make([]string, len(diags)),
 		JobID:    job.ID(),
-	}, nil
+	}
+	for i, diag := range diags {
+		output.Warnings[i] = diag.Error()
+	}
+	return &output, nil
 }
 
 func executeRunTasks(g *deps.Graph) {

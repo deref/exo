@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"fmt"
+	"os"
 
 	"github.com/kr/pretty"
 	"github.com/spf13/cobra"
@@ -17,8 +17,8 @@ var manifestExpandCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		res, err := loadManifest(args[0])
-		if err != nil {
-			return fmt.Errorf("loading manifest: %w", err)
+		if err := writeManifestError(os.Stderr, err); err != nil {
+			return err
 		}
 		// XXX Print manifest as HCL, not internal data structures.
 		_, _ = pretty.Print(res)
