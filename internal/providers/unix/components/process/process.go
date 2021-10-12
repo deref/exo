@@ -65,12 +65,21 @@ func (p *Process) start(ctx context.Context) error {
 		Setsid: true, // Run in background.
 	}
 
+	envMap := make(map[string]string)
+	for key, val := range p.WorkspaceEnvironment {
+		envMap[key] = val
+	}
+	for key, val := range p.Environment {
+		envMap[key] = val
+	}
+	p.State.FullEnvironment = envMap
+
 	// Pipe JSON config to supervise on stdin.
 	configJSON := supervise.MustEncodeConfig(&supervise.Config{
 		ComponentID:      p.ComponentID,
 		WorkingDirectory: p.WorkspaceRoot,
 		SyslogPort:       p.SyslogPort,
-		Environment:      p.Environment,
+		Environment:      envMap,
 		Program:          program,
 		Arguments:        p.Arguments,
 	})
@@ -93,15 +102,6 @@ func (p *Process) start(ctx context.Context) error {
 	p.State.SupervisorPid = cmd.Process.Pid
 	p.State.Pgid, _ = syscall.Getpgid(p.State.SupervisorPid)
 	p.State.Pid = 0 // Overriden below.
-
-	envMap := make(map[string]string)
-	for key, val := range p.WorkspaceEnvironment {
-		envMap[key] = val
-	}
-	for key, val := range p.Environment {
-		envMap[key] = val
-	}
-	p.State.FullEnvironment = envMap
 
 	// Collect supervise output.
 	pidC := make(chan int, 1)
