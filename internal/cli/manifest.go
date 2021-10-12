@@ -6,6 +6,7 @@ import (
 	"io"
 	"os"
 
+	"github.com/deref/exo/internal/manifest"
 	"github.com/deref/exo/internal/manifest/exohcl"
 	"github.com/deref/exo/internal/util/term"
 	"github.com/hashicorp/hcl/v2"
@@ -15,6 +16,11 @@ import (
 func init() {
 	rootCmd.AddCommand(manifestCmd)
 	manifestCmd.AddCommand(makeHelpSubcmd())
+	manifestCmd.PersistentFlags().StringVar(&manifestFlags.Format, "format", "", "exo, compose, procfile")
+}
+
+var manifestFlags struct {
+	Format string
 }
 
 var manifestCmd = &cobra.Command{
@@ -26,16 +32,19 @@ var manifestCmd = &cobra.Command{
 }
 
 func loadManifest(name string) (*exohcl.Manifest, error) {
-	// TODO: Support other formats here too.
-	loader := &exohcl.Loader{
-		Filename: name,
-	}
 	f, err := os.Open(name)
 	if err != nil {
 		return nil, fmt.Errorf("opening: %w", err)
 	}
 	defer f.Close()
-	return loader.Load(f)
+
+	loader := &manifest.Loader{
+		WorkspaceName: "unnamed",
+		Format:        manifestFlags.Format,
+		Filename:      name,
+		Reader:        f,
+	}
+	return loader.Load()
 }
 
 func writeManifestError(w io.Writer, err error) error {

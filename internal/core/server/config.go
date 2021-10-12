@@ -4,7 +4,6 @@ import (
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"io/ioutil"
 	"net/http"
 	"path"
@@ -13,9 +12,7 @@ import (
 
 	"github.com/deref/exo/internal/core/api"
 	"github.com/deref/exo/internal/manifest"
-	"github.com/deref/exo/internal/manifest/compose"
 	"github.com/deref/exo/internal/manifest/exohcl"
-	"github.com/deref/exo/internal/manifest/procfile"
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/osutil"
 	"github.com/deref/exo/internal/util/pathutil"
@@ -80,25 +77,17 @@ func (ws *Workspace) loadManifest(rootDir string, input *api.ApplyInput) (*exohc
 		format = input.Format
 	}
 
-	var loader interface {
-		Load(r io.Reader) (*exohcl.Manifest, error)
-	}
-	switch format {
-	case "procfile":
-		loader = procfile.Loader
-	case "compose":
-		projectName := path.Base(rootDir)
-		projectName = exohcl.MangleName(projectName)
-		loader = &compose.Loader{ProjectName: projectName}
-	case "exo":
-		loader = &exohcl.Loader{
-			Filename: manifestPath,
-		}
-	default:
-		return nil, fmt.Errorf("unknown manifest format: %q", format)
-	}
+	// TODO: Get official name from workspace description.
+	workspaceName := path.Base(rootDir)
+	workspaceName = exohcl.MangleName(workspaceName)
 
-	return loader.Load(strings.NewReader(manifestString))
+	loader := &manifest.Loader{
+		WorkspaceName: workspaceName,
+		Format:        format,
+		Filename:      manifestPath,
+		Reader:        strings.NewReader(manifestString),
+	}
+	return loader.Load()
 }
 
 func (ws *Workspace) ResolveManifest(ctx context.Context, input *api.ResolveManifestInput) (*api.ResolveManifestOutput, error) {
