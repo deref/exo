@@ -1,6 +1,7 @@
 <script lang="ts">
   import * as router from 'svelte-spa-router';
   import Panel from '../components/Panel.svelte';
+  import Button from '../components/Button.svelte';
   import Layout from '../components/Layout.svelte';
   import Spinner from '../components/Spinner.svelte';
   import WorkspaceNav from '../components/WorkspaceNav.svelte';
@@ -57,7 +58,7 @@
                       >Create secret</a
                     >
                   {:else if vault.needsAuth}
-                    <button on:click={authEsv}>Authenticate</button>
+                    <Button on:click={authEsv}>Authenticate</Button>
                   {:else}
                     Bad vault URL
                   {/if}
@@ -65,11 +66,13 @@
               </tr>
             {/each}
             <tr>
-              <button
-                on:click={() => router.push(`${workspaceRoute}/add-vault`)}
-              >
-                Add vault
-              </button>
+              <td colspan="3">
+                <Button
+                  on:click={() => router.push(`${workspaceRoute}/add-vault`)}
+                >
+                  Add vault
+                </Button>
+              </td>
             </tr>
           </tbody>
         </table>
@@ -77,3 +80,9 @@
     {/await}
   </Panel>
 </Layout>
+
+<style>
+  h2 {
+    margin-top: 1.5em;
+  }
+</style>
