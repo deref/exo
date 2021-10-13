@@ -12,8 +12,9 @@ func init() {
 }
 
 var secretsCmd = &cobra.Command{
-	Use:  "secrets",
-	Args: cobra.NoArgs,
+	Use:    "secrets",
+	Args:   cobra.NoArgs,
+	Hidden: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		checkOrEnsureServer()
 		ctx := newContext()
