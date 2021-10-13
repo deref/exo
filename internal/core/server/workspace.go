@@ -486,21 +486,19 @@ func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]api.Variabl
 
 	env := map[string]api.VariableDescription{}
 
-	if ws.EsvClient != nil {
-		vaults, err := ws.getVaults(ctx)
+	vaults, err := ws.getVaults(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting vaults: %w", err)
+	}
+	for _, vault := range vaults {
+		secrets, err := ws.EsvClient.GetWorkspaceSecrets(vault.Url)
 		if err != nil {
-			return nil, fmt.Errorf("getting vaults: %w", err)
-		}
-		for _, vault := range vaults {
-			secrets, err := ws.EsvClient.GetWorkspaceSecrets(vault.Url)
-			if err != nil {
-				ws.logEventf(ctx, "getting workspace secrets: %v", err)
-			} else {
-				for k, val := range secrets {
-					env[k] = api.VariableDescription{
-						Value:  val,
-						Source: vault.Name,
-					}
+			ws.logEventf(ctx, "getting workspace secrets: %v", err)
+		} else {
+			for k, val := range secrets {
+				env[k] = api.VariableDescription{
+					Value:  val,
+					Source: vault.Name,
 				}
 			}
 		}
