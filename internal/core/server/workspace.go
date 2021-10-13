@@ -494,12 +494,12 @@ func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]api.Variabl
 		secrets, err := ws.EsvClient.GetWorkspaceSecrets(vault.Url)
 		if err != nil {
 			ws.logEventf(ctx, "getting workspace secrets: %v", err)
-		} else {
-			for k, val := range secrets {
-				env[k] = api.VariableDescription{
-					Value:  val,
-					Source: vault.Name,
-				}
+			continue
+		}
+		for k, val := range secrets {
+			env[k] = api.VariableDescription{
+				Value:  val,
+				Source: vault.Name,
 			}
 		}
 	}
