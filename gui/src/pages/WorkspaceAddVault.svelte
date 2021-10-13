@@ -38,6 +38,6 @@
     </form>
 
     <h2>Need a vault?</h2>
-    <a href="${esvUrl}">Create one with Exo Secrets</a>
+    <a href={esvUrl}>Create one with Exo Secrets</a>
   </Panel>
 </Layout>
