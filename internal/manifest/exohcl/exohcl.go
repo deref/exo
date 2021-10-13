@@ -72,7 +72,7 @@ type Loader struct {
 
 func (l *Loader) LoadBytes(bs []byte) (*Manifest, error) {
 	var file *hcl.File
-	file, l.diags = hclsyntax.ParseConfig(bs, l.Filename, hcl.Pos{Line: 1, Column: 1})
+	file, l.diags = hclsyntax.ParseConfig(bs, l.Filename, hcl.InitialPos)
 	manifest := l.loadHCL(file)
 	return &manifest, l.diags
 }

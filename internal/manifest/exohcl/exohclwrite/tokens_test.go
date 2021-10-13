@@ -65,7 +65,7 @@ func TestFormatExpression(t *testing.T) {
 	}
 	for _, src := range exprs {
 		bs := []byte(src)
-		ast, err := hclsyntax.ParseExpression(bs, "", hcl.Pos{Line: 1, Column: 1})
+		ast, err := hclsyntax.ParseExpression(bs, "", hcl.InitialPos)
 		if !assert.False(t, err.HasErrors()) {
 			continue
 		}
