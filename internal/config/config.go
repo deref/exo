@@ -33,7 +33,7 @@ type Config struct {
 	RunDir       string
 	RunStateFile string
 	TokensFile   string
-	EsvTokenFile string
+	EsvTokenPath string
 
 	HTTPPort uint `toml:"httpPort"`
 	NoDaemon bool `toml:"noDaemon"`
@@ -106,8 +106,8 @@ func setDefaults(cfg *Config) {
 	if cfg.TokensFile == "" {
 		cfg.TokensFile = filepath.Join(cfg.VarDir, "token")
 	}
-	if cfg.EsvTokenFile == "" {
-		cfg.EsvTokenFile = filepath.Join(cfg.VarDir, "esv-token")
+	if cfg.EsvTokenPath == "" {
+		cfg.EsvTokenPath = filepath.Join(cfg.VarDir, "esv-token")
 	}
 
 	if cfg.HTTPPort == 0 {

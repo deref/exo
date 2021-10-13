@@ -18,7 +18,7 @@ import (
 var AuthError = errors.New("auth error")
 
 type EsvClient struct {
-	TokenFile    string
+	TokenPath    string
 	refreshToken string
 }
 
@@ -44,7 +44,7 @@ func (c *EsvClient) StartAuthFlow(ctx context.Context) (AuthResponse, error) {
 
 		c.refreshToken = tokens.RefreshToken
 
-		err = ioutil.WriteFile(c.TokenFile, []byte(tokens.RefreshToken), 0600)
+		err = ioutil.WriteFile(c.TokenPath, []byte(tokens.RefreshToken), 0600)
 		if err != nil {
 			logger.Infof("writing esv secret: %s", err)
 			return
@@ -58,11 +58,11 @@ func (c *EsvClient) StartAuthFlow(ctx context.Context) (AuthResponse, error) {
 }
 
 func (c *EsvClient) getAccessToken() (string, error) {
-	if c.TokenFile == "" {
+	if c.TokenPath == "" {
 		return "", fmt.Errorf("token file not set")
 	}
 	if c.refreshToken == "" {
-		tokenBytes, err := ioutil.ReadFile(c.TokenFile)
+		tokenBytes, err := ioutil.ReadFile(c.TokenPath)
 		if err != nil {
 			if os.IsNotExist(err) {
 				return "", fmt.Errorf("%w: token file does not exist", AuthError)

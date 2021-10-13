@@ -139,7 +139,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 		TaskTracker: taskTracker,
 		TokenClient: cfg.GetTokenClient(),
 		EsvClient: &esv.EsvClient{
-			TokenFile: cfg.EsvTokenFile,
+			TokenPath: cfg.EsvTokenPath,
 		},
 	}
 
