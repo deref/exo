@@ -1,6 +1,7 @@
 <script lang="ts">
   import * as router from 'svelte-spa-router';
   import type { WorkspaceDescription } from '../lib/api';
+  import FormattedDirectory from './FormattedDirectory.svelte';
 
   export let workspaces: WorkspaceDescription[];
 </script>
@@ -16,10 +17,9 @@
       on:click={() => {
         router.push(`/workspaces/${encodeURIComponent(workspace.id)}`);
       }}
-      title={workspace.root}
     >
       <b>{workspace.displayName}</b>
-      <span>{workspace.root}</span>
+      <span><FormattedDirectory raw={workspace.root} /></span>
     </button>
   {/each}
 </div>
