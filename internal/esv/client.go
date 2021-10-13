@@ -18,8 +18,8 @@ import (
 var AuthError = errors.New("auth error")
 
 type EsvClient struct {
-	refreshToken string
 	TokenFile    string
+	refreshToken string
 }
 
 type AuthResponse struct {
