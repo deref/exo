@@ -81,7 +81,22 @@ func (ws *Workspace) getVaultConfigs(ctx context.Context) ([]vaultConfig, error)
 	return []vaultConfig{{name: "esv-vault", url: secretsUrl}}, nil
 }
 
-func (ws *Workspace) getVaults(ctx context.Context) ([]api.VaultDescription, error) {
+// AddVault performs an upsert for the specified vault name and URL.
+func (ws *Workspace) AddVault(ctx context.Context, input *api.AddVaultInput) (*api.AddVaultOutput, error) {
+	// SEE NOTE [VAULTS_IN_MANIFEST]
+	secretConfigPath, err := ws.resolveWorkspacePath(ctx, secretsUrlFile)
+	if err != nil {
+		return nil, fmt.Errorf("resolving secrets config file path: %w", err)
+	}
+
+	if err := ioutil.WriteFile(secretConfigPath, []byte(input.Url), 0600); err != nil {
+		return nil, fmt.Errorf("writing secrets config file: %w", err)
+	}
+
+	return &api.AddVaultOutput{}, nil
+}
+
+func (ws *Workspace) DescribeVaults(ctx context.Context, input *api.DescribeVaultsInput) (*api.DescribeVaultsOutput, error) {
 	vaultConfigs, err := ws.getVaultConfigs(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("getting vault configs: %w", err)
@@ -99,30 +114,7 @@ func (ws *Workspace) getVaults(ctx context.Context) ([]api.VaultDescription, err
 		}
 	}
 
-	return descriptions, nil
-}
-
-// AddVault performs an upsert for the specified vault name and URL.
-func (ws *Workspace) AddVault(ctx context.Context, input *api.AddVaultInput) (*api.AddVaultOutput, error) {
-	// SEE NOTE [VAULTS_IN_MANIFEST]
-	secretConfigPath, err := ws.resolveWorkspacePath(ctx, secretsUrlFile)
-	if err != nil {
-		return nil, fmt.Errorf("resolving secrets config file path: %w", err)
-	}
-
-	if err := ioutil.WriteFile(secretConfigPath, []byte(input.Url), 0600); err != nil {
-		return nil, fmt.Errorf("writing secrets config file: %w", err)
-	}
-
-	return &api.AddVaultOutput{}, nil
-}
-
-func (ws *Workspace) DescribeVaults(ctx context.Context, input *api.DescribeVaultsInput) (*api.DescribeVaultsOutput, error) {
-	vaults, err := ws.getVaults(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("getting vaults: %w", err)
-	}
-	return &api.DescribeVaultsOutput{Vaults: vaults}, nil
+	return &api.DescribeVaultsOutput{Vaults: descriptions}, nil
 }
 
 func (ws *Workspace) logEventf(ctx context.Context, format string, v ...interface{}) {
@@ -504,11 +496,11 @@ func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]api.Variabl
 
 	env := map[string]api.VariableDescription{}
 
-	vaults, err := ws.getVaults(ctx)
+	describeVaultsResult, err := ws.DescribeVaults(ctx, &api.DescribeVaultsInput{})
 	if err != nil {
 		return nil, fmt.Errorf("getting vaults: %w", err)
 	}
-	for _, vault := range vaults {
+	for _, vault := range describeVaultsResult.Vaults {
 		secrets, err := ws.EsvClient.GetWorkspaceSecrets(vault.Url)
 		if err != nil {
 			ws.logEventf(ctx, "getting workspace secrets: %v", err)
