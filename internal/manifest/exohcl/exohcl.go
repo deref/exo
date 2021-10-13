@@ -3,7 +3,6 @@ package exohcl
 import (
 	"fmt"
 	"io"
-	"io/ioutil"
 	"strconv"
 	"strings"
 
@@ -71,28 +70,10 @@ type Loader struct {
 	evalCtx  *hcl.EvalContext
 }
 
-func (l *Loader) Load(r io.Reader) (*Manifest, error) {
-	bs, err := ioutil.ReadAll(r)
-	if err != nil {
-		return nil, err
-	}
-	return l.LoadBytes(bs)
-}
-
 func (l *Loader) LoadBytes(bs []byte) (*Manifest, error) {
-	l.evalCtx = &hcl.EvalContext{
-		Functions: map[string]function.Function{
-			"jsonencode": stdlib.JSONEncodeFunc,
-			"yamlencode": ctyyaml.YAMLEncodeFunc,
-		},
-	}
-
 	var file *hcl.File
 	file, l.diags = hclsyntax.ParseConfig(bs, l.Filename, hcl.Pos{Line: 1, Column: 1})
-	manifest := l.parseManifest(file)
-	if len(l.diags) > 0 {
-		return nil, l.diags
-	}
+	manifest := l.loadHCL(file)
 	return &manifest, l.diags
 }
 
@@ -100,7 +81,19 @@ func (l *Loader) appendDiags(diags ...*hcl.Diagnostic) {
 	l.diags = append(l.diags, diags...)
 }
 
-func (l *Loader) parseManifest(file *hcl.File) (manifest Manifest) {
+func (l *Loader) LoadHCL(file *hcl.File) (*Manifest, error) {
+	m := l.loadHCL(file)
+	return &m, l.diags
+}
+
+func (l *Loader) loadHCL(file *hcl.File) (manifest Manifest) {
+	l.evalCtx = &hcl.EvalContext{
+		Functions: map[string]function.Function{
+			"jsonencode": stdlib.JSONEncodeFunc,
+			"yamlencode": ctyyaml.YAMLEncodeFunc,
+		},
+	}
+
 	if file == nil {
 		return
 	}
@@ -399,7 +392,7 @@ func (l *Loader) expandComponent(block *hclsyntax.Block) *hclsyntax.Block {
 	specItems := make([]hclsyntax.ObjectConsItem, 0, len(attrs))
 	for _, attr := range attrs {
 		specItems = append(specItems, hclsyntax.ObjectConsItem{
-			KeyExpr:   newStringLit(attr.Name, attr.Range()),
+			KeyExpr:   NewStringLiteral(attr.Name, attr.Range()),
 			ValueExpr: attr.Expr,
 		})
 	}
@@ -411,7 +404,7 @@ func (l *Loader) expandComponent(block *hclsyntax.Block) *hclsyntax.Block {
 			Attributes: hclsyntax.Attributes{
 				"type": &hclsyntax.Attribute{
 					Name:        "type",
-					Expr:        newStringLit(block.Type, block.TypeRange),
+					Expr:        NewStringLiteral(block.Type, block.TypeRange),
 					SrcRange:    block.TypeRange,
 					NameRange:   block.TypeRange,
 					EqualsRange: block.TypeRange,
@@ -438,18 +431,6 @@ func (l *Loader) expandComponent(block *hclsyntax.Block) *hclsyntax.Block {
 		LabelRanges:     block.LabelRanges,
 		OpenBraceRange:  block.OpenBraceRange,
 		CloseBraceRange: block.CloseBraceRange,
-	}
-}
-
-func newStringLit(s string, rng hcl.Range) *hclsyntax.TemplateExpr {
-	return &hclsyntax.TemplateExpr{
-		Parts: []hclsyntax.Expression{
-			&hclsyntax.LiteralValueExpr{
-				Val:      cty.StringVal(s),
-				SrcRange: rng,
-			},
-		},
-		SrcRange: rng,
 	}
 }
 

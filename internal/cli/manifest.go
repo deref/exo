@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 	"io"
-	"os"
+	"io/ioutil"
 
 	"github.com/deref/exo/internal/manifest"
 	"github.com/deref/exo/internal/manifest/exohcl"
@@ -32,17 +32,16 @@ var manifestCmd = &cobra.Command{
 }
 
 func loadManifest(name string) (*exohcl.Manifest, error) {
-	f, err := os.Open(name)
+	bs, err := ioutil.ReadFile(name)
 	if err != nil {
-		return nil, fmt.Errorf("opening: %w", err)
+		return nil, fmt.Errorf("reading: %w", err)
 	}
-	defer f.Close()
 
 	loader := &manifest.Loader{
 		WorkspaceName: "unnamed",
 		Format:        manifestFlags.Format,
 		Filename:      name,
-		Reader:        f,
+		Bytes:         bs,
 	}
 	return loader.Load()
 }

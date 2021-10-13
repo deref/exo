@@ -2,7 +2,6 @@ package manifest
 
 import (
 	"fmt"
-	"io"
 	"net/http"
 	"path/filepath"
 	"strings"
@@ -11,6 +10,7 @@ import (
 	"github.com/deref/exo/internal/manifest/exohcl"
 	"github.com/deref/exo/internal/manifest/procfile"
 	"github.com/deref/exo/internal/util/errutil"
+	"github.com/hashicorp/hcl/v2"
 )
 
 func GuessFormat(path string) string {
@@ -34,7 +34,7 @@ type Loader struct {
 	WorkspaceName string
 	Format        string
 	Filename      string
-	Reader        io.Reader
+	Bytes         []byte
 }
 
 func (l *Loader) Load() (*exohcl.Manifest, error) {
@@ -50,22 +50,31 @@ func (l *Loader) Load() (*exohcl.Manifest, error) {
 		}
 	}
 
-	var formatLoader interface {
-		Load(r io.Reader) (*exohcl.Manifest, error)
+	var converter interface {
+		Convert(bs []byte) (*hcl.File, hcl.Diagnostics)
 	}
 	switch format {
 	case "procfile":
-		formatLoader = procfile.Loader
+		converter = &procfile.Converter{}
 	case "compose":
-		formatLoader = &compose.Loader{
+		converter = &compose.Converter{
 			ProjectName: l.WorkspaceName,
 		}
 	case "exo":
-		formatLoader = &exohcl.Loader{
-			Filename: l.Filename,
-		}
+		// No converter needed.
 	default:
 		return nil, fmt.Errorf("unknown manifest format: %q", l.Format)
 	}
-	return formatLoader.Load(l.Reader)
+	hclloader := &exohcl.Loader{
+		Filename: l.Filename,
+	}
+	if converter == nil {
+		return hclloader.LoadBytes(l.Bytes)
+	} else {
+		file, diags := converter.Convert(l.Bytes)
+		if diags.HasErrors() {
+			return nil, diags
+		}
+		return hclloader.LoadHCL(file)
+	}
 }

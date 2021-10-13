@@ -19,16 +19,18 @@ type Procfile struct {
 }
 
 type Process struct {
-	Name        string
-	Program     string
-	Arguments   []string
-	Environment map[string]string
-	Range       hcl.Range
+	Name         string
+	Program      string
+	Arguments    []string
+	Environment  map[string]string
+	NameRange    hcl.Range
+	CommandRange hcl.Range
+	Range        hcl.Range
 }
 
 const MaxLineLen = 4096
 
-func Parse(r io.Reader) (*Procfile, error) {
+func Parse(r io.Reader) (*Procfile, hcl.Diagnostics) {
 	var diags hcl.Diagnostics
 	var procfile Procfile
 	br := bufio.NewReaderSize(r, MaxLineLen)
@@ -63,7 +65,7 @@ func Parse(r io.Reader) (*Procfile, error) {
 				Detail:   fmt.Sprintf("line exceeds length limit of %d", MaxLineLen),
 				Subject:  &rng,
 			})
-			return nil, fmt.Errorf("line %d is too long", lineIndex)
+			return nil, diags
 		}
 		line = bytes.TrimSpace(line)
 		if len(line) == 0 || bytes.HasPrefix(line, []byte("#")) {
@@ -95,6 +97,8 @@ func Parse(r io.Reader) (*Procfile, error) {
 		}
 		process.Name = name
 		process.Range = rng
+		process.NameRange = rng    // TODO: Narrower range.
+		process.CommandRange = rng // TODO: Narrower range.
 		procfile.Processes = append(procfile.Processes, *process)
 	}
 	return &procfile, diags

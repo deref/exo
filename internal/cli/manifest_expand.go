@@ -21,7 +21,7 @@ var manifestExpandCmd = &cobra.Command{
 			return err
 		}
 		// XXX Print manifest as HCL, not internal data structures.
-		_, _ = pretty.Print(res)
+		_, _ = pretty.Println(res)
 		return nil
 	},
 }

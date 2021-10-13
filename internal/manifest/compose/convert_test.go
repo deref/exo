@@ -9,6 +9,9 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+// XXX test all the yamlToHCL types.
+// XXX change these tests to compare HCL output.
+
 func TestConvert(t *testing.T) {
 	t.Skipf("Skipping convert test until we decide what strategy to use for converting compose files to component specs.")
 

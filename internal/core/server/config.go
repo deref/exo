@@ -8,7 +8,6 @@ import (
 	"net/http"
 	"path"
 	"path/filepath"
-	"strings"
 
 	"github.com/deref/exo/internal/core/api"
 	"github.com/deref/exo/internal/manifest"
@@ -71,7 +70,7 @@ func (ws *Workspace) loadManifest(rootDir string, input *api.ApplyInput) (*exohc
 		WorkspaceName: workspaceName,
 		Format:        input.Format,
 		Filename:      manifestPath,
-		Reader:        strings.NewReader(manifestString),
+		Bytes:         []byte(manifestString),
 	}
 	return loader.Load()
 }
