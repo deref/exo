@@ -71,7 +71,7 @@ func (ws *Workspace) getVaults(ctx context.Context) ([]api.VaultDescription, err
 	if err != nil {
 		return nil, fmt.Errorf("reading secrets config: %w", err)
 	}
-	secretsUrl := strings.TrimSpace(string(secretsUrlBytes))
+	secretsUrl := string(bytes.TrimSpace(secretsUrlBytes))
 
 	// TODO: add a status command.
 	_, err = ws.EsvClient.GetWorkspaceSecrets(secretsUrl)
