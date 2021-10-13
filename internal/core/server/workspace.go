@@ -55,10 +55,16 @@ var _ api.Workspace = &Workspace{}
 
 var secretsUrlFile = "exo-secrets-url"
 
-func (ws *Workspace) getVaults(ctx context.Context) ([]api.VaultDescription, error) {
-	// Right now getVaults relies on an exo-secrets-url file in the workspace root
-	// to provide the vault. At the moment only one is supported. Instead we
-	// should add this to the state of the workspace and support multiple vaults.
+type vaultConfig struct {
+	name string
+	url  string
+}
+
+func (ws *Workspace) getVaultConfigs(ctx context.Context) ([]vaultConfig, error) {
+	// NOTE: [VAULTS_IN_MANIFEST] Right now getVaultConfigs relies on an
+	// exo-secrets-url file in the workspace root to provide the vault. At the
+	// moment only one is supported. Instead we should add this to the state of
+	// the workspace and support multiple vaults.
 
 	secretConfigPath, err := ws.resolveWorkspacePath(ctx, secretsUrlFile)
 	if err != nil {
@@ -66,27 +72,39 @@ func (ws *Workspace) getVaults(ctx context.Context) ([]api.VaultDescription, err
 	}
 	secretsUrlBytes, err := ioutil.ReadFile(secretConfigPath)
 	if os.IsNotExist(err) {
-		return []api.VaultDescription{}, nil
+		return []vaultConfig{}, nil
 	}
 	if err != nil {
 		return nil, fmt.Errorf("reading secrets config: %w", err)
 	}
 	secretsUrl := string(bytes.TrimSpace(secretsUrlBytes))
-
-	// TODO: add a status command.
-	_, err = ws.EsvClient.GetWorkspaceSecrets(secretsUrl)
-
-	return []api.VaultDescription{
-		{
-			Name:      "esv-vault",
-			Url:       secretsUrl,
-			Connected: err == nil,
-			NeedsAuth: errors.Is(err, esv.AuthError),
-		},
-	}, nil
+	return []vaultConfig{{name: "esv-vault", url: secretsUrl}}, nil
 }
 
+func (ws *Workspace) getVaults(ctx context.Context) ([]api.VaultDescription, error) {
+	vaultConfigs, err := ws.getVaultConfigs(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting vault configs: %w", err)
+	}
+
+	descriptions := make([]api.VaultDescription, len(vaultConfigs))
+	for i, vaultConfig := range vaultConfigs {
+		// TODO: add a status command.
+		_, err = ws.EsvClient.GetWorkspaceSecrets(vaultConfig.url)
+		descriptions[i] = api.VaultDescription{
+			Name:      vaultConfig.name,
+			Url:       vaultConfig.url,
+			Connected: err == nil,
+			NeedsAuth: errors.Is(err, esv.AuthError),
+		}
+	}
+
+	return descriptions, nil
+}
+
+// AddVault performs an upsert for the specified vault name and URL.
 func (ws *Workspace) AddVault(ctx context.Context, input *api.AddVaultInput) (*api.AddVaultOutput, error) {
+	// SEE NOTE [VAULTS_IN_MANIFEST]
 	secretConfigPath, err := ws.resolveWorkspacePath(ctx, secretsUrlFile)
 	if err != nil {
 		return nil, fmt.Errorf("resolving secrets config file path: %w", err)
