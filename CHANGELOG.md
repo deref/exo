@@ -10,6 +10,11 @@ This project adhears to [CalVer](./doc/versioning.md).
 
 - Project templates
 
+## 2021.10.12
+
+- [#407](https://github.com/deref/exo/pull/407) `exo init` command.
+- [#406] Alpha/undocumented release of `exo.hcl` manifests.
+
 
 ## 2021.10.08_1
 
