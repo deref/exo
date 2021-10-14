@@ -1,11 +1,11 @@
 package compose
 
 import (
-	"bytes"
 	"reflect"
 	"strings"
 	"testing"
 
+	"github.com/deref/exo/internal/util/yamlutil"
 	"github.com/stretchr/testify/assert"
 	"gopkg.in/yaml.v3"
 )
@@ -20,10 +20,10 @@ func testYAML(t *testing.T, name string, s string, v interface{}) {
 		}
 	})
 	t.Run("marshal_"+name, func(t *testing.T) {
-		bs, err := yaml.Marshal(v)
+		marshaled, err := yamlutil.MarshalString(v)
 		if assert.NoError(t, err) {
-			bs = bytes.TrimSpace(bs)
-			assert.Equal(t, s, string(bs))
+			marshaled = strings.TrimSpace(marshaled)
+			assert.Equal(t, s, marshaled)
 		}
 	})
 }
