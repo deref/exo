@@ -32,6 +32,15 @@ interface "workspace" {
   # Should inline the methods and append a `-workspace` suffix to each.
   extends = ["process", "builder"]
 
+  method "describe-vaults" {
+    output "vaults" "[]VaultDescription" {}
+  }
+
+  method "add-vault" {
+    input "name" "string" {}
+    input "url" "string" {}
+  }
+
   method "describe" {
     doc = "Describes this workspace."
     output "description" "WorkspaceDescription" {}
@@ -249,7 +258,7 @@ interface "workspace" {
   }
 
   method "describe-environment" {
-    output "variables" "map[string]string" {}
+    output "variables" "map[string]VariableDescription" {}
   }
 }
 
@@ -304,4 +313,16 @@ struct "volume-description" {
 struct "network-description" {
   field "id" "string" {}
   field "name" "string" {}
+}
+
+struct "vault-description" {
+  field "name" "string" {}
+  field "url" "string" {}
+  field "connected" "bool" {}
+  field "needs-auth" "bool" {}
+}
+
+struct "variable-description" {
+  field "value" "string" {}
+  field "source" "string" {}
 }

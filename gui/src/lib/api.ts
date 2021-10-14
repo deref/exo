@@ -171,11 +171,23 @@ const rpc = async (
   return await res.json();
 };
 
+export interface AddVaultInput {
+  name: string;
+  url: string;
+}
+
 export interface ProcessSpec {
   directory?: string;
   program: string;
   arguments: string[];
   environment?: Record<string, string>;
+}
+
+export interface VaultDescription {
+  name: string;
+  url: string;
+  needsAuth: boolean;
+  connected: boolean;
 }
 
 export interface WorkspaceDescription {
@@ -221,6 +233,11 @@ export interface ReadDirResult {
   entries: DirectoryEntry[];
 }
 
+export interface AuthEsvResult {
+  authUrl: string;
+  authCode: string;
+}
+
 export interface KernelApi {
   getUserHomeDir(): Promise<string>;
   readDir(path: string): Promise<ReadDirResult>;
@@ -231,25 +248,29 @@ export interface KernelApi {
   getVersion(): Promise<GetVersionResponse>;
   upgrade(): Promise<void>;
   ping(): Promise<void>;
+  authEsv(): Promise<AuthEsvResult>;
   describeTasks(input?: DescribeTasksInput): Promise<TaskDescription[]>;
+}
+
+export interface VariableDescription {
+  value: string;
+  source: string;
 }
 
 export interface WorkspaceApi {
   id: string;
-
   describeSelf(): Promise<WorkspaceDescription>;
 
   describeComponents(
     input?: DescribeComponentsInput,
   ): Promise<ComponentDescription[]>;
 
-  describeEnvironment(): Promise<Record<string, string>>;
-
+  describeEnvironment(): Promise<Record<string, VariableDescription>>;
+  describeVaults(): Promise<VaultDescription[]>;
   describeProcesses(): Promise<ProcessDescription[]>;
-
   describeVolumes(): Promise<VolumeDescription[]>;
-
   describeNetworks(): Promise<NetworkDescription[]>;
+  addVault(input: AddVaultInput): Promise<void>;
 
   destroy(): Promise<void>;
 
@@ -339,8 +360,12 @@ export const api = (() => {
       async describeTasks(
         input: DescribeTasksInput = {},
       ): Promise<TaskDescription[]> {
-        const { tasks } = (await invoke('describe-tasks', {})) as any;
+        const { tasks } = (await invoke('describe-tasks', input)) as any;
         return tasks as TaskDescription[];
+      },
+
+      async authEsv(): Promise<AuthEsvResult> {
+        return (await invoke('auth-esv', {})) as any;
       },
     };
   })();
@@ -350,6 +375,10 @@ export const api = (() => {
       rpc(`/workspace/${method}`, { id }, data);
     return {
       id,
+
+      async addVault(input: AddVaultInput) {
+        await invoke('add-vault', input);
+      },
 
       async describeSelf(): Promise<WorkspaceDescription> {
         const { description } = (await invoke('describe')) as any;
@@ -364,7 +393,14 @@ export const api = (() => {
         return components;
       },
 
-      async describeEnvironment(): Promise<Record<string, string>> {
+      async describeVaults(): Promise<VaultDescription[]> {
+        const { vaults } = (await invoke('describe-vaults')) as any;
+        return vaults;
+      },
+
+      async describeEnvironment(): Promise<
+        Record<string, VariableDescription>
+      > {
         const { variables } = (await invoke('describe-environment')) as any;
         return variables;
       },

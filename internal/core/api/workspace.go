@@ -82,6 +82,8 @@ func BuildBuilderMux(b *josh.MuxBuilder, factory func(req *http.Request) Builder
 type Workspace interface {
 	Process
 	Builder
+	DescribeVaults(context.Context, *DescribeVaultsInput) (*DescribeVaultsOutput, error)
+	AddVault(context.Context, *AddVaultInput) (*AddVaultOutput, error)
 	// Describes this workspace.
 	Describe(context.Context, *DescribeInput) (*DescribeOutput, error)
 	// Dispose resources, then delete the record of it.
@@ -122,6 +124,21 @@ type Workspace interface {
 	WriteFile(context.Context, *WriteFileInput) (*WriteFileOutput, error)
 	BuildComponents(context.Context, *BuildComponentsInput) (*BuildComponentsOutput, error)
 	DescribeEnvironment(context.Context, *DescribeEnvironmentInput) (*DescribeEnvironmentOutput, error)
+}
+
+type DescribeVaultsInput struct {
+}
+
+type DescribeVaultsOutput struct {
+	Vaults []VaultDescription `json:"vaults"`
+}
+
+type AddVaultInput struct {
+	Name string `json:"name"`
+	Url  string `json:"url"`
+}
+
+type AddVaultOutput struct {
 }
 
 type DescribeInput struct {
@@ -374,7 +391,7 @@ type DescribeEnvironmentInput struct {
 }
 
 type DescribeEnvironmentOutput struct {
-	Variables map[string]string `json:"variables"`
+	Variables map[string]VariableDescription `json:"variables"`
 }
 
 func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Workspace) {
@@ -392,6 +409,12 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	})
 	b.AddMethod("build", func(req *http.Request) interface{} {
 		return factory(req).Build
+	})
+	b.AddMethod("describe-vaults", func(req *http.Request) interface{} {
+		return factory(req).DescribeVaults
+	})
+	b.AddMethod("add-vault", func(req *http.Request) interface{} {
+		return factory(req).AddVault
 	})
 	b.AddMethod("describe", func(req *http.Request) interface{} {
 		return factory(req).Describe
@@ -527,4 +550,16 @@ type VolumeDescription struct {
 type NetworkDescription struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
+}
+
+type VaultDescription struct {
+	Name      string `json:"name"`
+	Url       string `json:"url"`
+	Connected bool   `json:"connected"`
+	NeedsAuth bool   `json:"needsAuth"`
+}
+
+type VariableDescription struct {
+	Value  string `json:"value"`
+	Source string `json:"source"`
 }

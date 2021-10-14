@@ -3,7 +3,9 @@ package server
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
@@ -14,6 +16,7 @@ import (
 	"github.com/deref/exo/internal/core/api"
 	state "github.com/deref/exo/internal/core/state/api"
 	"github.com/deref/exo/internal/deps"
+	"github.com/deref/exo/internal/esv"
 	eventd "github.com/deref/exo/internal/eventd/api"
 	"github.com/deref/exo/internal/gensym"
 	josh "github.com/deref/exo/internal/josh/server"
@@ -45,6 +48,73 @@ type Workspace struct {
 	Logger      logging.Logger // TODO: Embed in context, so it can be annotated with request info.
 	Docker      *dockerclient.Client
 	TaskTracker *task.TaskTracker
+	EsvClient   *esv.EsvClient
+}
+
+var _ api.Workspace = &Workspace{}
+
+var secretsUrlFile = "exo-secrets-url"
+
+type vaultConfig struct {
+	name string
+	url  string
+}
+
+func (ws *Workspace) getVaultConfigs(ctx context.Context) ([]vaultConfig, error) {
+	// NOTE: [VAULTS_IN_MANIFEST] Right now getVaultConfigs relies on an
+	// exo-secrets-url file in the workspace root to provide the vault. At the
+	// moment only one is supported. Instead we should add this to the state of
+	// the workspace and support multiple vaults.
+
+	secretConfigPath, err := ws.resolveWorkspacePath(ctx, secretsUrlFile)
+	if err != nil {
+		return nil, fmt.Errorf("resolving secrets config file path: %w", err)
+	}
+	secretsUrlBytes, err := ioutil.ReadFile(secretConfigPath)
+	if os.IsNotExist(err) {
+		return []vaultConfig{}, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("reading secrets config: %w", err)
+	}
+	secretsUrl := string(bytes.TrimSpace(secretsUrlBytes))
+	return []vaultConfig{{name: "esv-vault", url: secretsUrl}}, nil
+}
+
+// AddVault performs an upsert for the specified vault name and URL.
+func (ws *Workspace) AddVault(ctx context.Context, input *api.AddVaultInput) (*api.AddVaultOutput, error) {
+	// SEE NOTE [VAULTS_IN_MANIFEST]
+	secretConfigPath, err := ws.resolveWorkspacePath(ctx, secretsUrlFile)
+	if err != nil {
+		return nil, fmt.Errorf("resolving secrets config file path: %w", err)
+	}
+
+	if err := ioutil.WriteFile(secretConfigPath, []byte(input.Url), 0600); err != nil {
+		return nil, fmt.Errorf("writing secrets config file: %w", err)
+	}
+
+	return &api.AddVaultOutput{}, nil
+}
+
+func (ws *Workspace) DescribeVaults(ctx context.Context, input *api.DescribeVaultsInput) (*api.DescribeVaultsOutput, error) {
+	vaultConfigs, err := ws.getVaultConfigs(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting vault configs: %w", err)
+	}
+
+	descriptions := make([]api.VaultDescription, len(vaultConfigs))
+	for i, vaultConfig := range vaultConfigs {
+		// TODO: add a status command.
+		_, err = ws.EsvClient.GetWorkspaceSecrets(vaultConfig.url)
+		descriptions[i] = api.VaultDescription{
+			Name:      vaultConfig.name,
+			Url:       vaultConfig.url,
+			Connected: err == nil,
+			NeedsAuth: errors.Is(err, esv.AuthError),
+		}
+	}
+
+	return &api.DescribeVaultsOutput{Vaults: descriptions}, nil
 }
 
 func (ws *Workspace) logEventf(ctx context.Context, format string, v ...interface{}) {
@@ -356,13 +426,17 @@ func (ws *Workspace) newController(ctx context.Context, desc api.ComponentDescri
 			Err: fmt.Errorf("environment error: %w", err),
 		}
 	}
+	simpleEnv := map[string]string{}
+	for k, v := range env {
+		simpleEnv[k] = v.Value
+	}
 	base := core.ComponentBase{
 		ComponentID:          desc.ID,
 		ComponentName:        desc.Name,
 		ComponentState:       desc.State,
 		WorkspaceID:          ws.ID,
 		WorkspaceRoot:        description.Root,
-		WorkspaceEnvironment: env,
+		WorkspaceEnvironment: simpleEnv,
 		Logger:               ws.Logger,
 	}
 	switch desc.Type {
@@ -414,21 +488,39 @@ func (ws *Workspace) DescribeEnvironment(ctx context.Context, input *api.Describ
 	}, nil
 }
 
-func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]string, error) {
+func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]api.VariableDescription, error) {
 	envPath, err := ws.resolveWorkspacePath(ctx, ".env")
 	if err != nil {
 		return nil, fmt.Errorf("resolving env file path: %w", err)
 	}
 
-	env := map[string]string{}
+	env := map[string]api.VariableDescription{}
+
+	describeVaultsResult, err := ws.DescribeVaults(ctx, &api.DescribeVaultsInput{})
+	if err != nil {
+		return nil, fmt.Errorf("getting vaults: %w", err)
+	}
+	for _, vault := range describeVaultsResult.Vaults {
+		secrets, err := ws.EsvClient.GetWorkspaceSecrets(vault.Url)
+		if err != nil {
+			ws.logEventf(ctx, "getting workspace secrets: %v", err)
+			continue
+		}
+		for k, val := range secrets {
+			env[k] = api.VariableDescription{
+				Value:  val,
+				Source: vault.Name,
+			}
+		}
+	}
 
 	// Encourage programs to log with colors enabled.  The closest thing to a
 	// standard for this is <https://bixense.com/clicolors/#bug-reports>, but
 	// support is spotty. This may grow if there are other popular enviornment
 	// variables to include. If we grow PTY support, this may become unnecessary.
-	env["CLICOLOR"] = "1"
-	env["CLICOLOR_FORCE"] = "1"
-	env["FORCE_COLOR"] = "3" // https://github.com/chalk/chalk/tree/9d5b9a133c3f8aa9f24de283660de3f732964aaa#supportscolor
+	env["CLICOLOR"] = api.VariableDescription{Value: "1", Source: "exo"}
+	env["CLICOLOR_FORCE"] = api.VariableDescription{Value: "1", Source: "exo"}
+	env["FORCE_COLOR"] = api.VariableDescription{Value: "3", Source: "exo"} // https://github.com/chalk/chalk/tree/9d5b9a133c3f8aa9f24de283660de3f732964aaa#supportscolor
 
 	// Apply user's environment.
 	// TODO: This should probably somehow shell-out to get the user's current
@@ -438,7 +530,10 @@ func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]string, err
 		parts := strings.SplitN(assign, "=", 2)
 		key := parts[0]
 		val := parts[1]
-		env[key] = val
+		env[key] = api.VariableDescription{
+			Value:  val,
+			Source: "server environment",
+		}
 	}
 
 	// Apply .env file, if one exists.
@@ -450,7 +545,7 @@ func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]string, err
 		return nil, fmt.Errorf("processing .env file: %w", err)
 	}
 	for name, value := range dotEnvMap {
-		env[name] = value
+		env[name] = api.VariableDescription{Value: value, Source: "env file"}
 	}
 
 	return env, nil

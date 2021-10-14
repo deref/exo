@@ -10,6 +10,7 @@ import (
 )
 
 type Kernel interface {
+	AuthEsv(context.Context, *AuthEsvInput) (*AuthEsvOutput, error)
 	CreateProject(context.Context, *CreateProjectInput) (*CreateProjectOutput, error)
 	DescribeTemplates(context.Context, *DescribeTemplatesInput) (*DescribeTemplatesOutput, error)
 	CreateWorkspace(context.Context, *CreateWorkspaceInput) (*CreateWorkspaceOutput, error)
@@ -28,6 +29,14 @@ type Kernel interface {
 	DescribeTasks(context.Context, *DescribeTasksInput) (*DescribeTasksOutput, error)
 	GetUserHomeDir(context.Context, *GetUserHomeDirInput) (*GetUserHomeDirOutput, error)
 	ReadDir(context.Context, *ReadDirInput) (*ReadDirOutput, error)
+}
+
+type AuthEsvInput struct {
+}
+
+type AuthEsvOutput struct {
+	AuthUrl  string `json:"authUrl"`
+	AuthCode string `json:"authCode"`
 }
 
 type CreateProjectInput struct {
@@ -131,6 +140,9 @@ type ReadDirOutput struct {
 }
 
 func BuildKernelMux(b *josh.MuxBuilder, factory func(req *http.Request) Kernel) {
+	b.AddMethod("auth-esv", func(req *http.Request) interface{} {
+		return factory(req).AuthEsv
+	})
 	b.AddMethod("create-project", func(req *http.Request) interface{} {
 		return factory(req).CreateProject
 	})

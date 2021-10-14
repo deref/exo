@@ -21,6 +21,11 @@ func GetKernel(client *josh.Client) *Kernel {
 	}
 }
 
+func (c *Kernel) AuthEsv(ctx context.Context, input *api.AuthEsvInput) (output *api.AuthEsvOutput, err error) {
+	err = c.client.Invoke(ctx, "auth-esv", input, &output)
+	return
+}
+
 func (c *Kernel) CreateProject(ctx context.Context, input *api.CreateProjectInput) (output *api.CreateProjectOutput, err error) {
 	err = c.client.Invoke(ctx, "create-project", input, &output)
 	return

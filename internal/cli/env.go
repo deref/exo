@@ -51,7 +51,7 @@ func getEnvv() ([]string, error) {
 	envv := make([]string, i)
 	for i, key := range keys {
 		value := output.Variables[key]
-		envv[i] = fmt.Sprintf("%s=%s", key, shellescape.Quote(value))
+		envv[i] = fmt.Sprintf("%s=%s", key, shellescape.Quote(value.Value))
 	}
 	return envv, nil
 }
