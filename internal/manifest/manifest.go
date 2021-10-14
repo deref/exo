@@ -65,16 +65,12 @@ func (l *Loader) Load() (*exohcl.Manifest, error) {
 	default:
 		return nil, fmt.Errorf("unknown manifest format: %q", l.Format)
 	}
-	hclloader := &exohcl.Loader{
-		Filename: l.Filename,
-	}
+	var m *exohcl.Manifest
 	if converter == nil {
-		return hclloader.LoadBytes(l.Bytes)
+		m = exohcl.Parse(l.Filename, l.Bytes)
 	} else {
 		file, diags := converter.Convert(l.Bytes)
-		if diags.HasErrors() {
-			return nil, diags
-		}
-		return hclloader.LoadHCL(file)
+		m = exohcl.NewManifest(l.Filename, file, diags)
 	}
+	return m, m.Diagnostics()
 }

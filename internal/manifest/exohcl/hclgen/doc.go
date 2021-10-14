@@ -1,2 +1,2 @@
-// Package hclgen provides utility functions for generating HCL from ASTs.
+// Package hclgen generates formatted HCL from ASTs.
 package hclgen

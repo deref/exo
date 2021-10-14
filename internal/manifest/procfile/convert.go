@@ -5,6 +5,7 @@ import (
 	"strconv"
 
 	"github.com/deref/exo/internal/manifest/exohcl"
+	"github.com/deref/exo/internal/manifest/exohcl/hclgen"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 )
@@ -43,16 +44,16 @@ func (c *Converter) Convert(bs []byte) (*hcl.File, hcl.Diagnostics) {
 		// Build HCL attributes.
 		args := make([]hclsyntax.Expression, len(p.Arguments))
 		for i, arg := range p.Arguments {
-			args[i] = exohcl.NewStringLiteral(arg, p.Range)
+			args[i] = hclgen.NewStringLiteral(arg, p.Range)
 		}
 		attrs := []*hclsyntax.Attribute{
 			{
 				Name: "program",
-				Expr: exohcl.NewStringLiteral(p.Program, p.Range),
+				Expr: hclgen.NewStringLiteral(p.Program, p.Range),
 			},
 			{
 				Name: "arguments",
-				Expr: exohcl.NewTuple(args, p.Range),
+				Expr: hclgen.NewTuple(args, p.Range),
 			},
 		}
 		if len(environment) > 0 {
@@ -61,8 +62,8 @@ func (c *Converter) Convert(bs []byte) (*hcl.File, hcl.Diagnostics) {
 			}
 			for k, v := range environment {
 				envExpr.Items = append(envExpr.Items, hclsyntax.ObjectConsItem{
-					KeyExpr:   exohcl.NewStringLiteral(k, p.Range),
-					ValueExpr: exohcl.NewStringLiteral(v, p.Range),
+					KeyExpr:   hclgen.NewObjStringKey(k, p.Range),
+					ValueExpr: hclgen.NewStringLiteral(v, p.Range),
 				})
 			}
 			attrs = append(attrs, &hclsyntax.Attribute{
@@ -75,7 +76,7 @@ func (c *Converter) Convert(bs []byte) (*hcl.File, hcl.Diagnostics) {
 			Type:   "process",
 			Labels: []string{name},
 			Body: &hclsyntax.Body{
-				Attributes: exohcl.NewAttributes(attrs...),
+				Attributes: hclgen.NewAttributes(attrs...),
 			},
 		})
 	}

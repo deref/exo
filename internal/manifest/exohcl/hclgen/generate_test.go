@@ -24,6 +24,7 @@ func TestGenerate(t *testing.T) {
 			}
 			child "p" "q" {
 				e = f(x)
+				obj = { bare = "BARE", "quoted" = "QUOTED" }
 			}
 		}`,
 	}
@@ -33,7 +34,7 @@ func TestGenerate(t *testing.T) {
 			continue
 		}
 		var buf bytes.Buffer
-		_, err := WriteTo(&buf, &hclsyntax.File{
+		_, err := WriteTo(&buf, &hcl.File{
 			Body:  f.Body.(*hclsyntax.Body),
 			Bytes: f.Bytes,
 		})

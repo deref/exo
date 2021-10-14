@@ -133,6 +133,8 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 	if invalidManifest {
 		return nil, errutil.WithHTTPStatus(http.StatusBadRequest, err)
 	}
+	manifestComponents := m.Components()
+	numComponents := manifestComponents.Len()
 
 	describeOutput, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{})
 	if err != nil {
@@ -168,12 +170,13 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 
 	// 1.
 	allComponents := deps.New()
-	for _, c := range m.Components {
+	for i := 0; i < numComponents; i++ {
+		c := manifestComponents.Index(i)
 		allComponents.AddNode(&componentNode{
 			component: c,
 		})
-		for _, dependency := range c.DependsOn {
-			allComponents.AddEdge(c.Name, dependency)
+		for _, dependency := range c.DependsOn() {
+			allComponents.AddEdge(c.Name(), dependency)
 		}
 	}
 
@@ -210,7 +213,7 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 	// 5.
 	updateSet := make(map[string]struct{})
 
-	recreateComponentOnce := func(name string, oldComponent api.ComponentDescription, newComponent exohcl.Component) {
+	recreateComponentOnce := func(name string, oldComponent api.ComponentDescription, newComponent *exohcl.Component) {
 		// 6.1.1.
 		if _, alreadyUpdated := updateSet[name]; alreadyUpdated {
 			return
@@ -232,19 +235,19 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 			task: job.CreateChild("re-creating " + name),
 			run: func(t *task.Task) error {
 				// Should the replacement component get the old component's ID?
-				return ws.createComponent(t, newComponent, gensym.RandomBase32())
+				return ws.createComponent(t, manifestComponentToCreate(newComponent), gensym.RandomBase32())
 			},
 		})
-		for _, dependency := range newComponent.DependsOn {
+		for _, dependency := range newComponent.DependsOn() {
 			createGraph.AddEdge(name, dependency)
 		}
 		updateSet[name] = struct{}{}
 	}
 
 	// 6.
-	for _, newComponent := range m.Components {
-		newComponent := newComponent
-		name := newComponent.Name
+	for i := 0; i < numComponents; i++ {
+		newComponent := manifestComponents.Index(i)
+		name := newComponent.Name()
 
 		if oldComponent, exists := oldComponents[name]; exists {
 			name := name
@@ -263,10 +266,10 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 				name: name,
 				task: job.CreateChild("adding " + name),
 				run: func(t *task.Task) error {
-					return ws.createComponent(t, newComponent, gensym.RandomBase32())
+					return ws.createComponent(t, manifestComponentToCreate(newComponent), gensym.RandomBase32())
 				},
 			})
-			for _, dependency := range newComponent.DependsOn {
+			for _, dependency := range newComponent.DependsOn() {
 				createGraph.AddEdge(name, dependency)
 			}
 		}
@@ -476,11 +479,7 @@ func (ws *Workspace) CreateComponent(ctx context.Context, input *api.CreateCompo
 	go func() {
 		defer job.Finish()
 
-		err := ws.createComponent(ctx, exohcl.Component{
-			Name: input.Name,
-			Type: input.Type,
-			Spec: input.Spec,
-		}, id)
+		err := ws.createComponent(ctx, input, id)
 		if err != nil {
 			ws.logEventf(ctx, "error creating %s: %v", input.Name, err)
 			job.Fail(err)
@@ -495,19 +494,19 @@ func (ws *Workspace) CreateComponent(ctx context.Context, input *api.CreateCompo
 	}, nil
 }
 
-func (ws *Workspace) createComponent(ctx context.Context, component exohcl.Component, id string) error {
-	if err := exohcl.ValidateName(component.Name); err != nil {
-		return errutil.HTTPErrorf(http.StatusBadRequest, "component name %q invalid: %w", component.Name, err)
+func (ws *Workspace) createComponent(ctx context.Context, input *api.CreateComponentInput, id string) error {
+	if err := exohcl.ValidateName(input.Name); err != nil {
+		return errutil.HTTPErrorf(http.StatusBadRequest, "component name %q invalid: %w", input.Name, err)
 	}
 
 	if _, err := ws.Store.AddComponent(ctx, &state.AddComponentInput{
 		WorkspaceID: ws.ID,
 		ID:          id,
-		Name:        component.Name,
-		Type:        component.Type,
-		Spec:        component.Spec,
+		Name:        input.Name,
+		Type:        input.Type,
+		Spec:        input.Spec,
 		Created:     chrono.NowString(ctx),
-		DependsOn:   component.DependsOn,
+		DependsOn:   input.DependsOn,
 	}); err != nil {
 		return fmt.Errorf("adding component: %w", err)
 	}
@@ -517,14 +516,23 @@ func (ws *Workspace) createComponent(ctx context.Context, component exohcl.Compo
 	// TODO: Store.AddComponent could return a component description?
 	desc := api.ComponentDescription{
 		ID:        id,
-		Name:      component.Name,
-		Type:      component.Type,
-		Spec:      component.Spec,
-		DependsOn: component.DependsOn,
+		Name:      input.Name,
+		Type:      input.Type,
+		Spec:      input.Spec,
+		DependsOn: input.DependsOn,
 	}
 	return ws.control(ctx, desc, &api.InitializeInput{
-		Spec: component.Spec,
+		Spec: input.Spec,
 	})
+}
+
+func manifestComponentToCreate(c *exohcl.Component) *api.CreateComponentInput {
+	return &api.CreateComponentInput{
+		Type:      c.Type(),
+		Name:      c.Name(),
+		Spec:      c.Spec(),
+		DependsOn: c.DependsOn(),
+	}
 }
 
 func (ws *Workspace) UpdateComponent(ctx context.Context, input *api.UpdateComponentInput) (*api.UpdateComponentOutput, error) {
@@ -1183,9 +1191,9 @@ func (n *runTaskNode) ID() string {
 }
 
 type componentNode struct {
-	component exohcl.Component
+	component *exohcl.Component
 }
 
 func (n *componentNode) ID() string {
-	return n.component.Name
+	return n.component.Name()
 }

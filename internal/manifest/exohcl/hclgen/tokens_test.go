@@ -1,4 +1,4 @@
-package exohclwrite
+package hclgen
 
 import (
 	"testing"

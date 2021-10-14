@@ -1,7 +1,7 @@
 // This file implements HCL generation for expressions. At time of writing,
 // the official HCL package only supports generation of values as literals.
 
-package exohclwrite
+package hclgen
 
 import (
 	"fmt"
@@ -12,6 +12,13 @@ import (
 	"github.com/zclconf/go-cty/cty"
 	"github.com/zclconf/go-cty/cty/function/stdlib"
 )
+
+func FormatBlock(block *hcl.Block) []byte {
+	f := hclwrite.NewEmptyFile()
+	out := f.Body().AppendNewBlock(block.Type, block.Labels)
+	genBodyTo(out.Body(), block.Body)
+	return f.Bytes()
+}
 
 func FormatExpression(x hclsyntax.Expression) []byte {
 	f := hclwrite.NewEmptyFile()
@@ -279,7 +286,16 @@ func appendTokensForExpression(toks hclwrite.Tokens, x hclsyntax.Expression) hcl
 		})
 
 	case *hclsyntax.ObjectConsKeyExpr:
-		toks = appendTokensForExpression(toks, x.Wrapped)
+		var unwrapped hclsyntax.Expression = x.Wrapped
+		if !x.ForceNonLiteral {
+			travExpr, isTraversal := unwrapped.(*hclsyntax.ScopeTraversalExpr)
+			if isTraversal && len(travExpr.Traversal) == 1 {
+				if s := hcl.ExprAsKeyword(unwrapped); s != "" {
+					unwrapped = NewIdentifier(s, unwrapped.Range())
+				}
+			}
+		}
+		toks = appendTokensForExpression(toks, unwrapped)
 
 	case *hclsyntax.ForExpr:
 		panic(fmt.Errorf("not yet supported expression type: %T", x))

@@ -4,7 +4,7 @@ import (
 	"io"
 	"sort"
 
-	"github.com/deref/exo/internal/manifest/exohcl/exohclwrite"
+	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
 )
@@ -12,26 +12,27 @@ import (
 // Writes an HCL file AST to w. Note that syntax trivia (comments and
 // whitespace) are not preserved, and so this function is only appropriate for
 // conversion/generation use cases.
-func WriteTo(w io.Writer, f *hclsyntax.File) (int64, error) {
+func WriteTo(w io.Writer, f *hcl.File) (int64, error) {
 	out := hclwrite.NewEmptyFile()
 	genFileTo(out, f)
 	return out.WriteTo(w)
 }
 
-func genFileTo(out *hclwrite.File, in *hclsyntax.File) {
+func genFileTo(out *hclwrite.File, in *hcl.File) {
 	genBodyTo(out.Body(), in.Body)
 }
 
-func genBodyTo(out *hclwrite.Body, in *hclsyntax.Body) {
-	attrs := make([]*hclsyntax.Attribute, 0, len(in.Attributes))
-	for _, attr := range in.Attributes {
+func genBodyTo(out *hclwrite.Body, in hcl.Body) {
+	syn := in.(*hclsyntax.Body) // TODO: Handle non-syntax bodies as well.
+	attrs := make([]*hclsyntax.Attribute, 0, len(syn.Attributes))
+	for _, attr := range syn.Attributes {
 		attrs = append(attrs, attr)
 	}
 	sort.Sort(attributeSort(attrs))
 	for _, attr := range attrs {
-		out.SetAttributeRaw(attr.Name, exohclwrite.TokensForExpression(attr.Expr))
+		out.SetAttributeRaw(attr.Name, TokensForExpression(attr.Expr))
 	}
-	for _, block := range in.Blocks {
+	for _, block := range syn.Blocks {
 		out.AppendBlock(genBlock(block))
 	}
 }
