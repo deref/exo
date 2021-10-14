@@ -121,8 +121,8 @@ func (c *EsvClient) runCommand(output interface{}, host, commandName string, bod
 
 }
 
-func (c *EsvClient) GetWorkspaceSecrets(projectURL string) (map[string]string, error) {
-	type describeProjectResp struct {
+func (c *EsvClient) GetWorkspaceSecrets(vaultURL string) (map[string]string, error) {
+	type describeVaultResp struct {
 		ID          string `json:"id"`
 		DisplayName string `json:"displayName"`
 		Secrets     []struct {
@@ -132,21 +132,21 @@ func (c *EsvClient) GetWorkspaceSecrets(projectURL string) (map[string]string, e
 		} `json:"secrets"`
 	}
 
-	organizationID, projectID, err := getIdsFromUrl(projectURL)
+	organizationID, vaultID, err := getIdsFromUrl(vaultURL)
 	if err != nil {
 		return nil, fmt.Errorf("could not find IDs: %w", err)
 	}
 
-	uri, err := url.Parse(projectURL)
+	uri, err := url.Parse(vaultURL)
 	if err != nil {
 		return nil, fmt.Errorf("parsing secrets URL: %w", err)
 	}
 	host := url.URL{Scheme: uri.Scheme, Host: uri.Host}
 
-	resp := describeProjectResp{}
+	resp := describeVaultResp{}
 	err = c.runCommand(&resp, host.String(), "describe-project", map[string]string{
 		"organizationId": organizationID,
-		"projectId":      projectID,
+		"vaultId":        vaultID,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("running describe-project command: %w", err)
@@ -158,10 +158,10 @@ func (c *EsvClient) GetWorkspaceSecrets(projectURL string) (map[string]string, e
 	return secrets, nil
 }
 
-func getIdsFromUrl(projectURL string) (organizationID, projectID string, err error) {
-	parsedUrl, err := url.Parse(projectURL)
+func getIdsFromUrl(vaultURL string) (organizationID, vaultID string, err error) {
+	parsedUrl, err := url.Parse(vaultURL)
 	if err != nil {
-		return "", "", fmt.Errorf("parsing project URL: %w", err)
+		return "", "", fmt.Errorf("parsing vault URL: %w", err)
 	}
 
 	parts := strings.Split(parsedUrl.Path, "/")
@@ -171,15 +171,15 @@ func getIdsFromUrl(projectURL string) (organizationID, projectID string, err err
 				organizationID = parts[i+1]
 			}
 		}
-		if part == "projects" {
+		if part == "vaults" {
 			if i+1 < len(parts) {
-				projectID = parts[i+1]
+				vaultID = parts[i+1]
 			}
 		}
-		if organizationID != "" && projectID != "" {
+		if organizationID != "" && vaultID != "" {
 			return
 		}
 	}
-	err = fmt.Errorf("could not find IDs in URL: %q", projectURL)
+	err = fmt.Errorf("could not find IDs in URL: %q", vaultURL)
 	return
 }
