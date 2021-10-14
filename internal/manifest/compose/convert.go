@@ -121,6 +121,9 @@ func (c *Converter) Convert(bs []byte) (*hcl.File, hcl.Diagnostics) {
 				return nil, diags
 			}
 		}
+		// TODO: It probably makes more sense for these labels to be omitted here,
+		// but preserved if adopting an existing Docker resource. As it is now,
+		// they show up in converted manifests, which doesn't make much sense.
 		service.Labels["com.docker.compose.project"] = &c.ProjectName
 		service.Labels["com.docker.compose.service"] = &originalName
 
