@@ -107,7 +107,7 @@ func setDefaults(cfg *Config) {
 		cfg.TokensFile = filepath.Join(cfg.VarDir, "token")
 	}
 	if cfg.EsvTokenPath == "" {
-		cfg.EsvTokenPath = filepath.Join(cfg.VarDir, "esv-token")
+		cfg.EsvTokenPath = filepath.Join(cfg.VarDir, "deref-token")
 	}
 
 	if cfg.HTTPPort == 0 {
