@@ -1,18 +1,18 @@
 package compose
 
 import (
-	"strings"
 	"testing"
 
-	"github.com/deref/exo/internal/util/yamlutil"
 	"github.com/stretchr/testify/assert"
 )
 
 func TestParseBytes(t *testing.T) {
 	check := func(s string, expected int64) {
-		actual, err := ParseBytes(s)
-		assert.NoError(t, err)
-		assert.Equal(t, expected, actual)
+		var actual Bytes
+		err := actual.Parse(s)
+		if assert.NoError(t, err) {
+			assert.Equal(t, expected, actual.Int())
+		}
 	}
 	check("5", 5)
 	check("10b", 10)
@@ -24,17 +24,13 @@ func TestParseBytes(t *testing.T) {
 	check("1gb", 1024*1024*1024)
 }
 
-func TestBytesYaml(t *testing.T) {
-	var actual struct {
-		Int Bytes
-		Str Bytes
-	}
-	yamlutil.MustUnmarshalString(`
-int: 1234
-str: 5k
-`, &actual)
-	assert.Equal(t, int64(1234), int64(actual.Int))
-	assert.Equal(t, int64(5120), int64(actual.Str))
-
-	assert.Equal(t, "1024", strings.TrimSpace(yamlutil.MustMarshalString(Bytes(1024))))
+func TestBytesYAML(t *testing.T) {
+	testYAML(t, "int", `1234`, Bytes{Quantity: 1234})
+	testYAML(t, "string", `5k`, Bytes{
+		Quantity: 5,
+		Unit: ByteUnit{
+			Suffix: "k",
+			Scalar: 1024,
+		},
+	})
 }
