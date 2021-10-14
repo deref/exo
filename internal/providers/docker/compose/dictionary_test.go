@@ -1,52 +1,63 @@
 package compose
 
 import (
-	"strings"
 	"testing"
-
-	"github.com/deref/exo/internal/util/yamlutil"
-	"github.com/stretchr/testify/assert"
 )
 
-func strAddr(s string) *string {
-	return &s
+func TestDictionaryItemYAML(t *testing.T) {
+	testYAML(t, "bare", `key`, DictionaryItem{
+		Syntax: DictionarySyntaxArray,
+		Key:    "key",
+	})
+	testYAML(t, "colon_empty", `key:`, DictionaryItem{
+		Syntax: DictionarySyntaxMap,
+		Key:    "key",
+	})
+	testYAML(t, "colon_value", `key: value`, DictionaryItem{
+		Syntax: DictionarySyntaxMap,
+		Key:    "key",
+		Value:  "value",
+	})
+	testYAML(t, "equal", `key=value`, DictionaryItem{
+		Syntax: DictionarySyntaxArray,
+		Key:    "key",
+		Value:  "value",
+	})
 }
 
-func TestDictionaryYaml(t *testing.T) {
-	type Data struct {
-		Dict Dictionary `yaml:"dict"`
-	}
-
-	data := Data{
-		Dict: Dictionary(map[string]*string{
-			"a": strAddr("1"),
-			"b": strAddr("2"),
-		}),
-	}
-	mapStr := `
-dict:
-  a: "1"
-  b: "2"
-`
-	arrayStr := `
-dict:
-  - a=1
-  - b=2
-`
-	assert.Equal(t,
-		strings.TrimSpace(mapStr),
-		strings.TrimSpace(yamlutil.MustMarshalString(data)),
-	)
-
-	{
-		var actual Data
-		yamlutil.MustUnmarshalString(mapStr, &actual)
-		assert.Equal(t, data, actual)
-	}
-
-	{
-		var actual Data
-		yamlutil.MustUnmarshalString(arrayStr, &actual)
-		assert.Equal(t, data, actual)
-	}
+func TestDictionaryYAML(t *testing.T) {
+	testYAML(t, "map", `
+key: value
+novalue:
+`, Dictionary{
+		Syntax: DictionarySyntaxMap,
+		Items: []DictionaryItem{
+			{
+				Syntax: DictionarySyntaxMap,
+				Key:    "key",
+				Value:  "value",
+			},
+			{
+				Syntax: DictionarySyntaxMap,
+				Key:    "novalue",
+			},
+		},
+	})
+	testYAML(t, "slice", `
+- key=value
+- novalue
+`, Dictionary{
+		Syntax: DictionarySyntaxArray,
+		Items: []DictionaryItem{
+			{
+				Syntax: DictionarySyntaxArray,
+				Key:    "key",
+				Value:  "value",
+			},
+			{
+				Syntax: DictionarySyntaxArray,
+				Key:    "novalue",
+			},
+		},
+	})
 }

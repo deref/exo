@@ -1,82 +1,134 @@
 package compose
 
 import (
+	"errors"
 	"fmt"
-	"sort"
-	"strconv"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
-// string->string mapping that may be encoded as either a map or an array of
-// pairs each encoded as "name=value". If the equal sign is not supplied,
-// the value is treated as nil.
-type Dictionary map[string]*string
+type DictionarySyntax rune
 
-func (dict Dictionary) MarshalYAML() (interface{}, error) {
-	return map[string]*string(dict), nil
+const (
+	DictionarySyntaxUnknown DictionarySyntax = 0
+	DictionarySyntaxMap                      = 'M'
+	DictionarySyntaxArray                    = 'A'
+)
+
+type Dictionary struct {
+	Syntax DictionarySyntax
+	Items  []DictionaryItem
 }
 
-type stringOrNum string
+type DictionaryItem struct {
+	Syntax DictionarySyntax
+	Key    string
+	Value  string
+}
 
-func (sn *stringOrNum) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var s string
-	if err := unmarshal(&s); err != nil {
-		return err
+func (dict Dictionary) MarshalYAML() (interface{}, error) {
+	if dict.Syntax == DictionarySyntaxArray {
+		return dict.Items, nil
 	}
+	node := &yaml.Node{
+		Kind:    yaml.MappingNode,
+		Content: make([]*yaml.Node, len(dict.Items)*2),
+	}
+	for i, item := range dict.Items {
+		keyNode, valueNode := mapItemNodes(item)
+		node.Content[i*2+0] = &keyNode
+		node.Content[i*2+1] = &valueNode
+	}
+	return node, nil
+}
 
-	// This is necessary as otherwise you end up parsing the number and converting
-	// it back to a string. That means a value like "99999999999999.999" becomes
-	// "1e+14".
-	if _, err := strconv.ParseFloat(s, 64); err == nil {
-		*sn = stringOrNum(s)
+func (dict *Dictionary) UnmarshalYAML(node *yaml.Node) error {
+	switch node.Tag {
+	case "!!map":
+		dict.Syntax = DictionarySyntaxMap
+		n := len(node.Content) / 2
+		dict.Items = make([]DictionaryItem, n)
+		for i := 0; i < n; i++ {
+			if err := dict.Items[i].UnmarshalYAML(&yaml.Node{
+				Kind: yaml.MappingNode,
+				Content: []*yaml.Node{
+					node.Content[i*2+0],
+					node.Content[i*2+1],
+				},
+			}); err != nil {
+				return err
+			}
+		}
+		return nil
+	case "!!seq":
+		dict.Syntax = DictionarySyntaxArray
+		return node.Decode(&dict.Items)
+	default:
+		return fmt.Errorf("expected !!seq or !!map, got %s", node.ShortTag())
+	}
+}
+
+func (item DictionaryItem) MarshalYAML() (interface{}, error) {
+	if item.Syntax == DictionarySyntaxArray {
+		if item.Value == "" {
+			return item.Key, nil
+		}
+		return fmt.Sprintf("%s=%s", item.Key, item.Value), nil
+	}
+	keyNode, valueNode := mapItemNodes(item)
+	return &yaml.Node{
+		Kind: yaml.MappingNode,
+		Content: []*yaml.Node{
+			&keyNode,
+			&valueNode,
+		},
+	}, nil
+}
+
+func mapItemNodes(item DictionaryItem) (keyNode, valueNode yaml.Node) {
+	if err := keyNode.Encode(item.Key); err != nil {
+		panic(err)
+	}
+	if item.Value == "" {
+		valueNode.Kind = yaml.ScalarNode
+	} else {
+		if err := valueNode.Encode(item.Value); err != nil {
+			panic(err)
+		}
+	}
+	return
+}
+
+func (item *DictionaryItem) UnmarshalYAML(node *yaml.Node) error {
+	var s string
+	err := node.Decode(&s)
+	if err == nil {
+		item.Syntax = DictionarySyntaxArray
+		parts := strings.SplitN(s, "=", 2)
+		item.Key = parts[0]
+		if len(parts) > 1 {
+			item.Value = parts[1]
+		}
 		return nil
 	}
 
-	*sn = stringOrNum(s)
-	return nil
-}
-
-func (dict *Dictionary) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var data interface{}
-	if err := unmarshal(&data); err != nil {
+	var m map[string]string
+	if err := node.Decode(&m); err != nil {
 		return err
 	}
-
-	res := make(map[string]*string)
-	switch data := data.(type) {
-	case map[string]interface{}:
-		stringOrNumMap := make(map[string]stringOrNum)
-		if err := unmarshal(&stringOrNumMap); err != nil {
-			return err
-		}
-		for k, v := range stringOrNumMap {
-			s := string(v)
-			res[k] = &s
-		}
-	case []interface{}:
-		for _, elem := range data {
-			s, ok := elem.(string)
-			if !ok {
-				return fmt.Errorf("expected elements to be string, got %T", elem)
-			}
-			parts := strings.SplitN(s, "=", 2)
-			k := parts[0]
-			switch len(parts) {
-			case 1:
-				res[k] = nil
-			case 2:
-				res[k] = &parts[1]
-			default:
-				panic("unreachable")
-			}
-		}
-	default:
-		return fmt.Errorf("expected map or array, got %T", data)
+	if len(m) != 1 {
+		return errors.New("expected single mapping")
 	}
-
-	*dict = res
+	item.Syntax = DictionarySyntaxMap
+	for k, v := range m {
+		item.Key = k
+		item.Value = v
+	}
 	return nil
 }
+
+/*
 
 func (dict Dictionary) Slice() []string {
 	m := map[string]*string(dict)
@@ -104,3 +156,5 @@ func (dict Dictionary) WithoutNils() map[string]string {
 	}
 	return m
 }
+
+*/
