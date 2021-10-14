@@ -46,7 +46,7 @@ func (kern *Kernel) AuthEsv(ctx context.Context, input *api.AuthEsvInput) (*api.
 	}
 
 	return &api.AuthEsvOutput{
-		AuthCode: authResponse.DeviceCode,
+		AuthCode: authResponse.UserCode,
 		AuthUrl:  authResponse.AuthURL,
 	}, nil
 }
