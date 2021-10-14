@@ -13,19 +13,6 @@ import (
 	"github.com/zclconf/go-cty/cty/function/stdlib"
 )
 
-func FormatBlock(block *hcl.Block) []byte {
-	f := hclwrite.NewEmptyFile()
-	out := f.Body().AppendNewBlock(block.Type, block.Labels)
-	genBodyTo(out.Body(), block.Body)
-	return f.Bytes()
-}
-
-func FormatExpression(x hclsyntax.Expression) []byte {
-	f := hclwrite.NewEmptyFile()
-	f.Body().AppendUnstructuredTokens(TokensForExpression(x))
-	return f.Bytes()
-}
-
 func TokensForExpression(x hclsyntax.Expression) hclwrite.Tokens {
 	return appendTokensForExpression(nil, x)
 }

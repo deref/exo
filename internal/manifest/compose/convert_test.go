@@ -1,7 +1,6 @@
 package compose_test
 
 import (
-	"bytes"
 	"testing"
 
 	"github.com/deref/exo/internal/manifest/compose"
@@ -9,7 +8,6 @@ import (
 	"github.com/deref/exo/internal/manifest/exohcl/testutil"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
-	"github.com/stretchr/testify/assert"
 )
 
 func TestConvert(t *testing.T) {
@@ -108,19 +106,20 @@ networks:
 		testCase := testCase
 		t.Run(testCase.Name, func(t *testing.T) {
 			converter := &compose.Converter{ProjectName: projectName}
-			out, diags := converter.Convert([]byte(testCase.In))
+			actual, diags := converter.Convert([]byte(testCase.In))
 			if len(diags) > 0 {
-				assert.NoError(t, diags)
-				return
+				t.Fatalf("error converting: %v", diags)
 			}
-			var buf bytes.Buffer
-			_, err := hclgen.WriteTo(&buf, &hcl.File{
-				Body:  out.Body.(*hclsyntax.Body),
-				Bytes: out.Bytes,
-			})
-			if assert.NoError(t, err) {
-				// These tests are too brittle, as they are very sensitive to spacing and ordering.
-				assert.Equal(t, testutil.CleanHCL([]byte(testCase.Expected)), testutil.CleanHCL(buf.Bytes()))
+
+			expected, diags := hclsyntax.ParseConfig([]byte(testCase.Expected), testCase.Name, hcl.InitialPos)
+			if len(diags) > 0 {
+				t.Fatalf("malformed test case: %v", diags)
+			}
+
+			if !testutil.FileEquiv(expected, &hcl.File{Body: actual.Body.(*hclsyntax.Body)}) {
+				t.Errorf("hcl files inequivalent. expected:\n%s\nactual:\n%s",
+					testCase.Expected,
+					string(hclgen.FormatFile(actual)))
 			}
 		})
 	}

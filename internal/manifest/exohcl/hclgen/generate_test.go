@@ -1,9 +1,9 @@
 package hclgen_test
 
 import (
-	"bytes"
 	"testing"
 
+	"github.com/deref/exo/internal/manifest/exohcl/hclgen"
 	"github.com/deref/exo/internal/manifest/exohcl/testutil"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
@@ -34,15 +34,11 @@ func TestGenerate(t *testing.T) {
 		if !assert.False(t, diags.HasErrors()) {
 			continue
 		}
-		var buf bytes.Buffer
-		_, err := WriteTo(&buf, &hcl.File{
+		bs := hclgen.FormatFile(&hcl.File{
 			Body:  f.Body.(*hclsyntax.Body),
 			Bytes: f.Bytes,
 		})
-		if !assert.NoError(t, err) {
-			continue
-		}
 		formatted := string(hclwrite.Format([]byte(src)))
-		assert.Equal(t, formatted, testutil.CleanHCL(buf.Bytes()))
+		assert.Equal(t, formatted, testutil.CleanHCL(bs))
 	}
 }

@@ -1,6 +1,7 @@
 package hclgen
 
 import (
+	"bytes"
 	"io"
 	"sort"
 
@@ -16,6 +17,28 @@ func WriteTo(w io.Writer, f *hcl.File) (int64, error) {
 	out := hclwrite.NewEmptyFile()
 	genFileTo(out, f)
 	return out.WriteTo(w)
+}
+
+func FormatFile(f *hcl.File) []byte {
+	var buf bytes.Buffer
+	_, err := WriteTo(&buf, f)
+	if err != nil {
+		panic(err)
+	}
+	return buf.Bytes()
+}
+
+func FormatBlock(block *hcl.Block) []byte {
+	f := hclwrite.NewEmptyFile()
+	out := f.Body().AppendNewBlock(block.Type, block.Labels)
+	genBodyTo(out.Body(), block.Body)
+	return f.Bytes()
+}
+
+func FormatExpression(x hclsyntax.Expression) []byte {
+	f := hclwrite.NewEmptyFile()
+	f.Body().AppendUnstructuredTokens(TokensForExpression(x))
+	return f.Bytes()
 }
 
 func genFileTo(out *hclwrite.File, in *hcl.File) {
