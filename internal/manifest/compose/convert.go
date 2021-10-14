@@ -12,6 +12,7 @@ import (
 	"github.com/goccy/go-yaml"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
+	"github.com/zclconf/go-cty/cty"
 )
 
 type Converter struct {
@@ -51,7 +52,7 @@ func (c *Converter) Convert(bs []byte) (*hcl.File, hcl.Diagnostics) {
 		}
 		volumesByComposeName[originalName] = volume.Name
 
-		b.AddComponentBlock(makeComponentBlock("volume", name, volume))
+		b.AddComponentBlock(makeComponentBlock("volume", name, volume, nil))
 	}
 
 	// Set up networks.
@@ -78,7 +79,7 @@ func (c *Converter) Convert(bs []byte) (*hcl.File, hcl.Diagnostics) {
 			network.Driver = "bridge"
 		}
 
-		b.AddComponentBlock(makeComponentBlock("network", name, network))
+		b.AddComponentBlock(makeComponentBlock("network", name, network, nil))
 	}
 	// TODO: Docker Compose only creates the default network if there is at least 1 service that does not
 	// specify a network. We should do the same.
@@ -90,7 +91,7 @@ func (c *Converter) Convert(bs []byte) (*hcl.File, hcl.Diagnostics) {
 		b.AddComponentBlock(makeComponentBlock("network", componentName, map[string]string{
 			"name":   name,
 			"driver": "bridge",
-		}))
+		}, nil))
 	}
 
 	for originalName, service := range project.Services {
@@ -128,7 +129,7 @@ func (c *Converter) Convert(bs []byte) (*hcl.File, hcl.Diagnostics) {
 		if len(service.Networks) > 0 {
 			mappedNetworks := make([]compose.ServiceNetwork, len(service.Networks))
 			for i, network := range service.Networks {
-				networkName, ok := networksByComposeName[network.Network]
+				_, ok := networksByComposeName[network.Network]
 				if !ok {
 					diags = append(diags, &hcl.Diagnostic{
 						Severity: hcl.DiagError,
@@ -137,7 +138,7 @@ func (c *Converter) Convert(bs []byte) (*hcl.File, hcl.Diagnostics) {
 					continue
 				}
 				mappedNetworks[i] = network
-				dependsOn = append(dependsOn, networkName)
+				dependsOn = append(dependsOn, network.Network)
 			}
 			service.Networks = mappedNetworks
 		} else {
@@ -211,7 +212,7 @@ func (c *Converter) Convert(bs []byte) (*hcl.File, hcl.Diagnostics) {
 			dependsOn = append(dependsOn, mangledServiceName)
 		}
 
-		b.AddComponentBlock(makeComponentBlock("volume", name, service))
+		b.AddComponentBlock(makeComponentBlock("container", name, service, dependsOn))
 	}
 
 	return b.Build(), diags
@@ -230,27 +231,42 @@ func (c *Converter) prefixedName(name string, suffix string) string {
 	return out.String()
 }
 
-func makeComponentBlock(typ string, name string, spec interface{}) *hclsyntax.Block {
+func makeComponentBlock(typ string, name string, spec interface{}, dependsOn []string) *hclsyntax.Block {
 	obj := yamlToHCL(spec).(*hclsyntax.ObjectConsExpr)
 	attrs := make([]*hclsyntax.Attribute, len(obj.Items))
 	for i, item := range obj.Items {
-		key := item.KeyExpr.(*hclsyntax.TemplateExpr)
-		if len(key.Parts) != 1 {
-			panic("unexpected multi-part template")
+		key := item.KeyExpr.(*hclsyntax.ObjectConsKeyExpr)
+		name := hcl.ExprAsKeyword(key.Wrapped)
+		if name == "" {
+			fmt.Printf("%#v\n", key.Wrapped.(*hclsyntax.TemplateExpr).Parts[0])
+			panic("unexpected complex key")
 		}
 		val := item.ValueExpr
 		attrs[i] = &hclsyntax.Attribute{
-			Name:      key.Parts[0].(*hclsyntax.LiteralValueExpr).Val.AsString(),
-			NameRange: key.SrcRange,
+			Name:      name,
+			NameRange: key.Range(),
 			Expr:      val,
-			SrcRange:  hcl.RangeBetween(key.SrcRange, val.Range()),
+			SrcRange:  hcl.RangeBetween(key.Range(), val.Range()),
 		}
+	}
+	var blocks hclsyntax.Blocks
+	if len(dependsOn) > 0 {
+		blocks = append(blocks, &hclsyntax.Block{
+			Type: "_",
+			Body: &hclsyntax.Body{
+				Attributes: hclgen.NewAttributes(&hclsyntax.Attribute{
+					Name: "depends_on",
+					Expr: yamlToHCL(dependsOn),
+				}),
+			},
+		})
 	}
 	return &hclsyntax.Block{
 		Type:   typ,
 		Labels: []string{name},
 		Body: &hclsyntax.Body{
 			Attributes: hclgen.NewAttributes(attrs...),
+			Blocks:     blocks,
 		},
 	}
 }
@@ -270,14 +286,40 @@ func yamlToHCL(v interface{}) hclsyntax.Expression {
 		return hclgen.NewNullLiteral(hcl.Range{})
 	case string:
 		return hclgen.NewStringLiteral(v, hcl.Range{})
+	case int:
+		return &hclsyntax.LiteralValueExpr{
+			Val: cty.NumberIntVal(int64(v)),
+		}
+	case int64:
+		return &hclsyntax.LiteralValueExpr{
+			Val: cty.NumberIntVal(v),
+		}
+	case float64:
+		return &hclsyntax.LiteralValueExpr{
+			Val: cty.NumberFloatVal(v),
+		}
+	case bool:
+		return &hclsyntax.LiteralValueExpr{
+			Val: cty.BoolVal(v),
+		}
+	case yaml.MapSlice:
+		out := make([]hclsyntax.ObjectConsItem, len(v))
+		for i, in := range v {
+			out[i] = hclsyntax.ObjectConsItem{
+				KeyExpr:   yamlToHCLKey(in.Key),
+				ValueExpr: yamlToHCL(in.Value),
+			}
+		}
+		return &hclsyntax.ObjectConsExpr{
+			Items: out,
+		}
 	default:
 		rv := reflect.ValueOf(v)
 		if rv.Kind() == reflect.Ptr {
 			if rv.IsNil() {
 				return hclgen.NewNullLiteral(hcl.Range{})
 			}
-			rv = rv.Elem()
-
+			return yamlToHCL(rv.Elem().Interface())
 		}
 		switch rv.Kind() {
 		case reflect.Struct:
@@ -285,7 +327,7 @@ func yamlToHCL(v interface{}) hclsyntax.Expression {
 			typ := rv.Type()
 
 			numField := rv.NumField()
-			items := make([]hclsyntax.ObjectConsItem, 0, numField)
+			var items []hclsyntax.ObjectConsItem
 			for i := 0; i < numField; i++ {
 				fld := typ.Field(i)
 				tag := fld.Tag.Get("yaml")
@@ -294,6 +336,9 @@ func yamlToHCL(v interface{}) hclsyntax.Expression {
 				}
 				options := strings.Split(tag, ",")
 				name := options[0]
+				if name == "-" {
+					continue
+				}
 				omitempty := false
 				for _, option := range options[1:] {
 					switch option {
@@ -320,12 +365,22 @@ func yamlToHCL(v interface{}) hclsyntax.Expression {
 				Items: items,
 			}
 
+		case reflect.Slice:
+			elems := make([]hclsyntax.Expression, rv.Len())
+			for i := range elems {
+				elems[i] = yamlToHCL(rv.Index(i).Interface())
+			}
+			return &hclsyntax.TupleConsExpr{
+				Exprs: elems,
+			}
+
 		case reflect.Map:
+			// XXX need a stable sort!
 			items := make([]hclsyntax.ObjectConsItem, 0, rv.Len())
 			iter := rv.MapRange()
 			for iter.Next() {
 				item := hclsyntax.ObjectConsItem{
-					KeyExpr:   yamlToHCL(iter.Key().Interface()),
+					KeyExpr:   yamlToHCLKey(iter.Key().Interface()),
 					ValueExpr: yamlToHCL(iter.Value().Interface()),
 				}
 				items = append(items, item)
@@ -337,5 +392,17 @@ func yamlToHCL(v interface{}) hclsyntax.Expression {
 		default:
 			panic(fmt.Errorf("unexpected yaml type: %T", v))
 		}
+	}
+}
+
+func yamlToHCLKey(v interface{}) hclsyntax.Expression {
+	x := yamlToHCL(v)
+	if template, isTemplate := x.(*hclsyntax.TemplateExpr); isTemplate && len(template.Parts) == 1 {
+		if lit, isLit := template.Parts[0].(*hclsyntax.LiteralValueExpr); isLit && lit.Val.Type() == cty.String {
+			return hclgen.NewObjStringKey(lit.Val.AsString(), hcl.Range{})
+		}
+	}
+	return &hclsyntax.ObjectConsKeyExpr{
+		Wrapped: x,
 	}
 }

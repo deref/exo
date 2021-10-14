@@ -238,6 +238,7 @@ func expandComponent(block *hclsyntax.Block) (*hclsyntax.Block, hcl.Diagnostics)
 		})
 	}
 	// sort.Sort(specItemsSorter{specItems}) // XXX sort specItems by attr range?
+	// XXX search for "_" blocks with depends_on, etc. and other meta properties.
 	return &hclsyntax.Block{
 		Type:   "component",
 		Labels: block.Labels,

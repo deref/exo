@@ -1,66 +1,58 @@
 package compose_test
 
 import (
-	"strings"
+	"bytes"
 	"testing"
 
 	"github.com/deref/exo/internal/manifest/compose"
-	"github.com/deref/exo/internal/manifest/exohcl"
+	"github.com/deref/exo/internal/manifest/exohcl/hclgen"
+	"github.com/deref/exo/internal/manifest/exohcl/testutil"
+	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/stretchr/testify/assert"
 )
 
-// XXX test all the yamlToHCL types.
-// XXX change these tests to compare HCL output.
-
 func TestConvert(t *testing.T) {
-	t.Skipf("Skipping convert test until we decide what strategy to use for converting compose files to component specs.")
-
 	projectName := "testproj"
-	defaultNetwork := exohcl.Component{
-		Name: "default",
-		Type: "network",
-		Spec: `driver: bridge
-name: testproj_default
-`,
-	}
 
 	testCases := []struct {
-		name     string
-		in       string
-		expected exohcl.Manifest
+		Name     string
+		In       string
+		Expected string
 	}{
 		{
-			name: "basic service",
-			in: `
+			Name: "basic service",
+			In: `
 services:
     web:
         image: "nodejs:14"
         volumes: ['./src:/srv']
         command: node /srv/index.js
 `,
-			expected: exohcl.Manifest{
-				Components: []exohcl.Component{
-					defaultNetwork,
-					{
-						Name: "web",
-						Type: "container",
-						Spec: `command: node /srv/index.js
-container_name: testproj_web_1
-image: nodejs:14
-networks:
-- testproj_default
-volumes:
-- ./src:/srv
-`,
-						DependsOn: []string{"default"},
-					},
-				},
-			},
+			Expected: `
+				exo = "1.0"
+				components {
+					network "default" {
+						driver = "bridge"
+						name = "testproj_default"
+					}
+					container "web" {
+						command = "node /srv/index.js"
+						container_name = "testproj_web_1"
+            image = "nodejs:14"
+						labels = { "com.docker.compose.project" = "testproj", "com.docker.compose.service" = "web" }
+						networks = ["testproj_default"]
+						volumes = ["./src:srv"]
+						_ {
+							depends_on = ["default"]
+						}
+					}
+				}`,
 		},
 
 		{
-			name: "named networks",
-			in: `
+			Name: "named networks",
+			In: `
 services:
   proxy:
     image: nginx
@@ -75,60 +67,60 @@ networks:
   frontend:
   backend:
 `,
-			expected: exohcl.Manifest{
-				Components: []exohcl.Component{
-					defaultNetwork,
-					{
-						Name: "frontend",
-						Type: "network",
-						Spec: `driver: bridge
-name: testproj_frontend
-`,
-					},
-					{
-						Name: "backend",
-						Type: "network",
-						Spec: `driver: bridge
-name: testproj_backend
-`,
-					},
-					{
-						Name: "proxy",
-						Type: "container",
-						Spec: `container_name: testproj_proxy_1
-image: nginx
-networks:
-- testproj_backend
-- testproj_frontend
-`,
-						DependsOn: []string{"backend", "frontend"},
-					},
-					{
-						Name: "srv",
-						Type: "container",
-						Spec: `container_name: testproj_srv_1
-image: myapp
-networks:
-- testproj_backend
-`,
-						DependsOn: []string{"backend"},
-					},
-				},
-			},
+			Expected: `
+				exo = "1.0"
+				components {
+					network "frontend" {
+						driver = "bridge"
+						name = "testproj_frontend"
+					}
+					network "backend" {
+						driver = "bridge"
+						name = "testproj_backend"
+					}
+					network "default" {
+						driver = "bridge"
+						name = "testproj_default"
+					}
+					container "proxy" {
+						container_name = "testproj_proxy_1"
+						image = "nginx"
+						labels = { "com.docker.compose.project" = "testproj", "com.docker.compose.service" = "proxy" }
+						networks = [ "testproj_backend", "testproj_frontend" ]
+						_ {
+							depends_on = ["backend", "frontend"]
+						}
+					}
+					container "srv" {
+						container_name = "testproj_srv_1"
+						image = "myapp"
+						labels = { "com.docker.compose.project" = "testproj", "com.docker.compose.service" = "srv" }
+						networks = ["testproj_backend"]
+						_ {
+							depends_on = ["backend"]
+						}
+					}
+				}`,
 		},
 	}
 
-	loader := compose.Loader{ProjectName: projectName}
 	for _, testCase := range testCases {
-		name := testCase.name
-		in := strings.NewReader(testCase.in)
-		expected := testCase.expected
-		t.Run(name, func(t *testing.T) {
-			out, err := loader.Load(in)
+		testCase := testCase
+		t.Run(testCase.Name, func(t *testing.T) {
+			converter := &compose.Converter{ProjectName: projectName}
+			out, diags := converter.Convert([]byte(testCase.In))
+			if len(diags) > 0 {
+				assert.NoError(t, diags)
+				return
+			}
+			var buf bytes.Buffer
+			_, err := hclgen.WriteTo(&buf, &hcl.File{
+				Body:  out.Body.(*hclsyntax.Body),
+				Bytes: out.Bytes,
+			})
 			if assert.NoError(t, err) {
-				if len(expected.Components) > 0 {
-					assert.ElementsMatch(t, expected.Components, out.Components)
-				}
+				// These tests are too brittle, as they are very sensitive to spacing and ordering.
+				assert.Equal(t, testutil.CleanHCL([]byte(testCase.Expected)), testutil.CleanHCL(buf.Bytes()))
 			}
 		})
 	}
