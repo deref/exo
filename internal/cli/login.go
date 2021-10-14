@@ -8,11 +8,11 @@ import (
 )
 
 func init() {
-	rootCmd.AddCommand(secretsCmd)
+	rootCmd.AddCommand(loginCmd)
 }
 
-var secretsCmd = &cobra.Command{
-	Use:    "secrets",
+var loginCmd = &cobra.Command{
+	Use:    "login",
 	Args:   cobra.NoArgs,
 	Hidden: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
