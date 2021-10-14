@@ -15,14 +15,19 @@
   const workspace = api.workspace(workspaceId);
   const workspaceRoute = `/workspaces/${encodeURIComponent(workspaceId)}`;
 
-  const requests = Promise.all([
-    workspace.describeEnvironment(),
-    workspace.describeVaults(),
-  ]);
+  const makeRequests = () =>
+    Promise.all([workspace.describeEnvironment(), workspace.describeVaults()]);
+  let requests = makeRequests();
 
   const authEsv = async () => {
     const result = await api.kernel.authEsv();
     window.open(result.authUrl, '_blank')?.focus();
+
+    // This alert is doing two jobs: informing the user of the auth code they
+    // should see in Auth0 as well as providing an indication that the user has
+    // finished authenticating when they dismiss the alert.
+    alert(`You should see the following code in Auth0: ${result.authCode}`);
+    requests = makeRequests();
   };
 </script>
 

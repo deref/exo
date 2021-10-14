@@ -23,8 +23,8 @@ type EsvClient struct {
 }
 
 type AuthResponse struct {
-	DeviceCode string
-	AuthURL    string
+	UserCode string
+	AuthURL  string
 }
 
 func (c *EsvClient) StartAuthFlow(ctx context.Context) (AuthResponse, error) {
@@ -52,8 +52,8 @@ func (c *EsvClient) StartAuthFlow(ctx context.Context) (AuthResponse, error) {
 	}()
 
 	return AuthResponse{
-		AuthURL:    codeResponse.VerificationURIComplete,
-		DeviceCode: codeResponse.DeviceCode,
+		AuthURL:  codeResponse.VerificationURIComplete,
+		UserCode: codeResponse.UserCode,
 	}, nil
 }
 
