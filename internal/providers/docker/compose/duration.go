@@ -4,6 +4,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"gopkg.in/yaml.v3"
 )
 
 type Duration time.Duration
@@ -36,15 +38,9 @@ func (d Duration) MarshalYAML() (interface{}, error) {
 	return d.String(), nil
 }
 
-func (d *Duration) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var i int64
-	if err := unmarshal(&i); err == nil {
-		*d = Duration(time.Duration(i) * time.Microsecond)
-		return nil
-	}
-
+func (d *Duration) UnmarshalYAML(node *yaml.Node) error {
 	var s string
-	if err := unmarshal(&s); err != nil {
+	if err := node.Decode(&s); err != nil {
 		return err
 	}
 
