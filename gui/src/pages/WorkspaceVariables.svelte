@@ -12,7 +12,7 @@
 
   const workspaceId = params.workspace;
   const workspace = api.workspace(workspaceId);
-  const workspaceRoute = `#/workspaces/${encodeURIComponent(workspaceId)}`;
+  const workspaceRoute = `/workspaces/${encodeURIComponent(workspaceId)}`;
 
   const makeRequests = () =>
     Promise.all([workspace.describeEnvironment(), workspace.describeVaults()]);

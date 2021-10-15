@@ -1,6 +1,7 @@
 <script lang="ts">
   import * as router from 'svelte-spa-router';
   import { createEventDispatcher } from 'svelte';
+  import { absoluteUrl } from '../lib/regex';
 
   export let type: string | undefined = undefined;
   export let href: string | undefined = undefined;
@@ -17,7 +18,7 @@
 
   const handleClick = (e: MouseEvent) => {
     if (href) {
-      if (href.startsWith('#')) {
+      if (!absoluteUrl.test(href)) {
         // Handle internal routes.
         router.push(href);
         return;
