@@ -7,16 +7,23 @@ import (
 	"regexp"
 	"strconv"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
 type PortMappings []PortMapping
 
 type PortMapping struct {
-	Target    string `yaml:"target,omitempty"`
-	Published string `yaml:"published,omitempty"`
-	HostIP    string `yaml:"host_ip,omitempty"`
-	Protocol  string `yaml:"protocol,omitempty"`
-	Mode      string `yaml:"mode,omitempty"`
+	IsShortForm bool
+	PortMappingLongForm
+}
+
+type PortMappingLongForm struct {
+	Target    PortRange `yaml:"target,omitempty"`
+	Published PortRange `yaml:"published,omitempty"`
+	HostIP    string    `yaml:"host_ip,omitempty"`
+	Protocol  string    `yaml:"protocol,omitempty"`
+	Mode      string    `yaml:"mode,omitempty"`
 }
 
 func ParsePortMappings(short string) (mappings PortMappings, err error) {
@@ -28,17 +35,20 @@ func ParsePortMappings(short string) (mappings PortMappings, err error) {
 		}
 		mapping, err := ParsePortMapping(part)
 		if err != nil {
-			return nil, err
+			return PortMappings{}, err
 		}
-		mappings = append(mappings, mapping)
+		mappings = append(mappings, PortMapping{
+			IsShortForm:         true,
+			PortMappingLongForm: mapping,
+		})
 	}
 	return mappings, nil
 }
 
-func ParsePortMapping(short string) (PortMapping, error) {
+func ParsePortMapping(short string) (PortMappingLongForm, error) {
 	submatches := portRegexp.FindStringSubmatch(short)
 	if len(submatches) == 0 {
-		return PortMapping{}, errors.New("invalid port mapping syntax")
+		return PortMappingLongForm{}, errors.New("invalid port mapping syntax")
 	}
 
 	result := make(map[string]string)
@@ -48,14 +58,21 @@ func ParsePortMapping(short string) (PortMapping, error) {
 		}
 	}
 
-	var mapping PortMapping
+	var mapping PortMappingLongForm
+	var err error
 	mapping.HostIP = result["ip"]
-	mapping.Published = result["published"]
-	mapping.Target = result["target"]
+	mapping.Published, err = ParsePortRange(result["published"])
+	if err != nil {
+		return PortMappingLongForm{}, fmt.Errorf("invalid published port range: %w", err)
+	}
+	mapping.Target, err = ParsePortRange(result["target"])
+	if err != nil {
+		return PortMappingLongForm{}, fmt.Errorf("invalid target port range: %w", err)
+	}
 	mapping.Protocol = result["protocol"]
 
 	if mapping.HostIP != "" && net.ParseIP(mapping.HostIP) == nil {
-		return PortMapping{}, fmt.Errorf("invalid IP: %s", mapping.HostIP)
+		return PortMappingLongForm{}, fmt.Errorf("invalid IP: %s", mapping.HostIP)
 	}
 
 	return mapping, nil
@@ -72,39 +89,33 @@ func (mappings PortMappings) MarshalYAML() (interface{}, error) {
 	return res, nil
 }
 
-func (mappings *PortMappings) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	*mappings = []PortMapping{}
+func (pm *PortMapping) UnmarshalYAML(node *yaml.Node) error {
 	var s string
-	err := unmarshal(&s)
-	if err == nil {
-		*mappings, err = ParsePortMappings(s)
-	} else {
-		var xs []portMappingMarshaller
-		err = unmarshal(&xs)
-		for _, x := range xs {
-			*mappings = append(*mappings, PortMapping(x))
-		}
+	if node.Decode(&s) == nil {
+		pm.IsShortForm = true
+		var err error
+		pm.PortMappingLongForm, err = ParsePortMapping(s)
+		return err
 	}
-	return err
+	return node.Decode(&pm.PortMappingLongForm)
 }
 
-type portMappingMarshaller PortMapping
-
-func (marshaller *portMappingMarshaller) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var s string
-	var mapping PortMapping
-	err := unmarshal(&s)
-	if err == nil {
-		mapping, err = ParsePortMapping(s)
-	} else {
-		err = unmarshal(&mapping)
+func (pm PortMapping) MarshalYAML() (interface{}, error) {
+	if pm.IsShortForm {
+		return pm.Target, nil
 	}
-	*marshaller = portMappingMarshaller(mapping)
-	return err
+	return pm.PortMappingLongForm, nil
 }
 
-func ParsePortRange(numbers string, protocol string) (res PortRange, err error) {
-	res.Protocol = protocol
+type PortRange struct {
+	Min uint16
+	Max uint16
+}
+
+func ParsePortRange(numbers string) (res PortRange, err error) {
+	if numbers == "" {
+		return PortRange{}, nil
+	}
 	parts := strings.SplitN(numbers, "-", 2)
 	if len(parts) == 1 {
 		parts = append(parts, parts[0])
@@ -120,16 +131,27 @@ func ParsePortRange(numbers string, protocol string) (res PortRange, err error) 
 	return
 }
 
-type PortRange struct {
-	Min      uint16
-	Max      uint16
-	Protocol string
-}
-
 func FormatPort(num uint16, protocol string) string {
 	res := strconv.Itoa(int(num))
 	if protocol != "" {
 		res += "/" + protocol
 	}
 	return res
+}
+
+func (rng *PortRange) UnmarshalYAML(node *yaml.Node) error {
+	var s string
+	if err := node.Decode(&s); err != nil {
+		return err
+	}
+	var err error
+	*rng, err = ParsePortRange(s)
+	return err
+}
+
+func (rng PortRange) MarshalYAML() (interface{}, error) {
+	if rng.Min == rng.Max {
+		return rng.Min, nil
+	}
+	return fmt.Sprintf("%d-%d", rng.Min, rng.Max), nil
 }
