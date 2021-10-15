@@ -4,19 +4,19 @@ import "testing"
 
 func TestStringsYAML(t *testing.T) {
 	testYAML(t, "string", `str`, Strings{
-		Values: []string{
+		Items: []string{
 			"str",
 		},
 	})
 	testYAML(t, "empty", `[]`, Strings{
 		IsSequence: true,
-		Values:     []string{},
+		Items:      []string{},
 	})
 	testYAML(t, "single", `
 - elem
 `, Strings{
 		IsSequence: true,
-		Values: []string{
+		Items: []string{
 			"elem",
 		},
 	})
@@ -25,7 +25,7 @@ func TestStringsYAML(t *testing.T) {
 - two
 `, Strings{
 		IsSequence: true,
-		Values: []string{
+		Items: []string{
 			"one",
 			"two",
 		},

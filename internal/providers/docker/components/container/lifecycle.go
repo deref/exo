@@ -158,12 +158,12 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 	}
 
 	exposePort := func(numbers string, protocol string) error {
-		rng, err := compose.ParsePortRange(numbers, protocol)
+		rng, err := compose.ParsePortRange(numbers)
 		if err != nil {
 			return fmt.Errorf("parsing port: %w", err)
 		}
 		for n := rng.Min; n <= rng.Max; n++ {
-			port := nat.Port(compose.FormatPort(n, rng.Protocol))
+			port := nat.Port(compose.FormatPort(n, protocol))
 			containerCfg.ExposedPorts[port] = struct{}{}
 		}
 		return nil

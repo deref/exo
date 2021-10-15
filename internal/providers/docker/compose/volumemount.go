@@ -104,5 +104,5 @@ type BindOptions struct {
 }
 
 type TmpfsOptions struct {
-	Size int64 `yaml:"size,omitempty"`
+	Size Bytes `yaml:"size,omitempty"`
 }

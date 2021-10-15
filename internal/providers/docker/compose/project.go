@@ -13,13 +13,11 @@ import (
 	"io"
 	"strings"
 
-	"github.com/goccy/go-yaml"
+	"gopkg.in/yaml.v3"
 )
 
 func Parse(r io.Reader) (*Project, error) {
-	dec := yaml.NewDecoder(r,
-		yaml.DisallowDuplicateKey(),
-	)
+	dec := yaml.NewDecoder(r)
 	var comp Project
 	if err := dec.Decode(&comp); err != nil {
 		return nil, err
@@ -41,13 +39,19 @@ func Parse(r io.Reader) (*Project, error) {
 }
 
 type Project struct {
-	Version  string             `yaml:"version,omitempty"`
-	Services map[string]Service `yaml:"services,omitempty"`
-	Networks map[string]Network `yaml:"networks,omitempty"`
-	Volumes  map[string]Volume  `yaml:"volumes,omitempty"`
-	Configs  map[string]Config  `yaml:"configs,omitempty"`
-	Secrets  map[string]Secret  `yaml:"secrets,omitempty"`
+	Version  string          `yaml:"version,omitempty"`
+	Services ProjectServices `yaml:"services,omitempty"`
+	Networks ProjectNetworks `yaml:"networks,omitempty"`
+	Volumes  ProjectVolumes  `yaml:"volumes,omitempty"`
+	Configs  ProjectConfigs  `yaml:"configs,omitempty"`
+	Secrets  ProjectSecrets  `yaml:"secrets,omitempty"`
 
 	Raw map[string]interface{} `yaml:",inline"`
 	// TODO: extensions with "x-" prefix.
 }
+
+type ProjectServices []Service
+type ProjectNetworks []Network
+type ProjectVolumes []Volume
+type ProjectConfigs []Config
+type ProjectSecrets []Secret

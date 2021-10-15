@@ -4,22 +4,32 @@ import "gopkg.in/yaml.v3"
 
 type Strings struct {
 	IsSequence bool
-	Values     []string
+	Items      []string
+}
+
+func MakeStrings(items ...string) Strings {
+	res := Strings{
+		Items: items,
+	}
+	if len(items) != 1 {
+		res.IsSequence = true
+	}
+	return res
 }
 
 func (ss Strings) MarshalYAML() (interface{}, error) {
-	if ss.IsSequence || len(ss.Values) != 1 {
-		return ss.Values, nil
+	if ss.IsSequence || len(ss.Items) != 1 {
+		return ss.Items, nil
 	}
-	return ss.Values[0], nil
+	return ss.Items[0], nil
 }
 
 func (ss *Strings) UnmarshalYAML(node *yaml.Node) error {
 	var s string
 	if node.Decode(&s) == nil {
-		ss.Values = []string{s}
+		ss.Items = []string{s}
 		return nil
 	}
 	ss.IsSequence = true
-	return node.Decode(&ss.Values)
+	return node.Decode(&ss.Items)
 }

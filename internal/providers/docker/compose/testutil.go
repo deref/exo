@@ -32,3 +32,11 @@ func zeroAddr(typ reflect.Type) reflect.Value {
 	sliceType := reflect.SliceOf(typ)
 	return reflect.MakeSlice(sliceType, 1, 1).Index(0).Addr()
 }
+
+func boolRef(b bool) *bool {
+	return &b
+}
+
+func int64Ref(i int64) *int64 {
+	return &i
+}

@@ -2,16 +2,24 @@ package compose
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
 
 	"gopkg.in/yaml.v3"
 )
 
-type Duration time.Duration
+type Duration struct {
+	Expression string
+	Duration   time.Duration
+}
 
 func (d Duration) String() string {
-	td := time.Duration(d)
+	if d.Expression != "" {
+		return d.Expression
+	}
+
+	td := d.Duration
 	var buf strings.Builder
 
 	step := func(unit string, resolution time.Duration) {
@@ -39,17 +47,16 @@ func (d Duration) MarshalYAML() (interface{}, error) {
 }
 
 func (d *Duration) UnmarshalYAML(node *yaml.Node) error {
-	var s string
-	if err := node.Decode(&s); err != nil {
+	if err := node.Decode(&d.Expression); err != nil {
 		return err
 	}
 
-	var err error
-	*d, err = ParseDuration(s)
-	return err
-}
+	n, err := strconv.Atoi(d.Expression)
+	if err == nil {
+		d.Duration = time.Duration(n) * time.Microsecond
+		return nil
+	}
 
-func ParseDuration(s string) (Duration, error) {
-	td, err := time.ParseDuration(s)
-	return Duration(td), err
+	d.Duration, err = time.ParseDuration(d.Expression)
+	return err
 }

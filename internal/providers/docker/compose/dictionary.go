@@ -28,7 +28,7 @@ func (dict Dictionary) MarshalYAML() (interface{}, error) {
 		Content: make([]*yaml.Node, len(dict.Items)*2),
 	}
 	for i, item := range dict.Items {
-		keyNode, valueNode := mapItemNodes(item)
+		keyNode, valueNode := makeDictionaryItemNodes(item)
 		node.Content[i*2+0] = &keyNode
 		node.Content[i*2+1] = &valueNode
 	}
@@ -68,7 +68,7 @@ func (item DictionaryItem) MarshalYAML() (interface{}, error) {
 		}
 		return fmt.Sprintf("%s=%s", item.Key, item.Value), nil
 	}
-	keyNode, valueNode := mapItemNodes(item)
+	keyNode, valueNode := makeDictionaryItemNodes(item)
 	return &yaml.Node{
 		Kind: yaml.MappingNode,
 		Content: []*yaml.Node{
@@ -78,7 +78,7 @@ func (item DictionaryItem) MarshalYAML() (interface{}, error) {
 	}, nil
 }
 
-func mapItemNodes(item DictionaryItem) (keyNode, valueNode yaml.Node) {
+func makeDictionaryItemNodes(item DictionaryItem) (keyNode, valueNode yaml.Node) {
 	if err := keyNode.Encode(item.Key); err != nil {
 		panic(err)
 	}
@@ -112,7 +112,7 @@ func (item *DictionaryItem) UnmarshalYAML(node *yaml.Node) error {
 	if len(m) != 1 {
 		return errors.New("expected single mapping")
 	}
-	item.Style = SeqStyle
+	item.Style = MapStyle
 	for k, v := range m {
 		item.Key = k
 		item.Value = v

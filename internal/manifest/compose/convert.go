@@ -9,10 +9,10 @@ import (
 	"github.com/deref/exo/internal/manifest/exohcl"
 	"github.com/deref/exo/internal/manifest/exohcl/hclgen"
 	"github.com/deref/exo/internal/providers/docker/compose"
-	"github.com/goccy/go-yaml"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/zclconf/go-cty/cty"
+	"gopkg.in/yaml.v3"
 )
 
 type Converter struct {
@@ -169,7 +169,11 @@ func (c *Converter) Convert(bs []byte) (*hcl.File, hcl.Diagnostics) {
 		}
 
 		for _, dependency := range service.DependsOn.Services {
-			if dependency.Condition != "service_started" {
+			condition := dependency.Condition
+			if condition == "" {
+				condition = "service_started"
+			}
+			if condition != "service_started" {
 				var subject *hcl.Range
 				diags = append(diags, exohcl.NewUnsupportedFeatureWarning(
 					fmt.Sprintf("service condition %q", dependency.Service),

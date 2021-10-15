@@ -20,10 +20,10 @@ shm_size: 1024
 		BuildLongForm: BuildLongForm{
 			Context: ".",
 			Args: Dictionary{
-				Style: MapStyle,
+				Style: SeqStyle,
 				Items: []DictionaryItem{
-					DictionaryItem{
-						Style: MapStyle,
+					{
+						Style: SeqStyle,
 						Key:   "x",
 						Value: "y",
 					},
