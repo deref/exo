@@ -16,12 +16,12 @@ cpuset: 0,2,4
 		CPUCount:   2,
 		CPUPercent: 80,
 		CPURealtimeRuntime: Duration{
-			Expression: "400ms",
-			Duration:   400 * time.Millisecond,
+			String:   MakeString("400ms"),
+			Duration: 400 * time.Millisecond,
 		},
 		CPURealtimePeriod: Duration{
-			Expression: "1400",
-			Duration:   1400 * time.Microsecond,
+			String:   String(MakeInt(1400)),
+			Duration: 1400 * time.Microsecond,
 		},
 		CPUSet: "0,2,4",
 	})

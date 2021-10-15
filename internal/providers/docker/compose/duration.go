@@ -10,13 +10,28 @@ import (
 )
 
 type Duration struct {
-	Expression string
-	Duration   time.Duration
+	String
+	Duration time.Duration
 }
 
-func (d Duration) String() string {
-	if d.Expression != "" {
-		return d.Expression
+func (d *Duration) UnmarshalYAML(node *yaml.Node) error {
+	if err := node.Decode(&d.String); err != nil {
+		return err
+	}
+
+	n, err := strconv.Atoi(d.Value)
+	if err == nil {
+		d.Duration = time.Duration(n) * time.Microsecond
+		return nil
+	}
+
+	d.Duration, err = time.ParseDuration(d.Value)
+	return err
+}
+
+func (d Duration) MarshalYAML() (interface{}, error) {
+	if d.String.Expression != "" {
+		return d.String, nil
 	}
 
 	td := d.Duration
@@ -37,26 +52,7 @@ func (d Duration) String() string {
 	step("us", time.Microsecond)
 
 	if buf.Len() == 0 {
-		return "0s"
+		return "0s", nil
 	}
-	return buf.String()
-}
-
-func (d Duration) MarshalYAML() (interface{}, error) {
-	return d.String(), nil
-}
-
-func (d *Duration) UnmarshalYAML(node *yaml.Node) error {
-	if err := node.Decode(&d.Expression); err != nil {
-		return err
-	}
-
-	n, err := strconv.Atoi(d.Expression)
-	if err == nil {
-		d.Duration = time.Duration(n) * time.Microsecond
-		return nil
-	}
-
-	d.Duration, err = time.ParseDuration(d.Expression)
-	return err
+	return buf.String(), nil
 }

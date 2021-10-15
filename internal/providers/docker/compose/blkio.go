@@ -10,11 +10,11 @@ type BlkioConfig struct {
 }
 
 type ThrottleDevice struct {
-	Path string `yaml:"path,omitempty"`
+	Path String `yaml:"path,omitempty"`
 	Rate Bytes  `yaml:"rate,omitempty"`
 }
 
 type WeightDevice struct {
-	Path   string `yaml:"path,omitempty"`
+	Path   String `yaml:"path,omitempty"`
 	Weight uint16 `yaml:"weight,omitempty"`
 }

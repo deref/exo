@@ -20,8 +20,8 @@ func TestDurationYAML(t *testing.T) {
 	}
 	checkRoundTrip := func(s string, d time.Duration) {
 		testYAML(t, s, s, Duration{
-			Expression: s,
-			Duration:   d,
+			String:   MakeString(s),
+			Duration: d,
 		})
 		checkOneWay(s, d)
 	}
