@@ -58,7 +58,7 @@
                   <td>
                     {#if vault.connected}
                       <Button href={`${vault.url}/create-secret`} small>
-                        Add new secret
+                        + New secret
                       </Button>
                     {:else if vault.needsAuth}
                       <Button on:click={authEsv} small>Authenticate</Button>
