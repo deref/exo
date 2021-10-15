@@ -16,6 +16,7 @@
     | 'Home'
     | 'Layers'
     | 'LeftUp'
+    | 'Lock'
     | 'LogoDeno'
     | 'LogoDiscord'
     | 'LogoDjango'
@@ -60,6 +61,7 @@
   import HomeGlyph from './icon/glyphs/Home.svelte';
   import LayersGlyph from './icon/glyphs/Layers.svelte';
   import LeftUpGlyph from './icon/glyphs/LeftUp.svelte';
+  import LockGlyph from './icon/glyphs/Lock.svelte';
   import LogoDenoGlyph from './icon/glyphs/LogoDeno.svelte';
   import LogoDiscordGlyph from './icon/glyphs/LogoDiscord.svelte';
   import LogoDjangoGlyph from './icon/glyphs/LogoDjango.svelte';
@@ -117,6 +119,8 @@
   <LayersGlyph />
 {:else if glyph === 'LeftUp'}
   <LeftUpGlyph />
+{:else if glyph === 'Lock'}
+  <LockGlyph />
 {:else if glyph === 'LogoDeno'}
   <LogoDenoGlyph />
 {:else if glyph === 'LogoDiscord'}
