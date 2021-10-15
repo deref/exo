@@ -1,14 +1,28 @@
 <script lang="ts">
   import Tooltip from '../Tooltip.svelte';
+  import type { ShortcutParams } from '../../lib/actions/shortcut';
+  import { shortcut } from '../../lib/actions/shortcut';
 
   export let title: string | undefined = undefined;
   export let active: string | undefined = undefined;
+
+  export let shortcutParams: ShortcutParams | undefined = undefined;
 </script>
 
 <div>
-  <button on:click class:active={title && active === title}>
-    <slot />
-  </button>
+  {#if shortcutParams !== undefined}
+    <button
+      use:shortcut={shortcutParams}
+      on:click
+      class:active={title && active === title}
+    >
+      <slot />
+    </button>
+  {:else}
+    <button on:click class:active={title && active === title}>
+      <slot />
+    </button>
+  {/if}
   {#if title}
     <div class="tooltip"><Tooltip>{title}</Tooltip></div>
   {/if}

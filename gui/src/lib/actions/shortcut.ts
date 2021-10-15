@@ -9,7 +9,7 @@ interface Chord {
   code: string;
 }
 
-interface ShortcutsParams {
+export interface ShortcutsParams {
   chords: Chord[];
   callback?(e: KeyboardEvent): void;
 }
@@ -49,7 +49,7 @@ export const shortcuts = (node: HTMLElement, params: ShortcutsParams) => {
   };
 };
 
-interface ShortcutParams extends Chord {
+export interface ShortcutParams extends Chord {
   callback?(e: KeyboardEvent): void;
 }
 

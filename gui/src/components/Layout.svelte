@@ -4,8 +4,6 @@
   import NavbarRoute from './nav/NavbarRoute.svelte';
   import NavbarButton from './nav/NavbarButton.svelte';
   import { theme, themeOptions } from '../lib/theme';
-  import { shortcut } from '../lib/actions/shortcut';
-  import * as router from 'svelte-spa-router';
 
   $: {
     for (const option of themeOptions) {
@@ -16,15 +14,8 @@
 
 <main>
   <nav>
-    <header
-      use:shortcut={{
-        code: 'KeyH',
-        callback: () => {
-          router.push('#/');
-        },
-      }}
-    >
-      <NavbarRoute title="Home" href="#/">
+    <header>
+      <NavbarRoute title="Home" href="#/" shortcutParams={{ code: 'KeyH' }}>
         {#if import.meta.env.MODE === 'development'}
           <img src="/deref-rounded-icon-dev.png" alt="Deref" height="24px" />
         {:else}
@@ -35,15 +26,12 @@
     <div class="navbar-wrapper">
       <slot name="navbar" />
     </div>
-    <footer
-      use:shortcut={{
-        code: 'KeyP',
-        callback: () => {
-          router.push('#/preferences');
-        },
-      }}
-    >
-      <NavbarRoute title="Preferences" href="#/preferences">
+    <footer>
+      <NavbarRoute
+        title="Preferences"
+        href="#/preferences"
+        shortcutParams={{ code: 'KeyP' }}
+      >
         <Icon glyph="Preferences" />
       </NavbarRoute>
       <NavbarButton
