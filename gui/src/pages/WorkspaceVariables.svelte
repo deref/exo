@@ -37,7 +37,7 @@
       <Spinner />
     {:then [variables, vaults]}
       <div class="vaults-title">
-        <h2>Vaults</h2>
+        <h2>Secrets Vaults</h2>
         <Button href={`${workspaceRoute}/add-vault`} small>Add vault</Button>
       </div>
       {#if vaults.length > 0}
@@ -58,7 +58,7 @@
                   <td>
                     {#if vault.connected}
                       <Button href={`${vault.url}/create-secret`} small>
-                        Create secret
+                        Add new secret
                       </Button>
                     {:else if vault.needsAuth}
                       <Button on:click={authEsv} small>Authenticate</Button>

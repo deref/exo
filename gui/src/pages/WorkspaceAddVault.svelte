@@ -23,7 +23,7 @@
 <Layout>
   <WorkspaceNav {workspaceId} active="Variables" slot="navbar" />
   <CenterFormPanel title="Add Vault" {backRoute}>
-    <h1><Icon glyph="Lock" /> Add Vault</h1>
+    <h1><Icon glyph="Lock" /> Add Secrets Vault</h1>
     <form
       on:submit={async () => {
         await workspace.addVault({
@@ -37,10 +37,10 @@
     >
       <p>Enter a URL for your vault:</p>
       <Textbox bind:value={vaultUrl} --input-width="100%" autofocus />
-      <SubmitButton>Add Vault</SubmitButton>
+      <SubmitButton>Add Secrets Vault</SubmitButton>
     </form>
 
     <h2>Need a vault?</h2>
-    <a href={esvUrl}>Create one with Exo Secrets</a>
+    <a href={esvUrl}>Create one with Exo Secrets Vault</a>
   </CenterFormPanel>
 </Layout>
