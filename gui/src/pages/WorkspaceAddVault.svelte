@@ -1,9 +1,11 @@
 <script lang="ts">
   import * as router from 'svelte-spa-router';
-  import Panel from '../components/Panel.svelte';
+  import Icon from '../components/Icon.svelte';
   import Layout from '../components/Layout.svelte';
   import Textbox from '../components/Textbox.svelte';
   import WorkspaceNav from '../components/WorkspaceNav.svelte';
+  import SubmitButton from '../components/form/SubmitButton.svelte';
+  import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
   import { api } from '../lib/api';
 
   export let params = { workspace: '' };
@@ -20,7 +22,8 @@
 
 <Layout>
   <WorkspaceNav {workspaceId} active="Variables" slot="navbar" />
-  <Panel title="Workspace Variables" backRoute={workspaceRoute}>
+  <CenterFormPanel title="Add Vault" backRoute={workspaceRoute}>
+    <h1><Icon glyph="Lock" /> Add Vault</h1>
     <form
       on:submit={async () => {
         await workspace.addVault({
@@ -34,10 +37,10 @@
     >
       <p>Enter a URL for your vault:</p>
       <Textbox bind:value={vaultUrl} --input-width="100%" autofocus />
-      <button type="submit">Add</button>
+      <SubmitButton>Add Vault</SubmitButton>
     </form>
 
     <h2>Need a vault?</h2>
     <a href={esvUrl}>Create one with Exo Secrets</a>
-  </Panel>
+  </CenterFormPanel>
 </Layout>
