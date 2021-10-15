@@ -4,22 +4,16 @@ import (
 	"fmt"
 	"regexp"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
 type VolumeMount struct {
-	Type        string
-	Source      string
-	Target      string
-	ReadOnly    bool
-	Bind        *BindOptions
-	Volume      *VolumeOptions
-	Tmpfs       *TmpfsOptions
-	Consistency *Ignored
+	IsShortForm bool
+	VolumeMountLongForm
 }
 
-// extendedVolumeMount is a private struct that is structurally identical to VolumeAttachment but
-// is only used for YAML unmarshalling where we do not need to consider the short string-based syntax.
-type extendedVolumeMount struct {
+type VolumeMountLongForm struct {
 	Type        string         `yaml:"type,omitempty"`
 	Source      string         `yaml:"source,omitempty"`
 	Target      string         `yaml:"target,omitempty"`
@@ -31,38 +25,28 @@ type extendedVolumeMount struct {
 }
 
 func (vm VolumeMount) MarshalYAML() (interface{}, error) {
-	return extendedVolumeMount{
-		Type:        vm.Type,
-		Source:      vm.Source,
-		Target:      vm.Target,
-		ReadOnly:    vm.ReadOnly,
-		Bind:        vm.Bind,
-		Volume:      vm.Volume,
-		Tmpfs:       vm.Tmpfs,
-		Consistency: vm.Consistency,
-	}, nil
+	if vm.IsShortForm {
+		var sb strings.Builder
+		if vm.Source != "" {
+			sb.WriteString(vm.Source)
+			sb.WriteRune(':')
+		}
+		sb.WriteString(vm.Target)
+		if vm.ReadOnly {
+			sb.WriteString(":ro")
+		}
+		return sb.String(), nil
+	}
+	return vm.VolumeMountLongForm, nil
 }
 
-func (vm *VolumeMount) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var asString string
-	if err := unmarshal(&asString); err == nil {
-		return vm.fromShortSyntax(asString)
+func (vm *VolumeMount) UnmarshalYAML(node *yaml.Node) error {
+	var s string
+	if node.Decode(&s) == nil {
+		vm.IsShortForm = true
+		return vm.fromShortSyntax(s)
 	}
-
-	asExtended := extendedVolumeMount{}
-	if err := unmarshal(&asExtended); err != nil {
-		return err
-	}
-	vm.Type = asExtended.Type
-	vm.Source = asExtended.Source
-	vm.Target = asExtended.Target
-	vm.ReadOnly = asExtended.ReadOnly
-	vm.Bind = asExtended.Bind
-	vm.Volume = asExtended.Volume
-	vm.Tmpfs = asExtended.Tmpfs
-	vm.Consistency = asExtended.Consistency
-
-	return nil
+	return node.Decode(&vm.VolumeMountLongForm)
 }
 
 func (vm *VolumeMount) fromShortSyntax(in string) error {
