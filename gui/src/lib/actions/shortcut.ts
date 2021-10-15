@@ -53,7 +53,11 @@ export interface ShortcutParams extends Chord {
   callback?(e: KeyboardEvent): void;
 }
 
-export const shortcut = (node: HTMLElement, params: ShortcutParams) => {
+export const shortcut = (
+  node: HTMLElement,
+  params: ShortcutParams | undefined,
+) => {
+  if (!params) return;
   const { callback, ...chord } = params;
   shortcuts(node, { chords: [chord], callback });
 };

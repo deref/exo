@@ -22,22 +22,13 @@
 </script>
 
 <div>
-  {#if shortcutParams !== undefined}
-    <button
-      use:shortcut={shortcutParams}
-      on:click|preventDefault={handleClick}
-      class:active={title && active === title}
-    >
-      <slot />
-    </button>
-  {:else}
-    <button
-      on:click|preventDefault={handleClick}
-      class:active={title && active === title}
-    >
-      <slot />
-    </button>
-  {/if}
+  <button
+    use:shortcut={shortcutParams}
+    on:click|preventDefault={handleClick}
+    class:active={title && active === title}
+  >
+    <slot />
+  </button>
   {#if title}
     <div class="tooltip"><Tooltip>{title}</Tooltip></div>
   {/if}
