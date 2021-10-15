@@ -3,6 +3,8 @@ package compose
 import (
 	"errors"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
 type DeviceMapping struct {
@@ -24,13 +26,13 @@ func (dm DeviceMapping) MarshalYAML() (interface{}, error) {
 	return out.String(), nil
 }
 
-func (dm *DeviceMapping) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var dmStr string
-	if err := unmarshal(&dmStr); err != nil {
+func (dm *DeviceMapping) UnmarshalYAML(node *yaml.Node) error {
+	var s string
+	if err := node.Decode(&s); err != nil {
 		return err
 	}
 
-	segments := strings.Split(dmStr, ":")
+	segments := strings.Split(s, ":")
 	if len(segments) < 2 || len(segments) > 3 {
 		return errors.New("device mapping should be in the form: HOST_PATH:CONTAINER_PATH[:CGROUP_PERMISSIONS]")
 	}
