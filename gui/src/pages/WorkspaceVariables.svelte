@@ -63,11 +63,11 @@
                   <td>{vault.url}</td>
                   <td>
                     {#if vault.connected}
-                      <a href={`${vault.url}/create-secret`} target="_blank"
-                        >Create secret</a
-                      >
+                      <Button href={`${vault.url}/create-secret`} small>
+                        Create secret
+                      </Button>
                     {:else if vault.needsAuth}
-                      <Button on:click={authEsv}>Authenticate</Button>
+                      <Button on:click={authEsv} small>Authenticate</Button>
                     {:else}
                       Bad vault URL
                     {/if}

@@ -1,5 +1,9 @@
 <script lang="ts">
+  import * as router from 'svelte-spa-router';
+  import { createEventDispatcher } from 'svelte';
+
   export let type: string | undefined = undefined;
+  export let href: string | undefined = undefined;
 
   export let small: boolean = false;
 
@@ -8,9 +12,33 @@
   export let inset: boolean = false;
 
   export let disabled = false;
+
+  const dispatch = createEventDispatcher();
+
+  const handleClick = (e: MouseEvent) => {
+    if (href) {
+      if (href.startsWith('#')) {
+        // Handle internal routes.
+        router.push(href);
+        return;
+      }
+      // Handle external routes (open in new tab).
+      window.open(href, '_blank')?.focus();
+      return;
+    }
+    // No-href default handling.
+    dispatch('click', e);
+  };
 </script>
 
-<button {disabled} class:small class:danger class:inset on:click {type}>
+<button
+  {disabled}
+  class:small
+  class:danger
+  class:inset
+  on:click|preventDefault={handleClick}
+  {type}
+>
   <slot />
 </button>
 
