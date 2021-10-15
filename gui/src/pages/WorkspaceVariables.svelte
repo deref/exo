@@ -13,7 +13,7 @@
 
   const workspaceId = params.workspace;
   const workspace = api.workspace(workspaceId);
-  const workspaceRoute = `/workspaces/${encodeURIComponent(workspaceId)}`;
+  const workspaceRoute = `#/workspaces/${encodeURIComponent(workspaceId)}`;
 
   const makeRequests = () =>
     Promise.all([workspace.describeEnvironment(), workspace.describeVaults()]);
@@ -39,12 +39,7 @@
     {:then [variables, vaults]}
       <div class="vaults-title">
         <h2>Vaults</h2>
-        <Button
-          on:click={() => router.push(`${workspaceRoute}/add-vault`)}
-          small
-        >
-          Add vault
-        </Button>
+        <Button href={`${workspaceRoute}/add-vault`} small>Add vault</Button>
       </div>
       {#if vaults.length}
         <CheckeredTableWrapper>
