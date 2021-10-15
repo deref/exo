@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 
 	"github.com/deref/exo/internal/core/api"
-	"github.com/deref/exo/internal/manifest"
+	"github.com/deref/exo/internal/manifest/exohcl"
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/spf13/cobra"
 )
@@ -53,7 +53,7 @@ Prints instructions for using the newly created workspace.`,
 		if manifestOutput.Path == "" {
 			// Create a new empty manifest.
 			manifestPath := filepath.Join(root, "exo.hcl")
-			if err := ioutil.WriteFile(manifestPath, []byte(manifest.Starter), 0600); err != nil {
+			if err := ioutil.WriteFile(manifestPath, []byte(exohcl.Starter), 0600); err != nil {
 				return fmt.Errorf("writing manifest file: %w", err)
 			}
 			fmt.Printf("Wrote manifest: %q\n", manifestPath)

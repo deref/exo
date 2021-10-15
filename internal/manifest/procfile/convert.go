@@ -1,33 +1,28 @@
 package procfile
 
 import (
-	"fmt"
-	"io"
+	"bytes"
 	"strconv"
 
-	"github.com/deref/exo/internal/manifest"
-	"github.com/deref/exo/internal/providers/unix/components/process"
-	"github.com/deref/exo/internal/util/jsonutil"
+	"github.com/deref/exo/internal/manifest/exohcl"
+	"github.com/deref/exo/internal/manifest/exohcl/hclgen"
+	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/hclsyntax"
 )
-
-type loader struct{}
-
-var Loader = loader{}
-
-func (l loader) Load(r io.Reader) manifest.LoadResult {
-	procfile, err := Parse(r)
-	if err != nil {
-		return manifest.LoadResult{Err: fmt.Errorf("parsing: %w", err)}
-	}
-	return convert(procfile)
-}
 
 const BasePort = 5000
 const PortStep = 100
 
-func convert(procfile *Procfile) manifest.LoadResult {
-	var res manifest.LoadResult
-	m := manifest.NewManifest()
+type Converter struct{}
+
+func (c *Converter) Convert(bs []byte) (*hcl.File, hcl.Diagnostics) {
+	procfile, diags := Parse(bytes.NewBuffer(bs))
+	if diags.HasErrors() {
+		return nil, diags
+	}
+
+	b := exohcl.NewBuilder(bs)
+
 	port := BasePort
 	for _, p := range procfile.Processes {
 		// Assign default PORT, merge in specified environment.
@@ -40,24 +35,50 @@ func convert(procfile *Procfile) manifest.LoadResult {
 		port += PortStep
 
 		// Get component name.
-		name := manifest.MangleName(p.Name)
+		name := exohcl.MangleName(p.Name)
 		if name != p.Name {
-			warning := fmt.Sprintf("invalid name: %q, renamed to: %q", p.Name, name)
-			res.Warnings = append(res.Warnings, warning)
+			var subject *hcl.Range
+			diags = append(diags, exohcl.NewRenameWarning(p.Name, name, subject))
 		}
 
-		// Add component.
-		component := manifest.Component{
-			Name: name,
-			Type: "process",
-			Spec: jsonutil.MustMarshalIndentString(process.Spec{
-				Program:     p.Program,
-				Arguments:   p.Arguments,
-				Environment: environment,
-			}),
+		// Build HCL attributes.
+		args := make([]hclsyntax.Expression, len(p.Arguments))
+		for i, arg := range p.Arguments {
+			args[i] = hclgen.NewStringLiteral(arg, p.Range)
 		}
-		m.Components = append(m.Components, component)
+		attrs := []*hclsyntax.Attribute{
+			{
+				Name: "program",
+				Expr: hclgen.NewStringLiteral(p.Program, p.Range),
+			},
+			{
+				Name: "arguments",
+				Expr: hclgen.NewTuple(args, p.Range),
+			},
+		}
+		if len(environment) > 0 {
+			envExpr := &hclsyntax.ObjectConsExpr{
+				SrcRange: p.Range,
+			}
+			for k, v := range environment {
+				envExpr.Items = append(envExpr.Items, hclsyntax.ObjectConsItem{
+					KeyExpr:   hclgen.NewObjStringKey(k, p.Range),
+					ValueExpr: hclgen.NewStringLiteral(v, p.Range),
+				})
+			}
+			attrs = append(attrs, &hclsyntax.Attribute{
+				Name: "environment",
+				Expr: envExpr,
+			})
+		}
+
+		b.AddComponentBlock(&hclsyntax.Block{
+			Type:   "process",
+			Labels: []string{name},
+			Body: &hclsyntax.Body{
+				Attributes: hclgen.NewAttributes(attrs...),
+			},
+		})
 	}
-	res.Manifest = m
-	return res
+	return b.Build(), diags
 }

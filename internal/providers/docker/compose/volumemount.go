@@ -30,6 +30,19 @@ type extendedVolumeMount struct {
 	Consistency *Ignored       `yaml:"consistency,omitempty"`
 }
 
+func (vm VolumeMount) MarshalYAML() (interface{}, error) {
+	return extendedVolumeMount{
+		Type:        vm.Type,
+		Source:      vm.Source,
+		Target:      vm.Target,
+		ReadOnly:    vm.ReadOnly,
+		Bind:        vm.Bind,
+		Volume:      vm.Volume,
+		Tmpfs:       vm.Tmpfs,
+		Consistency: vm.Consistency,
+	}, nil
+}
+
 func (vm *VolumeMount) UnmarshalYAML(unmarshal func(interface{}) error) error {
 	var asString string
 	if err := unmarshal(&asString); err == nil {

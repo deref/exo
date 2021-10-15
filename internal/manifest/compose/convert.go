@@ -1,32 +1,38 @@
 package compose
 
 import (
+	"bytes"
 	"fmt"
-	"io"
+	"reflect"
 	"strings"
 
-	"github.com/deref/exo/internal/manifest"
+	"github.com/deref/exo/internal/manifest/exohcl"
+	"github.com/deref/exo/internal/manifest/exohcl/hclgen"
 	"github.com/deref/exo/internal/providers/docker/compose"
-	"github.com/deref/exo/internal/util/yamlutil"
+	"github.com/goccy/go-yaml"
+	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/hclsyntax"
+	"github.com/zclconf/go-cty/cty"
 )
 
-type Loader struct {
+type Converter struct {
 	// ProjectName is used as a prefix for the resources created by this importer.
 	ProjectName string
 }
 
-func (i *Loader) Load(r io.Reader) manifest.LoadResult {
-	composeProject, err := compose.Parse(r)
+func (c *Converter) Convert(bs []byte) (*hcl.File, hcl.Diagnostics) {
+	project, err := compose.Parse(bytes.NewBuffer(bs))
 	if err != nil {
-		return manifest.LoadResult{Err: fmt.Errorf("parsing: %w", err)}
+		return nil, hcl.Diagnostics{
+			&hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  err.Error(),
+			},
+		}
 	}
-	return i.convert(composeProject)
-}
 
-func (i *Loader) convert(project *compose.Project) manifest.LoadResult {
-	res := manifest.LoadResult{
-		Manifest: &manifest.Manifest{},
-	}
+	b := exohcl.NewBuilder(bs)
+	var diags hcl.Diagnostics
 
 	// Since containers reference networks and volumes by their docker-compose name, but the
 	// Docker components will have a namespaced name, so we need to keep track of which
@@ -35,21 +41,18 @@ func (i *Loader) convert(project *compose.Project) manifest.LoadResult {
 	volumesByComposeName := map[string]string{}
 
 	for originalName, volume := range project.Volumes {
-		name := manifest.MangleName(originalName)
+		name := exohcl.MangleName(originalName)
 		if originalName != name {
-			res = res.AddRenameWarning(originalName, name)
+			var subject *hcl.Range
+			diags = append(diags, exohcl.NewRenameWarning(originalName, name, subject))
 		}
 
 		if volume.Name == "" {
-			volume.Name = i.prefixedName(originalName, "")
+			volume.Name = c.prefixedName(originalName, "")
 		}
 		volumesByComposeName[originalName] = volume.Name
 
-		res.Manifest.Components = append(res.Manifest.Components, manifest.Component{
-			Name: name,
-			Type: "volume",
-			Spec: yamlutil.MustMarshalString(volume),
-		})
+		b.AddComponentBlock(makeComponentBlock("volume", name, volume, nil))
 	}
 
 	// Set up networks.
@@ -58,16 +61,17 @@ func (i *Loader) convert(project *compose.Project) manifest.LoadResult {
 		if originalName == "default" {
 			hasDefaultNetwork = true
 		}
-		name := manifest.MangleName(originalName)
+		name := exohcl.MangleName(originalName)
 		if originalName != name {
-			res = res.AddRenameWarning(originalName, name)
+			var subject *hcl.Range
+			diags = append(diags, exohcl.NewRenameWarning(originalName, name, subject))
 		}
 
 		// If a `name` key is specified in the network configuration (usually used in conjunction with `external: true`),
 		// then we should honor that as the docker network name. Otherwise, we should set the name as
 		// `<project_name>_<network_key>`.
 		if network.Name == "" {
-			network.Name = i.prefixedName(originalName, "")
+			network.Name = c.prefixedName(originalName, "")
 		}
 		networksByComposeName[originalName] = network.Name
 
@@ -75,44 +79,34 @@ func (i *Loader) convert(project *compose.Project) manifest.LoadResult {
 			network.Driver = "bridge"
 		}
 
-		res.Manifest.Components = append(res.Manifest.Components, manifest.Component{
-			Name: name,
-			Type: "network",
-			Spec: yamlutil.MustMarshalString(network),
-		})
+		b.AddComponentBlock(makeComponentBlock("network", name, network, nil))
 	}
 	// TODO: Docker Compose only creates the default network if there is at least 1 service that does not
 	// specify a network. We should do the same.
 	if !hasDefaultNetwork {
 		componentName := "default"
-		name := i.prefixedName(componentName, "")
+		name := c.prefixedName(componentName, "")
 		networksByComposeName[componentName] = name
 
-		res.Manifest.Components = append(res.Manifest.Components, manifest.Component{
-			Name: componentName,
-			Type: "network",
-			Spec: yamlutil.MustMarshalString(map[string]string{
-				"name":   name,
-				"driver": "bridge",
-			}),
-		})
+		b.AddComponentBlock(makeComponentBlock("network", componentName, map[string]string{
+			"name":   name,
+			"driver": "bridge",
+		}, nil))
 	}
 
 	for originalName, service := range project.Services {
-		name := manifest.MangleName(originalName)
+		name := exohcl.MangleName(originalName)
 		if originalName != name {
-			res = res.AddRenameWarning(originalName, name)
+			var subject *hcl.Range
+			diags = append(diags, exohcl.NewRenameWarning(originalName, name, subject))
 		}
-		component := manifest.Component{
-			Name: name,
-			Type: "container",
-		}
+		var dependsOn []string
 
 		if service.ContainerName == "" {
 			// The generated container name intentionally matches the container name generated by Docker Compose
 			// when the scale is set at 1. When we address scaling containers, this will need to be updated to
 			// use a different suffix for each container.
-			service.ContainerName = i.prefixedName(originalName, "1")
+			service.ContainerName = c.prefixedName(originalName, "1")
 		}
 
 		if service.Labels == nil {
@@ -120,11 +114,17 @@ func (i *Loader) convert(project *compose.Project) manifest.LoadResult {
 		}
 		for k := range service.Labels {
 			if strings.HasPrefix(k, "com.docker.compose") {
-				res.Err = fmt.Errorf("service may not specify labels with prefix \"com.docker.compose\", but %q specified %q", originalName, k)
-				return res
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  fmt.Sprintf("service may not specify labels with prefix \"com.docker.compose\", but %q specified %q", originalName, k),
+				})
+				return nil, diags
 			}
 		}
-		service.Labels["com.docker.compose.project"] = &i.ProjectName
+		// TODO: It probably makes more sense for these labels to be omitted here,
+		// but preserved if adopting an existing Docker resource. As it is now,
+		// they show up in converted manifests, which doesn't make much sense.
+		service.Labels["com.docker.compose.project"] = &c.ProjectName
 		service.Labels["com.docker.compose.service"] = &originalName
 
 		// Map the docker-compose network name to the name of the docker network that is created.
@@ -132,13 +132,16 @@ func (i *Loader) convert(project *compose.Project) manifest.LoadResult {
 		if len(service.Networks) > 0 {
 			mappedNetworks := make([]compose.ServiceNetwork, len(service.Networks))
 			for i, network := range service.Networks {
-				networkName, ok := networksByComposeName[network.Network]
+				_, ok := networksByComposeName[network.Network]
 				if !ok {
-					res.Err = fmt.Errorf("unknown network: %q", network)
+					diags = append(diags, &hcl.Diagnostic{
+						Severity: hcl.DiagError,
+						Summary:  fmt.Sprintf("unknown network: %q", network),
+					})
 					continue
 				}
 				mappedNetworks[i] = network
-				component.DependsOn = append(component.DependsOn, networkName)
+				dependsOn = append(dependsOn, network.Network)
 			}
 			service.Networks = mappedNetworks
 		} else {
@@ -147,7 +150,7 @@ func (i *Loader) convert(project *compose.Project) manifest.LoadResult {
 					Network: defaultNetworkName,
 				},
 			}
-			component.DependsOn = append(component.DependsOn, "default")
+			dependsOn = append(dependsOn, "default")
 		}
 
 		if len(service.Volumes) > 0 {
@@ -158,7 +161,7 @@ func (i *Loader) convert(project *compose.Project) manifest.LoadResult {
 				if volumeName, ok := volumesByComposeName[volumeMount.Source]; ok {
 					originalName := volumeMount.Source
 					service.Volumes[i].Source = volumeName
-					component.DependsOn = append(component.DependsOn, originalName)
+					dependsOn = append(dependsOn, originalName)
 				}
 				// If the volume was not listed under the top-level "volumes" key, then the docker engine
 				// will create a new volume that will not be namespaced by the Compose project name.
@@ -167,9 +170,14 @@ func (i *Loader) convert(project *compose.Project) manifest.LoadResult {
 
 		for _, dependency := range service.DependsOn.Services {
 			if dependency.Condition != "service_started" {
-				res = res.AddUnsupportedFeatureWarning(fmt.Sprintf("service condition %q", dependency.Service), "only service_started is currently supported")
+				var subject *hcl.Range
+				diags = append(diags, exohcl.NewUnsupportedFeatureWarning(
+					fmt.Sprintf("service condition %q", dependency.Service),
+					"only service_started is currently supported",
+					subject,
+				))
 			}
-			component.DependsOn = append(component.DependsOn, manifest.MangleName(dependency.Service))
+			dependsOn = append(dependsOn, exohcl.MangleName(dependency.Service))
 		}
 
 		for idx, link := range service.Links {
@@ -183,8 +191,11 @@ func (i *Loader) convert(project *compose.Project) manifest.LoadResult {
 				linkService = parts[0]
 				linkAlias = parts[1]
 			default:
-				res.Err = fmt.Errorf("expected SERVICE or SERVICE:ALIAS for link, but got: %q", link)
-				return res
+				diags = append(diags, &hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  fmt.Sprintf("expected SERVICE or SERVICE:ALIAS for link, but got: %q", link),
+				})
+				return nil, diags
 			}
 			// NOTE [RESOLVING SERVICE CONTAINERS]:
 			// There are several locations in a compose definition where a service may reference another service
@@ -198,22 +209,21 @@ func (i *Loader) convert(project *compose.Project) manifest.LoadResult {
 
 			// See https://github.com/docker/compose/blob/v2.0.0-rc.3/compose/service.py#L836 for how compose configures
 			// links.
-			mangledServiceName := manifest.MangleName(linkService)
-			containerName := i.prefixedName(mangledServiceName, "1")
+			mangledServiceName := exohcl.MangleName(linkService)
+			containerName := c.prefixedName(mangledServiceName, "1")
 			service.Links[idx] = fmt.Sprintf("%s:%s", containerName, linkAlias)
-			component.DependsOn = append(component.DependsOn, mangledServiceName)
+			dependsOn = append(dependsOn, mangledServiceName)
 		}
 
-		component.Spec = yamlutil.MustMarshalString(service)
-		res.Manifest.Components = append(res.Manifest.Components, component)
+		b.AddComponentBlock(makeComponentBlock("container", name, service, dependsOn))
 	}
 
-	return res
+	return b.Build(), diags
 }
 
-func (i *Loader) prefixedName(name string, suffix string) string {
+func (c *Converter) prefixedName(name string, suffix string) string {
 	var out strings.Builder
-	out.WriteString(i.ProjectName)
+	out.WriteString(c.ProjectName)
 	out.WriteByte('_')
 	out.WriteString(name)
 	if suffix != "" {
@@ -222,4 +232,180 @@ func (i *Loader) prefixedName(name string, suffix string) string {
 	}
 
 	return out.String()
+}
+
+func makeComponentBlock(typ string, name string, spec interface{}, dependsOn []string) *hclsyntax.Block {
+	obj := yamlToHCL(spec).(*hclsyntax.ObjectConsExpr)
+	attrs := make([]*hclsyntax.Attribute, len(obj.Items))
+	for i, item := range obj.Items {
+		key := item.KeyExpr.(*hclsyntax.ObjectConsKeyExpr)
+		name := hcl.ExprAsKeyword(key.Wrapped)
+		if name == "" {
+			fmt.Printf("%#v\n", key.Wrapped.(*hclsyntax.TemplateExpr).Parts[0])
+			panic("unexpected complex key")
+		}
+		val := item.ValueExpr
+		attrs[i] = &hclsyntax.Attribute{
+			Name:      name,
+			NameRange: key.Range(),
+			Expr:      val,
+			SrcRange:  hcl.RangeBetween(key.Range(), val.Range()),
+		}
+	}
+	var blocks hclsyntax.Blocks
+	if len(dependsOn) > 0 {
+		blocks = append(blocks, &hclsyntax.Block{
+			Type: "_",
+			Body: &hclsyntax.Body{
+				Attributes: hclgen.NewAttributes(&hclsyntax.Attribute{
+					Name: "depends_on",
+					Expr: yamlToHCL(dependsOn),
+				}),
+			},
+		})
+	}
+	return &hclsyntax.Block{
+		Type:   typ,
+		Labels: []string{name},
+		Body: &hclsyntax.Body{
+			Attributes: hclgen.NewAttributes(attrs...),
+			Blocks:     blocks,
+		},
+	}
+}
+
+func yamlToHCL(v interface{}) hclsyntax.Expression {
+	marshaller, ok := v.(yaml.InterfaceMarshaler)
+	if ok {
+		v, err := marshaller.MarshalYAML()
+		if err != nil {
+			panic(err)
+		}
+		return yamlToHCL(v)
+	}
+
+	switch v := v.(type) {
+	case nil:
+		return hclgen.NewNullLiteral(hcl.Range{})
+	case string:
+		return hclgen.NewStringLiteral(v, hcl.Range{})
+	case int:
+		return &hclsyntax.LiteralValueExpr{
+			Val: cty.NumberIntVal(int64(v)),
+		}
+	case int64:
+		return &hclsyntax.LiteralValueExpr{
+			Val: cty.NumberIntVal(v),
+		}
+	case float64:
+		return &hclsyntax.LiteralValueExpr{
+			Val: cty.NumberFloatVal(v),
+		}
+	case bool:
+		return &hclsyntax.LiteralValueExpr{
+			Val: cty.BoolVal(v),
+		}
+	case yaml.MapSlice:
+		out := make([]hclsyntax.ObjectConsItem, len(v))
+		for i, in := range v {
+			out[i] = hclsyntax.ObjectConsItem{
+				KeyExpr:   yamlToHCLKey(in.Key),
+				ValueExpr: yamlToHCL(in.Value),
+			}
+		}
+		return &hclsyntax.ObjectConsExpr{
+			Items: out,
+		}
+	default:
+		rv := reflect.ValueOf(v)
+		if rv.Kind() == reflect.Ptr {
+			if rv.IsNil() {
+				return hclgen.NewNullLiteral(hcl.Range{})
+			}
+			return yamlToHCL(rv.Elem().Interface())
+		}
+		switch rv.Kind() {
+		case reflect.Struct:
+
+			typ := rv.Type()
+
+			numField := rv.NumField()
+			var items []hclsyntax.ObjectConsItem
+			for i := 0; i < numField; i++ {
+				fld := typ.Field(i)
+				tag := fld.Tag.Get("yaml")
+				if tag == "" {
+					continue
+				}
+				options := strings.Split(tag, ",")
+				name := options[0]
+				if name == "-" {
+					continue
+				}
+				omitempty := false
+				for _, option := range options[1:] {
+					switch option {
+					case "omitempty":
+						omitempty = true
+					default:
+						panic(fmt.Errorf("unsupported yaml field tag option: %q", option))
+					}
+				}
+
+				fldV := rv.Field(i)
+
+				if omitempty && fldV.IsZero() {
+					continue
+				}
+
+				item := hclsyntax.ObjectConsItem{
+					KeyExpr:   hclgen.NewObjStringKey(name, hcl.Range{}),
+					ValueExpr: yamlToHCL(fldV.Interface()),
+				}
+				items = append(items, item)
+			}
+			return &hclsyntax.ObjectConsExpr{
+				Items: items,
+			}
+
+		case reflect.Slice:
+			elems := make([]hclsyntax.Expression, rv.Len())
+			for i := range elems {
+				elems[i] = yamlToHCL(rv.Index(i).Interface())
+			}
+			return &hclsyntax.TupleConsExpr{
+				Exprs: elems,
+			}
+
+		case reflect.Map:
+			// XXX need a stable sort!
+			items := make([]hclsyntax.ObjectConsItem, 0, rv.Len())
+			iter := rv.MapRange()
+			for iter.Next() {
+				item := hclsyntax.ObjectConsItem{
+					KeyExpr:   yamlToHCLKey(iter.Key().Interface()),
+					ValueExpr: yamlToHCL(iter.Value().Interface()),
+				}
+				items = append(items, item)
+			}
+			return &hclsyntax.ObjectConsExpr{
+				Items: items,
+			}
+
+		default:
+			panic(fmt.Errorf("unexpected yaml type: %T", v))
+		}
+	}
+}
+
+func yamlToHCLKey(v interface{}) hclsyntax.Expression {
+	x := yamlToHCL(v)
+	if template, isTemplate := x.(*hclsyntax.TemplateExpr); isTemplate && len(template.Parts) == 1 {
+		if lit, isLit := template.Parts[0].(*hclsyntax.LiteralValueExpr); isLit && lit.Val.Type() == cty.String {
+			return hclgen.NewObjStringKey(lit.Val.AsString(), hcl.Range{})
+		}
+	}
+	return &hclsyntax.ObjectConsKeyExpr{
+		Wrapped: x,
+	}
 }
