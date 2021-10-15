@@ -1,5 +1,4 @@
 <script lang="ts">
-  import * as router from 'svelte-spa-router';
   import Panel from '../components/Panel.svelte';
   import Button from '../components/Button.svelte';
   import Layout from '../components/Layout.svelte';
@@ -41,7 +40,7 @@
         <h2>Vaults</h2>
         <Button href={`${workspaceRoute}/add-vault`} small>Add vault</Button>
       </div>
-      {#if vaults.length}
+      {#if vaults.length > 0}
         <CheckeredTableWrapper>
           <table>
             <thead>
@@ -75,12 +74,12 @@
       {:else}
         <div>No vaults linked to this workspace.</div>
       {/if}
-      {#if Object.keys(variables).length === 0}
-        <div>Empty Environment</div>
-      {:else}
+      {#if Object.keys(variables).length > 0}
         <hr />
         <h2>Variables</h2>
         <EnvironmentTable {variables} />
+      {:else}
+        <div>Empty environment, no variables found.</div>
       {/if}
     {/await}
   </Panel>
