@@ -6,22 +6,22 @@ import (
 
 func TestDictionaryItemYAML(t *testing.T) {
 	testYAML(t, "bare", `key`, DictionaryItem{
-		Syntax: DictionarySyntaxArray,
-		Key:    "key",
+		Style: SeqStyle,
+		Key:   "key",
 	})
 	testYAML(t, "colon_empty", `key:`, DictionaryItem{
-		Syntax: DictionarySyntaxMap,
-		Key:    "key",
+		Style: MapStyle,
+		Key:   "key",
 	})
 	testYAML(t, "colon_value", `key: value`, DictionaryItem{
-		Syntax: DictionarySyntaxMap,
-		Key:    "key",
-		Value:  "value",
+		Style: MapStyle,
+		Key:   "key",
+		Value: "value",
 	})
 	testYAML(t, "equal", `key=value`, DictionaryItem{
-		Syntax: DictionarySyntaxArray,
-		Key:    "key",
-		Value:  "value",
+		Style: SeqStyle,
+		Key:   "key",
+		Value: "value",
 	})
 }
 
@@ -30,16 +30,16 @@ func TestDictionaryYAML(t *testing.T) {
 key: value
 novalue:
 `, Dictionary{
-		Syntax: DictionarySyntaxMap,
+		Style: MapStyle,
 		Items: []DictionaryItem{
 			{
-				Syntax: DictionarySyntaxMap,
-				Key:    "key",
-				Value:  "value",
+				Style: MapStyle,
+				Key:   "key",
+				Value: "value",
 			},
 			{
-				Syntax: DictionarySyntaxMap,
-				Key:    "novalue",
+				Style: MapStyle,
+				Key:   "novalue",
 			},
 		},
 	})
@@ -47,16 +47,16 @@ novalue:
 - key=value
 - novalue
 `, Dictionary{
-		Syntax: DictionarySyntaxArray,
+		Style: SeqStyle,
 		Items: []DictionaryItem{
 			{
-				Syntax: DictionarySyntaxArray,
-				Key:    "key",
-				Value:  "value",
+				Style: SeqStyle,
+				Key:   "key",
+				Value: "value",
 			},
 			{
-				Syntax: DictionarySyntaxArray,
-				Key:    "novalue",
+				Style: SeqStyle,
+				Key:   "novalue",
 			},
 		},
 	})

@@ -8,27 +8,19 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type DictionarySyntax rune
-
-const (
-	DictionarySyntaxUnknown DictionarySyntax = 0
-	DictionarySyntaxMap                      = 'M'
-	DictionarySyntaxArray                    = 'A'
-)
-
 type Dictionary struct {
-	Syntax DictionarySyntax
-	Items  []DictionaryItem
+	Style Style
+	Items []DictionaryItem
 }
 
 type DictionaryItem struct {
-	Syntax DictionarySyntax
-	Key    string
-	Value  string
+	Style Style
+	Key   string
+	Value string
 }
 
 func (dict Dictionary) MarshalYAML() (interface{}, error) {
-	if dict.Syntax == DictionarySyntaxArray {
+	if dict.Style == SeqStyle {
 		return dict.Items, nil
 	}
 	node := &yaml.Node{
@@ -46,7 +38,7 @@ func (dict Dictionary) MarshalYAML() (interface{}, error) {
 func (dict *Dictionary) UnmarshalYAML(node *yaml.Node) error {
 	switch node.Tag {
 	case "!!map":
-		dict.Syntax = DictionarySyntaxMap
+		dict.Style = MapStyle
 		n := len(node.Content) / 2
 		dict.Items = make([]DictionaryItem, n)
 		for i := 0; i < n; i++ {
@@ -62,7 +54,7 @@ func (dict *Dictionary) UnmarshalYAML(node *yaml.Node) error {
 		}
 		return nil
 	case "!!seq":
-		dict.Syntax = DictionarySyntaxArray
+		dict.Style = SeqStyle
 		return node.Decode(&dict.Items)
 	default:
 		return fmt.Errorf("expected !!seq or !!map, got %s", node.ShortTag())
@@ -70,7 +62,7 @@ func (dict *Dictionary) UnmarshalYAML(node *yaml.Node) error {
 }
 
 func (item DictionaryItem) MarshalYAML() (interface{}, error) {
-	if item.Syntax == DictionarySyntaxArray {
+	if item.Style == SeqStyle {
 		if item.Value == "" {
 			return item.Key, nil
 		}
@@ -104,7 +96,7 @@ func (item *DictionaryItem) UnmarshalYAML(node *yaml.Node) error {
 	var s string
 	err := node.Decode(&s)
 	if err == nil {
-		item.Syntax = DictionarySyntaxArray
+		item.Style = SeqStyle
 		parts := strings.SplitN(s, "=", 2)
 		item.Key = parts[0]
 		if len(parts) > 1 {
@@ -120,7 +112,7 @@ func (item *DictionaryItem) UnmarshalYAML(node *yaml.Node) error {
 	if len(m) != 1 {
 		return errors.New("expected single mapping")
 	}
-	item.Syntax = DictionarySyntaxMap
+	item.Style = SeqStyle
 	for k, v := range m {
 		item.Key = k
 		item.Value = v
