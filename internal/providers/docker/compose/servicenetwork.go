@@ -3,11 +3,21 @@ package compose
 import (
 	"fmt"
 
-	"github.com/goccy/go-yaml"
+	"gopkg.in/yaml.v3"
 )
 
+type ServiceNetworks struct {
+	Style Style
+	Items []ServiceNetwork
+}
+
 type ServiceNetwork struct {
-	Network      string   `yaml:"-"`
+	Name        string
+	IsShortForm bool
+	ServiceNetworkLongForm
+}
+
+type ServiceNetworkLongForm struct {
 	Aliases      []string `yaml:"aliases,omitempty"`
 	IPV4Address  string   `yaml:"ipv4_address,omitempty"`
 	IPV6Address  string   `yaml:"ipv6_address,omitempty"`
@@ -15,53 +25,66 @@ type ServiceNetwork struct {
 	Priority     int64    `yaml:"priority,omitempty"`
 }
 
-type ServiceNetworks []ServiceNetwork
-
-func (sn ServiceNetworks) MarshalYAML() (interface{}, error) {
-	slice := make(yaml.MapSlice, len(sn))
-	for i, n := range sn {
-		slice[i] = yaml.MapItem{
-			Key:   n.Network,
-			Value: n,
+func (sn *ServiceNetworks) UnmarshalYAML(node *yaml.Node) error {
+	switch node.Tag {
+	case "!!map":
+		sn.Style = MapStyle
+		n := len(node.Content) / 2
+		sn.Items = make([]ServiceNetwork, n)
+		for i := 0; i < n; i++ {
+			nameNode := node.Content[i*2+0]
+			longFormNode := node.Content[i*2+1]
+			var item ServiceNetwork
+			if err := nameNode.Decode(&item.Name); err != nil {
+				return err
+			}
+			if err := longFormNode.Decode(&item.ServiceNetworkLongForm); err != nil {
+				return err
+			}
+			sn.Items[i] = item
 		}
+		return nil
+	case "!!seq":
+		sn.Style = SeqStyle
+		return node.Decode(&sn.Items)
+	default:
+		return fmt.Errorf("expected !!seq or !!map, got %s", node.ShortTag())
 	}
-	return slice, nil
 }
 
-func (sn *ServiceNetworks) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var asStrings []string
-	if err := unmarshal(&asStrings); err == nil {
-		nets := make([]ServiceNetwork, len(asStrings))
-		for i, network := range asStrings {
-			nets[i] = ServiceNetwork{
-				Network: network,
-			}
+func (sn ServiceNetworks) MarshalYAML() (interface{}, error) {
+	if sn.Style == SeqStyle {
+		return sn.Items, nil
+	}
+	node := &yaml.Node{
+		Kind:    yaml.MappingNode,
+		Content: make([]*yaml.Node, len(sn.Items)*2),
+	}
+	for i, item := range sn.Items {
+		var keyNode, valueNode yaml.Node
+		if err := keyNode.Encode(item.Name); err != nil {
+			panic(err)
 		}
-		*sn = nets
+		if err := valueNode.Encode(item); err != nil {
+			return nil, err
+		}
+		node.Content[i*2+0] = &keyNode
+		node.Content[i*2+1] = &valueNode
+	}
+	return node, nil
+}
+
+func (sn *ServiceNetwork) UnmarshalYAML(node *yaml.Node) error {
+	if node.Decode(&sn.Name) == nil {
+		sn.IsShortForm = true
 		return nil
 	}
+	return node.Decode(&sn.ServiceNetworkLongForm)
+}
 
-	var mapSlice yaml.MapSlice
-	if err := unmarshal(&mapSlice); err != nil {
-		return err
+func (sn ServiceNetwork) MarshalYAML() (interface{}, error) {
+	if sn.IsShortForm {
+		return sn.Name, nil
 	}
-
-	var asMap map[string]ServiceNetwork
-	if err := unmarshal(&asMap); err != nil {
-		return err
-	}
-
-	nets := make([]ServiceNetwork, len(mapSlice))
-	for i, item := range mapSlice {
-		key, ok := item.Key.(string)
-		if !ok {
-			return fmt.Errorf("expected string key at index %d, got: %T", i, item.Key)
-		}
-		sn := asMap[key]
-		sn.Network = key
-		nets[i] = sn
-	}
-	*sn = nets
-
-	return nil
+	return sn.ServiceNetworkLongForm, nil
 }
