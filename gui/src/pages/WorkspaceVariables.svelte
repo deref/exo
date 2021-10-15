@@ -38,7 +38,7 @@
     {:then [variables, vaults]}
       <div class="vaults-title">
         <h2>Secrets Vaults</h2>
-        <Button href={`${workspaceRoute}/add-vault`} small>Add vault</Button>
+        <Button href={`${workspaceRoute}/add-vault`} small>+ Add vault</Button>
       </div>
       {#if vaults.length > 0}
         <CheckeredTableWrapper>
