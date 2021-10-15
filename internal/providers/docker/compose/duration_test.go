@@ -1,35 +1,32 @@
 package compose
 
 import (
-	"strings"
+	"bytes"
 	"testing"
 	"time"
 
-	"github.com/deref/exo/internal/util/yamlutil"
 	"github.com/stretchr/testify/assert"
+	"gopkg.in/yaml.v3"
 )
 
-func TestParseDuration(t *testing.T) {
-	check := func(s string, expected time.Duration) {
-		actual, err := ParseDuration(s)
-		assert.NoError(t, err)
-		assert.Equal(t, Duration(expected), actual)
-		assert.Equal(t, s, actual.String())
+func TestDurationYAML(t *testing.T) {
+	checkOneWay := func(expected string, d time.Duration) {
+		actual, err := yaml.Marshal(Duration{
+			Duration: d,
+		})
+		if assert.NoError(t, err) {
+			assert.Equal(t, expected, string(bytes.TrimSpace(actual)))
+		}
 	}
-	check("5s", 5*time.Second)
-	check("1m30s", 90*time.Second)
-	check("37us", 37*time.Microsecond)
-	check("1h5m30s20ms", 1*time.Hour+5*time.Minute+30*time.Second+20*time.Millisecond)
-}
-
-func TestDurationYaml(t *testing.T) {
-	var actual struct {
-		D Duration
+	checkRoundTrip := func(s string, d time.Duration) {
+		testYAML(t, s, s, Duration{
+			String:   MakeString(s),
+			Duration: d,
+		})
+		checkOneWay(s, d)
 	}
-	yamlutil.MustUnmarshalString(`
-d: 1m30s
-`, &actual)
-	assert.Equal(t, Duration(90*time.Second), actual.D)
-
-	assert.Equal(t, "1h5m30s20ms", strings.TrimSpace(yamlutil.MustMarshalString(Duration(1*time.Hour+5*time.Minute+30*time.Second+20*time.Millisecond))))
+	checkRoundTrip("5s", 5*time.Second)
+	checkRoundTrip("1m30s", 90*time.Second)
+	checkRoundTrip("37us", 37*time.Microsecond)
+	checkRoundTrip("1h5m30s20ms", 1*time.Hour+5*time.Minute+30*time.Second+20*time.Millisecond)
 }

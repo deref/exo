@@ -9,7 +9,7 @@ import (
 
 func TestInterpolate(t *testing.T) {
 	expected := map[string]interface{}{
-		"foo": uint64(123),
+		"foo": 123,
 		"bar": "i",
 		"array": []interface{}{
 			nil,

@@ -1,6 +1,8 @@
 package compose
 
 type Service struct {
+	Key string `yaml:"-"`
+
 	// Note that these two are only applicable to Windows.
 	CPUCount   int64 `yaml:"cpu_count,omitempty"`
 	CPUPercent int64 `yaml:"cpu_percent,omitempty"`
@@ -20,17 +22,17 @@ type Service struct {
 	Configs            []string    `yaml:"configs,omitempty"` // TODO: support long syntax.
 	ContainerName      string      `yaml:"container_name,omitempty"`
 	// TODO: credential_spec
-	DependsOn         ServiceDependencies `yaml:"depends_on,omitempty"`
-	DeviceCgroupRules []string            `yaml:"device_cgroup_rules,omitempty"`
-	Devices           []DeviceMapping     `yaml:"devices,omitempty"`
-	DNS               StringOrStringSlice `yaml:"dns,omitempty"`
-	DNSOptions        []string            `yaml:"dns_opt,omitempty"`
-	DNSSearch         StringOrStringSlice `yaml:"dns_search,omitempty"`
-	Domainname        string              `yaml:"domainname,omitempty"`
-	Entrypoint        Command             `yaml:"entrypoint,omitempty"`
-	EnvFile           StringOrStringSlice `yaml:"env_file,omitempty"` // TODO: Add to the environment for a docker container component.
-	Environment       Dictionary          `yaml:"environment,omitempty"`
-	Expose            PortMappings        `yaml:"expose,omitempty"` // TODO: Validate target-only.
+	DependsOn         ServiceDependencies     `yaml:"depends_on,omitempty"`
+	DeviceCgroupRules []string                `yaml:"device_cgroup_rules,omitempty"`
+	Devices           []DeviceMapping         `yaml:"devices,omitempty"`
+	DNS               Strings                 `yaml:"dns,omitempty"`
+	DNSOptions        []string                `yaml:"dns_opt,omitempty"`
+	DNSSearch         Strings                 `yaml:"dns_search,omitempty"`
+	Domainname        string                  `yaml:"domainname,omitempty"`
+	Entrypoint        Command                 `yaml:"entrypoint,omitempty"`
+	EnvFile           Strings                 `yaml:"env_file,omitempty"`
+	Environment       Dictionary              `yaml:"environment,omitempty"`
+	Expose            []PortRangeWithProtocol `yaml:"expose,omitempty"`
 	// TODO: extends
 	// List of links of the form `SERVICE` or `SERVICE:ALIAS`
 	ExternalLinks []string `yaml:"external_links,omitempty"`
@@ -64,26 +66,26 @@ type Service struct {
 	Ports          PortMappings `yaml:"ports,omitempty"`
 	Privileged     bool         `yaml:"privileged,omitempty"`
 	// TODO: Support profiles. See https://docs.docker.com/compose/profiles/.
-	Profiles        Ignored             `yaml:"profiles,omitempty"`
-	PullPolicy      string              `yaml:"pull_policy,omitempty"`
-	ReadOnly        bool                `yaml:"read_only,omitempty"`
-	Restart         string              `yaml:"restart,omitempty"`
-	Runtime         string              `yaml:"runtime,omitempty"`
-	SecurityOpt     []string            `yaml:"security_opt,omitempty"`
-	ShmSize         Bytes               `yaml:"shm_size,omitempty"`
-	StdinOpen       bool                `yaml:"stdin_open,omitempty"`
-	StopGracePeriod *Duration           `yaml:"stop_grace_period,omitempty"`
-	StopSignal      string              `yaml:"stop_signal,omitempty"`
-	StorageOpt      map[string]string   `yaml:"storage_opt,omitempty"`
-	Sysctls         Dictionary          `yaml:"sysctls,omitempty"`
-	Tmpfs           StringOrStringSlice `yaml:"tmpfs,omitempty"`
-	TTY             bool                `yaml:"tty,omitempty"`
-	Ulimits         Ulimits             `yaml:"ulimits,omitempty"`
-	User            string              `yaml:"user,omitempty"`
-	UsernsMode      string              `yaml:"userns_mode,omitempty"`
-	Volumes         []VolumeMount       `yaml:"volumes,omitempty"`
-	VolumesFrom     []string            `yaml:"volumes_from,omitempty"`
-	WorkingDir      string              `yaml:"working_dir,omitempty"`
+	Profiles        Ignored       `yaml:"profiles,omitempty"`
+	PullPolicy      string        `yaml:"pull_policy,omitempty"`
+	ReadOnly        bool          `yaml:"read_only,omitempty"`
+	Restart         string        `yaml:"restart,omitempty"`
+	Runtime         string        `yaml:"runtime,omitempty"`
+	SecurityOpt     []string      `yaml:"security_opt,omitempty"`
+	ShmSize         Bytes         `yaml:"shm_size,omitempty"`
+	StdinOpen       bool          `yaml:"stdin_open,omitempty"`
+	StopGracePeriod *Duration     `yaml:"stop_grace_period,omitempty"`
+	StopSignal      string        `yaml:"stop_signal,omitempty"`
+	StorageOpt      Dictionary    `yaml:"storage_opt,omitempty"`
+	Sysctls         Dictionary    `yaml:"sysctls,omitempty"`
+	Tmpfs           Strings       `yaml:"tmpfs,omitempty"`
+	TTY             bool          `yaml:"tty,omitempty"`
+	Ulimits         Ulimits       `yaml:"ulimits,omitempty"`
+	User            string        `yaml:"user,omitempty"`
+	UsernsMode      string        `yaml:"userns_mode,omitempty"`
+	Volumes         []VolumeMount `yaml:"volumes,omitempty"`
+	VolumesFrom     []string      `yaml:"volumes_from,omitempty"`
+	WorkingDir      string        `yaml:"working_dir,omitempty"`
 
 	// NOTE [DOCKER SWARM FEATURES]:
 	// Docker-Compose manages local, single-container deployments as well as Docker Swarm
@@ -93,17 +95,4 @@ type Service struct {
 	Deploy  Ignored `yaml:"deploy,omitempty"`
 	Scale   Ignored `yaml:"scale,omitempty"`
 	Secrets Ignored `yaml:"secrets,omitempty"`
-}
-
-type Healthcheck struct {
-	Test        Command  `yaml:"test,omitempty"`
-	Interval    Duration `yaml:"interval,omitempty"`
-	Timeout     Duration `yaml:"timeout,omitempty"`
-	Retries     int      `yaml:"retries,omitempty"`
-	StartPeriod Duration `yaml:"start_period,omitempty"`
-}
-
-type Logging struct {
-	Driver  string            `yaml:"driver,omitempty"`
-	Options map[string]string `yaml:"options,omitempty"`
 }

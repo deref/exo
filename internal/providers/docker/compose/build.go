@@ -1,25 +1,13 @@
 package compose
 
-type Build BuildConfig
+import "gopkg.in/yaml.v3"
 
-func (b Build) MarshalYAML() (interface{}, error) {
-	return BuildConfig(b), nil
+type Build struct {
+	IsShortForm bool
+	BuildLongForm
 }
 
-func (dict *Build) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var s string
-	var cfg BuildConfig
-	err := unmarshal(&s)
-	if err == nil {
-		cfg.Context = s
-	} else if err := unmarshal(&cfg); err != nil {
-		return nil
-	}
-	*dict = Build(cfg)
-	return nil
-}
-
-type BuildConfig struct {
+type BuildLongForm struct {
 	Context    string     `yaml:"context,omitempty"`
 	Dockerfile string     `yaml:"dockerfile,omitempty"`
 	Args       Dictionary `yaml:"args,omitempty"`
@@ -29,4 +17,22 @@ type BuildConfig struct {
 	Labels     Dictionary `yaml:"labels,omitempty"`
 	ShmSize    Bytes      `yaml:"shm_size,omitempty"`
 	Target     string     `yaml:"target,omitempty"`
+}
+
+func (b Build) MarshalYAML() (interface{}, error) {
+	if b.IsShortForm {
+		return b.Context, nil
+	}
+	return b.BuildLongForm, nil
+}
+
+func (b *Build) UnmarshalYAML(node *yaml.Node) error {
+	var short string
+	err := node.Decode(&short)
+	if err == nil {
+		b.IsShortForm = true
+		b.Context = short
+		return nil
+	}
+	return node.Decode(&b.BuildLongForm)
 }

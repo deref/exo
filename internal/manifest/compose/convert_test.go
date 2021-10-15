@@ -11,7 +11,7 @@ import (
 )
 
 func TestConvert(t *testing.T) {
-	t.Skipf("parsed compose data is not order-stable & other gunk in here doesn't belong, like labels")
+	t.Skip("compose to exo.hcl not yet working")
 
 	projectName := "testproj"
 
@@ -29,25 +29,28 @@ services:
         volumes: ['./src:/srv']
         command: node /srv/index.js
 `,
+			// TODO: These tests are checking some undesirable behavior such
+			// as including labels, assigning container names, etc. That logic
+			// should be pushed down in to the component controllers.
 			Expected: `
-				exo = "1.0"
-				components {
-					network "default" {
-						driver = "bridge"
-						name = "testproj_default"
-					}
-					container "web" {
-						command = "node /srv/index.js"
-						container_name = "testproj_web_1"
-            image = "nodejs:14"
-						labels = { "com.docker.compose.project" = "testproj", "com.docker.compose.service" = "web" }
-						networks = ["testproj_default"]
-						volumes = ["./src:srv"]
-						_ {
-							depends_on = ["default"]
-						}
-					}
-				}`,
+exo = "1.0"
+components {
+	network "default" {
+		driver = "bridge"
+		name = "testproj_default"
+	}
+	container "web" {
+		command = "node /srv/index.js"
+		container_name = "testproj_web_1"
+		image = "nodejs:14"
+		labels = { "com.docker.compose.project" = "testproj", "com.docker.compose.service" = "web" }
+		networks = ["testproj_default"]
+		volumes = ["./src:srv"]
+		_ {
+			depends_on = ["default"]
+		}
+	}
+}`,
 		},
 
 		{
@@ -68,39 +71,39 @@ networks:
   backend:
 `,
 			Expected: `
-				exo = "1.0"
-				components {
-					network "frontend" {
-						driver = "bridge"
-						name = "testproj_frontend"
-					}
-					network "backend" {
-						driver = "bridge"
-						name = "testproj_backend"
-					}
-					network "default" {
-						driver = "bridge"
-						name = "testproj_default"
-					}
-					container "proxy" {
-						container_name = "testproj_proxy_1"
-						image = "nginx"
-						labels = { "com.docker.compose.project" = "testproj", "com.docker.compose.service" = "proxy" }
-						networks = [ "testproj_backend", "testproj_frontend" ]
-						_ {
-							depends_on = ["backend", "frontend"]
-						}
-					}
-					container "srv" {
-						container_name = "testproj_srv_1"
-						image = "myapp"
-						labels = { "com.docker.compose.project" = "testproj", "com.docker.compose.service" = "srv" }
-						networks = ["testproj_backend"]
-						_ {
-							depends_on = ["backend"]
-						}
-					}
-				}`,
+exo = "1.0"
+components {
+	network "frontend" {
+		driver = "bridge"
+		name = "testproj_frontend"
+	}
+	network "backend" {
+		driver = "bridge"
+		name = "testproj_backend"
+	}
+	network "default" {
+		driver = "bridge"
+		name = "testproj_default"
+	}
+	container "proxy" {
+		container_name = "testproj_proxy_1"
+		image = "nginx"
+		labels = { "com.docker.compose.project" = "testproj", "com.docker.compose.service" = "proxy" }
+		networks = [ "testproj_backend", "testproj_frontend" ]
+		_ {
+			depends_on = ["backend", "frontend"]
+		}
+	}
+	container "srv" {
+		container_name = "testproj_srv_1"
+		image = "myapp"
+		labels = { "com.docker.compose.project" = "testproj", "com.docker.compose.service" = "srv" }
+		networks = ["testproj_backend"]
+		_ {
+			depends_on = ["backend"]
+		}
+	}
+}`,
 		},
 	}
 

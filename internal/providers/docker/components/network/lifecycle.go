@@ -51,7 +51,7 @@ func (n *Network) Initialize(ctx context.Context, input *core.InitializeInput) (
 		return &core.InitializeOutput{}, nil
 	}
 
-	labels := spec.Labels.WithoutNils()
+	labels := spec.Labels.Map()
 	for k, v := range n.GetExoLabels() {
 		labels[k] = v
 	}

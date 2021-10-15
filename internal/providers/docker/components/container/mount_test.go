@@ -12,8 +12,10 @@ import (
 func TestMakeMount(t *testing.T) {
 	workspaceRoot := "/home/test/app"
 	homeDir := "/home/test"
-	makeMount := func(vm compose.VolumeMount) mount.Mount {
-		res, err := makeMountFromVolumeMount(workspaceRoot, homeDir, vm)
+	makeMount := func(vm compose.VolumeMountLongForm) mount.Mount {
+		res, err := makeMountFromVolumeMount(workspaceRoot, homeDir, compose.VolumeMount{
+			VolumeMountLongForm: vm,
+		})
 		assert.NoError(t, err)
 		return res
 	}
@@ -21,7 +23,7 @@ func TestMakeMount(t *testing.T) {
 	assert.Equal(t, mount.Mount{
 		Type:   mount.TypeVolume,
 		Target: "/home/node/app",
-	}, makeMount(compose.VolumeMount{
+	}, makeMount(compose.VolumeMountLongForm{
 		Type:   "volume",
 		Target: "/home/node/app",
 	}))
@@ -30,7 +32,7 @@ func TestMakeMount(t *testing.T) {
 		Type:   mount.TypeBind,
 		Source: workspaceRoot + "/testing",
 		Target: "/home/node/app",
-	}, makeMount(compose.VolumeMount{
+	}, makeMount(compose.VolumeMountLongForm{
 		Type:   "bind",
 		Source: "./testing",
 		Target: "/home/node/app",
@@ -40,7 +42,7 @@ func TestMakeMount(t *testing.T) {
 		Type:   mount.TypeBind,
 		Source: "/testing",
 		Target: "/home/node/app",
-	}, makeMount(compose.VolumeMount{
+	}, makeMount(compose.VolumeMountLongForm{
 		Type:   "bind",
 		Source: "/testing",
 		Target: "/home/node/app",
@@ -50,7 +52,7 @@ func TestMakeMount(t *testing.T) {
 		Type:   mount.TypeBind,
 		Source: path.Join(homeDir, "testing"),
 		Target: "/home/node/app",
-	}, makeMount(compose.VolumeMount{
+	}, makeMount(compose.VolumeMountLongForm{
 		Type:   "bind",
 		Source: "~/testing",
 		Target: "/home/node/app",
@@ -60,7 +62,7 @@ func TestMakeMount(t *testing.T) {
 		Type:   mount.TypeVolume,
 		Source: "testing",
 		Target: "/home/node/app",
-	}, makeMount(compose.VolumeMount{
+	}, makeMount(compose.VolumeMountLongForm{
 		Type:   "volume",
 		Source: "testing",
 		Target: "/home/node/app",

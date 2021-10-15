@@ -1,30 +1,43 @@
 package compose
 
-type StringOrStringSlice []string
+import "gopkg.in/yaml.v3"
 
-func (ss StringOrStringSlice) MarshalYAML() (interface{}, error) {
-	if len(ss) == 1 {
-		return ss[0], nil
-	}
-	return []string(ss), nil
+type Strings struct {
+	IsSequence bool
+	Items      []string
 }
 
-func (ss *StringOrStringSlice) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var asSlice []interface{}
-	if err := unmarshal(&asSlice); err == nil {
-		stringSlice := make([]string, len(asSlice))
-		for i, s := range asSlice {
-			stringSlice[i] = s.(string)
-		}
-		*ss = StringOrStringSlice(stringSlice)
+func MakeStrings(items ...string) Strings {
+	res := Strings{
+		Items: items,
+	}
+	if len(items) != 1 {
+		res.IsSequence = true
+	}
+	return res
+}
+
+func (ss Strings) MarshalYAML() (interface{}, error) {
+	if ss.IsSequence || len(ss.Items) != 1 {
+		return ss.Items, nil
+	}
+	return ss.Items[0], nil
+}
+
+func (ss *Strings) UnmarshalYAML(node *yaml.Node) error {
+	var s string
+	if node.Decode(&s) == nil {
+		ss.Items = []string{s}
 		return nil
 	}
+	ss.IsSequence = true
+	return node.Decode(&ss.Items)
+}
 
-	var asString string
-	err := unmarshal(&asString)
-	if err == nil {
-		*ss = []string{asString}
+func (ss Strings) Slice() []string {
+	res := make([]string, len(ss.Items))
+	for i, s := range ss.Items {
+		res[i] = s
 	}
-
-	return err
+	return res
 }
