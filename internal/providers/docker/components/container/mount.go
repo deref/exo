@@ -37,7 +37,7 @@ func makeMountFromVolumeMount(workspaceRoot, userHomeDir string, va compose.Volu
 		mountType = mount.TypeTmpfs
 		if va.Tmpfs != nil {
 			tmpfsOptions = &mount.TmpfsOptions{
-				SizeBytes: va.Tmpfs.Size,
+				SizeBytes: va.Tmpfs.Size.Int64(),
 			}
 		}
 

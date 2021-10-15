@@ -112,6 +112,11 @@ type PortRange struct {
 	Max uint16
 }
 
+type PortRangeWithProtocol struct {
+	PortRange
+	Protocol string
+}
+
 func ParsePortRange(numbers string) (res PortRange, err error) {
 	if numbers == "" {
 		return PortRange{}, nil
@@ -154,4 +159,40 @@ func (rng PortRange) MarshalYAML() (interface{}, error) {
 		return rng.Min, nil
 	}
 	return fmt.Sprintf("%d-%d", rng.Min, rng.Max), nil
+}
+
+func (rng PortRange) String() string {
+	if rng.Min == rng.Max {
+		return fmt.Sprintf("%d", rng.Min)
+	}
+	return fmt.Sprintf("%d-%d", rng.Min, rng.Max)
+}
+
+func (rng *PortRangeWithProtocol) UnmarshalYAML(node *yaml.Node) error {
+	var s string
+	if err := node.Decode(&s); err != nil {
+		return err
+	}
+	parts := strings.SplitN(s, "/", 2)
+	if len(parts) > 1 {
+		rng.Protocol = parts[1]
+	}
+	var err error
+	rng.PortRange, err = ParsePortRange(parts[0])
+	return err
+}
+
+func (rng PortRangeWithProtocol) MarshalYAML() (interface{}, error) {
+	if rng.Min == rng.Max {
+		return rng.Min, nil
+	}
+	return rng.String(), nil
+}
+
+func (rng PortRangeWithProtocol) String() string {
+	s := rng.PortRange.String()
+	if rng.Protocol != "" {
+		s += "/" + rng.Protocol
+	}
+	return s
 }

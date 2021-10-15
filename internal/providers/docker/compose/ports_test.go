@@ -174,4 +174,17 @@ mode: host
 			},
 		},
 	})
+	testYAML(t, "range_with_protocol", `1000-2000/tcp`, PortRangeWithProtocol{
+		PortRange: PortRange{
+			Min: 1000,
+			Max: 2000,
+		},
+		Protocol: "tcp",
+	})
+	testYAML(t, "range_with_blank_protocol", `1000-2000`, PortRangeWithProtocol{
+		PortRange: PortRange{
+			Min: 1000,
+			Max: 2000,
+		},
+	})
 }

@@ -83,17 +83,13 @@ func (c *Container) buildImage(ctx context.Context, spec *image.Spec) error {
 		//MemorySwap     int64
 		//CgroupParent   string
 		//NetworkMode    string
-		ShmSize:    int64(spec.Build.ShmSize),
+		ShmSize:    spec.Build.ShmSize.Int64(),
 		Dockerfile: spec.Build.Dockerfile,
 		//Ulimits        []*units.Ulimit
-		//// BuildArgs needs to be a *string instead of just a string so that
-		//// we can tell the difference between "" (empty string) and no value
-		//// at all (nil). See the parsing of buildArgs in
-		//// api/server/router/build/build_routes.go for even more info.
-		BuildArgs: spec.Build.Args,
+		BuildArgs: spec.Build.Args.MapOfPtr(),
 		//AuthConfigs map[string]AuthConfig
 		//Context     io.Reader
-		Labels: spec.Build.Labels.WithoutNils(),
+		Labels: spec.Build.Labels.Map(),
 		//// squash the resulting image's layers to the parent
 		//// preserves the original image and creates a new one from the parent with all
 		//// the changes applied to a single layer

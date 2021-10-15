@@ -22,17 +22,17 @@ type Service struct {
 	Configs            []string    `yaml:"configs,omitempty"` // TODO: support long syntax.
 	ContainerName      string      `yaml:"container_name,omitempty"`
 	// TODO: credential_spec
-	DependsOn         ServiceDependencies `yaml:"depends_on,omitempty"`
-	DeviceCgroupRules []string            `yaml:"device_cgroup_rules,omitempty"`
-	Devices           []DeviceMapping     `yaml:"devices,omitempty"`
-	DNS               Strings             `yaml:"dns,omitempty"`
-	DNSOptions        []string            `yaml:"dns_opt,omitempty"`
-	DNSSearch         Strings             `yaml:"dns_search,omitempty"`
-	Domainname        string              `yaml:"domainname,omitempty"`
-	Entrypoint        Command             `yaml:"entrypoint,omitempty"`
-	EnvFile           Strings             `yaml:"env_file,omitempty"`
-	Environment       Dictionary          `yaml:"environment,omitempty"`
-	Expose            []PortRange         `yaml:"expose,omitempty"`
+	DependsOn         ServiceDependencies     `yaml:"depends_on,omitempty"`
+	DeviceCgroupRules []string                `yaml:"device_cgroup_rules,omitempty"`
+	Devices           []DeviceMapping         `yaml:"devices,omitempty"`
+	DNS               Strings                 `yaml:"dns,omitempty"`
+	DNSOptions        []string                `yaml:"dns_opt,omitempty"`
+	DNSSearch         Strings                 `yaml:"dns_search,omitempty"`
+	Domainname        string                  `yaml:"domainname,omitempty"`
+	Entrypoint        Command                 `yaml:"entrypoint,omitempty"`
+	EnvFile           Strings                 `yaml:"env_file,omitempty"`
+	Environment       Dictionary              `yaml:"environment,omitempty"`
+	Expose            []PortRangeWithProtocol `yaml:"expose,omitempty"`
 	// TODO: extends
 	// List of links of the form `SERVICE` or `SERVICE:ALIAS`
 	ExternalLinks []string `yaml:"external_links,omitempty"`

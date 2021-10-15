@@ -14,9 +14,10 @@ type Dictionary struct {
 }
 
 type DictionaryItem struct {
-	Style Style
-	Key   string
-	Value string
+	Style   Style
+	Key     string
+	Value   string
+	NoValue bool
 }
 
 func (dict Dictionary) MarshalYAML() (interface{}, error) {
@@ -101,6 +102,8 @@ func (item *DictionaryItem) UnmarshalYAML(node *yaml.Node) error {
 		item.Key = parts[0]
 		if len(parts) > 1 {
 			item.Value = parts[1]
+		} else {
+			item.NoValue = true
 		}
 		return nil
 	}
@@ -120,33 +123,35 @@ func (item *DictionaryItem) UnmarshalYAML(node *yaml.Node) error {
 	return nil
 }
 
-/*
-
 func (dict Dictionary) Slice() []string {
-	m := map[string]*string(dict)
-	res := make([]string, len(m))
-	i := 0
-	for k, v := range m {
-		if v == nil {
-			res[i] = k
+	res := make([]string, len(dict.Items))
+	for i, item := range dict.Items {
+		if item.Value == "" {
+			res[i] = item.Key
 		} else {
-			res[i] = fmt.Sprintf("%s=%s", k, *v)
+			res[i] = fmt.Sprintf("%s=%s", item.Key, item.Value)
 		}
-		i++
 	}
-	sort.Strings(res)
 	return res
 }
 
-func (dict Dictionary) WithoutNils() map[string]string {
-	m := make(map[string]string, len(dict))
-	for k, v := range dict {
-		if v == nil {
-			continue
-		}
-		m[k] = *v
+func (dict Dictionary) Map() map[string]string {
+	m := make(map[string]string, len(dict.Items))
+	for _, item := range dict.Items {
+		m[item.Key] = item.Value
 	}
 	return m
 }
 
-*/
+func (dict Dictionary) MapOfPtr() map[string]*string {
+	m := make(map[string]*string, len(dict.Items))
+	for _, item := range dict.Items {
+		if item.NoValue {
+			m[item.Key] = nil
+		} else {
+			value := item.Value
+			m[item.Key] = &value
+		}
+	}
+	return m
+}

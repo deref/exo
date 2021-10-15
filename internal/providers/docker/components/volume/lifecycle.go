@@ -25,14 +25,14 @@ func (v *Volume) Initialize(ctx context.Context, input *core.InitializeInput) (o
 		return &core.InitializeOutput{}, nil
 	}
 
-	labels := spec.Labels.WithoutNils()
+	labels := spec.Labels.Map()
 	for k, v := range v.GetExoLabels() {
 		labels[k] = v
 	}
 
 	opts := volume.VolumeCreateBody{
 		Driver:     spec.Driver,
-		DriverOpts: spec.DriverOpts,
+		DriverOpts: spec.DriverOpts.Map(),
 		Labels:     labels,
 		Name:       spec.Name,
 	}

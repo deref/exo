@@ -2,12 +2,15 @@ package compose
 
 import (
 	"testing"
+
+	"github.com/stretchr/testify/assert"
 )
 
 func TestDictionaryItemYAML(t *testing.T) {
 	testYAML(t, "bare", `key`, DictionaryItem{
-		Style: SeqStyle,
-		Key:   "key",
+		Style:   SeqStyle,
+		Key:     "key",
+		NoValue: true,
 	})
 	testYAML(t, "colon_empty", `key:`, DictionaryItem{
 		Style: MapStyle,
@@ -55,9 +58,27 @@ novalue:
 				Value: "value",
 			},
 			{
-				Style: SeqStyle,
-				Key:   "novalue",
+				Style:   SeqStyle,
+				Key:     "novalue",
+				NoValue: true,
 			},
 		},
 	})
+}
+
+func TestDictionarySlice(t *testing.T) {
+	assert.Equal(t, []string{
+		"novalue",
+		"k=v",
+	}, Dictionary{
+		Items: []DictionaryItem{
+			{
+				Key: "novalue",
+			},
+			{
+				Key:   "k",
+				Value: "v",
+			},
+		},
+	}.Slice())
 }

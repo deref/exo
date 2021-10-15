@@ -69,20 +69,20 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 	if spec.Healthcheck != nil {
 		healthCfg = &container.HealthConfig{
 			Test:        strslice.StrSlice(spec.Healthcheck.Test.Parts),
-			Interval:    time.Duration(spec.Healthcheck.Interval),
-			Timeout:     time.Duration(spec.Healthcheck.Timeout),
+			Interval:    spec.Healthcheck.Interval.Duration,
+			Timeout:     spec.Healthcheck.Timeout.Duration,
 			Retries:     spec.Healthcheck.Retries,
-			StartPeriod: time.Duration(spec.Healthcheck.StartPeriod),
+			StartPeriod: spec.Healthcheck.StartPeriod.Duration,
 		}
 	}
 
-	labels := spec.Labels.WithoutNils()
+	labels := spec.Labels.Map()
 	for k, v := range c.GetExoLabels() {
 		labels[k] = v
 	}
 
 	envMap := map[string]string{}
-	for _, envFilePath := range spec.EnvFile {
+	for _, envFilePath := range spec.EnvFile.Items {
 		if !path.IsAbs(envFilePath) {
 			envFilePath = path.Join(c.WorkspaceRoot, envFilePath)
 		}
@@ -97,18 +97,19 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 			envMap[k] = v
 		}
 	}
-	for k, v := range spec.Environment {
-		if v == nil {
-			if v, ok := c.WorkspaceEnvironment[k]; ok {
-				envMap[k] = v
+	for _, item := range spec.Environment.Items {
+		if item.Value == "" {
+			if v, ok := c.WorkspaceEnvironment[item.Key]; ok {
+				envMap[item.Key] = v
 			}
 		} else {
-			envMap[k] = *v
+			envMap[item.Key] = item.Value
 		}
 	}
 	envSlice := []string{}
-	for k, v := range envMap {
-		envSlice = append(envSlice, fmt.Sprintf("%s=%s", k, v))
+	for _, item := range spec.Environment.Items {
+		v := envMap[item.Key]
+		envSlice = append(envSlice, fmt.Sprintf("%s=%s", item.Key, v))
 	}
 
 	containerCfg := &container.Config{
@@ -153,31 +154,21 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 	}
 
 	if spec.StopGracePeriod != nil {
-		timeout := int(time.Duration(*spec.StopGracePeriod).Round(time.Second).Seconds())
+		timeout := int(spec.StopGracePeriod.Duration.Round(time.Second).Seconds())
 		containerCfg.StopTimeout = &timeout
 	}
 
-	exposePort := func(numbers string, protocol string) error {
-		rng, err := compose.ParsePortRange(numbers)
-		if err != nil {
-			return fmt.Errorf("parsing port: %w", err)
-		}
+	exposePort := func(rng compose.PortRange, protocol string) {
 		for n := rng.Min; n <= rng.Max; n++ {
 			port := nat.Port(compose.FormatPort(n, protocol))
 			containerCfg.ExposedPorts[port] = struct{}{}
 		}
-		return nil
 	}
-
 	for _, exposed := range spec.Expose {
-		if err := exposePort(exposed.Target, exposed.Protocol); err != nil {
-			return fmt.Errorf("exposing port %q: %w", exposed.Target, err)
-		}
+		exposePort(exposed.PortRange, exposed.Protocol)
 	}
 	for _, mapping := range spec.Ports {
-		if err := exposePort(mapping.Target, mapping.Protocol); err != nil {
-			return fmt.Errorf("exposing mapped port %q: %w", mapping.Target, err)
-		}
+		exposePort(mapping.Target, mapping.Protocol)
 	}
 
 	logCfg := container.LogConfig{}
@@ -199,7 +190,7 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 	blkioWeightDevice := make([]*blkiodev.WeightDevice, len(spec.BlkioConfig.WeightDevice))
 	for i, weightDevice := range spec.BlkioConfig.WeightDevice {
 		blkioWeightDevice[i] = &blkiodev.WeightDevice{
-			Path:   weightDevice.Path,
+			Path:   weightDevice.Path.Value,
 			Weight: weightDevice.Weight,
 		}
 	}
@@ -222,9 +213,9 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 		CapAdd:  spec.CapAdd,
 		CapDrop: spec.CapDrop,
 		//CgroupnsMode    CgroupnsMode      // Cgroup namespace mode to use for the container
-		DNS:        spec.DNS,
+		DNS:        spec.DNS.Slice(),
 		DNSOptions: spec.DNSOptions,
-		DNSSearch:  spec.DNSSearch,
+		DNSSearch:  spec.DNSSearch.Slice(),
 		ExtraHosts: spec.ExtraHosts,
 		GroupAdd:   spec.GroupAdd,
 		//Cgroup          CgroupSpec        // Cgroup to use for the container
@@ -236,11 +227,11 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 		//PublishAllPorts bool              // Should docker publish all exposed port for the container
 		ReadonlyRootfs: spec.ReadOnly,
 		SecurityOpt:    spec.SecurityOpt,
-		StorageOpt:     spec.StorageOpt,
+		StorageOpt:     spec.StorageOpt.Map(),
 		//UTSMode         UTSMode           // UTS namespace to use for the container
 		UsernsMode: container.UsernsMode(spec.UsernsMode),
-		ShmSize:    int64(spec.ShmSize),
-		Sysctls:    spec.Sysctls.WithoutNils(),
+		ShmSize:    spec.ShmSize.Int64(),
+		Sysctls:    spec.Sysctls.Map(),
 		Runtime:    spec.Runtime,
 
 		//// Applicable to Windows
@@ -253,12 +244,12 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 			CPUShares:            spec.CPUShares,
 			CPUPeriod:            spec.CPUPeriod,
 			CPUQuota:             spec.CPUQuota,
-			Memory:               int64(spec.MemoryLimit),
-			MemoryReservation:    int64(spec.MemoryReservation),
+			Memory:               spec.MemoryLimit.Int64(),
+			MemoryReservation:    spec.MemoryReservation.Int64(),
 			MemorySwappiness:     spec.MemorySwappiness,
-			MemorySwap:           int64(spec.MemswapLimit),
-			CPURealtimePeriod:    time.Duration(spec.CPURealtimePeriod).Microseconds(),
-			CPURealtimeRuntime:   time.Duration(spec.CPURealtimeRuntime).Microseconds(),
+			MemorySwap:           spec.MemswapLimit.Int64(),
+			CPURealtimePeriod:    spec.CPURealtimePeriod.Duration.Microseconds(),
+			CPURealtimeRuntime:   spec.CPURealtimeRuntime.Duration.Microseconds(),
 			BlkioWeight:          uint16(spec.BlkioConfig.Weight),
 			BlkioWeightDevice:    blkioWeightDevice,
 			BlkioDeviceReadBps:   convertThrottleDevice(spec.BlkioConfig.DeviceReadBPS),
@@ -307,10 +298,10 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 		return err
 	}
 
-	if len(spec.Tmpfs) > 0 {
-		hostCfg.Tmpfs = make(map[string]string, len(spec.Tmpfs))
+	if len(spec.Tmpfs.Items) > 0 {
+		hostCfg.Tmpfs = make(map[string]string, len(spec.Tmpfs.Items))
 		// This matches the docker-compose behaviour for specifying tmpfs mounts with the service-level `tmpfs` option.
-		for _, path := range spec.Tmpfs {
+		for _, path := range spec.Tmpfs.Items {
 			hostCfg.Tmpfs[path] = ""
 		}
 	}
@@ -332,7 +323,7 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 	}
 
 	for _, mapping := range spec.Ports {
-		target, err := nat.NewPort(mapping.Protocol, mapping.Target)
+		target, err := nat.NewPort(mapping.Protocol, mapping.Target.String())
 		if err != nil {
 			return fmt.Errorf("could not parse port: %w", err)
 		}
@@ -343,7 +334,7 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 		}
 
 		for targetPort := targetLow; targetPort <= targetHigh; targetPort += 1 {
-			publishedPort, err := nat.NewPort(mapping.Protocol, mapping.Published)
+			publishedPort, err := nat.NewPort(mapping.Protocol, mapping.Published.String())
 			if err != nil {
 				return fmt.Errorf("could not parse port range: %w", err)
 			}
@@ -379,10 +370,10 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 	// Docker only allows a single network to be specified when creating a container. The other networks must be
 	// connected after the container is started. See https://github.com/moby/moby/issues/29265#issuecomment-265909198.
 	var remainingNetworks []compose.ServiceNetwork
-	if len(spec.Networks) > 0 {
-		firstNetwork := spec.Networks[0]
-		remainingNetworks = spec.Networks[1:]
-		networkCfg.EndpointsConfig[firstNetwork.Network] = c.endpointSettings(firstNetwork, spec)
+	if len(spec.Networks.Items) > 0 {
+		firstNetwork := spec.Networks.Items[0]
+		remainingNetworks = spec.Networks.Items[1:]
+		networkCfg.EndpointsConfig[firstNetwork.Name] = c.endpointSettings(firstNetwork, spec)
 	}
 
 	var platform *v1.Platform
@@ -415,7 +406,7 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 	for _, network := range remainingNetworks {
 		network := network
 		netConnects.Go(func() error {
-			return c.Docker.NetworkConnect(ctx, network.Network, createdBody.ID, c.endpointSettings(network, spec))
+			return c.Docker.NetworkConnect(ctx, network.Name, createdBody.ID, c.endpointSettings(network, spec))
 		})
 	}
 
@@ -523,8 +514,8 @@ func convertThrottleDevice(in []compose.ThrottleDevice) []*blkiodev.ThrottleDevi
 	out := make([]*blkiodev.ThrottleDevice, len(in))
 	for i, throttleDevice := range in {
 		out[i] = &blkiodev.ThrottleDevice{
-			Path: throttleDevice.Path,
-			Rate: uint64(throttleDevice.Rate),
+			Path: throttleDevice.Path.Value,
+			Rate: throttleDevice.Rate.Uint64(),
 		}
 	}
 	return out
@@ -552,16 +543,13 @@ func convertUlimits(in compose.Ulimits) []*units.Ulimit {
 	}
 
 	out := make([]*units.Ulimit, len(in))
-	i := 0
-	for name, ulimit := range in {
+	for i, ulimit := range in {
 		out[i] = &units.Ulimit{
-			Name: name,
+			Name: ulimit.Name,
 			Hard: ulimit.Hard,
 			Soft: ulimit.Soft,
 		}
-		i++
 	}
-
 	return out
 }
 

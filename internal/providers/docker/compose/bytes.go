@@ -19,8 +19,12 @@ type ByteUnit struct {
 	Scalar int64
 }
 
-func (bs Bytes) Int() int64 {
+func (bs Bytes) Int64() int64 {
 	return bs.Quantity * bs.Unit.Scalar
+}
+
+func (bs Bytes) Uint64() uint64 {
+	return uint64(bs.Int64())
 }
 
 func (bs Bytes) MarshalYAML() (interface{}, error) {

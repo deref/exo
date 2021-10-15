@@ -11,7 +11,7 @@ func TestParseBytes(t *testing.T) {
 		var actual Bytes
 		err := actual.Parse(s)
 		if assert.NoError(t, err) {
-			assert.Equal(t, expected, actual.Int())
+			assert.Equal(t, expected, actual.Int64())
 		}
 	}
 	check("5", 5)

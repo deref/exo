@@ -33,3 +33,11 @@ func (ss *Strings) UnmarshalYAML(node *yaml.Node) error {
 	ss.IsSequence = true
 	return node.Decode(&ss.Items)
 }
+
+func (ss Strings) Slice() []string {
+	res := make([]string, len(ss.Items))
+	for i, s := range ss.Items {
+		res[i] = s
+	}
+	return res
+}
