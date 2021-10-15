@@ -4,7 +4,7 @@ import "testing"
 
 func TestServiceNetworksYAML(t *testing.T) {
 	testYAML(t, "short", `net`, ServiceNetwork{
-		Name:        "net",
+		Key:         "net",
 		IsShortForm: true,
 	})
 	testYAML(t, "long", `
@@ -34,11 +34,11 @@ priority: 1000
 		Style: SeqStyle,
 		Items: []ServiceNetwork{
 			{
-				Name:        "one",
+				Key:         "one",
 				IsShortForm: true,
 			},
 			{
-				Name:        "two",
+				Key:         "two",
 				IsShortForm: true,
 			},
 		},
@@ -53,10 +53,10 @@ two:
 		Style: MapStyle,
 		Items: []ServiceNetwork{
 			{
-				Name: "one",
+				Key: "one",
 			},
 			{
-				Name: "two",
+				Key: "two",
 				ServiceNetworkLongForm: ServiceNetworkLongForm{
 					Aliases: []string{
 						"a",

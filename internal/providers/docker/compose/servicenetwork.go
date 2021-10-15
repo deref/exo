@@ -12,7 +12,7 @@ type ServiceNetworks struct {
 }
 
 type ServiceNetwork struct {
-	Name        string
+	Key         string
 	IsShortForm bool
 	ServiceNetworkLongForm
 }
@@ -32,10 +32,10 @@ func (sn *ServiceNetworks) UnmarshalYAML(node *yaml.Node) error {
 		n := len(node.Content) / 2
 		sn.Items = make([]ServiceNetwork, n)
 		for i := 0; i < n; i++ {
-			nameNode := node.Content[i*2+0]
+			keyNode := node.Content[i*2+0]
 			longFormNode := node.Content[i*2+1]
 			var item ServiceNetwork
-			if err := nameNode.Decode(&item.Name); err != nil {
+			if err := keyNode.Decode(&item.Key); err != nil {
 				return err
 			}
 			if err := longFormNode.Decode(&item.ServiceNetworkLongForm); err != nil {
@@ -62,7 +62,7 @@ func (sn ServiceNetworks) MarshalYAML() (interface{}, error) {
 	}
 	for i, item := range sn.Items {
 		var keyNode, valueNode yaml.Node
-		if err := keyNode.Encode(item.Name); err != nil {
+		if err := keyNode.Encode(item.Key); err != nil {
 			panic(err)
 		}
 		if err := valueNode.Encode(item); err != nil {
@@ -75,7 +75,7 @@ func (sn ServiceNetworks) MarshalYAML() (interface{}, error) {
 }
 
 func (sn *ServiceNetwork) UnmarshalYAML(node *yaml.Node) error {
-	if node.Decode(&sn.Name) == nil {
+	if node.Decode(&sn.Key) == nil {
 		sn.IsShortForm = true
 		return nil
 	}
@@ -84,7 +84,7 @@ func (sn *ServiceNetwork) UnmarshalYAML(node *yaml.Node) error {
 
 func (sn ServiceNetwork) MarshalYAML() (interface{}, error) {
 	if sn.IsShortForm {
-		return sn.Name, nil
+		return sn.Key, nil
 	}
 	return sn.ServiceNetworkLongForm, nil
 }

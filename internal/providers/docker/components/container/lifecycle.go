@@ -373,7 +373,7 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 	if len(spec.Networks.Items) > 0 {
 		firstNetwork := spec.Networks.Items[0]
 		remainingNetworks = spec.Networks.Items[1:]
-		networkCfg.EndpointsConfig[firstNetwork.Name] = c.endpointSettings(firstNetwork, spec)
+		networkCfg.EndpointsConfig[firstNetwork.Key] = c.endpointSettings(firstNetwork, spec)
 	}
 
 	var platform *v1.Platform
@@ -406,7 +406,7 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 	for _, network := range remainingNetworks {
 		network := network
 		netConnects.Go(func() error {
-			return c.Docker.NetworkConnect(ctx, network.Name, createdBody.ID, c.endpointSettings(network, spec))
+			return c.Docker.NetworkConnect(ctx, network.Key, createdBody.ID, c.endpointSettings(network, spec))
 		})
 	}
 
