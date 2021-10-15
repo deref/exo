@@ -1,7 +1,7 @@
 package compose
 
 type Service struct {
-	Name string `yaml:"-"`
+	Key string `yaml:"-"`
 
 	// Note that these two are only applicable to Windows.
 	CPUCount   int64 `yaml:"cpu_count,omitempty"`
