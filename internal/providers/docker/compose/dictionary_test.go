@@ -88,3 +88,38 @@ func TestDictionarySlice(t *testing.T) {
 		},
 	}.Slice())
 }
+
+func TestDictionaryInterpolate(t *testing.T) {
+	env := map[string]string{
+		"one": "1",
+		"two": "2",
+	}
+	// Map keys are not interpolated.
+	assertInterpolated(t, env, `
+${one}: ${two}
+`, Dictionary{
+		Style: MapStyle,
+		Items: []DictionaryItem{
+			{
+				Style:  MapStyle,
+				String: MakeString("${two}").WithValue("2"),
+				Key:    "${one}",
+				Value:  "2",
+			},
+		},
+	})
+	// But keys as part of seq-style items are.
+	assertInterpolated(t, env, `
+- ${one}=${two}
+`, Dictionary{
+		Style: SeqStyle,
+		Items: []DictionaryItem{
+			{
+				Style:  SeqStyle,
+				String: MakeString("${one}=${two}").WithValue("1=2"),
+				Key:    "1",
+				Value:  "2",
+			},
+		},
+	})
+}

@@ -12,3 +12,7 @@ type Network struct {
 	Labels     Dictionary `yaml:"labels,omitempty"`
 	External   Bool       `yaml:"external,omitempty"`
 }
+
+func (n *Network) Interpolate(env Environment) error {
+	return interpolateStruct(n, env)
+}

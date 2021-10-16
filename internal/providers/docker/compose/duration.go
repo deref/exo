@@ -19,13 +19,25 @@ func (d *Duration) UnmarshalYAML(node *yaml.Node) error {
 		return err
 	}
 
-	n, err := strconv.Atoi(d.Value)
+	_ = d.Interpolate(ErrEnvironment)
+	return nil
+}
+
+func (d *Duration) Interpolate(env Environment) error {
+	if err := d.String.Interpolate(env); err != nil {
+		return err
+	}
+	if d.String.Value == "" {
+		return nil
+	}
+
+	n, err := strconv.Atoi(d.String.Value)
 	if err == nil {
 		d.Duration = time.Duration(n) * time.Microsecond
 		return nil
 	}
 
-	d.Duration, err = time.ParseDuration(d.Value)
+	d.Duration, err = time.ParseDuration(d.String.Value)
 	return err
 }
 

@@ -2,8 +2,6 @@ package template
 
 import (
 	"bytes"
-	"errors"
-	"fmt"
 	"io"
 	"regexp"
 )
@@ -14,8 +12,10 @@ type Template interface {
 
 func Substitute(template Template, env Environment) (string, error) {
 	var buf bytes.Buffer
-	err := template.Substitute(&buf, env)
-	return buf.String(), err
+	if err := template.Substitute(&buf, env); err != nil {
+		return "", err
+	}
+	return buf.String(), nil
 }
 
 func Parse(s string) (Template, error) {
@@ -52,7 +52,8 @@ func Parse(s string) (Template, error) {
 			break
 		}
 		v := &Variable{
-			Name: s[nameLeft:nameRight],
+			Name:   s[nameLeft:nameRight],
+			Braces: s[nameLeft-1] == '{',
 		}
 
 		defaultLeft := match[10]
@@ -98,34 +99,16 @@ func (lit *Literal) Substitute(w io.Writer, env Environment) error {
 
 type Variable struct {
 	Name           string
+	Braces         bool
 	Separator      string
 	DefaultOrError string
 }
 
 func (v *Variable) Substitute(w io.Writer, env Environment) error {
-	value, found := env.Lookup(v.Name)
-	switch v.Separator {
-	case "":
-		// No-op.
-	case ":-":
-		if value == "" {
-			value = v.DefaultOrError
-		}
-	case "-":
-		if !found {
-			value = v.DefaultOrError
-		}
-	case ":?":
-		if value == "" {
-			return errors.New(v.DefaultOrError)
-		}
-	case "?":
-		if !found {
-			return errors.New(v.DefaultOrError)
-		}
-	default:
-		return fmt.Errorf("invalid variable syntax: %q", v.Name+v.Separator)
+	substitution, err := env.Lookup(v)
+	if err != nil {
+		return err
 	}
-	_, err := io.WriteString(w, value)
+	_, err = io.WriteString(w, substitution)
 	return err
 }

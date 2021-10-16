@@ -34,8 +34,8 @@ var _ core.Lifecycle = (*Container)(nil)
 
 func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput) (output *core.InitializeOutput, err error) {
 	var spec Spec
-	if err := yamlutil.UnmarshalString(input.Spec, &spec); err != nil {
-		return nil, fmt.Errorf("unmarshalling spec: %w", err)
+	if err := c.LoadSpec(input.Spec, &spec); err != nil {
+		return nil, fmt.Errorf("loading spec: %w", err)
 	}
 
 	// NOTE [IMAGE_SUBCOMPONENT]: Should create image as subcomponent instead of
@@ -83,15 +83,15 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 
 	envMap := map[string]string{}
 	for _, envFilePath := range spec.EnvFile.Items {
-		if !path.IsAbs(envFilePath) {
-			envFilePath = path.Join(c.WorkspaceRoot, envFilePath)
+		if !path.IsAbs(envFilePath.Value) {
+			envFilePath.Value = path.Join(c.WorkspaceRoot, envFilePath.Value)
 		}
-		if !pathutil.HasPathPrefix(envFilePath, c.WorkspaceRoot) {
-			return fmt.Errorf("env file %s is not contained within the workspace", envFilePath)
+		if !pathutil.HasPathPrefix(envFilePath.Value, c.WorkspaceRoot) {
+			return fmt.Errorf("env file %s is not contained within the workspace", envFilePath.Value)
 		}
-		envFileVars, err := godotenv.Read(envFilePath)
+		envFileVars, err := godotenv.Read(envFilePath.Value)
 		if err != nil {
-			return fmt.Errorf("reading env file %s: %w", envFilePath, err)
+			return fmt.Errorf("reading env file %s: %w", envFilePath.Value, err)
 		}
 		for k, v := range envFileVars {
 			envMap[k] = v
@@ -213,9 +213,9 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 		CapAdd:  spec.CapAdd.Values(),
 		CapDrop: spec.CapDrop.Values(),
 		//CgroupnsMode    CgroupnsMode      // Cgroup namespace mode to use for the container
-		DNS:        spec.DNS.Slice(),
+		DNS:        spec.DNS.Values(),
 		DNSOptions: spec.DNSOptions.Values(),
-		DNSSearch:  spec.DNSSearch.Slice(),
+		DNSSearch:  spec.DNSSearch.Values(),
 		ExtraHosts: spec.ExtraHosts.Values(),
 		GroupAdd:   spec.GroupAdd.Values(),
 		//Cgroup          CgroupSpec        // Cgroup to use for the container
@@ -302,7 +302,7 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 		hostCfg.Tmpfs = make(map[string]string, len(spec.Tmpfs.Items))
 		// This matches the docker-compose behaviour for specifying tmpfs mounts with the service-level `tmpfs` option.
 		for _, path := range spec.Tmpfs.Items {
-			hostCfg.Tmpfs[path] = ""
+			hostCfg.Tmpfs[path.Value] = ""
 		}
 	}
 
@@ -420,8 +420,8 @@ func (c *Container) Refresh(ctx context.Context, input *core.RefreshInput) (*cor
 		// has passed from October 2021, or when the [IMAGE_SUBCOMPONENT] note has
 		// been resolved.
 		var spec Spec
-		if err := yamlutil.UnmarshalString(input.Spec, &spec); err != nil {
-			return nil, fmt.Errorf("unmarshalling spec: %w", err)
+		if err := c.LoadSpec(input.Spec, &spec); err != nil {
+			return nil, fmt.Errorf("loading spec: %w", err)
 		}
 		c.State.Image.Spec = yamlutil.MustMarshalString(image.Spec{
 			Platform: spec.Platform.Value,
@@ -491,15 +491,15 @@ func (c *Container) removeExistingContainerByName(ctx context.Context, name stri
 
 func (c *Container) endpointSettings(sn compose.ServiceNetwork, spec *Spec) *network.EndpointSettings {
 	es := &network.EndpointSettings{
-		Aliases: append([]string{c.ComponentID, c.ComponentName}, sn.Aliases...),
+		Aliases: append([]string{c.ComponentID, c.ComponentName}, sn.Aliases.Values()...),
 		Links:   append(append([]string{}, spec.Links.Values()...), spec.ExternalLinks.Values()...),
 	}
 
-	if sn.IPV4Address != "" || sn.IPV6Address != "" || len(sn.LinkLocalIPs) > 0 {
+	if sn.IPV4Address.Value != "" || sn.IPV6Address.Value != "" || len(sn.LinkLocalIPs) > 0 {
 		es.IPAMConfig = &network.EndpointIPAMConfig{
-			IPv4Address:  sn.IPV4Address,
-			IPv6Address:  sn.IPV6Address,
-			LinkLocalIPs: sn.LinkLocalIPs,
+			IPv4Address:  sn.IPV4Address.Value,
+			IPv6Address:  sn.IPV6Address.Value,
+			LinkLocalIPs: sn.LinkLocalIPs.Values(),
 		}
 	}
 
@@ -546,8 +546,8 @@ func convertUlimits(in compose.Ulimits) []*units.Ulimit {
 	for i, ulimit := range in {
 		out[i] = &units.Ulimit{
 			Name: ulimit.Name,
-			Hard: ulimit.Hard,
-			Soft: ulimit.Soft,
+			Hard: ulimit.Hard.Value,
+			Soft: ulimit.Soft.Value,
 		}
 	}
 	return out

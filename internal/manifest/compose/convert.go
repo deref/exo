@@ -49,10 +49,10 @@ func (c *Converter) Convert(bs []byte) (*hcl.File, hcl.Diagnostics) {
 			diags = append(diags, exohcl.NewRenameWarning(volume.Key, name, subject))
 		}
 
-		if volume.Name == "" {
-			volume.Name = c.prefixedName(volume.Key, "")
+		if volume.Name.Value == "" {
+			volume.Name.Value = c.prefixedName(volume.Key, "")
 		}
-		volumeKeyToName[volume.Key] = volume.Name
+		volumeKeyToName[volume.Key] = volume.Name.Value
 
 		b.AddComponentBlock(makeComponentBlock("volume", name, volume, nil))
 	}
@@ -159,12 +159,12 @@ func (c *Converter) Convert(bs []byte) (*hcl.File, hcl.Diagnostics) {
 
 		if len(service.Volumes) > 0 {
 			for i, volumeMount := range service.Volumes {
-				if volumeMount.Type != "volume" {
+				if volumeMount.Type.Value != "volume" {
 					continue
 				}
-				if volumeName, ok := volumeKeyToName[volumeMount.Source]; ok {
-					originalName := volumeMount.Source
-					service.Volumes[i].Source = volumeName
+				if volumeName, ok := volumeKeyToName[volumeMount.Source.Value]; ok {
+					originalName := volumeMount.Source.Value
+					service.Volumes[i].Source.Value = volumeName
 					dependsOn = append(dependsOn, originalName)
 				}
 				// If the volume was not listed in the top-level "volumes" section, then the docker engine
@@ -174,10 +174,10 @@ func (c *Converter) Convert(bs []byte) (*hcl.File, hcl.Diagnostics) {
 
 		for _, dependency := range service.DependsOn.Items {
 			condition := dependency.Condition
-			if condition == "" {
-				condition = "service_started"
+			if condition.Value == "" {
+				condition.Value = "service_started"
 			}
-			if condition != "service_started" {
+			if condition.Value != "service_started" {
 				var subject *hcl.Range
 				diags = append(diags, exohcl.NewUnsupportedFeatureWarning(
 					fmt.Sprintf("service condition %q", dependency.Service),
@@ -185,7 +185,7 @@ func (c *Converter) Convert(bs []byte) (*hcl.File, hcl.Diagnostics) {
 					subject,
 				))
 			}
-			dependsOn = append(dependsOn, exohcl.MangleName(dependency.Service))
+			dependsOn = append(dependsOn, exohcl.MangleName(dependency.Service.Value))
 		}
 
 		for idx, link := range service.Links {

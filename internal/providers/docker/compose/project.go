@@ -42,6 +42,10 @@ type ProjectVolumes []Volume
 type ProjectConfigs []Config
 type ProjectSecrets []Secret
 
+func (project *Project) Interpolate(env Environment) error {
+	return interpolateStruct(project, env)
+}
+
 func (section *ProjectServices) UnmarshalYAML(node *yaml.Node) error {
 	return unmarshalSection(section, node)
 }
@@ -72,6 +76,22 @@ func (section ProjectConfigs) MarshalYAML() (interface{}, error) {
 }
 func (section ProjectSecrets) MarshalYAML() (interface{}, error) {
 	return marshalSection(section)
+}
+
+func (section *ProjectServices) Interpolate(env Environment) error {
+	return interpolateSlice(*section, env)
+}
+func (section *ProjectNetworks) Interpolate(env Environment) error {
+	return interpolateSlice(*section, env)
+}
+func (section *ProjectVolumes) Interpolate(env Environment) error {
+	return interpolateSlice(*section, env)
+}
+func (section *ProjectConfigs) Interpolate(env Environment) error {
+	return interpolateSlice(*section, env)
+}
+func (section *ProjectSecrets) Interpolate(env Environment) error {
+	return interpolateSlice(*section, env)
 }
 
 func unmarshalSection(v interface{}, node *yaml.Node) error {

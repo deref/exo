@@ -39,7 +39,7 @@ func (bs *Bytes) UnmarshalYAML(node *yaml.Node) error {
 	if err := node.Decode(&bs.String); err != nil {
 		return err
 	}
-	_ = bs.Interpolate(nil)
+	_ = bs.Interpolate(ErrEnvironment)
 	return nil
 }
 

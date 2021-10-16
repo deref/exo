@@ -5,10 +5,10 @@ import "gopkg.in/yaml.v3"
 // A sequence of strings that may be marshalled as an individual string.
 type Tuple struct {
 	IsSequence bool
-	Items      []string
+	Items      []String
 }
 
-func MakeTuple(items ...string) Tuple {
+func MakeTuple(items ...String) Tuple {
 	res := Tuple{
 		Items: items,
 	}
@@ -26,19 +26,23 @@ func (ss Tuple) MarshalYAML() (interface{}, error) {
 }
 
 func (ss *Tuple) UnmarshalYAML(node *yaml.Node) error {
-	var s string
+	var s String
 	if node.Decode(&s) == nil {
-		ss.Items = []string{s}
+		ss.Items = []String{s}
 		return nil
 	}
 	ss.IsSequence = true
 	return node.Decode(&ss.Items)
 }
 
-func (ss Tuple) Slice() []string {
+func (tup *Tuple) Interpolate(env Environment) error {
+	return interpolateSlice(tup.Items, env)
+}
+
+func (ss Tuple) Values() []string {
 	res := make([]string, len(ss.Items))
 	for i, s := range ss.Items {
-		res[i] = s
+		res[i] = s.Value
 	}
 	return res
 }

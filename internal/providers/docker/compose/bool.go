@@ -46,7 +46,7 @@ func (b *Bool) UnmarshalYAML(node *yaml.Node) error {
 	if err := b.String.UnmarshalYAML(node); err != nil {
 		return err
 	}
-	_ = b.Interpolate(nil)
+	_ = b.Interpolate(ErrEnvironment)
 	return nil
 }
 
@@ -57,7 +57,7 @@ func (b *Bool) Interpolate(env Environment) error {
 	switch strings.ToLower(b.String.Value) {
 	case "1", "y", "yes", "t", "true", "on":
 		b.Value = true
-	case "0", "n", "no", "f", "false", "off":
+	case "0", "n", "no", "f", "false", "off", "":
 		b.Value = false
 	default:
 		return fmt.Errorf("malformed boolean: %q", b.String.Value)

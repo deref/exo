@@ -5,16 +5,13 @@ import "testing"
 func TestServiceDependencyYAML(t *testing.T) {
 	testYAML(t, "short", `service`, ServiceDependency{
 		IsShortSyntax: true,
-		Service:       "service",
-		ServiceDependencyLongForm: ServiceDependencyLongForm{
-			Condition: "service_started",
-		},
+		Service:       MakeString("service"),
 	})
 	testYAML(t, "long", `
 condition: service_healthy
 `, ServiceDependency{
 		ServiceDependencyLongForm: ServiceDependencyLongForm{
-			Condition: "service_healthy",
+			Condition: MakeString("service_healthy"),
 		},
 	})
 	testYAML(t, "seq", `
@@ -24,18 +21,14 @@ condition: service_healthy
 		Style: SeqStyle,
 		Items: []ServiceDependency{
 			{
-				IsShortSyntax: true,
-				Service:       "foo",
-				ServiceDependencyLongForm: ServiceDependencyLongForm{
-					Condition: "service_started",
-				},
+				IsShortSyntax:             true,
+				Service:                   MakeString("foo"),
+				ServiceDependencyLongForm: ServiceDependencyLongForm{},
 			},
 			{
-				IsShortSyntax: true,
-				Service:       "bar",
-				ServiceDependencyLongForm: ServiceDependencyLongForm{
-					Condition: "service_started",
-				},
+				IsShortSyntax:             true,
+				Service:                   MakeString("bar"),
+				ServiceDependencyLongForm: ServiceDependencyLongForm{},
 			},
 		},
 	})
@@ -47,12 +40,37 @@ bar:
 		Style: MapStyle,
 		Items: []ServiceDependency{
 			{
-				Service: "foo",
+				Service: MakeString("foo"),
 			},
 			{
-				Service: "bar",
+				Service: MakeString("bar"),
 				ServiceDependencyLongForm: ServiceDependencyLongForm{
-					Condition: "service_healthy",
+					Condition: MakeString("service_healthy"),
+				},
+			},
+		},
+	})
+	assertInterpolated(t, map[string]string{"short": "service"}, `
+- ${short}
+`, ServiceDependencies{
+		Style: SeqStyle,
+		Items: []ServiceDependency{
+			{
+				IsShortSyntax: true,
+				Service:       MakeString("${short}").WithValue("service"),
+			},
+		},
+	})
+	assertInterpolated(t, map[string]string{"condition": "service_healthy"}, `
+service:
+  condition: ${condition}
+`, ServiceDependencies{
+		Style: MapStyle,
+		Items: []ServiceDependency{
+			{
+				Service: MakeString("service"),
+				ServiceDependencyLongForm: ServiceDependencyLongForm{
+					Condition: MakeString("${condition}").WithValue("service_healthy"),
 				},
 			},
 		},

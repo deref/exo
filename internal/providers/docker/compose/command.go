@@ -54,3 +54,12 @@ func (cmd *Command) UnmarshalYAML(node *yaml.Node) error {
 	cmd.Parts = []String{s}
 	return nil
 }
+
+func (cmd *Command) Interpolate(env Environment) error {
+	for i := range cmd.Parts {
+		if err := cmd.Parts[i].Interpolate(env); err != nil {
+			return err
+		}
+	}
+	return nil
+}

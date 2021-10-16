@@ -13,10 +13,10 @@ import (
 func testYAML(t *testing.T, name string, s string, v interface{}) {
 	s = strings.TrimSpace(s)
 	t.Run("unmarshal_"+name, func(t *testing.T) {
-		sAsV := zeroAddr(reflect.TypeOf(v))
-		err := yaml.Unmarshal([]byte(s), sAsV.Interface())
+		out := zeroAddr(reflect.TypeOf(v))
+		err := yaml.Unmarshal([]byte(s), out.Interface())
 		if assert.NoError(t, err) {
-			assert.Equal(t, v, sAsV.Elem().Interface())
+			assert.Equal(t, v, out.Elem().Interface())
 		}
 	})
 	// NOTE: This test is inadequate because lots of MarshalYAML implementations
@@ -36,4 +36,18 @@ func testYAML(t *testing.T, name string, s string, v interface{}) {
 func zeroAddr(typ reflect.Type) reflect.Value {
 	sliceType := reflect.SliceOf(typ)
 	return reflect.MakeSlice(sliceType, 1, 1).Index(0).Addr()
+}
+
+func assertInterpolated(t *testing.T, env map[string]string, s string, v interface{}) {
+	s = strings.TrimSpace(s)
+	out := zeroAddr(reflect.TypeOf(v))
+	err := yaml.Unmarshal([]byte(s), out.Interface())
+	if !assert.NoError(t, err) {
+		return
+	}
+	err = (out.Interface().(Interpolator)).Interpolate(MapEnvironment(env))
+	if !assert.NoError(t, err) {
+		return
+	}
+	assert.Equal(t, v, out.Elem().Interface())
 }

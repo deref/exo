@@ -17,6 +17,9 @@ func (ss Strings) Values() []string {
 	return res
 }
 
+// String is a scalar leaf node in a compose document.  Non-string types
+// generally embed a String to facilitate interpolation.  See the package
+// documentation.
 type String struct {
 	Tag        string
 	Style      yaml.Style
@@ -32,12 +35,17 @@ func MakeString(s string) String {
 	}
 }
 
+func (s String) WithValue(v string) String {
+	s.Value = v
+	return s
+}
+
 func (s *String) UnmarshalYAML(node *yaml.Node) error {
 	s.Tag = node.Tag
 	s.Style = node.Style
 	err := node.Decode(&s.Expression)
 	s.Value = s.Expression
-	_ = s.Interpolate(nil)
+	_ = s.Interpolate(ErrEnvironment)
 	return err
 }
 

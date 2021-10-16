@@ -48,7 +48,7 @@ func (i *Int) UnmarshalYAML(node *yaml.Node) error {
 	if err := i.String.UnmarshalYAML(node); err != nil {
 		return err
 	}
-	_ = i.Interpolate(nil)
+	_ = i.Interpolate(ErrEnvironment)
 	return nil
 }
 
@@ -57,6 +57,8 @@ func (i *Int) Interpolate(env Environment) error {
 		return err
 	}
 	var err error
-	i.Value, err = strconv.ParseInt(i.String.Value, 10, 64)
+	if i.String.Value != "" {
+		i.Value, err = strconv.ParseInt(i.String.Value, 10, 64)
+	}
 	return err
 }

@@ -35,7 +35,7 @@ func (dm *DeviceMapping) UnmarshalYAML(node *yaml.Node) error {
 		return err
 	}
 
-	_ = dm.Interpolate(nil)
+	_ = dm.Interpolate(ErrEnvironment)
 	return nil
 }
 
