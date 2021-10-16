@@ -90,6 +90,10 @@ func (mappings PortMappings) MarshalYAML() (interface{}, error) {
 	return res, nil
 }
 
+func (pm *PortMappings) Interpolate(env Environment) error {
+	return interpolateSlice(*pm, env)
+}
+
 func (pm *PortMapping) UnmarshalYAML(node *yaml.Node) error {
 	switch node.Tag {
 	case "!!int", "!!str":
@@ -97,7 +101,7 @@ func (pm *PortMapping) UnmarshalYAML(node *yaml.Node) error {
 		if err := node.Decode(&pm.String); err != nil {
 			return err
 		}
-		_ = pm.Interpolate(nil)
+		_ = pm.Interpolate(ErrEnvironment)
 		return nil
 	default:
 		return node.Decode(&pm.PortMappingLongForm)
@@ -164,7 +168,7 @@ func (rng *PortRange) UnmarshalYAML(node *yaml.Node) error {
 	if err := node.Decode(&rng.String); err != nil {
 		return err
 	}
-	_ = rng.Interpolate(nil)
+	_ = rng.Interpolate(ErrEnvironment)
 	return nil
 }
 
@@ -188,7 +192,7 @@ func (rng *PortRangeWithProtocol) UnmarshalYAML(node *yaml.Node) error {
 	if err := node.Decode(&rng.String); err != nil {
 		return err
 	}
-	_ = rng.Interpolate(nil)
+	_ = rng.Interpolate(ErrEnvironment)
 	return nil
 }
 

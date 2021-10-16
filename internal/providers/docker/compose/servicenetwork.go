@@ -12,17 +12,18 @@ type ServiceNetworks struct {
 }
 
 type ServiceNetwork struct {
-	Key         string
-	IsShortForm bool
+	Key string
+
+	ShortForm String
 	ServiceNetworkLongForm
 }
 
 type ServiceNetworkLongForm struct {
-	Aliases      []string `yaml:"aliases,omitempty"`
-	IPV4Address  string   `yaml:"ipv4_address,omitempty"`
-	IPV6Address  string   `yaml:"ipv6_address,omitempty"`
-	LinkLocalIPs []string `yaml:"link_local_ips,omitempty"`
-	Priority     int64    `yaml:"priority,omitempty"`
+	Aliases      Strings `yaml:"aliases,omitempty"`
+	IPV4Address  String  `yaml:"ipv4_address,omitempty"`
+	IPV6Address  String  `yaml:"ipv6_address,omitempty"`
+	LinkLocalIPs Strings `yaml:"link_local_ips,omitempty"`
+	Priority     Int     `yaml:"priority,omitempty"`
 }
 
 func (sn *ServiceNetworks) UnmarshalYAML(node *yaml.Node) error {
@@ -52,6 +53,10 @@ func (sn *ServiceNetworks) UnmarshalYAML(node *yaml.Node) error {
 	}
 }
 
+func (sn *ServiceNetworks) Interpolate(env Environment) error {
+	return interpolateSlice(sn.Items, env)
+}
+
 func (sn ServiceNetworks) MarshalYAML() (interface{}, error) {
 	if sn.Style == SeqStyle {
 		return sn.Items, nil
@@ -75,16 +80,33 @@ func (sn ServiceNetworks) MarshalYAML() (interface{}, error) {
 }
 
 func (sn *ServiceNetwork) UnmarshalYAML(node *yaml.Node) error {
-	if node.Decode(&sn.Key) == nil {
-		sn.IsShortForm = true
-		return nil
+	var err error
+	if node.Tag == "!!str" {
+		err = node.Decode(&sn.ShortForm)
+	} else {
+		err = node.Decode(&sn.ServiceNetworkLongForm)
 	}
-	return node.Decode(&sn.ServiceNetworkLongForm)
+	_ = sn.Interpolate(ErrEnvironment)
+	return err
+}
+
+func (sn *ServiceNetwork) Interpolate(env Environment) error {
+	if sn.ShortForm.Tag != "" {
+		if err := sn.ShortForm.Interpolate(env); err != nil {
+			return err
+		}
+		sn.Key = sn.ShortForm.Value
+	}
+	return sn.ServiceNetworkLongForm.Interpolate(env)
 }
 
 func (sn ServiceNetwork) MarshalYAML() (interface{}, error) {
-	if sn.IsShortForm {
-		return sn.Key, nil
+	if sn.ShortForm.Expression != "" {
+		return sn.ShortForm.Expression, nil
 	}
 	return sn.ServiceNetworkLongForm, nil
+}
+
+func (sn *ServiceNetworkLongForm) Interpolate(env Environment) error {
+	return interpolateStruct(sn, env)
 }

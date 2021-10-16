@@ -7,3 +7,7 @@ type Config struct {
 	External Bool   `yaml:"external,omitempty"`
 	Name     String `yaml:"name,omitempty"`
 }
+
+func (cfg *Config) Interpolate(env Environment) error {
+	return interpolateStruct(cfg, env)
+}

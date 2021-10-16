@@ -23,7 +23,7 @@ func (c *Container) ProjectName() string {
 	return projectName
 }
 
-type Spec compose.Service
+type Spec = compose.Service
 
 type State struct {
 	ContainerID string     `json:"containerId"`

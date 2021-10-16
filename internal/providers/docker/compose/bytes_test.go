@@ -38,3 +38,14 @@ func TestBytesYAML(t *testing.T) {
 		},
 	})
 }
+
+func TestBytesInterpolate(t *testing.T) {
+	assertInterpolated(t, map[string]string{"twogig": "2gb"}, `${twogig}`, Bytes{
+		String:   MakeString("${twogig}").WithValue("2gb"),
+		Quantity: 2,
+		Unit: ByteUnit{
+			Suffix: "gb",
+			Scalar: 1024 * 1024 * 1024,
+		},
+	})
+}

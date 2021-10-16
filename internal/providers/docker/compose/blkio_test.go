@@ -73,4 +73,24 @@ weight_device:
 			},
 		},
 	})
+	assertInterpolated(t, map[string]string{
+		"read":   "books",
+		"weight": "heavy",
+	}, `
+device_read_bps:
+  - path: ${read}
+weight_device:
+  - path: ${weight}
+`, BlkioConfig{
+		DeviceReadBPS: []ThrottleDevice{
+			{
+				Path: MakeString("${read}").WithValue("books"),
+			},
+		},
+		WeightDevice: []WeightDevice{
+			{
+				Path: MakeString("${weight}").WithValue("heavy"),
+			},
+		},
+	})
 }

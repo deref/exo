@@ -29,4 +29,6 @@ func TestStringYAML(t *testing.T) {
 		Expression: "123",
 		Value:      "123",
 	})
+
+	assertInterpolated(t, map[string]string{"x": "1"}, `${x}`, MakeString("${x}").WithValue("1"))
 }

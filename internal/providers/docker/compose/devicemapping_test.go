@@ -14,4 +14,16 @@ func TestDeviceMapping(t *testing.T) {
 		PathInContainer:   "/dev/xvda",
 		CgroupPermissions: "rwm",
 	})
+	assertInterpolated(t, map[string]string{"whole": "/dev/sda:/dev/xvda:rwm"}, `${whole}`, DeviceMapping{
+		String:            MakeString(`${whole}`).WithValue(`/dev/sda:/dev/xvda:rwm`),
+		PathOnHost:        "/dev/sda",
+		PathInContainer:   "/dev/xvda",
+		CgroupPermissions: "rwm",
+	})
+	assertInterpolated(t, map[string]string{"part": "/dev/sda"}, `${part}:/dev/xvda:rwm`, DeviceMapping{
+		String:            MakeString(`${part}:/dev/xvda:rwm`).WithValue(`/dev/sda:/dev/xvda:rwm`),
+		PathOnHost:        "/dev/sda",
+		PathInContainer:   "/dev/xvda",
+		CgroupPermissions: "rwm",
+	})
 }

@@ -13,12 +13,12 @@ type ServiceDependencies struct {
 
 type ServiceDependency struct {
 	IsShortSyntax bool
-	Service       string
+	Service       String
 	ServiceDependencyLongForm
 }
 
 type ServiceDependencyLongForm struct {
-	Condition string `yaml:"condition,omitempty"`
+	Condition String `yaml:"condition,omitempty"`
 }
 
 func (deps *ServiceDependencies) UnmarshalYAML(node *yaml.Node) error {
@@ -48,6 +48,10 @@ func (deps *ServiceDependencies) UnmarshalYAML(node *yaml.Node) error {
 	}
 }
 
+func (deps *ServiceDependencies) Interpolate(env Environment) error {
+	return interpolateSlice(deps.Items, env)
+}
+
 func (deps ServiceDependencies) MarshalYAML() (interface{}, error) {
 	if deps.Style == SeqStyle {
 		return deps.Items, nil
@@ -71,17 +75,31 @@ func (deps ServiceDependencies) MarshalYAML() (interface{}, error) {
 }
 
 func (dep *ServiceDependency) UnmarshalYAML(node *yaml.Node) error {
-	if node.Decode(&dep.Service) == nil {
+	var err error
+	if node.Tag == "!!str" {
 		dep.IsShortSyntax = true
-		dep.Condition = "service_started"
-		return nil
+		err = node.Decode(&dep.Service)
+	} else {
+		err = node.Decode(&dep.ServiceDependencyLongForm)
 	}
-	return node.Decode(&dep.ServiceDependencyLongForm)
+	_ = dep.Interpolate(ErrEnvironment)
+	return err
+}
+
+func (dep *ServiceDependency) Interpolate(env Environment) error {
+	if dep.IsShortSyntax {
+		return dep.Service.Interpolate(env)
+	}
+	return dep.ServiceDependencyLongForm.Interpolate(env)
 }
 
 func (dep ServiceDependency) MarshalYAML() (interface{}, error) {
-	if dep.IsShortSyntax && dep.Condition == "service_started" {
+	if dep.IsShortSyntax && dep.Condition.Value == "" {
 		return dep.Service, nil
 	}
 	return dep.ServiceDependencyLongForm, nil
+}
+
+func (dep *ServiceDependencyLongForm) Interpolate(env Environment) error {
+	return interpolateStruct(dep, env)
 }

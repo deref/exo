@@ -3,9 +3,13 @@ package compose
 type Volume struct {
 	Key string `yaml:"-"`
 
-	Driver     string     `yaml:"driver,omitempty"`
+	Driver     String     `yaml:"driver,omitempty"`
 	DriverOpts Dictionary `yaml:"driver_opts,omitempty"`
 	// TODO: external
 	Labels Dictionary `yaml:"labels,omitempty"`
-	Name   string     `yaml:"name,omitempty"`
+	Name   String     `yaml:"name,omitempty"`
+}
+
+func (v *Volume) Interpolate(env Environment) error {
+	return interpolateStruct(v, env)
 }

@@ -4,29 +4,29 @@ import "testing"
 
 func TestVolumeMountYAML(t *testing.T) {
 	testYAML(t, "short_volume", "target", VolumeMount{
-		IsShortForm: true,
+		ShortForm: MakeString("target"),
 		VolumeMountLongForm: VolumeMountLongForm{
-			Type:   "volume",
-			Target: "target",
+			Type:   MakeString("volume"),
+			Target: MakeString("target"),
 		},
 	})
 	testYAML(t, "short_bind", "volume:/container_path", VolumeMount{
-		IsShortForm: true,
+		ShortForm: MakeString("volume:/container_path"),
 		VolumeMountLongForm: VolumeMountLongForm{
-			Type:   "volume",
-			Source: "volume",
-			Target: "/container_path",
+			Type:   MakeString("volume"),
+			Source: MakeString("volume"),
+			Target: MakeString("/container_path"),
 		},
 	})
 	testYAML(t, "short_access", "./host_path:/container_path:ro", VolumeMount{
-		IsShortForm: true,
+		ShortForm: MakeString("./host_path:/container_path:ro"),
 		VolumeMountLongForm: VolumeMountLongForm{
-			Type:     "bind",
-			Source:   "./host_path",
-			Target:   "/container_path",
-			ReadOnly: true,
+			Type:     MakeString("bind"),
+			Source:   MakeString("./host_path"),
+			Target:   MakeString("/container_path"),
+			ReadOnly: MakeBool(true),
 			Bind: &BindOptions{
-				CreateHostPath: true,
+				CreateHostPath: MakeBool(true),
 			},
 		},
 	})
@@ -39,12 +39,12 @@ volume:
   nocopy: true
 `, VolumeMount{
 		VolumeMountLongForm: VolumeMountLongForm{
-			Type:     "volume",
-			Source:   "mydata",
-			Target:   "/data",
-			ReadOnly: true,
+			Type:     MakeString("volume"),
+			Source:   MakeString("mydata"),
+			Target:   MakeString("/data"),
+			ReadOnly: MakeBool(true),
 			Volume: &VolumeOptions{
-				Nocopy: true,
+				Nocopy: MakeBool(true),
 			},
 		},
 	})
@@ -57,12 +57,12 @@ bind:
   create_host_path: true
 `, VolumeMount{
 		VolumeMountLongForm: VolumeMountLongForm{
-			Type:   "bind",
-			Source: "/path/a",
-			Target: "/path/b",
+			Type:   MakeString("bind"),
+			Source: MakeString("/path/a"),
+			Target: MakeString("/path/b"),
 			Bind: &BindOptions{
-				Propagation:    "rshared",
-				CreateHostPath: true,
+				Propagation:    MakeString("rshared"),
+				CreateHostPath: MakeBool(true),
 			},
 		},
 	})
@@ -73,13 +73,28 @@ tmpfs:
   size: 208666624
 `, VolumeMount{
 		VolumeMountLongForm: VolumeMountLongForm{
-			Type:   "tmpfs",
-			Target: "/data/buffer",
+			Type:   MakeString("tmpfs"),
+			Target: MakeString("/data/buffer"),
 			Tmpfs: &TmpfsOptions{
 				Size: Bytes{
 					String:   MakeInt(208666624).String,
 					Quantity: 208666624,
 				},
+			},
+		},
+	})
+
+	assertInterpolated(t, map[string]string{
+		"short": "./host_path:/container_path:ro",
+	}, "${short}", VolumeMount{
+		ShortForm: MakeString("${short}").WithValue("./host_path:/container_path:ro"),
+		VolumeMountLongForm: VolumeMountLongForm{
+			Type:     MakeString("bind"),
+			Source:   MakeString("./host_path"),
+			Target:   MakeString("/container_path"),
+			ReadOnly: MakeBool(true),
+			Bind: &BindOptions{
+				CreateHostPath: MakeBool(true),
 			},
 		},
 	})

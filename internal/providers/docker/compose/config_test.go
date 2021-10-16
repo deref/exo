@@ -12,4 +12,14 @@ name: something
 		External: MakeBool(true),
 		Name:     MakeString("something"),
 	})
+	assertInterpolated(t, map[string]string{"x": "1", "ok": "true"}, `
+file: ${x}
+external: ${ok}
+`, Config{
+		File: MakeString("${x}").WithValue("1"),
+		External: Bool{
+			String: MakeString("${ok}").WithValue("true"),
+			Value:  true,
+		},
+	})
 }

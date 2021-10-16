@@ -197,3 +197,41 @@ mode: host
 		Max:    2000,
 	})
 }
+
+func TestPortInterpolate(t *testing.T) {
+	assertInterpolated(t, map[string]string{"port": "3000"}, `${port}`, PortMapping{
+		IsShortForm: true,
+		String:      MakeString("${port}").WithValue("3000"),
+		PortMappingLongForm: PortMappingLongForm{
+			Target: PortRange{
+				Min: 3000,
+				Max: 3000,
+			},
+		},
+	})
+	assertInterpolated(t, map[string]string{"a": "4000", "b": "5000"}, `
+- ${a}
+- ${b}
+`, PortMappings{
+		{
+			IsShortForm: true,
+			String:      MakeString("${a}").WithValue("4000"),
+			PortMappingLongForm: PortMappingLongForm{
+				Target: PortRange{
+					Min: 4000,
+					Max: 4000,
+				},
+			},
+		},
+		{
+			IsShortForm: true,
+			String:      MakeString("${b}").WithValue("5000"),
+			PortMappingLongForm: PortMappingLongForm{
+				Target: PortRange{
+					Min: 5000,
+					Max: 5000,
+				},
+			},
+		},
+	})
+}

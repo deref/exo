@@ -9,14 +9,15 @@ import (
 type Ulimits []Ulimit
 
 type Ulimit struct {
-	Name        string
-	IsShortForm bool
+	Name string
+
+	ShortForm Int
 	UlimitLongForm
 }
 
 type UlimitLongForm struct {
-	Soft int64 `yaml:"soft,omitempty"`
-	Hard int64 `yaml:"hard,omitempty"`
+	Soft Int `yaml:"soft,omitempty"`
+	Hard Int `yaml:"hard,omitempty"`
 }
 
 func (uls *Ulimits) UnmarshalYAML(node *yaml.Node) error {
@@ -39,6 +40,10 @@ func (uls *Ulimits) UnmarshalYAML(node *yaml.Node) error {
 	return nil
 }
 
+func (uls *Ulimits) Interpolate(env Environment) error {
+	return interpolateSlice(*uls, env)
+}
+
 func (uls Ulimits) MarshalYAML() (interface{}, error) {
 	node := &yaml.Node{
 		Kind:    yaml.MappingNode,
@@ -59,19 +64,34 @@ func (uls Ulimits) MarshalYAML() (interface{}, error) {
 }
 
 func (ul *Ulimit) UnmarshalYAML(node *yaml.Node) error {
-	var n int64
-	if node.Decode(&n) == nil {
-		ul.IsShortForm = true
-		ul.Soft = n
-		ul.Hard = n
-		return nil
+	var err error
+	if node.Kind == yaml.ScalarNode {
+		err = node.Decode(&ul.ShortForm)
+	} else {
+		err = node.Decode(&ul.UlimitLongForm)
 	}
-	return node.Decode(&ul.UlimitLongForm)
+	_ = ul.Interpolate(ErrEnvironment)
+	return err
+}
+
+func (ul *Ulimit) Interpolate(env Environment) error {
+	if ul.ShortForm.Tag != "" {
+		if err := ul.ShortForm.Interpolate(env); err != nil {
+			return err
+		}
+		ul.Soft = ul.ShortForm
+		ul.Hard = ul.ShortForm
+	}
+	return ul.UlimitLongForm.Interpolate(env)
 }
 
 func (ul Ulimit) MarshalYAML() (interface{}, error) {
-	if ul.IsShortForm && ul.Hard == ul.Soft {
-		return ul.Soft, nil
+	if ul.ShortForm.Tag != "" {
+		return ul.ShortForm, nil
 	}
 	return ul.UlimitLongForm, nil
+}
+
+func (ul *UlimitLongForm) Interpolate(env Environment) error {
+	return interpolateStruct(ul, env)
 }

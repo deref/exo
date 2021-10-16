@@ -68,6 +68,15 @@ func (dict *Dictionary) UnmarshalYAML(node *yaml.Node) error {
 	}
 }
 
+func (dict *Dictionary) Interpolate(env Environment) error {
+	for i := range dict.Items {
+		if err := dict.Items[i].Interpolate(env); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
 func (item DictionaryItem) MarshalYAML() (interface{}, error) {
 	if item.Style == SeqStyle {
 		if item.String.Expression != "" {
@@ -121,7 +130,7 @@ func (item *DictionaryItem) UnmarshalYAML(node *yaml.Node) error {
 		}
 	}
 
-	_ = item.Interpolate(nil)
+	_ = item.Interpolate(ErrEnvironment)
 	return nil
 }
 

@@ -14,6 +14,7 @@ import (
 	"strings"
 
 	"github.com/deref/exo/internal/core/api"
+	"github.com/deref/exo/internal/providers/docker"
 	"github.com/deref/exo/internal/providers/docker/components/image"
 	"github.com/deref/exo/internal/task"
 	"github.com/deref/exo/internal/util/pathutil"
@@ -29,12 +30,12 @@ func (c *Container) Build(ctx context.Context, input *api.BuildInput) (*api.Buil
 		// SEE NOTE: [MIGRATE_CONTAINER_STATE].
 		return nil, errors.New("refresh needed")
 	}
-	spec, err := image.UnmarshalSpec(c.State.Image.Spec)
-	if err != nil {
-		return nil, fmt.Errorf("unmarshalling image spec: %w", err)
+	var spec image.Spec
+	if err := docker.LoadSpec(c.State.Image.Spec, &spec, c.WorkspaceEnvironment); err != nil {
+		return nil, fmt.Errorf("loading image spec: %w", err)
 	}
-	if c.canBuild(spec) {
-		if err := c.buildImage(ctx, spec); err != nil {
+	if c.canBuild(&spec) {
+		if err := c.buildImage(ctx, &spec); err != nil {
 			return nil, err
 		}
 	}

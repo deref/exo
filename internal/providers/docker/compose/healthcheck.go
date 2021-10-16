@@ -7,3 +7,7 @@ type Healthcheck struct {
 	Retries     Int      `yaml:"retries,omitempty"`
 	StartPeriod Duration `yaml:"start_period,omitempty"`
 }
+
+func (hc *Healthcheck) Interpolate(env Environment) error {
+	return interpolateStruct(hc, env)
+}

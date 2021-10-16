@@ -18,3 +18,15 @@ type WeightDevice struct {
 	Path   String `yaml:"path,omitempty"`
 	Weight Int    `yaml:"weight,omitempty"`
 }
+
+func (blkio *BlkioConfig) Interpolate(env Environment) error {
+	return interpolateStruct(blkio, env)
+}
+
+func (td *ThrottleDevice) Interpolate(env Environment) error {
+	return interpolateStruct(td, env)
+}
+
+func (wd *WeightDevice) Interpolate(env Environment) error {
+	return interpolateStruct(wd, env)
+}

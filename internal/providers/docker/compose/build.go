@@ -3,7 +3,7 @@ package compose
 import "gopkg.in/yaml.v3"
 
 type Build struct {
-	IsShortForm bool
+	ShortForm String
 	BuildLongForm
 }
 
@@ -20,19 +20,33 @@ type BuildLongForm struct {
 }
 
 func (b Build) MarshalYAML() (interface{}, error) {
-	if b.IsShortForm {
-		return b.Context, nil
+	if b.ShortForm.Expression != "" {
+		return b.ShortForm.Expression, nil
 	}
 	return b.BuildLongForm, nil
 }
 
 func (b *Build) UnmarshalYAML(node *yaml.Node) error {
-	var short String
-	err := node.Decode(&short)
-	if err == nil {
-		b.IsShortForm = true
-		b.Context = short
-		return nil
+	var err error
+	if node.Tag == "!!str" {
+		err = node.Decode(&b.ShortForm)
+	} else {
+		err = node.Decode(&b.BuildLongForm)
 	}
-	return node.Decode(&b.BuildLongForm)
+	_ = b.Interpolate(ErrEnvironment)
+	return err
+}
+
+func (b *Build) Interpolate(env Environment) error {
+	if b.ShortForm.Expression != "" {
+		err := b.ShortForm.Interpolate(env)
+		b.Context = b.ShortForm
+		return err
+	} else {
+		return b.BuildLongForm.Interpolate(env)
+	}
+}
+
+func (b *BuildLongForm) Interpolate(env Environment) error {
+	return interpolateStruct(b, env)
 }

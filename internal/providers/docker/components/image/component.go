@@ -2,7 +2,6 @@ package image
 
 import (
 	"github.com/deref/exo/internal/providers/docker/compose"
-	"github.com/deref/exo/internal/util/yamlutil"
 )
 
 // SEE NOTE [IMAGE_SUBCOMPONENT].
@@ -12,8 +11,6 @@ type Spec struct {
 	Build    compose.Build `yaml:"build"`
 }
 
-func UnmarshalSpec(s string) (*Spec, error) {
-	var spec Spec
-	err := yamlutil.UnmarshalString(s, &spec)
-	return &spec, err
+func (s *Spec) Interpolate(env compose.Environment) error {
+	return s.Build.Interpolate(env)
 }

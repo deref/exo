@@ -7,6 +7,10 @@ import "gopkg.in/yaml.v3"
 // TODO: Eliminate all usages of this with actual parsing logic.
 type Ignored struct{}
 
-func (ignored *Ignored) UnmarshalYAML(node *yaml.Node) error {
+func (_ *Ignored) UnmarshalYAML(node *yaml.Node) error {
+	return nil
+}
+
+func (_ *Ignored) Interpolate(env Environment) error {
 	return nil
 }

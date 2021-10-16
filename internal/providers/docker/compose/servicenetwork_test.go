@@ -4,8 +4,8 @@ import "testing"
 
 func TestServiceNetworksYAML(t *testing.T) {
 	testYAML(t, "short", `net`, ServiceNetwork{
-		Key:         "net",
-		IsShortForm: true,
+		Key:       "net",
+		ShortForm: MakeString("net"),
 	})
 	testYAML(t, "long", `
 aliases:
@@ -19,11 +19,14 @@ link_local_ips:
 priority: 1000
 	`, ServiceNetwork{
 		ServiceNetworkLongForm: ServiceNetworkLongForm{
-			Aliases:      []string{"foo", "bar"},
-			IPV4Address:  "172.16.238.10",
-			IPV6Address:  "2001:3984:3989::10",
-			LinkLocalIPs: []string{"57.123.22.11", "57.123.22.13"},
-			Priority:     1000,
+			Aliases:     []String{MakeString("foo"), MakeString("bar")},
+			IPV4Address: MakeString("172.16.238.10"),
+			IPV6Address: MakeString("2001:3984:3989::10"),
+			LinkLocalIPs: []String{
+				MakeString("57.123.22.11"),
+				MakeString("57.123.22.13"),
+			},
+			Priority: MakeInt(1000),
 		},
 	})
 
@@ -34,12 +37,12 @@ priority: 1000
 		Style: SeqStyle,
 		Items: []ServiceNetwork{
 			{
-				Key:         "one",
-				IsShortForm: true,
+				Key:       "one",
+				ShortForm: MakeString("one"),
 			},
 			{
-				Key:         "two",
-				IsShortForm: true,
+				Key:       "two",
+				ShortForm: MakeString("two"),
 			},
 		},
 	})
@@ -58,9 +61,37 @@ two:
 			{
 				Key: "two",
 				ServiceNetworkLongForm: ServiceNetworkLongForm{
-					Aliases: []string{
-						"a",
-						"b",
+					Aliases: []String{
+						MakeString("a"),
+						MakeString("b"),
+					},
+				},
+			},
+		},
+	})
+	assertInterpolated(t, map[string]string{"network": "NETWORK"}, `
+- ${network}
+`, ServiceNetworks{
+		Style: SeqStyle,
+		Items: []ServiceNetwork{
+			{
+				Key:       "NETWORK",
+				ShortForm: MakeString("${network}").WithValue("NETWORK"),
+			},
+		},
+	})
+	assertInterpolated(t, map[string]string{"alias": "ALIAS"}, `
+key:
+  aliases:
+    - ${alias}
+`, ServiceNetworks{
+		Style: MapStyle,
+		Items: []ServiceNetwork{
+			{
+				Key: "key",
+				ServiceNetworkLongForm: ServiceNetworkLongForm{
+					Aliases: Strings{
+						MakeString("${alias}").WithValue("ALIAS"),
 					},
 				},
 			},

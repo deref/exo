@@ -96,3 +96,7 @@ type Service struct {
 	Scale   Ignored `yaml:"scale,omitempty"`
 	Secrets Ignored `yaml:"secrets,omitempty"`
 }
+
+func (service *Service) Interpolate(env Environment) error {
+	return interpolateStruct(service, env)
+}

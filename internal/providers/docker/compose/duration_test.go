@@ -29,4 +29,8 @@ func TestDurationYAML(t *testing.T) {
 	checkRoundTrip("1m30s", 90*time.Second)
 	checkRoundTrip("37us", 37*time.Microsecond)
 	checkRoundTrip("1h5m30s20ms", 1*time.Hour+5*time.Minute+30*time.Second+20*time.Millisecond)
+	assertInterpolated(t, map[string]string{"halfday": "12h"}, `${halfday}`, Duration{
+		String:   MakeString("${halfday}").WithValue("12h"),
+		Duration: 12 * time.Hour,
+	})
 }

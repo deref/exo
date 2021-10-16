@@ -57,7 +57,7 @@ device_cgroup_rules:
 	testYAML(t, "dns_single", `
 dns: 8.8.8.8
 `, Service{
-		DNS: MakeTuple("8.8.8.8"),
+		DNS: MakeTuple(MakeString("8.8.8.8")),
 	})
 
 	testYAML(t, "dns_multiple", `
@@ -65,7 +65,7 @@ dns:
   - 8.8.8.8
   - 4.4.4.4
 `, Service{
-		DNS: MakeTuple("8.8.8.8", "4.4.4.4"),
+		DNS: MakeTuple(MakeString("8.8.8.8"), MakeString("4.4.4.4")),
 	})
 
 	testYAML(t, "dns_options", `
@@ -82,7 +82,7 @@ dns_opt:
 	testYAML(t, "dns_search_short", `
 dns_search: example.com
 `, Service{
-		DNSSearch: MakeTuple("example.com"),
+		DNSSearch: MakeTuple(MakeString("example.com")),
 	})
 
 	testYAML(t, "dns_search_long", `
@@ -90,13 +90,13 @@ dns_search:
   - ns1.example.com
   - ns2.example.com
 `, Service{
-		DNSSearch: MakeTuple("ns1.example.com", "ns2.example.com"),
+		DNSSearch: MakeTuple(MakeString("ns1.example.com"), MakeString("ns2.example.com")),
 	})
 
 	testYAML(t, "env_file", `
 env_file: .dockerenv
 `, Service{
-		EnvFile: MakeTuple(".dockerenv"),
+		EnvFile: MakeTuple(MakeString(".dockerenv")),
 	})
 
 	testYAML(t, "external_links", `
@@ -253,6 +253,12 @@ volumes_from:
   - container:my-container:ro
 `, Service{
 		VolumesFrom: []String{MakeString("container:my-container:ro")},
+	})
+
+	assertInterpolated(t, map[string]string{"image": "example:latest"}, `
+image: ${image}
+`, Service{
+		Image: MakeString("${image}").WithValue("example:latest"),
 	})
 
 }
