@@ -8,15 +8,21 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
+// Map of string to string that can be marshalled as either a !!map or a !!seq.
+// In the seq style, entries are of the form "key" or "key=value".
 type Dictionary struct {
 	Style Style
 	Items []DictionaryItem
 }
 
 type DictionaryItem struct {
-	Style   Style
-	Key     string
-	Value   string
+	Style Style
+	// For map style, String contains only the value.
+	// For seq style, String is expected to evaluate to "key" or "key=value".
+	String String
+	Key    string
+	Value  string
+	// True in seq style when there is no "=" in the evaluated String.
 	NoValue bool
 }
 
@@ -64,6 +70,9 @@ func (dict *Dictionary) UnmarshalYAML(node *yaml.Node) error {
 
 func (item DictionaryItem) MarshalYAML() (interface{}, error) {
 	if item.Style == SeqStyle {
+		if item.String.Expression != "" {
+			return item.String.Expression, nil
+		}
 		if item.Value == "" {
 			return item.Key, nil
 		}
@@ -94,32 +103,47 @@ func makeDictionaryItemNodes(item DictionaryItem) (keyNode, valueNode yaml.Node)
 }
 
 func (item *DictionaryItem) UnmarshalYAML(node *yaml.Node) error {
-	var s string
-	err := node.Decode(&s)
+	err := node.Decode(&item.String)
 	if err == nil {
 		item.Style = SeqStyle
-		parts := strings.SplitN(s, "=", 2)
+	} else {
+		var m map[string]String
+		if err := node.Decode(&m); err != nil {
+			return err
+		}
+		if len(m) != 1 {
+			return errors.New("expected single mapping")
+		}
+		item.Style = MapStyle
+		for k, v := range m {
+			item.String = v
+			item.Key = k
+		}
+	}
+
+	_ = item.Interpolate(nil)
+	return nil
+}
+
+func (item *DictionaryItem) Interpolate(env Environment) error {
+	if err := item.String.Interpolate(env); err != nil {
+		return nil
+	}
+	switch item.Style {
+	case SeqStyle:
+		parts := strings.SplitN(item.String.Value, "=", 2)
 		item.Key = parts[0]
 		if len(parts) > 1 {
 			item.Value = parts[1]
 		} else {
 			item.NoValue = true
 		}
-		return nil
+	case MapStyle:
+		item.Value = item.String.Value
+	default:
+		return errors.New("cannot identify as map or seq style dictionary item")
 	}
 
-	var m map[string]string
-	if err := node.Decode(&m); err != nil {
-		return err
-	}
-	if len(m) != 1 {
-		return errors.New("expected single mapping")
-	}
-	item.Style = MapStyle
-	for k, v := range m {
-		item.Key = k
-		item.Value = v
-	}
 	return nil
 }
 

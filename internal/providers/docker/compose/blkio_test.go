@@ -25,6 +25,7 @@ weight_device:
 			{
 				Path: MakeString("/dev/sdb"),
 				Rate: Bytes{
+					String:   MakeString("12mb"),
 					Quantity: 12,
 					Unit: ByteUnit{
 						Scalar: 1024 * 1024,
@@ -37,6 +38,7 @@ weight_device:
 			{
 				Path: MakeString("/dev/sdb"),
 				Rate: Bytes{
+					String:   MakeInt(120).String,
 					Quantity: 120,
 				},
 			},
@@ -45,6 +47,7 @@ weight_device:
 			{
 				Path: MakeString("/dev/sdb"),
 				Rate: Bytes{
+					String:   MakeString("1024k"),
 					Quantity: 1024,
 					Unit: ByteUnit{
 						Scalar: 1024,
@@ -57,15 +60,16 @@ weight_device:
 			{
 				Path: MakeString("/dev/sdb"),
 				Rate: Bytes{
+					String:   MakeInt(30).String,
 					Quantity: 30,
 				},
 			},
 		},
-		Weight: 300,
+		Weight: MakeInt(300),
 		WeightDevice: []WeightDevice{
 			{
 				Path:   MakeString("/dev/sda"),
-				Weight: 400,
+				Weight: MakeInt(400),
 			},
 		},
 	})

@@ -77,6 +77,7 @@ tmpfs:
 			Target: "/data/buffer",
 			Tmpfs: &TmpfsOptions{
 				Size: Bytes{
+					String:   MakeInt(208666624).String,
 					Quantity: 208666624,
 				},
 			},

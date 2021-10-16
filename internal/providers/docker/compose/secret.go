@@ -3,7 +3,7 @@ package compose
 type Secret struct {
 	Key string `yaml:"-"`
 
-	File     string `yaml:"file,omitempty"`
-	External bool   `yaml:"external,omitempty"`
-	Name     string `yaml:"name,omitempty"`
+	File     String `yaml:"file,omitempty"`
+	External Bool   `yaml:"external,omitempty"`
+	Name     String `yaml:"name,omitempty"`
 }

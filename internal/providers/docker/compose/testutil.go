@@ -19,6 +19,11 @@ func testYAML(t *testing.T, name string, s string, v interface{}) {
 			assert.Equal(t, v, sAsV.Elem().Interface())
 		}
 	})
+	// NOTE: This test is inadequate because lots of MarshalYAML implementations
+	// will not exercise the inverse of interpolation. This happens because
+	// There are checks like `String.Expression != ""` in order to preserve
+	// input.
+	// TODO: Make the inverse operation explicit, so it can be tested properly.
 	t.Run("marshal_"+name, func(t *testing.T) {
 		marshaled, err := yamlutil.MarshalString(v)
 		if assert.NoError(t, err) {
@@ -31,12 +36,4 @@ func testYAML(t *testing.T, name string, s string, v interface{}) {
 func zeroAddr(typ reflect.Type) reflect.Value {
 	sliceType := reflect.SliceOf(typ)
 	return reflect.MakeSlice(sliceType, 1, 1).Index(0).Addr()
-}
-
-func boolRef(b bool) *bool {
-	return &b
-}
-
-func int64Ref(i int64) *int64 {
-	return &i
 }

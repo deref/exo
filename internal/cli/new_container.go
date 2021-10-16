@@ -150,7 +150,7 @@ exo flags and options for your docker container command.
 
 		name := args[0]
 
-		containerSpec.Image = args[1]
+		containerSpec.Image = compose.MakeString(args[1])
 
 		var err error
 		containerSpec.Ports, err = compose.ParsePortMappings(newContainerOptions.Publish)

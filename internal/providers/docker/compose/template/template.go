@@ -1,4 +1,4 @@
-package interpolate
+package template
 
 import (
 	"bytes"
@@ -18,7 +18,7 @@ func Substitute(template Template, env Environment) (string, error) {
 	return buf.String(), err
 }
 
-func NewTemplate(s string) (Template, error) {
+func Parse(s string) (Template, error) {
 	var elements []Template
 	matches := pattern.FindAllStringSubmatchIndex(s, -1)
 	left := 0

@@ -27,11 +27,11 @@ secrets:
     name: secret
   ten: {}
 `, Project{
-		Version: String(MakeInt(3)),
+		Version: MakeInt(3).String,
 		Services: ProjectServices{
 			{
 				Key:   "one",
-				Image: "service",
+				Image: MakeString("service"),
 			},
 			{
 				Key: "two",
@@ -40,7 +40,7 @@ secrets:
 		Networks: ProjectNetworks{
 			{
 				Key:  "three",
-				Name: "network",
+				Name: MakeString("network"),
 			},
 			{
 				Key: "four",
@@ -58,7 +58,7 @@ secrets:
 		Configs: ProjectConfigs{
 			{
 				Key:  "seven",
-				Name: "config",
+				Name: MakeString("config"),
 			},
 			{
 				Key: "eight",
@@ -67,7 +67,7 @@ secrets:
 		Secrets: ProjectSecrets{
 			{
 				Key:  "nine",
-				Name: "secret",
+				Name: MakeString("secret"),
 			},
 			{
 				Key: "ten",

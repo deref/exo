@@ -2,19 +2,19 @@ package compose
 
 import "testing"
 
-func TestStringsYAML(t *testing.T) {
-	testYAML(t, "string", `str`, Strings{
+func TestTupleYAML(t *testing.T) {
+	testYAML(t, "string", `str`, Tuple{
 		Items: []string{
 			"str",
 		},
 	})
-	testYAML(t, "empty", `[]`, Strings{
+	testYAML(t, "empty", `[]`, Tuple{
 		IsSequence: true,
 		Items:      []string{},
 	})
 	testYAML(t, "single", `
 - elem
-`, Strings{
+`, Tuple{
 		IsSequence: true,
 		Items: []string{
 			"elem",
@@ -23,7 +23,7 @@ func TestStringsYAML(t *testing.T) {
 	testYAML(t, "multiple", `
 - one
 - two
-`, Strings{
+`, Tuple{
 		IsSequence: true,
 		Items: []string{
 			"one",

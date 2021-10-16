@@ -15,6 +15,7 @@ type PortMappings []PortMapping
 
 type PortMapping struct {
 	IsShortForm bool
+	String
 	PortMappingLongForm
 }
 
@@ -61,11 +62,11 @@ func ParsePortMapping(short string) (PortMappingLongForm, error) {
 	var mapping PortMappingLongForm
 	var err error
 	mapping.HostIP = result["ip"]
-	mapping.Published, err = ParsePortRange(result["published"])
+	mapping.Published.Min, mapping.Published.Max, err = ParsePortRange(result["published"])
 	if err != nil {
 		return PortMappingLongForm{}, fmt.Errorf("invalid published port range: %w", err)
 	}
-	mapping.Target, err = ParsePortRange(result["target"])
+	mapping.Target.Min, mapping.Target.Max, err = ParsePortRange(result["target"])
 	if err != nil {
 		return PortMappingLongForm{}, fmt.Errorf("invalid target port range: %w", err)
 	}
@@ -90,14 +91,26 @@ func (mappings PortMappings) MarshalYAML() (interface{}, error) {
 }
 
 func (pm *PortMapping) UnmarshalYAML(node *yaml.Node) error {
-	var s string
-	if node.Decode(&s) == nil {
+	switch node.Tag {
+	case "!!int", "!!str":
 		pm.IsShortForm = true
-		var err error
-		pm.PortMappingLongForm, err = ParsePortMapping(s)
+		if err := node.Decode(&pm.String); err != nil {
+			return err
+		}
+		_ = pm.Interpolate(nil)
+		return nil
+	default:
+		return node.Decode(&pm.PortMappingLongForm)
+	}
+}
+
+func (pm *PortMapping) Interpolate(env Environment) error {
+	if err := pm.String.Interpolate(env); err != nil {
 		return err
 	}
-	return node.Decode(&pm.PortMappingLongForm)
+	var err error
+	pm.PortMappingLongForm, err = ParsePortMapping(pm.String.Value)
+	return err
 }
 
 func (pm PortMapping) MarshalYAML() (interface{}, error) {
@@ -108,24 +121,27 @@ func (pm PortMapping) MarshalYAML() (interface{}, error) {
 }
 
 type PortRange struct {
+	String
 	Min uint16
 	Max uint16
 }
 
 type PortRangeWithProtocol struct {
-	PortRange
+	String
+	Min      uint16
+	Max      uint16
 	Protocol string
 }
 
-func ParsePortRange(numbers string) (res PortRange, err error) {
+func ParsePortRange(numbers string) (min uint16, max uint16, err error) {
 	if numbers == "" {
-		return PortRange{}, nil
+		return 0, 0, nil
 	}
 	parts := strings.SplitN(numbers, "-", 2)
 	if len(parts) == 1 {
 		parts = append(parts, parts[0])
 	}
-	for i, dest := range []*uint16{&res.Min, &res.Max} {
+	for i, dest := range []*uint16{&min, &max} {
 		var n int
 		n, err = strconv.Atoi(parts[i])
 		*dest = uint16(n)
@@ -145,12 +161,19 @@ func FormatPort(num uint16, protocol string) string {
 }
 
 func (rng *PortRange) UnmarshalYAML(node *yaml.Node) error {
-	var s string
-	if err := node.Decode(&s); err != nil {
+	if err := node.Decode(&rng.String); err != nil {
+		return err
+	}
+	_ = rng.Interpolate(nil)
+	return nil
+}
+
+func (rng *PortRange) Interpolate(env Environment) error {
+	if err := rng.String.Interpolate(env); err != nil {
 		return err
 	}
 	var err error
-	*rng, err = ParsePortRange(s)
+	rng.Min, rng.Max, err = ParsePortRange(rng.String.Value)
 	return err
 }
 
@@ -161,24 +184,24 @@ func (rng PortRange) MarshalYAML() (interface{}, error) {
 	return fmt.Sprintf("%d-%d", rng.Min, rng.Max), nil
 }
 
-func (rng PortRange) String() string {
-	if rng.Min == rng.Max {
-		return fmt.Sprintf("%d", rng.Min)
-	}
-	return fmt.Sprintf("%d-%d", rng.Min, rng.Max)
-}
-
 func (rng *PortRangeWithProtocol) UnmarshalYAML(node *yaml.Node) error {
-	var s string
-	if err := node.Decode(&s); err != nil {
+	if err := node.Decode(&rng.String); err != nil {
 		return err
 	}
-	parts := strings.SplitN(s, "/", 2)
+	_ = rng.Interpolate(nil)
+	return nil
+}
+
+func (rng *PortRangeWithProtocol) Interpolate(env Environment) error {
+	if err := rng.String.Interpolate(env); err != nil {
+		return err
+	}
+	parts := strings.SplitN(rng.String.Value, "/", 2)
 	if len(parts) > 1 {
 		rng.Protocol = parts[1]
 	}
 	var err error
-	rng.PortRange, err = ParsePortRange(parts[0])
+	rng.Min, rng.Max, err = ParsePortRange(parts[0])
 	return err
 }
 
@@ -186,13 +209,9 @@ func (rng PortRangeWithProtocol) MarshalYAML() (interface{}, error) {
 	if rng.Min == rng.Max {
 		return rng.Min, nil
 	}
-	return rng.String(), nil
-}
-
-func (rng PortRangeWithProtocol) String() string {
-	s := rng.PortRange.String()
+	s := fmt.Sprintf("%d-%d", rng.Min, rng.Max)
 	if rng.Protocol != "" {
 		s += "/" + rng.Protocol
 	}
-	return s
+	return s, nil
 }

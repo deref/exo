@@ -3,12 +3,12 @@ package compose
 type Network struct {
 	Key string `yaml:"-"`
 
-	Name       string     `yaml:"name,omitempty"`
-	Driver     string     `yaml:"driver,omitempty"`
+	Name       String     `yaml:"name,omitempty"`
+	Driver     String     `yaml:"driver,omitempty"`
 	DriverOpts Dictionary `yaml:"driver_opts,omitempty"`
-	Attachable bool       `yaml:"attachable,omitempty"`
-	EnableIPv6 bool       `yaml:"enable_ipv6,omitempty"`
-	Internal   bool       `yaml:"internal,omitempty"`
+	Attachable Bool       `yaml:"attachable,omitempty"`
+	EnableIPv6 Bool       `yaml:"enable_ipv6,omitempty"`
+	Internal   Bool       `yaml:"internal,omitempty"`
 	Labels     Dictionary `yaml:"labels,omitempty"`
-	External   bool       `yaml:"external,omitempty"`
+	External   Bool       `yaml:"external,omitempty"`
 }
