@@ -2,13 +2,14 @@ package compose
 
 import "gopkg.in/yaml.v3"
 
-type Strings struct {
+// A sequence of strings that may be marshalled as an individual string.
+type Tuple struct {
 	IsSequence bool
 	Items      []string
 }
 
-func MakeStrings(items ...string) Strings {
-	res := Strings{
+func MakeTuple(items ...string) Tuple {
+	res := Tuple{
 		Items: items,
 	}
 	if len(items) != 1 {
@@ -17,14 +18,14 @@ func MakeStrings(items ...string) Strings {
 	return res
 }
 
-func (ss Strings) MarshalYAML() (interface{}, error) {
+func (ss Tuple) MarshalYAML() (interface{}, error) {
 	if ss.IsSequence || len(ss.Items) != 1 {
 		return ss.Items, nil
 	}
 	return ss.Items[0], nil
 }
 
-func (ss *Strings) UnmarshalYAML(node *yaml.Node) error {
+func (ss *Tuple) UnmarshalYAML(node *yaml.Node) error {
 	var s string
 	if node.Decode(&s) == nil {
 		ss.Items = []string{s}
@@ -34,7 +35,7 @@ func (ss *Strings) UnmarshalYAML(node *yaml.Node) error {
 	return node.Decode(&ss.Items)
 }
 
-func (ss Strings) Slice() []string {
+func (ss Tuple) Slice() []string {
 	res := make([]string, len(ss.Items))
 	for i, s := range ss.Items {
 		res[i] = s

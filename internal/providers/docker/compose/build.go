@@ -8,15 +8,15 @@ type Build struct {
 }
 
 type BuildLongForm struct {
-	Context    string     `yaml:"context,omitempty"`
-	Dockerfile string     `yaml:"dockerfile,omitempty"`
+	Context    String     `yaml:"context,omitempty"`
+	Dockerfile String     `yaml:"dockerfile,omitempty"`
 	Args       Dictionary `yaml:"args,omitempty"`
-	CacheFrom  []string   `yaml:"cache_from,omitempty"`
-	ExtraHosts []string   `yaml:"extra_hosts,omitempty"`
-	Isolation  string     `yaml:"isolation,omitempty"`
+	CacheFrom  Strings    `yaml:"cache_from,omitempty"`
+	ExtraHosts Strings    `yaml:"extra_hosts,omitempty"`
+	Isolation  String     `yaml:"isolation,omitempty"`
 	Labels     Dictionary `yaml:"labels,omitempty"`
 	ShmSize    Bytes      `yaml:"shm_size,omitempty"`
-	Target     string     `yaml:"target,omitempty"`
+	Target     String     `yaml:"target,omitempty"`
 }
 
 func (b Build) MarshalYAML() (interface{}, error) {
@@ -27,7 +27,7 @@ func (b Build) MarshalYAML() (interface{}, error) {
 }
 
 func (b *Build) UnmarshalYAML(node *yaml.Node) error {
-	var short string
+	var short String
 	err := node.Decode(&short)
 	if err == nil {
 		b.IsShortForm = true

@@ -9,6 +9,7 @@ import (
 func TestDictionaryItemYAML(t *testing.T) {
 	testYAML(t, "bare", `key`, DictionaryItem{
 		Style:   SeqStyle,
+		String:  MakeString("key"),
 		Key:     "key",
 		NoValue: true,
 	})
@@ -17,14 +18,16 @@ func TestDictionaryItemYAML(t *testing.T) {
 		Key:   "key",
 	})
 	testYAML(t, "colon_value", `key: value`, DictionaryItem{
-		Style: MapStyle,
-		Key:   "key",
-		Value: "value",
+		Style:  MapStyle,
+		String: MakeString("value"),
+		Key:    "key",
+		Value:  "value",
 	})
 	testYAML(t, "equal", `key=value`, DictionaryItem{
-		Style: SeqStyle,
-		Key:   "key",
-		Value: "value",
+		Style:  SeqStyle,
+		String: MakeString("key=value"),
+		Key:    "key",
+		Value:  "value",
 	})
 }
 
@@ -36,9 +39,10 @@ novalue:
 		Style: MapStyle,
 		Items: []DictionaryItem{
 			{
-				Style: MapStyle,
-				Key:   "key",
-				Value: "value",
+				Style:  MapStyle,
+				String: MakeString("value"),
+				Key:    "key",
+				Value:  "value",
 			},
 			{
 				Style: MapStyle,
@@ -46,19 +50,21 @@ novalue:
 			},
 		},
 	})
-	testYAML(t, "slice", `
+	testYAML(t, "seq", `
 - key=value
 - novalue
 `, Dictionary{
 		Style: SeqStyle,
 		Items: []DictionaryItem{
 			{
-				Style: SeqStyle,
-				Key:   "key",
-				Value: "value",
+				Style:  SeqStyle,
+				String: MakeString("key=value"),
+				Key:    "key",
+				Value:  "value",
 			},
 			{
 				Style:   SeqStyle,
+				String:  MakeString("novalue"),
 				Key:     "novalue",
 				NoValue: true,
 			},

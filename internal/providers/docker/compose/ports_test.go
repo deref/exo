@@ -113,39 +113,43 @@ func TestParsePortMappings(t *testing.T) {
 }
 
 func TestPortYAML(t *testing.T) {
-	testYAML(t, "short_target", `4000`, PortMapping{
+	testYAML(t, "short_target", `6000`, PortMapping{
 		IsShortForm: true,
+		String:      MakeInt(6000).String,
 		PortMappingLongForm: PortMappingLongForm{
 			Target: PortRange{
-				Min: 4000,
-				Max: 4000,
+				Min: 6000,
+				Max: 6000,
 			},
 		},
 	})
-	testYAML(t, "short_target_range", `4000-4001`, PortMapping{
+	testYAML(t, "short_target_range", `7000-7001`, PortMapping{
 		IsShortForm: true,
+		String:      MakeString("7000-7001"),
 		PortMappingLongForm: PortMappingLongForm{
 			Target: PortRange{
-				Min: 4000,
-				Max: 4001,
+				Min: 7000,
+				Max: 7001,
 			},
 		},
 	})
 	testYAML(t, "long", `
-target: 4000-4001
-published: 5000-5001
+target: 8000-8001
+published: 9000-9001
 host_ip: 1.2.3.4
 protocol: tcp
 mode: host
 `, PortMapping{
 		PortMappingLongForm: PortMappingLongForm{
 			Target: PortRange{
-				Min: 4000,
-				Max: 4001,
+				String: MakeString("8000-8001"),
+				Min:    8000,
+				Max:    8001,
 			},
 			Published: PortRange{
-				Min: 5000,
-				Max: 5001,
+				String: MakeString("9000-9001"),
+				Min:    9000,
+				Max:    9001,
 			},
 			HostIP:   "1.2.3.4",
 			Protocol: "tcp",
@@ -153,38 +157,43 @@ mode: host
 		},
 	})
 	testYAML(t, "multiple", `
-- 3000
-- published: 4000
+- 3333
+- published: 4444
 `, PortMappings{
 		PortMapping{
+			String:      MakeInt(3333).String,
 			IsShortForm: true,
 			PortMappingLongForm: PortMappingLongForm{
 				Target: PortRange{
-					Min: 3000,
-					Max: 3000,
+					Min: 3333,
+					Max: 3333,
 				},
 			},
 		},
 		PortMapping{
 			PortMappingLongForm: PortMappingLongForm{
 				Published: PortRange{
-					Min: 4000,
-					Max: 4000,
+					String: MakeInt(4444).String,
+					Min:    4444,
+					Max:    4444,
 				},
 			},
 		},
 	})
+	testYAML(t, "range_int", `1000`, PortRangeWithProtocol{
+		String: MakeInt(1000).String,
+		Min:    1000,
+		Max:    1000,
+	})
 	testYAML(t, "range_with_protocol", `1000-2000/tcp`, PortRangeWithProtocol{
-		PortRange: PortRange{
-			Min: 1000,
-			Max: 2000,
-		},
+		String:   MakeString("1000-2000/tcp"),
+		Min:      1000,
+		Max:      2000,
 		Protocol: "tcp",
 	})
 	testYAML(t, "range_with_blank_protocol", `1000-2000`, PortRangeWithProtocol{
-		PortRange: PortRange{
-			Min: 1000,
-			Max: 2000,
-		},
+		String: MakeString("1000-2000"),
+		Min:    1000,
+		Max:    2000,
 	})
 }

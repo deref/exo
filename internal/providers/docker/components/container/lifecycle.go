@@ -41,7 +41,7 @@ func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput)
 	// NOTE [IMAGE_SUBCOMPONENT]: Should create image as subcomponent instead of
 	// copying spec in to state.
 	c.State.Image.Spec = yamlutil.MustMarshalString(image.Spec{
-		Platform: spec.Platform,
+		Platform: spec.Platform.Value,
 		Build:    spec.Build,
 	})
 
@@ -49,7 +49,7 @@ func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput)
 		return nil, fmt.Errorf("ensuring image: %w", err)
 	}
 
-	if err := c.removeExistingContainerByName(ctx, spec.ContainerName); err != nil {
+	if err := c.removeExistingContainerByName(ctx, spec.ContainerName.Value); err != nil {
 		return nil, fmt.Errorf("removing existing container %q: %w", spec.ContainerName, err)
 	}
 
@@ -68,10 +68,10 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 	var healthCfg *container.HealthConfig
 	if spec.Healthcheck != nil {
 		healthCfg = &container.HealthConfig{
-			Test:        strslice.StrSlice(spec.Healthcheck.Test.Parts),
+			Test:        strslice.StrSlice(spec.Healthcheck.Test.Parts.Values()),
 			Interval:    spec.Healthcheck.Interval.Duration,
 			Timeout:     spec.Healthcheck.Timeout.Duration,
-			Retries:     spec.Healthcheck.Retries,
+			Retries:     spec.Healthcheck.Retries.Int(),
 			StartPeriod: spec.Healthcheck.StartPeriod.Duration,
 		}
 	}
@@ -113,12 +113,12 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 	}
 
 	containerCfg := &container.Config{
-		Hostname:     spec.Hostname,
-		Domainname:   spec.Domainname,
-		User:         spec.User,
+		Hostname:     spec.Hostname.Value,
+		Domainname:   spec.Domainname.Value,
+		User:         spec.User.Value,
 		ExposedPorts: make(nat.PortSet),
-		Tty:          spec.TTY,
-		OpenStdin:    spec.StdinOpen,
+		Tty:          spec.TTY.Value,
+		OpenStdin:    spec.StdinOpen.Value,
 		// StdinOnce       bool                // If true, close stdin after the 1 attached client disconnects.
 		Env:         envSlice,
 		Healthcheck: healthCfg,
@@ -126,20 +126,20 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 
 		Image: c.State.Image.ID,
 		// Volumes         map[string]struct{} // List of volumes (mounts) used for the container
-		WorkingDir: spec.WorkingDir,
-		Entrypoint: strslice.StrSlice(spec.Entrypoint.Parts),
+		WorkingDir: spec.WorkingDir.Value,
+		Entrypoint: strslice.StrSlice(spec.Entrypoint.Parts.Values()),
 		// NetworkDisabled bool                `json:",omitempty"` // Is network disabled
-		MacAddress: spec.MacAddress,
+		MacAddress: spec.MacAddress.Value,
 		// OnBuild         []string            // ONBUILD metadata that were defined on the image Dockerfile
 		Labels:     labels,
-		StopSignal: spec.StopSignal,
+		StopSignal: spec.StopSignal.Value,
 		// Shell           strslice.StrSlice   `json:",omitempty"` // Shell for shell-form of RUN, CMD, ENTRYPOINT
 	}
 
 	if spec.Command.IsShellForm {
-		containerCfg.Cmd = append(append([]string{}, c.State.Image.Shell...), spec.Command.Parts[0])
+		containerCfg.Cmd = append(append([]string{}, c.State.Image.Shell...), spec.Command.Parts[0].Value)
 	} else {
-		containerCfg.Cmd = spec.Command.Parts
+		containerCfg.Cmd = spec.Command.Parts.Values()
 	}
 	if len(containerCfg.Cmd) == 0 {
 		containerCfg.Cmd = c.State.Image.Command
@@ -158,21 +158,21 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 		containerCfg.StopTimeout = &timeout
 	}
 
-	exposePort := func(rng compose.PortRange, protocol string) {
-		for n := rng.Min; n <= rng.Max; n++ {
+	exposePort := func(min, max uint16, protocol string) {
+		for n := min; n <= max; n++ {
 			port := nat.Port(compose.FormatPort(n, protocol))
 			containerCfg.ExposedPorts[port] = struct{}{}
 		}
 	}
 	for _, exposed := range spec.Expose {
-		exposePort(exposed.PortRange, exposed.Protocol)
+		exposePort(exposed.Min, exposed.Max, exposed.Protocol)
 	}
 	for _, mapping := range spec.Ports {
-		exposePort(mapping.Target, mapping.Protocol)
+		exposePort(mapping.Target.Min, mapping.Target.Max, mapping.Protocol)
 	}
 
 	logCfg := container.LogConfig{}
-	if spec.Logging.Driver == "" && (spec.Logging.Options == nil || len(spec.Logging.Options) == 0) {
+	if spec.Logging.Driver.Value == "" && len(spec.Logging.Options.Items) == 0 {
 		// No logging configuration specified, so default to logging to exo's
 		// syslog service.
 		logCfg.Type = "syslog"
@@ -183,15 +183,15 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 			"syslog-format":   "rfc5424micro",
 		}
 	} else {
-		logCfg.Type = spec.Logging.Driver
-		logCfg.Config = spec.Logging.Options
+		logCfg.Type = spec.Logging.Driver.Value
+		logCfg.Config = spec.Logging.Options.Map()
 	}
 
 	blkioWeightDevice := make([]*blkiodev.WeightDevice, len(spec.BlkioConfig.WeightDevice))
 	for i, weightDevice := range spec.BlkioConfig.WeightDevice {
 		blkioWeightDevice[i] = &blkiodev.WeightDevice{
 			Path:   weightDevice.Path.Value,
-			Weight: weightDevice.Weight,
+			Weight: weightDevice.Weight.Uint16(),
 		}
 	}
 
@@ -204,68 +204,68 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 		PortBindings: make(nat.PortMap),
 		// TODO: Potentially inherit from deploy's restart_policy.
 		RestartPolicy: container.RestartPolicy{
-			Name: spec.Restart,
+			Name: spec.Restart.Value,
 		},
 		//AutoRemove      bool          // Automatically remove container when it exits
 		//VolumeDriver    string        // Name of the volume driver used to mount volumes
 
 		//// Applicable to UNIX platforms
-		CapAdd:  spec.CapAdd,
-		CapDrop: spec.CapDrop,
+		CapAdd:  spec.CapAdd.Values(),
+		CapDrop: spec.CapDrop.Values(),
 		//CgroupnsMode    CgroupnsMode      // Cgroup namespace mode to use for the container
 		DNS:        spec.DNS.Slice(),
-		DNSOptions: spec.DNSOptions,
+		DNSOptions: spec.DNSOptions.Values(),
 		DNSSearch:  spec.DNSSearch.Slice(),
-		ExtraHosts: spec.ExtraHosts,
-		GroupAdd:   spec.GroupAdd,
+		ExtraHosts: spec.ExtraHosts.Values(),
+		GroupAdd:   spec.GroupAdd.Values(),
 		//Cgroup          CgroupSpec        // Cgroup to use for the container
 
 		// See NOTE: [RESOLVING SERVICE CONTAINERS].
-		Links: append(append([]string{}, spec.Links...), spec.ExternalLinks...),
+		Links: append(append([]string{}, spec.Links.Values()...), spec.ExternalLinks.Values()...),
 		//OomScoreAdj     int               // Container preference for OOM-killing
-		Privileged: spec.Privileged,
+		Privileged: spec.Privileged.Value,
 		//PublishAllPorts bool              // Should docker publish all exposed port for the container
-		ReadonlyRootfs: spec.ReadOnly,
-		SecurityOpt:    spec.SecurityOpt,
+		ReadonlyRootfs: spec.ReadOnly.Value,
+		SecurityOpt:    spec.SecurityOpt.Values(),
 		StorageOpt:     spec.StorageOpt.Map(),
 		//UTSMode         UTSMode           // UTS namespace to use for the container
-		UsernsMode: container.UsernsMode(spec.UsernsMode),
+		UsernsMode: container.UsernsMode(spec.UsernsMode.Value),
 		ShmSize:    spec.ShmSize.Int64(),
 		Sysctls:    spec.Sysctls.Map(),
-		Runtime:    spec.Runtime,
+		Runtime:    spec.Runtime.Value,
 
 		//// Applicable to Windows
 		//ConsoleSize [2]uint   // Initial console size (height,width)
 
 		//// Contains container's resources (cgroups, ulimits)
 		Resources: container.Resources{
-			CPUCount:             spec.CPUCount,
-			CPUPercent:           spec.CPUPercent,
-			CPUShares:            spec.CPUShares,
-			CPUPeriod:            spec.CPUPeriod,
-			CPUQuota:             spec.CPUQuota,
+			CPUCount:             spec.CPUCount.Value,
+			CPUPercent:           spec.CPUPercent.Value,
+			CPUShares:            spec.CPUShares.Value,
+			CPUPeriod:            spec.CPUPeriod.Value,
+			CPUQuota:             spec.CPUQuota.Value,
 			Memory:               spec.MemoryLimit.Int64(),
 			MemoryReservation:    spec.MemoryReservation.Int64(),
-			MemorySwappiness:     spec.MemorySwappiness,
+			MemorySwappiness:     spec.MemorySwappiness.Int64Ptr(),
 			MemorySwap:           spec.MemswapLimit.Int64(),
 			CPURealtimePeriod:    spec.CPURealtimePeriod.Duration.Microseconds(),
 			CPURealtimeRuntime:   spec.CPURealtimeRuntime.Duration.Microseconds(),
-			BlkioWeight:          uint16(spec.BlkioConfig.Weight),
+			BlkioWeight:          spec.BlkioConfig.Weight.Uint16(),
 			BlkioWeightDevice:    blkioWeightDevice,
 			BlkioDeviceReadBps:   convertThrottleDevice(spec.BlkioConfig.DeviceReadBPS),
 			BlkioDeviceReadIOps:  convertThrottleDevice(spec.BlkioConfig.DeviceReadIOPS),
 			BlkioDeviceWriteBps:  convertThrottleDevice(spec.BlkioConfig.DeviceWriteBPS),
 			BlkioDeviceWriteIOps: convertThrottleDevice(spec.BlkioConfig.DeviceWriteIOPS),
-			CpusetCpus:           spec.CPUSet,
-			CgroupParent:         spec.CgroupParent,
-			DeviceCgroupRules:    spec.DeviceCgroupRules,
+			CpusetCpus:           spec.CPUSet.Value,
+			CgroupParent:         spec.CgroupParent.Value,
+			DeviceCgroupRules:    spec.DeviceCgroupRules.Values(),
 			Devices:              convertDeviceMappings(spec.Devices),
-			OomKillDisable:       spec.OomKillDisable,
-			PidsLimit:            spec.PidsLimit,
+			OomKillDisable:       spec.OomKillDisable.Ptr(),
+			PidsLimit:            spec.PidsLimit.Int64Ptr(),
 			Ulimits:              convertUlimits(spec.Ulimits),
 		},
 
-		OomScoreAdj: spec.OomScoreAdj,
+		OomScoreAdj: spec.OomScoreAdj.Int(),
 
 		//// MaskedPaths is the list of paths to be masked inside the container (this overrides the default set of paths)
 		//MaskedPaths []string
@@ -274,27 +274,27 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 		//ReadonlyPaths []string
 
 		//// Run a custom init inside the container, if null, use the daemon's configured settings
-		Init: spec.Init,
+		Init: spec.Init.Ptr(),
 	}
 
 	var err error
-	if hostCfg.IpcMode, err = c.parseIPCMode(spec.IPC); err != nil {
+	if hostCfg.IpcMode, err = c.parseIPCMode(spec.IPC.Value); err != nil {
 		return err
 	}
 
-	if hostCfg.Isolation, err = parseIsolation(spec.Isolation); err != nil {
+	if hostCfg.Isolation, err = parseIsolation(spec.Isolation.Value); err != nil {
 		return err
 	}
 
-	if hostCfg.NetworkMode, err = c.parseNetworkMode(spec.NetworkMode); err != nil {
+	if hostCfg.NetworkMode, err = c.parseNetworkMode(spec.NetworkMode.Value); err != nil {
 		return err
 	}
 
-	if hostCfg.PidMode, err = c.parsePIDMode(spec.PidMode); err != nil {
+	if hostCfg.PidMode, err = c.parsePIDMode(spec.PidMode.Value); err != nil {
 		return err
 	}
 
-	if hostCfg.VolumesFrom, err = c.parseVolumesFrom(spec.VolumesFrom); err != nil {
+	if hostCfg.VolumesFrom, err = c.parseVolumesFrom(spec.VolumesFrom.Values()); err != nil {
 		return err
 	}
 
@@ -323,7 +323,7 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 	}
 
 	for _, mapping := range spec.Ports {
-		target, err := nat.NewPort(mapping.Protocol, mapping.Target.String())
+		target, err := nat.NewPort(mapping.Protocol, mapping.Target.String.Value)
 		if err != nil {
 			return fmt.Errorf("could not parse port: %w", err)
 		}
@@ -334,7 +334,7 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 		}
 
 		for targetPort := targetLow; targetPort <= targetHigh; targetPort += 1 {
-			publishedPort, err := nat.NewPort(mapping.Protocol, mapping.Published.String())
+			publishedPort, err := nat.NewPort(mapping.Protocol, mapping.Published.String.Value)
 			if err != nil {
 				return fmt.Errorf("could not parse port range: %w", err)
 			}
@@ -397,7 +397,7 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 	//	//// example `v7` to specify ARMv7 when architecture is `arm`.
 	//	//Variant string `json:"variant,omitempty"`
 	//}
-	createdBody, err := c.Docker.ContainerCreate(ctx, containerCfg, hostCfg, networkCfg, platform, spec.ContainerName)
+	createdBody, err := c.Docker.ContainerCreate(ctx, containerCfg, hostCfg, networkCfg, platform, spec.ContainerName.Value)
 	if err != nil {
 		return err
 	}
@@ -424,7 +424,7 @@ func (c *Container) Refresh(ctx context.Context, input *core.RefreshInput) (*cor
 			return nil, fmt.Errorf("unmarshalling spec: %w", err)
 		}
 		c.State.Image.Spec = yamlutil.MustMarshalString(image.Spec{
-			Platform: spec.Platform,
+			Platform: spec.Platform.Value,
 			Build:    spec.Build,
 		})
 	}
@@ -492,7 +492,7 @@ func (c *Container) removeExistingContainerByName(ctx context.Context, name stri
 func (c *Container) endpointSettings(sn compose.ServiceNetwork, spec *Spec) *network.EndpointSettings {
 	es := &network.EndpointSettings{
 		Aliases: append([]string{c.ComponentID, c.ComponentName}, sn.Aliases...),
-		Links:   append(append([]string{}, spec.Links...), spec.ExternalLinks...),
+		Links:   append(append([]string{}, spec.Links.Values()...), spec.ExternalLinks.Values()...),
 	}
 
 	if sn.IPV4Address != "" || sn.IPV6Address != "" || len(sn.LinkLocalIPs) > 0 {

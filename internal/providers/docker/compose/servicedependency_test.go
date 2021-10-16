@@ -23,14 +23,14 @@ condition: service_healthy
 `, ServiceDependencies{
 		Style: SeqStyle,
 		Items: []ServiceDependency{
-			ServiceDependency{
+			{
 				IsShortSyntax: true,
 				Service:       "foo",
 				ServiceDependencyLongForm: ServiceDependencyLongForm{
 					Condition: "service_started",
 				},
 			},
-			ServiceDependency{
+			{
 				IsShortSyntax: true,
 				Service:       "bar",
 				ServiceDependencyLongForm: ServiceDependencyLongForm{
@@ -46,10 +46,10 @@ bar:
 `, ServiceDependencies{
 		Style: MapStyle,
 		Items: []ServiceDependency{
-			ServiceDependency{
+			{
 				Service: "foo",
 			},
-			ServiceDependency{
+			{
 				Service: "bar",
 				ServiceDependencyLongForm: ServiceDependencyLongForm{
 					Condition: "service_healthy",

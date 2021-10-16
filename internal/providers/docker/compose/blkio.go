@@ -5,7 +5,7 @@ type BlkioConfig struct {
 	DeviceWriteBPS  []ThrottleDevice `yaml:"device_write_bps,omitempty"`
 	DeviceReadIOPS  []ThrottleDevice `yaml:"device_read_iops,omitempty"`
 	DeviceWriteIOPS []ThrottleDevice `yaml:"device_write_iops,omitempty"`
-	Weight          uint16           `yaml:"weight,omitempty"`
+	Weight          Int              `yaml:"weight,omitempty"`
 	WeightDevice    []WeightDevice   `yaml:"weight_device,omitempty"`
 }
 
@@ -16,5 +16,5 @@ type ThrottleDevice struct {
 
 type WeightDevice struct {
 	Path   String `yaml:"path,omitempty"`
-	Weight uint16 `yaml:"weight,omitempty"`
+	Weight Int    `yaml:"weight,omitempty"`
 }

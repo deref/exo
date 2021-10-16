@@ -10,6 +10,7 @@ import (
 )
 
 type Bytes struct {
+	String
 	Quantity int64
 	Unit     ByteUnit
 }
@@ -35,25 +36,32 @@ func (bs Bytes) MarshalYAML() (interface{}, error) {
 }
 
 func (bs *Bytes) UnmarshalYAML(node *yaml.Node) error {
-	var n int64
-	err := node.Decode(&n)
-	if err == nil {
-		*bs = Bytes{
-			Quantity: n,
-		}
-		return nil
-	}
-	var s string
-	if err = node.Decode(&s); err != nil {
+	if err := node.Decode(&bs.String); err != nil {
 		return err
 	}
-	return bs.Parse(s)
+	_ = bs.Interpolate(nil)
+	return nil
+}
+
+func (bs *Bytes) Interpolate(env Environment) error {
+	if err := bs.String.Interpolate(env); err != nil {
+		return err
+	}
+	return bs.Parse(bs.String.Value)
 }
 
 func (bs *Bytes) Parse(s string) error {
 	if s == "" {
 		return nil
 	}
+
+	n, err := strconv.ParseInt(bs.String.Value, 10, 64)
+	if err == nil {
+		bs.String.Tag = "!!int"
+		bs.Quantity = n
+		return nil
+	}
+
 	s = strings.ToLower(s)
 	for _, unit := range byteUnits {
 		if strings.HasSuffix(s, unit.Suffix) {

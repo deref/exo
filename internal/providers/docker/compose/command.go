@@ -7,7 +7,7 @@ type Command struct {
 	// array of strings. This indicates that it should be passed to the image's
 	// shell as the first argument.
 	IsShellForm bool
-	Parts       []string
+	Parts       Strings
 }
 
 func (cmd Command) MarshalYAML() (interface{}, error) {
@@ -35,18 +35,22 @@ func (cmd Command) MarshalYAML() (interface{}, error) {
 }
 
 func (cmd *Command) UnmarshalYAML(node *yaml.Node) error {
-	var strs []string
+	var strs []String
 	err := node.Decode(&strs)
 	if err == nil {
+		for i := range strs {
+			strs[i].Style = 0
+		}
 		cmd.Parts = strs
 		return nil
 	}
 
-	var s string
+	var s String
 	if err := node.Decode(&s); err != nil {
 		return err
 	}
+	s.Style = 0
 	cmd.IsShellForm = true
-	cmd.Parts = []string{s}
+	cmd.Parts = []String{s}
 	return nil
 }

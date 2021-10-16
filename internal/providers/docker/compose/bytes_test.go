@@ -25,8 +25,12 @@ func TestParseBytes(t *testing.T) {
 }
 
 func TestBytesYAML(t *testing.T) {
-	testYAML(t, "int", `1234`, Bytes{Quantity: 1234})
+	testYAML(t, "int", `1234`, Bytes{
+		String:   MakeInt(1234).String,
+		Quantity: 1234,
+	})
 	testYAML(t, "string", `5k`, Bytes{
+		String:   MakeString("5k"),
 		Quantity: 5,
 		Unit: ByteUnit{
 			Suffix: "k",

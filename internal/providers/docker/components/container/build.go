@@ -42,7 +42,7 @@ func (c *Container) Build(ctx context.Context, input *api.BuildInput) (*api.Buil
 }
 
 func (c *Container) canBuild(spec *image.Spec) bool {
-	return spec.Build.Context != ""
+	return spec.Build.Context.Value != ""
 }
 
 func (c *Container) buildImage(ctx context.Context, spec *image.Spec) error {
@@ -51,15 +51,15 @@ func (c *Container) buildImage(ctx context.Context, spec *image.Spec) error {
 		panic("No build task")
 	}
 
-	contextPath := filepath.Join(c.WorkspaceRoot, spec.Build.Context)
+	contextPath := filepath.Join(c.WorkspaceRoot, spec.Build.Context.Value)
 	if !pathutil.HasFilePathPrefix(contextPath, c.WorkspaceRoot) {
 		return errors.New("docker container build context path must be in exo workspace root")
 	}
 	dockerfile := spec.Build.Dockerfile
-	if dockerfile == "" {
-		dockerfile = "Dockerfile"
+	if dockerfile.Value == "" {
+		dockerfile.Value = "Dockerfile"
 	}
-	buildContext, err := getArchive(contextPath, dockerfile)
+	buildContext, err := getArchive(contextPath, dockerfile.Value)
 	if err != nil {
 		return fmt.Errorf("getting build context: %w", err)
 	}
@@ -73,7 +73,7 @@ func (c *Container) buildImage(ctx context.Context, spec *image.Spec) error {
 		//Remove         bool
 		//ForceRemove    bool
 		//PullParent     bool
-		Isolation: container.Isolation(spec.Build.Isolation),
+		Isolation: container.Isolation(spec.Build.Isolation.Value),
 		//CPUSetCPUs     string
 		//CPUSetMems     string
 		//CPUShares      int64
@@ -84,7 +84,7 @@ func (c *Container) buildImage(ctx context.Context, spec *image.Spec) error {
 		//CgroupParent   string
 		//NetworkMode    string
 		ShmSize:    spec.Build.ShmSize.Int64(),
-		Dockerfile: spec.Build.Dockerfile,
+		Dockerfile: spec.Build.Dockerfile.Value,
 		//Ulimits        []*units.Ulimit
 		BuildArgs: spec.Build.Args.MapOfPtr(),
 		//AuthConfigs map[string]AuthConfig
@@ -96,10 +96,10 @@ func (c *Container) buildImage(ctx context.Context, spec *image.Spec) error {
 		//Squash bool
 		// CacheFrom specifies images that are used for matching cache. Images
 		// specified here do not need to have a valid parent chain to match cache.
-		CacheFrom: spec.Build.CacheFrom,
+		CacheFrom: spec.Build.CacheFrom.Values(),
 		//SecurityOpt []string
-		ExtraHosts: spec.Build.ExtraHosts,
-		Target:     spec.Build.Target,
+		ExtraHosts: spec.Build.ExtraHosts.Values(),
+		Target:     spec.Build.Target.Value,
 		//SessionID   string
 		Platform: spec.Platform,
 		//// Version specifies the version of the unerlying builder to use
