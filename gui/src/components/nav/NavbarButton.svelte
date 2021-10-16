@@ -1,12 +1,32 @@
 <script lang="ts">
   import Tooltip from '../Tooltip.svelte';
+  import type { ShortcutParams } from '../../lib/actions/shortcut';
+  import { shortcut } from '../../lib/actions/shortcut';
+  import * as router from 'svelte-spa-router';
+  import { createEventDispatcher } from 'svelte';
 
   export let title: string | undefined = undefined;
   export let active: string | undefined = undefined;
+  export let href: string | undefined = undefined;
+  export let shortcutParams: ShortcutParams | undefined = undefined;
+
+  const dispatch = createEventDispatcher();
+
+  const handleClick = (e: MouseEvent) => {
+    if (href) {
+      router.push(href);
+      return;
+    }
+    dispatch('click', e);
+  };
 </script>
 
 <div>
-  <button on:click class:active={title && active === title}>
+  <button
+    use:shortcut={shortcutParams}
+    on:click|preventDefault={handleClick}
+    class:active={title && active === title}
+  >
     <slot />
   </button>
   {#if title}
