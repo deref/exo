@@ -50,19 +50,19 @@ const themeVariables = {
     'linear-gradient(#aa0000, #660000)',
   ],
   'danger-button-shadow': [
-    '0 0.33px 0 1px #ff555526, 0 4px 8px -3px #00000026, 0 0.4px 0 0.8px #880000ff',
-    '0 -0.33px 0 1px #ff555533, 0 4px 8px -3px #00000026, 0 0.4px 0 0.8px #660000ff',
-    '0 -0.33px 0 1px #ff555533, 0 4px 8px -3px #00000026, 0 0.4px 0 0.8px #660000ff',
+    '0 0.33px 0 1px #ff555526, 0 4px 8px -3px #00000026, 0 0.4px 0 0.8px #880000ff, 0 0 0 1px #00000012',
+    '0 -0.33px 0 1px #ff555533, 0 4px 8px -3px #00000026, 0 0.4px 0 0.8px #660000ff, 0 0 0 1px #ffffff15',
+    '0 -0.33px 0 1px #ff555533, 0 4px 8px -3px #00000026, 0 0.4px 0 0.8px #660000ff, 0 0 0 1px #ffffff15',
   ],
   'danger-button-hover-shadow': [
-    '0 0.33px 0 1px #ff555526, 0 6px 8px -4px #00000033, 0 0.4px 0 0.8px #660000ff',
-    '0 -0.33px 0 1px #ff555555, 0 6px 8px -4px #00000033, 0 0.4px 0 0.8px #440000ff',
-    '0 -0.33px 0 1px #ff555555, 0 6px 8px -4px #00000033, 0 0.4px 0 0.8px #440000ff',
+    '0 0.33px 0 1px #ff555526, 0 6px 8px -4px #00000033, 0 0.4px 0 0.8px #660000ff, 0 0 0 1px #00000012',
+    '0 -0.33px 0 1px #ff555555, 0 6px 8px -4px #00000033, 0 0.4px 0 0.8px #440000ff, 0 0 0 1px #ffffff15',
+    '0 -0.33px 0 1px #ff555555, 0 6px 8px -4px #00000033, 0 0.4px 0 0.8px #440000ff, 0 0 0 1px #ffffff15',
   ],
   'danger-button-active-shadow': [
-    '0 0.33px 0 1px #ff555526, 0 4px 6px -3px #00000026, 0 0.4px 0 0.8px #660000ff',
-    '0 -0.33px 0 1px #ff555544, 0 4px 6px -3px #00000026, 0 0.4px 0 0.8px #440000ff',
-    '0 -0.33px 0 1px #ff555544, 0 4px 6px -3px #00000026, 0 0.4px 0 0.8px #440000ff',
+    '0 0.33px 0 1px #ff555526, 0 4px 6px -3px #00000026, 0 0.4px 0 0.8px #660000ff, 0 0 0 1px #00000012',
+    '0 -0.33px 0 1px #ff555544, 0 4px 6px -3px #00000026, 0 0.4px 0 0.8px #440000ff, 0 0 0 1px #ffffff15',
+    '0 -0.33px 0 1px #ff555544, 0 4px 6px -3px #00000026, 0 0.4px 0 0.8px #440000ff, 0 0 0 1px #ffffff15',
   ],
 
   // Nav
@@ -73,9 +73,9 @@ const themeVariables = {
   // Code
   'code-bg-color': ['#44444411', '#aaaaaa11', '#aaaaaa11'],
   'code-shadow': [
-    '0 0.33px 0 1px #ffffff26, 0 6px 9px -4px #00000033, 0 0.4px 0 0.8px #0000001a',
-    '0 0.33px 0 1px #ffffff26, 0 6px 9px -4px #00000033, 0 0.4px 0 0.8px #0000001a',
-    '0 0.33px 0 1px #ffffff26, 0 6px 9px -4px #00000033, 0 0.4px 0 0.8px #0000001a',
+    '0 0.33px 0 1px #ffffff26, 0 6px 9px -4px #00000033, 0 0.4px 0 0.8px #0000001a, 0 0 0 1px #00000012',
+    '0 0.33px 0 1px #ffffff26, 0 6px 9px -4px #00000033, 0 0.4px 0 0.8px #0000001a, 0 0 0 1px #ffffff15',
+    '0 0.33px 0 1px #ffffff26, 0 6px 9px -4px #00000033, 0 0.4px 0 0.8px #0000001a, 0 0 0 1px #ffffff15',
   ],
 
   // Process details
@@ -123,41 +123,41 @@ const themeVariables = {
     'linear-gradient(#222222, #333333)',
   ],
   'button-shadow': [
-    '0 0.33px 0 1px #ffffff26, 0 4px 8px -3px #00000026, 0 0.4px 0 0.8px #00000040',
-    '0 -0.33px 0 1px #ffffff33, 0 4px 8px -3px #00000026, 0 0.4px 0 0.8px #00000040',
-    '0 -0.33px 0 1px #ffffff33, 0 4px 8px -3px #00000026, 0 0.4px 0 0.8px #00000040',
+    '0 0.33px 0 1px #ffffff26, 0 4px 8px -3px #00000022, 0 0.4px 0 0.8px #00000040, 0 0 0 1px #00000012',
+    '0 -0.33px 0 1px #ffffff30, 0 4px 8px -3px #00000022, 0 0.4px 0 0.8px #00000040, 0 0 0 1px #ffffff15',
+    '0 -0.33px 0 1px #ffffff30, 0 4px 8px -3px #00000022, 0 0.4px 0 0.8px #00000040, 0 0 0 1px #ffffff15',
   ],
   'button-hover-shadow': [
-    '0 0.33px 0 1px #ffffff26, 0 6px 8px -4px #00000033, 0 0.4px 0 0.8px #00000059',
-    '0 -0.33px 0 1px #ffffff55, 0 6px 8px -4px #00000033, 0 0.4px 0 0.8px #00000059',
-    '0 -0.33px 0 1px #ffffff55, 0 6px 8px -4px #00000033, 0 0.4px 0 0.8px #00000059',
+    '0 0.33px 0 1px #ffffff26, 0 6px 8px -4px #00000030, 0 0.4px 0 0.8px #00000059, 0 0 0 1px #00000012',
+    '0 -0.33px 0 1px #ffffff50, 0 6px 8px -4px #00000030, 0 0.4px 0 0.8px #00000059, 0 0 0 1px #ffffff15',
+    '0 -0.33px 0 1px #ffffff50, 0 6px 8px -4px #00000030, 0 0.4px 0 0.8px #00000059, 0 0 0 1px #ffffff15',
   ],
   'button-active-shadow': [
-    '0 0.33px 0 1px #ffffff26, 0 4px 6px -3px #00000026, 0 0.4px 0 0.8px #00000073',
-    '0 -0.33px 0 1px #ffffff44, 0 4px 6px -3px #00000026, 0 0.4px 0 0.8px #00000073',
-    '0 -0.33px 0 1px #ffffff44, 0 4px 6px -3px #00000026, 0 0.4px 0 0.8px #00000073',
+    '0 0.33px 0 1px #ffffff26, 0 4px 6px -3px #00000024, 0 0.4px 0 0.8px #00000073, 0 0 0 1px #00000012',
+    '0 -0.33px 0 1px #ffffff40, 0 4px 6px -3px #00000024, 0 0.4px 0 0.8px #00000073, 0 0 0 1px #ffffff15',
+    '0 -0.33px 0 1px #ffffff40, 0 4px 6px -3px #00000024, 0 0.4px 0 0.8px #00000073, 0 0 0 1px #ffffff15',
   ],
   'button-inset-shadow': [
-    '0 0.33px 0 1px #ffffff26 inset, 0 4px 8px -3px #00000026 inset, 0 0.4px 0 0.8px #00000040 inset',
-    '0 -0.33px 0 1px #ffffff44 inset, 0 4px 8px -3px #00000026 inset, 0 0.4px 0 0.8px #00000040 inset',
-    '0 -0.33px 0 1px #ffffff44 inset, 0 4px 8px -3px #00000026 inset, 0 0.4px 0 0.8px #00000040 inset',
+    '0 0.33px 0 1px #ffffff26 inset, 0 4px 8px -3px #00000022 inset, 0 0.4px 0 0.8px #00000040 inset, 0 0 0 1px #00000012 inset',
+    '0 -0.33px 0 1px #ffffff40 inset, 0 4px 8px -3px #00000022 inset, 0 0.4px 0 0.8px #00000040 inset, 0 0 0 1px #ffffff15 inset',
+    '0 -0.33px 0 1px #ffffff40 inset, 0 4px 8px -3px #00000022 inset, 0 0.4px 0 0.8px #00000040 inset, 0 0 0 1px #ffffff15 inset',
   ],
 
   // Shadows
   'heavy-3d-box-shadow': [
-    '0 0.33px 0 1px #ffffff26, 0 8px 12px -6px #0000004d, 0 0.5px 0 1px #00000033',
-    '0 -0.33px 0 1px #ffffff26, 0 8px 12px -6px #0000004d, 0 0.5px 0 1px #00000033',
-    '0 -0.33px 0 1px #ffffff26, 0 8px 12px -6px #0000004d, 0 0.5px 0 1px #00000033',
+    '0 0.33px 0 1px #ffffff26, 0 8px 12px -6px #0000004d, 0 0.5px 0 1px #00000030, 0 0 0 1px #00000012',
+    '0 -0.33px 0 1px #ffffff23, 0 8px 12px -6px #0000004d, 0 0.5px 0 1px #00000030, 0 0 0 1px #ffffff15',
+    '0 -0.33px 0 1px #ffffff23, 0 8px 12px -6px #0000004d, 0 0.5px 0 1px #00000030, 0 0 0 1px #ffffff15',
   ],
   'text-input-shadow': [
-    '0 0.33px 0 1px #ffffff26, 0 6px 9px -4px #0000001a inset, 0 0.4px 0 0.8px #0000001a inset',
-    '0 -0.33px 0 1px #ffffff26, 0 6px 9px -4px #0000001a inset, 0 0.4px 0 0.8px #0000001a inset',
-    '0 -0.33px 0 1px #ffffff26, 0 6px 9px -4px #0000001a inset, 0 0.4px 0 0.8px #0000001a inset',
+    '0 0.33px 0 1px #ffffff26, 0 6px 9px -4px #0000001a inset, 0 0.4px 0 0.8px #0000001a inset, 0 0 0 1px #00000012 inset',
+    '0 -0.33px 0 1px #ffffff26, 0 6px 9px -4px #0000001a inset, 0 0.4px 0 0.8px #0000001a inset, 0 0 0 1px #ffffff15 inset',
+    '0 -0.33px 0 1px #ffffff26, 0 6px 9px -4px #0000001a inset, 0 0.4px 0 0.8px #0000001a inset, 0 0 0 1px #ffffff15 inset',
   ],
   'text-input-shadow-focus': [
-    '0 0px 0 1px #0066ee, 0 6px 9px -4px #0000001a inset, 0 0.4px 0 0.8px #0000001a inset',
-    '0 0px 0 1px #22aaff, 0 6px 9px -4px #0000001a inset, 0 0.4px 0 0.8px #0000001a inset',
-    '0 0px 0 1px #22aaff, 0 6px 9px -4px #0000001a inset, 0 0.4px 0 0.8px #0000001a inset',
+    '0 0px 0 1px #0066ee, 0 6px 9px -4px #0000001a inset, 0 0.4px 0 0.8px #0000001a inset, 0 0 0 1px #00000012 inset',
+    '0 0px 0 1px #22aaff, 0 6px 9px -4px #0000001a inset, 0 0.4px 0 0.8px #0000001a inset, 0 0 0 1px #ffffff15 inset',
+    '0 0px 0 1px #22aaff, 0 6px 9px -4px #0000001a inset, 0 0.4px 0 0.8px #0000001a inset, 0 0 0 1px #ffffff15 inset',
   ],
   'shadow-focus': [
     '0 0px 0 1px #0066ee',
@@ -165,19 +165,19 @@ const themeVariables = {
     '0 0px 0 1px #22aaff',
   ],
   'dropdown-shadow': [
-    '0 0.33px 0 1px #ffffff26, 0 12px 12px -4px #00000033, 0 0.4px 0 0.8px #00000059',
-    '0 -0.33px 0 1px #ffffff55, 0 12px 12px -4px #00000033, 0 0.4px 0 0.8px #00000059',
-    '0 -0.33px 0 1px #ffffff55, 0 12px 12px -4px #00000033, 0 0.4px 0 0.8px #00000059',
+    '0 0.33px 0 1px #ffffff26, 0 12px 12px -4px #00000033, 0 0.4px 0 0.8px #00000052, 0 0 0 1px #00000012',
+    '0 -0.33px 0 1px #ffffff55, 0 12px 12px -4px #00000033, 0 0.4px 0 0.8px #00000052, 0 0 0 1px #ffffff15',
+    '0 -0.33px 0 1px #ffffff55, 0 12px 12px -4px #00000033, 0 0.4px 0 0.8px #00000052, 0 0 0 1px #ffffff15',
   ],
   'card-shadow': [
-    '0.25px 0.25px 0 0.75px #ffffff26, 0 4px 8px -3px #00000022, 0.2px 0.3px 0 0.7px #00000033',
-    '0.25px -0.25px 0 0.75px #ffffff33, 0 4px 8px -3px #00000022, 0.2px 0.3px 0 0.7px #00000033',
-    '0.25px -0.25px 0 0.75px #ffffff33, 0 4px 8px -3px #00000022, 0.2px 0.3px 0 0.7px #00000033',
+    '0.25px 0.25px 0 0.75px #ffffff26, 0 4px 8px -3px #00000022, 0.2px 0.3px 0 0.7px #00000030, 0 0 0 1px #00000012',
+    '0.25px -0.25px 0 0.75px #ffffff30, 0 4px 8px -3px #00000022, 0.2px 0.3px 0 0.7px #00000030, 0 0 0 1px #ffffff15',
+    '0.25px -0.25px 0 0.75px #ffffff30, 0 4px 8px -3px #00000022, 0.2px 0.3px 0 0.7px #00000030, 0 0 0 1px #ffffff15',
   ],
   'card-hover-shadow': [
-    '0.25px 0.25px 0 1px #ffffff26, 0 6px 8px -4px #00000044, 0.2px 0.25px 0 0.85px #00000055',
-    '0.25px -0.25px 0 1px #ffffff55, 0 6px 8px -4px #00000044, 0.2px 0.25px 0 0.85px #00000055',
-    '0.25px -0.25px 0 1px #ffffff55, 0 6px 8px -4px #00000044, 0.2px 0.25px 0 0.85px #00000055',
+    '0.25px 0.25px 0 1px #ffffff26, 0 6px 8px -4px #00000044, 0.2px 0.25px 0 0.85px #00000050, 0 0 0 1px #00000012',
+    '0.25px -0.25px 0 1px #ffffff50, 0 6px 8px -4px #00000044, 0.2px 0.25px 0 0.85px #00000050, 0 0 0 1px #ffffff15',
+    '0.25px -0.25px 0 1px #ffffff50, 0 6px 8px -4px #00000044, 0.2px 0.25px 0 0.85px #00000050, 0 0 0 1px #ffffff15',
   ],
 };
 
