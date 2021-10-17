@@ -48,12 +48,14 @@ func (c *Converter) Convert(bs []byte) (*hcl.File, hcl.Diagnostics) {
 		}
 		attrs := []*hclsyntax.Attribute{
 			{
-				Name: "program",
-				Expr: hclgen.NewStringLiteral(p.Program, p.Range),
+				Name:     "program",
+				Expr:     hclgen.NewStringLiteral(p.Program, p.Range),
+				SrcRange: p.Range,
 			},
 			{
-				Name: "arguments",
-				Expr: hclgen.NewTuple(args, p.Range),
+				Name:     "arguments",
+				Expr:     hclgen.NewTuple(args, p.Range),
+				SrcRange: p.CommandRange,
 			},
 		}
 		if len(environment) > 0 {
@@ -72,11 +74,11 @@ func (c *Converter) Convert(bs []byte) (*hcl.File, hcl.Diagnostics) {
 			})
 		}
 
-		b.AddComponentBlock(&hclsyntax.Block{
+		b.AddComponentBlock(&hclgen.Block{
 			Type:   "process",
 			Labels: []string{name},
-			Body: &hclsyntax.Body{
-				Attributes: hclgen.NewAttributes(attrs...),
+			Body: &hclgen.Body{
+				Attributes: attrs,
 			},
 		})
 	}

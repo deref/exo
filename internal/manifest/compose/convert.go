@@ -242,7 +242,7 @@ func (c *Converter) prefixedName(name string, suffix string) string {
 	return out.String()
 }
 
-func makeComponentBlock(typ string, name string, spec interface{}, dependsOn []string) *hclsyntax.Block {
+func makeComponentBlock(typ string, name string, spec interface{}, dependsOn []string) *hclgen.Block {
 	obj := yamlToHCL(spec).(*hclsyntax.ObjectConsExpr)
 	attrs := make([]*hclsyntax.Attribute, len(obj.Items))
 	for i, item := range obj.Items {
@@ -260,23 +260,25 @@ func makeComponentBlock(typ string, name string, spec interface{}, dependsOn []s
 			SrcRange:  hcl.RangeBetween(key.Range(), val.Range()),
 		}
 	}
-	var blocks hclsyntax.Blocks
+	var blocks []*hclgen.Block
 	if len(dependsOn) > 0 {
-		blocks = append(blocks, &hclsyntax.Block{
+		blocks = append(blocks, &hclgen.Block{
 			Type: "_",
-			Body: &hclsyntax.Body{
-				Attributes: hclgen.NewAttributes(&hclsyntax.Attribute{
-					Name: "depends_on",
-					Expr: yamlToHCL(dependsOn),
-				}),
+			Body: &hclgen.Body{
+				Attributes: []*hclsyntax.Attribute{
+					{
+						Name: "depends_on",
+						Expr: yamlToHCL(dependsOn),
+					},
+				},
 			},
 		})
 	}
-	return &hclsyntax.Block{
+	return &hclgen.Block{
 		Type:   typ,
 		Labels: []string{name},
-		Body: &hclsyntax.Body{
-			Attributes: hclgen.NewAttributes(attrs...),
+		Body: &hclgen.Body{
+			Attributes: attrs,
 			Blocks:     blocks,
 		},
 	}

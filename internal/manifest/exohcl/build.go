@@ -8,7 +8,7 @@ import (
 
 type Builder struct {
 	file     *hcl.File
-	topLevel *hclsyntax.Body
+	topLevel *hclgen.Body
 }
 
 // If provided, src is the original source code used to build a new Exo
@@ -16,11 +16,13 @@ type Builder struct {
 // diagnostics will be reported in terms of this source code when available,
 // not the constructed manifest file.
 func NewBuilder(src []byte) *Builder {
-	topLevel := &hclsyntax.Body{
-		Attributes: hclgen.NewAttributes(&hclsyntax.Attribute{
-			Name: "exo",
-			Expr: hclgen.NewStringLiteral(Latest.String(), hcl.Range{}),
-		}),
+	topLevel := &hclgen.Body{
+		Attributes: []*hclsyntax.Attribute{
+			{
+				Name: "exo",
+				Expr: hclgen.NewStringLiteral(Latest.String(), hcl.Range{}),
+			},
+		},
 	}
 	return &Builder{
 		file: &hcl.File{
@@ -35,21 +37,21 @@ func (b *Builder) Build() *hcl.File {
 	return b.file
 }
 
-func (b *Builder) EnsureComponentBlock() *hclsyntax.Block {
+func (b *Builder) EnsureComponentBlock() *hclgen.Block {
 	for _, block := range b.topLevel.Blocks {
 		if block.Type == "components" {
 			return block
 		}
 	}
-	block := &hclsyntax.Block{
+	block := &hclgen.Block{
 		Type: "components",
-		Body: &hclsyntax.Body{},
+		Body: &hclgen.Body{},
 	}
 	b.topLevel.Blocks = append(b.topLevel.Blocks, block)
 	return block
 }
 
-func (b *Builder) AddComponentBlock(block *hclsyntax.Block) {
+func (b *Builder) AddComponentBlock(block *hclgen.Block) {
 	componentsBlock := b.EnsureComponentBlock()
 	componentsBlock.Body.Blocks = append(componentsBlock.Body.Blocks, block)
 }

@@ -3,7 +3,6 @@ package hclgen
 import (
 	"bytes"
 	"io"
-	"sort"
 
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
@@ -46,36 +45,16 @@ func genFileTo(out *hclwrite.File, in *hcl.File) {
 }
 
 func genBodyTo(out *hclwrite.Body, in hcl.Body) {
-	syn := in.(*hclsyntax.Body) // TODO: Handle non-syntax bodies as well.
-	attrs := make([]*hclsyntax.Attribute, 0, len(syn.Attributes))
-	for _, attr := range syn.Attributes {
-		attrs = append(attrs, attr)
-	}
-	sort.Sort(attributeSort(attrs))
-	for _, attr := range attrs {
+	body := bodyFromStructure(in)
+	for _, attr := range body.Attributes {
 		out.SetAttributeRaw(attr.Name, TokensForExpression(attr.Expr))
 	}
-	for _, block := range syn.Blocks {
+	for _, block := range body.Blocks {
 		out.AppendBlock(genBlock(block))
 	}
 }
 
-type attributeSort []*hclsyntax.Attribute
-
-func (a attributeSort) Len() int      { return len(a) }
-func (a attributeSort) Swap(i, j int) { a[i], a[j] = a[j], a[i] }
-
-// Try to preserve the source code order, but fallback to alphabetical.
-func (a attributeSort) Less(i, j int) bool {
-	lhs := a[i]
-	rhs := a[j]
-	if lhs.Range().Start.Byte < rhs.Range().Start.Byte {
-		return true
-	}
-	return lhs.Name < rhs.Name
-}
-
-func genBlock(in *hclsyntax.Block) *hclwrite.Block {
+func genBlock(in *Block) *hclwrite.Block {
 	out := hclwrite.NewBlock(in.Type, in.Labels)
 	genBodyTo(out.Body(), in.Body)
 	return out

@@ -6,14 +6,6 @@ import (
 	"github.com/zclconf/go-cty/cty"
 )
 
-func NewAttributes(attributes ...*hclsyntax.Attribute) hclsyntax.Attributes {
-	m := make(hclsyntax.Attributes, len(attributes))
-	for _, attr := range attributes {
-		m[attr.Name] = attr
-	}
-	return m
-}
-
 func NewNullLiteral(rng hcl.Range) *hclsyntax.LiteralValueExpr {
 	return &hclsyntax.LiteralValueExpr{
 		Val:      cty.NilVal,
