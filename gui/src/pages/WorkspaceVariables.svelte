@@ -77,7 +77,12 @@
       {#if Object.keys(variables).length > 0}
         <hr />
         <h2>Variables</h2>
-        <EnvironmentTable {variables} />
+        <EnvironmentTable
+          variables={Object.entries(variables).map(([name, description]) => ({
+            name,
+            ...description,
+          }))}
+        />
       {:else}
         <div>Empty environment, no variables found.</div>
       {/if}
