@@ -3,6 +3,45 @@ import fs from 'fs';
 // Variable definitions follow this format:
 // { name: [light, dark, black] }
 
+// Create a pseudo-3D border using subpixel box-shadow with no blur.
+const pseudo3DBorder = (
+  x: number,
+  y: number,
+  thickness: number,
+  color: string,
+  alpha: string,
+) => `${x}px ${y}px 0 ${thickness}px #${color}${alpha}`;
+
+// Convenience function for light-mode (dark shadow) pseudo-3D borders.
+const lightP3D = (
+  alpha = '40',
+  y = 0.4,
+  x = 0,
+  thickness = 0.8,
+  color = '000000',
+) => pseudo3DBorder(x, y, thickness, color, alpha);
+
+// Convenience function for dark-mode (light highlight) pseudo-3D borders.
+const darkP3D = (
+  alpha = '30',
+  y = -0.33,
+  x = 0,
+  thickness = 1,
+  color = 'ffffff',
+) => pseudo3DBorder(x, y, thickness, color, alpha);
+
+// Compensate for Firefox's incorrect subpixel rendering with a slight 1px thick border.
+const ffRenderFix = (alpha: string, color: string) =>
+  `0 0 0 1px #${color}${alpha}`;
+const lightFFRF = (alpha = '12') => ffRenderFix(alpha, '000000');
+const darkFFRF = (alpha = '15') => ffRenderFix(alpha, 'ffffff');
+
+// Add " inset".
+const inset = (s: string) => s + ' inset';
+
+// Join with commas.
+const list = (s: string, ...S: string[]) => s + ', ' + S.join(', ');
+
 const themeVariables = {
   'primary-color': ['#000000', '#ffffff', '#ffffff'],
   'strong-color': ['#000000', '#ffffff', '#ffffff'],
@@ -50,19 +89,19 @@ const themeVariables = {
     'linear-gradient(#aa0000, #660000)',
   ],
   'danger-button-shadow': [
-    '0 0.33px 0 1px #ff555526, 0 4px 8px -3px #00000026, 0 0.4px 0 0.8px #880000ff, 0 0 0 1px #00000012',
-    '0 -0.33px 0 1px #ff555533, 0 4px 8px -3px #00000026, 0 0.4px 0 0.8px #660000ff, 0 0 0 1px #ffffff15',
-    '0 -0.33px 0 1px #ff555533, 0 4px 8px -3px #00000026, 0 0.4px 0 0.8px #660000ff, 0 0 0 1px #ffffff15',
+    list('0 4px 8px -3px #00000026', '0 0.4px 0 0.8px #880000ff', lightFFRF()),
+    list('0 -0.33px 0 1px #ff555533', darkFFRF()),
+    list('0 -0.33px 0 1px #ff555533', darkFFRF()),
   ],
   'danger-button-hover-shadow': [
-    '0 0.33px 0 1px #ff555526, 0 6px 8px -4px #00000033, 0 0.4px 0 0.8px #660000ff, 0 0 0 1px #00000012',
-    '0 -0.33px 0 1px #ff555555, 0 6px 8px -4px #00000033, 0 0.4px 0 0.8px #440000ff, 0 0 0 1px #ffffff15',
-    '0 -0.33px 0 1px #ff555555, 0 6px 8px -4px #00000033, 0 0.4px 0 0.8px #440000ff, 0 0 0 1px #ffffff15',
+    list('0 6px 8px -4px #00000033', '0 0.4px 0 0.8px #660000ff', lightFFRF()),
+    list('0 -0.33px 0 1px #ff555555', darkFFRF()),
+    list('0 -0.33px 0 1px #ff555555', darkFFRF()),
   ],
   'danger-button-active-shadow': [
-    '0 0.33px 0 1px #ff555526, 0 4px 6px -3px #00000026, 0 0.4px 0 0.8px #660000ff, 0 0 0 1px #00000012',
-    '0 -0.33px 0 1px #ff555544, 0 4px 6px -3px #00000026, 0 0.4px 0 0.8px #440000ff, 0 0 0 1px #ffffff15',
-    '0 -0.33px 0 1px #ff555544, 0 4px 6px -3px #00000026, 0 0.4px 0 0.8px #440000ff, 0 0 0 1px #ffffff15',
+    list('0 4px 6px -3px #00000026', '0 0.4px 0 0.8px #660000ff', lightFFRF()),
+    list('0 -0.33px 0 1px #ff555544', darkFFRF()),
+    list('0 -0.33px 0 1px #ff555544', darkFFRF()),
   ],
 
   // Nav
@@ -73,9 +112,9 @@ const themeVariables = {
   // Code
   'code-bg-color': ['#44444411', '#aaaaaa11', '#aaaaaa11'],
   'code-shadow': [
-    '0 0.33px 0 1px #ffffff26, 0 6px 9px -4px #00000033, 0 0.4px 0 0.8px #0000001a, 0 0 0 1px #00000012',
-    '0 0.33px 0 1px #ffffff26, 0 6px 9px -4px #00000033, 0 0.4px 0 0.8px #0000001a, 0 0 0 1px #ffffff15',
-    '0 0.33px 0 1px #ffffff26, 0 6px 9px -4px #00000033, 0 0.4px 0 0.8px #0000001a, 0 0 0 1px #ffffff15',
+    list('0 6px 9px -4px #00000033', '0 0.4px 0 0.8px #0000001a', lightFFRF()),
+    list('0 0.33px 0 1px #ffffff26', darkFFRF()),
+    list('0 0.33px 0 1px #ffffff26', darkFFRF()),
   ],
 
   // Process details
@@ -123,41 +162,64 @@ const themeVariables = {
     'linear-gradient(#222222, #333333)',
   ],
   'button-shadow': [
-    '0 0.33px 0 1px #ffffff26, 0 4px 8px -3px #00000022, 0 0.4px 0 0.8px #00000040, 0 0 0 1px #00000012',
-    '0 -0.33px 0 1px #ffffff30, 0 4px 8px -3px #00000022, 0 0.4px 0 0.8px #00000040, 0 0 0 1px #ffffff15',
-    '0 -0.33px 0 1px #ffffff30, 0 4px 8px -3px #00000022, 0 0.4px 0 0.8px #00000040, 0 0 0 1px #ffffff15',
+    list('0 4px 8px -3px #00000022', lightP3D('40'), lightFFRF()),
+    list(darkP3D('30'), darkFFRF()),
+    list(darkP3D('30'), darkFFRF()),
   ],
   'button-hover-shadow': [
-    '0 0.33px 0 1px #ffffff26, 0 6px 8px -4px #00000030, 0 0.4px 0 0.8px #00000059, 0 0 0 1px #00000012',
-    '0 -0.33px 0 1px #ffffff50, 0 6px 8px -4px #00000030, 0 0.4px 0 0.8px #00000059, 0 0 0 1px #ffffff15',
-    '0 -0.33px 0 1px #ffffff50, 0 6px 8px -4px #00000030, 0 0.4px 0 0.8px #00000059, 0 0 0 1px #ffffff15',
+    list('0 6px 8px -4px #00000030', lightP3D('59'), lightFFRF()),
+    list(darkP3D('50'), darkFFRF()),
+    list(darkP3D('50'), darkFFRF()),
   ],
   'button-active-shadow': [
-    '0 0.33px 0 1px #ffffff26, 0 4px 6px -3px #00000024, 0 0.4px 0 0.8px #00000073, 0 0 0 1px #00000012',
-    '0 -0.33px 0 1px #ffffff40, 0 4px 6px -3px #00000024, 0 0.4px 0 0.8px #00000073, 0 0 0 1px #ffffff15',
-    '0 -0.33px 0 1px #ffffff40, 0 4px 6px -3px #00000024, 0 0.4px 0 0.8px #00000073, 0 0 0 1px #ffffff15',
+    list('0 4px 6px -3px #00000024', lightP3D('73'), lightFFRF()),
+    list(darkP3D('40'), darkFFRF()),
+    list(darkP3D('40'), darkFFRF()),
   ],
   'button-inset-shadow': [
-    '0 0.33px 0 1px #ffffff26 inset, 0 4px 8px -3px #00000022 inset, 0 0.4px 0 0.8px #00000040 inset, 0 0 0 1px #00000012 inset',
-    '0 -0.33px 0 1px #ffffff40 inset, 0 4px 8px -3px #00000022 inset, 0 0.4px 0 0.8px #00000040 inset, 0 0 0 1px #ffffff15 inset',
-    '0 -0.33px 0 1px #ffffff40 inset, 0 4px 8px -3px #00000022 inset, 0 0.4px 0 0.8px #00000040 inset, 0 0 0 1px #ffffff15 inset',
+    list(
+      inset('0 4px 8px -3px #00000022'),
+      inset(lightP3D('40')),
+      inset(lightFFRF()),
+    ),
+    list(inset(darkP3D('40')), inset(darkFFRF())),
+    list(inset(darkP3D('40')), inset(darkFFRF())),
   ],
 
   // Shadows
   'heavy-3d-box-shadow': [
-    '0 0.33px 0 1px #ffffff26, 0 8px 12px -6px #0000004d, 0 0.5px 0 1px #00000030, 0 0 0 1px #00000012',
-    '0 -0.33px 0 1px #ffffff23, 0 8px 12px -6px #0000004d, 0 0.5px 0 1px #00000030, 0 0 0 1px #ffffff15',
-    '0 -0.33px 0 1px #ffffff23, 0 8px 12px -6px #0000004d, 0 0.5px 0 1px #00000030, 0 0 0 1px #ffffff15',
+    list('0 8px 12px -6px #0000004d', lightP3D('30', 0.5, 0, 1), lightFFRF()),
+    list(darkP3D('23'), '0 8px 12px -6px #0000004d', darkFFRF()),
+    list(darkP3D('23'), '0 8px 12px -6px #0000004d', darkFFRF()),
   ],
   'text-input-shadow': [
-    '0 0.33px 0 1px #ffffff26, 0 6px 9px -4px #0000001a inset, 0 0.4px 0 0.8px #0000001a inset, 0 0 0 1px #00000012 inset',
-    '0 -0.33px 0 1px #ffffff26, 0 6px 9px -4px #0000001a inset, 0 0.4px 0 0.8px #0000001a inset, 0 0 0 1px #ffffff15 inset',
-    '0 -0.33px 0 1px #ffffff26, 0 6px 9px -4px #0000001a inset, 0 0.4px 0 0.8px #0000001a inset, 0 0 0 1px #ffffff15 inset',
+    list(
+      inset('0 6px 9px -4px #0000001a'),
+      inset(lightP3D('1a')),
+      inset(lightFFRF()),
+    ),
+    list(darkP3D('26'), inset('0 6px 9px -4px #0000001a'), inset(darkFFRF())),
+    list(darkP3D('26'), inset('0 6px 9px -4px #0000001a'), inset(darkFFRF())),
   ],
   'text-input-shadow-focus': [
-    '0 0px 0 1px #0066ee, 0 6px 9px -4px #0000001a inset, 0 0.4px 0 0.8px #0000001a inset, 0 0 0 1px #00000012 inset',
-    '0 0px 0 1px #22aaff, 0 6px 9px -4px #0000001a inset, 0 0.4px 0 0.8px #0000001a inset, 0 0 0 1px #ffffff15 inset',
-    '0 0px 0 1px #22aaff, 0 6px 9px -4px #0000001a inset, 0 0.4px 0 0.8px #0000001a inset, 0 0 0 1px #ffffff15 inset',
+    list(
+      '0 0px 0 1px #0066ee',
+      inset('0 6px 9px -4px #0000001a'),
+      inset(lightP3D('1a')),
+      inset(lightFFRF()),
+    ),
+    list(
+      '0 0px 0 1px #22aaff',
+      inset('0 6px 9px -4px #0000001a'),
+      inset(lightP3D('1a')),
+      inset(darkFFRF()),
+    ),
+    list(
+      '0 0px 0 1px #22aaff',
+      inset('0 6px 9px -4px #0000001a'),
+      inset(lightP3D('1a')),
+      inset(darkFFRF()),
+    ),
   ],
   'shadow-focus': [
     '0 0px 0 1px #0066ee',
@@ -165,19 +227,43 @@ const themeVariables = {
     '0 0px 0 1px #22aaff',
   ],
   'dropdown-shadow': [
-    '0 0.33px 0 1px #ffffff26, 0 12px 12px -4px #00000033, 0 0.4px 0 0.8px #00000052, 0 0 0 1px #00000012',
-    '0 -0.33px 0 1px #ffffff55, 0 12px 12px -4px #00000033, 0 0.4px 0 0.8px #00000052, 0 0 0 1px #ffffff15',
-    '0 -0.33px 0 1px #ffffff55, 0 12px 12px -4px #00000033, 0 0.4px 0 0.8px #00000052, 0 0 0 1px #ffffff15',
+    list('0 12px 12px -4px #00000033', lightP3D('52'), lightFFRF()),
+    list(darkP3D('55'), '0 12px 12px -4px #00000033', darkFFRF()),
+    list(darkP3D('55'), '0 12px 12px -4px #00000033', darkFFRF()),
   ],
   'card-shadow': [
-    '0.25px 0.25px 0 0.75px #ffffff26, 0 4px 8px -3px #00000022, 0.2px 0.3px 0 0.7px #00000030, 0 0 0 1px #00000012',
-    '0.25px -0.25px 0 0.75px #ffffff30, 0 4px 8px -3px #00000022, 0.2px 0.3px 0 0.7px #00000030, 0 0 0 1px #ffffff15',
-    '0.25px -0.25px 0 0.75px #ffffff30, 0 4px 8px -3px #00000022, 0.2px 0.3px 0 0.7px #00000030, 0 0 0 1px #ffffff15',
+    list(
+      '0 4px 8px -3px #00000022',
+      '0.2px 0.3px 0 0.7px #00000030',
+      lightFFRF(),
+    ),
+    list(
+      '0.25px -0.25px 0 0.75px #ffffff30',
+      '0 4px 8px -3px #00000022',
+      darkFFRF(),
+    ),
+    list(
+      '0.25px -0.25px 0 0.75px #ffffff30',
+      '0 4px 8px -3px #00000022',
+      darkFFRF(),
+    ),
   ],
   'card-hover-shadow': [
-    '0.25px 0.25px 0 1px #ffffff26, 0 6px 8px -4px #00000044, 0.2px 0.25px 0 0.85px #00000050, 0 0 0 1px #00000012',
-    '0.25px -0.25px 0 1px #ffffff50, 0 6px 8px -4px #00000044, 0.2px 0.25px 0 0.85px #00000050, 0 0 0 1px #ffffff15',
-    '0.25px -0.25px 0 1px #ffffff50, 0 6px 8px -4px #00000044, 0.2px 0.25px 0 0.85px #00000050, 0 0 0 1px #ffffff15',
+    list(
+      '0 6px 8px -4px #00000044',
+      '0.2px 0.25px 0 0.85px #00000050',
+      lightFFRF(),
+    ),
+    list(
+      '0.25px -0.25px 0 1px #ffffff50',
+      '0 6px 8px -4px #00000044',
+      darkFFRF(),
+    ),
+    list(
+      '0.25px -0.25px 0 1px #ffffff50',
+      '0 6px 8px -4px #00000044',
+      darkFFRF(),
+    ),
   ],
 };
 
