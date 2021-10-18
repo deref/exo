@@ -37,7 +37,6 @@ import (
 	"github.com/deref/exo/internal/util/pathutil"
 	dockerclient "github.com/docker/docker/client"
 	"github.com/hashicorp/hcl/v2"
-	"github.com/joho/godotenv"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -501,69 +500,6 @@ func (ws *Workspace) DescribeEnvironment(ctx context.Context, input *api.Describ
 	return &api.DescribeEnvironmentOutput{
 		Variables: env,
 	}, nil
-}
-
-func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]api.VariableDescription, error) {
-	envPath, err := ws.resolveWorkspacePath(ctx, ".env")
-	if err != nil {
-		return nil, fmt.Errorf("resolving env file path: %w", err)
-	}
-
-	env := map[string]api.VariableDescription{}
-
-	describeVaultsResult, err := ws.DescribeVaults(ctx, &api.DescribeVaultsInput{})
-	if err != nil {
-		return nil, fmt.Errorf("getting vaults: %w", err)
-	}
-	for _, vault := range describeVaultsResult.Vaults {
-		secrets, err := ws.EsvClient.GetWorkspaceSecrets(vault.Url)
-		if err != nil {
-			ws.logEventf(ctx, "getting workspace secrets: %v", err)
-			continue
-		}
-		for k, val := range secrets {
-			env[k] = api.VariableDescription{
-				Value:  val,
-				Source: vault.Name,
-			}
-		}
-	}
-
-	// Encourage programs to log with colors enabled.  The closest thing to a
-	// standard for this is <https://bixense.com/clicolors/#bug-reports>, but
-	// support is spotty. This may grow if there are other popular enviornment
-	// variables to include. If we grow PTY support, this may become unnecessary.
-	env["CLICOLOR"] = api.VariableDescription{Value: "1", Source: "exo"}
-	env["CLICOLOR_FORCE"] = api.VariableDescription{Value: "1", Source: "exo"}
-	env["FORCE_COLOR"] = api.VariableDescription{Value: "3", Source: "exo"} // https://github.com/chalk/chalk/tree/9d5b9a133c3f8aa9f24de283660de3f732964aaa#supportscolor
-
-	// Apply user's environment.
-	// TODO: This should probably somehow shell-out to get the user's current
-	// environment, otherwise changes to shell profiles won't take effect until
-	// the exo daemon is exited and restarted.
-	for _, assign := range os.Environ() {
-		parts := strings.SplitN(assign, "=", 2)
-		key := parts[0]
-		val := parts[1]
-		env[key] = api.VariableDescription{
-			Value:  val,
-			Source: "server environment",
-		}
-	}
-
-	// Apply .env file, if one exists.
-	dotEnvMap, err := godotenv.Read(envPath)
-	if os.IsNotExist(err) {
-		err = nil
-	}
-	if err != nil {
-		return nil, fmt.Errorf("processing .env file: %w", err)
-	}
-	for name, value := range dotEnvMap {
-		env[name] = api.VariableDescription{Value: value, Source: "env file"}
-	}
-
-	return env, nil
 }
 
 func (ws *Workspace) CreateComponent(ctx context.Context, input *api.CreateComponentInput) (*api.CreateComponentOutput, error) {
@@ -1137,6 +1073,7 @@ func (ws *Workspace) WriteFile(ctx context.Context, input *api.WriteFileInput) (
 	return &api.WriteFileOutput{}, nil
 }
 
+// TODO: Usages of this on the read codepath always check for exists - can we bake that in?
 func (ws *Workspace) resolveWorkspacePath(ctx context.Context, relativePath string) (string, error) {
 	description, err := ws.describe(ctx)
 	if err != nil {
