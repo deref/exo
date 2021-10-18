@@ -1,5 +1,4 @@
 <script lang="ts">
-  import * as router from 'svelte-spa-router';
   import Panel from '../components/Panel.svelte';
   import Button from '../components/Button.svelte';
   import Layout from '../components/Layout.svelte';
@@ -37,57 +36,64 @@
     {#await requests}
       <Spinner />
     {:then [variables, vaults]}
-      {#if Object.keys(variables).length === 0}
-        <div>Empty Environment</div>
-      {:else}
-        <EnvironmentTable {variables} />
-      {/if}
-      <h2>Vaults</h2>
-      <CheckeredTableWrapper>
-        <table>
-          <thead>
-            <tr>
-              <th>Name</th>
-              <th>URL</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {#each vaults as vault}
+      <div class="vaults-title">
+        <h2>Secrets Vaults</h2>
+        <Button href={`${workspaceRoute}/add-vault`} small>+ Add vault</Button>
+      </div>
+      {#if vaults.length > 0}
+        <CheckeredTableWrapper>
+          <table>
+            <thead>
               <tr>
-                <td>{vault.name}</td>
-                <td>{vault.url}</td>
-                <td>
-                  {#if vault.connected}
-                    <a href={`${vault.url}/create-secret`} target="_blank"
-                      >Create secret</a
-                    >
-                  {:else if vault.needsAuth}
-                    <Button on:click={authEsv}>Authenticate</Button>
-                  {:else}
-                    Bad vault URL
-                  {/if}
-                </td>
+                <th>Name</th>
+                <th>URL</th>
+                <th />
               </tr>
-            {/each}
-            <tr>
-              <td colspan="3">
-                <Button
-                  on:click={() => router.push(`${workspaceRoute}/add-vault`)}
-                >
-                  Add vault
-                </Button>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </CheckeredTableWrapper>
+            </thead>
+            <tbody>
+              {#each vaults as vault}
+                <tr>
+                  <td>{vault.name}</td>
+                  <td>{vault.url}</td>
+                  <td>
+                    {#if vault.connected}
+                      <Button href={`${vault.url}/create-secret`} small>
+                        + New secret
+                      </Button>
+                    {:else if vault.needsAuth}
+                      <Button on:click={authEsv} small>Authenticate</Button>
+                    {:else}
+                      Bad vault URL
+                    {/if}
+                  </td>
+                </tr>
+              {/each}
+            </tbody>
+          </table>
+        </CheckeredTableWrapper>
+      {:else}
+        <div>No vaults linked to this workspace.</div>
+      {/if}
+      {#if Object.keys(variables).length > 0}
+        <hr />
+        <h2>Variables</h2>
+        <EnvironmentTable {variables} />
+      {:else}
+        <div>Empty environment, no variables found.</div>
+      {/if}
     {/await}
   </Panel>
 </Layout>
 
 <style>
-  h2 {
-    margin-top: 1.5em;
+  .vaults-title {
+    display: flex;
+    align-items: center;
+    gap: 18px;
+    margin-bottom: 24px;
+  }
+
+  .vaults-title h2 {
+    margin: 0;
   }
 </style>
