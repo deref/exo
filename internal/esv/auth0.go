@@ -27,6 +27,11 @@ type tokenResponse struct {
 	ExpiresIn    int    `json:"expires_in"`
 }
 
+type accessTokenResult struct {
+	AccessToken string
+	Expiry      time.Time
+}
+
 var clientId = "LNPi71pWh6trIbZOGxxGi5eilI5DakWE"
 var derefAuth0Domain = "https://deref.us.auth0.com"
 
@@ -119,8 +124,9 @@ func requestTokens(deviceCode string, interval int) (tokenResponse, error) {
 	}
 }
 
-func getNewAccessToken(refreshToken string) (string, error) {
+func getNewAccessToken(refreshToken string) (accessTokenResult, error) {
 	uri := derefAuth0Domain + "/oauth/token"
+	now := time.Now()
 
 	values := url.Values{}
 	values.Set("client_id", clientId)
@@ -130,14 +136,14 @@ func getNewAccessToken(refreshToken string) (string, error) {
 
 	req, err := http.NewRequest("POST", uri, strings.NewReader(payloadString))
 	if err != nil {
-		return "", fmt.Errorf("building refresh token request: %w", err)
+		return accessTokenResult{}, fmt.Errorf("building refresh token request: %w", err)
 	}
 
 	req.Header.Add("content-type", "application/x-www-form-urlencoded")
 
 	res, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return "", fmt.Errorf("performing refresh token request: %w", err)
+		return accessTokenResult{}, fmt.Errorf("performing refresh token request: %w", err)
 	}
 
 	defer res.Body.Close()
@@ -146,10 +152,13 @@ func getNewAccessToken(refreshToken string) (string, error) {
 	if res.StatusCode == 200 {
 		tokens := tokenResponse{}
 		if err := json.Unmarshal(body, &tokens); err != nil {
-			return "", fmt.Errorf("unmarshalling auth token response: %w", err)
+			return accessTokenResult{}, fmt.Errorf("unmarshalling auth token response: %w", err)
 		}
-		return tokens.AccessToken, nil
+		return accessTokenResult{
+			AccessToken: tokens.AccessToken,
+			Expiry:      now.Add(time.Second * time.Duration(tokens.ExpiresIn)),
+		}, nil
 	}
 
-	return "", fmt.Errorf("unexpected status: %q", res.Status)
+	return accessTokenResult{}, fmt.Errorf("unexpected status: %q", res.Status)
 }

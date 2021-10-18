@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"time"
 
 	"github.com/deref/exo/internal/util/logging"
 )
@@ -18,8 +19,11 @@ import (
 var AuthError = errors.New("auth error")
 
 type EsvClient struct {
-	TokenPath    string
-	refreshToken string
+	TokenPath string
+
+	refreshToken          string
+	accessToken           string
+	accessTokenExpiration time.Time
 }
 
 type AuthResponse struct {
@@ -57,27 +61,35 @@ func (c *EsvClient) StartAuthFlow(ctx context.Context) (AuthResponse, error) {
 	}, nil
 }
 
-func (c *EsvClient) getAccessToken() (string, error) {
+func (c *EsvClient) ensureAccessToken() error {
+	// If we already have a valid access token, don't fetch a new one.
+	if c.accessTokenExpiration.After(time.Now()) {
+		return nil
+	}
+
 	if c.TokenPath == "" {
-		return "", fmt.Errorf("token file not set")
+		return fmt.Errorf("token file not set")
 	}
 	if c.refreshToken == "" {
 		tokenBytes, err := ioutil.ReadFile(c.TokenPath)
 		if err != nil {
 			if os.IsNotExist(err) {
-				return "", fmt.Errorf("%w: token file does not exist", AuthError)
+				return fmt.Errorf("%w: token file does not exist", AuthError)
 			}
-			return "", fmt.Errorf("reading token file: %w", err)
+			return fmt.Errorf("reading token file: %w", err)
 		}
 		c.refreshToken = strings.TrimSpace(string(tokenBytes))
 	}
 
 	// FIXME: don't refresh access token on every request.
-	accessToken, err := getNewAccessToken(c.refreshToken)
+	result, err := getNewAccessToken(c.refreshToken)
 	if err != nil {
-		return "", fmt.Errorf("getting access token: %w", err)
+		return fmt.Errorf("getting access token: %w", err)
 	}
-	return accessToken, nil
+
+	c.accessToken = result.AccessToken
+	c.accessTokenExpiration = result.Expiry
+	return nil
 }
 
 func (c *EsvClient) runCommand(output interface{}, host, commandName string, body interface{}) error {
@@ -86,14 +98,13 @@ func (c *EsvClient) runCommand(output interface{}, host, commandName string, bod
 		return fmt.Errorf("marshalling command body: %w", err)
 	}
 
-	accessToken, err := c.getAccessToken()
-	if err != nil {
+	if err := c.ensureAccessToken(); err != nil {
 		return fmt.Errorf("getting access token: %w", err)
 	}
 
 	req, _ := http.NewRequest("POST", host+"/api/_exo/"+commandName, bytes.NewBuffer(marshalledBody))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+accessToken)
+	req.Header.Set("Authorization", "Bearer "+c.accessToken)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -118,7 +129,6 @@ func (c *EsvClient) runCommand(output interface{}, host, commandName string, bod
 	}
 
 	return nil
-
 }
 
 func (c *EsvClient) GetWorkspaceSecrets(vaultURL string) (map[string]string, error) {
@@ -132,7 +142,7 @@ func (c *EsvClient) GetWorkspaceSecrets(vaultURL string) (map[string]string, err
 		} `json:"secrets"`
 	}
 
-	organizationID, vaultID, err := getIdsFromUrl(vaultURL)
+	organizationID, vaultID, err := getIDsFromURL(vaultURL)
 	if err != nil {
 		return nil, fmt.Errorf("could not find IDs: %w", err)
 	}
@@ -144,10 +154,12 @@ func (c *EsvClient) GetWorkspaceSecrets(vaultURL string) (map[string]string, err
 	host := url.URL{Scheme: uri.Scheme, Host: uri.Host}
 
 	resp := describeVaultResp{}
+	now := time.Now()
 	err = c.runCommand(&resp, host.String(), "describe-project", map[string]string{
 		"organizationId": organizationID,
 		"vaultId":        vaultID,
 	})
+	fmt.Printf("describing project took: %+v\n", time.Now().Sub(now))
 	if err != nil {
 		return nil, fmt.Errorf("running describe-project command: %w", err)
 	}
@@ -158,7 +170,7 @@ func (c *EsvClient) GetWorkspaceSecrets(vaultURL string) (map[string]string, err
 	return secrets, nil
 }
 
-func getIdsFromUrl(vaultURL string) (organizationID, vaultID string, err error) {
+func getIDsFromURL(vaultURL string) (organizationID, vaultID string, err error) {
 	parsedUrl, err := url.Parse(vaultURL)
 	if err != nil {
 		return "", "", fmt.Errorf("parsing vault URL: %w", err)
