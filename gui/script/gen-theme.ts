@@ -40,7 +40,7 @@ const darkFFRF = (alpha = '15') => ffRenderFix(alpha, 'ffffff');
 const inset = (s: string) => s + ' inset';
 
 // Join with commas.
-const list = (s: string, ...S: string[]) => s + ', ' + S.join(', ');
+const list = (...s: string[]) => s.join(', ');
 
 const themeVariables = {
   'primary-color': ['#000000', '#ffffff', '#ffffff'],
