@@ -9,6 +9,8 @@ import (
 	"github.com/deref/exo/internal/util/osutil"
 )
 
+// XXX This now does network requests and non-trivial parsing work. Therefore,
+// it is no longer appropriate to call deep in the call stack.
 func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]api.VariableDescription, error) {
 	var sources []environment.Source
 
@@ -22,6 +24,10 @@ func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]api.Variabl
 			Name:   vault.Name,
 			URL:    vault.Url,
 		})
+	}
+
+	if manifest := ws.tryLoadManifest(ctx); manifest != nil {
+		sources = append(sources, manifest.Environment())
 	}
 
 	sources = append(sources,

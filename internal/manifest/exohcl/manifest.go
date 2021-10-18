@@ -46,6 +46,7 @@ func NewManifest(filename string, f *hcl.File, diags hcl.Diagnostics) *Manifest 
 			{Name: "exo", Required: true},
 		},
 		Blocks: []hcl.BlockHeaderSchema{
+			{Type: "environment"},
 			{Type: "components"},
 		},
 	})
