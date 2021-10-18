@@ -1,5 +1,9 @@
 exo = "1.0"
 
+environment {
+  TEST_VARIABLE = "HELLO"
+}
+
 components {
 
   # This is the "long form"

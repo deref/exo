@@ -31,6 +31,16 @@ var manifestCandidates = []manifestCandidate{
 	{"procfile", "Procfile"},
 }
 
+// XXX This is a hacky workaround until manifest handling is overhauled.
+func (ws *Workspace) tryLoadManifest(ctx context.Context) *exohcl.Manifest {
+	wsDesc, err := ws.describe(ctx)
+	if err != nil {
+		return nil
+	}
+	m, err := ws.loadManifest(wsDesc.Root, &api.ApplyInput{})
+	return m
+}
+
 func (ws *Workspace) loadManifest(rootDir string, input *api.ApplyInput) (*exohcl.Manifest, error) {
 	manifestString := ""
 	manifestPath := ""

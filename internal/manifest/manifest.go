@@ -72,5 +72,11 @@ func (l *Loader) Load() (*exohcl.Manifest, error) {
 		file, diags := converter.Convert(l.Bytes)
 		m = exohcl.NewManifest(l.Filename, file, diags)
 	}
-	return m, m.Diagnostics()
+	var err error
+	diags := m.Diagnostics()
+	if len(diags) > 0 {
+		// Note that this effectively treats all warnings as errors.
+		err = diags
+	}
+	return m, err
 }
