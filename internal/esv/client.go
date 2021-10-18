@@ -81,7 +81,6 @@ func (c *EsvClient) ensureAccessToken() error {
 		c.refreshToken = strings.TrimSpace(string(tokenBytes))
 	}
 
-	// FIXME: don't refresh access token on every request.
 	result, err := getNewAccessToken(c.refreshToken)
 	if err != nil {
 		return fmt.Errorf("getting access token: %w", err)
