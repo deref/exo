@@ -14,12 +14,13 @@ import (
 )
 
 type Manifest struct {
-	filename   string
-	f          *hcl.File
-	evalCtx    *hcl.EvalContext
-	diags      hcl.Diagnostics
-	content    *hcl.BodyContent
-	components *ComponentSet
+	filename    string
+	f           *hcl.File
+	evalCtx     *hcl.EvalContext
+	diags       hcl.Diagnostics
+	content     *hcl.BodyContent
+	environment *Environment
+	components  *ComponentSet
 }
 
 func Parse(filename string, bs []byte) *Manifest {
@@ -50,10 +51,12 @@ func NewManifest(filename string, f *hcl.File, diags hcl.Diagnostics) *Manifest 
 	})
 	m.appendDiags(diags...)
 
-	var componentBlocks hcl.Blocks
+	var environmentBlocks, componentBlocks hcl.Blocks
 	if m.content != nil {
+		environmentBlocks = m.content.Blocks.OfType("environment")
 		componentBlocks = m.content.Blocks.OfType("components")
 	}
+	m.environment = newEnvironment(m, environmentBlocks)
 	m.components = newComponentSet(m, componentBlocks)
 
 	return m
@@ -134,6 +137,10 @@ func (m *Manifest) evalString(x hcl.Expression) string {
 		return ""
 	}
 	return v.AsString()
+}
+
+func (m *Manifest) Environment() *Environment {
+	return m.environment
 }
 
 func (m *Manifest) Components() *ComponentSet {
