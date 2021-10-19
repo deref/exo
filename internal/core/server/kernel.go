@@ -30,7 +30,7 @@ type Kernel struct {
 	VarDir      string
 	Store       state.Store
 	TaskTracker *task.TaskTracker
-	EsvClient   *esv.EsvClient
+	EsvClient   esv.EsvClient
 }
 
 var _ api.Kernel = &Kernel{}

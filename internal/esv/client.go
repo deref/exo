@@ -19,14 +19,19 @@ import (
 
 var AuthError = errors.New("auth error")
 
-func NewEsvClient(tokenPath string) *EsvClient {
-	return &EsvClient{
+type EsvClient interface {
+	StartAuthFlow(ctx context.Context) (AuthResponse, error)
+	GetWorkspaceSecrets(vaultURL string) (map[string]string, error)
+}
+
+func NewEsvClient(tokenPath string) *esvClient {
+	return &esvClient{
 		tokenPath:  tokenPath,
 		tokenMutex: &sync.Mutex{},
 	}
 }
 
-type EsvClient struct {
+type esvClient struct {
 	tokenPath string
 
 	// tokenMutex locks both the refresh token and access token.
@@ -41,7 +46,7 @@ type AuthResponse struct {
 	AuthURL  string
 }
 
-func (c *EsvClient) StartAuthFlow(ctx context.Context) (AuthResponse, error) {
+func (c *esvClient) StartAuthFlow(ctx context.Context) (AuthResponse, error) {
 	codeResponse, err := requestDeviceCode()
 	if err != nil {
 		return AuthResponse{}, fmt.Errorf("requesting device code: %w", err)
@@ -74,7 +79,7 @@ func (c *EsvClient) StartAuthFlow(ctx context.Context) (AuthResponse, error) {
 	}, nil
 }
 
-func (c *EsvClient) ensureAccessToken() error {
+func (c *esvClient) ensureAccessToken() error {
 	// If we already have a valid access token, don't fetch a new one.
 	if c.accessTokenExpiration.After(time.Now()) {
 		return nil
@@ -107,7 +112,7 @@ func (c *EsvClient) ensureAccessToken() error {
 	return nil
 }
 
-func (c *EsvClient) runCommand(output interface{}, host, commandName string, body interface{}) error {
+func (c *esvClient) runCommand(output interface{}, host, commandName string, body interface{}) error {
 	marshalledBody, err := json.Marshal(body)
 	if err != nil {
 		return fmt.Errorf("marshalling command body: %w", err)
@@ -146,7 +151,7 @@ func (c *EsvClient) runCommand(output interface{}, host, commandName string, bod
 	return nil
 }
 
-func (c *EsvClient) GetWorkspaceSecrets(vaultURL string) (map[string]string, error) {
+func (c *esvClient) GetWorkspaceSecrets(vaultURL string) (map[string]string, error) {
 	type describeVaultResp struct {
 		ID          string `json:"id"`
 		DisplayName string `json:"displayName"`

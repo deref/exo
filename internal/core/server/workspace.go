@@ -48,7 +48,7 @@ type Workspace struct {
 	Logger      logging.Logger // TODO: Embed in context, so it can be annotated with request info.
 	Docker      *dockerclient.Client
 	TaskTracker *task.TaskTracker
-	EsvClient   *esv.EsvClient
+	EsvClient   esv.EsvClient
 }
 
 var _ api.Workspace = &Workspace{}
