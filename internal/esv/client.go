@@ -11,6 +11,7 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/deref/exo/internal/util/logging"
@@ -18,9 +19,18 @@ import (
 
 var AuthError = errors.New("auth error")
 
-type EsvClient struct {
-	TokenPath string
+func NewEsvClient(tokenPath string) *EsvClient {
+	return &EsvClient{
+		tokenPath:  tokenPath,
+		tokenMutex: &sync.Mutex{},
+	}
+}
 
+type EsvClient struct {
+	tokenPath string
+
+	// tokenMutex locks both the refresh token and access token.
+	tokenMutex            *sync.Mutex
 	refreshToken          string
 	accessToken           string
 	accessTokenExpiration time.Time
@@ -46,9 +56,12 @@ func (c *EsvClient) StartAuthFlow(ctx context.Context) (AuthResponse, error) {
 			return
 		}
 
+		c.tokenMutex.Lock()
+		defer c.tokenMutex.Unlock()
 		c.refreshToken = tokens.RefreshToken
+		c.accessToken = ""
 
-		err = ioutil.WriteFile(c.TokenPath, []byte(tokens.RefreshToken), 0600)
+		err = ioutil.WriteFile(c.tokenPath, []byte(tokens.RefreshToken), 0600)
 		if err != nil {
 			logger.Infof("writing esv secret: %s", err)
 			return
@@ -67,11 +80,14 @@ func (c *EsvClient) ensureAccessToken() error {
 		return nil
 	}
 
-	if c.TokenPath == "" {
+	c.tokenMutex.Lock()
+	defer c.tokenMutex.Unlock()
+
+	if c.tokenPath == "" {
 		return fmt.Errorf("token file not set")
 	}
 	if c.refreshToken == "" {
-		tokenBytes, err := ioutil.ReadFile(c.TokenPath)
+		tokenBytes, err := ioutil.ReadFile(c.tokenPath)
 		if err != nil {
 			if os.IsNotExist(err) {
 				return fmt.Errorf("%w: token file does not exist", AuthError)
