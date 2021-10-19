@@ -12,7 +12,7 @@ jobs:
           go-version: 1.16
       - uses: actions/setup-node@v2
         with:
-          node-version: 'lts/*'
+          node-version: '16'
       - uses: actions/cache@v2
         with:
           path: |
