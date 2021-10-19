@@ -307,12 +307,16 @@ func appendTokensForValue(toks hclwrite.Tokens, v cty.Value) hclwrite.Tokens {
 
 func escapeQuotedStringLit(s string) []byte {
 	toks := hclwrite.TokensForValue(cty.StringVal(s))
-	if len(toks) != 3 || toks[0].Type != hclsyntax.TokenOQuote || toks[2].Type != hclsyntax.TokenCQuote {
+	nToks := len(toks)
+	if nToks < 2 || toks[0].Type != hclsyntax.TokenOQuote || toks[nToks-1].Type != hclsyntax.TokenCQuote || 3 < nToks {
 		// We're abusing knowledge about hclwrite.TokensForValue to get at
 		// the behavior of the private hclwrite.escapeQuotedStringLit function.
 		panic("unexpected string tokens form hclwrite.TokensForValue")
 	}
-	return toks[1].Bytes
+	if nToks == 3 {
+		return toks[1].Bytes
+	}
+	return nil
 }
 
 func appendTokensForTraverser(toks hclwrite.Tokens, t hcl.Traverser) hclwrite.Tokens {

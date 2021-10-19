@@ -58,6 +58,14 @@ func (sn *ServiceNetworks) Interpolate(env Environment) error {
 }
 
 func (sn ServiceNetworks) MarshalYAML() (interface{}, error) {
+	if sn.Style == UnknownStyle {
+		sn.Style = SeqStyle
+		for _, item := range sn.Items {
+			if item.ShortForm.Expression == "" {
+				sn.Style = MapStyle
+			}
+		}
+	}
 	if sn.Style == SeqStyle {
 		return sn.Items, nil
 	}

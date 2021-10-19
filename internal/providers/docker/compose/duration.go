@@ -64,7 +64,9 @@ func (d Duration) MarshalYAML() (interface{}, error) {
 	step("us", time.Microsecond)
 
 	if buf.Len() == 0 {
-		return "0s", nil
+		// XXX Probably should return "0s" here, but that causes problems for the
+		// "omitempty" flag on yaml fields. Is there some better solution?
+		return nil, nil
 	}
 	return buf.String(), nil
 }

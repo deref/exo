@@ -5,12 +5,16 @@ import (
 
 	"github.com/deref/exo/internal/manifest/compose"
 	"github.com/deref/exo/internal/manifest/exohcl/hclgen"
-	"github.com/deref/exo/internal/manifest/exohcl/testutil"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 )
 
 func TestConvert(t *testing.T) {
+	// TODO: These tests are badly broken, since this entire approach is badly broken.
+	// The following things that are being tested for here should not appear in converted manifests:
+	// - prefixed container/volume/network names.
+	// - docker compose labels
+	// - dependencies that can be inferred from the spec body
 	t.Skip("compose to exo.hcl not yet working")
 
 	projectName := "testproj"
@@ -29,9 +33,6 @@ services:
         volumes: ['./src:/srv']
         command: node /srv/index.js
 `,
-			// TODO: These tests are checking some undesirable behavior such
-			// as including labels, assigning container names, etc. That logic
-			// should be pushed down in to the component controllers.
 			Expected: `
 exo = "1.0"
 components {
@@ -121,7 +122,7 @@ components {
 				t.Fatalf("malformed test case: %v", diags)
 			}
 
-			if !testutil.FileEquiv(expected, &hcl.File{Body: actual.Body.(*hclsyntax.Body)}) {
+			if !hclgen.FileEquiv(expected, &hcl.File{Body: actual.Body}) {
 				t.Errorf("hcl files inequivalent. expected:\n%s\nactual:\n%s",
 					testCase.Expected,
 					string(hclgen.FormatFile(actual)))

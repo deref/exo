@@ -1,10 +1,10 @@
 package hclgen_test
 
 import (
+	"bytes"
 	"testing"
 
 	"github.com/deref/exo/internal/manifest/exohcl/hclgen"
-	"github.com/deref/exo/internal/manifest/exohcl/testutil"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/hashicorp/hcl/v2/hclwrite"
@@ -39,6 +39,11 @@ func TestGenerate(t *testing.T) {
 			Bytes: f.Bytes,
 		})
 		formatted := string(hclwrite.Format([]byte(src)))
-		assert.Equal(t, formatted, testutil.CleanHCL(bs))
+
+		bs = hclwrite.Format(bs)
+		bs = bytes.TrimSpace(bs)
+		bs = bytes.ReplaceAll(bs, []byte{'\t'}, []byte("  "))
+
+		assert.Equal(t, formatted, string(bs))
 	}
 }

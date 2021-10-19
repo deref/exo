@@ -221,13 +221,18 @@ func expandComponent(block *hclsyntax.Block) (*hclsyntax.Block, hcl.Diagnostics)
 		})
 		return nil, diags
 	}
-	if len(body.Blocks) > 0 {
-		diags = append(diags, &hcl.Diagnostic{
-			Severity: hcl.DiagError,
-			Summary:  "Unexpected block",
-			Detail:   fmt.Sprintf(`Unexpected block in %q component.`, block.Type),
-			Subject:  body.Blocks[0].DefRange().Ptr(),
-		})
+	for _, subblock := range body.Blocks {
+		switch subblock.Type {
+		case "_":
+			// TODO: copy content of "meta" blocks in to the expanded output.
+		default:
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  "Unexpected block",
+				Detail:   fmt.Sprintf(`Unexpected %q block in %q component.`, subblock.Type, block.Type),
+				Subject:  body.Blocks[0].DefRange().Ptr(),
+			})
+		}
 	}
 	attrs := body.Attributes
 	specItems := make([]hclsyntax.ObjectConsItem, 0, len(attrs))

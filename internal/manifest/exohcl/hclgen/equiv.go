@@ -1,4 +1,4 @@
-package testutil
+package hclgen
 
 import (
 	"github.com/hashicorp/hcl/v2"
@@ -10,8 +10,8 @@ func FileEquiv(a, b *hcl.File) bool {
 }
 
 func BodyEquiv(a, b hcl.Body) bool {
-	synA := a.(*hclsyntax.Body)
-	synB := b.(*hclsyntax.Body)
+	synA := bodyFromStructure(a).syntaxBody()
+	synB := bodyFromStructure(b).syntaxBody()
 	return AttributesEquiv(synA.Attributes, synB.Attributes) && BlocksEquiv(synA.Blocks, synB.Blocks)
 }
 
