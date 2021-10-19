@@ -10,11 +10,13 @@
     | 'Delete'
     | 'Details'
     | 'Doc'
+    | 'Edit'
     | 'Ellipsis'
     | 'Feedback'
     | 'Home'
     | 'Layers'
     | 'LeftUp'
+    | 'Lock'
     | 'LogoDeno'
     | 'LogoDiscord'
     | 'LogoDjango'
@@ -53,11 +55,13 @@
   import DeleteGlyph from './icon/glyphs/Delete.svelte';
   import DetailsGlyph from './icon/glyphs/Details.svelte';
   import DocGlyph from './icon/glyphs/Doc.svelte';
+  import EditGlyph from './icon/glyphs/Edit.svelte';
   import EllipsisGlyph from './icon/glyphs/Ellipsis.svelte';
   import FeedbackGlyph from './icon/glyphs/Feedback.svelte';
   import HomeGlyph from './icon/glyphs/Home.svelte';
   import LayersGlyph from './icon/glyphs/Layers.svelte';
   import LeftUpGlyph from './icon/glyphs/LeftUp.svelte';
+  import LockGlyph from './icon/glyphs/Lock.svelte';
   import LogoDenoGlyph from './icon/glyphs/LogoDeno.svelte';
   import LogoDiscordGlyph from './icon/glyphs/LogoDiscord.svelte';
   import LogoDjangoGlyph from './icon/glyphs/LogoDjango.svelte';
@@ -103,6 +107,8 @@
   <DetailsGlyph />
 {:else if glyph === 'Doc'}
   <DocGlyph />
+{:else if glyph === 'Edit'}
+  <EditGlyph />
 {:else if glyph === 'Ellipsis'}
   <EllipsisGlyph />
 {:else if glyph === 'Feedback'}
@@ -113,6 +119,8 @@
   <LayersGlyph />
 {:else if glyph === 'LeftUp'}
   <LeftUpGlyph />
+{:else if glyph === 'Lock'}
+  <LockGlyph />
 {:else if glyph === 'LogoDeno'}
   <LogoDenoGlyph />
 {:else if glyph === 'LogoDiscord'}

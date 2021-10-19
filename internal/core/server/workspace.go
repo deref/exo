@@ -3,7 +3,9 @@ package server
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
@@ -14,6 +16,7 @@ import (
 	"github.com/deref/exo/internal/core/api"
 	state "github.com/deref/exo/internal/core/state/api"
 	"github.com/deref/exo/internal/deps"
+	"github.com/deref/exo/internal/esv"
 	eventd "github.com/deref/exo/internal/eventd/api"
 	"github.com/deref/exo/internal/gensym"
 	josh "github.com/deref/exo/internal/josh/server"
@@ -28,7 +31,6 @@ import (
 	"github.com/deref/exo/internal/providers/docker/components/volume"
 	"github.com/deref/exo/internal/providers/unix/components/process"
 	"github.com/deref/exo/internal/task"
-	"github.com/deref/exo/internal/util/contextutil"
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/deref/exo/internal/util/logging"
@@ -46,17 +48,86 @@ type Workspace struct {
 	Logger      logging.Logger // TODO: Embed in context, so it can be annotated with request info.
 	Docker      *dockerclient.Client
 	TaskTracker *task.TaskTracker
+	EsvClient   *esv.EsvClient
+}
+
+var _ api.Workspace = &Workspace{}
+
+var secretsUrlFile = "exo-secrets-url"
+
+type vaultConfig struct {
+	name string
+	url  string
+}
+
+func (ws *Workspace) getVaultConfigs(ctx context.Context) ([]vaultConfig, error) {
+	// NOTE: [VAULTS_IN_MANIFEST] Right now getVaultConfigs relies on an
+	// exo-secrets-url file in the workspace root to provide the vault. At the
+	// moment only one is supported. Instead we should add this to the state of
+	// the workspace and support multiple vaults.
+
+	secretConfigPath, err := ws.resolveWorkspacePath(ctx, secretsUrlFile)
+	if err != nil {
+		return nil, fmt.Errorf("resolving secrets config file path: %w", err)
+	}
+	secretsUrlBytes, err := ioutil.ReadFile(secretConfigPath)
+	if os.IsNotExist(err) {
+		return []vaultConfig{}, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("reading secrets config: %w", err)
+	}
+	secretsUrl := string(bytes.TrimSpace(secretsUrlBytes))
+	return []vaultConfig{{name: "esv-vault", url: secretsUrl}}, nil
+}
+
+// AddVault performs an upsert for the specified vault name and URL.
+func (ws *Workspace) AddVault(ctx context.Context, input *api.AddVaultInput) (*api.AddVaultOutput, error) {
+	// SEE NOTE [VAULTS_IN_MANIFEST]
+	secretConfigPath, err := ws.resolveWorkspacePath(ctx, secretsUrlFile)
+	if err != nil {
+		return nil, fmt.Errorf("resolving secrets config file path: %w", err)
+	}
+
+	if err := ioutil.WriteFile(secretConfigPath, []byte(input.Url), 0600); err != nil {
+		return nil, fmt.Errorf("writing secrets config file: %w", err)
+	}
+
+	return &api.AddVaultOutput{}, nil
+}
+
+func (ws *Workspace) DescribeVaults(ctx context.Context, input *api.DescribeVaultsInput) (*api.DescribeVaultsOutput, error) {
+	vaultConfigs, err := ws.getVaultConfigs(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting vault configs: %w", err)
+	}
+
+	descriptions := make([]api.VaultDescription, len(vaultConfigs))
+	for i, vaultConfig := range vaultConfigs {
+		// TODO: add a status command.
+		_, err = ws.EsvClient.GetWorkspaceSecrets(vaultConfig.url)
+		descriptions[i] = api.VaultDescription{
+			Name:      vaultConfig.name,
+			Url:       vaultConfig.url,
+			Connected: err == nil,
+			NeedsAuth: errors.Is(err, esv.AuthError),
+		}
+	}
+
+	return &api.DescribeVaultsOutput{Vaults: descriptions}, nil
 }
 
 func (ws *Workspace) logEventf(ctx context.Context, format string, v ...interface{}) {
 	eventStore := log.CurrentEventStore(ctx)
-	_, err := eventStore.AddEvent(ctx, &eventd.AddEventInput{
+	input := &eventd.AddEventInput{
 		Stream:    ws.ID,
 		Timestamp: chrono.NowString(ctx),
 		Message:   fmt.Sprintf(format, v...),
-	})
+	}
+	_, err := eventStore.AddEvent(ctx, input)
 	if err != nil {
 		ws.Logger.Infof("error adding workspace event: %v", err)
+		ws.Logger.Infof("event message was: %s", input.Message)
 	}
 }
 
@@ -222,8 +293,7 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 			task: job.CreateChild("re-creating " + name),
 			run: func(t *task.Task) error {
 				// Should the replacement component get the old component's ID?
-				_, err := ws.createComponent(t, newComponent, gensym.RandomBase32())
-				return err
+				return ws.createComponent(t, newComponent, gensym.RandomBase32())
 			},
 		})
 		for _, dependency := range newComponent.DependsOn {
@@ -254,9 +324,7 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 				name: name,
 				task: job.CreateChild("adding " + name),
 				run: func(t *task.Task) error {
-					id := gensym.RandomBase32()
-					_, err := ws.createComponent(t, newComponent, id)
-					return err
+					return ws.createComponent(t, newComponent, gensym.RandomBase32())
 				},
 			})
 			for _, dependency := range newComponent.DependsOn {
@@ -358,13 +426,17 @@ func (ws *Workspace) newController(ctx context.Context, desc api.ComponentDescri
 			Err: fmt.Errorf("environment error: %w", err),
 		}
 	}
+	simpleEnv := map[string]string{}
+	for k, v := range env {
+		simpleEnv[k] = v.Value
+	}
 	base := core.ComponentBase{
 		ComponentID:          desc.ID,
 		ComponentName:        desc.Name,
 		ComponentState:       desc.State,
 		WorkspaceID:          ws.ID,
 		WorkspaceRoot:        description.Root,
-		WorkspaceEnvironment: env,
+		WorkspaceEnvironment: simpleEnv,
 		Logger:               ws.Logger,
 	}
 	switch desc.Type {
@@ -416,21 +488,39 @@ func (ws *Workspace) DescribeEnvironment(ctx context.Context, input *api.Describ
 	}, nil
 }
 
-func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]string, error) {
+func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]api.VariableDescription, error) {
 	envPath, err := ws.resolveWorkspacePath(ctx, ".env")
 	if err != nil {
 		return nil, fmt.Errorf("resolving env file path: %w", err)
 	}
 
-	env := map[string]string{}
+	env := map[string]api.VariableDescription{}
+
+	describeVaultsResult, err := ws.DescribeVaults(ctx, &api.DescribeVaultsInput{})
+	if err != nil {
+		return nil, fmt.Errorf("getting vaults: %w", err)
+	}
+	for _, vault := range describeVaultsResult.Vaults {
+		secrets, err := ws.EsvClient.GetWorkspaceSecrets(vault.Url)
+		if err != nil {
+			ws.logEventf(ctx, "getting workspace secrets: %v", err)
+			continue
+		}
+		for k, val := range secrets {
+			env[k] = api.VariableDescription{
+				Value:  val,
+				Source: vault.Name,
+			}
+		}
+	}
 
 	// Encourage programs to log with colors enabled.  The closest thing to a
 	// standard for this is <https://bixense.com/clicolors/#bug-reports>, but
 	// support is spotty. This may grow if there are other popular enviornment
 	// variables to include. If we grow PTY support, this may become unnecessary.
-	env["CLICOLOR"] = "1"
-	env["CLICOLOR_FORCE"] = "1"
-	env["FORCE_COLOR"] = "3" // https://github.com/chalk/chalk/tree/9d5b9a133c3f8aa9f24de283660de3f732964aaa#supportscolor
+	env["CLICOLOR"] = api.VariableDescription{Value: "1", Source: "exo"}
+	env["CLICOLOR_FORCE"] = api.VariableDescription{Value: "1", Source: "exo"}
+	env["FORCE_COLOR"] = api.VariableDescription{Value: "3", Source: "exo"} // https://github.com/chalk/chalk/tree/9d5b9a133c3f8aa9f24de283660de3f732964aaa#supportscolor
 
 	// Apply user's environment.
 	// TODO: This should probably somehow shell-out to get the user's current
@@ -440,7 +530,10 @@ func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]string, err
 		parts := strings.SplitN(assign, "=", 2)
 		key := parts[0]
 		val := parts[1]
-		env[key] = val
+		env[key] = api.VariableDescription{
+			Value:  val,
+			Source: "server environment",
+		}
 	}
 
 	// Apply .env file, if one exists.
@@ -452,7 +545,7 @@ func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]string, err
 		return nil, fmt.Errorf("processing .env file: %w", err)
 	}
 	for name, value := range dotEnvMap {
-		env[name] = value
+		env[name] = api.VariableDescription{Value: value, Source: "env file"}
 	}
 
 	return env, nil
@@ -460,25 +553,33 @@ func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]string, err
 
 func (ws *Workspace) CreateComponent(ctx context.Context, input *api.CreateComponentInput) (*api.CreateComponentOutput, error) {
 	id := gensym.RandomBase32()
-	jobID, err := ws.createComponent(ctx, manifest.Component{
-		Name: input.Name,
-		Type: input.Type,
-		Spec: input.Spec,
-	}, id)
-	if err != nil {
-		return nil, err
-	}
+
+	job := ws.TaskTracker.StartTask(ctx, "creating "+input.Name)
+	go func() {
+		defer job.Finish()
+
+		err := ws.createComponent(ctx, manifest.Component{
+			Name: input.Name,
+			Type: input.Type,
+			Spec: input.Spec,
+		}, id)
+		if err != nil {
+			ws.logEventf(ctx, "error creating %s: %v", input.Name, err)
+			job.Fail(err)
+			return
+		}
+	}()
 
 	ws.logEventf(ctx, "new component: %s", input.Name)
 	return &api.CreateComponentOutput{
 		ID:    id,
-		JobID: jobID,
+		JobID: job.ID(),
 	}, nil
 }
 
-func (ws *Workspace) createComponent(ctx context.Context, component manifest.Component, id string) (string, error) {
+func (ws *Workspace) createComponent(ctx context.Context, component manifest.Component, id string) error {
 	if err := manifest.ValidateName(component.Name); err != nil {
-		return "", errutil.HTTPErrorf(http.StatusBadRequest, "component name %q invalid: %w", component.Name, err)
+		return errutil.HTTPErrorf(http.StatusBadRequest, "component name %q invalid: %w", component.Name, err)
 	}
 
 	if _, err := ws.Store.AddComponent(ctx, &state.AddComponentInput{
@@ -490,37 +591,22 @@ func (ws *Workspace) createComponent(ctx context.Context, component manifest.Com
 		Created:     chrono.NowString(ctx),
 		DependsOn:   component.DependsOn,
 	}); err != nil {
-		return "", fmt.Errorf("adding component: %w", err)
+		return fmt.Errorf("adding component: %w", err)
 	}
 
-	job := ws.TaskTracker.StartTask(contextutil.WithoutCancel(ctx), "creating "+component.Name)
-	go func() {
-		defer job.Finish()
-
-		// Construct a synthetic component description to avoid re-reading after
-		// the add. Only the fields needed by control are included.
-		// TODO: Store.AddComponent could return a component description?
-		desc := api.ComponentDescription{
-			ID:        id,
-			Name:      component.Name,
-			Type:      component.Type,
-			Spec:      component.Spec,
-			DependsOn: component.DependsOn,
-		}
-		if err := ws.control(job, desc, &api.InitializeInput{
-			Spec: component.Spec,
-		}); err != nil {
-			ws.logEventf(ctx, "error creating %s: %v", component.Name, err)
-			job.Fail(err)
-			return
-		}
-
-		if err := job.Wait(); err != nil {
-			return
-		}
-	}()
-
-	return job.ID(), nil
+	// Construct a synthetic component description to avoid re-reading after
+	// the add. Only the fields needed by control are included.
+	// TODO: Store.AddComponent could return a component description?
+	desc := api.ComponentDescription{
+		ID:        id,
+		Name:      component.Name,
+		Type:      component.Type,
+		Spec:      component.Spec,
+		DependsOn: component.DependsOn,
+	}
+	return ws.control(ctx, desc, &api.InitializeInput{
+		Spec: component.Spec,
+	})
 }
 
 func (ws *Workspace) UpdateComponent(ctx context.Context, input *api.UpdateComponentInput) (*api.UpdateComponentOutput, error) {
@@ -528,37 +614,84 @@ func (ws *Workspace) UpdateComponent(ctx context.Context, input *api.UpdateCompo
 	if err != nil {
 		return nil, fmt.Errorf("describing components: %w", err)
 	}
+	if len(describeOutput.Components) == 0 {
+		return nil, errutil.HTTPErrorf(http.StatusNotFound, "component not found: %q", input.Ref)
+	}
 
 	oldComponent := describeOutput.Components[0]
-	dependsOn := oldComponent.DependsOn
+	newComponent := oldComponent
+	patch := state.PatchComponentInput{
+		ID: oldComponent.ID,
+	}
+
+	if input.Name != "" {
+		if err := manifest.ValidateName(input.Name); err != nil {
+			return nil, errutil.HTTPErrorf(http.StatusBadRequest, "new component name %q is invalid: %w", input.Name, err)
+		}
+		newComponent.Name = input.Name
+		patch.Name = input.Name
+	}
+	if input.Spec != "" {
+		newComponent.Spec = input.Spec
+		patch.Spec = input.Spec
+	}
 	if input.DependsOn != nil {
-		dependsOn = input.DependsOn
+		newComponent.DependsOn = input.DependsOn
+		patch.DependsOn = &input.DependsOn
+	}
+
+	_, err = ws.Store.PatchComponent(ctx, &patch)
+	if err != nil {
+		return nil, fmt.Errorf("patching component: %w", err)
 	}
 
 	ws.logEventf(ctx, "updating %s", oldComponent.Name)
-	if err := ws.updateComponent(ctx, oldComponent, manifest.Component{
-		Type:      oldComponent.Type,
-		Name:      oldComponent.Name,
-		Spec:      input.Spec,
-		DependsOn: dependsOn,
-	}, oldComponent.ID); err != nil {
+	job := ws.TaskTracker.StartTask(ctx, "updating")
+	go func() {
+		defer job.Finish()
+		// TODO: Most updates should be accomplished without a full replacement; especially when there are no spec changes!
+		job.Go("dispose old", func(disposeTask *task.Task) error {
+			// TODO: Fix this really awkward way of encoding a waterfall of async steps.
+			job.Go("initialize new", func(initializeTask *task.Task) error {
+				if err := disposeTask.Wait(); err != nil {
+					return context.Canceled
+				}
+				return ws.control(ctx, newComponent, &api.InitializeInput{
+					Spec: newComponent.Spec,
+				})
+			})
+			return ws.control(ctx, oldComponent, &api.DisposeInput{})
+		})
+	}()
+
+	return &api.UpdateComponentOutput{
+		JobID: job.ID(),
+	}, nil
+}
+
+func (ws *Workspace) RenameComponent(ctx context.Context, input *api.RenameComponentInput) (*api.RenameComponentOutput, error) {
+	describeOutput, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{Refs: []string{input.Ref}})
+	if err != nil {
+		return nil, fmt.Errorf("describing components: %w", err)
+	}
+	if len(describeOutput.Components) == 0 {
+		return nil, errutil.HTTPErrorf(http.StatusNotFound, "component not found: %q", input.Ref)
+	}
+
+	component := describeOutput.Components[0]
+
+	if err := manifest.ValidateName(input.Name); err != nil {
+		return nil, errutil.HTTPErrorf(http.StatusBadRequest, "new component name %q is invalid: %w", input.Name, err)
+	}
+
+	if _, err := ws.Store.PatchComponent(ctx, &state.PatchComponentInput{
+		ID:   component.ID,
+		Name: input.Name,
+	}); err != nil {
 		return nil, err
 	}
 
-	return &api.UpdateComponentOutput{}, nil
-}
-
-func (ws *Workspace) updateComponent(ctx context.Context, oldComponent api.ComponentDescription, newComponent manifest.Component, id string) error {
-	// TODO: Most updates should be accomplished without a full replacement; especially when there are no spec changes!
-	if err := ws.control(ctx, oldComponent, &api.DisposeInput{}); err != nil {
-		return fmt.Errorf("disposing %q for replacement: %w", oldComponent.Name, err)
-	}
-	if err := ws.control(ctx, oldComponent, api.InitializeInput{
-		Spec: newComponent.Spec,
-	}); err != nil {
-		return fmt.Errorf("initializing replacement %q: %w", newComponent.Name, err)
-	}
-	return nil
+	return &api.RenameComponentOutput{}, nil
 }
 
 func (ws *Workspace) RefreshComponents(ctx context.Context, input *api.RefreshComponentsInput) (*api.RefreshComponentsOutput, error) {
@@ -729,7 +862,10 @@ func (ws *Workspace) StartComponents(ctx context.Context, input *api.StartCompon
 	// Note that we are only querying Process component types specifically because they are the only
 	// things that are "startable".
 	query := allProcessQuery(withRefs(input.Refs...), withDependencies)
-	jobID := ws.controlEachComponent(ctx, "starting", query, func(*api.ComponentDescription) interface{} {
+	jobID := ws.controlEachComponent(ctx, "starting", query, func(desc *api.ComponentDescription) interface{} {
+		if !isRunnableType(desc.Type) {
+			return nil
+		}
 		return &api.StartInput{}
 	}, func(desc *api.ComponentDescription, err error) {
 		ws.logEventf(ctx, "error starting %s: %v", desc.Name, err)
@@ -757,7 +893,10 @@ func (ws *Workspace) StopComponents(ctx context.Context, input *api.StopComponen
 		withReversedDependencies,
 		withDependents,
 	)
-	jobID := ws.controlEachComponent(ctx, "stopping", query, func(*api.ComponentDescription) interface{} {
+	jobID := ws.controlEachComponent(ctx, "stopping", query, func(desc *api.ComponentDescription) interface{} {
+		if !isRunnableType(desc.Type) {
+			return nil
+		}
 		return &api.StopInput{TimeoutSeconds: input.TimeoutSeconds}
 	})
 	return &api.StopComponentsOutput{
@@ -815,7 +954,10 @@ func (ws *Workspace) RestartComponents(ctx context.Context, input *api.RestartCo
 	//    then restart the dependents in normal order again.
 	// 3. Ensure that all dependendencies are started (in normal order), then restart these components (current behaviour).
 	query := allProcessQuery(withRefs(input.Refs...), withDependencies)
-	jobID := ws.controlEachComponent(ctx, "restart", query, func(*api.ComponentDescription) interface{} {
+	jobID := ws.controlEachComponent(ctx, "restart", query, func(desc *api.ComponentDescription) interface{} {
+		if !isRunnableType(desc.Type) {
+			return nil
+		}
 		return &api.RestartInput{TimeoutSeconds: input.TimeoutSeconds}
 	}, func(desc *api.ComponentDescription, err error) {
 		ws.logEventf(ctx, "error restarting %s: %v", desc.Name, err)
@@ -1014,7 +1156,11 @@ func (ws *Workspace) goControlComponents(t *task.Task, query componentQuery, mak
 			name: component.Name,
 			task: t.CreateChild(component.Name),
 			run: func(t *task.Task) error {
-				err := ws.control(t, component, makeMessage(&component))
+				msg := makeMessage(&component)
+				if msg == nil {
+					return nil
+				}
+				err := ws.control(t, component, msg)
 				if err != nil {
 					for _, f := range onErr {
 						f(&component, err)

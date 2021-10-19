@@ -4,10 +4,10 @@ import (
 	"errors"
 	"fmt"
 	"io/ioutil"
-	"os"
 	"strings"
 
 	"github.com/deref/exo/internal/gensym"
+	"github.com/deref/exo/internal/util/osutil"
 )
 
 type TokenClient interface {
@@ -64,9 +64,15 @@ func (c *FileTokenClient) CheckToken(tokenToCheck string) (bool, error) {
 }
 
 func EnsureTokenFile(path string) error {
-	if _, err := os.Stat(path); os.IsNotExist(err) {
+	exists, err := osutil.Exists(path)
+	if err != nil {
+		return fmt.Errorf("stating token file: %w", err)
+	}
+	if !exists {
 		token := genToken()
-		if err := ioutil.WriteFile(path, []byte(token+"\n"), 0600); err != nil {
+		// Write file with an fsync, so that the CLI process can be sure to find
+		// this file after the server goes up.
+		if err := osutil.WriteFileSync(path, []byte(token+"\n"), 0600); err != nil {
 			return fmt.Errorf("writing token file: %w", err)
 		}
 	}

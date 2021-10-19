@@ -23,7 +23,7 @@ func (i *Loader) Load(r io.Reader) manifest.LoadResult {
 	return i.convert(composeProject)
 }
 
-func (i *Loader) convert(project *compose.Compose) manifest.LoadResult {
+func (i *Loader) convert(project *compose.Project) manifest.LoadResult {
 	res := manifest.LoadResult{
 		Manifest: &manifest.Manifest{},
 	}

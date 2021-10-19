@@ -10,7 +10,7 @@ source "$( dirname "${BASH_SOURCE[0]}" )/.include"
 
 (
   cd "$ROOT_DIR"
-  go build -o "$EXO_DEV_HOME/bin/exo" ./cmd/exo
+  go build -o "$EXO_DEV_HOME/bin/exo"
 )
 
 export EXO_HOME="$EXO_DEV_HOME"

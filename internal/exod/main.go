@@ -15,6 +15,7 @@ import (
 	"github.com/deref/exo/internal/core/server"
 	kernel "github.com/deref/exo/internal/core/server"
 	"github.com/deref/exo/internal/core/state/statefile"
+	"github.com/deref/exo/internal/esv"
 	eventdapi "github.com/deref/exo/internal/eventd/api"
 	eventdsqlite "github.com/deref/exo/internal/eventd/sqlite"
 	"github.com/deref/exo/internal/gensym"
@@ -137,6 +138,9 @@ func RunServer(ctx context.Context, flags map[string]string) {
 		Logger:      logger,
 		TaskTracker: taskTracker,
 		TokenClient: cfg.GetTokenClient(),
+		EsvClient: &esv.EsvClient{
+			TokenPath: cfg.EsvTokenPath,
+		},
 	}
 
 	// As a one-time migration, simply delete all logs in the old Badger format.

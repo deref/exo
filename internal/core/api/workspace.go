@@ -82,6 +82,8 @@ func BuildBuilderMux(b *josh.MuxBuilder, factory func(req *http.Request) Builder
 type Workspace interface {
 	Process
 	Builder
+	DescribeVaults(context.Context, *DescribeVaultsInput) (*DescribeVaultsOutput, error)
+	AddVault(context.Context, *AddVaultInput) (*AddVaultOutput, error)
 	// Describes this workspace.
 	Describe(context.Context, *DescribeInput) (*DescribeOutput, error)
 	// Dispose resources, then delete the record of it.
@@ -90,12 +92,14 @@ type Workspace interface {
 	Apply(context.Context, *ApplyInput) (*ApplyOutput, error)
 	// Resolves a reference in to an ID.
 	Resolve(context.Context, *ResolveInput) (*ResolveOutput, error)
+	ResolveManifest(context.Context, *ResolveManifestInput) (*ResolveManifestOutput, error)
 	// Returns component descriptions.
 	DescribeComponents(context.Context, *DescribeComponentsInput) (*DescribeComponentsOutput, error)
 	// Creates a component and triggers an initialize lifecycle event.
 	CreateComponent(context.Context, *CreateComponentInput) (*CreateComponentOutput, error)
 	// Replaces the spec on a component and triggers an update lifecycle event.
 	UpdateComponent(context.Context, *UpdateComponentInput) (*UpdateComponentOutput, error)
+	RenameComponent(context.Context, *RenameComponentInput) (*RenameComponentOutput, error)
 	// Asycnhronously refreshes component state.
 	RefreshComponents(context.Context, *RefreshComponentsInput) (*RefreshComponentsOutput, error)
 	// Asynchronously runs dispose lifecycle methods on each component.
@@ -122,6 +126,21 @@ type Workspace interface {
 	DescribeEnvironment(context.Context, *DescribeEnvironmentInput) (*DescribeEnvironmentOutput, error)
 }
 
+type DescribeVaultsInput struct {
+}
+
+type DescribeVaultsOutput struct {
+	Vaults []VaultDescription `json:"vaults"`
+}
+
+type AddVaultInput struct {
+	Name string `json:"name"`
+	Url  string `json:"url"`
+}
+
+type AddVaultOutput struct {
+}
+
 type DescribeInput struct {
 }
 
@@ -139,7 +158,7 @@ type DestroyOutput struct {
 type ApplyInput struct {
 
 	// One of 'exo', 'compose', or 'procfile'.
-	Format *string `json:"format"`
+	Format string `json:"format"`
 	// Path of manifest file to load. May be relative to the workspace root. If format is not provided, will be inferred from path name.
 	ManifestPath *string `json:"manifestPath"`
 	// Contents of the manifest file. Not required if manifest-path is provided.
@@ -157,6 +176,14 @@ type ResolveInput struct {
 
 type ResolveOutput struct {
 	IDs []*string `json:"ids"`
+}
+
+type ResolveManifestInput struct {
+	Format string `json:"format"`
+}
+
+type ResolveManifestOutput struct {
+	Path string `json:"path"`
 }
 
 type DescribeComponentsInput struct {
@@ -188,12 +215,28 @@ type CreateComponentOutput struct {
 }
 
 type UpdateComponentInput struct {
-	Ref       string   `json:"ref"`
+
+	// Refers to the component to be updated.
+	Ref string `json:"ref"`
+	// If provided, renames the component.
+	Name      string   `json:"name"`
 	Spec      string   `json:"spec"`
 	DependsOn []string `json:"dependsOn"`
 }
 
 type UpdateComponentOutput struct {
+	JobID string `json:"jobId"`
+}
+
+type RenameComponentInput struct {
+
+	// Refers to the component to be renamed.
+	Ref string `json:"ref"`
+	// New name to give to the component.
+	Name string `json:"name"`
+}
+
+type RenameComponentOutput struct {
 }
 
 type RefreshComponentsInput struct {
@@ -348,7 +391,7 @@ type DescribeEnvironmentInput struct {
 }
 
 type DescribeEnvironmentOutput struct {
-	Variables map[string]string `json:"variables"`
+	Variables map[string]VariableDescription `json:"variables"`
 }
 
 func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Workspace) {
@@ -367,6 +410,12 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	b.AddMethod("build", func(req *http.Request) interface{} {
 		return factory(req).Build
 	})
+	b.AddMethod("describe-vaults", func(req *http.Request) interface{} {
+		return factory(req).DescribeVaults
+	})
+	b.AddMethod("add-vault", func(req *http.Request) interface{} {
+		return factory(req).AddVault
+	})
 	b.AddMethod("describe", func(req *http.Request) interface{} {
 		return factory(req).Describe
 	})
@@ -379,6 +428,9 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	b.AddMethod("resolve", func(req *http.Request) interface{} {
 		return factory(req).Resolve
 	})
+	b.AddMethod("resolve-manifest", func(req *http.Request) interface{} {
+		return factory(req).ResolveManifest
+	})
 	b.AddMethod("describe-components", func(req *http.Request) interface{} {
 		return factory(req).DescribeComponents
 	})
@@ -387,6 +439,9 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	})
 	b.AddMethod("update-component", func(req *http.Request) interface{} {
 		return factory(req).UpdateComponent
+	})
+	b.AddMethod("rename-component", func(req *http.Request) interface{} {
+		return factory(req).RenameComponent
 	})
 	b.AddMethod("refresh-components", func(req *http.Request) interface{} {
 		return factory(req).RefreshComponents
@@ -495,4 +550,16 @@ type VolumeDescription struct {
 type NetworkDescription struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
+}
+
+type VaultDescription struct {
+	Name      string `json:"name"`
+	Url       string `json:"url"`
+	Connected bool   `json:"connected"`
+	NeedsAuth bool   `json:"needsAuth"`
+}
+
+type VariableDescription struct {
+	Value  string `json:"value"`
+	Source string `json:"source"`
 }

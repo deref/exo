@@ -1,29 +1,23 @@
 <script lang="ts">
-  import Icon from './Icon.svelte';
-  import type { IconGlyph } from './Icon.svelte';
+  import { setMenuContext } from '../lib/menu';
 
   export let title: string | undefined;
 
-  interface Action {
-    name: string;
-    glyph: IconGlyph;
-    danger?: boolean;
-    execute(event: ExecuteEvent): void;
-  }
+  let nav: HTMLElement | undefined;
 
-  interface ExecuteEvent {}
-
-  export let actions: Action[];
+  setMenuContext({
+    close() {
+      const active = document?.activeElement as HTMLElement | undefined;
+      if (active) {
+        active.blur();
+      }
+    },
+  });
 </script>
 
-<nav>
+<nav bind:this={nav}>
   {#if title}<span>{title}</span>{/if}
-  {#each actions as action}
-    <button on:click={action.execute} class:danger={action.danger}>
-      <Icon glyph={action.glyph} />
-      {action.name}
-    </button>
-  {/each}
+  <slot />
 </nav>
 
 <style>
@@ -44,43 +38,5 @@
     padding: 4px 12px;
     font-size: 0.8em;
     color: var(--grey-7-color);
-  }
-
-  button {
-    background: none;
-    border: none;
-    display: flex;
-    align-items: center;
-    font-size: 0.9em;
-    gap: 4px;
-    border-radius: 2px;
-    padding: 6px 18px;
-    width: 100%;
-    white-space: nowrap;
-    color: var(--grey-5-color);
-    outline: none;
-  }
-
-  button :global(*) {
-    fill: currentColor;
-  }
-
-  button :global(svg) {
-    height: 16px;
-    margin-left: -8px;
-  }
-
-  button:hover,
-  button:focus,
-  button:focus-within {
-    color: var(--strong-color);
-    background: var(--grey-e-color);
-  }
-
-  .danger {
-    color: var(--error-color-faded);
-  }
-  .danger:hover {
-    color: var(--error-color);
   }
 </style>

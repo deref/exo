@@ -9,7 +9,7 @@ interface Chord {
   code: string;
 }
 
-interface ShortcutsParams {
+export interface ShortcutsParams {
   chords: Chord[];
   callback?(e: KeyboardEvent): void;
 }
@@ -19,7 +19,9 @@ export const shortcuts = (node: HTMLElement, params: ShortcutsParams) => {
   const removeHandler = () => window.removeEventListener('keydown', handler),
     setHandler = () => {
       removeHandler();
-      if (!params) return;
+      if (!params) {
+        return;
+      }
       handler = (e) => {
         const matched = params.chords.some((chord) => {
           if (
@@ -49,11 +51,17 @@ export const shortcuts = (node: HTMLElement, params: ShortcutsParams) => {
   };
 };
 
-interface ShortcutParams extends Chord {
+export interface ShortcutParams extends Chord {
   callback?(e: KeyboardEvent): void;
 }
 
-export const shortcut = (node: HTMLElement, params: ShortcutParams) => {
+export const shortcut = (
+  node: HTMLElement,
+  params: ShortcutParams | undefined,
+) => {
+  if (!params) {
+    return;
+  }
   const { callback, ...chord } = params;
   shortcuts(node, { chords: [chord], callback });
 };

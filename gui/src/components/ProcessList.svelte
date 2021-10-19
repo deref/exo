@@ -5,6 +5,7 @@
   import IconButton from './IconButton.svelte';
   import RemoteData from './RemoteData.svelte';
   import ContextMenu from './ContextMenu.svelte';
+  import MenuItem from './MenuItem.svelte';
   import ProcfileChecker from './processes/ProcfileChecker.svelte';
   import ProcessListTable from './processes/ProcessListTable.svelte';
   import { onDestroy, onMount } from 'svelte';
@@ -75,46 +76,38 @@
   <Panel title={description.displayName} backRoute="/" --panel-padding="0 1rem">
     <div class="actions" slot="actions">
       <span>Logs</span>
-      <div class="menu">
+      <div class="menu" tabindex="0">
         <IconButton
           glyph="Ellipsis"
           tooltip="Workspace actions..."
           on:click={() => {}}
         />
 
-        <ContextMenu
-          title={description.displayName}
-          actions={[
-            {
-              name: 'View details',
-              glyph: 'Details',
-              execute(event) {
-                router.push(
-                  `/workspaces/${encodeURIComponent(workspaceId)}/details`,
-                );
-              },
-            },
-            {
-              name: 'Add component',
-              glyph: 'Add',
-              execute(event) {
-                router.push(
-                  `#/workspaces/${encodeURIComponent(
-                    workspaceId,
-                  )}/new-component`,
-                );
-              },
-            },
-            {
-              name: 'Destroy workspace',
-              glyph: 'Delete',
-              danger: true,
-              execute(event) {
-                modalOpen = true;
-              },
-            },
-          ]}
-        />
+        <ContextMenu title={description.displayName}>
+          <MenuItem
+            glyph="Details"
+            href={`/workspaces/${encodeURIComponent(workspaceId)}/details`}
+          >
+            View details
+          </MenuItem>
+          <MenuItem
+            glyph="Add"
+            href={`#/workspaces/${encodeURIComponent(
+              workspaceId,
+            )}/new-component`}
+          >
+            Add component
+          </MenuItem>
+          <MenuItem
+            glyph="Delete"
+            danger
+            on:click={() => {
+              modalOpen = true;
+            }}
+          >
+            Destroy workspace
+          </MenuItem>
+        </ContextMenu>
       </div>
     </div>
 
@@ -257,6 +250,7 @@
   }
 
   .menu {
+    outline: none;
     position: relative;
   }
 

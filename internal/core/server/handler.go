@@ -6,6 +6,7 @@ import (
 
 	"github.com/deref/exo/internal/core/api"
 	state "github.com/deref/exo/internal/core/state/api"
+	"github.com/deref/exo/internal/esv"
 	josh "github.com/deref/exo/internal/josh/server"
 	"github.com/deref/exo/internal/task"
 	taskapi "github.com/deref/exo/internal/task/api"
@@ -24,6 +25,7 @@ type Config struct {
 	Logger      logging.Logger
 	TaskTracker *task.TaskTracker
 	TokenClient token.TokenClient
+	EsvClient   *esv.EsvClient
 }
 
 func BuildRootMux(prefix string, cfg *Config) *http.ServeMux {
@@ -60,6 +62,7 @@ func BuildRootMux(prefix string, cfg *Config) *http.ServeMux {
 			VarDir:      cfg.VarDir,
 			Store:       cfg.Store,
 			TaskTracker: cfg.TaskTracker,
+			EsvClient:   cfg.EsvClient,
 		}
 	})
 	endKernel()
@@ -74,6 +77,7 @@ func BuildRootMux(prefix string, cfg *Config) *http.ServeMux {
 			SyslogPort:  cfg.SyslogPort,
 			Docker:      cfg.Docker,
 			TaskTracker: cfg.TaskTracker,
+			EsvClient:   cfg.EsvClient,
 		}
 	})
 	endWorkspace()

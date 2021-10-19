@@ -2,7 +2,7 @@
 
 **exo-** _prefix_ – external; from outside.
 
-![The Exo GUI](https://github.com/deref/exo/blob/main/doc/screenshot-light.png?raw=true)
+![The Exo GUI](https://exo.deref.io/exo-shadow-screenshot.png)
 
 **Features**
 

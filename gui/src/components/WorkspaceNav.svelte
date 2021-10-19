@@ -1,6 +1,6 @@
 <script lang="ts">
   import Icon from './Icon.svelte';
-  import NavbarRoute from './nav/NavbarRoute.svelte';
+  import NavbarButton from './nav/NavbarButton.svelte';
   import type { IconGlyph } from './Icon.svelte';
 
   export let workspaceId: string;
@@ -43,8 +43,8 @@
 
 <aside>
   {#each routes as route}
-    <NavbarRoute title={route.title} href={route.href} {active}>
+    <NavbarButton title={route.title} href={route.href} {active}>
       <Icon glyph={route.glyph} />
-    </NavbarRoute>
+    </NavbarButton>
   {/each}
 </aside>

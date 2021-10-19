@@ -25,6 +25,12 @@
     overflow: hidden;
   }
 
+  div :global(th) {
+    font-size: 0.85em;
+    font-weight: 450;
+    color: var(--grey-5-color);
+  }
+
   div :global(td),
   div :global(th) {
     text-align: left;

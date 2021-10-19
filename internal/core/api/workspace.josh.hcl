@@ -32,6 +32,15 @@ interface "workspace" {
   # Should inline the methods and append a `-workspace` suffix to each.
   extends = ["process", "builder"]
 
+  method "describe-vaults" {
+    output "vaults" "[]VaultDescription" {}
+  }
+
+  method "add-vault" {
+    input "name" "string" {}
+    input "url" "string" {}
+  }
+
   method "describe" {
     doc = "Describes this workspace."
     output "description" "WorkspaceDescription" {}
@@ -45,7 +54,7 @@ interface "workspace" {
   method "apply" {
     doc = "Performs creates, updates, refreshes, disposes, as needed."
 
-    input "format" "*string" {
+    input "format" "string" {
       doc = "One of 'exo', 'compose', or 'procfile'."
     }
     input "manifest-path" "*string" {
@@ -65,6 +74,12 @@ interface "workspace" {
     input "refs" "[]string" {}
 
     output "ids" "[]*string" {}
+  }
+
+  method "resolve-manifest" {
+    input "format" "string" {}
+
+    output "path" "string" {}
   }
 
   method "describe-components" {
@@ -104,9 +119,25 @@ interface "workspace" {
   method "update-component" {
     doc = "Replaces the spec on a component and triggers an update lifecycle event."
 
-    input "ref" "string" {}
+    input "ref" "string" {
+      doc = "Refers to the component to be updated."
+    }
+    input "name" "string" {
+      doc = "If provided, renames the component."
+    }
     input "spec" "string" {}
     input "depends-on" "[]string" {}
+
+    output "job-id" "string" {}
+  }
+
+  method "rename-component" {
+    input "ref" "string" {
+      doc = "Refers to the component to be renamed."
+    }
+    input "name" "string" {
+      doc = "New name to give to the component."
+    }
   }
 
   method "refresh-components" {
@@ -227,7 +258,7 @@ interface "workspace" {
   }
 
   method "describe-environment" {
-    output "variables" "map[string]string" {}
+    output "variables" "map[string]VariableDescription" {}
   }
 }
 
@@ -282,4 +313,16 @@ struct "volume-description" {
 struct "network-description" {
   field "id" "string" {}
   field "name" "string" {}
+}
+
+struct "vault-description" {
+  field "name" "string" {}
+  field "url" "string" {}
+  field "connected" "bool" {}
+  field "needs-auth" "bool" {}
+}
+
+struct "variable-description" {
+  field "value" "string" {}
+  field "source" "string" {}
 }

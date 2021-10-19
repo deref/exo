@@ -20,6 +20,9 @@ func Send(ctx context.Context, self interface{}, input interface{}) (output inte
 		panic(fmt.Errorf("expected Input structure, got %T", input))
 	}
 	method := selfV.MethodByName(methodName)
+	if !method.IsValid() {
+		return nil, fmt.Errorf("no method %q on %T", methodName, self)
+	}
 	results := method.Call([]reflect.Value{
 		reflect.ValueOf(ctx),
 		inV,
