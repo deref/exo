@@ -153,12 +153,10 @@ func (c *EsvClient) GetWorkspaceSecrets(vaultURL string) (map[string]string, err
 	host := url.URL{Scheme: uri.Scheme, Host: uri.Host}
 
 	resp := describeVaultResp{}
-	now := time.Now()
 	err = c.runCommand(&resp, host.String(), "describe-project", map[string]string{
 		"organizationId": organizationID,
 		"vaultId":        vaultID,
 	})
-	fmt.Printf("describing project took: %+v\n", time.Now().Sub(now))
 	if err != nil {
 		return nil, fmt.Errorf("running describe-project command: %w", err)
 	}
