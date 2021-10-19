@@ -23,6 +23,7 @@ type Converter struct {
 func (c *Converter) Convert(bs []byte) (*hcl.File, hcl.Diagnostics) {
 	project, err := compose.Parse(bytes.NewBuffer(bs))
 	if err != nil {
+		// TODO: Get position information from YAML parser errors.
 		return nil, hcl.Diagnostics{
 			&hcl.Diagnostic{
 				Severity: hcl.DiagError,
@@ -31,262 +32,102 @@ func (c *Converter) Convert(bs []byte) (*hcl.File, hcl.Diagnostics) {
 		}
 	}
 
-	// TODO: Avoid mutating project during conversion.
-
 	b := exohcl.NewBuilder(bs)
 	var diags hcl.Diagnostics
 
-	// Since containers reference networks and volumes by their docker-compose name, but the
-	// Docker components will have a namespaced name, so we need to keep track of which
-	// volumes/components a service references.
-	networkKeyToName := map[string]string{}
-	volumeKeyToName := map[string]string{}
-
-	for _, volume := range project.Volumes {
-		name := exohcl.MangleName(volume.Key)
-		if volume.Key != name {
-			var subject *hcl.Range
-			diags = append(diags, exohcl.NewRenameWarning(volume.Key, name, subject))
-		}
-
-		if volume.Name.Value == "" {
-			volume.Name = compose.MakeString(c.prefixedName(volume.Key, ""))
-		}
-		volumeKeyToName[volume.Key] = volume.Name.Value
-
-		b.AddComponentBlock(makeComponentBlock("volume", name, volume, nil))
+	// Compose has one namespace per "section" (ie type of component), but Exo
+	// components live within a single namespace. Count these keys to detect
+	// conflicts.
+	keyCounts := make(map[string]int)
+	addKey := func(key string) {
+		keyCounts[key]++
+	}
+	for _, item := range project.Services {
+		addKey(item.Key)
+	}
+	for _, item := range project.Networks {
+		addKey(item.Key)
+	}
+	for _, item := range project.Volumes {
+		addKey(item.Key)
+	}
+	for _, item := range project.Configs {
+		addKey(item.Key)
+	}
+	for _, item := range project.Secrets {
+		addKey(item.Key)
 	}
 
-	// Set up networks.
-	hasDefaultNetwork := false
-	for _, network := range project.Networks {
-		if network.Key == "default" {
-			hasDefaultNetwork = true
-		}
-		name := exohcl.MangleName(network.Key)
-		if network.Key != name {
-			var subject *hcl.Range
-			diags = append(diags, exohcl.NewRenameWarning(network.Key, name, subject))
-		}
-
-		// If `name` is specified in the network configuration (usually used in conjunction with `external: true`),
-		// then we should honor that as the docker network name. Otherwise, we should set the name as
-		// `<project_name>_<network_key>`.
-		if network.Name.Value == "" {
-			network.Name = compose.MakeString(c.prefixedName(network.Key, ""))
-		}
-		networkKeyToName[network.Key] = network.Name.Value
-
-		if network.Driver.Value == "" {
-			network.Driver = compose.MakeString("bridge")
+	convertComponent := func(typ string, key string, spec interface{}) {
+		name := exohcl.MangleName(key)
+		// Detect conflicts between sections, report them against non-services.
+		if typ != "service" && keyCounts[key] > 1 {
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  fmt.Sprintf("%s name conflicts with service: %q", typ, key),
+			})
+		} else if key != name {
+			// Renames are an error because intra-compose-file references can be
+			// broken and we don't have a mechanism for applying renames to
+			// references, such as in `services[*].depends_on` or
+			// `service[*].volumes`.
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagError,
+				Summary:  fmt.Sprintf("invalid name: %q", key),
+			})
 		}
 
-		b.AddComponentBlock(makeComponentBlock("network", name, network, nil))
-	}
-	// TODO: Docker Compose only creates the default network if there is at least 1 service that does not
-	// specify a network. We should do the same.
-	if !hasDefaultNetwork {
-		key := "default"
-		name := c.prefixedName(key, "")
-		networkKeyToName[key] = name
-
-		b.AddComponentBlock(makeComponentBlock("network", key, map[string]string{
-			"name":   name,
-			"driver": "bridge",
-		}, nil))
+		obj := yamlToHCL(spec).(*hclsyntax.ObjectConsExpr)
+		attrs := make([]*hclsyntax.Attribute, len(obj.Items))
+		for i, item := range obj.Items {
+			key := item.KeyExpr.(*hclsyntax.ObjectConsKeyExpr)
+			name := hcl.ExprAsKeyword(key.Wrapped)
+			if name == "" {
+				panic("unexpected complex key")
+			}
+			val := item.ValueExpr
+			attrs[i] = &hclsyntax.Attribute{
+				Name:      name,
+				NameRange: key.Range(),
+				Expr:      val,
+				SrcRange:  hcl.RangeBetween(key.Range(), val.Range()),
+			}
+		}
+		block := &hclgen.Block{
+			Type:   typ,
+			Labels: []string{name},
+			Body: &hclgen.Body{
+				Attributes: attrs,
+			},
+		}
+		b.AddComponentBlock(block)
 	}
 
 	for _, service := range project.Services {
-		name := exohcl.MangleName(service.Key)
-		if service.Key != name {
-			var subject *hcl.Range
-			diags = append(diags, exohcl.NewRenameWarning(service.Key, name, subject))
-		}
-		var dependsOn []string
-
-		if service.ContainerName.Value == "" {
-			// The generated container name intentionally matches the container name generated by Docker Compose
-			// when the scale is set at 1. When we address scaling containers, this will need to be updated to
-			// use a different suffix for each container.
-			service.ContainerName = compose.MakeString(c.prefixedName(service.Key, "1"))
-		}
-
-		for _, item := range service.Labels.Items {
-			if strings.HasPrefix(item.Key, "com.docker.compose") {
-				diags = append(diags, &hcl.Diagnostic{
-					Severity: hcl.DiagError,
-					Summary:  fmt.Sprintf("service may not specify labels with prefix \"com.docker.compose\", but %q specified %q", service.Key, item.Key),
-				})
-				return nil, diags
-			}
-		}
-		// TODO: It probably makes more sense for these labels to be omitted here,
-		// but preserved if adopting an existing Docker resource. As it is now,
-		// they show up in converted manifests, which doesn't make much sense.
-		service.Labels.Items = append(service.Labels.Items, compose.DictionaryItem{
-			Key:   "com.docker.compose.project",
-			Value: c.ProjectName,
-		}, compose.DictionaryItem{
-			Key:   "com.docker.compose.service",
-			Value: service.Key,
+		// We directly translate services to containers until we have a richer
+		// notion of "service".
+		convertComponent("container", service.Key, service)
+	}
+	for _, volume := range project.Volumes {
+		convertComponent("volume", volume.Key, volume)
+	}
+	for _, network := range project.Networks {
+		convertComponent("network", network.Key, network)
+	}
+	if len(project.Configs) > 0 {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagWarning,
+			Summary:  fmt.Sprintf(`compose "config" seciton not yet supported`),
 		})
-
-		// Map the docker-compose network name to the name of the docker network that is created.
-		defaultNetworkName := networkKeyToName["default"]
-		if len(service.Networks.Items) > 0 {
-			mappedNetworks := make([]compose.ServiceNetwork, len(service.Networks.Items))
-			for i, network := range service.Networks.Items {
-				_, ok := networkKeyToName[network.Key]
-				if !ok {
-					diags = append(diags, &hcl.Diagnostic{
-						Severity: hcl.DiagError,
-						Summary:  fmt.Sprintf("unknown network: %q", network.Key),
-					})
-					continue
-				}
-				mappedNetworks[i] = network
-				dependsOn = append(dependsOn, network.Key)
-			}
-			service.Networks.Items = mappedNetworks
-		} else {
-			service.Networks.Items = []compose.ServiceNetwork{
-				{
-					Key:       defaultNetworkName,
-					ShortForm: compose.MakeString(defaultNetworkName),
-				},
-			}
-			dependsOn = append(dependsOn, "default")
-		}
-
-		if len(service.Volumes) > 0 {
-			for i, volumeMount := range service.Volumes {
-				if volumeMount.Type.Value != "volume" {
-					continue
-				}
-				if volumeName, ok := volumeKeyToName[volumeMount.Source.Value]; ok {
-					originalName := volumeMount.Source.Value
-					service.Volumes[i].Source = compose.MakeString(volumeName)
-					dependsOn = append(dependsOn, originalName)
-				}
-				// If the volume was not listed in the top-level "volumes" section, then the docker engine
-				// will create a new volume that will not be namespaced by the Compose project name.
-			}
-		}
-
-		for _, dependency := range service.DependsOn.Items {
-			condition := dependency.Condition
-			if condition.Value == "" {
-				condition = compose.MakeString("service_started")
-			}
-			if condition.Value != "service_started" {
-				var subject *hcl.Range
-				diags = append(diags, exohcl.NewUnsupportedFeatureWarning(
-					fmt.Sprintf("service condition %q", dependency.Service),
-					"only service_started is currently supported",
-					subject,
-				))
-			}
-			dependsOn = append(dependsOn, exohcl.MangleName(dependency.Service.Value))
-		}
-
-		for idx, link := range service.Links {
-			var linkService, linkAlias string
-			parts := strings.Split(link.Value, ":")
-			switch len(parts) {
-			case 1:
-				linkService = parts[0]
-				linkAlias = parts[0]
-			case 2:
-				linkService = parts[0]
-				linkAlias = parts[1]
-			default:
-				diags = append(diags, &hcl.Diagnostic{
-					Severity: hcl.DiagError,
-					Summary:  fmt.Sprintf("expected SERVICE or SERVICE:ALIAS for link, but got: %q", link),
-				})
-				return nil, diags
-			}
-			// NOTE [RESOLVING SERVICE CONTAINERS]:
-			// There are several locations in a compose definition where a service may reference another service
-			// by the compose name. We currently handle these situations by rewriting these locations to reference
-			// a container named `<project>_<mangled_service_name>_1` with the assumption that a container will
-			// be created by that name. However, this will break when the referenced service specifies a non-default
-			// container name. Additionally, we may want to handle cases where a service is scaled past a single
-			// container.
-			// Some of these values could/should be resolved at runtime, and we should do it when we have the entire
-			// project graph available.
-
-			// See https://github.com/docker/compose/blob/v2.0.0-rc.3/compose/service.py#L836 for how compose configures
-			// links.
-			mangledServiceName := exohcl.MangleName(linkService)
-			containerName := c.prefixedName(mangledServiceName, "1")
-			service.Links[idx] = compose.Link{
-				String:  compose.MakeString(fmt.Sprintf("%s:%s", containerName, linkAlias)),
-				Service: containerName,
-				Alias:   linkAlias,
-			}
-			dependsOn = append(dependsOn, mangledServiceName)
-		}
-
-		b.AddComponentBlock(makeComponentBlock("container", name, service, dependsOn))
+	}
+	if len(project.Secrets) > 0 {
+		diags = append(diags, &hcl.Diagnostic{
+			Severity: hcl.DiagWarning,
+			Summary:  fmt.Sprintf(`compose "secrets" seciton not yet supported`),
+		})
 	}
 
 	return b.Build(), diags
-}
-
-func (c *Converter) prefixedName(name string, suffix string) string {
-	var out strings.Builder
-	out.WriteString(c.ProjectName)
-	out.WriteByte('_')
-	out.WriteString(name)
-	if suffix != "" {
-		out.WriteByte('_')
-		out.WriteString(suffix)
-	}
-
-	return out.String()
-}
-
-func makeComponentBlock(typ string, name string, spec interface{}, dependsOn []string) *hclgen.Block {
-	obj := yamlToHCL(spec).(*hclsyntax.ObjectConsExpr)
-	attrs := make([]*hclsyntax.Attribute, len(obj.Items))
-	for i, item := range obj.Items {
-		key := item.KeyExpr.(*hclsyntax.ObjectConsKeyExpr)
-		name := hcl.ExprAsKeyword(key.Wrapped)
-		if name == "" {
-			fmt.Printf("%#v\n", key.Wrapped.(*hclsyntax.TemplateExpr).Parts[0])
-			panic("unexpected complex key")
-		}
-		val := item.ValueExpr
-		attrs[i] = &hclsyntax.Attribute{
-			Name:      name,
-			NameRange: key.Range(),
-			Expr:      val,
-			SrcRange:  hcl.RangeBetween(key.Range(), val.Range()),
-		}
-	}
-	var blocks []*hclgen.Block
-	if len(dependsOn) > 0 {
-		blocks = append(blocks, &hclgen.Block{
-			Type: "_",
-			Body: &hclgen.Body{
-				Attributes: []*hclsyntax.Attribute{
-					{
-						Name: "depends_on",
-						Expr: yamlToHCL(dependsOn),
-					},
-				},
-			},
-		})
-	}
-	return &hclgen.Block{
-		Type:   typ,
-		Labels: []string{name},
-		Body: &hclgen.Body{
-			Attributes: attrs,
-			Blocks:     blocks,
-		},
-	}
 }
 
 func yamlToHCL(v interface{}) hclsyntax.Expression {

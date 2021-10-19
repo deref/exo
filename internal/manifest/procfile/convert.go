@@ -2,6 +2,7 @@ package procfile
 
 import (
 	"bytes"
+	"fmt"
 	"strconv"
 
 	"github.com/deref/exo/internal/manifest/exohcl"
@@ -37,8 +38,10 @@ func (c *Converter) Convert(bs []byte) (*hcl.File, hcl.Diagnostics) {
 		// Get component name.
 		name := exohcl.MangleName(p.Name)
 		if name != p.Name {
-			var subject *hcl.Range
-			diags = append(diags, exohcl.NewRenameWarning(p.Name, name, subject))
+			diags = append(diags, &hcl.Diagnostic{
+				Severity: hcl.DiagWarning,
+				Summary:  fmt.Sprintf("invalid name: %s, renamed to %q", p.Name, name),
+			})
 		}
 
 		// Build HCL attributes.

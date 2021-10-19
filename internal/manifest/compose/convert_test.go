@@ -15,7 +15,7 @@ func TestConvert(t *testing.T) {
 	// - prefixed container/volume/network names.
 	// - docker compose labels
 	// - dependencies that can be inferred from the spec body
-	t.Skip("compose to exo.hcl not yet working")
+	// XXX resume work here.
 
 	projectName := "testproj"
 

@@ -31,20 +31,3 @@ func parseLiteralString(x hcl.Expression) (string, *hcl.Diagnostic) {
 	}
 	return lit.Val.AsString(), nil
 }
-
-func NewRenameWarning(originalName, newName string, subject *hcl.Range) *hcl.Diagnostic {
-	return &hcl.Diagnostic{
-		Severity: hcl.DiagWarning,
-		Summary:  fmt.Sprintf("invalid name: %s, renamed to %q", originalName, newName),
-		Subject:  subject,
-	}
-}
-
-func NewUnsupportedFeatureWarning(featureName, explanation string, subject *hcl.Range) *hcl.Diagnostic {
-	return &hcl.Diagnostic{
-		Severity: hcl.DiagWarning,
-		Summary:  fmt.Sprintf("unsupported feature: %s", featureName),
-		Detail:   fmt.Sprintf("The %s feature is unsupported. %s", featureName, explanation),
-		Subject:  subject,
-	}
-}
