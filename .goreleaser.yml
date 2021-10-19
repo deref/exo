@@ -7,7 +7,7 @@ before:
     #- make -C gui
     #
 builds:
-  - main: ./cmd/exo
+  - main: ./main.go
     env:
       - CGO_ENABLED=0
     goos:
