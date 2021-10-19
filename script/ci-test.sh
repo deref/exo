@@ -2,6 +2,8 @@
 
 set -e
 
+(cd gui && npm ci)
+
 # TODO: Configure Node support in CI and run ./script/codegen.sh instead.
 go run ./cmd/codegen
 
