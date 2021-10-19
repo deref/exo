@@ -19,6 +19,7 @@ require (
 	github.com/go-git/go-git/v5 v5.4.2
 	github.com/goccy/go-yaml v1.8.10
 	github.com/gofrs/flock v0.8.1
+	github.com/goreleaser/goreleaser v0.136.0
 	github.com/hashicorp/hcl/v2 v2.10.0
 	github.com/influxdata/go-syslog/v3 v3.0.0
 	github.com/jmoiron/sqlx v1.2.1-0.20190826204134-d7d95172beb5
