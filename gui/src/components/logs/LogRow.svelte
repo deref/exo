@@ -54,6 +54,7 @@
     text-align: right;
     background: var(--log-bg-color);
     color: var(--log-color);
+    white-space: nowrap;
   }
 
   tr:hover .name {
