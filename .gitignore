@@ -3,5 +3,4 @@
 /bin
 .DS_Store
 /dist/
-/exo
 *.tsbuildinfo
