@@ -14,3 +14,5 @@ if [[ "$(git status --porcelain)" ]]; then
 fi
 
 go test ./...
+
+(cd gui && npm run check)
