@@ -1,9 +1,10 @@
 #!/bin/bash
 
-set -e
+set -euxo pipefail
 
-# TODO: Configure Node support in CI and run ./script/codegen.sh instead.
-go run ./cmd/codegen
+(cd gui && npm ci)
+
+./script/codegen.sh
 
 if [[ "$(git status --porcelain)" ]]; then
   echo "Regenerate script modified files. Please run ./script/codegen.sh"
@@ -13,3 +14,5 @@ if [[ "$(git status --porcelain)" ]]; then
 fi
 
 go test ./...
+
+(cd gui && npm run check)

@@ -43,6 +43,25 @@
   const isLast = (variable: Variable) =>
     variables.length > 0 && variable.id === variables[variables.length - 1].id;
 
+  const handleInput = (
+    e: Event,
+    field: 'name' | 'value',
+    variable: Variable,
+  ) => {
+    if (e.currentTarget) {
+      const target = e.currentTarget as HTMLInputElement;
+      const text = target.value.trim();
+      const newVariable: Variable = { ...variable };
+      newVariable[field] = text;
+      variables = variables.map((variable) =>
+        variable.id === newVariable.id ? newVariable : variable,
+      );
+      if (!isBlank(newVariable) && isLast(variable)) {
+        pushBlank();
+      }
+    }
+  };
+
   $: {
     environment = {};
     for (const variable of variables) {
@@ -66,17 +85,7 @@
               removeVariable(variable.id);
             }
           }}
-          on:input={(e) => {
-            const text = e.currentTarget.value.trim();
-            const newVariable = { ...variable };
-            newVariable[field] = text;
-            variables = variables.map((variable) =>
-              variable.id === newVariable.id ? newVariable : variable,
-            );
-            if (!isBlank(newVariable) && isLast(variable)) {
-              pushBlank();
-            }
-          }}
+          on:input={(e) => handleInput(e, field, variable)}
         />
       {/each}
     </div>
