@@ -147,7 +147,14 @@
         </CheckeredTableWrapper>
         <br />
         <h3>Environment</h3>
-        <EnvironmentTable variables={process.envVars ?? undefined} />
+        <EnvironmentTable
+          variables={Object.entries(process.envVars ?? {}).map(
+            ([name, value]) => ({
+              name,
+              value,
+            }),
+          )}
+        />
       {:else}
         <span>Process is not running</span>
       {/if}
