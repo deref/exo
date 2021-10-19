@@ -4,8 +4,7 @@ set -euxo pipefail
 
 (cd gui && npm ci)
 
-# TODO: Configure Node support in CI and run ./script/codegen.sh instead.
-go run ./cmd/codegen
+./script/codegen.sh
 
 if [[ "$(git status --porcelain)" ]]; then
   echo "Regenerate script modified files. Please run ./script/codegen.sh"
