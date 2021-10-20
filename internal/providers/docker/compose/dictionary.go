@@ -1,106 +1,190 @@
 package compose
 
 import (
+	"errors"
 	"fmt"
-	"sort"
-	"strconv"
 	"strings"
+
+	"gopkg.in/yaml.v3"
 )
 
-// string->string mapping that may be encoded as either a map or an array of
-// pairs each encoded as "name=value". If the equal sign is not supplied,
-// the value is treated as nil.
-type Dictionary map[string]*string
-
-func (dict Dictionary) MarshalYAML() (interface{}, error) {
-	return map[string]*string(dict), nil
+// Map of string to string that can be marshalled as either a !!map or a !!seq.
+// In the seq style, entries are of the form "key" or "key=value".
+type Dictionary struct {
+	Style Style
+	Items []DictionaryItem
 }
 
-type stringOrNum string
+type DictionaryItem struct {
+	Style Style
+	// For map style, String contains only the value.
+	// For seq style, String is expected to evaluate to "key" or "key=value".
+	String String
+	Key    string
+	Value  string
+	// True in seq style when there is no "=" in the evaluated String.
+	NoValue bool
+}
 
-func (sn *stringOrNum) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var s string
-	if err := unmarshal(&s); err != nil {
-		return err
+func (dict Dictionary) MarshalYAML() (interface{}, error) {
+	if dict.Style == SeqStyle {
+		return dict.Items, nil
 	}
+	node := &yaml.Node{
+		Kind:    yaml.MappingNode,
+		Content: make([]*yaml.Node, len(dict.Items)*2),
+	}
+	for i, item := range dict.Items {
+		keyNode, valueNode := makeDictionaryItemNodes(item)
+		node.Content[i*2+0] = &keyNode
+		node.Content[i*2+1] = &valueNode
+	}
+	return node, nil
+}
 
-	// This is necessary as otherwise you end up parsing the number and converting
-	// it back to a string. That means a value like "99999999999999.999" becomes
-	// "1e+14".
-	if _, err := strconv.ParseFloat(s, 64); err == nil {
-		*sn = stringOrNum(s)
+func (dict *Dictionary) UnmarshalYAML(node *yaml.Node) error {
+	switch node.Tag {
+	case "!!map":
+		dict.Style = MapStyle
+		n := len(node.Content) / 2
+		dict.Items = make([]DictionaryItem, n)
+		for i := 0; i < n; i++ {
+			if err := dict.Items[i].UnmarshalYAML(&yaml.Node{
+				Kind: yaml.MappingNode,
+				Content: []*yaml.Node{
+					node.Content[i*2+0],
+					node.Content[i*2+1],
+				},
+			}); err != nil {
+				return err
+			}
+		}
 		return nil
+	case "!!seq":
+		dict.Style = SeqStyle
+		return node.Decode(&dict.Items)
+	default:
+		return fmt.Errorf("expected !!seq or !!map, got %s", node.ShortTag())
 	}
+}
 
-	*sn = stringOrNum(s)
+func (dict *Dictionary) Interpolate(env Environment) error {
+	for i := range dict.Items {
+		if err := dict.Items[i].Interpolate(env); err != nil {
+			return err
+		}
+	}
 	return nil
 }
 
-func (dict *Dictionary) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var data interface{}
-	if err := unmarshal(&data); err != nil {
-		return err
+func (item DictionaryItem) MarshalYAML() (interface{}, error) {
+	if item.Style == SeqStyle {
+		if item.String.Expression != "" {
+			return item.String.Expression, nil
+		}
+		if item.Value == "" {
+			return item.Key, nil
+		}
+		return fmt.Sprintf("%s=%s", item.Key, item.Value), nil
 	}
+	keyNode, valueNode := makeDictionaryItemNodes(item)
+	return &yaml.Node{
+		Kind: yaml.MappingNode,
+		Content: []*yaml.Node{
+			&keyNode,
+			&valueNode,
+		},
+	}, nil
+}
 
-	res := make(map[string]*string)
-	switch data := data.(type) {
-	case map[string]interface{}:
-		stringOrNumMap := make(map[string]stringOrNum)
-		if err := unmarshal(&stringOrNumMap); err != nil {
+func makeDictionaryItemNodes(item DictionaryItem) (keyNode, valueNode yaml.Node) {
+	if err := keyNode.Encode(item.Key); err != nil {
+		panic(err)
+	}
+	if item.Value == "" {
+		valueNode.Kind = yaml.ScalarNode
+	} else {
+		if err := valueNode.Encode(item.Value); err != nil {
+			panic(err)
+		}
+	}
+	return
+}
+
+func (item *DictionaryItem) UnmarshalYAML(node *yaml.Node) error {
+	err := node.Decode(&item.String)
+	if err == nil {
+		item.Style = SeqStyle
+	} else {
+		var m map[string]String
+		if err := node.Decode(&m); err != nil {
 			return err
 		}
-		for k, v := range stringOrNumMap {
-			s := string(v)
-			res[k] = &s
+		if len(m) != 1 {
+			return errors.New("expected single mapping")
 		}
-	case []interface{}:
-		for _, elem := range data {
-			s, ok := elem.(string)
-			if !ok {
-				return fmt.Errorf("expected elements to be string, got %T", elem)
-			}
-			parts := strings.SplitN(s, "=", 2)
-			k := parts[0]
-			switch len(parts) {
-			case 1:
-				res[k] = nil
-			case 2:
-				res[k] = &parts[1]
-			default:
-				panic("unreachable")
-			}
+		item.Style = MapStyle
+		for k, v := range m {
+			item.String = v
+			item.Key = k
 		}
-	default:
-		return fmt.Errorf("expected map or array, got %T", data)
 	}
 
-	*dict = res
+	_ = item.Interpolate(ErrEnvironment)
+	return nil
+}
+
+func (item *DictionaryItem) Interpolate(env Environment) error {
+	if err := item.String.Interpolate(env); err != nil {
+		return nil
+	}
+	switch item.Style {
+	case SeqStyle:
+		parts := strings.SplitN(item.String.Value, "=", 2)
+		item.Key = parts[0]
+		if len(parts) > 1 {
+			item.Value = parts[1]
+		} else {
+			item.NoValue = true
+		}
+	case MapStyle:
+		item.Value = item.String.Value
+	default:
+		return errors.New("cannot identify as map or seq style dictionary item")
+	}
+
 	return nil
 }
 
 func (dict Dictionary) Slice() []string {
-	m := map[string]*string(dict)
-	res := make([]string, len(m))
-	i := 0
-	for k, v := range m {
-		if v == nil {
-			res[i] = k
+	res := make([]string, len(dict.Items))
+	for i, item := range dict.Items {
+		if item.Value == "" {
+			res[i] = item.Key
 		} else {
-			res[i] = fmt.Sprintf("%s=%s", k, *v)
+			res[i] = fmt.Sprintf("%s=%s", item.Key, item.Value)
 		}
-		i++
 	}
-	sort.Strings(res)
 	return res
 }
 
-func (dict Dictionary) WithoutNils() map[string]string {
-	m := make(map[string]string, len(dict))
-	for k, v := range dict {
-		if v == nil {
-			continue
+func (dict Dictionary) Map() map[string]string {
+	m := make(map[string]string, len(dict.Items))
+	for _, item := range dict.Items {
+		m[item.Key] = item.Value
+	}
+	return m
+}
+
+func (dict Dictionary) MapOfPtr() map[string]*string {
+	m := make(map[string]*string, len(dict.Items))
+	for _, item := range dict.Items {
+		if item.NoValue {
+			m[item.Key] = nil
+		} else {
+			value := item.Value
+			m[item.Key] = &value
 		}
-		m[k] = *v
 	}
 	return m
 }

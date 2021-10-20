@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	core "github.com/deref/exo/internal/core/api"
-	"github.com/deref/exo/internal/util/yamlutil"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
 	docker "github.com/docker/docker/client"
@@ -14,20 +13,20 @@ import (
 
 func (n *Network) Initialize(ctx context.Context, input *core.InitializeInput) (output *core.InitializeOutput, err error) {
 	var spec Spec
-	if err := yamlutil.UnmarshalString(input.Spec, &spec); err != nil {
-		return nil, fmt.Errorf("unmarshalling spec: %w", err)
+	if err := n.LoadSpec(input.Spec, &spec); err != nil {
+		return nil, fmt.Errorf("loading spec: %w", err)
 	}
 
-	if spec.Name == "" {
+	if spec.Name.Value == "" {
 		return nil, errors.New("Network must have a name")
 	}
 
-	existing, err := n.findExistingNetwork(ctx, spec.Name)
+	existing, err := n.findExistingNetwork(ctx, spec.Name.Value)
 	if err != nil {
 		return nil, fmt.Errorf("looking up existing network: %w", err)
 	}
 
-	if spec.External {
+	if spec.External.Value {
 		if existing == nil {
 			return nil, fmt.Errorf("network %q not found", spec.Name)
 		}
@@ -51,7 +50,7 @@ func (n *Network) Initialize(ctx context.Context, input *core.InitializeInput) (
 		return &core.InitializeOutput{}, nil
 	}
 
-	labels := spec.Labels.WithoutNils()
+	labels := spec.Labels.Map()
 	for k, v := range n.GetExoLabels() {
 		labels[k] = v
 	}
@@ -59,19 +58,19 @@ func (n *Network) Initialize(ctx context.Context, input *core.InitializeInput) (
 	opts := types.NetworkCreate{
 		// We don't care about duplicates, and it's best-effort checking only anyway.
 		CheckDuplicate: false,
-		Driver:         spec.Driver,
+		Driver:         spec.Driver.Value,
 		//Scope          string
-		EnableIPv6: spec.EnableIPv6,
+		EnableIPv6: spec.EnableIPv6.Value,
 		//IPAM           *network.IPAM
-		Internal:   spec.Internal,
-		Attachable: spec.Attachable,
+		Internal:   spec.Internal.Value,
+		Attachable: spec.Attachable.Value,
 		//Ingress        bool
 		//ConfigOnly     bool
 		//ConfigFrom     *network.ConfigReference
 		//Options        map[string]string
 		Labels: labels,
 	}
-	createdBody, err := n.Docker.NetworkCreate(ctx, spec.Name, opts)
+	createdBody, err := n.Docker.NetworkCreate(ctx, spec.Name.Value, opts)
 	if err != nil {
 		return nil, err
 	}

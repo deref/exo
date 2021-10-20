@@ -10,7 +10,7 @@ type Volume struct {
 	State
 }
 
-type Spec compose.Volume
+type Spec = compose.Volume
 
 type State struct {
 	VolumeName string `json:"volumeId"`
