@@ -80,13 +80,13 @@ func (c *esvClient) StartAuthFlow(ctx context.Context) (AuthResponse, error) {
 }
 
 func (c *esvClient) ensureAccessToken() error {
+	c.tokenMutex.Lock()
+	defer c.tokenMutex.Unlock()
+
 	// If we already have a valid access token, don't fetch a new one.
 	if c.accessTokenExpiration.After(time.Now()) {
 		return nil
 	}
-
-	c.tokenMutex.Lock()
-	defer c.tokenMutex.Unlock()
 
 	if c.tokenPath == "" {
 		return fmt.Errorf("token file not set")
