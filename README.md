@@ -13,7 +13,7 @@
 
 ## Getting Started
 
-Install exo:
+Install Exo:
 
 ```bash
 curl -sL https://exo.deref.io/install | bash
@@ -22,7 +22,7 @@ curl -sL https://exo.deref.io/install | bash
 If you prefer manual installation, see [./doc/install.md](./doc/install.md) for
 details, including uninstall instructions.
 
-Navigate to your code directory and then launch the exo gui:
+Navigate to your code directory and then launch the Exo gui:
 
 ```bash
 exo gui
@@ -39,8 +39,8 @@ This will work automatically with your `Procfile`, `compose.yaml`, or similarly
 named manifest files. The `run` command also accepts an explicit filename, if
 you have multiple configurations to choose from.
 
-For more, checkout the [exo guide](./doc/guide.md), watch some
-[videos](./doc/guide.md) or consult the builtin help by running `exo help`.
+For more, checkout the [Exo documentation](https://docs.deref.io/exo/), watch some
+[videos](https://docs.deref.io/exo/resources/videos) or consult the builtin help by running `exo help`.
 
 ---
 
