@@ -1,38 +1,59 @@
 # Documentation for .goreleaser.yml can be found at <https://goreleaser.com>.
-
+---
 before:
   hooks:
     - go mod tidy
     - make codegen
     #- make -C gui
-    #
+env:
+  - CGO_ENABLED=0
 builds:
-  - main: ./main.go
-    env:
-      - CGO_ENABLED=0
+  # This is the build for use in the install script.
+  - id: autoinstalled
+    main: .
     goos:
       - linux
-      #- windows # TODO: Enable Windows support.
+      - darwin
+    tags:
+      - bundle
+
+  # This is the build for use by package managers.
+  - id: managed
+    main: .
+    goos:
+      - linux
       - darwin
     tags:
       - bundle
       - managed
 
-# TODO: Re-enable these after testing Homebrew stuff.
-#archives:
-#  - wrap_in_directory: true
-#    replacements:
-#      darwin: Darwin
-#      linux: Linux
-#      windows: Windows
-#      386: i386
-#      amd64: x86_64
-#    files:
-#      - LICENSE
-#      - NOTICES.md
-#      - VERSION
-#      - README.md
-#      - doc/*
+archives:
+  - id: autoinstalled
+    name_template:  '{{ .ProjectName }}_autoinstalled_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}'
+    builds: ["autoinstalled"]
+    wrap_in_directory: true
+    replacements:
+      386: i386
+      amd64: x86_64
+    files:
+      - LICENSE
+      - NOTICES.md
+      - VERSION
+      - README.md
+      - doc/*
+  - id: managed
+    name_template:  '{{ .ProjectName }}_managed_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}'
+    builds: ["managed"]
+    wrap_in_directory: true
+    replacements:
+      386: i386
+      amd64: x86_64
+    files:
+      - LICENSE
+      - NOTICES.md
+      - VERSION
+      - README.md
+      - doc/*
 
 checksum:
   name_template: "checksums.txt"
@@ -49,6 +70,7 @@ changelog:
 
 brews:
   - name: exo
+    ids: ["managed"]
     tap:
       owner: deref
       name: homebrew-tap
@@ -59,3 +81,16 @@ brews:
     folder: Formula
     test: |
       system "#{bin}/exo version"
+
+nfpms:
+  - builds: ["managed"]
+    formats:
+    - apk
+    - deb
+    - rpm
+
+release:
+  github:
+    owner: deref
+    name: exo
+  disable: true
