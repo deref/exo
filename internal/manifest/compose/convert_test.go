@@ -34,7 +34,7 @@ services:
         command: node /srv/index.js
 `,
 			Expected: `
-exo = "1.0"
+exo = "0.1"
 components {
 	network "default" {
 		driver = "bridge"
@@ -72,7 +72,7 @@ networks:
   backend:
 `,
 			Expected: `
-exo = "1.0"
+exo = "0.1"
 components {
 	network "frontend" {
 		driver = "bridge"

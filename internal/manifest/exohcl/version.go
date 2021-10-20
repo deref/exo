@@ -3,8 +3,8 @@ package exohcl
 import "fmt"
 
 var Latest = FormatVersion{
-	Major: 1,
-	Minor: 0,
+	Major: 0,
+	Minor: 1,
 }
 
 var Starter = fmt.Sprintf(`# See https://docs.deref.io/exo for details.
