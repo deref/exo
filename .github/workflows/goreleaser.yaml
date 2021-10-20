@@ -1,7 +1,7 @@
 on:
   push:
     tags:
-      - "*"
+      - "v*"
 
 # Needed to create a Github release with archives.
 #permissions:
@@ -30,6 +30,17 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # TODO: Need a custom personal access token to allow publishing to
           # the deref/homebrew-tap repository.
-          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+          # GITHUB_TOKEN: ${{ secrets.GH_PAT }}
           # Your GoReleaser Pro key, if you are using the 'goreleaser-pro' distribution
           # GORELEASER_KEY: ${{ secrets.GORELEASER_KEY }}
+
+      - name: Get version from VERSION file
+        id: get_version
+        run: echo ::set-output name=release_version::$(cat VERSION | tr -d '[:space:]')
+
+      - name: Update version in CloudFlare K/V
+        uses: cloudflare/wrangler-action@1.3.0
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          publish: false
+          preCommands: wrangler kv:key put --binding VERSIONS "exo" ${{ steps.get_version.outputs.release_version }}
