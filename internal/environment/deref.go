@@ -5,7 +5,7 @@ import (
 )
 
 type ESV struct {
-	Client *esv.EsvClient
+	Client esv.EsvClient
 	Name   string
 	URL    string
 }
