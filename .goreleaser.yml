@@ -32,9 +32,6 @@ archives:
     name_template:  '{{ .ProjectName }}_autoinstalled_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}'
     builds: ["autoinstalled"]
     wrap_in_directory: true
-    replacements:
-      386: i386
-      amd64: x86_64
     files:
       - LICENSE
       - NOTICES.md
@@ -45,9 +42,6 @@ archives:
     name_template:  '{{ .ProjectName }}_managed_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}'
     builds: ["managed"]
     wrap_in_directory: true
-    replacements:
-      386: i386
-      amd64: x86_64
     files:
       - LICENSE
       - NOTICES.md
