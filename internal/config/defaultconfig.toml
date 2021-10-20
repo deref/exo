@@ -12,7 +12,7 @@
 # runDir = "/path/to/exo-home/run"
 
 # Port the daemon service listens on.
-# httpPort = 4000
+# httpPort = 43643
 
 ## Logging subsystem that collects logs from running services.
 [log]
