@@ -260,6 +260,10 @@ interface "workspace" {
   method "describe-environment" {
     output "variables" "map[string]VariableDescription" {}
   }
+
+  method "render-dependencies" {
+    output "dot" "string" {}
+  }
 }
 
 struct "workspace-description" {

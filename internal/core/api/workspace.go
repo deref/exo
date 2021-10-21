@@ -124,6 +124,7 @@ type Workspace interface {
 	WriteFile(context.Context, *WriteFileInput) (*WriteFileOutput, error)
 	BuildComponents(context.Context, *BuildComponentsInput) (*BuildComponentsOutput, error)
 	DescribeEnvironment(context.Context, *DescribeEnvironmentInput) (*DescribeEnvironmentOutput, error)
+	RenderDependencies(context.Context, *RenderDependenciesInput) (*RenderDependenciesOutput, error)
 }
 
 type DescribeVaultsInput struct {
@@ -394,6 +395,13 @@ type DescribeEnvironmentOutput struct {
 	Variables map[string]VariableDescription `json:"variables"`
 }
 
+type RenderDependenciesInput struct {
+}
+
+type RenderDependenciesOutput struct {
+	Dot string `json:"dot"`
+}
+
 func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Workspace) {
 	b.AddMethod("start", func(req *http.Request) interface{} {
 		return factory(req).Start
@@ -496,6 +504,9 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	})
 	b.AddMethod("describe-environment", func(req *http.Request) interface{} {
 		return factory(req).DescribeEnvironment
+	})
+	b.AddMethod("render-dependencies", func(req *http.Request) interface{} {
+		return factory(req).RenderDependencies
 	})
 }
 

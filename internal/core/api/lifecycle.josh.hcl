@@ -1,5 +1,13 @@
 interface "lifecycle" {
 
+  method "dependencies" {
+    input "spec" "string" {}
+
+    output "components" "[]string" {
+      doc = "Refs of components that this component depends on."
+    }
+  }
+
   method "initialize" {
     input "spec" "string" {}
   }
