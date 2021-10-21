@@ -220,7 +220,11 @@ func (c *Converter) Convert(bs []byte) (*hcl.File, hcl.Diagnostics) {
 			// links.
 			mangledServiceName := exohcl.MangleName(linkService)
 			containerName := c.prefixedName(mangledServiceName, "1")
-			service.Links[idx] = compose.MakeString(fmt.Sprintf("%s:%s", containerName, linkAlias))
+			service.Links[idx] = compose.Link{
+				String:  compose.MakeString(fmt.Sprintf("%s:%s", containerName, linkAlias)),
+				Service: containerName,
+				Alias:   linkAlias,
+			}
 			dependsOn = append(dependsOn, mangledServiceName)
 		}
 

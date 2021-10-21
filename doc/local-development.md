@@ -28,7 +28,7 @@ Now all `exo` commands will run against the development instance. To run against
 ## envrc
 
 The project root directory contains an `.envrc` script. You can use
-[https://direnv.net/](direnv) to automatically source this script when
+[direnv](https://direnv.net/) to automatically source this script when
 working on the project.
 
 ## dexo

@@ -32,6 +32,29 @@ import (
 
 var _ core.Lifecycle = (*Container)(nil)
 
+func (c *Container) Dependencies(ctx context.Context, input *core.DependenciesInput) (*core.DependenciesOutput, error) {
+	var spec Spec
+	if err := c.LoadSpec(input.Spec, &spec); err != nil {
+		return nil, fmt.Errorf("loading spec: %w", err)
+	}
+	seen := make(map[string]bool)
+	deps := make([]string, 0, len(spec.DependsOn.Items)+len(spec.Links.Values()))
+	addDep := func(service string) {
+		if seen[service] {
+			return
+		}
+		seen[service] = true
+		deps = append(deps, service)
+	}
+	for _, dep := range spec.DependsOn.Items {
+		addDep(dep.Service.Value)
+	}
+	for _, link := range spec.Links {
+		addDep(link.Service)
+	}
+	return &core.DependenciesOutput{Components: deps}, nil
+}
+
 func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput) (output *core.InitializeOutput, err error) {
 	var spec Spec
 	if err := c.LoadSpec(input.Spec, &spec); err != nil {

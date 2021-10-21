@@ -9,6 +9,7 @@ import (
 	"net/http"
 	"os"
 	"path"
+	"reflect"
 	"strings"
 	"sync"
 
@@ -1153,6 +1154,16 @@ func (ws *Workspace) goControlComponents(t *task.Task, query componentQuery, mak
 		}
 		wg.Wait()
 	}
+}
+
+func (ws *Workspace) query(ctx context.Context, desc api.ComponentDescription, output interface{}, input interface{}) error {
+	ctrl := ws.newController(ctx, desc)
+	if err := ctrl.InitResource(); err != nil {
+		return err
+	}
+	out, err := josh.Send(ctx, ctrl, input)
+	reflect.ValueOf(output).Elem().Set(reflect.ValueOf(out))
+	return err
 }
 
 func (ws *Workspace) control(ctx context.Context, desc api.ComponentDescription, input interface{}) error {

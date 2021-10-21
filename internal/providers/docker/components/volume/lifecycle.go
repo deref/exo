@@ -10,6 +10,12 @@ import (
 	dockerclient "github.com/docker/docker/client"
 )
 
+var _ core.Lifecycle = (*Volume)(nil)
+
+func (v *Volume) Dependencies(ctx context.Context, input *core.DependenciesInput) (*core.DependenciesOutput, error) {
+	return &core.DependenciesOutput{Components: []string{}}, nil
+}
+
 func (v *Volume) Initialize(ctx context.Context, input *core.InitializeInput) (output *core.InitializeOutput, err error) {
 	var spec Spec
 	if err := v.LoadSpec(input.Spec, &spec); err != nil {
