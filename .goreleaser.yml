@@ -3,7 +3,6 @@
 env:
   - CGO_ENABLED=1
 builds:
-  # This is the build for use in the install script.
   - id: linux-arm64-standalone
     main: .
     flags: ["-mod=readonly"]
