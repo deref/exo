@@ -12,6 +12,12 @@ import (
 	"github.com/deref/exo/internal/util/osutil"
 )
 
+var _ core.Lifecycle = (*Process)(nil)
+
+func (p *Process) Dependencies(ctx context.Context, input *core.DependenciesInput) (*core.DependenciesOutput, error) {
+	return &core.DependenciesOutput{Components: []string{}}, nil
+}
+
 func (p *Process) Initialize(ctx context.Context, input *core.InitializeInput) (*core.InitializeOutput, error) {
 	var spec Spec
 	if err := jsonutil.UnmarshalString(input.Spec, &spec); err != nil {

@@ -11,6 +11,12 @@ import (
 	docker "github.com/docker/docker/client"
 )
 
+var _ core.Lifecycle = (*Network)(nil)
+
+func (n *Network) Dependencies(ctx context.Context, input *core.DependenciesInput) (*core.DependenciesOutput, error) {
+	return &core.DependenciesOutput{Components: []string{}}, nil
+}
+
 func (n *Network) Initialize(ctx context.Context, input *core.InitializeInput) (output *core.InitializeOutput, err error) {
 	var spec Spec
 	if err := n.LoadSpec(input.Spec, &spec); err != nil {

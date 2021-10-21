@@ -239,3 +239,8 @@ func (c *Workspace) DescribeEnvironment(ctx context.Context, input *api.Describe
 	err = c.client.Invoke(ctx, "describe-environment", input, &output)
 	return
 }
+
+func (c *Workspace) RenderDependencies(ctx context.Context, input *api.RenderDependenciesInput) (output *api.RenderDependenciesOutput, err error) {
+	err = c.client.Invoke(ctx, "render-dependencies", input, &output)
+	return
+}
