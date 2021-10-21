@@ -20,6 +20,7 @@
       "~/*": ["./*"]
     },
     "esModuleInterop": true,
+    "moduleResolution": "Node",
     "noImplicitReturns": true,
     "noImplicitThis": true,
     "noImplicitAny": true
