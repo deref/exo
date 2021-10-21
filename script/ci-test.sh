@@ -2,7 +2,7 @@
 
 set -euxo pipefail
 
-(cd gui && npm ci)
+(cd gui && npm ci --also=dev)
 
 ./script/codegen.sh
 
