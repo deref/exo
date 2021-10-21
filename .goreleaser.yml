@@ -4,9 +4,9 @@ before:
   hooks:
     - go mod tidy
     - make codegen
-    #- make -C gui
-env:
-  - CGO_ENABLED=0
+    - make -C gui
+#env:
+  #- CGO_ENABLED=0
 builds:
   # This is the build for use in the install script.
   - id: autoinstalled
