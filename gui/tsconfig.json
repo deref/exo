@@ -19,6 +19,7 @@
     "paths": {
       "~/*": ["./*"]
     },
+    "esModuleInterop": true,
     "noImplicitReturns": true,
     "noImplicitThis": true,
     "noImplicitAny": true
