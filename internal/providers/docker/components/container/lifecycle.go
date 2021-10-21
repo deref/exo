@@ -26,6 +26,7 @@ import (
 	"github.com/docker/go-connections/nat"
 	"github.com/docker/go-units"
 	"github.com/joho/godotenv"
+	"github.com/moby/moby/errdefs"
 	v1 "github.com/opencontainers/image-spec/specs-go/v1"
 	"golang.org/x/sync/errgroup"
 )
@@ -398,12 +399,43 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 	networkCfg := &network.NetworkingConfig{
 		EndpointsConfig: make(map[string]*network.EndpointSettings), // Endpoint configs for each connecting network
 	}
+
+	networks := append([]compose.ServiceNetwork{}, spec.Networks.Items...)
+
+	// If no networks are specified, ensure a default network.
+	if len(networks) == 0 {
+		defaultNetworkName := c.StackName + "_default"
+		networks = append(networks, compose.ServiceNetwork{
+			Key:       defaultNetworkName,
+			ShortForm: compose.MakeString(defaultNetworkName),
+		})
+
+		_, err := c.Docker.NetworkCreate(ctx, defaultNetworkName, types.NetworkCreate{
+			// Duplicate checking is best effort, but should be reliable for a local
+			// Docker engine.  We'll need to do something better for clusters that
+			// don't provide atomicity gaurantees when creating networks.
+			CheckDuplicate: true,
+			// See also GetExoLabels.
+			Labels: map[string]string{
+				"com.docker.compose.project": c.StackName,
+				"com.docker.compose.network": "default",
+				"io.deref.exo.workspace":     c.WorkspaceID,
+			},
+		})
+		if errdefs.IsConflict(err) {
+			err = nil
+		}
+		if err != nil {
+			return fmt.Errorf("creating default network: %w", err)
+		}
+	}
+
 	// Docker only allows a single network to be specified when creating a container. The other networks must be
 	// connected after the container is started. See https://github.com/moby/moby/issues/29265#issuecomment-265909198.
 	var remainingNetworks []compose.ServiceNetwork
-	if len(spec.Networks.Items) > 0 {
-		firstNetwork := spec.Networks.Items[0]
-		remainingNetworks = spec.Networks.Items[1:]
+	if len(networks) > 0 {
+		firstNetwork := networks[0]
+		remainingNetworks = networks[1:]
 		networkCfg.EndpointsConfig[firstNetwork.Key] = c.endpointSettings(firstNetwork, spec)
 	}
 
@@ -494,6 +526,33 @@ func (c *Container) Dispose(ctx context.Context, input *core.DisposeInput) (*cor
 		return nil, err
 	}
 	c.State.ContainerID = ""
+
+	// Attempt to cleanup any default networks.
+	{
+		nets, err := c.Docker.NetworkList(ctx, types.NetworkListOptions{
+			Filters: filters.NewArgs(filters.KeyValuePair{
+				Key:   "label",
+				Value: "com.docker.compose.project=" + c.StackName,
+			}, filters.KeyValuePair{
+				Key:   "label",
+				Value: "com.docker.compose.network=default",
+			}),
+		})
+		if err != nil {
+			return nil, fmt.Errorf("listing networks: %w", err)
+		}
+		for _, net := range nets {
+			err := c.Docker.NetworkRemove(ctx, net.ID)
+			if err != nil && strings.Contains(err.Error(), "has active endpoints") {
+				// Another container is still using the network.
+				err = nil
+			}
+			if err != nil {
+				return nil, fmt.Errorf("removing default network %q: %w", net.ID, err)
+			}
+		}
+	}
+
 	return &core.DisposeOutput{}, nil
 }
 
