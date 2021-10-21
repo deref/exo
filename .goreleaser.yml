@@ -14,6 +14,7 @@ builds:
       - CC=aarch64-linux-gnu-gcc
       - CXX=aarch64-linux-gnu-g++
     tags:
+      - netgo
       - bundle
   - id: linux-amd64-standalone
     main: .
@@ -25,6 +26,7 @@ builds:
       - CC=gcc
       - CXX=g++
     tags:
+      - netgo
       - bundle
   - id: linux-arm64-managed
     main: .
@@ -36,6 +38,7 @@ builds:
       - CC=aarch64-linux-gnu-gcc
       - CXX=aarch64-linux-gnu-g++
     tags:
+      - netgo
       - bundle
       - managed
   - id: linux-amd64-managed
@@ -48,6 +51,7 @@ builds:
       - CC=gcc
       - CXX=g++
     tags:
+      - netgo
       - bundle
       - managed
   - id: darwin-arm64-standalone
@@ -59,7 +63,8 @@ builds:
       - CC=oa64-clang
       - CXX=oa64-clang++
     tags:
-    - bundle
+      - netgo
+      - bundle
   - id: darwin-amd64-standalone
     main: .
     flags: ["-mod=readonly"]
@@ -69,6 +74,7 @@ builds:
       - CC=oa64-clang
       - CXX=oa64-clang++
     tags:
+      - netgo
       - bundle
   - id: darwin-arm64-managed
     main: .
@@ -79,6 +85,7 @@ builds:
       - CC=oa64-clang
       - CXX=oa64-clang++
     tags:
+      - netgo
       - bundle
       - managed
   - id: darwin-amd64-managed
@@ -90,6 +97,7 @@ builds:
       - CC=oa64-clang
       - CXX=oa64-clang++
     tags:
+      - netgo
       - bundle
       - managed
 
