@@ -2,6 +2,9 @@
 
 set -euxo pipefail
 
+node --version
+npm --version
+
 (cd gui && npm ci --also=dev)
 
 ./script/codegen.sh
