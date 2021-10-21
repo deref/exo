@@ -14,6 +14,7 @@ jobs:
         with:
           node-version: '16'
           cache: 'npm'
+          cache-dependency-path: "gui/package-lock.json"
 
       # Restore Go cache
       - uses: actions/cache@v2
