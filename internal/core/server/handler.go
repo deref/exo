@@ -25,7 +25,7 @@ type Config struct {
 	Logger      logging.Logger
 	TaskTracker *task.TaskTracker
 	TokenClient token.TokenClient
-	EsvClient   *esv.EsvClient
+	EsvClient   esv.EsvClient
 }
 
 func BuildRootMux(prefix string, cfg *Config) *http.ServeMux {

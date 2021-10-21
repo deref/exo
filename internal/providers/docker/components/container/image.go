@@ -14,12 +14,12 @@ import (
 )
 
 func (c *Container) ensureImage(ctx context.Context, spec *Spec) error {
-	if c.State.Image.ID != "" && spec.PullPolicy != "build" {
+	if c.State.Image.ID != "" && spec.PullPolicy.Value != "build" {
 		return nil
 	}
 
 	imageSpec := &image.Spec{
-		Platform: spec.Platform,
+		Platform: spec.Platform.Value,
 		Build:    spec.Build,
 	}
 
@@ -34,10 +34,10 @@ func (c *Container) ensureImage(ctx context.Context, spec *Spec) error {
 			return fmt.Errorf("inspecting built image: %w", err)
 		}
 	} else {
-		if spec.PullPolicy != "always" {
-			inspection, _, err = c.Docker.ImageInspectWithRaw(ctx, spec.Image)
+		if spec.PullPolicy.Value != "always" {
+			inspection, _, err = c.Docker.ImageInspectWithRaw(ctx, spec.Image.Value)
 			if docker.IsErrNotFound(err) {
-				if spec.PullPolicy == "never" {
+				if spec.PullPolicy.Value == "never" {
 					return fmt.Errorf("pull policy for %q set to \"never\", no image %q found in local cache, and no build specification provided", c.ComponentName, spec.Image)
 				}
 			} else if err != nil {
@@ -48,7 +48,7 @@ func (c *Container) ensureImage(ctx context.Context, spec *Spec) error {
 			if err := c.pullImage(ctx, spec); err != nil {
 				return fmt.Errorf("pulling image: %w", err)
 			}
-			inspection, _, err = c.Docker.ImageInspectWithRaw(ctx, spec.Image)
+			inspection, _, err = c.Docker.ImageInspectWithRaw(ctx, spec.Image.Value)
 			if err != nil {
 				return fmt.Errorf("inspecting pulled image: %w", err)
 			}
@@ -88,7 +88,7 @@ func (c *Container) pullImage(ctx context.Context, spec *Spec) error {
 		panic("No build task")
 	}
 
-	image, err := c.Docker.ImagePull(ctx, spec.Image, types.ImagePullOptions{
+	image, err := c.Docker.ImagePull(ctx, spec.Image.Value, types.ImagePullOptions{
 		//All           bool
 		//RegistryAuth  string // RegistryAuth is the base64 encoded credentials for the registry
 		//PrivilegeFunc RequestPrivilegeFunc

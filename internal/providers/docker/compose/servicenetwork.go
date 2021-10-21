@@ -3,65 +3,118 @@ package compose
 import (
 	"fmt"
 
-	"github.com/goccy/go-yaml"
+	"gopkg.in/yaml.v3"
 )
 
-type ServiceNetwork struct {
-	Network      string   `yaml:"-"`
-	Aliases      []string `yaml:"aliases,omitempty"`
-	IPV4Address  string   `yaml:"ipv4_address,omitempty"`
-	IPV6Address  string   `yaml:"ipv6_address,omitempty"`
-	LinkLocalIPs []string `yaml:"link_local_ips,omitempty"`
-	Priority     int64    `yaml:"priority,omitempty"`
+type ServiceNetworks struct {
+	Style Style
+	Items []ServiceNetwork
 }
 
-type ServiceNetworks []ServiceNetwork
+type ServiceNetwork struct {
+	Key string
+
+	ShortForm String
+	ServiceNetworkLongForm
+}
+
+type ServiceNetworkLongForm struct {
+	Aliases      Strings `yaml:"aliases,omitempty"`
+	IPV4Address  String  `yaml:"ipv4_address,omitempty"`
+	IPV6Address  String  `yaml:"ipv6_address,omitempty"`
+	LinkLocalIPs Strings `yaml:"link_local_ips,omitempty"`
+	Priority     Int     `yaml:"priority,omitempty"`
+}
+
+func (sn *ServiceNetworks) UnmarshalYAML(node *yaml.Node) error {
+	switch node.Tag {
+	case "!!map":
+		sn.Style = MapStyle
+		n := len(node.Content) / 2
+		sn.Items = make([]ServiceNetwork, n)
+		for i := 0; i < n; i++ {
+			keyNode := node.Content[i*2+0]
+			longFormNode := node.Content[i*2+1]
+			var item ServiceNetwork
+			if err := keyNode.Decode(&item.Key); err != nil {
+				return err
+			}
+			if err := longFormNode.Decode(&item.ServiceNetworkLongForm); err != nil {
+				return err
+			}
+			sn.Items[i] = item
+		}
+		return nil
+	case "!!seq":
+		sn.Style = SeqStyle
+		return node.Decode(&sn.Items)
+	default:
+		return fmt.Errorf("expected !!seq or !!map, got %s", node.ShortTag())
+	}
+}
+
+func (sn *ServiceNetworks) Interpolate(env Environment) error {
+	return interpolateSlice(sn.Items, env)
+}
 
 func (sn ServiceNetworks) MarshalYAML() (interface{}, error) {
-	slice := make(yaml.MapSlice, len(sn))
-	for i, n := range sn {
-		slice[i] = yaml.MapItem{
-			Key:   n.Network,
-			Value: n,
-		}
-	}
-	return slice, nil
-}
-
-func (sn *ServiceNetworks) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var asStrings []string
-	if err := unmarshal(&asStrings); err == nil {
-		nets := make([]ServiceNetwork, len(asStrings))
-		for i, network := range asStrings {
-			nets[i] = ServiceNetwork{
-				Network: network,
+	if sn.Style == UnknownStyle {
+		sn.Style = SeqStyle
+		for _, item := range sn.Items {
+			if item.ShortForm.Expression == "" {
+				sn.Style = MapStyle
 			}
 		}
-		*sn = nets
-		return nil
 	}
-
-	var mapSlice yaml.MapSlice
-	if err := unmarshal(&mapSlice); err != nil {
-		return err
+	if sn.Style == SeqStyle {
+		return sn.Items, nil
 	}
-
-	var asMap map[string]ServiceNetwork
-	if err := unmarshal(&asMap); err != nil {
-		return err
+	node := &yaml.Node{
+		Kind:    yaml.MappingNode,
+		Content: make([]*yaml.Node, len(sn.Items)*2),
 	}
-
-	nets := make([]ServiceNetwork, len(mapSlice))
-	for i, item := range mapSlice {
-		key, ok := item.Key.(string)
-		if !ok {
-			return fmt.Errorf("expected string key at index %d, got: %T", i, item.Key)
+	for i, item := range sn.Items {
+		var keyNode, valueNode yaml.Node
+		if err := keyNode.Encode(item.Key); err != nil {
+			panic(err)
 		}
-		sn := asMap[key]
-		sn.Network = key
-		nets[i] = sn
+		if err := valueNode.Encode(item); err != nil {
+			return nil, err
+		}
+		node.Content[i*2+0] = &keyNode
+		node.Content[i*2+1] = &valueNode
 	}
-	*sn = nets
+	return node, nil
+}
 
-	return nil
+func (sn *ServiceNetwork) UnmarshalYAML(node *yaml.Node) error {
+	var err error
+	if node.Tag == "!!str" {
+		err = node.Decode(&sn.ShortForm)
+	} else {
+		err = node.Decode(&sn.ServiceNetworkLongForm)
+	}
+	_ = sn.Interpolate(ErrEnvironment)
+	return err
+}
+
+func (sn *ServiceNetwork) Interpolate(env Environment) error {
+	if sn.ShortForm.Tag != "" {
+		if err := sn.ShortForm.Interpolate(env); err != nil {
+			return err
+		}
+		sn.Key = sn.ShortForm.Value
+	}
+	return sn.ServiceNetworkLongForm.Interpolate(env)
+}
+
+func (sn ServiceNetwork) MarshalYAML() (interface{}, error) {
+	if sn.ShortForm.Expression != "" {
+		return sn.ShortForm.Expression, nil
+	}
+	return sn.ServiceNetworkLongForm, nil
+}
+
+func (sn *ServiceNetworkLongForm) Interpolate(env Environment) error {
+	return interpolateStruct(sn, env)
 }

@@ -12,7 +12,9 @@ jobs:
           go-version: 1.16
       - uses: actions/setup-node@v2
         with:
-          node-version: '16'
+          node-version: 'lts/*'
+          cache: 'npm'
+          cache-dependency-path: "gui/package-lock.json"
 
       # Restore Go cache
       - uses: actions/cache@v2
@@ -26,18 +28,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
-      # Restore NPM cache
-      - name: Get npm cache directory
-        id: npm-cache-dir
-        run: |
-          echo "::set-output name=dir::$(npm config get cache)"
-      - uses: actions/cache@v2
-        id: npm-cache # use this to check for `cache-hit` ==> if: steps.npm-cache.outputs.cache-hit != 'true'
-        with:
-          path: ${{ steps.npm-cache-dir.outputs.dir }}
-          key: ${{ runner.os }}-node-${{ hashFiles('**/package-lock.json') }}
-          restore-keys: |
-            ${{ runner.os }}-node-
+      - name: Upgrade npm
+        run: npm i -g npm@latest
 
       - name: Perform tests
         run: script/ci-test.sh

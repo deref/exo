@@ -15,13 +15,13 @@ func makeMountFromVolumeMount(workspaceRoot, userHomeDir string, va compose.Volu
 	var volumeOptions *mount.VolumeOptions
 	var tmpfsOptions *mount.TmpfsOptions
 
-	switch va.Type {
+	switch va.Type.Value {
 	case "bind":
 		mountType = mount.TypeBind
 		if va.Bind != nil {
 			bindOptions = &mount.BindOptions{
-				Propagation:  mount.Propagation(va.Bind.Propagation),
-				NonRecursive: !va.Bind.CreateHostPath,
+				Propagation:  mount.Propagation(va.Bind.Propagation.Value),
+				NonRecursive: !va.Bind.CreateHostPath.Value,
 			}
 		}
 
@@ -29,7 +29,7 @@ func makeMountFromVolumeMount(workspaceRoot, userHomeDir string, va compose.Volu
 		mountType = mount.TypeVolume
 		if va.Volume != nil {
 			volumeOptions = &mount.VolumeOptions{
-				NoCopy: va.Volume.Nocopy,
+				NoCopy: va.Volume.Nocopy.Value,
 			}
 		}
 
@@ -37,7 +37,7 @@ func makeMountFromVolumeMount(workspaceRoot, userHomeDir string, va compose.Volu
 		mountType = mount.TypeTmpfs
 		if va.Tmpfs != nil {
 			tmpfsOptions = &mount.TmpfsOptions{
-				SizeBytes: va.Tmpfs.Size,
+				SizeBytes: va.Tmpfs.Size.Int64(),
 			}
 		}
 
@@ -45,7 +45,7 @@ func makeMountFromVolumeMount(workspaceRoot, userHomeDir string, va compose.Volu
 		return mount.Mount{}, fmt.Errorf("unsupported mount type: %q", va.Type)
 	}
 
-	source := va.Source
+	source := va.Source.Value
 	if strings.HasPrefix(source, ".") {
 		var err error
 		source, err = filepath.Abs(filepath.Join(workspaceRoot, source))
@@ -59,8 +59,8 @@ func makeMountFromVolumeMount(workspaceRoot, userHomeDir string, va compose.Volu
 	return mount.Mount{
 		Type:          mountType,
 		Source:        source,
-		Target:        va.Target,
-		ReadOnly:      va.ReadOnly,
+		Target:        va.Target.Value,
+		ReadOnly:      va.ReadOnly.Value,
 		BindOptions:   bindOptions,
 		VolumeOptions: volumeOptions,
 		TmpfsOptions:  tmpfsOptions,

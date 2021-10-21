@@ -10,7 +10,7 @@ type Network struct {
 	State
 }
 
-type Spec compose.Network
+type Spec = compose.Network
 
 type State struct {
 	NetworkID string `json:"networkId"`

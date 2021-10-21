@@ -20,7 +20,7 @@ import (
 	eventd "github.com/deref/exo/internal/eventd/api"
 	"github.com/deref/exo/internal/gensym"
 	josh "github.com/deref/exo/internal/josh/server"
-	"github.com/deref/exo/internal/manifest"
+	"github.com/deref/exo/internal/manifest/exohcl"
 	"github.com/deref/exo/internal/manifest/procfile"
 	"github.com/deref/exo/internal/providers/core"
 	"github.com/deref/exo/internal/providers/core/components/invalid"
@@ -36,7 +36,7 @@ import (
 	"github.com/deref/exo/internal/util/logging"
 	"github.com/deref/exo/internal/util/pathutil"
 	dockerclient "github.com/docker/docker/client"
-	"github.com/joho/godotenv"
+	"github.com/hashicorp/hcl/v2"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -48,7 +48,7 @@ type Workspace struct {
 	Logger      logging.Logger // TODO: Embed in context, so it can be annotated with request info.
 	Docker      *dockerclient.Client
 	TaskTracker *task.TaskTracker
-	EsvClient   *esv.EsvClient
+	EsvClient   esv.EsvClient
 }
 
 var _ api.Workspace = &Workspace{}
@@ -189,11 +189,20 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 	if err != nil {
 		return nil, fmt.Errorf("describing workspace: %w", err)
 	}
-	res := ws.loadManifest(description.Root, input)
-	if res.Err != nil {
-		return nil, res.Err
+	m, err := ws.loadManifest(description.Root, input)
+
+	var diags hcl.Diagnostics
+	invalidManifest := false
+	if errors.As(err, &diags) {
+		invalidManifest = diags.HasErrors()
+	} else {
+		invalidManifest = err != nil
 	}
-	m := res.Manifest
+	if invalidManifest {
+		return nil, errutil.WithHTTPStatus(http.StatusBadRequest, err)
+	}
+	manifestComponents := m.Components()
+	numComponents := manifestComponents.Len()
 
 	describeOutput, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{})
 	if err != nil {
@@ -229,12 +238,13 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 
 	// 1.
 	allComponents := deps.New()
-	for _, c := range m.Components {
+	for i := 0; i < numComponents; i++ {
+		c := manifestComponents.Index(i)
 		allComponents.AddNode(&componentNode{
 			component: c,
 		})
-		for _, dependency := range c.DependsOn {
-			allComponents.AddEdge(c.Name, dependency)
+		for _, dependency := range c.DependsOn() {
+			allComponents.AddEdge(c.Name(), dependency)
 		}
 	}
 
@@ -271,7 +281,7 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 	// 5.
 	updateSet := make(map[string]struct{})
 
-	recreateComponentOnce := func(name string, oldComponent api.ComponentDescription, newComponent manifest.Component) {
+	recreateComponentOnce := func(name string, oldComponent api.ComponentDescription, newComponent *exohcl.Component) {
 		// 6.1.1.
 		if _, alreadyUpdated := updateSet[name]; alreadyUpdated {
 			return
@@ -293,19 +303,19 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 			task: job.CreateChild("re-creating " + name),
 			run: func(t *task.Task) error {
 				// Should the replacement component get the old component's ID?
-				return ws.createComponent(t, newComponent, gensym.RandomBase32())
+				return ws.createComponent(t, manifestComponentToCreate(newComponent), gensym.RandomBase32())
 			},
 		})
-		for _, dependency := range newComponent.DependsOn {
+		for _, dependency := range newComponent.DependsOn() {
 			createGraph.AddEdge(name, dependency)
 		}
 		updateSet[name] = struct{}{}
 	}
 
 	// 6.
-	for _, newComponent := range m.Components {
-		newComponent := newComponent
-		name := newComponent.Name
+	for i := 0; i < numComponents; i++ {
+		newComponent := manifestComponents.Index(i)
+		name := newComponent.Name()
 
 		if oldComponent, exists := oldComponents[name]; exists {
 			name := name
@@ -324,10 +334,10 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 				name: name,
 				task: job.CreateChild("adding " + name),
 				run: func(t *task.Task) error {
-					return ws.createComponent(t, newComponent, gensym.RandomBase32())
+					return ws.createComponent(t, manifestComponentToCreate(newComponent), gensym.RandomBase32())
 				},
 			})
-			for _, dependency := range newComponent.DependsOn {
+			for _, dependency := range newComponent.DependsOn() {
 				createGraph.AddEdge(name, dependency)
 			}
 		}
@@ -341,10 +351,14 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 		executeRunTasks(createGraph)
 	}()
 
-	return &api.ApplyOutput{
-		Warnings: res.Warnings,
+	output := api.ApplyOutput{
+		Warnings: make([]string, len(diags)),
 		JobID:    job.ID(),
-	}, nil
+	}
+	for i, diag := range diags {
+		output.Warnings[i] = diag.Error()
+	}
+	return &output, nil
 }
 
 func executeRunTasks(g *deps.Graph) {
@@ -488,69 +502,6 @@ func (ws *Workspace) DescribeEnvironment(ctx context.Context, input *api.Describ
 	}, nil
 }
 
-func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]api.VariableDescription, error) {
-	envPath, err := ws.resolveWorkspacePath(ctx, ".env")
-	if err != nil {
-		return nil, fmt.Errorf("resolving env file path: %w", err)
-	}
-
-	env := map[string]api.VariableDescription{}
-
-	describeVaultsResult, err := ws.DescribeVaults(ctx, &api.DescribeVaultsInput{})
-	if err != nil {
-		return nil, fmt.Errorf("getting vaults: %w", err)
-	}
-	for _, vault := range describeVaultsResult.Vaults {
-		secrets, err := ws.EsvClient.GetWorkspaceSecrets(vault.Url)
-		if err != nil {
-			ws.logEventf(ctx, "getting workspace secrets: %v", err)
-			continue
-		}
-		for k, val := range secrets {
-			env[k] = api.VariableDescription{
-				Value:  val,
-				Source: vault.Name,
-			}
-		}
-	}
-
-	// Encourage programs to log with colors enabled.  The closest thing to a
-	// standard for this is <https://bixense.com/clicolors/#bug-reports>, but
-	// support is spotty. This may grow if there are other popular enviornment
-	// variables to include. If we grow PTY support, this may become unnecessary.
-	env["CLICOLOR"] = api.VariableDescription{Value: "1", Source: "exo"}
-	env["CLICOLOR_FORCE"] = api.VariableDescription{Value: "1", Source: "exo"}
-	env["FORCE_COLOR"] = api.VariableDescription{Value: "3", Source: "exo"} // https://github.com/chalk/chalk/tree/9d5b9a133c3f8aa9f24de283660de3f732964aaa#supportscolor
-
-	// Apply user's environment.
-	// TODO: This should probably somehow shell-out to get the user's current
-	// environment, otherwise changes to shell profiles won't take effect until
-	// the exo daemon is exited and restarted.
-	for _, assign := range os.Environ() {
-		parts := strings.SplitN(assign, "=", 2)
-		key := parts[0]
-		val := parts[1]
-		env[key] = api.VariableDescription{
-			Value:  val,
-			Source: "server environment",
-		}
-	}
-
-	// Apply .env file, if one exists.
-	dotEnvMap, err := godotenv.Read(envPath)
-	if os.IsNotExist(err) {
-		err = nil
-	}
-	if err != nil {
-		return nil, fmt.Errorf("processing .env file: %w", err)
-	}
-	for name, value := range dotEnvMap {
-		env[name] = api.VariableDescription{Value: value, Source: "env file"}
-	}
-
-	return env, nil
-}
-
 func (ws *Workspace) CreateComponent(ctx context.Context, input *api.CreateComponentInput) (*api.CreateComponentOutput, error) {
 	id := gensym.RandomBase32()
 
@@ -558,11 +509,7 @@ func (ws *Workspace) CreateComponent(ctx context.Context, input *api.CreateCompo
 	go func() {
 		defer job.Finish()
 
-		err := ws.createComponent(ctx, manifest.Component{
-			Name: input.Name,
-			Type: input.Type,
-			Spec: input.Spec,
-		}, id)
+		err := ws.createComponent(ctx, input, id)
 		if err != nil {
 			ws.logEventf(ctx, "error creating %s: %v", input.Name, err)
 			job.Fail(err)
@@ -577,19 +524,19 @@ func (ws *Workspace) CreateComponent(ctx context.Context, input *api.CreateCompo
 	}, nil
 }
 
-func (ws *Workspace) createComponent(ctx context.Context, component manifest.Component, id string) error {
-	if err := manifest.ValidateName(component.Name); err != nil {
-		return errutil.HTTPErrorf(http.StatusBadRequest, "component name %q invalid: %w", component.Name, err)
+func (ws *Workspace) createComponent(ctx context.Context, input *api.CreateComponentInput, id string) error {
+	if err := exohcl.ValidateName(input.Name); err != nil {
+		return errutil.HTTPErrorf(http.StatusBadRequest, "component name %q invalid: %w", input.Name, err)
 	}
 
 	if _, err := ws.Store.AddComponent(ctx, &state.AddComponentInput{
 		WorkspaceID: ws.ID,
 		ID:          id,
-		Name:        component.Name,
-		Type:        component.Type,
-		Spec:        component.Spec,
+		Name:        input.Name,
+		Type:        input.Type,
+		Spec:        input.Spec,
 		Created:     chrono.NowString(ctx),
-		DependsOn:   component.DependsOn,
+		DependsOn:   input.DependsOn,
 	}); err != nil {
 		return fmt.Errorf("adding component: %w", err)
 	}
@@ -599,14 +546,23 @@ func (ws *Workspace) createComponent(ctx context.Context, component manifest.Com
 	// TODO: Store.AddComponent could return a component description?
 	desc := api.ComponentDescription{
 		ID:        id,
-		Name:      component.Name,
-		Type:      component.Type,
-		Spec:      component.Spec,
-		DependsOn: component.DependsOn,
+		Name:      input.Name,
+		Type:      input.Type,
+		Spec:      input.Spec,
+		DependsOn: input.DependsOn,
 	}
 	return ws.control(ctx, desc, &api.InitializeInput{
-		Spec: component.Spec,
+		Spec: input.Spec,
 	})
+}
+
+func manifestComponentToCreate(c *exohcl.Component) *api.CreateComponentInput {
+	return &api.CreateComponentInput{
+		Type:      c.Type(),
+		Name:      c.Name(),
+		Spec:      c.Spec(),
+		DependsOn: c.DependsOn(),
+	}
 }
 
 func (ws *Workspace) UpdateComponent(ctx context.Context, input *api.UpdateComponentInput) (*api.UpdateComponentOutput, error) {
@@ -625,7 +581,7 @@ func (ws *Workspace) UpdateComponent(ctx context.Context, input *api.UpdateCompo
 	}
 
 	if input.Name != "" {
-		if err := manifest.ValidateName(input.Name); err != nil {
+		if err := exohcl.ValidateName(input.Name); err != nil {
 			return nil, errutil.HTTPErrorf(http.StatusBadRequest, "new component name %q is invalid: %w", input.Name, err)
 		}
 		newComponent.Name = input.Name
@@ -680,7 +636,7 @@ func (ws *Workspace) RenameComponent(ctx context.Context, input *api.RenameCompo
 
 	component := describeOutput.Components[0]
 
-	if err := manifest.ValidateName(input.Name); err != nil {
+	if err := exohcl.ValidateName(input.Name); err != nil {
 		return nil, errutil.HTTPErrorf(http.StatusBadRequest, "new component name %q is invalid: %w", input.Name, err)
 	}
 
@@ -1117,6 +1073,7 @@ func (ws *Workspace) WriteFile(ctx context.Context, input *api.WriteFileInput) (
 	return &api.WriteFileOutput{}, nil
 }
 
+// TODO: Usages of this on the read codepath always check for exists - can we bake that in?
 func (ws *Workspace) resolveWorkspacePath(ctx context.Context, relativePath string) (string, error) {
 	description, err := ws.describe(ctx)
 	if err != nil {
@@ -1265,9 +1222,9 @@ func (n *runTaskNode) ID() string {
 }
 
 type componentNode struct {
-	component manifest.Component
+	component *exohcl.Component
 }
 
 func (n *componentNode) ID() string {
-	return n.component.Name
+	return n.component.Name()
 }

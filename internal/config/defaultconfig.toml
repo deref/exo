@@ -11,15 +11,18 @@
 ## Run directory for ephemeral data. This defaults to <home-dir>/run.
 # runDir = "/path/to/exo-home/run"
 
+# Port the daemon service listens on.
+# httpPort = 4000
+
 ## Logging subsystem that collects logs from running services.
 [log]
 ## Port that the internal log collection service binds to.
-# syslogPort = 5140
+# syslogPort = 4500
 
 ## Web UI.
 [gui]
 ## (DEV only) Port that the Vite server binds to.
-# port = 3001
+# port = 3000
 
 ## Telemetry subsystem that collects and reports statistics back to Deref.
 [telemetry]
