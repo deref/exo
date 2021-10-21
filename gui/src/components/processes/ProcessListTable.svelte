@@ -50,7 +50,7 @@
 </script>
 
 {#each data as { id, name, running } (id)}
-  <div class="card" style={logStyleFromHash(name + ':out')}>
+  <div class="card" style={logStyleFromHash(name)}>
     <div>
       <ProcessRunControls {setProcRun} {statusPending} {id} {running} />
     </div>
