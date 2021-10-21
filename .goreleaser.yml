@@ -5,8 +5,9 @@ before:
     - go mod tidy
     - make codegen
     - make -C gui
-#env:
-  #- CGO_ENABLED=0
+    - go install github.com/mattn/go-sqlite3
+env:
+  - CGO_ENABLED=0
 builds:
   # This is the build for use in the install script.
   - id: autoinstalled
