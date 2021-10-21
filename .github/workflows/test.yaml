@@ -28,5 +28,8 @@ jobs:
           restore-keys: |
             ${{ runner.os }}-go-
 
+      - name: Upgrade npm
+        run: npm i -g npm@latest
+
       - name: Perform tests
         run: script/ci-test.sh
