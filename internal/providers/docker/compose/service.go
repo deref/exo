@@ -46,7 +46,7 @@ type Service struct {
 	IPC              String          `yaml:"ipc,omitempty"`
 	Isolation        String          `yaml:"isolation,omitempty"`
 	Labels           Dictionary      `yaml:"labels,omitempty"`
-	Links            Strings         `yaml:"links,omitempty"`
+	Links            Links           `yaml:"links,omitempty"`
 	Logging          Logging         `yaml:"logging,omitempty"`
 	NetworkMode      String          `yaml:"network_mode,omitempty"`
 	Networks         ServiceNetworks `yaml:"networks,omitempty"`
