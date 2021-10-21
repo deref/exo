@@ -1,35 +1,94 @@
 # Documentation for .goreleaser.yml can be found at <https://goreleaser.com>.
 ---
-before:
-  hooks:
-    - go mod tidy
-    - make codegen
-    - make -C gui
-    - go install github.com/mattn/go-sqlite3
 env:
-  - CGO_ENABLED=0
+  - CGO_ENABLED=1
 builds:
   # This is the build for use in the install script.
-  - id: standalone
+  - id: linux-arm64-standalone
     main: .
-    goos:
-      - linux
-      - darwin
-    goarch:
-      - amd64
-      - arm64
+    flags: ["-mod=readonly"]
+    goos: ["linux"]
+    goarch: ["arm64"]
+    ldflags: ['-extldflags=-static']
+    env:
+      - CC=aarch64-linux-gnu-gcc
+      - CXX=aarch64-linux-gnu-g++
     tags:
       - bundle
-
-  # This is the build for use by package managers.
-  - id: managed
+  - id: linux-amd64-standalone
     main: .
-    goos:
-      - linux
-      - darwin
-    goarch:
-      - amd64
-      - arm64
+    flags: ["-mod=readonly"]
+    goos: ["linux"]
+    goarch: ["amd64"]
+    ldflags: ['-extldflags=-static']
+    env:
+      - CC=gcc
+      - CXX=g++
+    tags:
+      - bundle
+  - id: linux-arm64-managed
+    main: .
+    flags: ["-mod=readonly"]
+    goos: ["linux"]
+    goarch: ["arm64"]
+    ldflags: ['-extldflags=-static']
+    env:
+      - CC=aarch64-linux-gnu-gcc
+      - CXX=aarch64-linux-gnu-g++
+    tags:
+      - bundle
+      - managed
+  - id: linux-amd64-managed
+    main: .
+    flags: ["-mod=readonly"]
+    goos: ["linux"]
+    goarch: ["amd64"]
+    ldflags: ['-extldflags=-static']
+    env:
+      - CC=gcc
+      - CXX=g++
+    tags:
+      - bundle
+      - managed
+  - id: darwin-arm64-standalone
+    main: .
+    flags: ["-mod=readonly"]
+    goos: ["darwin"]
+    goarch: ["arm64"]
+    env:
+      - CC=oa64-clang
+      - CXX=oa64-clang++
+    tags:
+    - bundle
+  - id: darwin-amd64-standalone
+    main: .
+    flags: ["-mod=readonly"]
+    goos: ["darwin"]
+    goarch: ["amd64"]
+    env:
+      - CC=oa64-clang
+      - CXX=oa64-clang++
+    tags:
+      - bundle
+  - id: darwin-arm64-managed
+    main: .
+    flags: ["-mod=readonly"]
+    goos: ["darwin"]
+    goarch: ["arm64"]
+    env:
+      - CC=oa64-clang
+      - CXX=oa64-clang++
+    tags:
+      - bundle
+      - managed
+  - id: darwin-amd64-managed
+    main: .
+    flags: ["-mod=readonly"]
+    goos: ["darwin"]
+    goarch: ["amd64"]
+    env:
+      - CC=oa64-clang
+      - CXX=oa64-clang++
     tags:
       - bundle
       - managed
@@ -37,11 +96,18 @@ builds:
 archives:
   - id: standalone
     name_template:  '{{ .ProjectName }}_standalone_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}'
-    builds: ["standalone"]
-    format: binary
+    builds:
+      - linux-arm64-standalone
+      - linux-amd64-standalone
+      - darwin-arm64-standalone
+      - darwin-amd64-standalone
   - id: managed
     name_template:  '{{ .ProjectName }}_managed_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}'
-    builds: ["managed"]
+    builds:
+      - linux-arm64-managed
+      - linux-amd64-managed
+      - darwin-arm64-managed
+      - darwin-amd64-managed
 
 checksum:
   name_template: "checksums.txt"
@@ -58,7 +124,8 @@ changelog:
 
 brews:
   - name: exo
-    ids: ["managed"]
+    ids:
+      - managed
     tap:
       owner: deref
       name: homebrew-tap
@@ -71,14 +138,15 @@ brews:
       system "#{bin}/exo version"
 
 nfpms:
-  - builds: ["managed"]
+  - builds:
+      - linux-arm64-managed
+      - linux-amd64-managed
     formats:
-    - apk
-    - deb
-    - rpm
+      - apk
+      - deb
+      - rpm
 
 release:
   github:
     owner: deref
     name: exo
-  disable: true
