@@ -33,6 +33,7 @@ func (v *Volume) Initialize(ctx context.Context, input *core.InitializeInput) (o
 	}
 
 	labels := spec.Labels.Map()
+	labels["com.docker.compose.volume"] = spec.Key
 	for k, v := range v.GetExoLabels() {
 		labels[k] = v
 	}

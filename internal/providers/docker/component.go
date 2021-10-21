@@ -16,6 +16,11 @@ type ComponentBase struct {
 
 func (c ComponentBase) GetExoLabels() map[string]string {
 	return map[string]string{
+		// Since we may adopt docker-compose objects, we preserve the labels that
+		// they use for bookkeeping.
+		"com.docker.compose.project": c.StackName,
+		// We also add some labels of our own, but we prefer IDs over names, so
+		// that we are more resiliant to renames.
 		"io.deref.exo.workspace": c.WorkspaceID,
 		"io.deref.exo.component": c.ComponentID,
 	}

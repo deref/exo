@@ -55,6 +55,7 @@ func (n *Network) Initialize(ctx context.Context, input *core.InitializeInput) (
 	}
 
 	labels := spec.Labels.Map()
+	labels["com.docker.compose.network"] = spec.Key
 	for k, v := range n.GetExoLabels() {
 		labels[k] = v
 	}

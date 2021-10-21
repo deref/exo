@@ -107,6 +107,7 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 	}
 
 	labels := spec.Labels.Map()
+	labels["com.docker.compose.service"] = spec.Key
 	for k, v := range c.GetExoLabels() {
 		labels[k] = v
 	}
