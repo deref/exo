@@ -19,7 +19,7 @@ Install Exo:
 curl -sL https://exo.deref.io/install | bash
 ```
 
-If you prefer manual installation, see [./doc/install.md](./doc/install.md) for
+If you prefer manual installation, see [the installation documentation](https://docs.deref.io/exo/getting-started/install#manual-installation) for
 details, including uninstall instructions.
 
 Navigate to your code directory and then launch the Exo gui:
