@@ -1,6 +1,8 @@
 package docker
 
 import (
+	"strings"
+
 	"github.com/deref/exo/internal/providers/core"
 	"github.com/deref/exo/internal/providers/docker/compose"
 	"github.com/deref/exo/internal/util/yamlutil"
@@ -28,4 +30,20 @@ func LoadSpec(s string, v compose.Interpolator, env map[string]string) error {
 
 func (c ComponentBase) LoadSpec(s string, v compose.Interpolator) error {
 	return LoadSpec(s, v, c.WorkspaceEnvironment)
+}
+
+func (c ComponentBase) DockerObjectName(name, suffix string) string {
+	var out strings.Builder
+	if name == "" {
+		out.WriteString(c.StackName)
+		out.WriteByte('_')
+		out.WriteString(c.ComponentName)
+	} else {
+		out.WriteString(name)
+	}
+	if suffix != "" {
+		out.WriteByte('_')
+		out.WriteString(suffix)
+	}
+	return out.String()
 }

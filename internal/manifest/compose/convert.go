@@ -15,10 +15,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-type Converter struct {
-	// ProjectName is used as a prefix for the resources created by this importer.
-	ProjectName string
-}
+type Converter struct{}
 
 func (c *Converter) Convert(bs []byte) (*hcl.File, hcl.Diagnostics) {
 	project, err := compose.Parse(bytes.NewBuffer(bs))

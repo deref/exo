@@ -19,6 +19,7 @@ type ComponentBase struct {
 	WorkspaceID          string
 	WorkspaceRoot        string
 	WorkspaceEnvironment map[string]string
+	StackName            string
 	Logger               logging.Logger
 	isDeleted            bool
 }

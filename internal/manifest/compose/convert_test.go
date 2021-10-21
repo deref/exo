@@ -17,8 +17,6 @@ func TestConvert(t *testing.T) {
 	// - dependencies that can be inferred from the spec body
 	// XXX resume work here.
 
-	projectName := "testproj"
-
 	testCases := []struct {
 		Name     string
 		In       string
@@ -111,7 +109,7 @@ components {
 	for _, testCase := range testCases {
 		testCase := testCase
 		t.Run(testCase.Name, func(t *testing.T) {
-			converter := &compose.Converter{ProjectName: projectName}
+			converter := &compose.Converter{}
 			actual, diags := converter.Convert([]byte(testCase.In))
 			if len(diags) > 0 {
 				t.Fatalf("error converting: %v", diags)

@@ -23,7 +23,9 @@ func (v *Volume) Initialize(ctx context.Context, input *core.InitializeInput) (o
 	}
 
 	// See NOTE: [ADOPT COMPOSE RESOURCES].
-	if existing, err := v.findExistingVolume(ctx, spec.Name.Value); err != nil {
+	name := v.DockerObjectName(spec.Name.Value, "")
+
+	if existing, err := v.findExistingVolume(ctx, name); err != nil {
 		return nil, fmt.Errorf("looking up existing volume: %w", err)
 	} else if existing != nil {
 		// TODO: Determine whether the existing volume is compatible with the spec.

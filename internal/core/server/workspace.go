@@ -452,7 +452,10 @@ func (ws *Workspace) newController(ctx context.Context, desc api.ComponentDescri
 		WorkspaceID:          ws.ID,
 		WorkspaceRoot:        description.Root,
 		WorkspaceEnvironment: simpleEnv,
-		Logger:               ws.Logger,
+		// TODO: Replace with a proper stack name. This is currently used
+		// for generating prefixed Docker object names.
+		StackName: exohcl.MangleName(description.DisplayName),
+		Logger:    ws.Logger,
 	}
 	switch desc.Type {
 	case "process":

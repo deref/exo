@@ -2,7 +2,6 @@ package network
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	core "github.com/deref/exo/internal/core/api"
@@ -23,11 +22,10 @@ func (n *Network) Initialize(ctx context.Context, input *core.InitializeInput) (
 		return nil, fmt.Errorf("loading spec: %w", err)
 	}
 
-	if spec.Name.Value == "" {
-		return nil, errors.New("Network must have a name")
-	}
+	// See NOTE: [ADOPT COMPOSE RESOURCES].
+	name := n.DockerObjectName(spec.Name.Value, "")
 
-	existing, err := n.findExistingNetwork(ctx, spec.Name.Value)
+	existing, err := n.findExistingNetwork(ctx, name)
 	if err != nil {
 		return nil, fmt.Errorf("looking up existing network: %w", err)
 	}

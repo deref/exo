@@ -57,9 +57,7 @@ func (l *Loader) Load() (*exohcl.Manifest, error) {
 	case "procfile":
 		converter = &procfile.Converter{}
 	case "compose":
-		converter = &compose.Converter{
-			ProjectName: l.WorkspaceName,
-		}
+		converter = &compose.Converter{}
 	case "exo":
 		// No converter needed.
 	default:
