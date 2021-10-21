@@ -6,7 +6,7 @@
 
 **Features**
 
-- [Procfile](./doc/procfiles.md) and [Docker Compose](./doc/compose.md) compatible process manager.
+- [Procfile](https://docs.deref.io/exo/manifests/migrate/procfiles) and [Docker Compose](https://docs.deref.io/exo/manifests/migrate/compose) compatible process manager.
 - Terminal commands and browser-based-GUI for all functionality.
 - Multiplexed, colorizing log tailing. Toggle visibility of individual logs.
 - Dynamic process supervision: create, start, stop, restart, delete.
