@@ -10,11 +10,14 @@ env:
   - CGO_ENABLED=0
 builds:
   # This is the build for use in the install script.
-  - id: autoinstalled
+  - id: standalone
     main: .
     goos:
       - linux
       - darwin
+    goarch:
+      - amd64
+      - arm64
     tags:
       - bundle
 
@@ -24,31 +27,21 @@ builds:
     goos:
       - linux
       - darwin
+    goarch:
+      - amd64
+      - arm64
     tags:
       - bundle
       - managed
 
 archives:
-  - id: autoinstalled
-    name_template:  '{{ .ProjectName }}_autoinstalled_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}'
-    builds: ["autoinstalled"]
-    wrap_in_directory: true
-    files:
-      - LICENSE
-      - NOTICES.md
-      - VERSION
-      - README.md
-      - doc/*
+  - id: standalone
+    name_template:  '{{ .ProjectName }}_standalone_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}'
+    builds: ["standalone"]
+    format: binary
   - id: managed
     name_template:  '{{ .ProjectName }}_managed_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}'
     builds: ["managed"]
-    wrap_in_directory: true
-    files:
-      - LICENSE
-      - NOTICES.md
-      - VERSION
-      - README.md
-      - doc/*
 
 checksum:
   name_template: "checksums.txt"
