@@ -7,7 +7,7 @@ We don't have a lot of test automation yet, so here's a manual test plan.
 ## Installation
 
 - `exo upgrade`
-- `exo uninstall` and then [Fresh Installation](./install.md)
+- `exo uninstall` and then [Fresh Installation](https://docs.deref.io/exo/getting-started/install)
 
 ## Run
 

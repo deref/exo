@@ -1,7 +1,13 @@
 package compose
 
 type Config struct {
-	File     string `yaml:"file,omitempty"`
-	External bool   `yaml:"external,omitempty"`
-	Name     string `yaml:"name,omitempty"`
+	Key string `yaml:"-"`
+
+	File     String `yaml:"file,omitempty"`
+	External Bool   `yaml:"external,omitempty"`
+	Name     String `yaml:"name,omitempty"`
+}
+
+func (cfg *Config) Interpolate(env Environment) error {
+	return interpolateStruct(cfg, env)
 }

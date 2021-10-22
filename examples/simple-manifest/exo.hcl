@@ -1,4 +1,8 @@
-exo = "1.0"
+exo = "0.1"
+
+environment {
+  TEST_VARIABLE = "HELLO"
+}
 
 components {
 

@@ -1,6 +1,6 @@
 # Notices
 
-The exo project is subject to the [Deref Community License][1].
+The exo project is subject to the [Apache License][1].
 
 Copyright (c) 2021 Deref Inc. All rights reserved.
 
@@ -14,7 +14,7 @@ These notices are available online at
 
 The following licenses cover portions of this software project.
 
-- [Deref Community License, Version 1.0][1]
+- [Apache License, Version 2.0][1]
 - [SIL Open Font License, Version 1.1][2]
 
 ## Third Party Software

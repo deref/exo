@@ -1,9 +1,22 @@
 package yamlutil
 
-import "github.com/goccy/go-yaml"
+import (
+	"bytes"
+
+	"gopkg.in/yaml.v3"
+)
+
+// Prefers 2 space indentation.
+func Marshal(v interface{}) ([]byte, error) {
+	var buf bytes.Buffer
+	enc := yaml.NewEncoder(&buf)
+	enc.SetIndent(2)
+	err := enc.Encode(v)
+	return buf.Bytes(), err
+}
 
 func MarshalString(v interface{}) (string, error) {
-	bs, err := yaml.Marshal(v)
+	bs, err := Marshal(v)
 	return string(bs), err
 }
 

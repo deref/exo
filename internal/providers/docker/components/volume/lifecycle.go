@@ -5,36 +5,41 @@ import (
 	"fmt"
 
 	core "github.com/deref/exo/internal/core/api"
-	"github.com/deref/exo/internal/util/yamlutil"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/volume"
 	dockerclient "github.com/docker/docker/client"
 )
 
+var _ core.Lifecycle = (*Volume)(nil)
+
+func (v *Volume) Dependencies(ctx context.Context, input *core.DependenciesInput) (*core.DependenciesOutput, error) {
+	return &core.DependenciesOutput{Components: []string{}}, nil
+}
+
 func (v *Volume) Initialize(ctx context.Context, input *core.InitializeInput) (output *core.InitializeOutput, err error) {
 	var spec Spec
-	if err := yamlutil.UnmarshalString(input.Spec, &spec); err != nil {
-		return nil, fmt.Errorf("unmarshalling spec: %w", err)
+	if err := v.LoadSpec(input.Spec, &spec); err != nil {
+		return nil, fmt.Errorf("loading spec: %w", err)
 	}
 
 	// See NOTE: [ADOPT COMPOSE RESOURCES].
-	if existing, err := v.findExistingVolume(ctx, spec.Name); err != nil {
+	if existing, err := v.findExistingVolume(ctx, spec.Name.Value); err != nil {
 		return nil, fmt.Errorf("looking up existing volume: %w", err)
 	} else if existing != nil {
 		// TODO: Determine whether the existing volume is compatible with the spec.
 		return &core.InitializeOutput{}, nil
 	}
 
-	labels := spec.Labels.WithoutNils()
+	labels := spec.Labels.Map()
 	for k, v := range v.GetExoLabels() {
 		labels[k] = v
 	}
 
 	opts := volume.VolumeCreateBody{
-		Driver:     spec.Driver,
-		DriverOpts: spec.DriverOpts,
+		Driver:     spec.Driver.Value,
+		DriverOpts: spec.DriverOpts.Map(),
 		Labels:     labels,
-		Name:       spec.Name,
+		Name:       spec.Name.Value,
 	}
 	createdBody, err := v.Docker.VolumeCreate(ctx, opts)
 	if err != nil {

@@ -11,43 +11,128 @@ package compose
 import (
 	"fmt"
 	"io"
-	"strings"
+	"reflect"
 
-	"github.com/goccy/go-yaml"
+	"gopkg.in/yaml.v3"
 )
 
 func Parse(r io.Reader) (*Project, error) {
-	dec := yaml.NewDecoder(r,
-		yaml.DisallowDuplicateKey(),
-	)
+	dec := yaml.NewDecoder(r)
 	var comp Project
 	if err := dec.Decode(&comp); err != nil {
 		return nil, err
 	}
-
-	// Validate.
-	for key := range comp.Raw {
-		switch key {
-		case "version", "services", "networks", "volumes", "configs", "secrets":
-			// Ok.
-		default:
-			if !strings.HasPrefix(key, "x-") {
-				return nil, fmt.Errorf("unsupported top-level key in compose file: %q", key)
-			}
-		}
-	}
-
+	// TODO: Initial validation pass.  This pass has to be separate, since it
+	// needs to be possible to re-run it after string interpolation.
 	return &comp, nil
 }
 
 type Project struct {
-	Version  string             `yaml:"version,omitempty"`
-	Services map[string]Service `yaml:"services,omitempty"`
-	Networks map[string]Network `yaml:"networks,omitempty"`
-	Volumes  map[string]Volume  `yaml:"volumes,omitempty"`
-	Configs  map[string]Config  `yaml:"configs,omitempty"`
-	Secrets  map[string]Secret  `yaml:"secrets,omitempty"`
+	Version  String          `yaml:"version,omitempty"`
+	Services ProjectServices `yaml:"services,omitempty"`
+	Networks ProjectNetworks `yaml:"networks,omitempty"`
+	Volumes  ProjectVolumes  `yaml:"volumes,omitempty"`
+	Configs  ProjectConfigs  `yaml:"configs,omitempty"`
+	Secrets  ProjectSecrets  `yaml:"secrets,omitempty"`
+}
 
-	Raw map[string]interface{} `yaml:",inline"`
-	// TODO: extensions with "x-" prefix.
+type ProjectServices []Service
+type ProjectNetworks []Network
+type ProjectVolumes []Volume
+type ProjectConfigs []Config
+type ProjectSecrets []Secret
+
+func (project *Project) Interpolate(env Environment) error {
+	return interpolateStruct(project, env)
+}
+
+func (section *ProjectServices) UnmarshalYAML(node *yaml.Node) error {
+	return unmarshalSection(section, node)
+}
+func (section *ProjectNetworks) UnmarshalYAML(node *yaml.Node) error {
+	return unmarshalSection(section, node)
+}
+func (section *ProjectVolumes) UnmarshalYAML(node *yaml.Node) error {
+	return unmarshalSection(section, node)
+}
+func (section *ProjectConfigs) UnmarshalYAML(node *yaml.Node) error {
+	return unmarshalSection(section, node)
+}
+func (section *ProjectSecrets) UnmarshalYAML(node *yaml.Node) error {
+	return unmarshalSection(section, node)
+}
+
+func (section ProjectServices) MarshalYAML() (interface{}, error) {
+	return marshalSection(section)
+}
+func (section ProjectNetworks) MarshalYAML() (interface{}, error) {
+	return marshalSection(section)
+}
+func (section ProjectVolumes) MarshalYAML() (interface{}, error) {
+	return marshalSection(section)
+}
+func (section ProjectConfigs) MarshalYAML() (interface{}, error) {
+	return marshalSection(section)
+}
+func (section ProjectSecrets) MarshalYAML() (interface{}, error) {
+	return marshalSection(section)
+}
+
+func (section *ProjectServices) Interpolate(env Environment) error {
+	return interpolateSlice(*section, env)
+}
+func (section *ProjectNetworks) Interpolate(env Environment) error {
+	return interpolateSlice(*section, env)
+}
+func (section *ProjectVolumes) Interpolate(env Environment) error {
+	return interpolateSlice(*section, env)
+}
+func (section *ProjectConfigs) Interpolate(env Environment) error {
+	return interpolateSlice(*section, env)
+}
+func (section *ProjectSecrets) Interpolate(env Environment) error {
+	return interpolateSlice(*section, env)
+}
+
+func unmarshalSection(v interface{}, node *yaml.Node) error {
+	if node.Tag != "!!map" {
+		return fmt.Errorf("expected !!map, got %s", node.Tag)
+	}
+	rv := reflect.ValueOf(v)
+	n := len(node.Content) / 2
+	rv.Elem().Set(reflect.MakeSlice(rv.Type().Elem(), n, n))
+	for i := 0; i < n; i++ {
+		keyNode := node.Content[i*2+0]
+		configNode := node.Content[i*2+1]
+		elem := rv.Elem().Index(i)
+		if err := configNode.Decode(elem.Addr().Interface()); err != nil {
+			return err
+		}
+		if err := keyNode.Decode(elem.FieldByName("Key").Addr().Interface()); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func marshalSection(v interface{}) (interface{}, error) {
+	rv := reflect.ValueOf(v)
+	n := rv.Len()
+	node := &yaml.Node{
+		Kind:    yaml.MappingNode,
+		Content: make([]*yaml.Node, n*2),
+	}
+	for i := 0; i < n; i++ {
+		elem := rv.Index(i)
+		var keyNode, valueNode yaml.Node
+		if err := keyNode.Encode(elem.FieldByName("Key").Interface()); err != nil {
+			panic(err)
+		}
+		if err := valueNode.Encode(elem.Interface()); err != nil {
+			return nil, err
+		}
+		node.Content[i*2+0] = &keyNode
+		node.Content[i*2+1] = &valueNode
+	}
+	return node, nil
 }

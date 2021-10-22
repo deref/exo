@@ -1,3 +1,0 @@
-# Project Philosophy
-
-TODO

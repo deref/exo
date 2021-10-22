@@ -11,15 +11,34 @@ import (
 	"net/url"
 	"os"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/deref/exo/internal/util/logging"
 )
 
 var AuthError = errors.New("auth error")
 
-type EsvClient struct {
-	TokenPath    string
-	refreshToken string
+type EsvClient interface {
+	StartAuthFlow(ctx context.Context) (AuthResponse, error)
+	GetWorkspaceSecrets(vaultURL string) (map[string]string, error)
+}
+
+func NewEsvClient(tokenPath string) *esvClient {
+	return &esvClient{
+		tokenPath:  tokenPath,
+		tokenMutex: &sync.Mutex{},
+	}
+}
+
+type esvClient struct {
+	tokenPath string
+
+	// tokenMutex locks both the refresh token and access token.
+	tokenMutex            *sync.Mutex
+	refreshToken          string
+	accessToken           string
+	accessTokenExpiration time.Time
 }
 
 type AuthResponse struct {
@@ -27,7 +46,7 @@ type AuthResponse struct {
 	AuthURL  string
 }
 
-func (c *EsvClient) StartAuthFlow(ctx context.Context) (AuthResponse, error) {
+func (c *esvClient) StartAuthFlow(ctx context.Context) (AuthResponse, error) {
 	codeResponse, err := requestDeviceCode()
 	if err != nil {
 		return AuthResponse{}, fmt.Errorf("requesting device code: %w", err)
@@ -42,9 +61,12 @@ func (c *EsvClient) StartAuthFlow(ctx context.Context) (AuthResponse, error) {
 			return
 		}
 
+		c.tokenMutex.Lock()
+		defer c.tokenMutex.Unlock()
 		c.refreshToken = tokens.RefreshToken
+		c.accessToken = ""
 
-		err = ioutil.WriteFile(c.TokenPath, []byte(tokens.RefreshToken), 0600)
+		err = ioutil.WriteFile(c.tokenPath, []byte(tokens.RefreshToken), 0600)
 		if err != nil {
 			logger.Infof("writing esv secret: %s", err)
 			return
@@ -57,43 +79,52 @@ func (c *EsvClient) StartAuthFlow(ctx context.Context) (AuthResponse, error) {
 	}, nil
 }
 
-func (c *EsvClient) getAccessToken() (string, error) {
-	if c.TokenPath == "" {
-		return "", fmt.Errorf("token file not set")
+func (c *esvClient) ensureAccessToken() error {
+	c.tokenMutex.Lock()
+	defer c.tokenMutex.Unlock()
+
+	// If we already have a valid access token, don't fetch a new one.
+	if c.accessTokenExpiration.After(time.Now()) {
+		return nil
+	}
+
+	if c.tokenPath == "" {
+		return fmt.Errorf("token file not set")
 	}
 	if c.refreshToken == "" {
-		tokenBytes, err := ioutil.ReadFile(c.TokenPath)
+		tokenBytes, err := ioutil.ReadFile(c.tokenPath)
 		if err != nil {
 			if os.IsNotExist(err) {
-				return "", fmt.Errorf("%w: token file does not exist", AuthError)
+				return fmt.Errorf("%w: token file does not exist", AuthError)
 			}
-			return "", fmt.Errorf("reading token file: %w", err)
+			return fmt.Errorf("reading token file: %w", err)
 		}
 		c.refreshToken = strings.TrimSpace(string(tokenBytes))
 	}
 
-	// FIXME: don't refresh access token on every request.
-	accessToken, err := getNewAccessToken(c.refreshToken)
+	result, err := getNewAccessToken(c.refreshToken)
 	if err != nil {
-		return "", fmt.Errorf("getting access token: %w", err)
+		return fmt.Errorf("getting access token: %w", err)
 	}
-	return accessToken, nil
+
+	c.accessToken = result.AccessToken
+	c.accessTokenExpiration = result.Expiry
+	return nil
 }
 
-func (c *EsvClient) runCommand(output interface{}, host, commandName string, body interface{}) error {
+func (c *esvClient) runCommand(output interface{}, host, commandName string, body interface{}) error {
 	marshalledBody, err := json.Marshal(body)
 	if err != nil {
 		return fmt.Errorf("marshalling command body: %w", err)
 	}
 
-	accessToken, err := c.getAccessToken()
-	if err != nil {
+	if err := c.ensureAccessToken(); err != nil {
 		return fmt.Errorf("getting access token: %w", err)
 	}
 
 	req, _ := http.NewRequest("POST", host+"/api/_exo/"+commandName, bytes.NewBuffer(marshalledBody))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("Authorization", "Bearer "+accessToken)
+	req.Header.Set("Authorization", "Bearer "+c.accessToken)
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -118,10 +149,9 @@ func (c *EsvClient) runCommand(output interface{}, host, commandName string, bod
 	}
 
 	return nil
-
 }
 
-func (c *EsvClient) GetWorkspaceSecrets(vaultURL string) (map[string]string, error) {
+func (c *esvClient) GetWorkspaceSecrets(vaultURL string) (map[string]string, error) {
 	type describeVaultResp struct {
 		ID          string `json:"id"`
 		DisplayName string `json:"displayName"`
@@ -132,7 +162,7 @@ func (c *EsvClient) GetWorkspaceSecrets(vaultURL string) (map[string]string, err
 		} `json:"secrets"`
 	}
 
-	organizationID, vaultID, err := getIdsFromUrl(vaultURL)
+	organizationID, vaultID, err := getIDsFromURL(vaultURL)
 	if err != nil {
 		return nil, fmt.Errorf("could not find IDs: %w", err)
 	}
@@ -158,7 +188,7 @@ func (c *EsvClient) GetWorkspaceSecrets(vaultURL string) (map[string]string, err
 	return secrets, nil
 }
 
-func getIdsFromUrl(vaultURL string) (organizationID, vaultID string, err error) {
+func getIDsFromURL(vaultURL string) (organizationID, vaultID string, err error) {
 	parsedUrl, err := url.Parse(vaultURL)
 	if err != nil {
 		return "", "", fmt.Errorf("parsing vault URL: %w", err)

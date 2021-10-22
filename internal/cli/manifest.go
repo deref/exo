@@ -1,17 +1,26 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
-	"os"
+	"io"
+	"io/ioutil"
 
 	"github.com/deref/exo/internal/manifest"
-	"github.com/deref/exo/internal/util/cmdutil"
+	"github.com/deref/exo/internal/manifest/exohcl"
+	"github.com/deref/exo/internal/util/term"
+	"github.com/hashicorp/hcl/v2"
 	"github.com/spf13/cobra"
 )
 
 func init() {
 	rootCmd.AddCommand(manifestCmd)
 	manifestCmd.AddCommand(makeHelpSubcmd())
+	manifestCmd.PersistentFlags().StringVar(&manifestFlags.Format, "format", "", "exo, compose, procfile")
+}
+
+var manifestFlags struct {
+	Format string
 }
 
 var manifestCmd = &cobra.Command{
@@ -22,17 +31,29 @@ var manifestCmd = &cobra.Command{
 	Args:   cobra.NoArgs,
 }
 
-func loadManifest(name string) (*manifest.Manifest, error) {
-	// TODO: Support other formats here too.
-	loader := &manifest.Loader{}
-	f, err := os.Open(name)
+func loadManifest(name string) (*exohcl.Manifest, error) {
+	bs, err := ioutil.ReadFile(name)
 	if err != nil {
-		return nil, fmt.Errorf("opening: %w", err)
+		return nil, fmt.Errorf("reading: %w", err)
 	}
-	defer f.Close()
-	res := loader.Load(f)
-	for _, warning := range res.Warnings {
-		cmdutil.Warnf("%s\n", warning)
+
+	loader := &manifest.Loader{
+		WorkspaceName: "unnamed",
+		Format:        manifestFlags.Format,
+		Filename:      name,
+		Bytes:         bs,
 	}
-	return res.Manifest, res.Err
+	return loader.Load()
+}
+
+func writeManifestError(w io.Writer, err error) error {
+	var diags hcl.Diagnostics
+	if !errors.As(err, &diags) {
+		return err
+	}
+	files := map[string]*hcl.File{} // TODO: Populate map for .hcl input files.
+	width, _ := term.GetSize()
+	enableColor := true // https://github.com/deref/exo/issues/179
+	diagWr := hcl.NewDiagnosticTextWriter(w, files, uint(width), enableColor)
+	return diagWr.WriteDiagnostics(diags)
 }
