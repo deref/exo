@@ -19,6 +19,15 @@ jobs:
         uses: actions/setup-go@v2
         with:
           go-version: 1.17
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+          cache-dependency-path: "gui/package-lock.json"
+      - run: npm ci
+        working-directory: ./gui
+
       - name: Run GoReleaser
         uses: goreleaser/goreleaser-action@v2
         with:
