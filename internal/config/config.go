@@ -111,12 +111,12 @@ func setDefaults(cfg *Config) {
 	}
 
 	if cfg.HTTPPort == 0 {
-		cfg.HTTPPort = 4000
+		cfg.HTTPPort = 43643
 	}
 
 	// Log
 	if cfg.Log.SyslogPort == 0 {
-		cfg.Log.SyslogPort = 4500
+		cfg.Log.SyslogPort = 43550
 	}
 
 	// GUI

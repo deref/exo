@@ -211,6 +211,21 @@ func RunServer(ctx context.Context, flags map[string]string) {
 		Next:  mux,
 	})
 
+	go func() {
+		// Add a redirect to the new port number if a request is received on the old
+		// one. Ignore any error as that's most likely some other service attempting
+		// to listen on the same port. This is to allow people to upgrade seamlessly
+		// but we should be able to remove it soon after the next release. (Written
+		// on the 19th of Oct 2021)
+		http.ListenAndServe(":4000", http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
+			uri := *req.URL
+			uri.Host = fmt.Sprintf("localhost:%d", cfg.HTTPPort)
+			redirectTo := uri.String()
+			http.Redirect(resp, req, redirectTo, http.StatusMovedPermanently)
+			return
+		}))
+	}()
+
 	addr := cmdutil.GetAddr(cfg)
 	logger.Infof("listening for API calls at %s", addr)
 	cmdutil.ListenAndServe(ctx, &http.Server{
