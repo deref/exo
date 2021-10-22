@@ -29,11 +29,19 @@ mod-tidy:
 .PHONY: release-dry-run
 release-dry-run: make-gui mod-tidy codegen
 	@docker run \
-		--rm \
 		--privileged \
-		-e CGO_ENABLED=1 \
 		-v /var/run/docker.sock:/var/run/docker.sock \
 		-v `pwd`:/go/src/$(PACKAGE_NAME) \
 		-w /go/src/$(PACKAGE_NAME) \
 		ghcr.io/troian/golang-cross:${GOLANG_CROSS_VERSION} \
 		--rm-dist --skip-validate --skip-publish
+
+.PHONY: release
+release: make-gui mod-tidy codegen
+	@docker run \
+		--privileged \
+		-v /var/run/docker.sock:/var/run/docker.sock \
+		-v `pwd`:/go/src/$(PACKAGE_NAME) \
+		-w /go/src/$(PACKAGE_NAME) \
+		ghcr.io/troian/golang-cross:${GOLANG_CROSS_VERSION} \
+		--rm-dist
