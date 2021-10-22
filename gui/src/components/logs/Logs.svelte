@@ -63,9 +63,9 @@
   table {
     background: var(--primary-bg-color);
     font-family: var(--font-mono);
+    font-size: var(--preferred-log-font-size);
     font-variant-ligatures: var(--preferred-ligatures-logs);
     font-weight: 450;
-    font-size: 15px;
   }
 
   table {

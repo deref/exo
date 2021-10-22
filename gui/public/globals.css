@@ -17,12 +17,15 @@ body {
   --panel-overflow-x: hidden;
   --panel-bg-color: var(--primary-bg-color);
   --preferred-ligatures-logs: none;
-  --preferres-ligatures-code: none;
+  --preferred-ligatures-code: none;
+  --preferred-main-font-size: 16px;
+  --preferred-log-font-size: 15px;
 }
 
 :root,
 body {
   font-family: var(--font-sans);
+  font-size: var(--preferred-main-font-size);
   color: var(--primary-color);
   background-color: var(--primary-bg-color);
 }
