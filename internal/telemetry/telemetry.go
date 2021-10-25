@@ -19,8 +19,9 @@ type Telemetry interface {
 }
 
 type Config struct {
-	Disable  bool
-	DeviceID string
+	Disable           bool
+	DerefInternalUser bool
+	DeviceID          string
 }
 
 func New(ctx context.Context, cfg Config) Telemetry {
@@ -33,11 +34,12 @@ func New(ctx context.Context, cfg Config) Telemetry {
 	}
 
 	t := &defaultTelemetry{
-		ctx:            ctx,
-		deviceID:       cfg.DeviceID,
-		client:         httpClient,
-		ampClient:      NewAmplitudeClient(ctx, httpClient, about.AmplitudeAPIKey),
-		operationGauge: newOperationGauge(),
+		ctx:               ctx,
+		deviceID:          cfg.DeviceID,
+		client:            httpClient,
+		ampClient:         NewAmplitudeClient(ctx, httpClient, about.AmplitudeAPIKey),
+		operationGauge:    newOperationGauge(),
+		derefInternalUser: cfg.DerefInternalUser,
 	}
 	t.latestVersion = cacheutil.NewTTLVal(t.getLatestVersion, 5*time.Minute)
 

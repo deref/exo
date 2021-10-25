@@ -16,12 +16,13 @@ import (
 )
 
 type defaultTelemetry struct {
-	ctx            context.Context
-	client         *http.Client
-	deviceID       string
-	sessionID      int64
-	operationGauge *SummaryGauge
-	ampClient      *AmplitudeClient
+	ctx               context.Context
+	client            *http.Client
+	deviceID          string
+	sessionID         int64
+	operationGauge    *SummaryGauge
+	ampClient         *AmplitudeClient
+	derefInternalUser bool
 
 	latestVersion *cacheutil.TTLVal
 	getSession    sync.Once
@@ -55,6 +56,11 @@ func (t *defaultTelemetry) SendEvent(ctx context.Context, evt Event) {
 	evt.SessionID = t.sessionID
 	evt.EventID = t.nextEventID()
 	evt.Time = chrono.NowMillisecond(ctx)
+
+	if evt.UserProperties == nil {
+		evt.UserProperties = make(map[string]interface{})
+	}
+	evt.UserProperties["isDerefInternalUser"] = t.derefInternalUser
 
 	if err := t.ampClient.Publish(evt); err != nil {
 		logging.CurrentLogger(ctx).Infof("Could not publish telemetry event %q: %v", evt.Type, err)

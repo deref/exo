@@ -11,4 +11,5 @@ port = 3001
 syslogPort = 5401
 
 [telemetry]
-disable = true
+# disable = false
+derefInternalUser = true

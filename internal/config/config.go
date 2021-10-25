@@ -23,7 +23,8 @@ type LogConfig struct {
 }
 
 type TelemetryConfig struct {
-	Disable bool
+	Disable           bool
+	DerefInternalUser bool
 }
 
 type Config struct {

@@ -110,8 +110,9 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	}
 
 	tel := telemetry.New(ctx, telemetry.Config{
-		Disable:  cfg.Telemetry.Disable,
-		DeviceID: deviceID,
+		Disable:           cfg.Telemetry.Disable,
+		DeviceID:          deviceID,
+		DerefInternalUser: cfg.Telemetry.DerefInternalUser,
 	})
 	ctx = telemetry.ContextWithTelemetry(ctx, tel)
 	tel.StartSession(ctx)
