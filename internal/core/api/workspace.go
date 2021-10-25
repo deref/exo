@@ -82,20 +82,24 @@ func BuildBuilderMux(b *josh.MuxBuilder, factory func(req *http.Request) Builder
 type Workspace interface {
 	Process
 	Builder
+	DescribeVaults(context.Context, *DescribeVaultsInput) (*DescribeVaultsOutput, error)
+	AddVault(context.Context, *AddVaultInput) (*AddVaultOutput, error)
 	// Describes this workspace.
 	Describe(context.Context, *DescribeInput) (*DescribeOutput, error)
-	// Asynchronously deletes all components in the workspace, then deletes the workspace itself.
+	// Dispose resources, then delete the record of it.
 	Destroy(context.Context, *DestroyInput) (*DestroyOutput, error)
 	// Performs creates, updates, refreshes, disposes, as needed.
 	Apply(context.Context, *ApplyInput) (*ApplyOutput, error)
 	// Resolves a reference in to an ID.
 	Resolve(context.Context, *ResolveInput) (*ResolveOutput, error)
+	ResolveManifest(context.Context, *ResolveManifestInput) (*ResolveManifestOutput, error)
 	// Returns component descriptions.
 	DescribeComponents(context.Context, *DescribeComponentsInput) (*DescribeComponentsOutput, error)
 	// Creates a component and triggers an initialize lifecycle event.
 	CreateComponent(context.Context, *CreateComponentInput) (*CreateComponentOutput, error)
 	// Replaces the spec on a component and triggers an update lifecycle event.
 	UpdateComponent(context.Context, *UpdateComponentInput) (*UpdateComponentOutput, error)
+	RenameComponent(context.Context, *RenameComponentInput) (*RenameComponentOutput, error)
 	// Asycnhronously refreshes component state.
 	RefreshComponents(context.Context, *RefreshComponentsInput) (*RefreshComponentsOutput, error)
 	// Asynchronously runs dispose lifecycle methods on each component.
@@ -104,8 +108,7 @@ type Workspace interface {
 	DeleteComponents(context.Context, *DeleteComponentsInput) (*DeleteComponentsOutput, error)
 	GetComponentState(context.Context, *GetComponentStateInput) (*GetComponentStateOutput, error)
 	SetComponentState(context.Context, *SetComponentStateInput) (*SetComponentStateOutput, error)
-	DescribeLogs(context.Context, *DescribeLogsInput) (*DescribeLogsOutput, error)
-	// Returns pages of log events for some set of logs. If `cursor` is specified, standard pagination behavior is used. Otherwise the cursor is assumed to represent the current tail of the log.
+	// Returns pages of events for some set of streams. If `cursor` is specified, standard pagination behavior is used. Otherwise the cursor is assumed to represent the current tail of the stream.
 	GetEvents(context.Context, *GetEventsInput) (*GetEventsOutput, error)
 	StartComponents(context.Context, *StartComponentsInput) (*StartComponentsOutput, error)
 	StopComponents(context.Context, *StopComponentsInput) (*StopComponentsOutput, error)
@@ -121,6 +124,22 @@ type Workspace interface {
 	WriteFile(context.Context, *WriteFileInput) (*WriteFileOutput, error)
 	BuildComponents(context.Context, *BuildComponentsInput) (*BuildComponentsOutput, error)
 	DescribeEnvironment(context.Context, *DescribeEnvironmentInput) (*DescribeEnvironmentOutput, error)
+	RenderDependencies(context.Context, *RenderDependenciesInput) (*RenderDependenciesOutput, error)
+}
+
+type DescribeVaultsInput struct {
+}
+
+type DescribeVaultsOutput struct {
+	Vaults []VaultDescription `json:"vaults"`
+}
+
+type AddVaultInput struct {
+	Name string `json:"name"`
+	Url  string `json:"url"`
+}
+
+type AddVaultOutput struct {
 }
 
 type DescribeInput struct {
@@ -140,7 +159,7 @@ type DestroyOutput struct {
 type ApplyInput struct {
 
 	// One of 'exo', 'compose', or 'procfile'.
-	Format *string `json:"format"`
+	Format string `json:"format"`
 	// Path of manifest file to load. May be relative to the workspace root. If format is not provided, will be inferred from path name.
 	ManifestPath *string `json:"manifestPath"`
 	// Contents of the manifest file. Not required if manifest-path is provided.
@@ -160,10 +179,18 @@ type ResolveOutput struct {
 	IDs []*string `json:"ids"`
 }
 
+type ResolveManifestInput struct {
+	Format string `json:"format"`
+}
+
+type ResolveManifestOutput struct {
+	Path string `json:"path"`
+}
+
 type DescribeComponentsInput struct {
 
-	// If non-empty, filters components to supplied ids.
-	IDs []string `json:"ids"`
+	// If non-empty, filters components to supplied refs.
+	Refs []string `json:"refs"`
 	// If non-empty, filters components to supplied types.
 	Types []string `json:"types"`
 	// If true, includes all components that the filtered components depend on.
@@ -189,12 +216,28 @@ type CreateComponentOutput struct {
 }
 
 type UpdateComponentInput struct {
-	Ref       string   `json:"ref"`
+
+	// Refers to the component to be updated.
+	Ref string `json:"ref"`
+	// If provided, renames the component.
+	Name      string   `json:"name"`
 	Spec      string   `json:"spec"`
 	DependsOn []string `json:"dependsOn"`
 }
 
 type UpdateComponentOutput struct {
+	JobID string `json:"jobId"`
+}
+
+type RenameComponentInput struct {
+
+	// Refers to the component to be renamed.
+	Ref string `json:"ref"`
+	// New name to give to the component.
+	Name string `json:"name"`
+}
+
+type RenameComponentOutput struct {
 }
 
 type RefreshComponentsInput struct {
@@ -239,18 +282,10 @@ type SetComponentStateInput struct {
 type SetComponentStateOutput struct {
 }
 
-type DescribeLogsInput struct {
-	Refs []string `json:"refs"`
-}
-
-type DescribeLogsOutput struct {
-	Logs []LogDescription `json:"logs"`
-}
-
 type GetEventsInput struct {
-	Logs      []string `json:"logs"`
+	Streams   []string `json:"streams"`
 	Cursor    *string  `json:"cursor"`
-	FilterStr *string  `json:"filterStr"`
+	FilterStr string   `json:"filterStr"`
 	Prev      *int     `json:"prev"`
 	Next      *int     `json:"next"`
 }
@@ -357,7 +392,14 @@ type DescribeEnvironmentInput struct {
 }
 
 type DescribeEnvironmentOutput struct {
-	Variables map[string]string `json:"variables"`
+	Variables map[string]VariableDescription `json:"variables"`
+}
+
+type RenderDependenciesInput struct {
+}
+
+type RenderDependenciesOutput struct {
+	Dot string `json:"dot"`
 }
 
 func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Workspace) {
@@ -376,6 +418,12 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	b.AddMethod("build", func(req *http.Request) interface{} {
 		return factory(req).Build
 	})
+	b.AddMethod("describe-vaults", func(req *http.Request) interface{} {
+		return factory(req).DescribeVaults
+	})
+	b.AddMethod("add-vault", func(req *http.Request) interface{} {
+		return factory(req).AddVault
+	})
 	b.AddMethod("describe", func(req *http.Request) interface{} {
 		return factory(req).Describe
 	})
@@ -388,6 +436,9 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	b.AddMethod("resolve", func(req *http.Request) interface{} {
 		return factory(req).Resolve
 	})
+	b.AddMethod("resolve-manifest", func(req *http.Request) interface{} {
+		return factory(req).ResolveManifest
+	})
 	b.AddMethod("describe-components", func(req *http.Request) interface{} {
 		return factory(req).DescribeComponents
 	})
@@ -396,6 +447,9 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	})
 	b.AddMethod("update-component", func(req *http.Request) interface{} {
 		return factory(req).UpdateComponent
+	})
+	b.AddMethod("rename-component", func(req *http.Request) interface{} {
+		return factory(req).RenameComponent
 	})
 	b.AddMethod("refresh-components", func(req *http.Request) interface{} {
 		return factory(req).RefreshComponents
@@ -411,9 +465,6 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	})
 	b.AddMethod("set-component-state", func(req *http.Request) interface{} {
 		return factory(req).SetComponentState
-	})
-	b.AddMethod("describe-logs", func(req *http.Request) interface{} {
-		return factory(req).DescribeLogs
 	})
 	b.AddMethod("get-events", func(req *http.Request) interface{} {
 		return factory(req).GetEvents
@@ -454,35 +505,38 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	b.AddMethod("describe-environment", func(req *http.Request) interface{} {
 		return factory(req).DescribeEnvironment
 	})
+	b.AddMethod("render-dependencies", func(req *http.Request) interface{} {
+		return factory(req).RenderDependencies
+	})
 }
 
 type WorkspaceDescription struct {
-	ID   string `json:"id"`
-	Root string `json:"root"`
+	ID          string `json:"id"`
+	Root        string `json:"root"`
+	DisplayName string `json:"displayName"`
 }
 
 type ComponentDescription struct {
-	ID          string   `json:"id"`
-	Name        string   `json:"name"`
-	Type        string   `json:"type"`
-	Spec        string   `json:"spec"`
-	State       string   `json:"state"`
-	Created     string   `json:"created"`
-	Initialized *string  `json:"initialized"`
-	Disposed    *string  `json:"disposed"`
-	DependsOn   []string `json:"dependsOn"`
+	ID        string   `json:"id"`
+	Name      string   `json:"name"`
+	Type      string   `json:"type"`
+	Spec      string   `json:"spec"`
+	State     string   `json:"state"`
+	Created   string   `json:"created"`
+	DependsOn []string `json:"dependsOn"`
 }
 
-type LogDescription struct {
+type StreamDescription struct {
 	Name        string  `json:"name"`
 	LastEventAt *string `json:"lastEventAt"`
 }
 
 type Event struct {
-	ID        string `json:"id"`
-	Log       string `json:"log"`
-	Timestamp string `json:"timestamp"`
-	Message   string `json:"message"`
+	ID        string            `json:"id"`
+	Stream    string            `json:"stream"`
+	Timestamp string            `json:"timestamp"`
+	Message   string            `json:"message"`
+	Tags      map[string]string `json:"tags"`
 }
 
 type ProcessDescription struct {
@@ -507,4 +561,16 @@ type VolumeDescription struct {
 type NetworkDescription struct {
 	ID   string `json:"id"`
 	Name string `json:"name"`
+}
+
+type VaultDescription struct {
+	Name      string `json:"name"`
+	Url       string `json:"url"`
+	Connected bool   `json:"connected"`
+	NeedsAuth bool   `json:"needsAuth"`
+}
+
+type VariableDescription struct {
+	Value  string `json:"value"`
+	Source string `json:"source"`
 }

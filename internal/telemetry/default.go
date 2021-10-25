@@ -9,7 +9,7 @@ import (
 	"sync/atomic"
 	"unsafe"
 
-	"github.com/deref/exo"
+	"github.com/deref/exo/internal/about"
 	"github.com/deref/exo/internal/chrono"
 	"github.com/deref/exo/internal/util/cacheutil"
 	"github.com/deref/exo/internal/util/logging"
@@ -88,7 +88,7 @@ func (t *defaultTelemetry) ensureSession(ctx context.Context) {
 }
 
 func (t *defaultTelemetry) getLatestVersion() (interface{}, error) {
-	resp, err := t.client.Get(exo.CheckVersionEndpoint)
+	resp, err := t.client.Get(about.CheckVersionEndpoint)
 	if err != nil {
 		return "", fmt.Errorf("fetching latest version: %w", err)
 	}

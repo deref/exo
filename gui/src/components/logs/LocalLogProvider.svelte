@@ -1,12 +1,11 @@
 <script lang="ts">
-  import type { LogEvent } from './types';
+  import type { LogEvent } from '../../lib/logs/types';
   import ErrorLabel from '../ErrorLabel.svelte';
   import type { WorkspaceApi } from '../../lib/api';
-  import { formatLogs } from './util';
   import { onDestroy } from 'svelte';
 
   const maxEvents = 1000;
-  const logsPollInterval = 1000;
+  const pollInterval = 1000;
 
   let cursor: string | null = null;
   let events: LogEvent[];
@@ -14,8 +13,7 @@
   export let workspace: WorkspaceApi;
 
   export let filterStr: string | null = null;
-  export let logs: string[] = [];
-  export let processIdToName: Record<string, string> = {};
+  export let streams: string[] = [];
 
   let pollRefreshTimer: ReturnType<typeof setTimeout> | null = null;
   const scheduleNextPoll = async () => {
@@ -24,17 +22,17 @@
       return;
     }
 
-    const res = await workspace.getEvents(logs, filterStr, {
+    const res = await workspace.getEvents(streams, filterStr, {
       cursor,
       next: maxEvents,
     });
     cursor = res.nextCursor;
-    events = [...events, ...formatLogs(res.items, processIdToName)].slice(-maxEvents);
+    events = [...events, ...res.items].slice(-maxEvents);
 
     pollRefreshTimer = setTimeout(() => {
       pollRefreshTimer = null;
       scheduleNextPoll();
-    }, logsPollInterval);
+    }, pollInterval);
   };
 
   onDestroy(() => {
@@ -43,28 +41,31 @@
     }
   });
 
-  const resetLogs = async (logs: string[], filterStr: string | null) => {
-    if (logs.length === 0) {
-      cursor = null;
-      events = [];
-      return;
-    }
-
-    const res = await workspace.getEvents(logs, filterStr, {
+  const resetStreams = async (streams: string[], filterStr: string | null) => {
+    const res = await workspace.getEvents(streams, filterStr, {
       cursor: null,
       prev: maxEvents,
     });
     cursor = res.nextCursor;
-    events = formatLogs(res.items, processIdToName);
+    events = res.items;
     scheduleNextPoll();
   };
 
-  // Reset log events entirely when filter or logs change.
+  // Reset log events entirely when filter or streams change.
   $: {
-    resetLogs(logs, filterStr);
+    resetStreams(streams, filterStr);
   }
+
+  // This is not ideal, since any change to the set of displayed logs will
+  // reset the streams and the cursor, effectively "unclearing" events.
+  // However, even this simple implementation should suffice for a while to
+  // satisfy the use case of clearing scrollback to make it easier to see only
+  // recent events while debugging.
+  export const clearEvents = () => {
+    events = [];
+  };
 </script>
 
-<slot {events}>
+<slot {events} {clearEvents}>
   <ErrorLabel value="Please provide a logs component" />
 </slot>

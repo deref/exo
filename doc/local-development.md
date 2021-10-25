@@ -14,13 +14,13 @@ cd path/to/exo
 exo run
 ```
 
-If all goes well, you should be able to manage your server and gui processes at [http://localhost:4000](http://localhost:4000). Please note that this is the _installed_ exo gui that you are viewing, not the development instance. The development instance runs on port `4001` and can be accessed at [http://localhost:4001](http://localhost:4001). The development mode GUI has a "DEV" indicator in the footer so that you can tell at a glance which instance you are using.
+If all goes well, you should be able to manage your server and gui processes at [http://localhost:43643](http://localhost:43643). Please note that this is the _installed_ exo gui that you are viewing, not the development instance. The development instance runs on port `44643` and can be accessed at [http://localhost:44643](http://localhost:44643). The development mode GUI has a "DEV" indicator in the footer so that you can tell at a glance which instance you are using.
 
 The `exo` CLI runs against the installed instance by default, but you can change to the development instance by adding the following to your exo config file (located at `~/.exo/config.toml`):
 
 ```
 [client]
-url = "http://localhost:4001"
+url = "http://localhost:44643"
 ```
 
 Now all `exo` commands will run against the development instance. To run against the installed instance again, remove or comment out these lines from your `config.toml`.
@@ -28,7 +28,7 @@ Now all `exo` commands will run against the development instance. To run against
 ## envrc
 
 The project root directory contains an `.envrc` script. You can use
-[https://direnv.net/](direnv) to automatically source this script when
+[direnv](https://direnv.net/) to automatically source this script when
 working on the project.
 
 ## dexo

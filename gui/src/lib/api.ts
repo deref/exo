@@ -1,4 +1,4 @@
-import { isRunning } from './global/server-status';
+import { isAuthenticated, isRunning } from './global/server-status';
 import type { GetVersionResponse } from './kernel/types';
 import type {
   ExportProcfileResponse,
@@ -35,6 +35,10 @@ interface RefetchingResponse<T> {
   data: T;
 }
 
+// TODO: This is an invalid enumeration of states. For example, this cannot
+// represent an error that is being retried. In practice, there are actually
+// three booleans for a total of nine states: (loading, !!data, and !!error).
+// Look up "SWR" for examples of how to do this better.
 export type RequestLifecycle<T> =
   | IdleRequest
   | PendingRequest
@@ -110,8 +114,8 @@ export class APIError extends Error {
   }
 }
 
-export const isClientError = (err: Error): err is APIError =>
-  err instanceof APIError && 400 <= err.httpStatus && err.httpStatus < 500;
+export const isClientError = (x: unknown): x is APIError =>
+  x instanceof APIError && 400 <= x.httpStatus && x.httpStatus < 500;
 
 const responseToError = async (res: Response): Promise<Error | null> => {
   if (200 <= res.status && res.status < 300) {
@@ -157,7 +161,8 @@ const rpc = async (
     throw err;
   }
 
-  isRunning.update(() => true);
+  isRunning.set(true);
+  isAuthenticated.set(res.status !== 401);
 
   const err = await responseToError(res);
   if (err !== null) {
@@ -166,6 +171,11 @@ const rpc = async (
   return await res.json();
 };
 
+export interface AddVaultInput {
+  name: string;
+  url: string;
+}
+
 export interface ProcessSpec {
   directory?: string;
   program: string;
@@ -173,15 +183,24 @@ export interface ProcessSpec {
   environment?: Record<string, string>;
 }
 
+export interface VaultDescription {
+  name: string;
+  url: string;
+  needsAuth: boolean;
+  connected: boolean;
+}
+
 export interface WorkspaceDescription {
   id: string;
   root: string;
+  displayName: string;
 }
 
 export interface ComponentDescription {
   id: string;
   name: string;
   type: string;
+  spec: string;
 }
 
 export interface CreateComponentResponse {
@@ -192,25 +211,68 @@ export interface DescribeTasksInput {
   jobIds?: string[];
 }
 
+export interface DescribeComponentsInput {
+  refs?: string[];
+}
+
+export interface TemplateDescription {
+  name: string;
+  displayName: string;
+  iconGlyph: string;
+  url: string;
+}
+export interface DirectoryEntry {
+  name: string;
+  path: string;
+  isDirectory: boolean;
+}
+
+export interface ReadDirResult {
+  directory: DirectoryEntry;
+  parent: null | DirectoryEntry;
+  entries: DirectoryEntry[];
+}
+
+export interface AuthEsvResult {
+  authUrl: string;
+  authCode: string;
+}
+
 export interface KernelApi {
+  getUserHomeDir(): Promise<string>;
+  readDir(path: string): Promise<ReadDirResult>;
   describeWorkspaces(): Promise<WorkspaceDescription[]>;
+  describeTemplates(): Promise<TemplateDescription[]>;
+  createProject(root: string, templateUrl: string | null): Promise<string>;
   createWorkspace(root: string): Promise<string>;
   getVersion(): Promise<GetVersionResponse>;
   upgrade(): Promise<void>;
   ping(): Promise<void>;
+  authEsv(): Promise<AuthEsvResult>;
   describeTasks(input?: DescribeTasksInput): Promise<TaskDescription[]>;
 }
 
+export interface VariableDescription {
+  value: string;
+  source: string;
+}
+
 export interface WorkspaceApi {
-  describeComponents(): Promise<ComponentDescription[]>;
+  id: string;
+  describeSelf(): Promise<WorkspaceDescription>;
 
-  describeEnvironment(): Promise<Record<string, string>>;
+  describeComponents(
+    input?: DescribeComponentsInput,
+  ): Promise<ComponentDescription[]>;
 
+  describeEnvironment(): Promise<Record<string, VariableDescription>>;
+  describeVaults(): Promise<VaultDescription[]>;
   describeProcesses(): Promise<ProcessDescription[]>;
-
   describeVolumes(): Promise<VolumeDescription[]>;
-
   describeNetworks(): Promise<NetworkDescription[]>;
+  addVault(input: AddVaultInput): Promise<void>;
+
+  destroy(): Promise<void>;
 
   apply(): Promise<void>;
 
@@ -225,16 +287,18 @@ export interface WorkspaceApi {
     spec: string,
   ): Promise<CreateComponentResponse>;
 
+  updateComponent(ref: string, name: string, spec: string): Promise<void>;
+
+  deleteComponent(ref: string): Promise<void>;
+
   startProcess(ref: string): Promise<void>;
 
   stopProcess(ref: string): Promise<void>;
 
-  deleteComponent(ref: string): Promise<void>;
-
   refreshAllProcesses(): Promise<void>;
 
   getEvents(
-    logs: string[],
+    streams: string[],
     filterStr: string | null,
     pagination?: PaginationParams,
   ): Promise<LogsResponse>;
@@ -251,9 +315,30 @@ export const api = (() => {
     const invoke = (method: string, data?: unknown) =>
       rpc(`/kernel/${method}`, {}, data);
     return {
+      async describeTemplates(): Promise<TemplateDescription[]> {
+        const { templates } = (await invoke('describe-templates', {})) as any;
+        return templates;
+      },
+      async getUserHomeDir(): Promise<string> {
+        const { path } = (await invoke('get-user-home-dir', {})) as any;
+        return path;
+      },
+      async readDir(path: string): Promise<ReadDirResult> {
+        return (await invoke('read-dir', { path })) as any;
+      },
       async describeWorkspaces(): Promise<WorkspaceDescription[]> {
         const { workspaces } = (await invoke('describe-workspaces', {})) as any;
         return workspaces;
+      },
+      async createProject(
+        root: string,
+        templateUrl: string | null,
+      ): Promise<string> {
+        const { workspaceId } = (await invoke('create-project', {
+          root,
+          templateUrl,
+        })) as any;
+        return workspaceId;
       },
       async createWorkspace(root: string): Promise<string> {
         const { id } = (await invoke('create-workspace', { root })) as any;
@@ -275,8 +360,12 @@ export const api = (() => {
       async describeTasks(
         input: DescribeTasksInput = {},
       ): Promise<TaskDescription[]> {
-        const { tasks } = (await invoke('describe-tasks', {})) as any;
+        const { tasks } = (await invoke('describe-tasks', input)) as any;
         return tasks as TaskDescription[];
+      },
+
+      async authEsv(): Promise<AuthEsvResult> {
+        return (await invoke('auth-esv', {})) as any;
       },
     };
   })();
@@ -285,12 +374,33 @@ export const api = (() => {
     const invoke = (method: string, data?: unknown) =>
       rpc(`/workspace/${method}`, { id }, data);
     return {
-      async describeComponents(): Promise<ComponentDescription[]> {
-        const { components } = (await invoke('describe-components')) as any;
+      id,
+
+      async addVault(input: AddVaultInput) {
+        await invoke('add-vault', input);
+      },
+
+      async describeSelf(): Promise<WorkspaceDescription> {
+        const { description } = (await invoke('describe')) as any;
+        return description;
+      },
+
+      async describeComponents(input = {}): Promise<ComponentDescription[]> {
+        const { components } = (await invoke(
+          'describe-components',
+          input,
+        )) as any;
         return components;
       },
 
-      async describeEnvironment(): Promise<Record<string, string>> {
+      async describeVaults(): Promise<VaultDescription[]> {
+        const { vaults } = (await invoke('describe-vaults')) as any;
+        return vaults;
+      },
+
+      async describeEnvironment(): Promise<
+        Record<string, VariableDescription>
+      > {
         const { variables } = (await invoke('describe-environment')) as any;
         return variables;
       },
@@ -310,7 +420,11 @@ export const api = (() => {
         return networks;
       },
 
-      async apply() {
+      async destroy(): Promise<void> {
+        await invoke('destroy', {});
+      },
+
+      async apply(): Promise<void> {
         await invoke('apply', {});
       },
 
@@ -337,7 +451,21 @@ export const api = (() => {
         })) as CreateComponentResponse;
       },
 
-      // TODO: Add updateComponent once fully working in backend
+      async updateComponent(
+        ref: string,
+        name: string,
+        spec: string,
+      ): Promise<void> {
+        await invoke('update-component', {
+          ref,
+          name,
+          spec,
+        });
+      },
+
+      async deleteComponent(ref: string): Promise<void> {
+        await invoke('delete-components', { refs: [ref] });
+      },
 
       async startProcess(ref: string): Promise<void> {
         await invoke('start-components', { refs: [ref] });
@@ -347,21 +475,17 @@ export const api = (() => {
         await invoke('stop-components', { refs: [ref] });
       },
 
-      async deleteComponent(ref: string): Promise<void> {
-        await invoke('delete-components', { refs: [ref] });
-      },
-
       async refreshAllProcesses(): Promise<void> {
         await invoke('refresh-components');
       },
 
       async getEvents(
-        logs: string[],
+        streams: string[],
         filterStr: string | null,
         pagination?: PaginationParams,
       ): Promise<LogsResponse> {
         return (await invoke('get-events', {
-          logs,
+          streams,
           filterStr,
           ...pagination,
         })) as LogsResponse;

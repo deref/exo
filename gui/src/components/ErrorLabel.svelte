@@ -1,12 +1,12 @@
 <script lang="ts">
-  import WarningSVG from './mono/WarningSVG.svelte';
+  import Icon from './Icon.svelte';
 
   export let value: unknown = null;
 </script>
 
 {#if value !== null}
   <div>
-    <WarningSVG />
+    <Icon glyph="Warning" />
     <span>
       {#if value instanceof Error}
         {value.message}

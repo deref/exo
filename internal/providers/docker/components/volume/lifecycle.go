@@ -10,25 +10,36 @@ import (
 	dockerclient "github.com/docker/docker/client"
 )
 
+var _ core.Lifecycle = (*Volume)(nil)
+
+func (v *Volume) Dependencies(ctx context.Context, input *core.DependenciesInput) (*core.DependenciesOutput, error) {
+	return &core.DependenciesOutput{Components: []string{}}, nil
+}
+
 func (v *Volume) Initialize(ctx context.Context, input *core.InitializeInput) (output *core.InitializeOutput, err error) {
+	var spec Spec
+	if err := v.LoadSpec(input.Spec, &spec); err != nil {
+		return nil, fmt.Errorf("loading spec: %w", err)
+	}
+
 	// See NOTE: [ADOPT COMPOSE RESOURCES].
-	if existing, err := v.findExistingVolume(ctx); err != nil {
+	if existing, err := v.findExistingVolume(ctx, spec.Name.Value); err != nil {
 		return nil, fmt.Errorf("looking up existing volume: %w", err)
 	} else if existing != nil {
 		// TODO: Determine whether the existing volume is compatible with the spec.
 		return &core.InitializeOutput{}, nil
 	}
 
-	labels := v.Spec.Labels.WithoutNils()
+	labels := spec.Labels.Map()
 	for k, v := range v.GetExoLabels() {
 		labels[k] = v
 	}
 
 	opts := volume.VolumeCreateBody{
-		Driver:     v.Driver,
-		DriverOpts: v.DriverOpts,
+		Driver:     spec.Driver.Value,
+		DriverOpts: spec.DriverOpts.Map(),
 		Labels:     labels,
-		Name:       v.Spec.Name,
+		Name:       spec.Name.Value,
 	}
 	createdBody, err := v.Docker.VolumeCreate(ctx, opts)
 	if err != nil {
@@ -49,15 +60,20 @@ func (v *Volume) Dispose(ctx context.Context, input *core.DisposeInput) (*core.D
 		return &core.DisposeOutput{}, nil
 	}
 	force := false
-	if err := v.Docker.VolumeRemove(ctx, v.VolumeName, force); err != nil {
+	err := v.Docker.VolumeRemove(ctx, v.VolumeName, force)
+	if dockerclient.IsErrNotFound(err) {
+		v.Logger.Infof("volume to be removed not found: %q", v.VolumeName)
+		err = nil
+	}
+	if err != nil {
 		return nil, err
 	}
 	v.VolumeName = ""
 	return &core.DisposeOutput{}, nil
 }
 
-func (v *Volume) findExistingVolume(ctx context.Context) (*types.Volume, error) {
-	volume, err := v.Docker.VolumeInspect(ctx, v.Spec.Name)
+func (v *Volume) findExistingVolume(ctx context.Context, name string) (*types.Volume, error) {
+	volume, err := v.Docker.VolumeInspect(ctx, name)
 	if err == nil {
 		return &volume, nil
 	}

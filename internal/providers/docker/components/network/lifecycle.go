@@ -8,21 +8,33 @@ import (
 	core "github.com/deref/exo/internal/core/api"
 	"github.com/docker/docker/api/types"
 	"github.com/docker/docker/api/types/filters"
+	docker "github.com/docker/docker/client"
 )
 
+var _ core.Lifecycle = (*Network)(nil)
+
+func (n *Network) Dependencies(ctx context.Context, input *core.DependenciesInput) (*core.DependenciesOutput, error) {
+	return &core.DependenciesOutput{Components: []string{}}, nil
+}
+
 func (n *Network) Initialize(ctx context.Context, input *core.InitializeInput) (output *core.InitializeOutput, err error) {
-	if n.Name == "" {
+	var spec Spec
+	if err := n.LoadSpec(input.Spec, &spec); err != nil {
+		return nil, fmt.Errorf("loading spec: %w", err)
+	}
+
+	if spec.Name.Value == "" {
 		return nil, errors.New("Network must have a name")
 	}
 
-	existing, err := n.findExistingNetwork(ctx)
+	existing, err := n.findExistingNetwork(ctx, spec.Name.Value)
 	if err != nil {
 		return nil, fmt.Errorf("looking up existing network: %w", err)
 	}
 
-	if n.External {
+	if spec.External.Value {
 		if existing == nil {
-			return nil, fmt.Errorf("network %q not found", n.Name)
+			return nil, fmt.Errorf("network %q not found", spec.Name)
 		}
 
 		n.NetworkID = existing.ID
@@ -44,7 +56,7 @@ func (n *Network) Initialize(ctx context.Context, input *core.InitializeInput) (
 		return &core.InitializeOutput{}, nil
 	}
 
-	labels := n.Spec.Labels.WithoutNils()
+	labels := spec.Labels.Map()
 	for k, v := range n.GetExoLabels() {
 		labels[k] = v
 	}
@@ -52,19 +64,19 @@ func (n *Network) Initialize(ctx context.Context, input *core.InitializeInput) (
 	opts := types.NetworkCreate{
 		// We don't care about duplicates, and it's best-effort checking only anyway.
 		CheckDuplicate: false,
-		Driver:         n.Driver,
+		Driver:         spec.Driver.Value,
 		//Scope          string
-		EnableIPv6: n.EnableIPv6,
+		EnableIPv6: spec.EnableIPv6.Value,
 		//IPAM           *network.IPAM
-		Internal:   n.Internal,
-		Attachable: n.Attachable,
+		Internal:   spec.Internal.Value,
+		Attachable: spec.Attachable.Value,
 		//Ingress        bool
 		//ConfigOnly     bool
 		//ConfigFrom     *network.ConfigReference
 		//Options        map[string]string
 		Labels: labels,
 	}
-	createdBody, err := n.Docker.NetworkCreate(ctx, n.Name, opts)
+	createdBody, err := n.Docker.NetworkCreate(ctx, spec.Name.Value, opts)
 	if err != nil {
 		return nil, err
 	}
@@ -82,18 +94,23 @@ func (n *Network) Dispose(ctx context.Context, input *core.DisposeInput) (*core.
 	if n.NetworkID == "" {
 		return &core.DisposeOutput{}, nil
 	}
-	if err := n.Docker.NetworkRemove(ctx, n.NetworkID); err != nil {
+	err := n.Docker.NetworkRemove(ctx, n.NetworkID)
+	if docker.IsErrNotFound(err) {
+		n.Logger.Infof("network to be removed not found: %q", n.NetworkID)
+		err = nil
+	}
+	if err != nil {
 		return nil, err
 	}
 	n.NetworkID = ""
 	return &core.DisposeOutput{}, nil
 }
 
-func (n *Network) findExistingNetwork(ctx context.Context) (*types.NetworkResource, error) {
+func (n *Network) findExistingNetwork(ctx context.Context, name string) (*types.NetworkResource, error) {
 	nets, err := n.Docker.NetworkList(ctx, types.NetworkListOptions{
 		Filters: filters.NewArgs(filters.KeyValuePair{
 			Key:   "name",
-			Value: n.Name,
+			Value: name,
 		}),
 	})
 	if err != nil {

@@ -32,21 +32,29 @@ interface "workspace" {
   # Should inline the methods and append a `-workspace` suffix to each.
   extends = ["process", "builder"]
 
+  method "describe-vaults" {
+    output "vaults" "[]VaultDescription" {}
+  }
+
+  method "add-vault" {
+    input "name" "string" {}
+    input "url" "string" {}
+  }
+
   method "describe" {
     doc = "Describes this workspace."
     output "description" "WorkspaceDescription" {}
   }
 
   method "destroy" {
-    doc = "Asynchronously deletes all components in the workspace, then deletes the workspace itself."
-
+    doc = "Dispose resources, then delete the record of it."
     output "job-id" "string" {}
   }
 
   method "apply" {
     doc = "Performs creates, updates, refreshes, disposes, as needed."
 
-    input "format" "*string" {
+    input "format" "string" {
       doc = "One of 'exo', 'compose', or 'procfile'."
     }
     input "manifest-path" "*string" {
@@ -68,11 +76,17 @@ interface "workspace" {
     output "ids" "[]*string" {}
   }
 
+  method "resolve-manifest" {
+    input "format" "string" {}
+
+    output "path" "string" {}
+  }
+
   method "describe-components" {
     doc = "Returns component descriptions."
 
-    input "ids" "[]string" {
-      doc = "If non-empty, filters components to supplied ids."
+    input "refs" "[]string" {
+      doc = "If non-empty, filters components to supplied refs."
     }
 
     input "types" "[]string" {
@@ -105,9 +119,25 @@ interface "workspace" {
   method "update-component" {
     doc = "Replaces the spec on a component and triggers an update lifecycle event."
 
-    input "ref" "string" {}
+    input "ref" "string" {
+      doc = "Refers to the component to be updated."
+    }
+    input "name" "string" {
+      doc = "If provided, renames the component."
+    }
     input "spec" "string" {}
     input "depends-on" "[]string" {}
+
+    output "job-id" "string" {}
+  }
+
+  method "rename-component" {
+    input "ref" "string" {
+      doc = "Refers to the component to be renamed."
+    }
+    input "name" "string" {
+      doc = "New name to give to the component."
+    }
   }
 
   method "refresh-components" {
@@ -147,20 +177,14 @@ interface "workspace" {
     input "state" "string" {}
   }
 
-  method "describe-logs" {
-    input "refs" "[]string" {}
-
-    output "logs" "[]LogDescription" {}
-  }
-
   method "get-events" {
-    doc = "Returns pages of log events for some set of logs. If `cursor` is specified, standard pagination behavior is used. Otherwise the cursor is assumed to represent the current tail of the log."
+    doc = "Returns pages of events for some set of streams. If `cursor` is specified, standard pagination behavior is used. Otherwise the cursor is assumed to represent the current tail of the stream."
 
     # TODO: Replace this with some filter expression.
-    input "logs" "[]string" {}
+    input "streams" "[]string" {}
 
     input "cursor" "*string" {}
-    input "filterStr" "*string" {}
+    input "filter-str" "string" {}
     input "prev" "*int" {}
     input "next" "*int" {}
 
@@ -234,13 +258,18 @@ interface "workspace" {
   }
 
   method "describe-environment" {
-    output "variables" "map[string]string" {}
+    output "variables" "map[string]VariableDescription" {}
+  }
+
+  method "render-dependencies" {
+    output "dot" "string" {}
   }
 }
 
 struct "workspace-description" {
   field "id" "string" {}
   field "root" "string" {}
+  field "display-name" "string" {}
 }
 
 struct "component-description" {
@@ -250,21 +279,20 @@ struct "component-description" {
   field "spec" "string" {}
   field "state" "string" {}
   field "created" "string" {}
-  field "initialized" "*string" {}
-  field "disposed" "*string" {}
   field "depends-on" "[]string" {}
 }
 
-struct "log-description" {
+struct "stream-description" {
   field "name" "string" {}
   field "last-event-at" "*string" {}
 }
 
 struct "event" {
   field "id" "string" {}
-  field "log" "string" {}
+  field "stream" "string" {}
   field "timestamp" "string" {}
   field "message" "string" {}
+  field "tags" "map[string]string" {}
 }
 
 struct "process-description" {
@@ -289,4 +317,16 @@ struct "volume-description" {
 struct "network-description" {
   field "id" "string" {}
   field "name" "string" {}
+}
+
+struct "vault-description" {
+  field "name" "string" {}
+  field "url" "string" {}
+  field "connected" "bool" {}
+  field "needs-auth" "bool" {}
+}
+
+struct "variable-description" {
+  field "value" "string" {}
+  field "source" "string" {}
 }

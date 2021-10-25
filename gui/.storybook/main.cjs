@@ -7,6 +7,7 @@ module.exports = {
     '@storybook/addon-links',
     '@storybook/addon-essentials',
     '@storybook/addon-svelte-csf',
+    'storybook-dark-mode',
   ],
   svelteOptions: {
     preprocess: require('svelte-preprocess')(),

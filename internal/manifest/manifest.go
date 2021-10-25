@@ -2,83 +2,81 @@ package manifest
 
 import (
 	"fmt"
-	"io"
-	"io/ioutil"
+	"net/http"
+	"path/filepath"
+	"strings"
 
+	"github.com/deref/exo/internal/manifest/compose"
+	"github.com/deref/exo/internal/manifest/exohcl"
+	"github.com/deref/exo/internal/manifest/procfile"
+	"github.com/deref/exo/internal/util/errutil"
 	"github.com/hashicorp/hcl/v2"
-	"github.com/hashicorp/hcl/v2/gohcl"
-	"github.com/hashicorp/hcl/v2/hclsimple"
-	"github.com/hashicorp/hcl/v2/hclwrite"
-	"github.com/zclconf/go-cty/cty/function"
-	"github.com/zclconf/go-cty/cty/function/stdlib"
 )
 
-var Version = "0.1"
-
-type Manifest struct {
-	Exo        string      `hcl:"exo"`
-	Components []Component `hcl:"component,block"`
-}
-
-type Component struct {
-	Name      string   `hcl:"name,label"`
-	Type      string   `hcl:"type,label"`
-	Spec      string   `hcl:"spec"` // TODO: Custom unmarshalling to allow convenient json representation.
-	DependsOn []string `hcl:"depends_on"`
-}
-
-func NewManifest() *Manifest {
-	return &Manifest{
-		Exo: Version,
+func GuessFormat(path string) string {
+	name := strings.ToLower(filepath.Base(path))
+	switch name {
+	case "exo.hcl":
+		return "exo"
+	case "procfile":
+		return "procfile"
+	case "compose.yaml", "compose.yml", "docker-compose.yaml", "docker-compose.yml":
+		return "compose"
+	default:
+		if strings.HasPrefix(name, "procfile.") || strings.HasSuffix(name, ".procfile") {
+			return "procfile"
+		}
+		return ""
 	}
 }
 
-type LoadResult struct {
-	Manifest *Manifest
-	Warnings []string
-	Err      error
+type Loader struct {
+	WorkspaceName string
+	Format        string
+	Filename      string
+	Bytes         []byte
 }
 
-func (lr LoadResult) AddRenameWarning(originalName, newName string) LoadResult {
-	warning := fmt.Sprintf("invalid name: %q, renamed to: %q", originalName, newName)
-	lr.Warnings = append(lr.Warnings, warning)
-	return lr
-}
-
-func (lr LoadResult) AddUnsupportedFeatureWarning(featureName, explanation string) LoadResult {
-	warning := fmt.Sprintf("unsupported feature %s: %s", featureName, explanation)
-	lr.Warnings = append(lr.Warnings, warning)
-	return lr
-}
-
-type loader struct{}
-
-var Loader = loader{}
-
-func (l loader) Load(r io.Reader) LoadResult {
-	bs, err := ioutil.ReadAll(r)
-	if err != nil {
-		return LoadResult{Err: err}
+func (l *Loader) Load() (*exohcl.Manifest, error) {
+	format := l.Format
+	if format == "" {
+		if l.Filename == "" || l.Filename == "/dev/stdin" {
+			format = "exo"
+		} else {
+			format = GuessFormat(l.Filename)
+			if format == "" {
+				return nil, errutil.NewHTTPError(http.StatusBadRequest, "cannot determine manifest format from file name")
+			}
+		}
 	}
-	return ReadBytes(bs)
-}
 
-func ReadBytes(bs []byte) LoadResult {
-	var manifest Manifest
-	evalCtx := &hcl.EvalContext{
-		Functions: map[string]function.Function{
-			"jsonencode": stdlib.JSONEncodeFunc,
-		},
+	var converter interface {
+		Convert(bs []byte) (*hcl.File, hcl.Diagnostics)
 	}
-	if err := hclsimple.Decode("exo.hcl", bs, evalCtx, &manifest); err != nil {
-		return LoadResult{Err: err}
+	switch format {
+	case "procfile":
+		converter = &procfile.Converter{}
+	case "compose":
+		converter = &compose.Converter{
+			ProjectName: l.WorkspaceName,
+		}
+	case "exo":
+		// No converter needed.
+	default:
+		return nil, fmt.Errorf("unknown manifest format: %q", l.Format)
 	}
-	return LoadResult{Manifest: &manifest}
-}
-
-func Generate(w io.Writer, manifest *Manifest) error {
-	f := hclwrite.NewEmptyFile()
-	gohcl.EncodeIntoBody(manifest, f.Body())
-	_, err := f.WriteTo(w)
-	return err
+	var m *exohcl.Manifest
+	if converter == nil {
+		m = exohcl.Parse(l.Filename, l.Bytes)
+	} else {
+		file, diags := converter.Convert(l.Bytes)
+		m = exohcl.NewManifest(l.Filename, file, diags)
+	}
+	var err error
+	diags := m.Diagnostics()
+	if len(diags) > 0 {
+		// Note that this effectively treats all warnings as errors.
+		err = diags
+	}
+	return m, err
 }

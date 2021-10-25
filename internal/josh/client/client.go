@@ -15,8 +15,9 @@ import (
 )
 
 type Client struct {
-	HTTP *http.Client
-	URL  string
+	HTTP  *http.Client
+	URL   string
+	Token string
 }
 
 func (c *Client) Invoke(ctx context.Context, method string, input interface{}, output interface{}) error {
@@ -31,8 +32,16 @@ func (c *Client) Invoke(ctx context.Context, method string, input interface{}, o
 	}
 	endpoint.Path += "/" + method
 
-	contentType := "application/json"
-	resp, err := c.HTTP.Post(endpoint.String(), contentType, bytes.NewBuffer(inputB))
+	req, err := http.NewRequest("POST", endpoint.String(), bytes.NewBuffer(inputB))
+	if err != nil {
+		return fmt.Errorf("forming request: %w", err)
+	}
+	req.Header.Add("Content-Type", "application/json")
+	if c.Token != "" {
+		req.Header.Add("Authorization", "Bearer "+c.Token)
+	}
+
+	resp, err := c.HTTP.Do(req)
 	if err != nil {
 		return fmt.Errorf("posting: %w", err)
 	}

@@ -1,9 +1,13 @@
 <script lang="ts">
+  import Icon from './Icon.svelte';
+  import type { IconGlyph } from './Icon.svelte';
+
   export let tooltip: string | undefined = undefined;
+  export let glyph: IconGlyph;
 </script>
 
 <button on:click title={tooltip}>
-  <slot />
+  <Icon {glyph} />
 </button>
 
 <style>

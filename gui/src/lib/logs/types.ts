@@ -1,7 +1,7 @@
 export interface LogEvent {
   id: string;
   timestamp: string;
-  log: string; // Process name:(out|err).
+  stream: string; // Process name:(out|err).
   message: string;
 }
 

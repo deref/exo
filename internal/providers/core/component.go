@@ -9,16 +9,12 @@ import (
 
 type Component interface {
 	GetComponentID() string
-
-	// TODO: Rethink these.
-	IsDeleted() bool
-	MarkDeleted()
+	GetComponentName() string
 }
 
 type ComponentBase struct {
 	ComponentID          string
 	ComponentName        string
-	ComponentSpec        string
 	ComponentState       string
 	WorkspaceID          string
 	WorkspaceRoot        string
@@ -31,12 +27,8 @@ func (c ComponentBase) GetComponentID() string {
 	return c.ComponentID
 }
 
-func (c *ComponentBase) IsDeleted() bool {
-	return c.isDeleted
-}
-
-func (c *ComponentBase) MarkDeleted() {
-	c.isDeleted = true
+func (c ComponentBase) GetComponentName() string {
+	return c.ComponentName
 }
 
 func (c *ComponentBase) Build(ctx context.Context, input *api.BuildInput) (*api.BuildOutput, error) {

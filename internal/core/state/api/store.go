@@ -64,7 +64,7 @@ type ResolveOutput struct {
 
 type DescribeComponentsInput struct {
 	WorkspaceID         string   `json:"workspaceId"`
-	IDs                 []string `json:"ids"`
+	Refs                []string `json:"refs"`
 	Types               []string `json:"types"`
 	IncludeDependencies bool     `json:"includeDependencies"`
 	IncludeDependents   bool     `json:"includeDependents"`
@@ -88,11 +88,15 @@ type AddComponentOutput struct {
 }
 
 type PatchComponentInput struct {
-	ID          string    `json:"id"`
-	State       string    `json:"state"`
-	Initialized string    `json:"initialized"`
-	Disposed    string    `json:"disposed"`
-	DependsOn   *[]string `json:"dependsOn"`
+
+	// ID of component to be patched.
+	ID string `json:"id"`
+	// If provided, renames component.
+	Name string `json:"name"`
+	// If provided, replaces component spec.
+	Spec      string    `json:"spec"`
+	State     string    `json:"state"`
+	DependsOn *[]string `json:"dependsOn"`
 }
 
 type PatchComponentOutput struct {
@@ -136,8 +140,9 @@ func BuildStoreMux(b *josh.MuxBuilder, factory func(req *http.Request) Store) {
 }
 
 type WorkspaceDescription struct {
-	ID   string `json:"id"`
-	Root string `json:"root"`
+	ID          string `json:"id"`
+	Root        string `json:"root"`
+	DisplayName string `json:"displayName"`
 }
 
 type ComponentDescription struct {
@@ -148,7 +153,5 @@ type ComponentDescription struct {
 	Spec        string   `json:"spec"`
 	State       string   `json:"state"`
 	Created     string   `json:"created"`
-	Initialized *string  `json:"initialized"`
-	Disposed    *string  `json:"disposed"`
 	DependsOn   []string `json:"dependsOn"`
 }

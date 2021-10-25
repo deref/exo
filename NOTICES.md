@@ -1,6 +1,6 @@
 # Notices
 
-The exo project is subject to the [Deref Community License](./LICENSE).
+The exo project is subject to the [Apache License][1].
 
 Copyright (c) 2021 Deref Inc. All rights reserved.
 
@@ -14,7 +14,7 @@ These notices are available online at
 
 The following licenses cover portions of this software project.
 
-- [Deref Community License, Version 1.0][1]
+- [Apache License, Version 2.0][1]
 - [SIL Open Font License, Version 1.1][2]
 
 ## Third Party Software
@@ -40,6 +40,5 @@ https://github.com/rsms/inter
 
 This Font Software is licensed under the [SIL Open Font License, Version 1.1][2].
 
-
-[1]: ./LICENSE
-[2]: ./doc/licenses/ofl
+[1]: https://github.com/deref/exo/blob/main/LICENSE
+[2]: https://github.com/deref/exo/blob/main/doc/licenses/ofl

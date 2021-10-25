@@ -1,9 +1,10 @@
 <script lang="ts">
   import IconButton from '../IconButton.svelte';
+  import ContextMenu from '../ContextMenu.svelte';
+  import MenuItem from '../MenuItem.svelte';
   import CheckboxButton from '../CheckboxButton.svelte';
   import ProcessRunControls from './ProcessRunControls.svelte';
-  import DeleteSVG from '../mono/DeleteSVG.svelte';
-  import { link } from 'svelte-spa-router';
+  import * as router from 'svelte-spa-router';
   import {
     startProcess,
     stopProcess,
@@ -13,8 +14,11 @@
     setLogVisibility,
     visibleLogsStore,
   } from '../../lib/logs/visible-logs';
+  import { logStyleFromHash } from '../../lib/color';
   import type { ProcessDescription } from '../../lib/process/types';
   import type { WorkspaceApi } from '../../lib/api';
+
+  const { link } = router;
 
   export let data: ProcessDescription[];
   export let workspace: WorkspaceApi;
@@ -45,131 +49,144 @@
   }
 </script>
 
-<table>
-  <thead>
-    <th />
-    <th>Process</th>
-    <th>Logs</th>
-    <th />
-  </thead>
-  {#each data as { id, name, running } (id)}
-    <tr>
-      <td>
-        <ProcessRunControls {setProcRun} {statusPending} {id} {running} />
-      </td>
+{#each data as { id, name, running } (id)}
+  <div class="card" style={logStyleFromHash(name)}>
+    <div>
+      <ProcessRunControls {setProcRun} {statusPending} {id} {running} />
+    </div>
 
-      <td
-        ><a
-          class="process-name"
-          use:link
+    <div>
+      <a
+        class="process-name"
+        use:link
+        href={`/workspaces/${encodeURIComponent(
+          workspaceId,
+        )}/components/${encodeURIComponent(id)}`}
+      >
+        {name}
+      </a>
+    </div>
+
+    <div class="checkbox">
+      <CheckboxButton
+        tooltip={$visibleLogsStore.has(id) ? 'Hide logs' : 'Show logs'}
+        on:click={() => {
+          setProcLogs(id, $visibleLogsStore.has(id) ? false : true);
+        }}
+        active={$visibleLogsStore.has(id)}
+      />
+    </div>
+
+    <div class="actions" tabindex="0">
+      <IconButton glyph="Ellipsis" />
+
+      <ContextMenu title={name}>
+        <MenuItem
+          glyph="Details"
           href={`/workspaces/${encodeURIComponent(
             workspaceId,
-          )}/processes/${encodeURIComponent(id)}`}>{name}</a
-        ></td
-      >
-
-      <td>
-        <CheckboxButton
-          tooltip={$visibleLogsStore.has(id) ? 'Hide logs' : 'Show logs'}
+          )}/components/${encodeURIComponent(id)}`}>View details</MenuItem
+        >
+        <MenuItem
+          glyph="Edit"
+          href={`/workspaces/${encodeURIComponent(
+            workspaceId,
+          )}/components/${encodeURIComponent(id)}/edit`}
+          >Edit component</MenuItem
+        >
+        <MenuItem
+          glyph="Logs"
           on:click={() => {
             setProcLogs(id, $visibleLogsStore.has(id) ? false : true);
           }}
-          active={$visibleLogsStore.has(id)}
-        />
-      </td>
-
-      <td>
-        <div class="hover-only-visibility">
-          <IconButton
-            tooltip="Delete process"
-            on:click={() => {
-              void deleteProcess(workspace, id);
-              setProcLogs(id, false);
-            }}
-          >
-            <DeleteSVG />
-          </IconButton>
-        </div>
-      </td>
-    </tr>
-  {:else}
-    <i>No processes yet.</i>
-  {/each}
-</table>
+        >
+          Toggle logs visibility
+        </MenuItem>
+        <MenuItem
+          glyph="Delete"
+          danger
+          on:click={() => {
+            void deleteProcess(workspace, id);
+            setProcLogs(id, false);
+          }}
+        >
+          Delete component
+        </MenuItem>
+      </ContextMenu>
+    </div>
+  </div>
+{:else}
+  <i>No components yet.</i>
+{/each}
 
 <style>
-  table {
-    width: 100%;
-    border-collapse: collapse;
+  .card {
+    box-shadow: var(--card-shadow);
+    display: grid;
+    grid-template-columns: max-content auto max-content max-content;
+    align-items: center;
+    padding: 4px;
+    margin: 0px -4px;
+    border-radius: 4px;
+    margin-bottom: 8px;
+    border-left: 2px solid var(--log-color);
   }
 
-  th {
-    padding: 12px 0;
-    color: var(--grey-7-color);
+  .card:hover {
+    box-shadow: var(--card-hover-shadow);
   }
 
-  td,
-  th {
+  .card > * {
     font-size: inherit;
     font-weight: inherit;
     align-items: center;
     justify-content: center;
   }
 
-  td:nth-child(2),
-  th:nth-child(2) {
+  .card .checkbox {
+    margin-right: 18px;
+  }
+
+  .card > *:nth-child(2) {
     text-align: left;
   }
 
-  td:not(:last-child):not(:first-child),
-  th:not(:last-child):not(:first-child) {
-    border-right: 16px solid transparent;
-  }
-
-  td:nth-child(2) {
-    width: 99%;
-  }
-
-  td:not(:nth-child(2)) {
+  .card > *:not(:nth-child(2)) {
     white-space: nowrap;
   }
 
-  table,
-  thead,
-  th,
-  td,
-  tr {
-    border: none;
-  }
-
-  tr:not(:last-child) {
-    border-bottom: 8px solid transparent;
-  }
-
-  tr:not(:hover):not(:focus-within) .hover-only-visibility {
-    visibility: hidden;
+  .card:not(:hover):not(:focus-within) .actions {
+    opacity: 0.333;
   }
 
   .process-name {
     display: inline-block;
     text-decoration: none;
     margin: 0;
+    margin-left: 6px;
+    margin-right: 12px;
     line-height: 1;
     font-size: 16px;
     font-weight: 550;
-    padding: 4px 8px;
-    border-radius: 4px;
-    color: var(--grey-5-color);
-    background: var(--grey-d-color);
+    padding: 4px 7px;
+    border-radius: 3px;
+    color: var(--log-color);
     outline: none;
   }
 
-  .process-name:hover {
-    color: var(--strong-color);
-    background: var(--grey-c-color);
+  .process-name:hover,
+  .process-name:focus {
+    color: var(--log-hover-color);
+    background: var(--log-bg-hover-color);
   }
 
-  .process-name:focus {
-    background: var(--grey-b-color);
+  .actions {
+    outline: none;
+    position: relative;
+  }
+
+  .actions:focus :global(nav),
+  .actions:focus-within :global(nav) {
+    display: block;
   }
 </style>

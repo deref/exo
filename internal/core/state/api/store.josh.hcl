@@ -16,7 +16,7 @@ interface "store" {
   method "remove-workspace" {
     input "id" "string" {}
   }
-  
+
   method "resolve-workspace" {
     input "ref" "string" {}
 
@@ -32,7 +32,7 @@ interface "store" {
 
   method "describe-components" {
     input "workspace-id" "string" {}
-    input "ids" "[]string" {}
+    input "refs" "[]string" {}
     input "types" "[]string" {}
     input "include-dependencies" "bool" {}
     input "include-dependents" "bool" {}
@@ -51,11 +51,17 @@ interface "store" {
   }
 
   method "patch-component" {
-	  input "id" "string" {}
-	  input "state" "string" {}
-	  input "initialized" "string" {}
-	  input "disposed" "string" {}
-	  input "depends-on" "*[]string" {}
+    input "id" "string" {
+      doc = "ID of component to be patched."
+    }
+    input "name" "string" {
+      doc = "If provided, renames component."
+    }
+    input "spec" "string" {
+      doc = "If provided, replaces component spec."
+    }
+    input "state" "string" {}
+    input "depends-on" "*[]string" {}
   }
 
   method "remove-component" {
@@ -66,17 +72,18 @@ interface "store" {
 struct "workspace-description" {
   field "id" "string" {}
   field "root" "string" {}
+  field "display-name" "string" {}
 }
 
 struct "component-description" {
-	field "id" "string" {}
-	field "workspace-id" "string" {}
-	field "name" "string" {}
-	field "type" "string" {}
-	field "spec" "string" {}
-	field "state" "string" {}
-	field "created" "string" {}
-	field "initialized" "*string" {}
-	field "disposed" "*string" {}
-	field "depends-on" "[]string" {}
+  field "id" "string" {}
+  field "workspace-id" "string" {}
+  field "name" "string" {}
+  field "type" "string" {}
+  field "spec" "string" {}
+  field "state" "string" {}
+  field "created" "string" {}
+  # TODO: Remove dependencies from this store. Prefer lifecycle method
+  # for dynamic resolution of dependencies from spec.
+  field "depends-on" "[]string" {}
 }

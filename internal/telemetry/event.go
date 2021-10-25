@@ -3,7 +3,7 @@ package telemetry
 import (
 	"runtime"
 
-	"github.com/deref/exo"
+	"github.com/deref/exo/internal/about"
 )
 
 type Event struct {
@@ -28,7 +28,7 @@ func SystemInfoIdentifiedEvent() Event {
 		Type:       "system-info-identified",
 		Platform:   runtime.GOARCH,
 		OSName:     runtime.GOOS,
-		AppVersion: exo.Version,
+		AppVersion: about.Version,
 		EventProperties: map[string]interface{}{
 			"cpu_count": runtime.NumCPU(),
 		},

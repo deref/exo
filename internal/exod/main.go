@@ -2,6 +2,7 @@ package exod
 
 import (
 	"context"
+	"fmt"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -14,21 +15,24 @@ import (
 	"github.com/deref/exo/internal/core/server"
 	kernel "github.com/deref/exo/internal/core/server"
 	"github.com/deref/exo/internal/core/state/statefile"
+	"github.com/deref/exo/internal/esv"
+	eventdapi "github.com/deref/exo/internal/eventd/api"
+	eventdsqlite "github.com/deref/exo/internal/eventd/sqlite"
 	"github.com/deref/exo/internal/gensym"
 	"github.com/deref/exo/internal/install"
-	"github.com/deref/exo/internal/logd"
-	logdserver "github.com/deref/exo/internal/logd/server"
-	"github.com/deref/exo/internal/logd/store/badger"
 	"github.com/deref/exo/internal/providers/core/components/log"
+	"github.com/deref/exo/internal/syslogd"
 	"github.com/deref/exo/internal/task"
 	"github.com/deref/exo/internal/task/api"
 	taskserver "github.com/deref/exo/internal/task/server"
 	"github.com/deref/exo/internal/telemetry"
+	"github.com/deref/exo/internal/token"
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/deref/exo/internal/util/httputil"
 	"github.com/deref/exo/internal/util/logging"
 	"github.com/deref/exo/internal/util/sysutil"
 	docker "github.com/docker/docker/client"
+	"github.com/jmoiron/sqlx"
 	"github.com/mattn/go-isatty"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
@@ -48,6 +52,10 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	cfg := &config.Config{}
 	config.MustLoadDefault(cfg)
 	MustMakeDirectories(cfg)
+
+	if err := token.EnsureTokenFile(cfg.TokensFile); err != nil {
+		cmdutil.Fatalf("ensuring token file: %w", err)
+	}
 
 	_, forceStdLog := flags["force-std-log"]
 	if !(forceStdLog || isatty.IsTerminal(os.Stdout.Fd())) {
@@ -110,6 +118,23 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	tel.StartSession(ctx)
 	tel.SendEvent(ctx, telemetry.SystemInfoIdentifiedEvent())
 
+	dbPath := filepath.Join(cfg.VarDir, "exo.sqlite3")
+	// Fully serialize transactions. Hurts performance, but reasonable for
+	// an embedded database, as long as transactions are kept small.
+	// Helps dramatically with simplicity and correctness.
+	txMode := "exclusive"
+	connStr := dbPath + "?_txlock=" + txMode
+	db, err := sqlx.Open("sqlite3", connStr)
+	if err != nil {
+		cmdutil.Fatalf("opening sqlite db: %v", err)
+	}
+	defer func() {
+		// XXX Can't close this until all async tasks have completed.
+		if err := db.Close(); err != nil {
+			logger.Infof("error closing sqlite db: %v", err)
+		}
+	}()
+
 	dockerClient, err := docker.NewClientWithOpts()
 	if err != nil {
 		cmdutil.Fatalf("failed to create docker client: %v", err)
@@ -128,24 +153,34 @@ func RunServer(ctx context.Context, flags map[string]string) {
 		Docker:      dockerClient,
 		Logger:      logger,
 		TaskTracker: taskTracker,
+		TokenClient: cfg.GetTokenClient(),
+		EsvClient:   esv.NewEsvClient(cfg.EsvTokenPath),
 	}
 
+	// As a one-time migration, simply delete all logs in the old Badger format.
+	// TODO: Remove after a reasonable amount of time passes since October 2021.
 	logsDir := filepath.Join(cfg.VarDir, "logs")
-	logStore, err := badger.Open(ctx, logger, logsDir)
-	if err != nil {
-		cmdutil.Fatalf("opening logs store: %w", err)
+	if err := os.RemoveAll(logsDir); err != nil {
+		if !os.IsNotExist(err) {
+			logger.Infof("error removing badger-based logs: %v", logsDir)
+		}
 	}
-	defer logStore.Close()
 
-	logd := &logd.Service{
+	eventStore := &eventdsqlite.Store{
+		DB:    db,
+		IDGen: gensym.NewULIDGenerator(ctx),
+	}
+
+	if err := eventStore.Migrate(ctx); err != nil {
+		cmdutil.Fatalf("migrating event store: %v", err)
+	}
+
+	syslogServer := &syslogd.Server{
 		SyslogPort: kernelCfg.SyslogPort,
 		Logger:     logger,
-		LogCollector: logdserver.LogCollector{
-			IDGen: gensym.NewULIDGenerator(ctx),
-			Store: logStore,
-		},
+		Store:      eventStore,
 	}
-	ctx = log.ContextWithLogCollector(ctx, &logd.LogCollector)
+	ctx = log.ContextWithEventStore(ctx, eventStore)
 
 	mux := server.BuildRootMux("/_exo/", kernelCfg)
 	mux.Handle("/", gui.NewHandler(ctx, cfg.GUI))
@@ -155,8 +190,21 @@ func RunServer(ctx context.Context, flags map[string]string) {
 		defer shutdown()
 
 		go func() {
-			if err := logd.Run(ctx); err != nil {
-				cmdutil.Fatalf("log collector error: %w", err)
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case <-time.After(5 * time.Second):
+					if _, err := eventStore.RemoveOldEvents(ctx, &eventdapi.RemoveOldEventsInput{}); err != nil {
+						logger.Infof("error removing old events: %v", err)
+					}
+				}
+			}
+		}()
+
+		go func() {
+			if err := syslogServer.Run(ctx); err != nil {
+				cmdutil.Fatalf("syslog server error: %w", err)
 			}
 		}()
 
@@ -173,11 +221,32 @@ func RunServer(ctx context.Context, flags map[string]string) {
 		}()
 	}
 
+	validHosts := []string{fmt.Sprintf("localhost:%d", cfg.HTTPPort)}
+	handler := httputil.HandlerWithContext(ctx, &httputil.HostAllowListHandler{
+		Hosts: validHosts,
+		Next:  mux,
+	})
+
+	go func() {
+		// Add a redirect to the new port number if a request is received on the old
+		// one. Ignore any error as that's most likely some other service attempting
+		// to listen on the same port. This is to allow people to upgrade seamlessly
+		// but we should be able to remove it soon after the next release. (Written
+		// on the 19th of Oct 2021)
+		http.ListenAndServe(":4000", http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
+			uri := *req.URL
+			uri.Host = fmt.Sprintf("localhost:%d", cfg.HTTPPort)
+			redirectTo := uri.String()
+			http.Redirect(resp, req, redirectTo, http.StatusMovedPermanently)
+			return
+		}))
+	}()
+
 	addr := cmdutil.GetAddr(cfg)
 	logger.Infof("listening for API calls at %s", addr)
 	cmdutil.ListenAndServe(ctx, &http.Server{
 		Addr:    addr,
-		Handler: httputil.HandlerWithContext(ctx, mux),
+		Handler: handler,
 	})
 }
 

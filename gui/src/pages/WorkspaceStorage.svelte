@@ -5,6 +5,7 @@
   import WorkspaceNav from '../components/WorkspaceNav.svelte';
   import ComponentTable from '../components/ComponentTable.svelte';
   import { api } from '../lib/api';
+  import * as router from 'svelte-spa-router';
 
   export let params = { workspace: '' };
 
@@ -28,6 +29,27 @@
           title: 'name',
           component: StringLabel,
           getValue: (volume) => volume.name,
+        },
+      ]}
+      actions={[
+        {
+          tooltip: 'Edit volume',
+          glyph: 'Edit',
+          execute: (volume) => {
+            router.push(
+              `#/workspaces/${encodeURIComponent(
+                workspaceId,
+              )}/components/${encodeURIComponent(volume.id)}/edit`,
+            );
+          },
+        },
+        {
+          tooltip: 'Delete volume',
+          glyph: 'Delete',
+          execute: async (volume) => {
+            await workspace.deleteComponent(volume.id);
+            window.location.reload();
+          },
         },
       ]}
     />

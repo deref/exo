@@ -3,7 +3,7 @@ package container
 import (
 	"path"
 
-	"github.com/deref/exo/internal/manifest"
+	"github.com/deref/exo/internal/manifest/exohcl"
 	"github.com/deref/exo/internal/providers/docker"
 	"github.com/deref/exo/internal/providers/docker/compose"
 	"github.com/docker/docker/api/types/strslice"
@@ -12,7 +12,6 @@ import (
 type Container struct {
 	docker.ComponentBase
 
-	Spec  Spec
 	State State
 
 	SyslogPort uint
@@ -20,11 +19,11 @@ type Container struct {
 
 func (c *Container) ProjectName() string {
 	projectName := path.Base(c.WorkspaceRoot)
-	projectName = manifest.MangleName(projectName)
+	projectName = exohcl.MangleName(projectName)
 	return projectName
 }
 
-type Spec compose.Service
+type Spec = compose.Service
 
 type State struct {
 	ContainerID string     `json:"containerId"`
@@ -34,6 +33,7 @@ type State struct {
 
 type ImageState struct {
 	ID         string            `json:"id"`
+	Spec       string            `json:"spec"`
 	Command    strslice.StrSlice `json:"command"`
 	WorkingDir string            `json:"workingDir"`
 	Entrypoint strslice.StrSlice `json:"entrypoint"`

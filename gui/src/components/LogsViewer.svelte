@@ -1,5 +1,6 @@
 <script lang="ts">
   import Panel from './Panel.svelte';
+  import { shortcuts } from '../lib/actions/shortcut';
   import Logs from './logs/Logs.svelte';
   import LocalLogProvider from './logs/LocalLogProvider.svelte';
   import type { WorkspaceApi } from '../lib/api';
@@ -24,7 +25,10 @@
 
   // Maintain a mapping of process id to name. This can be removed once log streams are
   // tagged with a process name.
-  let processIdToName: Record<string, string> = {};
+  const initProcessIdToName: Record<string, string> = {
+    [workspace.id]: 'EXO',
+  };
+  let processIdToName = initProcessIdToName;
   const unsubscribeProcessStore = processes.subscribe((processData) => {
     if (processData.stage === 'success' || processData.stage === 'refetching') {
       processIdToName = processData.data.reduce(
@@ -32,10 +36,12 @@
           ...acc,
           [processDescription.id]: processDescription.name,
         }),
-        {},
+        initProcessIdToName,
       );
     }
   });
+
+  const getComponentName = (id: string) => processIdToName[id] ?? null;
 
   // Update filterStr when the input state changes (debounced).
   let filterStr = '';
@@ -57,24 +63,73 @@
   });
 </script>
 
-<Panel title="Logs" --panel-padding="0" --panel-overflow-y="hidden">
-  <LocalLogProvider {workspace} {processIdToName} {filterStr} {logs} let:events>
-    <Logs {events} />
-  </LocalLogProvider>
-
-  <div slot="bottom">
-    <input type="text" placeholder="Filter..." bind:value={filterInput} />
-  </div>
-</Panel>
+<LocalLogProvider
+  {workspace}
+  {filterStr}
+  streams={[workspace.id, ...logs]}
+  let:events
+  let:clearEvents
+>
+  <Panel title="Logs" --panel-padding="0" --panel-overflow-y="hidden">
+    <Logs {getComponentName} {events} />
+    <div class="bottom" slot="bottom">
+      <input type="text" placeholder="Filter..." bind:value={filterInput} />
+      <button
+        use:shortcuts={{
+          chords: [
+            {
+              meta: true,
+              code: 'KeyK',
+            },
+            {
+              control: true,
+              code: 'KeyL',
+            },
+          ],
+        }}
+        on:click={(e) => {
+          clearEvents();
+        }}
+      >
+        Clear Logs
+      </button>
+    </div>
+  </Panel>
+</LocalLogProvider>
 
 <style>
   input {
     width: 100%;
     border: none;
-    border-top: 1px solid var(--layout-bg-color);
-    background: var(--primary-bg-color);
     font-size: 16px;
+    background: var(--primary-bg-color);
     padding: 8px 12px;
+  }
+
+  .bottom {
+    display: flex;
+  }
+
+  input,
+  button {
+    border: none;
+    white-space: nowrap;
+    border-top: 1px solid var(--layout-bg-color);
     outline: none;
+  }
+
+  button {
+    font-size: 0.85em;
+    padding: 8px 16px;
+    border-left: 1px solid var(--layout-bg-color);
+    background: var(--primary-bg-color);
+  }
+
+  button:hover {
+    background: var(--grey-e-color);
+  }
+
+  button:active {
+    background: var(--grey-c-color);
   }
 </style>

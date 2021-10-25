@@ -36,6 +36,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+
       - name: Create tag
         uses: actions/github-script@v3
         with:
@@ -49,125 +50,42 @@ jobs:
               repo: context.repo.repo,
               ref: `refs/tags/v${version}`,
               sha: context.sha
-            })
+      - run: git tag ${{ steps.get_version.outputs.release_version }}
 
-  create-release:
-    name: Create a GH release from version tag
-    runs-on: ubuntu-latest
-    needs:
-      - create-release-tag
-    steps:
-      - uses: actions/checkout@v2
-      - name: Get version from VERSION file
-        id: get_version
-        run: |
-          echo ::set-output name=release_version::$(cat VERSION | tr -d '[:space:]')
-      - name: Create release
-        id: create_release
-        uses: actions/create-release@v1.0.0
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Set up Go
+        uses: actions/setup-go@v2
         with:
-          tag_name: v${{ steps.get_version.outputs.release_version }}
-          release_name: Release ${{ steps.get_version.outputs.release_version }}
-          draft: false
-          prerelease: false
-      - name: Output release URL file
-        run: echo "${{ steps.create_release.outputs.upload_url }}" > release_url.txt
-      - name: Save release URL file for publish
-        uses: actions/upload-artifact@v1
-        with:
-          name: release_url
-          path: release_url.txt
+          go-version: 1.17
 
-  publish-binaries:
-    runs-on: ubuntu-latest
-    needs:
-      - create-release
-    strategy:
-      matrix:
-        goos: [linux, darwin]
-        goarch: ["386", amd64, arm64]
-        exclude:
-          - goarch: "386"
-            goos: darwin
-    steps:
-      - uses: actions/checkout@v2
-      - uses: actions/setup-go@v2
+      - uses: actions/setup-node@v2
         with:
-          go-version: 1.16
-
-      - name: Use Node.js ${{ matrix.node-version }}
-        uses: actions/setup-node@v2
-        with:
-          node-version: 15.x
+          node-version: 'lts/*'
+          cache: 'npm'
+          cache-dependency-path: "gui/package-lock.json"
+      - run: npm i -g npm@latest
       - run: npm ci
-        working-directory: gui
-      - run: npm run build
-        working-directory: gui
+        working-directory: ./gui
 
       - name: Get version from VERSION file
         id: get_version
         run: echo ::set-output name=release_version::$(cat VERSION | tr -d '[:space:]')
-      - name: Load release URL file from release job
-        uses: actions/download-artifact@v1
-        with:
-          name: release_url
-      - name: Set environment variables
-        env:
-          REPOSITORY_NAME: ${{ github.repository }}
-          ARTIFACT_DIR: ./artifacts
-        run: |
-          export BASE_NAME=${REPOSITORY_NAME##*/}
-          export BINARY_NAME="${BASE_NAME}-${{ steps.get_version.outputs.release_version }}-${{ matrix.goos }}-${{ matrix.goarch }}"
-          echo "binary_name=$BINARY_NAME" >> $GITHUB_ENV
-          echo "artifact_dir=$ARTIFACT_DIR" >> $GITHUB_ENV
-          echo "binary_path=${ARTIFACT_DIR}/${BINARY_NAME}" >> $GITHUB_ENV
+
+        # FIXME: this will probably break the release as it will cause the
+        # working directory to be dirty.
       - name: Output Amplitude API key
         run: echo -n "${{ secrets.AMPLITUDE_API_KEY }}" > AMPLITUDE_API_KEY
-      - name: Build
-        run: |
-          mkdir -p "${{ env.artifact_dir }}"
-          GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build -tags bundle -o "${{ env.binary_path }}" ./cmd/exo
-          sha256sum "${{ env.binary_path }}" | cut -d ' ' -f 1 > "${{ env.binary_path }}.sha256"
-      - name: Set upload URL
-        id: get_release_info
-        run: |
-          value=`cat release_url/release_url.txt`
-          echo ::set-output name=upload_url::$value
-      - name: Upload release asset
-        id: upload-release-asset
-        uses: actions/upload-release-asset@v1.0.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.get_release_info.outputs.upload_url }}
-          asset_path: ${{ env.binary_path }}
-          asset_name: ${{ env.binary_name }}
-          asset_content_type: application/octet-stream
-      - name: Upload release SHA256 hash
-        id: upload-release-checksum
-        uses: actions/upload-release-asset@v1.0.1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
-          upload_url: ${{ steps.get_release_info.outputs.upload_url }}
-          asset_path: ${{ env.binary_path }}.sha256
-          asset_name: ${{ env.binary_name }}.sha256
-          asset_content_type: text/plain
 
-  update-version:
-    runs-on: ubuntu-latest
-    needs:
-      - publish-binaries
-    steps:
-      - uses: actions/checkout@v2
-      - name: Get version from VERSION file
-        id: get_version
-        run: echo ::set-output name=release_version::$(cat VERSION | tr -d '[:space:]')
+      - name: Run GoReleaser
+        run: make release
+        env:
+          # Need a custom personal access token to allow publishing to
+          # the deref/homebrew-tap repository.
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+
+
       - name: Update version in CloudFlare K/V
         uses: cloudflare/wrangler-action@1.3.0
         with:
           apiToken: ${{ secrets.CF_API_TOKEN }}
           publish: false
-          preCommands: wrangler kv:key put --binding VERSIONS "exo" ${{ steps.get_version.outputs.release_version }}
+          preCommands: wrangler kv:key put --binding VERSIONS "exo" ${{ steps.get_version.outputs.release_version }}           })

@@ -1,9 +1,7 @@
 <script lang="ts">
+  import Icon from './Icon.svelte';
   import VersionInfo from './VersionInfo.svelte';
-  import NavbarRoute from './nav/NavbarRoute.svelte';
   import NavbarButton from './nav/NavbarButton.svelte';
-  import FeedbackSVG from './mono/FeedbackSVG.svelte';
-  import PreferencesSVG from './mono/PreferencesSVG.svelte';
   import { theme, themeOptions } from '../lib/theme';
 
   $: {
@@ -16,28 +14,32 @@
 <main>
   <nav>
     <header>
-      <NavbarRoute title="Home" href="#/">
+      <NavbarButton title="Home" href="#/" shortcutParams={{ code: 'KeyH' }}>
         {#if import.meta.env.MODE === 'development'}
           <img src="/deref-rounded-icon-dev.png" alt="Deref" height="24px" />
         {:else}
           <img src="/deref-rounded-icon.png" alt="Deref" height="24px" />
         {/if}
-      </NavbarRoute>
+      </NavbarButton>
     </header>
     <div class="navbar-wrapper">
       <slot name="navbar" />
     </div>
     <footer>
-      <NavbarRoute title="Preferences" href="#/preferences">
-        <PreferencesSVG />
-      </NavbarRoute>
+      <NavbarButton
+        title="Preferences"
+        href="#/preferences"
+        shortcutParams={{ code: 'KeyP' }}
+      >
+        <Icon glyph="Preferences" />
+      </NavbarButton>
       <NavbarButton
         title="Give feedback on GitHub"
         on:click={() => {
           window.location.href = 'https://github.com/deref/exo/discussions';
         }}
       >
-        <FeedbackSVG />
+        <Icon glyph="Feedback" />
       </NavbarButton>
       <VersionInfo />
     </footer>

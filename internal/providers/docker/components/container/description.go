@@ -21,7 +21,7 @@ func GetProcessDescription(ctx context.Context, dockerClient *dockerclient.Clien
 	}
 
 	var state State
-	if err := jsonutil.UnmarshalString(component.State, &state); err != nil {
+	if err := jsonutil.UnmarshalStringOrEmpty(component.State, &state); err != nil {
 		return api.ProcessDescription{}, fmt.Errorf("unmarshalling container state: %v\n", err)
 	}
 	process := api.ProcessDescription{

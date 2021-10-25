@@ -3,7 +3,9 @@ package server
 import (
 	"bytes"
 	"context"
+	"errors"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"os"
 	"path"
@@ -15,9 +17,11 @@ import (
 	"github.com/deref/exo/internal/core/api"
 	state "github.com/deref/exo/internal/core/state/api"
 	"github.com/deref/exo/internal/deps"
+	"github.com/deref/exo/internal/esv"
+	eventd "github.com/deref/exo/internal/eventd/api"
 	"github.com/deref/exo/internal/gensym"
-	logd "github.com/deref/exo/internal/logd/api"
-	"github.com/deref/exo/internal/manifest"
+	josh "github.com/deref/exo/internal/josh/server"
+	"github.com/deref/exo/internal/manifest/exohcl"
 	"github.com/deref/exo/internal/manifest/procfile"
 	"github.com/deref/exo/internal/providers/core"
 	"github.com/deref/exo/internal/providers/core/components/invalid"
@@ -33,7 +37,7 @@ import (
 	"github.com/deref/exo/internal/util/logging"
 	"github.com/deref/exo/internal/util/pathutil"
 	dockerclient "github.com/docker/docker/client"
-	"github.com/joho/godotenv"
+	"github.com/hashicorp/hcl/v2"
 	"golang.org/x/sync/errgroup"
 )
 
@@ -45,6 +49,87 @@ type Workspace struct {
 	Logger      logging.Logger // TODO: Embed in context, so it can be annotated with request info.
 	Docker      *dockerclient.Client
 	TaskTracker *task.TaskTracker
+	EsvClient   esv.EsvClient
+}
+
+var _ api.Workspace = &Workspace{}
+
+var secretsUrlFile = "exo-secrets-url"
+
+type vaultConfig struct {
+	name string
+	url  string
+}
+
+func (ws *Workspace) getVaultConfigs(ctx context.Context) ([]vaultConfig, error) {
+	// NOTE: [VAULTS_IN_MANIFEST] Right now getVaultConfigs relies on an
+	// exo-secrets-url file in the workspace root to provide the vault. At the
+	// moment only one is supported. Instead we should add this to the state of
+	// the workspace and support multiple vaults.
+
+	secretConfigPath, err := ws.resolveWorkspacePath(ctx, secretsUrlFile)
+	if err != nil {
+		return nil, fmt.Errorf("resolving secrets config file path: %w", err)
+	}
+	secretsUrlBytes, err := ioutil.ReadFile(secretConfigPath)
+	if os.IsNotExist(err) {
+		return []vaultConfig{}, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("reading secrets config: %w", err)
+	}
+	secretsUrl := string(bytes.TrimSpace(secretsUrlBytes))
+	return []vaultConfig{{name: "esv-vault", url: secretsUrl}}, nil
+}
+
+// AddVault performs an upsert for the specified vault name and URL.
+func (ws *Workspace) AddVault(ctx context.Context, input *api.AddVaultInput) (*api.AddVaultOutput, error) {
+	// SEE NOTE [VAULTS_IN_MANIFEST]
+	secretConfigPath, err := ws.resolveWorkspacePath(ctx, secretsUrlFile)
+	if err != nil {
+		return nil, fmt.Errorf("resolving secrets config file path: %w", err)
+	}
+
+	if err := ioutil.WriteFile(secretConfigPath, []byte(input.Url), 0600); err != nil {
+		return nil, fmt.Errorf("writing secrets config file: %w", err)
+	}
+
+	return &api.AddVaultOutput{}, nil
+}
+
+func (ws *Workspace) DescribeVaults(ctx context.Context, input *api.DescribeVaultsInput) (*api.DescribeVaultsOutput, error) {
+	vaultConfigs, err := ws.getVaultConfigs(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("getting vault configs: %w", err)
+	}
+
+	descriptions := make([]api.VaultDescription, len(vaultConfigs))
+	for i, vaultConfig := range vaultConfigs {
+		// TODO: add a status command.
+		_, err = ws.EsvClient.GetWorkspaceSecrets(vaultConfig.url)
+		descriptions[i] = api.VaultDescription{
+			Name:      vaultConfig.name,
+			Url:       vaultConfig.url,
+			Connected: err == nil,
+			NeedsAuth: errors.Is(err, esv.AuthError),
+		}
+	}
+
+	return &api.DescribeVaultsOutput{Vaults: descriptions}, nil
+}
+
+func (ws *Workspace) logEventf(ctx context.Context, format string, v ...interface{}) {
+	eventStore := log.CurrentEventStore(ctx)
+	input := &eventd.AddEventInput{
+		Stream:    ws.ID,
+		Timestamp: chrono.NowString(ctx),
+		Message:   fmt.Sprintf(format, v...),
+	}
+	_, err := eventStore.AddEvent(ctx, input)
+	if err != nil {
+		ws.Logger.Infof("error adding workspace event: %v", err)
+		ws.Logger.Infof("event message was: %s", input.Message)
+	}
 }
 
 func (ws *Workspace) Describe(ctx context.Context, input *api.DescribeInput) (*api.DescribeOutput, error) {
@@ -67,20 +152,23 @@ func (ws *Workspace) describe(ctx context.Context) (*api.WorkspaceDescription, e
 	if len(output.Workspaces) != 1 {
 		return nil, fmt.Errorf("invalid workspace: %q", ws.ID)
 	}
+	desc := output.Workspaces[0]
 	return &api.WorkspaceDescription{
-		ID:   ws.ID,
-		Root: output.Workspaces[0].Root,
+		ID:          ws.ID,
+		Root:        desc.Root,
+		DisplayName: desc.DisplayName,
 	}, nil
 }
 
 func (ws *Workspace) Destroy(ctx context.Context, input *api.DestroyInput) (*api.DestroyOutput, error) {
 	job := ws.TaskTracker.StartTask(ctx, "destroying")
+	ws.logEventf(ctx, "destroying workspace... %s", job.JobID())
 	query := makeComponentQuery(withReversedDependencies)
 
 	go func() {
 		defer job.Finish()
-		ws.goControlComponents(job, query, func(ctx context.Context, lifecycle api.Lifecycle) error {
-			return ws.deleteComponent(ctx, lifecycle)
+		ws.goControlComponents(job, query, func(*api.ComponentDescription) interface{} {
+			return &api.DestroyInput{}
 		})
 		if err := job.Wait(); err != nil {
 			return
@@ -102,11 +190,20 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 	if err != nil {
 		return nil, fmt.Errorf("describing workspace: %w", err)
 	}
-	res := ws.loadManifest(description.Root, input)
-	if res.Err != nil {
-		return nil, res.Err
+	m, err := ws.loadManifest(description.Root, input)
+
+	var diags hcl.Diagnostics
+	invalidManifest := false
+	if errors.As(err, &diags) {
+		invalidManifest = diags.HasErrors()
+	} else {
+		invalidManifest = err != nil
 	}
-	m := res.Manifest
+	if invalidManifest {
+		return nil, errutil.WithHTTPStatus(http.StatusBadRequest, err)
+	}
+	manifestComponents := m.Components()
+	numComponents := manifestComponents.Len()
 
 	describeOutput, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{})
 	if err != nil {
@@ -120,6 +217,7 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 
 	// TODO: Handle partial failures.
 	job := ws.TaskTracker.StartTask(ctx, "applying")
+	ws.logEventf(ctx, "applying manifest... %s", job.JobID())
 
 	// The algorithm for applying a new manifest is as follows:
 	// 1. Build dependency graph for the new manifest, allComponents.
@@ -141,12 +239,13 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 
 	// 1.
 	allComponents := deps.New()
-	for _, c := range m.Components {
+	for i := 0; i < numComponents; i++ {
+		c := manifestComponents.Index(i)
 		allComponents.AddNode(&componentNode{
 			component: c,
 		})
-		for _, dependency := range c.DependsOn {
-			allComponents.AddEdge(c.Name, dependency)
+		for _, dependency := range c.DependsOn() {
+			allComponents.AddEdge(c.Name(), dependency)
 		}
 	}
 
@@ -164,9 +263,7 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 			name: name,
 			task: job.CreateChild("deleting " + name),
 			run: func(t *task.Task) error {
-				return ws.control(job.Context, oldComponent, func(ctx context.Context, lifecycle api.Lifecycle) error {
-					return ws.deleteComponent(job.Context, lifecycle)
-				})
+				return ws.control(job.Context, oldComponent, &api.DestroyInput{})
 			},
 		})
 		// Invert the dependencies for deletions so that we can check whether there is anything
@@ -185,7 +282,7 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 	// 5.
 	updateSet := make(map[string]struct{})
 
-	recreateComponentOnce := func(name string, oldComponent api.ComponentDescription, newComponent manifest.Component) {
+	recreateComponentOnce := func(name string, oldComponent api.ComponentDescription, newComponent *exohcl.Component) {
 		// 6.1.1.
 		if _, alreadyUpdated := updateSet[name]; alreadyUpdated {
 			return
@@ -195,9 +292,7 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 			name: name,
 			task: job.CreateChild("deleting " + name),
 			run: func(t *task.Task) error {
-				return ws.control(job.Context, oldComponent, func(ctx context.Context, lifecycle api.Lifecycle) error {
-					return ws.deleteComponent(job.Context, lifecycle)
-				})
+				return ws.control(job.Context, oldComponent, &api.DestroyInput{})
 			},
 		})
 		for _, dependency := range oldComponent.DependsOn {
@@ -209,20 +304,19 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 			task: job.CreateChild("re-creating " + name),
 			run: func(t *task.Task) error {
 				// Should the replacement component get the old component's ID?
-				_, err := ws.createComponent(t, newComponent, gensym.RandomBase32())
-				return err
+				return ws.createComponent(t, manifestComponentToCreate(newComponent), gensym.RandomBase32())
 			},
 		})
-		for _, dependency := range newComponent.DependsOn {
+		for _, dependency := range newComponent.DependsOn() {
 			createGraph.AddEdge(name, dependency)
 		}
 		updateSet[name] = struct{}{}
 	}
 
 	// 6.
-	for _, newComponent := range m.Components {
-		newComponent := newComponent
-		name := newComponent.Name
+	for i := 0; i < numComponents; i++ {
+		newComponent := manifestComponents.Index(i)
+		name := newComponent.Name()
 
 		if oldComponent, exists := oldComponents[name]; exists {
 			name := name
@@ -241,12 +335,10 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 				name: name,
 				task: job.CreateChild("adding " + name),
 				run: func(t *task.Task) error {
-					id := gensym.RandomBase32()
-					_, err := ws.createComponent(t, newComponent, id)
-					return err
+					return ws.createComponent(t, manifestComponentToCreate(newComponent), gensym.RandomBase32())
 				},
 			})
-			for _, dependency := range newComponent.DependsOn {
+			for _, dependency := range newComponent.DependsOn() {
 				createGraph.AddEdge(name, dependency)
 			}
 		}
@@ -260,10 +352,14 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 		executeRunTasks(createGraph)
 	}()
 
-	return &api.ApplyOutput{
-		Warnings: res.Warnings,
+	output := api.ApplyOutput{
+		Warnings: make([]string, len(diags)),
 		JobID:    job.ID(),
-	}, nil
+	}
+	for i, diag := range diags {
+		output.Warnings[i] = diag.Error()
+	}
+	return &output, nil
 }
 
 func executeRunTasks(g *deps.Graph) {
@@ -305,7 +401,7 @@ func (ws *Workspace) Resolve(ctx context.Context, input *api.ResolveInput) (*api
 func (ws *Workspace) DescribeComponents(ctx context.Context, input *api.DescribeComponentsInput) (*api.DescribeComponentsOutput, error) {
 	stateOutput, err := ws.Store.DescribeComponents(ctx, &state.DescribeComponentsInput{
 		WorkspaceID:         ws.ID,
-		IDs:                 input.IDs,
+		Refs:                input.Refs,
 		Types:               input.Types,
 		IncludeDependencies: input.IncludeDependencies,
 		IncludeDependents:   input.IncludeDependents,
@@ -319,20 +415,19 @@ func (ws *Workspace) DescribeComponents(ctx context.Context, input *api.Describe
 	}
 	for i, component := range stateOutput.Components {
 		output.Components[i] = api.ComponentDescription{
-			ID:          component.ID,
-			Name:        component.Name,
-			Type:        component.Type,
-			Spec:        component.Spec,
-			State:       component.State,
-			Created:     component.Created,
-			Initialized: component.Initialized,
-			Disposed:    component.Disposed,
-			DependsOn:   component.DependsOn,
+			ID:        component.ID,
+			Name:      component.Name,
+			Type:      component.Type,
+			Spec:      component.Spec,
+			State:     component.State,
+			Created:   component.Created,
+			DependsOn: component.DependsOn,
 		}
 	}
 	return output, nil
 }
 
+// TODO: Argument should be type+id, no spec or state or anything like that.
 func (ws *Workspace) newController(ctx context.Context, desc api.ComponentDescription) Controller {
 	description, err := ws.describe(ctx)
 	if err != nil {
@@ -346,14 +441,17 @@ func (ws *Workspace) newController(ctx context.Context, desc api.ComponentDescri
 			Err: fmt.Errorf("environment error: %w", err),
 		}
 	}
+	simpleEnv := map[string]string{}
+	for k, v := range env {
+		simpleEnv[k] = v.Value
+	}
 	base := core.ComponentBase{
 		ComponentID:          desc.ID,
 		ComponentName:        desc.Name,
-		ComponentSpec:        desc.Spec,
 		ComponentState:       desc.State,
 		WorkspaceID:          ws.ID,
 		WorkspaceRoot:        description.Root,
-		WorkspaceEnvironment: env,
+		WorkspaceEnvironment: simpleEnv,
 		Logger:               ws.Logger,
 	}
 	switch desc.Type {
@@ -405,153 +503,160 @@ func (ws *Workspace) DescribeEnvironment(ctx context.Context, input *api.Describ
 	}, nil
 }
 
-func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]string, error) {
-	envPath, err := ws.resolveWorkspacePath(ctx, ".env")
-	if err != nil {
-		return nil, fmt.Errorf("could not resolve path to .env file: %w", err)
-	}
-
-	_, err = os.Stat(envPath)
-	if os.IsNotExist(err) {
-		env := make(map[string]string)
-		for _, assign := range os.Environ() {
-			parts := strings.SplitN(assign, "=", 2)
-			key := parts[0]
-			val := parts[1]
-			env[key] = val
-		}
-		return env, nil
-	}
-	if err != nil {
-		return nil, fmt.Errorf("could not read .env file: %w", err)
-	}
-
-	envMap, err := godotenv.Read(envPath)
-	if err != nil {
-		return nil, fmt.Errorf("could not process env file: %w", err)
-	}
-	return envMap, nil
-}
-
 func (ws *Workspace) CreateComponent(ctx context.Context, input *api.CreateComponentInput) (*api.CreateComponentOutput, error) {
 	id := gensym.RandomBase32()
-	jobID, err := ws.createComponent(ctx, manifest.Component{
-		Name: input.Name,
-		Type: input.Type,
-		Spec: input.Spec,
-	}, id)
-	if err != nil {
-		return nil, err
-	}
 
+	job := ws.TaskTracker.StartTask(ctx, "creating "+input.Name)
+	go func() {
+		defer job.Finish()
+
+		err := ws.createComponent(ctx, input, id)
+		if err != nil {
+			ws.logEventf(ctx, "error creating %s: %v", input.Name, err)
+			job.Fail(err)
+			return
+		}
+	}()
+
+	ws.logEventf(ctx, "new component: %s", input.Name)
 	return &api.CreateComponentOutput{
 		ID:    id,
-		JobID: jobID,
+		JobID: job.ID(),
 	}, nil
 }
 
-func (ws *Workspace) createComponent(ctx context.Context, component manifest.Component, id string) (string, error) {
-	if err := manifest.ValidateName(component.Name); err != nil {
-		return "", errutil.HTTPErrorf(http.StatusBadRequest, "component name %q invalid: %w", component.Name, err)
+func (ws *Workspace) createComponent(ctx context.Context, input *api.CreateComponentInput, id string) error {
+	if err := exohcl.ValidateName(input.Name); err != nil {
+		return errutil.HTTPErrorf(http.StatusBadRequest, "component name %q invalid: %w", input.Name, err)
 	}
 
 	if _, err := ws.Store.AddComponent(ctx, &state.AddComponentInput{
 		WorkspaceID: ws.ID,
 		ID:          id,
-		Name:        component.Name,
-		Type:        component.Type,
-		Spec:        component.Spec,
+		Name:        input.Name,
+		Type:        input.Type,
+		Spec:        input.Spec,
 		Created:     chrono.NowString(ctx),
-		DependsOn:   component.DependsOn,
+		DependsOn:   input.DependsOn,
 	}); err != nil {
-		return "", fmt.Errorf("adding component: %w", err)
+		return fmt.Errorf("adding component: %w", err)
 	}
 
-	job := ws.TaskTracker.StartTask(ctx, "creating "+component.Name)
-	go func() {
-		defer job.Finish()
+	// Construct a synthetic component description to avoid re-reading after
+	// the add. Only the fields needed by control are included.
+	// TODO: Store.AddComponent could return a component description?
+	desc := api.ComponentDescription{
+		ID:        id,
+		Name:      input.Name,
+		Type:      input.Type,
+		Spec:      input.Spec,
+		DependsOn: input.DependsOn,
+	}
+	return ws.control(ctx, desc, &api.InitializeInput{
+		Spec: input.Spec,
+	})
+}
 
-		if err := ws.control(ctx, api.ComponentDescription{
-			// Construct a synthetic component description to avoid re-reading after
-			// the add. Only the fields needed by control are included.
-			// TODO: Store.AddComponent could return a component description?
-			ID:        id,
-			Name:      component.Name,
-			Type:      component.Type,
-			Spec:      component.Spec,
-			DependsOn: component.DependsOn,
-		}, func(ctx context.Context, lifecycle api.Lifecycle) error {
-			_, err := lifecycle.Initialize(ctx, &api.InitializeInput{})
-			return err
-		}); err != nil {
-			job.Fail(err)
-			return
-		}
-
-		// XXX this now double-patches the component to set Initialized timestamp. Optimize?
-		if _, err := ws.Store.PatchComponent(ctx, &state.PatchComponentInput{
-			ID:          id,
-			Initialized: chrono.NowString(ctx),
-		}); err != nil {
-			job.Fail(fmt.Errorf("modifying component after initialization: %w", err)) // XXX this message seems incorrect.
-			return
-		}
-
-		if err := job.Wait(); err != nil {
-			return
-		}
-	}()
-
-	return job.ID(), nil
+func manifestComponentToCreate(c *exohcl.Component) *api.CreateComponentInput {
+	return &api.CreateComponentInput{
+		Type:      c.Type(),
+		Name:      c.Name(),
+		Spec:      c.Spec(),
+		DependsOn: c.DependsOn(),
+	}
 }
 
 func (ws *Workspace) UpdateComponent(ctx context.Context, input *api.UpdateComponentInput) (*api.UpdateComponentOutput, error) {
-	id, err := ws.resolveRef(ctx, input.Ref)
-	if err != nil {
-		return nil, err
-	}
-
-	describeOutput, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{IDs: []string{id}})
+	describeOutput, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{Refs: []string{input.Ref}})
 	if err != nil {
 		return nil, fmt.Errorf("describing components: %w", err)
 	}
-
-	oldComponent := describeOutput.Components[0]
-	dependsOn := oldComponent.DependsOn
-	if input.DependsOn != nil {
-		dependsOn = input.DependsOn
+	if len(describeOutput.Components) == 0 {
+		return nil, errutil.HTTPErrorf(http.StatusNotFound, "component not found: %q", input.Ref)
 	}
 
-	if err := ws.updateComponent(ctx, oldComponent, manifest.Component{
-		Type:      oldComponent.Type,
-		Name:      oldComponent.Name,
-		Spec:      input.Spec,
-		DependsOn: dependsOn,
-	}, oldComponent.ID); err != nil {
+	oldComponent := describeOutput.Components[0]
+	newComponent := oldComponent
+	patch := state.PatchComponentInput{
+		ID: oldComponent.ID,
+	}
+
+	if input.Name != "" {
+		if err := exohcl.ValidateName(input.Name); err != nil {
+			return nil, errutil.HTTPErrorf(http.StatusBadRequest, "new component name %q is invalid: %w", input.Name, err)
+		}
+		newComponent.Name = input.Name
+		patch.Name = input.Name
+	}
+	if input.Spec != "" {
+		newComponent.Spec = input.Spec
+		patch.Spec = input.Spec
+	}
+	if input.DependsOn != nil {
+		newComponent.DependsOn = input.DependsOn
+		patch.DependsOn = &input.DependsOn
+	}
+
+	_, err = ws.Store.PatchComponent(ctx, &patch)
+	if err != nil {
+		return nil, fmt.Errorf("patching component: %w", err)
+	}
+
+	ws.logEventf(ctx, "updating %s", oldComponent.Name)
+	job := ws.TaskTracker.StartTask(ctx, "updating")
+	go func() {
+		defer job.Finish()
+		// TODO: Most updates should be accomplished without a full replacement; especially when there are no spec changes!
+		job.Go("dispose old", func(disposeTask *task.Task) error {
+			// TODO: Fix this really awkward way of encoding a waterfall of async steps.
+			job.Go("initialize new", func(initializeTask *task.Task) error {
+				if err := disposeTask.Wait(); err != nil {
+					return context.Canceled
+				}
+				return ws.control(ctx, newComponent, &api.InitializeInput{
+					Spec: newComponent.Spec,
+				})
+			})
+			return ws.control(ctx, oldComponent, &api.DisposeInput{})
+		})
+	}()
+
+	return &api.UpdateComponentOutput{
+		JobID: job.ID(),
+	}, nil
+}
+
+func (ws *Workspace) RenameComponent(ctx context.Context, input *api.RenameComponentInput) (*api.RenameComponentOutput, error) {
+	describeOutput, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{Refs: []string{input.Ref}})
+	if err != nil {
+		return nil, fmt.Errorf("describing components: %w", err)
+	}
+	if len(describeOutput.Components) == 0 {
+		return nil, errutil.HTTPErrorf(http.StatusNotFound, "component not found: %q", input.Ref)
+	}
+
+	component := describeOutput.Components[0]
+
+	if err := exohcl.ValidateName(input.Name); err != nil {
+		return nil, errutil.HTTPErrorf(http.StatusBadRequest, "new component name %q is invalid: %w", input.Name, err)
+	}
+
+	if _, err := ws.Store.PatchComponent(ctx, &state.PatchComponentInput{
+		ID:   component.ID,
+		Name: input.Name,
+	}); err != nil {
 		return nil, err
 	}
 
-	return &api.UpdateComponentOutput{}, nil
-}
-
-func (ws *Workspace) updateComponent(ctx context.Context, oldComponent api.ComponentDescription, newComponent manifest.Component, id string) error {
-	// TODO: Most updates should be accomplished without a full replacement; especially when there are no spec changes!
-	if err := ws.control(ctx, oldComponent, func(ctx context.Context, lifecycle api.Lifecycle) error {
-		return ws.deleteComponent(ctx, lifecycle)
-	}); err != nil {
-		return fmt.Errorf("delete %q for replacement: %w", oldComponent.Name, err)
-	}
-	if _, err := ws.createComponent(ctx, newComponent, id); err != nil {
-		return fmt.Errorf("adding replacement %q: %w", newComponent.Name, err)
-	}
-	return nil
+	return &api.RenameComponentOutput{}, nil
 }
 
 func (ws *Workspace) RefreshComponents(ctx context.Context, input *api.RefreshComponentsInput) (*api.RefreshComponentsOutput, error) {
 	query := makeComponentQuery(withRefs(input.Refs...))
-	jobID := ws.controlEachComponent(ctx, "refreshing", query, func(ctx context.Context, lifecycle api.Lifecycle) error {
-		_, err := lifecycle.Refresh(ctx, &api.RefreshInput{})
-		return err
+	jobID := ws.controlEachComponent(ctx, "refreshing", query, func(desc *api.ComponentDescription) interface{} {
+		return &api.RefreshInput{
+			Spec: desc.Spec,
+		}
 	})
 	return &api.RefreshComponentsOutput{
 		JobID: jobID,
@@ -560,9 +665,8 @@ func (ws *Workspace) RefreshComponents(ctx context.Context, input *api.RefreshCo
 
 func (ws *Workspace) DisposeComponents(ctx context.Context, input *api.DisposeComponentsInput) (*api.DisposeComponentsOutput, error) {
 	query := makeComponentQuery(withRefs(input.Refs...), withReversedDependencies)
-	jobID := ws.controlEachComponent(ctx, "disposing", query, func(ctx context.Context, lifecycle api.Lifecycle) error {
-		_, err := lifecycle.Dispose(ctx, &api.DisposeInput{})
-		return err
+	jobID := ws.controlEachComponent(ctx, "disposing", query, func(desc *api.ComponentDescription) interface{} {
+		return &api.DisposeInput{}
 	})
 	return &api.DisposeComponentsOutput{
 		JobID: jobID,
@@ -593,30 +697,19 @@ func (ws *Workspace) resolveRefs(ctx context.Context, refs []string) ([]string, 
 }
 
 func (ws *Workspace) DeleteComponents(ctx context.Context, input *api.DeleteComponentsInput) (*api.DeleteComponentsOutput, error) {
+	ws.logEventf(ctx, "deleting components: %s", input.Refs)
 	query := makeComponentQuery(withRefs(input.Refs...), withReversedDependencies)
-	jobID := ws.controlEachComponent(ctx, "deleting", query, func(ctx context.Context, lifecycle api.Lifecycle) error {
-		return ws.deleteComponent(ctx, lifecycle)
+	jobID := ws.controlEachComponent(ctx, "deleting", query, func(*api.ComponentDescription) interface{} {
+		return &api.DestroyInput{}
 	})
 	return &api.DeleteComponentsOutput{
 		JobID: jobID,
 	}, nil
 }
 
-func (ws *Workspace) deleteComponent(ctx context.Context, lifecycle api.Lifecycle) error {
-	_, err := lifecycle.Dispose(ctx, &api.DisposeInput{})
-	if err != nil {
-		return err
-	}
-	lifecycle.(core.Component).MarkDeleted()
-	return nil
-}
-
 func (ws *Workspace) GetComponentState(ctx context.Context, input *api.GetComponentStateInput) (*api.GetComponentStateOutput, error) {
 	query := makeComponentQuery(withRefs(input.Ref))
-	describe, err := query.describeComponentsInput(ctx, ws)
-	if err != nil {
-		return nil, err
-	}
+	describe := query.describeComponentsInput(ws)
 
 	describeOutput, err := ws.DescribeComponents(ctx, describe)
 	if err != nil {
@@ -653,65 +746,6 @@ func (ws *Workspace) SetComponentState(ctx context.Context, input *api.SetCompon
 	return &api.SetComponentStateOutput{}, nil
 }
 
-func (ws *Workspace) DescribeLogs(ctx context.Context, input *api.DescribeLogsInput) (*api.DescribeLogsOutput, error) {
-	describe, err := allProcessQuery().describeComponentsInput(ctx, ws)
-	if err != nil {
-		return nil, err
-	}
-
-	components, err := ws.DescribeComponents(ctx, describe)
-	if err != nil {
-		return nil, fmt.Errorf("describing components: %w", err)
-	}
-
-	// Find all logs in component hierarchy.
-	// TODO: More general handling of log groups, subcomponents, etc.
-	var logGroups []string
-	var logStreams []string
-	streamToGroup := make(map[string]int)
-	for _, component := range components.Components {
-		// XXX Janky provider inference. See note: [LOG_COMPONENTS].
-		var provider string
-		switch component.Type {
-		case "process":
-			provider = "unix"
-		case "container":
-			provider = "docker"
-		}
-		for _, streamName := range log.ComponentLogNames(provider, component.ID) {
-			streamToGroup[streamName] = len(logGroups)
-			logStreams = append(logStreams, streamName)
-		}
-		logGroups = append(logGroups, component.ID)
-	}
-
-	// Initialize output and index by log group name.
-	logs := make([]api.LogDescription, len(logGroups))
-	for i, logGroup := range logGroups {
-		logs[i] = api.LogDescription{
-			Name: logGroup,
-		}
-	}
-
-	// Decorate output with information from the log collector.
-	collector := log.CurrentLogCollector(ctx)
-	collectorLogs, err := collector.DescribeLogs(ctx, &logd.DescribeLogsInput{
-		Names: logStreams,
-	})
-	if err != nil {
-		return nil, err
-	}
-	for _, collectorLog := range collectorLogs.Logs {
-		groupIndex, ok := streamToGroup[collectorLog.Name]
-		if !ok {
-			continue
-		}
-		group := &logs[groupIndex]
-		group.LastEventAt = combineLastEventAt(group.LastEventAt, collectorLog.LastEventAt)
-	}
-	return &api.DescribeLogsOutput{Logs: logs}, nil
-}
-
 func combineLastEventAt(a, b *string) *string {
 	if a == nil {
 		return b
@@ -727,32 +761,22 @@ func combineLastEventAt(a, b *string) *string {
 }
 
 func (ws *Workspace) GetEvents(ctx context.Context, input *api.GetEventsInput) (*api.GetEventsOutput, error) {
-	logGroups := input.Logs
-	if logGroups == nil {
-		// No filter specified, use all streams.
-		logDescriptions, err := ws.DescribeLogs(ctx, &api.DescribeLogsInput{})
+	streamNames := input.Streams
+	if streamNames == nil {
+		describe := allComponentsQuery.describeComponentsInput(ws)
+		components, err := ws.DescribeComponents(ctx, describe)
 		if err != nil {
-			return nil, fmt.Errorf("enumerating logs: %w", err)
+			return nil, fmt.Errorf("describing components: %w", err)
 		}
-		logGroups = make([]string, len(logDescriptions.Logs))
-		for i, group := range logDescriptions.Logs {
-			logGroups[i] = group.Name
-		}
-	}
-	logStreams := make([]string, 0, 2*len(logGroups))
-	// Expand log groups in to streams.
-	for _, group := range logGroups {
-		// Each process acts as a log group combining both stdout and stderr.
-		// XXX See note [LOG_COMPONENTS].
-		for _, suffix := range []string{"", ":out", ":err"} {
-			stream := group + suffix
-			logStreams = append(logStreams, stream)
+		streamNames = make([]string, 1+len(components.Components))
+		streamNames[0] = ws.ID
+		for i, component := range components.Components {
+			streamNames[i+1] = component.ID
 		}
 	}
-
-	collector := log.CurrentLogCollector(ctx)
-	collectorOutput, err := collector.GetEvents(ctx, &logd.GetEventsInput{
-		Logs:      logStreams,
+	eventStore := log.CurrentEventStore(ctx)
+	storeOutput, err := eventStore.GetEvents(ctx, &eventd.GetEventsInput{
+		Streams:   streamNames,
 		Cursor:    input.Cursor,
 		FilterStr: input.FilterStr,
 		Prev:      input.Prev,
@@ -762,32 +786,28 @@ func (ws *Workspace) GetEvents(ctx context.Context, input *api.GetEventsInput) (
 		return nil, err
 	}
 	output := api.GetEventsOutput{
-		Items:      make([]api.Event, len(collectorOutput.Items)),
-		PrevCursor: collectorOutput.PrevCursor,
-		NextCursor: collectorOutput.NextCursor,
+		Items:      make([]api.Event, len(storeOutput.Items)),
+		PrevCursor: storeOutput.PrevCursor,
+		NextCursor: storeOutput.NextCursor,
 	}
-	for i, collectorEvent := range collectorOutput.Items {
+	for i, storeEvent := range storeOutput.Items {
 		output.Items[i] = api.Event{
-			ID:        collectorEvent.ID,
-			Log:       collectorEvent.Log,
-			Timestamp: collectorEvent.Timestamp,
-			Message:   collectorEvent.Message,
+			ID:        storeEvent.ID,
+			Stream:    storeEvent.Stream,
+			Timestamp: storeEvent.Timestamp,
+			Message:   storeEvent.Message,
+			Tags:      storeEvent.Tags,
 		}
 	}
 	return &output, nil
 }
 
 func (ws *Workspace) Start(ctx context.Context, input *api.StartInput) (*api.StartOutput, error) {
-	jobID := ws.controlEachComponent(ctx, "starting", allProcessQuery(withDependencies), func(ctx context.Context, thing interface{}) error {
-		if process, ok := thing.(api.Process); ok {
-			_, err := process.Start(ctx, &api.StartInput{})
-			return err
-		}
-		if lifecycle, ok := thing.(api.Lifecycle); ok {
-			_, err := lifecycle.Initialize(ctx, &api.InitializeInput{})
-			return err
-		}
-		return nil
+	ws.logEventf(ctx, "starting...")
+	jobID := ws.controlEachComponent(ctx, "starting", allProcessQuery(withDependencies), func(*api.ComponentDescription) interface{} {
+		return input
+	}, func(desc *api.ComponentDescription, err error) {
+		ws.logEventf(ctx, "error starting %s: %v", desc.Name, err)
 	})
 	return &api.StartOutput{
 		JobID: jobID,
@@ -795,19 +815,17 @@ func (ws *Workspace) Start(ctx context.Context, input *api.StartInput) (*api.Sta
 }
 
 func (ws *Workspace) StartComponents(ctx context.Context, input *api.StartComponentsInput) (*api.StartComponentsOutput, error) {
+	ws.logEventf(ctx, "starting: %s", input.Refs)
 	// Note that we are only querying Process component types specifically because they are the only
 	// things that are "startable".
 	query := allProcessQuery(withRefs(input.Refs...), withDependencies)
-	jobID := ws.controlEachComponent(ctx, "starting", query, func(ctx context.Context, thing interface{}) error {
-		if process, ok := thing.(api.Process); ok {
-			_, err := process.Start(ctx, &api.StartInput{})
-			return err
+	jobID := ws.controlEachComponent(ctx, "starting", query, func(desc *api.ComponentDescription) interface{} {
+		if !isRunnableType(desc.Type) {
+			return nil
 		}
-		if lifecycle, ok := thing.(api.Lifecycle); ok {
-			_, err := lifecycle.Initialize(ctx, &api.InitializeInput{})
-			return err
-		}
-		return nil
+		return &api.StartInput{}
+	}, func(desc *api.ComponentDescription, err error) {
+		ws.logEventf(ctx, "error starting %s: %v", desc.Name, err)
 	})
 	return &api.StartComponentsOutput{
 		JobID: jobID,
@@ -815,13 +833,10 @@ func (ws *Workspace) StartComponents(ctx context.Context, input *api.StartCompon
 }
 
 func (ws *Workspace) Stop(ctx context.Context, input *api.StopInput) (*api.StopOutput, error) {
+	ws.logEventf(ctx, "stopping...")
 	query := allProcessQuery(withReversedDependencies, withDependents)
-	jobID := ws.controlEachComponent(ctx, "stopping", query, func(ctx context.Context, thing interface{}) error {
-		if process, ok := thing.(api.Process); ok {
-			_, err := process.Stop(ctx, input)
-			return err
-		}
-		return nil
+	jobID := ws.controlEachComponent(ctx, "stopping", query, func(*api.ComponentDescription) interface{} {
+		return input
 	})
 	return &api.StopOutput{
 		JobID: jobID,
@@ -829,17 +844,17 @@ func (ws *Workspace) Stop(ctx context.Context, input *api.StopInput) (*api.StopO
 }
 
 func (ws *Workspace) StopComponents(ctx context.Context, input *api.StopComponentsInput) (*api.StopComponentsOutput, error) {
+	ws.logEventf(ctx, "stopping: %s", input.Refs)
 	query := allProcessQuery(
 		withRefs(input.Refs...),
 		withReversedDependencies,
 		withDependents,
 	)
-	jobID := ws.controlEachComponent(ctx, "stopping", query, func(ctx context.Context, thing interface{}) error {
-		if process, ok := thing.(api.Process); ok {
-			_, err := process.Stop(ctx, &api.StopInput{TimeoutSeconds: input.TimeoutSeconds})
-			return err
+	jobID := ws.controlEachComponent(ctx, "stopping", query, func(desc *api.ComponentDescription) interface{} {
+		if !isRunnableType(desc.Type) {
+			return nil
 		}
-		return nil
+		return &api.StopInput{TimeoutSeconds: input.TimeoutSeconds}
 	})
 	return &api.StopComponentsOutput{
 		JobID: jobID,
@@ -847,13 +862,10 @@ func (ws *Workspace) StopComponents(ctx context.Context, input *api.StopComponen
 }
 
 func (ws *Workspace) Signal(ctx context.Context, input *api.SignalInput) (*api.SignalOutput, error) {
+	ws.logEventf(ctx, "signalling %s...", input.Signal)
 	query := allProcessQuery(withReversedDependencies, withDependents)
-	jobID := ws.controlEachComponent(ctx, "signalling", query, func(ctx context.Context, thing interface{}) error {
-		if process, ok := thing.(api.Process); ok {
-			_, err := process.Signal(ctx, input)
-			return err
-		}
-		return nil
+	jobID := ws.controlEachComponent(ctx, "signalling", query, func(*api.ComponentDescription) interface{} {
+		return input
 	})
 	return &api.SignalOutput{
 		JobID: jobID,
@@ -861,19 +873,16 @@ func (ws *Workspace) Signal(ctx context.Context, input *api.SignalInput) (*api.S
 }
 
 func (ws *Workspace) SignalComponents(ctx context.Context, input *api.SignalComponentsInput) (*api.SignalComponentsOutput, error) {
+	ws.logEventf(ctx, "signalling %s to ", input.Refs)
 	query := allProcessQuery(
 		withRefs(input.Refs...),
 		withReversedDependencies,
 		withDependents,
 	)
-	jobID := ws.controlEachComponent(ctx, "signalling", query, func(ctx context.Context, thing interface{}) error {
-		if process, ok := thing.(api.Process); ok {
-			_, err := process.Signal(ctx, &api.SignalInput{
-				Signal: input.Signal,
-			})
-			return err
+	jobID := ws.controlEachComponent(ctx, "signalling", query, func(*api.ComponentDescription) interface{} {
+		return &api.SignalInput{
+			Signal: input.Signal,
 		}
-		return nil
 	})
 	return &api.SignalComponentsOutput{
 		JobID: jobID,
@@ -881,13 +890,12 @@ func (ws *Workspace) SignalComponents(ctx context.Context, input *api.SignalComp
 }
 
 func (ws *Workspace) Restart(ctx context.Context, input *api.RestartInput) (*api.RestartOutput, error) {
+	ws.logEventf(ctx, "restarting...")
 	query := makeComponentQuery(withDependencies)
-	jobID := ws.controlEachComponent(ctx, "restarting", query, func(ctx context.Context, thing interface{}) error {
-		if process, ok := thing.(api.Process); ok {
-			_, err := process.Restart(ctx, input)
-			return err
-		}
-		return nil
+	jobID := ws.controlEachComponent(ctx, "restarting", query, func(*api.ComponentDescription) interface{} {
+		return input
+	}, func(desc *api.ComponentDescription, err error) {
+		ws.logEventf(ctx, "error restarting %s: %v", desc.Name, err)
 	})
 	return &api.RestartOutput{
 		JobID: jobID,
@@ -895,6 +903,7 @@ func (ws *Workspace) Restart(ctx context.Context, input *api.RestartInput) (*api
 }
 
 func (ws *Workspace) RestartComponents(ctx context.Context, input *api.RestartComponentsInput) (*api.RestartComponentsOutput, error) {
+	ws.logEventf(ctx, "restarting %s", input.Refs)
 	// Restart currently restarts the component and everything that depends on it in the same order as start. There
 	// are likely 3 different restart "modes" that we will eventually want to support:
 	// 1. Restart only the component(s) requested. Do not cascade restarts to any other components.
@@ -902,12 +911,13 @@ func (ws *Workspace) RestartComponents(ctx context.Context, input *api.RestartCo
 	//    then restart the dependents in normal order again.
 	// 3. Ensure that all dependendencies are started (in normal order), then restart these components (current behaviour).
 	query := allProcessQuery(withRefs(input.Refs...), withDependencies)
-	jobID := ws.controlEachComponent(ctx, "restart", query, func(ctx context.Context, thing interface{}) error {
-		if process, ok := thing.(api.Process); ok {
-			_, err := process.Restart(ctx, &api.RestartInput{TimeoutSeconds: input.TimeoutSeconds})
-			return err
+	jobID := ws.controlEachComponent(ctx, "restart", query, func(desc *api.ComponentDescription) interface{} {
+		if !isRunnableType(desc.Type) {
+			return nil
 		}
-		return nil
+		return &api.RestartInput{TimeoutSeconds: input.TimeoutSeconds}
+	}, func(desc *api.ComponentDescription, err error) {
+		ws.logEventf(ctx, "error restarting %s: %v", desc.Name, err)
 	})
 	return &api.RestartComponentsOutput{
 		JobID: jobID,
@@ -915,11 +925,7 @@ func (ws *Workspace) RestartComponents(ctx context.Context, input *api.RestartCo
 }
 
 func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeProcessesInput) (*api.DescribeProcessesOutput, error) {
-	describe, err := allProcessQuery().describeComponentsInput(ctx, ws)
-	if err != nil {
-		return nil, err
-	}
-
+	describe := allProcessQuery().describeComponentsInput(ws)
 	components, err := ws.DescribeComponents(ctx, describe)
 	if err != nil {
 		return nil, fmt.Errorf("describing components: %w", err)
@@ -952,10 +958,7 @@ func (ws *Workspace) DescribeProcesses(ctx context.Context, input *api.DescribeP
 
 func (ws *Workspace) DescribeVolumes(ctx context.Context, input *api.DescribeVolumesInput) (*api.DescribeVolumesOutput, error) {
 	query := makeComponentQuery(withTypes("volume"))
-	describe, err := query.describeComponentsInput(ctx, ws)
-	if err != nil {
-		return nil, err
-	}
+	describe := query.describeComponentsInput(ws)
 	components, err := ws.DescribeComponents(ctx, describe)
 	if err != nil {
 		return nil, fmt.Errorf("describing components: %w", err)
@@ -975,10 +978,7 @@ func (ws *Workspace) DescribeVolumes(ctx context.Context, input *api.DescribeVol
 
 func (ws *Workspace) DescribeNetworks(ctx context.Context, input *api.DescribeNetworksInput) (*api.DescribeNetworksOutput, error) {
 	query := makeComponentQuery(withTypes("network"))
-	describe, err := query.describeComponentsInput(ctx, ws)
-	if err != nil {
-		return nil, err
-	}
+	describe := query.describeComponentsInput(ws)
 	components, err := ws.DescribeComponents(ctx, describe)
 	if err != nil {
 		return nil, fmt.Errorf("describing components: %w", err)
@@ -1007,7 +1007,7 @@ func (ws *Workspace) ExportProcfile(ctx context.Context, input *api.ExportProcfi
 	for _, proc := range procs.Processes {
 		if proc.Provider == "unix" {
 			var spec process.Spec
-			if err := jsonutil.UnmarshalString(proc.Spec, &spec); err != nil {
+			if err := jsonutil.UnmarshalStringOrEmpty(proc.Spec, &spec); err != nil {
 				logger.Infof("unmarshalling process spec: %v\n", err)
 				continue
 			}
@@ -1074,6 +1074,7 @@ func (ws *Workspace) WriteFile(ctx context.Context, input *api.WriteFileInput) (
 	return &api.WriteFileOutput{}, nil
 }
 
+// TODO: Usages of this on the read codepath always check for exists - can we bake that in?
 func (ws *Workspace) resolveWorkspacePath(ctx context.Context, relativePath string) (string, error) {
 	description, err := ws.describe(ctx)
 	if err != nil {
@@ -1088,22 +1089,17 @@ func (ws *Workspace) resolveWorkspacePath(ctx context.Context, relativePath stri
 	return resolvedPath, nil
 }
 
-func (ws *Workspace) controlEachComponent(ctx context.Context, label string, query componentQuery, f interface{}) (jobID string) {
+func (ws *Workspace) controlEachComponent(ctx context.Context, label string, query componentQuery, makeMessage func(*api.ComponentDescription) interface{}, onErr ...func(*api.ComponentDescription, error)) (jobID string) {
 	job := ws.TaskTracker.StartTask(ctx, label)
 	go func() {
 		defer job.Finish()
-		ws.goControlComponents(job, query, f)
+		ws.goControlComponents(job, query, makeMessage, onErr...)
 	}()
 	return job.ID()
 }
 
-func (ws *Workspace) goControlComponents(t *task.Task, query componentQuery, f interface{}) {
-	describe, err := query.describeComponentsInput(t, ws)
-	if err != nil {
-		t.Fail(err)
-		return
-	}
-
+func (ws *Workspace) goControlComponents(t *task.Task, query componentQuery, makeMessage func(*api.ComponentDescription) interface{}, onErr ...func(*api.ComponentDescription, error)) {
+	describe := query.describeComponentsInput(ws)
 	components, err := ws.DescribeComponents(t, describe)
 	if err != nil {
 		t.Fail(fmt.Errorf("describing components: %w", err))
@@ -1118,7 +1114,17 @@ func (ws *Workspace) goControlComponents(t *task.Task, query componentQuery, f i
 			name: component.Name,
 			task: t.CreateChild(component.Name),
 			run: func(t *task.Task) error {
-				return ws.control(t, component, f)
+				msg := makeMessage(&component)
+				if msg == nil {
+					return nil
+				}
+				err := ws.control(t, component, msg)
+				if err != nil {
+					for _, f := range onErr {
+						f(&component, err)
+					}
+				}
+				return err
 			},
 		})
 		for _, dependency := range component.DependsOn {
@@ -1150,24 +1156,33 @@ func (ws *Workspace) goControlComponents(t *task.Task, query componentQuery, f i
 	}
 }
 
-func (ws *Workspace) control(ctx context.Context, desc api.ComponentDescription, f interface{}) error {
+func (ws *Workspace) query(ctx context.Context, desc api.ComponentDescription, output interface{}, input interface{}) error {
 	ctrl := ws.newController(ctx, desc)
 	if err := ctrl.InitResource(); err != nil {
 		return err
 	}
-	ctxV := reflect.ValueOf(ctx)
-	fV := reflect.ValueOf(f)
-	ctrlV := reflect.ValueOf(ctrl)
-	argT := fV.Type().In(1)
-	if !ctrlV.Type().AssignableTo(argT) {
-		return fmt.Errorf("%q controller does not implement %s", desc.Type, argT)
+	out, err := josh.Send(ctx, ctrl, input)
+	reflect.ValueOf(output).Elem().Set(reflect.ValueOf(out))
+	return err
+}
+
+func (ws *Workspace) control(ctx context.Context, desc api.ComponentDescription, input interface{}) error {
+	ctrl := ws.newController(ctx, desc)
+	if err := ctrl.InitResource(); err != nil {
+		return err
 	}
-	results := fV.Call([]reflect.Value{ctxV, ctrlV})
-	fErr, _ := results[0].Interface().(error)
+	// TODO: Figure out how to avoid special-casing destroy.
+	destroying := false
+	switch input.(type) {
+	case *api.DestroyInput:
+		destroying = true
+		input = &api.DisposeInput{}
+	}
+	_, fErr := josh.Send(ctx, ctrl, input)
 	// Try to save state even if f fails.
 	newState, err := ctrl.MarshalState()
 	if err == nil {
-		if ctrl.IsDeleted() {
+		if destroying {
 			// TODO: Do this asynchronously as a garbage collection pass, so
 			// that we can inspect deleted components and debug them.
 			_, err = ws.Store.RemoveComponent(ctx, &state.RemoveComponentInput{
@@ -1187,9 +1202,9 @@ func (ws *Workspace) control(ctx context.Context, desc api.ComponentDescription,
 }
 
 func (ws *Workspace) Build(ctx context.Context, input *api.BuildInput) (*api.BuildOutput, error) {
-	jobID := ws.controlEachComponent(ctx, "building", allBuildableQuery(), func(ctx context.Context, builder api.Builder) error {
-		_, err := builder.Build(ctx, &api.BuildInput{})
-		return err
+	ws.logEventf(ctx, "building...")
+	jobID := ws.controlEachComponent(ctx, "building", allBuildableQuery(), func(*api.ComponentDescription) interface{} {
+		return input
 	})
 	return &api.BuildOutput{
 		JobID: jobID,
@@ -1197,10 +1212,10 @@ func (ws *Workspace) Build(ctx context.Context, input *api.BuildInput) (*api.Bui
 }
 
 func (ws *Workspace) BuildComponents(ctx context.Context, input *api.BuildComponentsInput) (*api.BuildComponentsOutput, error) {
+	ws.logEventf(ctx, "building: %s", input.Refs)
 	query := allBuildableQuery(withRefs(input.Refs...))
-	jobID := ws.controlEachComponent(ctx, "building", query, func(ctx context.Context, builder api.Builder) error {
-		_, err := builder.Build(ctx, &api.BuildInput{})
-		return err
+	jobID := ws.controlEachComponent(ctx, "building", query, func(*api.ComponentDescription) interface{} {
+		return &api.BuildInput{}
 	})
 	return &api.BuildComponentsOutput{
 		JobID: jobID,
@@ -1218,9 +1233,9 @@ func (n *runTaskNode) ID() string {
 }
 
 type componentNode struct {
-	component manifest.Component
+	component *exohcl.Component
 }
 
 func (n *componentNode) ID() string {
-	return n.component.Name
+	return n.component.Name()
 }

@@ -1,16 +1,33 @@
+<script lang="ts" context="module">
+  export interface Variable {
+    name: string;
+    value: string;
+    source?: string;
+  }
+</script>
+
 <script lang="ts">
   import CheckeredTableWrapper from '../components/CheckeredTableWrapper.svelte';
 
-  export let variables: Record<string, string> = {};
+  export let variables: Variable[] = [];
+
+  const hasSources = variables.some((v) => !!v.source);
+
+  const sorted = variables
+    .sort((e1, e2) => (e1.source || '').localeCompare(e2.source || ''))
+    .sort((e1, e2) => e1.name.localeCompare(e2.name));
 </script>
 
 <CheckeredTableWrapper>
   <tbody>
     <table>
-      {#each Object.keys(variables ?? []).sort() as name (name)}
+      {#each sorted as { name, value, source }}
         <tr>
           <td class="label">{name}</td>
-          <td><code><pre>{variables[name]}</pre></code></td>
+          <td><code><pre>{value}</pre></code></td>
+          {#if hasSources}
+            <td>{source}</td>
+          {/if}
         </tr>
       {/each}
     </table>

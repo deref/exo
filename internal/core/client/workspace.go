@@ -95,6 +95,16 @@ func (c *Workspace) Build(ctx context.Context, input *api.BuildInput) (output *a
 	return
 }
 
+func (c *Workspace) DescribeVaults(ctx context.Context, input *api.DescribeVaultsInput) (output *api.DescribeVaultsOutput, err error) {
+	err = c.client.Invoke(ctx, "describe-vaults", input, &output)
+	return
+}
+
+func (c *Workspace) AddVault(ctx context.Context, input *api.AddVaultInput) (output *api.AddVaultOutput, err error) {
+	err = c.client.Invoke(ctx, "add-vault", input, &output)
+	return
+}
+
 func (c *Workspace) Describe(ctx context.Context, input *api.DescribeInput) (output *api.DescribeOutput, err error) {
 	err = c.client.Invoke(ctx, "describe", input, &output)
 	return
@@ -115,6 +125,11 @@ func (c *Workspace) Resolve(ctx context.Context, input *api.ResolveInput) (outpu
 	return
 }
 
+func (c *Workspace) ResolveManifest(ctx context.Context, input *api.ResolveManifestInput) (output *api.ResolveManifestOutput, err error) {
+	err = c.client.Invoke(ctx, "resolve-manifest", input, &output)
+	return
+}
+
 func (c *Workspace) DescribeComponents(ctx context.Context, input *api.DescribeComponentsInput) (output *api.DescribeComponentsOutput, err error) {
 	err = c.client.Invoke(ctx, "describe-components", input, &output)
 	return
@@ -127,6 +142,11 @@ func (c *Workspace) CreateComponent(ctx context.Context, input *api.CreateCompon
 
 func (c *Workspace) UpdateComponent(ctx context.Context, input *api.UpdateComponentInput) (output *api.UpdateComponentOutput, err error) {
 	err = c.client.Invoke(ctx, "update-component", input, &output)
+	return
+}
+
+func (c *Workspace) RenameComponent(ctx context.Context, input *api.RenameComponentInput) (output *api.RenameComponentOutput, err error) {
+	err = c.client.Invoke(ctx, "rename-component", input, &output)
 	return
 }
 
@@ -152,11 +172,6 @@ func (c *Workspace) GetComponentState(ctx context.Context, input *api.GetCompone
 
 func (c *Workspace) SetComponentState(ctx context.Context, input *api.SetComponentStateInput) (output *api.SetComponentStateOutput, err error) {
 	err = c.client.Invoke(ctx, "set-component-state", input, &output)
-	return
-}
-
-func (c *Workspace) DescribeLogs(ctx context.Context, input *api.DescribeLogsInput) (output *api.DescribeLogsOutput, err error) {
-	err = c.client.Invoke(ctx, "describe-logs", input, &output)
 	return
 }
 
@@ -222,5 +237,10 @@ func (c *Workspace) BuildComponents(ctx context.Context, input *api.BuildCompone
 
 func (c *Workspace) DescribeEnvironment(ctx context.Context, input *api.DescribeEnvironmentInput) (output *api.DescribeEnvironmentOutput, err error) {
 	err = c.client.Invoke(ctx, "describe-environment", input, &output)
+	return
+}
+
+func (c *Workspace) RenderDependencies(ctx context.Context, input *api.RenderDependenciesInput) (output *api.RenderDependenciesOutput, err error) {
+	err = c.client.Invoke(ctx, "render-dependencies", input, &output)
 	return
 }

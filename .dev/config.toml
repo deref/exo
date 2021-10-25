@@ -1,7 +1,8 @@
-httpPort = 4001
+httpPort = 44643
+noDaemon = true
 
 [client]
-url = "http://localhost:4001"
+url = "http://localhost:44643"
 
 [gui]
 port = 3001

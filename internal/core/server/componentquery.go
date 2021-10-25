@@ -1,9 +1,6 @@
 package server
 
 import (
-	"context"
-	"fmt"
-
 	"github.com/deref/exo/internal/core/api"
 )
 
@@ -56,8 +53,21 @@ var withDependents = componentQueryUpdate(func(q *componentQuery) {
 	q.IncludeDependents = true
 })
 
+var allComponentsQuery = makeComponentQuery()
+
+var runnableTypes = []string{"process", "container"}
+
+func isRunnableType(name string) bool {
+	for _, typ := range runnableTypes {
+		if name == typ {
+			return true
+		}
+	}
+	return false
+}
+
 func allProcessQuery(updates ...componentQueryUpdate) componentQuery {
-	updates = append([]componentQueryUpdate{withTypes("process", "container")}, updates...)
+	updates = append([]componentQueryUpdate{withTypes(runnableTypes...)}, updates...)
 	return makeComponentQuery(updates...)
 }
 
@@ -66,20 +76,11 @@ func allBuildableQuery(updates ...componentQueryUpdate) componentQuery {
 	return makeComponentQuery(updates...)
 }
 
-func (q componentQuery) describeComponentsInput(ctx context.Context, ws *Workspace) (*api.DescribeComponentsInput, error) {
-	describe := &api.DescribeComponentsInput{
+func (q componentQuery) describeComponentsInput(ws *Workspace) *api.DescribeComponentsInput {
+	return &api.DescribeComponentsInput{
+		Refs:                q.Refs,
 		Types:               q.Types,
 		IncludeDependencies: q.IncludeDependencies,
 		IncludeDependents:   q.IncludeDependents,
 	}
-
-	if q.Refs != nil {
-		ids, err := ws.resolveRefs(ctx, q.Refs)
-		if err != nil {
-			return nil, fmt.Errorf("resolving refs: %w", err)
-		}
-		describe.IDs = ids
-	}
-
-	return describe, nil
 }

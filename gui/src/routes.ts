@@ -1,16 +1,20 @@
 import Home from './pages/Home.svelte';
-import NewWorkspace from './pages/NewWorkspace.svelte';
+import NewProject from './pages/NewProject.svelte';
+import NewProjectConfig from './pages/NewProjectConfig.svelte';
 import Workspace from './pages/Workspace.svelte';
+import WorkspaceDetails from './pages/WorkspaceDetails.svelte';
 import WorkspaceComponents from './pages/WorkspaceComponents.svelte';
 import WorkspaceVariables from './pages/WorkspaceVariables.svelte';
 import WorkspaceStorage from './pages/WorkspaceStorage.svelte';
 import WorkspaceNetworking from './pages/WorkspaceNetworking.svelte';
 import WorkspaceNewComponent from './pages/WorkspaceNewComponent.svelte';
+import WorkspaceAddVault from './pages/WorkspaceAddVault.svelte';
 import NewProcess from './pages/NewProcess.svelte';
 import NewDockerContainer from './pages/NewDockerContainer.svelte';
 import NewDockerNetwork from './pages/NewDockerNetwork.svelte';
 import NewDockerVolume from './pages/NewDockerVolume.svelte';
-import Process from './pages/Process.svelte';
+import EditComponent from './pages/EditComponent.svelte';
+import ComponentDetails from './pages/ComponentDetails.svelte';
 import Preferences from './pages/Preferences.svelte';
 import Jobs from './pages/Jobs.svelte';
 import Job from './pages/Job.svelte';
@@ -18,8 +22,10 @@ import NotFound from './pages/NotFound.svelte';
 
 export default {
   '/': Home,
-  '/new-workspace': NewWorkspace,
+  '/new-project': NewProject,
+  '/new-project/:starter': NewProjectConfig,
   '/workspaces/:workspace': Workspace,
+  '/workspaces/:workspace/details': WorkspaceDetails,
   '/workspaces/:workspace/components': WorkspaceComponents,
   '/workspaces/:workspace/variables': WorkspaceVariables,
   '/workspaces/:workspace/storage': WorkspaceStorage,
@@ -29,7 +35,9 @@ export default {
   '/workspaces/:workspace/new-container': NewDockerContainer,
   '/workspaces/:workspace/new-volume': NewDockerVolume,
   '/workspaces/:workspace/new-network': NewDockerNetwork,
-  '/workspaces/:workspace/processes/:process': Process,
+  '/workspaces/:workspace/add-vault': WorkspaceAddVault,
+  '/workspaces/:workspace/components/:component/edit': EditComponent,
+  '/workspaces/:workspace/components/:component': ComponentDetails,
   '/preferences': Preferences,
   '/jobs': Jobs,
   '/jobs/:job': Job,

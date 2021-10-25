@@ -1,3 +1,5 @@
+// SEE NOTE: [IMAGE_SUBCOMPONENT].
+
 package container
 
 import (
@@ -12,6 +14,8 @@ import (
 	"strings"
 
 	"github.com/deref/exo/internal/core/api"
+	"github.com/deref/exo/internal/providers/docker"
+	"github.com/deref/exo/internal/providers/docker/components/image"
 	"github.com/deref/exo/internal/task"
 	"github.com/deref/exo/internal/util/pathutil"
 	"github.com/docker/docker/api/types"
@@ -22,35 +26,41 @@ import (
 )
 
 func (c *Container) Build(ctx context.Context, input *api.BuildInput) (*api.BuildOutput, error) {
-	if c.canBuild() {
-		if err := c.buildImage(ctx); err != nil {
+	if c.State.Image.Spec == "" {
+		// SEE NOTE: [MIGRATE_CONTAINER_STATE].
+		return nil, errors.New("refresh needed")
+	}
+	var spec image.Spec
+	if err := docker.LoadSpec(c.State.Image.Spec, &spec, c.WorkspaceEnvironment); err != nil {
+		return nil, fmt.Errorf("loading image spec: %w", err)
+	}
+	if c.canBuild(&spec) {
+		if err := c.buildImage(ctx, &spec); err != nil {
 			return nil, err
 		}
 	}
 	return &api.BuildOutput{}, nil
 }
 
-func (c *Container) canBuild() bool {
-	return c.Spec.Build.Context != ""
+func (c *Container) canBuild(spec *image.Spec) bool {
+	return spec.Build.Context.Value != ""
 }
 
-func (c *Container) buildImage(ctx context.Context) error {
+func (c *Container) buildImage(ctx context.Context, spec *image.Spec) error {
 	buildTask := task.CurrentTask(ctx)
 	if buildTask == nil {
 		panic("No build task")
 	}
 
-	spec := c.Spec
-
-	contextPath := filepath.Join(c.WorkspaceRoot, spec.Build.Context)
+	contextPath := filepath.Join(c.WorkspaceRoot, spec.Build.Context.Value)
 	if !pathutil.HasFilePathPrefix(contextPath, c.WorkspaceRoot) {
 		return errors.New("docker container build context path must be in exo workspace root")
 	}
-	dockerfile := c.Spec.Build.Dockerfile
-	if dockerfile == "" {
-		dockerfile = "Dockerfile"
+	dockerfile := spec.Build.Dockerfile
+	if dockerfile.Value == "" {
+		dockerfile.Value = "Dockerfile"
 	}
-	buildContext, err := getArchive(contextPath, dockerfile)
+	buildContext, err := getArchive(contextPath, dockerfile.Value)
 	if err != nil {
 		return fmt.Errorf("getting build context: %w", err)
 	}
@@ -64,7 +74,7 @@ func (c *Container) buildImage(ctx context.Context) error {
 		//Remove         bool
 		//ForceRemove    bool
 		//PullParent     bool
-		Isolation: container.Isolation(spec.Build.Isolation),
+		Isolation: container.Isolation(spec.Build.Isolation.Value),
 		//CPUSetCPUs     string
 		//CPUSetMems     string
 		//CPUShares      int64
@@ -74,27 +84,23 @@ func (c *Container) buildImage(ctx context.Context) error {
 		//MemorySwap     int64
 		//CgroupParent   string
 		//NetworkMode    string
-		ShmSize:    int64(spec.Build.ShmSize),
-		Dockerfile: spec.Build.Dockerfile,
+		ShmSize:    spec.Build.ShmSize.Int64(),
+		Dockerfile: spec.Build.Dockerfile.Value,
 		//Ulimits        []*units.Ulimit
-		//// BuildArgs needs to be a *string instead of just a string so that
-		//// we can tell the difference between "" (empty string) and no value
-		//// at all (nil). See the parsing of buildArgs in
-		//// api/server/router/build/build_routes.go for even more info.
-		BuildArgs: spec.Build.Args,
+		BuildArgs: spec.Build.Args.MapOfPtr(),
 		//AuthConfigs map[string]AuthConfig
 		//Context     io.Reader
-		Labels: spec.Build.Labels.WithoutNils(),
+		Labels: spec.Build.Labels.Map(),
 		//// squash the resulting image's layers to the parent
 		//// preserves the original image and creates a new one from the parent with all
 		//// the changes applied to a single layer
 		//Squash bool
 		// CacheFrom specifies images that are used for matching cache. Images
 		// specified here do not need to have a valid parent chain to match cache.
-		CacheFrom: spec.Build.CacheFrom,
+		CacheFrom: spec.Build.CacheFrom.Values(),
 		//SecurityOpt []string
-		ExtraHosts: spec.Build.ExtraHosts,
-		Target:     spec.Build.Target,
+		ExtraHosts: spec.Build.ExtraHosts.Values(),
+		Target:     spec.Build.Target.Value,
 		//SessionID   string
 		Platform: spec.Platform,
 		//// Version specifies the version of the unerlying builder to use

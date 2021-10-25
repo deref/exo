@@ -2,3 +2,5 @@
 /.vscode/
 /bin
 .DS_Store
+/dist/
+*.tsbuildinfo

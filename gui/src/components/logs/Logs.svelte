@@ -1,9 +1,11 @@
 <script lang="ts">
   import { afterUpdate, beforeUpdate } from 'svelte';
 
-  import FormattedLogMessage from './FormattedLogMessage.svelte';
-  import type { LogEvent } from './types';
+  import LogRow from './LogRow.svelte';
+  import type { GetComponentNameFunc } from './LogRow.svelte';
+  import type { LogEvent } from '../../lib/logs/types';
 
+  export let getComponentName: GetComponentNameFunc | undefined;
   export let events: LogEvent[] = [];
 
   // Automatically scroll on new logs if the user is already scrolled close to the bottom of the content.
@@ -16,47 +18,38 @@
       return;
     }
 
-    const threshold = 150;
+    const threshold = 20; // Approximate minimum height of line log line.
     const currentPosition = logViewport.scrollTop + logViewport.offsetHeight;
     const height = logViewport.scrollHeight;
     wasScrolledCloseToBottom = currentPosition > height - threshold;
   });
 
+  const scrollToBottom = () => {
+    logViewport.scrollTop = logViewport.scrollHeight;
+  };
+
   afterUpdate(async () => {
     if (wasScrolledCloseToBottom && logViewport) {
-      logViewport.scrollTop = logViewport.scrollHeight;
+      scrollToBottom();
     }
   });
-
-  // This trims the final newline character at the end of each log message,
-  // because the table layout already effectively adds one line break at
-  // the end of each message and this was causing bugs on some Linux systems.
-  const trimFinalNewline = (message: string) =>
-    message.replace(/((\n\r)|(\n)|(\r)|(\r\n))$/, '');
-
-  // SEE NOTE [LOG_COMPONENTS]
-  const trimLabel = (name: string) => name.replace(/(:err$)|(:out$)/g, '');
 </script>
 
 <div class="logs-container" bind:this={logViewport}>
   <table>
     {#each events as event (event.id)}
-      <tr style={event.style}>
-        <td
-          class="time"
-          on:click={() => {
-            window.alert(`Full timestamp: ${event.time.full}`);
-          }}
-        >
-          {event.time.short}
-        </td>
-        <td class="name" title={event.name}>{trimLabel(event.name)}</td>
-        <td>
-          <FormattedLogMessage message={trimFinalNewline(event.message)} />
-        </td>
-      </tr>
+      <LogRow {getComponentName} {event} />
     {/each}
   </table>
+  <div class="latest" class:showLatest={!wasScrolledCloseToBottom}>
+    <button
+      on:click={(e) => {
+        scrollToBottom();
+      }}
+    >
+      ↓ Latest events
+    </button>
+  </div>
 </div>
 
 <style>
@@ -75,42 +68,41 @@
     font-size: 15px;
   }
 
-  table,
-  tr,
-  td {
+  table {
     border: none;
     border-collapse: collapse;
   }
 
-  td {
-    padding: 0 0.3em;
-    vertical-align: text-top;
-    color: var(--grey-3-color);
-    white-space: pre-wrap;
+  .latest {
+    display: none;
+    position: absolute;
+    right: 16px;
+    bottom: 12px;
+    margin: 10;
+    padding: 0;
   }
 
-  tr:hover td {
+  .latest button {
+    cursor: pointer;
+    border: none;
+    background: none;
+    display: inline-block;
+    font-size: 13px;
+    font-weight: 400;
+    color: var(--strong-color);
+    background: var(--primary-bg-color);
+    box-shadow: var(--card-shadow);
+    height: 22px;
+    padding: 3px 6px;
+    border-radius: 4px;
+    white-space: nowrap;
+  }
+
+  .latest button:hover {
     background: var(--grey-e-color);
-    color: var(--grey-1-color);
   }
 
-  .name {
-    text-align: right;
-    background: var(--log-bg-color);
-    color: var(--log-color);
-  }
-
-  tr:hover .name {
-    background: var(--log-bg-hover-color);
-    color: var(--log-hover-color);
-  }
-
-  .time {
-    color: var(--grey-9-color);
-    cursor: zoom-in;
-  }
-
-  tr:hover .time {
-    color: var(--grey-5-color);
+  .showLatest {
+    display: block;
   }
 </style>

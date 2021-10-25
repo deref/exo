@@ -21,6 +21,21 @@ func GetKernel(client *josh.Client) *Kernel {
 	}
 }
 
+func (c *Kernel) AuthEsv(ctx context.Context, input *api.AuthEsvInput) (output *api.AuthEsvOutput, err error) {
+	err = c.client.Invoke(ctx, "auth-esv", input, &output)
+	return
+}
+
+func (c *Kernel) CreateProject(ctx context.Context, input *api.CreateProjectInput) (output *api.CreateProjectOutput, err error) {
+	err = c.client.Invoke(ctx, "create-project", input, &output)
+	return
+}
+
+func (c *Kernel) DescribeTemplates(ctx context.Context, input *api.DescribeTemplatesInput) (output *api.DescribeTemplatesOutput, err error) {
+	err = c.client.Invoke(ctx, "describe-templates", input, &output)
+	return
+}
+
 func (c *Kernel) CreateWorkspace(ctx context.Context, input *api.CreateWorkspaceInput) (output *api.CreateWorkspaceOutput, err error) {
 	err = c.client.Invoke(ctx, "create-workspace", input, &output)
 	return
@@ -63,5 +78,15 @@ func (c *Kernel) Exit(ctx context.Context, input *api.ExitInput) (output *api.Ex
 
 func (c *Kernel) DescribeTasks(ctx context.Context, input *api.DescribeTasksInput) (output *api.DescribeTasksOutput, err error) {
 	err = c.client.Invoke(ctx, "describe-tasks", input, &output)
+	return
+}
+
+func (c *Kernel) GetUserHomeDir(ctx context.Context, input *api.GetUserHomeDirInput) (output *api.GetUserHomeDirOutput, err error) {
+	err = c.client.Invoke(ctx, "get-user-home-dir", input, &output)
+	return
+}
+
+func (c *Kernel) ReadDir(ctx context.Context, input *api.ReadDirInput) (output *api.ReadDirOutput, err error) {
+	err = c.client.Invoke(ctx, "read-dir", input, &output)
 	return
 }

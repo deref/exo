@@ -5,8 +5,8 @@ import (
 	"go/format"
 	"text/template"
 
-	"github.com/deref/exo/internal/inflect"
 	"github.com/deref/exo/internal/josh/model"
+	"github.com/deref/inflect-go"
 )
 
 func GenerateAPI(pkg *model.Package) ([]byte, error) {

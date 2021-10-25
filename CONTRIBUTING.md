@@ -22,10 +22,10 @@ For a smooth development experience, please take a look at the [local developmen
 
 ## Contributing Features
 
-If you would like to contribute a new feature, please use the [Feature Request template](https://github.com/deref/exo/issues/new?labels=feature-request&template=feature_request.md&title=%5BFEATURE%5D) to propose the feature you would like to add. Before opening your request, please take a moment to familiarize yourself with the [project philosophy](https://github.com/deref/exo/blob/main/doc/project-philosophy.md) to maximize the likelihood that your feature is accepted. In the feature request, please indicate that you would like to implement the feature yourself. We will ensure that we respond in a timely manner.
+If you would like to contribute a new feature, please use the [Feature Request template](https://github.com/deref/exo/issues/new?labels=feature-request&template=feature_request.md&title=%5BFEATURE%5D) to propose the feature you would like to add. In the feature request, please indicate that you would like to implement the feature yourself. We will ensure that we respond in a timely manner.
 
 For a smooth development experience, please take a look at the [local development guide](https://github.com/deref/exo/blob/main/doc/local-development.md).
 
 ## Join the Team
 
-Interested in working on exo full-time? Email [jobs@deref.io](jobs@deref.io) and mention that you're coming from `CONTRIBUTING.md`.
+Interested in working on exo full-time? Email [jobs@deref.io](mailto:jobs@deref.io) and mention that you're coming from `CONTRIBUTING.md`.

@@ -6,26 +6,88 @@ import (
 	"fmt"
 	"net/http"
 	"os"
-	"path"
+	"path/filepath"
 	"syscall"
 	"time"
 
-	"github.com/deref/exo"
+	"github.com/deref/exo/internal/about"
 	"github.com/deref/exo/internal/core/api"
 	state "github.com/deref/exo/internal/core/state/api"
+	"github.com/deref/exo/internal/esv"
 	"github.com/deref/exo/internal/gensym"
 	"github.com/deref/exo/internal/install"
 	"github.com/deref/exo/internal/task"
 	taskapi "github.com/deref/exo/internal/task/api"
 	"github.com/deref/exo/internal/telemetry"
+	"github.com/deref/exo/internal/template"
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/osutil"
 )
+
+var dirExistsErr = errutil.HTTPErrorf(409, "Directory already exists.")
 
 type Kernel struct {
 	Store       state.Store
 	Install     *install.Install
 	TaskTracker *task.TaskTracker
+	EsvClient   esv.EsvClient
+}
+
+var _ api.Kernel = &Kernel{}
+
+func (kern *Kernel) DescribeTemplates(ctx context.Context, input *api.DescribeTemplatesInput) (*api.DescribeTemplatesOutput, error) {
+	return &api.DescribeTemplatesOutput{Templates: template.GetTemplateDescriptions()}, nil
+}
+
+func (kern *Kernel) AuthEsv(ctx context.Context, input *api.AuthEsvInput) (*api.AuthEsvOutput, error) {
+	authResponse, err := kern.EsvClient.StartAuthFlow(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("starting auth flow: %w", err)
+	}
+
+	return &api.AuthEsvOutput{
+		AuthCode: authResponse.UserCode,
+		AuthUrl:  authResponse.AuthURL,
+	}, nil
+}
+
+func (kern *Kernel) CreateProject(ctx context.Context, input *api.CreateProjectInput) (*api.CreateProjectOutput, error) {
+	projectDir := input.Root
+	if !filepath.IsAbs(projectDir) {
+		return nil, errors.New("path must be absolute")
+	}
+
+	var templateDir string
+	if input.TemplateUrl != nil {
+		var err error
+		templateDir, err = template.GetTemplateFiles(ctx, *input.TemplateUrl)
+		if err != nil {
+			return nil, fmt.Errorf("getting template files: %w", err)
+		}
+	}
+
+	if templateDir != "" {
+		err := os.Rename(templateDir, projectDir)
+		if err != nil {
+			if os.IsExist(err) {
+				return nil, dirExistsErr
+			}
+			return nil, fmt.Errorf("moving project dir: %w", err)
+		}
+	} else {
+		if err := os.Mkdir(projectDir, 0750); err != nil {
+			if os.IsExist(err) {
+				return nil, dirExistsErr
+			}
+			return nil, fmt.Errorf("making project dir: %w", err)
+		}
+	}
+
+	result, err := kern.CreateWorkspace(ctx, &api.CreateWorkspaceInput{Root: projectDir})
+	if err != nil {
+		return nil, fmt.Errorf("creating workspace: %w", err)
+	}
+	return &api.CreateProjectOutput{WorkspaceID: result.ID}, err
 }
 
 func (kern *Kernel) CreateWorkspace(ctx context.Context, input *api.CreateWorkspaceInput) (*api.CreateWorkspaceOutput, error) {
@@ -50,8 +112,9 @@ func (kern *Kernel) DescribeWorkspaces(ctx context.Context, input *api.DescribeW
 	workspaces := make([]api.WorkspaceDescription, len(output.Workspaces))
 	for i, workspace := range output.Workspaces {
 		workspaces[i] = api.WorkspaceDescription{
-			ID:   workspace.ID,
-			Root: workspace.Root,
+			ID:          workspace.ID,
+			Root:        workspace.Root,
+			DisplayName: workspace.DisplayName,
 		}
 	}
 	return &api.DescribeWorkspacesOutput{
@@ -73,7 +136,7 @@ func (kern *Kernel) ResolveWorkspace(ctx context.Context, input *api.ResolveWork
 
 func (kern *Kernel) GetVersion(ctx context.Context, input *api.GetVersionInput) (*api.GetVersionOutput, error) {
 	tel := telemetry.FromContext(ctx)
-	installed := exo.Version
+	installed := about.Version
 	current := true
 	var latest *string
 	if tel.IsEnabled() {
@@ -149,18 +212,18 @@ func restart(ctx context.Context) {
 	// Since the exo process is likely a specific version that `exo` is linked to,
 	// we check to see if there is an `exo` symlink in the same directory as the
 	// current executable, and if so, we run that instead.
-	dir := path.Dir(cmd)
-	symlinkPath := path.Join(dir, "exo")
+	dir := filepath.Dir(cmd)
+	symlinkPath := filepath.Join(dir, "exo")
 	if isSymlink, _ := osutil.IsSymlink(symlinkPath); isSymlink {
 		dest, err := os.Readlink(symlinkPath)
 		if err != nil {
 			exitWithError(fmt.Errorf("following exo symlink: %w", err))
 		}
-		if !path.IsAbs(dest) {
-			dest = path.Join(dir, dest)
+		if !filepath.IsAbs(dest) {
+			dest = filepath.Join(dir, dest)
 		}
 
-		cmd = path.Clean(dest)
+		cmd = filepath.Clean(dest)
 	}
 
 	if err := syscall.Exec(cmd, append([]string{cmd}, os.Args[1:]...), os.Environ()); err != nil {
@@ -199,4 +262,52 @@ func (kern *Kernel) DescribeTasks(ctx context.Context, input *api.DescribeTasksI
 		output.Tasks[i] = t2
 	}
 	return &output, nil
+}
+
+func (kern *Kernel) GetUserHomeDir(ctx context.Context, input *api.GetUserHomeDirInput) (*api.GetUserHomeDirOutput, error) {
+	path, err := os.UserHomeDir()
+	if err != nil {
+		return nil, fmt.Errorf("getting user home directory: %w", err)
+	}
+	return &api.GetUserHomeDirOutput{Path: path}, nil
+}
+
+func (kern *Kernel) ReadDir(ctx context.Context, input *api.ReadDirInput) (*api.ReadDirOutput, error) {
+	if !filepath.IsAbs(input.Path) {
+		return nil, fmt.Errorf("path not absolute: %q", input.Path)
+	}
+
+	entries, err := os.ReadDir(input.Path)
+	if err != nil {
+		if os.IsPermission(err) {
+			return nil, errutil.NewHTTPError(403, "Permission denied")
+		}
+		return nil, fmt.Errorf("reading directory: %w", err)
+	}
+
+	results := make([]api.DirectoryEntry, len(entries))
+	for i, e := range entries {
+		results[i] = api.DirectoryEntry{
+			Name:        e.Name(),
+			IsDirectory: e.IsDir(),
+			Path:        filepath.Join(input.Path, e.Name()),
+		}
+	}
+	var parent *api.DirectoryEntry
+	if input.Path != "/" {
+		parent = &api.DirectoryEntry{
+			Name:        filepath.Base(filepath.Dir(input.Path)),
+			Path:        filepath.Dir(input.Path),
+			IsDirectory: true,
+		}
+	}
+	return &api.ReadDirOutput{
+		Entries: results,
+		Parent:  parent,
+		Directory: api.DirectoryEntry{
+			Name:        filepath.Base(input.Path),
+			IsDirectory: true,
+			Path:        input.Path,
+		},
+	}, nil
 }

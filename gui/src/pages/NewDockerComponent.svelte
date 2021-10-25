@@ -5,15 +5,15 @@
 </script>
 
 <script lang="ts">
-  import Panel from '../components/Panel.svelte';
+  import Icon from '../components/Icon.svelte';
   import Layout from '../components/Layout.svelte';
-  import Button from '../components/Button.svelte';
   import Textbox from '../components/Textbox.svelte';
   import EditAs from '../components/form/EditAs.svelte';
-  import CodeBlock from '../components/CodeBlock.svelte';
   import ErrorLabel from '../components/ErrorLabel.svelte';
   import TextEditor from '../components/TextEditor.svelte';
-  import DockerSVG from '../components/mono/DockerSVG.svelte';
+  import WorkspaceNav from '../components/WorkspaceNav.svelte';
+  import SubmitButton from '../components/form/SubmitButton.svelte';
+  import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
   import { api, isClientError } from '../lib/api';
   import { setLogVisibility } from '../lib/logs/visible-logs';
   import * as router from 'svelte-spa-router';
@@ -46,109 +46,57 @@
 
   export let componentType: string;
   export let displayType: string;
-  export let specExample: string;
 </script>
 
 <Layout>
-  <Panel
+  <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
+  <CenterFormPanel
     title={`New ${displayType}`}
     backRoute={workspaceNewComponentRoute}
-    --panel-padding="2rem"
-    --panel-overflow-y="scroll"
   >
-    <div class="center-form">
-      <h1><DockerSVG /> New {displayType}</h1>
-      <form
-        on:submit|preventDefault={async () => {
-          try {
-            const { id } = await workspace.createComponent(
-              name,
-              componentType,
-              spec,
-            );
+    <h1><Icon glyph="LogoDocker" /> New {displayType}</h1>
+    <form
+      on:submit|preventDefault={async () => {
+        try {
+          const { id } = await workspace.createComponent(
+            name,
+            componentType,
+            spec,
+          );
 
-            setLogVisibility(id, true);
+          setLogVisibility(id, true);
 
-            router.push(workspaceRoute);
-          } catch (ex) {
-            if (!isClientError(ex)) {
-              throw ex;
-            }
-            error = ex;
+          router.push(workspaceRoute);
+        } catch (ex) {
+          if (!isClientError(ex)) {
+            throw ex;
           }
-        }}
-      >
-        <div class="group">
-          <label for="name">Name:</label>
-          <Textbox
-            id="name"
-            name="name"
-            bind:value={name}
-            --input-width="100%"
-          />
-        </div>
+          error = ex;
+        }
+      }}
+    >
+      <div>
+        <label for="name">Name:</label>
+        <Textbox id="name" name="name" bind:value={name} --input-width="100%" />
+      </div>
 
-        <EditAs bind:mode {editorModes} />
-        {#if mode === 'compose'}
-          <div class="group">
-            <label for="spec">Spec:</label>
-            <TextEditor id="spec" bind:value={spec} language="yaml" />
-          </div>
-          <details>
-            <summary>Show/hide example</summary>
-            <CodeBlock>
-              {specExample}
-            </CodeBlock>
-          </details>
-        {:else}
-          <!-- GUI form edit mode -->
-        {/if}
-        <div class="buttons">
-          <Button type="submit">Create {displayType}</Button>
+      <EditAs bind:mode {editorModes} />
+      {#if mode === 'compose'}
+        <div>
+          <label for="spec">Spec:</label>
+          <TextEditor id="spec" bind:value={spec} language="yaml" />
         </div>
-        <div style="margin: 24px 0;">
-          <ErrorLabel value={error} />
-        </div>
-      </form>
-    </div>
-  </Panel>
+        <details>
+          <summary>Show/hide example</summary>
+          <slot />
+        </details>
+      {:else}
+        <!-- GUI form edit mode -->
+      {/if}
+      <SubmitButton>Create {displayType}</SubmitButton>
+      <div style="margin: 24px 0;">
+        <ErrorLabel value={error} />
+      </div>
+    </form>
+  </CenterFormPanel>
 </Layout>
-
-<style>
-  details {
-    margin: 24px 0;
-  }
-
-  summary {
-    margin-bottom: 12px;
-    user-select: none;
-    cursor: pointer;
-  }
-
-  label {
-    display: block;
-    margin-bottom: 8px;
-  }
-
-  .center-form {
-    max-width: 640px;
-    margin: 0 auto;
-  }
-
-  h1 {
-    display: flex;
-    align-items: center;
-    gap: 18px;
-    font-size: 24px;
-    font-weight: 500;
-    margin: 0;
-    margin-bottom: 36px;
-  }
-
-  .buttons {
-    display: flex;
-    flex-direction: row;
-    justify-content: flex-end;
-    margin-top: 8px;
-  }
-</style>

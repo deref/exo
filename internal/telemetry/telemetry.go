@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/deref/exo"
+	"github.com/deref/exo/internal/about"
 	"github.com/deref/exo/internal/util/cacheutil"
 )
 
@@ -25,7 +25,7 @@ type Config struct {
 
 func New(ctx context.Context, cfg Config) Telemetry {
 	if cfg.Disable {
-		return &noOpTelemetry{}
+		return &Nop{}
 	}
 
 	httpClient := &http.Client{
@@ -36,7 +36,7 @@ func New(ctx context.Context, cfg Config) Telemetry {
 		ctx:            ctx,
 		deviceID:       cfg.DeviceID,
 		client:         httpClient,
-		ampClient:      NewAmplitudeClient(ctx, httpClient, exo.AmplitudeAPIKey),
+		ampClient:      NewAmplitudeClient(ctx, httpClient, about.AmplitudeAPIKey),
 		operationGauge: newOperationGauge(),
 	}
 	t.latestVersion = cacheutil.NewTTLVal(t.getLatestVersion, 5*time.Minute)

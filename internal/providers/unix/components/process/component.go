@@ -4,7 +4,6 @@ import "github.com/deref/exo/internal/providers/core"
 
 type Process struct {
 	core.ComponentBase
-	Spec
 	State
 
 	SyslogPort uint
@@ -19,13 +18,21 @@ type Spec struct {
 }
 
 type State struct {
-	Pgid          int `json:"pgid"`
-	SupervisorPid int `json:"supervisorPid"`
-	Pid           int `json:"pid"`
-	// Program string `json:"program"`
+	Directory                  string            `json:"directory"`
+	Program                    string            `json:"program"`
+	Arguments                  []string          `json:"arguments"`
+	Environment                map[string]string `json:"environment"`
+	ShutdownGracePeriodSeconds *int              `json:"shutdownGracePeriodSeconds"`
+
+	Pgid            int               `json:"pgid"`
+	SupervisorPid   int               `json:"supervisorPid"`
+	Pid             int               `json:"pid"`
 	FullEnvironment map[string]string `json:"fullEnvironment"`
 }
 
-func (state *State) clear() {
-	*state = State{}
+func (state *State) reset() {
+	state.Pgid = 0
+	state.SupervisorPid = 0
+	state.Pid = 0
+	state.FullEnvironment = nil
 }

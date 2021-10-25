@@ -1,24 +1,24 @@
 import { writable } from 'svelte/store';
 
-export const themeLocalStorageKey = 'io.deref.exo/gui-theme';
+const themeLocalStorageKey = 'io.deref.exo/gui-theme';
 
-export const themeOptions = ['auto', 'light', 'dark', 'black'];
+export const themeOptions = ['auto', 'light', 'dark', 'black'] as const;
 
-type ThemeName = 'auto' | 'light' | 'dark' | 'black';
+type ThemeOption = typeof themeOptions[number];
 
 function createTheme() {
   const ls = localStorage.getItem(themeLocalStorageKey) || 'auto';
 
-  const { subscribe, set } = writable<ThemeName>(<ThemeName>ls);
+  const { subscribe, set } = writable<ThemeOption>(<ThemeOption>ls);
 
-  const localSyncedSet = (t: ThemeName) => {
+  const localSyncedSet = (t: ThemeOption) => {
     localStorage.setItem(themeLocalStorageKey, t);
     set(t);
   };
 
   return {
     subscribe,
-    apply: (t: ThemeName) => localSyncedSet(t),
+    apply: (t: ThemeOption) => localSyncedSet(t),
   };
 }
 

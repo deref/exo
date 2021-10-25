@@ -19,7 +19,7 @@ import (
 	"time"
 
 	"github.com/deref/exo/internal/chrono"
-	"github.com/deref/exo/internal/logd/api"
+	"github.com/deref/exo/internal/eventd/api"
 	"github.com/deref/exo/internal/util/osutil"
 	"github.com/deref/exo/internal/util/sysutil"
 	"github.com/influxdata/go-syslog/v3/rfc5424"
@@ -55,7 +55,7 @@ func Main() {
 
 	cmd := exec.Command(cfg.Program, cfg.Arguments...)
 	cmd.Dir = cfg.WorkingDirectory
-	cmd.Env = os.Environ() // TODO: Should we start with an empty env?
+	cmd.Env = make([]string, 0, len(cfg.Environment))
 	for key, val := range cfg.Environment {
 		cmd.Env = append(cmd.Env, fmt.Sprintf("%s=%s", key, val))
 	}
@@ -156,41 +156,54 @@ func Main() {
 
 func pipeToSyslog(ctx context.Context, conn net.Conn, componentID string, name string, procID string, r io.Reader) {
 	b := bufio.NewReaderSize(r, api.MaxMessageSize)
-	for {
+	readLine := func() (string, error) {
+		// Usage of ReadLine in preference to ReadString is intentional, since
+		// ReadString will perform unbounded buffering.
+		// See discussion here: https://github.com/deref/exo/pull/322
 		message, isPrefix, err := b.ReadLine()
-		if errors.Is(err, io.EOF) || errors.Is(err, os.ErrClosed) {
-			return
-		}
-		if err != nil {
-			fatalf("reading %s: %v", name, err)
-		}
-		// TODO: Do something better with lines that are too long.
 		for isPrefix {
 			// Skip remainder of line.
-			message = append([]byte{}, message...)
 			_, isPrefix, err = b.ReadLine()
 			if err == io.EOF {
-				return
+				break
 			}
 			if err != nil {
 				fatalf("reading %s: %v", name, err)
 			}
 		}
+		return string(message), err
+	}
 
-		sm := &rfc5424.SyslogMessage{}
-		sm.SetVersion(1)
-		sm.SetPriority(syslogPriority)
-		sm.SetTimestamp(chrono.Now(ctx).Format(chrono.RFC3339MicroUTC))
-		sm.SetAppname(componentID)
-		sm.SetProcID(procID)
-		sm.SetMsgID(name) // See note: [LOG_COMPONENTS].
-		sm.SetMessage(string(message))
-		packet, err := sm.String()
-		if err != nil {
-			fatalf("building syslog message: %w", err)
+	for {
+		message, err := readLine()
+
+		// Error handling is performed after piping the message to syslog since we
+		// always want to write the message, even if an error has occurred.
+		if message != "" {
+			if message[len(message)-1] == '\n' {
+				message = message[:len(message)-1]
+			}
+			sm := &rfc5424.SyslogMessage{}
+			sm.SetVersion(1)
+			sm.SetPriority(syslogPriority)
+			sm.SetTimestamp(chrono.Now(ctx).Format(chrono.RFC3339MicroUTC))
+			sm.SetAppname(componentID)
+			sm.SetProcID(procID)
+			sm.SetMsgID(name) // See note: [SYSLOG_MSG_ID].
+			sm.SetMessage(message)
+			packet, err := sm.String()
+			if err != nil {
+				fatalf("building syslog message: %w", err)
+			}
+			if _, err := io.WriteString(conn, packet); err != nil {
+				log.Printf("sending syslog message: %v", err)
+			}
 		}
-		if _, err := io.WriteString(conn, packet); err != nil {
-			log.Printf("sending syslog message: %v", err)
+		if errors.Is(err, io.EOF) || errors.Is(err, os.ErrClosed) {
+			return
+		}
+		if err != nil {
+			fatalf("reading %s: %v", name, err)
 		}
 	}
 }

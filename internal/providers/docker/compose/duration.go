@@ -2,14 +2,51 @@ package compose
 
 import (
 	"fmt"
+	"strconv"
 	"strings"
 	"time"
+
+	"gopkg.in/yaml.v3"
 )
 
-type Duration time.Duration
+type Duration struct {
+	String
+	Duration time.Duration
+}
 
-func (d Duration) String() string {
-	td := time.Duration(d)
+func (d *Duration) UnmarshalYAML(node *yaml.Node) error {
+	if err := node.Decode(&d.String); err != nil {
+		return err
+	}
+
+	_ = d.Interpolate(ErrEnvironment)
+	return nil
+}
+
+func (d *Duration) Interpolate(env Environment) error {
+	if err := d.String.Interpolate(env); err != nil {
+		return err
+	}
+	if d.String.Value == "" {
+		return nil
+	}
+
+	n, err := strconv.Atoi(d.String.Value)
+	if err == nil {
+		d.Duration = time.Duration(n) * time.Microsecond
+		return nil
+	}
+
+	d.Duration, err = time.ParseDuration(d.String.Value)
+	return err
+}
+
+func (d Duration) MarshalYAML() (interface{}, error) {
+	if d.String.Expression != "" {
+		return d.String, nil
+	}
+
+	td := d.Duration
 	var buf strings.Builder
 
 	step := func(unit string, resolution time.Duration) {
@@ -27,33 +64,9 @@ func (d Duration) String() string {
 	step("us", time.Microsecond)
 
 	if buf.Len() == 0 {
-		return "0s"
+		// XXX Probably should return "0s" here, but that causes problems for the
+		// "omitempty" flag on yaml fields. Is there some better solution?
+		return nil, nil
 	}
-	return buf.String()
-}
-
-func (d Duration) MarshalYAML() (interface{}, error) {
-	return d.String(), nil
-}
-
-func (d *Duration) UnmarshalYAML(unmarshal func(interface{}) error) error {
-	var i int64
-	if err := unmarshal(&i); err == nil {
-		*d = Duration(time.Duration(i) * time.Microsecond)
-		return nil
-	}
-
-	var s string
-	if err := unmarshal(&s); err != nil {
-		return err
-	}
-
-	var err error
-	*d, err = ParseDuration(s)
-	return err
-}
-
-func ParseDuration(s string) (Duration, error) {
-	td, err := time.ParseDuration(s)
-	return Duration(td), err
+	return buf.String(), nil
 }

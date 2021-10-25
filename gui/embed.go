@@ -5,6 +5,7 @@ package gui
 import (
 	"context"
 	"embed"
+	"fmt"
 	"io/fs"
 	"net/http"
 
@@ -19,5 +20,8 @@ func NewHandler(ctx context.Context, cfg config.GUIConfig) http.Handler {
 	if err != nil {
 		panic(err)
 	}
-	return http.FileServer(http.FS(content))
+	return &guiMiddleware{
+		URL:  fmt.Sprintf("http://localhost:%d/", cfg.Port),
+		Next: http.FileServer(http.FS(content)),
+	}
 }

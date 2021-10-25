@@ -2,11 +2,21 @@
   export let id: string | undefined = undefined;
   export let name: string | undefined = undefined;
   export let placeholder: string | undefined = undefined;
+  export let autofocus: boolean | undefined = undefined;
 
   export let value: string;
 </script>
 
-<input {id} bind:value {name} {placeholder} on:blur on:focus on:input />
+<input
+  {id}
+  bind:value
+  {name}
+  {placeholder}
+  on:blur
+  on:focus
+  on:input
+  {autofocus}
+/>
 
 <style>
   input {
@@ -17,5 +27,11 @@
     color: var(--strong-color);
     box-shadow: var(--text-input-shadow);
     width: var(--input-width);
+    outline: none;
+  }
+
+  input:focus,
+  input:focus-within {
+    box-shadow: var(--text-input-shadow-focus) !important;
   }
 </style>

@@ -1,21 +1,36 @@
 interface "kernel" {
-  
+
+  method "auth-esv" {
+    output "auth-url" "string" {}
+    output "auth-code" "string" {}
+  }
+
+  method "create-project" {
+    input "root" "string" {}
+    input "template-url" "*string" {}
+    output "workspace-id" "string" {}
+  }
+
+  method "describe-templates" {
+    output "templates" "[]TemplateDescription" {}
+  }
+
   method "create-workspace" {
     input "root" "string" {}
-    
+
     output "id" "string" {}
   }
-  
+
   method "describe-workspaces" {
     output "workspaces" "[]WorkspaceDescription" {}
   }
-  
+
   method "resolve-workspace" {
     input "ref" "string" {}
 
     output "id" "*string" {}
   }
-  
+
   method "panic" {
     doc = "Debug method to test what happens when the service panics."
 
@@ -50,6 +65,29 @@ interface "kernel" {
 
     output "tasks" "[]TaskDescription" {}
   }
+
+  method "get-user-home-dir" {
+    output "path" "string" {}
+  }
+  method "read-dir" {
+    input "path" "string" {}
+    output "directory" "DirectoryEntry" {}
+    output "parent" "*DirectoryEntry" {}
+    output "entries" "[]DirectoryEntry" {}
+  }
+}
+
+struct "directory-entry" {
+  field "name" "string" {}
+  field "path" "string" {}
+  field "is-directory" "bool" {}
+}
+
+struct "template-description" {
+  field "name" "string" {}
+  field "display-name" "string" {}
+  field "icon-glyph" "string" {}
+  field "url" "string" {}
 }
 
 struct "task-description" {

@@ -15,7 +15,8 @@ import (
 )
 
 func NewHandler(ctx context.Context, cfg config.GUIConfig) http.Handler {
-	guiURL, err := url.Parse(fmt.Sprintf("http://localhost:%d/", cfg.Port))
+	urlStr := fmt.Sprintf("http://localhost:%d/", cfg.Port)
+	guiURL, err := url.Parse(urlStr)
 	if err != nil {
 		panic(err)
 	}
@@ -24,5 +25,8 @@ func NewHandler(ctx context.Context, cfg config.GUIConfig) http.Handler {
 		err = errutil.NewHTTPError(http.StatusBadGateway, err.Error())
 		exoutil.WriteError(w, req, err)
 	}
-	return proxy
+	return &guiMiddleware{
+		URL:  urlStr,
+		Next: proxy,
+	}
 }

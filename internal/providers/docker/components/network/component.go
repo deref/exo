@@ -7,11 +7,10 @@ import (
 
 type Network struct {
 	docker.ComponentBase
-	Spec
 	State
 }
 
-type Spec compose.Network
+type Spec = compose.Network
 
 type State struct {
 	NetworkID string `json:"networkId"`

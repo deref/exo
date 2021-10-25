@@ -7,11 +7,10 @@ import (
 
 type Volume struct {
 	docker.ComponentBase
-	Spec
 	State
 }
 
-type Spec compose.Volume
+type Spec = compose.Volume
 
 type State struct {
 	VolumeName string `json:"volumeId"`

@@ -10,6 +10,9 @@ import (
 )
 
 type Kernel interface {
+	AuthEsv(context.Context, *AuthEsvInput) (*AuthEsvOutput, error)
+	CreateProject(context.Context, *CreateProjectInput) (*CreateProjectOutput, error)
+	DescribeTemplates(context.Context, *DescribeTemplatesInput) (*DescribeTemplatesOutput, error)
 	CreateWorkspace(context.Context, *CreateWorkspaceInput) (*CreateWorkspaceOutput, error)
 	DescribeWorkspaces(context.Context, *DescribeWorkspacesInput) (*DescribeWorkspacesOutput, error)
 	ResolveWorkspace(context.Context, *ResolveWorkspaceInput) (*ResolveWorkspaceOutput, error)
@@ -24,6 +27,32 @@ type Kernel interface {
 	// Gracefully shutdown the exo daemon.
 	Exit(context.Context, *ExitInput) (*ExitOutput, error)
 	DescribeTasks(context.Context, *DescribeTasksInput) (*DescribeTasksOutput, error)
+	GetUserHomeDir(context.Context, *GetUserHomeDirInput) (*GetUserHomeDirOutput, error)
+	ReadDir(context.Context, *ReadDirInput) (*ReadDirOutput, error)
+}
+
+type AuthEsvInput struct {
+}
+
+type AuthEsvOutput struct {
+	AuthUrl  string `json:"authUrl"`
+	AuthCode string `json:"authCode"`
+}
+
+type CreateProjectInput struct {
+	Root        string  `json:"root"`
+	TemplateUrl *string `json:"templateUrl"`
+}
+
+type CreateProjectOutput struct {
+	WorkspaceID string `json:"workspaceId"`
+}
+
+type DescribeTemplatesInput struct {
+}
+
+type DescribeTemplatesOutput struct {
+	Templates []TemplateDescription `json:"templates"`
 }
 
 type CreateWorkspaceInput struct {
@@ -93,7 +122,33 @@ type DescribeTasksOutput struct {
 	Tasks []TaskDescription `json:"tasks"`
 }
 
+type GetUserHomeDirInput struct {
+}
+
+type GetUserHomeDirOutput struct {
+	Path string `json:"path"`
+}
+
+type ReadDirInput struct {
+	Path string `json:"path"`
+}
+
+type ReadDirOutput struct {
+	Directory DirectoryEntry   `json:"directory"`
+	Parent    *DirectoryEntry  `json:"parent"`
+	Entries   []DirectoryEntry `json:"entries"`
+}
+
 func BuildKernelMux(b *josh.MuxBuilder, factory func(req *http.Request) Kernel) {
+	b.AddMethod("auth-esv", func(req *http.Request) interface{} {
+		return factory(req).AuthEsv
+	})
+	b.AddMethod("create-project", func(req *http.Request) interface{} {
+		return factory(req).CreateProject
+	})
+	b.AddMethod("describe-templates", func(req *http.Request) interface{} {
+		return factory(req).DescribeTemplates
+	})
 	b.AddMethod("create-workspace", func(req *http.Request) interface{} {
 		return factory(req).CreateWorkspace
 	})
@@ -121,6 +176,25 @@ func BuildKernelMux(b *josh.MuxBuilder, factory func(req *http.Request) Kernel) 
 	b.AddMethod("describe-tasks", func(req *http.Request) interface{} {
 		return factory(req).DescribeTasks
 	})
+	b.AddMethod("get-user-home-dir", func(req *http.Request) interface{} {
+		return factory(req).GetUserHomeDir
+	})
+	b.AddMethod("read-dir", func(req *http.Request) interface{} {
+		return factory(req).ReadDir
+	})
+}
+
+type DirectoryEntry struct {
+	Name        string `json:"name"`
+	Path        string `json:"path"`
+	IsDirectory bool   `json:"isDirectory"`
+}
+
+type TemplateDescription struct {
+	Name        string `json:"name"`
+	DisplayName string `json:"displayName"`
+	IconGlyph   string `json:"iconGlyph"`
+	Url         string `json:"url"`
 }
 
 type TaskDescription struct {

@@ -35,7 +35,11 @@ func (p *Process) Start(ctx context.Context, input *core.StartInput) (*core.Star
 }
 
 func (p *Process) start(ctx context.Context) error {
-	p.State.clear()
+	if p.Program == "" {
+		// SEE NOTE [PROCESS_STATE_MIGRATION].
+		return errors.New("refresh needed")
+	}
+	p.State.reset()
 
 	whichQ := which.Query{
 		Program: p.Program,
@@ -61,12 +65,21 @@ func (p *Process) start(ctx context.Context) error {
 		Setsid: true, // Run in background.
 	}
 
+	envMap := make(map[string]string)
+	for key, val := range p.WorkspaceEnvironment {
+		envMap[key] = val
+	}
+	for key, val := range p.Environment {
+		envMap[key] = val
+	}
+	p.State.FullEnvironment = envMap
+
 	// Pipe JSON config to supervise on stdin.
 	configJSON := supervise.MustEncodeConfig(&supervise.Config{
 		ComponentID:      p.ComponentID,
 		WorkingDirectory: p.WorkspaceRoot,
 		SyslogPort:       p.SyslogPort,
-		Environment:      p.Environment,
+		Environment:      envMap,
 		Program:          program,
 		Arguments:        p.Arguments,
 	})
@@ -89,15 +102,6 @@ func (p *Process) start(ctx context.Context) error {
 	p.State.SupervisorPid = cmd.Process.Pid
 	p.State.Pgid, _ = syscall.Getpgid(p.State.SupervisorPid)
 	p.State.Pid = 0 // Overriden below.
-
-	envMap := make(map[string]string)
-	for key, val := range p.WorkspaceEnvironment {
-		envMap[key] = val
-	}
-	for key, val := range p.Environment {
-		envMap[key] = val
-	}
-	p.State.FullEnvironment = envMap
 
 	// Collect supervise output.
 	pidC := make(chan int, 1)
@@ -140,15 +144,21 @@ func (p *Process) start(ctx context.Context) error {
 }
 
 func (p *Process) Stop(ctx context.Context, input *core.StopInput) (*core.StopOutput, error) {
-	p.stop(input.TimeoutSeconds)
+	if err := p.stop(input.TimeoutSeconds); err != nil {
+		return nil, err
+	}
 	return &core.StopOutput{}, nil
 }
 
 const DefaultShutdownGracePeriod = 5 * time.Second
 
-func (p *Process) stop(timeoutSeconds *uint) {
+func (p *Process) stop(timeoutSeconds *uint) error {
 	if p.zeroPids() {
-		return
+		return nil
+	}
+	if p.Program == "" {
+		// SEE NOTE [PROCESS_STATE_MIGRATION].
+		return errors.New("refresh needed")
 	}
 
 	timeout := DefaultShutdownGracePeriod
@@ -163,11 +173,14 @@ func (p *Process) stop(timeoutSeconds *uint) {
 		p.Logger.Infof("terminating process: %w", err)
 	}
 
-	p.State.clear()
+	p.State.reset()
+	return nil
 }
 
 func (p *Process) Restart(ctx context.Context, input *core.RestartInput) (*core.RestartOutput, error) {
-	p.stop(input.TimeoutSeconds)
+	if err := p.stop(input.TimeoutSeconds); err != nil {
+		return nil, err
+	}
 	err := p.start(ctx)
 	if err != nil {
 		return nil, err
