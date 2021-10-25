@@ -36,7 +36,6 @@ var _ state.Store = (*Store)(nil)
 type Root struct {
 	Workspaces          map[string]*Workspace `json:"workspaces"`          // Keyed by ID.
 	ComponentWorkspaces map[string]string     `json:"componentWorkspaces"` // Component ID -> Workspace ID.
-	DeviceID            string                `json:"deviceId"`
 }
 
 type Component struct {
