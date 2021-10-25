@@ -36,6 +36,7 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v2
+
       - name: Create tag
         uses: actions/github-script@v3
         with:
@@ -49,4 +50,37 @@ jobs:
               repo: context.repo.repo,
               ref: `refs/tags/v${version}`,
               sha: context.sha
-            })
+      - run: git tag ${{ steps.get_version.outputs.release_version }}
+
+      - name: Set up Go
+        uses: actions/setup-go@v2
+        with:
+          go-version: 1.17
+
+      - uses: actions/setup-node@v2
+        with:
+          node-version: 'lts/*'
+          cache: 'npm'
+          cache-dependency-path: "gui/package-lock.json"
+      - run: npm i -g npm@latest
+      - run: npm ci
+        working-directory: ./gui
+
+      - name: Get version from VERSION file
+        id: get_version
+        run: echo ::set-output name=release_version::$(cat VERSION | tr -d '[:space:]')
+
+      - name: Run GoReleaser
+        run: make release
+        env:
+          # Need a custom personal access token to allow publishing to
+          # the deref/homebrew-tap repository.
+          GITHUB_TOKEN: ${{ secrets.GH_PAT }}
+
+
+      - name: Update version in CloudFlare K/V
+        uses: cloudflare/wrangler-action@1.3.0
+        with:
+          apiToken: ${{ secrets.CF_API_TOKEN }}
+          publish: false
+          preCommands: wrangler kv:key put --binding VERSIONS "exo" ${{ steps.get_version.outputs.release_version }}           })
