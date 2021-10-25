@@ -99,9 +99,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	}
 
 	statePath := filepath.Join(cfg.VarDir, "state.json")
-	store := statefile.New(statefile.Config{
-		StoreFilename: statePath,
-	})
+	store := statefile.New(statePath)
 
 	inst := install.Get(filepath.Join(cfg.VarDir, "deviceid"))
 	deviceID, err := inst.GetDeviceID()

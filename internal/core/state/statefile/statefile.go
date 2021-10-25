@@ -17,13 +17,9 @@ import (
 	"github.com/deref/exo/internal/util/pathutil"
 )
 
-type Config struct {
-	StoreFilename string
-}
-
-func New(cfg Config) *Store {
+func New(filename string) *Store {
 	return &Store{
-		atom: atom.NewFileAtom(cfg.StoreFilename, atom.CodecJSON),
+		atom: atom.NewFileAtom(filename, atom.CodecJSON),
 	}
 }
 
