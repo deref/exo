@@ -5,25 +5,36 @@
   import IconButton from '../components/IconButton.svelte';
   import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
   import { theme, themeOptions } from '../lib/theme';
+  import { preferences } from '../lib/preferences';
+  import { onMount } from 'svelte';
 
-  let typographyPrefs = [
+  let prefGroups = [
     {
-      variable: 'main-font-size',
-      value: '16px',
-    },
-    {
-      variable: 'log-font-size',
-      value: '15px',
-    },
-    {
-      variable: 'ligatures-logs',
-      value: 'none',
-    },
-    {
-      variable: 'ligatures-code',
-      value: 'none',
+      title: 'Typography',
+      prefs: [
+        {
+          name: 'main-font-size',
+        },
+        {
+          name: 'log-font-size',
+        },
+        {
+          name: 'ligatures-logs',
+        },
+        {
+          name: 'ligatures-code',
+        },
+      ],
     },
   ];
+
+  type Preferences = Record<string, string>;
+
+  let dirtyPrefs: Preferences = {};
+
+  onMount(() => {
+    dirtyPrefs = $preferences;
+  });
 </script>
 
 <Layout>
@@ -32,7 +43,13 @@
       <IconButton
         glyph="Reset"
         tooltip="Reset to defaults"
-        on:click={() => theme.apply('auto')}
+        on:click={() => {
+          theme.apply('auto');
+          preferences.reset();
+          setTimeout(() => {
+            dirtyPrefs = $preferences;
+          }, 50);
+        }}
       />
     </div>
     <div>
@@ -52,17 +69,23 @@
         </div>
       </div>
 
-      <div class="group">
-        <div class="group-header">
-          <h2>Typography</h2>
-        </div>
-        {#each typographyPrefs as pref}
-          <div class="input-row">
-            <code>{pref.variable}</code>
-            <Textbox bind:value={pref.value} --input-width="100%" />
+      {#each prefGroups as group}
+        <div class="group">
+          <div class="group-header">
+            <h2>{group.title}</h2>
           </div>
-        {/each}
-      </div>
+          {#each group.prefs as pref}
+            <div class="input-row">
+              <code>{pref.name}</code>
+              <Textbox
+                bind:value={dirtyPrefs[pref.name]}
+                on:input={() => preferences.apply({ ...dirtyPrefs })}
+                --input-width="100%"
+              />
+            </div>
+          {/each}
+        </div>
+      {/each}
     </div>
   </CenterFormPanel>
 </Layout>

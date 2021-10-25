@@ -3,6 +3,7 @@
   import VersionInfo from './VersionInfo.svelte';
   import NavbarButton from './nav/NavbarButton.svelte';
   import { theme, themeOptions } from '../lib/theme';
+  import { preferences } from '../lib/preferences';
 
   $: {
     for (const option of themeOptions) {
@@ -11,7 +12,11 @@
   }
 </script>
 
-<main>
+<main
+  style={Object.entries($preferences)
+    .map((x) => `--preferred-${x[0]}:${x[1]}`)
+    .join(';')}
+>
   <nav>
     <header>
       <NavbarButton title="Home" href="#/" shortcutParams={{ code: 'KeyH' }}>
