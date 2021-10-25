@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"io/ioutil"
 	"net/http"
 	"time"
 
@@ -119,7 +120,17 @@ func (a *AmplitudeClient) publish(events []Event) {
 		logger.Infof("Could not perform telemetry request: %w", err)
 		return
 	}
-	res.Body.Close()
+	defer res.Body.Close()
+
+	if res.StatusCode != 200 {
+		logger.Infof("Got unexpected status code: %d", res.StatusCode)
+		body, err := ioutil.ReadAll(res.Body)
+		if err != nil {
+			logger.Infof("could not read body of errored request")
+			return
+		}
+		logger.Infof("res: %+v\n", string(body))
+	}
 }
 
 type UploadRequest struct {
