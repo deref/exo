@@ -1,0 +1,159 @@
+# Documentation for .goreleaser.yml can be found at <https://goreleaser.com>.
+---
+env:
+  - CGO_ENABLED=1
+builds:
+  - id: linux-arm64-standalone
+    main: .
+    flags: ["-mod=readonly"]
+    goos: ["linux"]
+    goarch: ["arm64"]
+    ldflags: ['-extldflags=-static']
+    env:
+      - CC=aarch64-linux-gnu-gcc
+      - CXX=aarch64-linux-gnu-g++
+    tags:
+      - netgo
+      - bundle
+  - id: linux-amd64-standalone
+    main: .
+    flags: ["-mod=readonly"]
+    goos: ["linux"]
+    goarch: ["amd64"]
+    ldflags: ['-extldflags=-static']
+    env:
+      - CC=gcc
+      - CXX=g++
+    tags:
+      - netgo
+      - bundle
+  - id: linux-arm64-managed
+    main: .
+    flags: ["-mod=readonly"]
+    goos: ["linux"]
+    goarch: ["arm64"]
+    ldflags: ['-extldflags=-static']
+    env:
+      - CC=aarch64-linux-gnu-gcc
+      - CXX=aarch64-linux-gnu-g++
+    tags:
+      - netgo
+      - bundle
+      - managed
+  - id: linux-amd64-managed
+    main: .
+    flags: ["-mod=readonly"]
+    goos: ["linux"]
+    goarch: ["amd64"]
+    ldflags: ['-extldflags=-static']
+    env:
+      - CC=gcc
+      - CXX=g++
+    tags:
+      - netgo
+      - bundle
+      - managed
+  - id: darwin-arm64-standalone
+    main: .
+    flags: ["-mod=readonly"]
+    goos: ["darwin"]
+    goarch: ["arm64"]
+    env:
+      - CC=oa64-clang
+      - CXX=oa64-clang++
+    tags:
+      - netgo
+      - bundle
+  - id: darwin-amd64-standalone
+    main: .
+    flags: ["-mod=readonly"]
+    goos: ["darwin"]
+    goarch: ["amd64"]
+    env:
+      - CC=oa64-clang
+      - CXX=oa64-clang++
+    tags:
+      - netgo
+      - bundle
+  - id: darwin-arm64-managed
+    main: .
+    flags: ["-mod=readonly"]
+    goos: ["darwin"]
+    goarch: ["arm64"]
+    env:
+      - CC=oa64-clang
+      - CXX=oa64-clang++
+    tags:
+      - netgo
+      - bundle
+      - managed
+  - id: darwin-amd64-managed
+    main: .
+    flags: ["-mod=readonly"]
+    goos: ["darwin"]
+    goarch: ["amd64"]
+    env:
+      - CC=oa64-clang
+      - CXX=oa64-clang++
+    tags:
+      - netgo
+      - bundle
+      - managed
+
+archives:
+  - id: standalone
+    name_template:  '{{ .ProjectName }}_standalone_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}'
+    builds:
+      - linux-arm64-standalone
+      - linux-amd64-standalone
+      - darwin-arm64-standalone
+      - darwin-amd64-standalone
+  - id: managed
+    name_template:  '{{ .ProjectName }}_managed_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}{{ if .Mips }}_{{ .Mips }}{{ end }}'
+    builds:
+      - linux-arm64-managed
+      - linux-amd64-managed
+      - darwin-arm64-managed
+      - darwin-amd64-managed
+
+checksum:
+  name_template: "checksums.txt"
+
+snapshot:
+  name_template: "{{ incpatch .Version }}-next"
+
+changelog:
+  sort: asc
+  filters:
+    exclude:
+      - "^docs:"
+      - "^test:"
+
+brews:
+  - name: exo
+    ids:
+      - managed
+    tap:
+      owner: deref
+      name: homebrew-tap
+    commit_author:
+      name: derefbot
+      email: bot@deref.io
+    homepage: "https://exo.deref.io"
+    folder: Formula
+    test: |
+      system "#{bin}/exo version"
+
+nfpms:
+  - builds:
+      - linux-arm64-managed
+      - linux-amd64-managed
+    formats:
+      - apk
+      - deb
+      - rpm
+
+release:
+  github:
+    owner: deref
+    name: exo

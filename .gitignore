@@ -2,5 +2,5 @@
 /.vscode/
 /bin
 .DS_Store
-/exo
+/dist/
 *.tsbuildinfo
