@@ -70,10 +70,8 @@ jobs:
         id: get_version
         run: echo ::set-output name=release_version::$(cat VERSION | tr -d '[:space:]')
 
-        # FIXME: this will probably break the release as it will cause the
-        # working directory to be dirty.
       - name: Output Amplitude API key
-        run: echo -n "${{ secrets.AMPLITUDE_API_KEY }}" > AMPLITUDE_API_KEY
+        run: echo -n "${{ secrets.AMPLITUDE_API_KEY }}" > AMPLITUDE_API_KEY && git update-index --assume-unchanged AMPLITUDE_API_KEY
 
       - name: Run GoReleaser
         run: make release
