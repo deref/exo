@@ -45,7 +45,7 @@ func genFileTo(out *hclwrite.File, in *hcl.File) {
 }
 
 func genBodyTo(out *hclwrite.Body, in hcl.Body) {
-	body := bodyFromStructure(in)
+	body := BodyFromStructure(in)
 	for _, attr := range body.Attributes {
 		out.SetAttributeRaw(attr.Name, TokensForExpression(attr.Expr))
 	}

@@ -234,7 +234,7 @@ func expandComponent(block *hclsyntax.Block) (*hclsyntax.Block, hcl.Diagnostics)
 			})
 		}
 	}
-	attrs := body.Attributes
+	attrs := hclgen.AttributesFromSyntax(body.Attributes)
 	specItems := make([]hclsyntax.ObjectConsItem, 0, len(attrs))
 	for _, attr := range attrs {
 		specItems = append(specItems, hclsyntax.ObjectConsItem{
@@ -242,7 +242,6 @@ func expandComponent(block *hclsyntax.Block) (*hclsyntax.Block, hcl.Diagnostics)
 			ValueExpr: attr.Expr,
 		})
 	}
-	// sort.Sort(specItemsSorter{specItems}) // XXX sort specItems by attr range?
 	// XXX search for "_" blocks with depends_on, etc. and other meta properties.
 	return &hclsyntax.Block{
 		Type:   "component",

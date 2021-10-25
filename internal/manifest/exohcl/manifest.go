@@ -19,6 +19,7 @@ type Manifest struct {
 	evalCtx     *hcl.EvalContext
 	diags       hcl.Diagnostics
 	content     *hcl.BodyContent
+	providers   *ProviderSet
 	environment *Environment
 	components  *ComponentSet
 }
@@ -52,11 +53,13 @@ func NewManifest(filename string, f *hcl.File, diags hcl.Diagnostics) *Manifest 
 	})
 	m.appendDiags(diags...)
 
-	var environmentBlocks, componentBlocks hcl.Blocks
+	var providerBlocks, environmentBlocks, componentBlocks hcl.Blocks
 	if m.content != nil {
+		providerBlocks = m.content.Blocks.OfType("providers")
 		environmentBlocks = m.content.Blocks.OfType("environment")
 		componentBlocks = m.content.Blocks.OfType("components")
 	}
+	m.providers = newProviderSet(m, providerBlocks)
 	m.environment = newEnvironment(m, environmentBlocks)
 	m.components = newComponentSet(m, componentBlocks)
 
