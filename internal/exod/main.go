@@ -99,7 +99,6 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	}
 
 	statePath := filepath.Join(cfg.VarDir, "state.json")
-	// deviceIDPath := filepath.Join(cfg.VarDir, "deviceid")
 	store := statefile.New(statefile.Config{
 		StoreFilename: statePath,
 	})
