@@ -37,7 +37,7 @@
   class:small
   class:danger
   class:inset
-  on:click|preventDefault={handleClick}
+  on:click={handleClick}
   {type}
 >
   <slot />

@@ -41,6 +41,6 @@
     </form>
 
     <h2>Need a vault?</h2>
-    <a href={esvUrl}>Create one with Exo Secrets Vault</a>
+    <a href={esvUrl} target="_blank">Create one with Exo Secrets Vault</a>
   </CenterFormPanel>
 </Layout>
