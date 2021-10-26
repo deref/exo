@@ -37,7 +37,11 @@ type Loader struct {
 	Bytes         []byte
 }
 
-func (l *Loader) Load() (*exohcl.Manifest, error) {
+func (l *Loader) Load(ctx *exohcl.AnalysisContext) (*exohcl.Manifest, error) {
+	m := &exohcl.Manifest{
+		Filename: l.Filename,
+	}
+
 	format := l.Format
 	if format == "" {
 		if l.Filename == "" || l.Filename == "/dev/stdin" {
@@ -50,33 +54,24 @@ func (l *Loader) Load() (*exohcl.Manifest, error) {
 		}
 	}
 
-	var converter interface {
-		Convert(bs []byte) (*hcl.File, hcl.Diagnostics)
+	var importer interface {
+		Import(ctx *exohcl.AnalysisContext, bs []byte) *hcl.File
 	}
 	switch format {
 	case "procfile":
-		converter = &procfile.Converter{}
+		importer = &procfile.Importer{}
 	case "compose":
-		converter = &compose.Converter{
+		importer = &compose.Importer{
 			ProjectName: l.WorkspaceName,
 		}
 	case "exo":
-		// No converter needed.
+		importer = &exohcl.Importer{
+			Filename: l.Filename,
+		}
 	default:
-		return nil, fmt.Errorf("unknown manifest format: %q", l.Format)
+		return m, fmt.Errorf("unknown manifest format: %q", l.Format)
 	}
-	var m *exohcl.Manifest
-	if converter == nil {
-		m = exohcl.Parse(l.Filename, l.Bytes)
-	} else {
-		file, diags := converter.Convert(l.Bytes)
-		m = exohcl.NewManifest(l.Filename, file, diags)
-	}
-	var err error
-	diags := m.Diagnostics()
-	if len(diags) > 0 {
-		// Note that this effectively treats all warnings as errors.
-		err = diags
-	}
-	return m, err
+	m.File = importer.Import(ctx, l.Bytes)
+	m.Analyze(ctx)
+	return m, nil
 }

@@ -6,6 +6,7 @@ import (
 
 	"github.com/deref/exo/internal/core/api"
 	"github.com/deref/exo/internal/environment"
+	"github.com/deref/exo/internal/manifest/exohcl"
 	"github.com/deref/exo/internal/util/logging"
 	"github.com/deref/exo/internal/util/osutil"
 )
@@ -16,7 +17,14 @@ func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]api.Variabl
 	var sources []environment.Source
 
 	if manifest := ws.tryLoadManifest(ctx); manifest != nil {
-		sources = append(sources, manifest.Environment())
+		manifestEnv := &exohcl.Environment{
+			Blocks: manifest.Environment,
+		}
+		diags := exohcl.Analyze(ctx, manifestEnv)
+		if diags.HasErrors() {
+			return nil, diags
+		}
+		sources = append(sources, manifestEnv)
 	}
 
 	sources = append(sources,

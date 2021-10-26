@@ -16,11 +16,12 @@ var manifestFormatCmd = &cobra.Command{
 	Short: "Loads a manifest file and reformats it to standard out.",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		m, err := loadManifest(args[0])
-		if err := writeManifestError(os.Stderr, err); err != nil {
+		ctx := newContext()
+		m, err := loadManifest(ctx, os.Stderr, args[0])
+		if err != nil {
 			return err
 		}
-		_, err = hclgen.WriteTo(os.Stdout, m.File())
+		_, err = hclgen.WriteTo(os.Stdout, m.File)
 		return err
 	},
 }

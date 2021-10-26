@@ -37,11 +37,11 @@ func (ws *Workspace) tryLoadManifest(ctx context.Context) *exohcl.Manifest {
 	if err != nil {
 		return nil
 	}
-	m, err := ws.loadManifest(wsDesc.Root, &api.ApplyInput{})
+	m, _ := ws.loadManifest(ctx, wsDesc.Root, &api.ApplyInput{})
 	return m
 }
 
-func (ws *Workspace) loadManifest(rootDir string, input *api.ApplyInput) (*exohcl.Manifest, error) {
+func (ws *Workspace) loadManifest(ctx context.Context, rootDir string, input *api.ApplyInput) (*exohcl.Manifest, error) {
 	manifestString := ""
 	manifestPath := ""
 	if input.ManifestPath != nil {
@@ -76,13 +76,20 @@ func (ws *Workspace) loadManifest(rootDir string, input *api.ApplyInput) (*exohc
 	workspaceName := path.Base(rootDir)
 	workspaceName = exohcl.MangleName(workspaceName)
 
+	analysisContext := &exohcl.AnalysisContext{
+		Context: ctx,
+	}
 	loader := &manifest.Loader{
 		WorkspaceName: workspaceName,
 		Format:        input.Format,
 		Filename:      manifestPath,
 		Bytes:         []byte(manifestString),
 	}
-	return loader.Load()
+	m, err := loader.Load(analysisContext)
+	if err == nil {
+		err = analysisContext.Diagnostics
+	}
+	return m, err
 }
 
 func (ws *Workspace) ResolveManifest(ctx context.Context, input *api.ResolveManifestInput) (*api.ResolveManifestOutput, error) {
