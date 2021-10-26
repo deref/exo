@@ -15,6 +15,7 @@
 
   const handleClick = (e: MouseEvent) => {
     if (href) {
+      e.preventDefault();
       if (!absoluteUrl.test(href)) {
         // Handle internal routes.
         router.push(href);
