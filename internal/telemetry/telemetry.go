@@ -6,7 +6,7 @@ import (
 	"net/http"
 	"time"
 
-	"github.com/deref/exo/internal/config"
+	"github.com/deref/exo/internal/about"
 	"github.com/deref/exo/internal/util/cacheutil"
 )
 
@@ -14,22 +14,32 @@ type Telemetry interface {
 	IsEnabled() bool
 	LatestVersion(context.Context) (string, error)
 	StartSession(context.Context)
-	SendEvent(context.Context, event)
+	SendEvent(context.Context, Event)
 	RecordOperation(OperationInvocation)
 }
 
-func New(ctx context.Context, cfg *config.TelemetryConfig) Telemetry {
+type Config struct {
+	Disable           bool
+	DerefInternalUser bool
+	DeviceID          string
+}
+
+func New(ctx context.Context, cfg Config) Telemetry {
 	if cfg.Disable {
 		return &Nop{}
 	}
 
+	httpClient := &http.Client{
+		Timeout: time.Second * 10,
+	}
+
 	t := &defaultTelemetry{
-		ctx: ctx,
-		cfg: cfg,
-		client: &http.Client{
-			Timeout: time.Second * 5,
-		},
-		operationGauge: newOperationGauge(),
+		ctx:               ctx,
+		deviceID:          cfg.DeviceID,
+		client:            httpClient,
+		ampClient:         NewAmplitudeClient(ctx, httpClient, about.AmplitudeAPIKey),
+		operationGauge:    newOperationGauge(),
+		derefInternalUser: cfg.DerefInternalUser,
 	}
 	t.latestVersion = cacheutil.NewTTLVal(t.getLatestVersion, 5*time.Minute)
 

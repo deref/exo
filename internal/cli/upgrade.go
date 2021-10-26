@@ -5,8 +5,8 @@ import (
 	"strings"
 
 	"github.com/deref/exo/internal/about"
+	"github.com/deref/exo/internal/install"
 	"github.com/deref/exo/internal/telemetry"
-	"github.com/deref/exo/internal/upgrade"
 	"github.com/spf13/cobra"
 )
 
@@ -24,7 +24,7 @@ var upgradeCmd = &cobra.Command{
 		tel := telemetry.FromContext(ctx)
 		if !tel.IsEnabled() {
 			fmt.Println("Cannot check current version - telemetry disabled.")
-			if upgrade.IsManaged {
+			if install.IsManaged {
 				fmt.Println("Please upgrade using your system package manager.")
 			} else {
 				fmt.Println("You may upgrade with the following command.")
@@ -45,8 +45,9 @@ var upgradeCmd = &cobra.Command{
 			fmt.Println("You are already running the latest version")
 		case -1:
 			fmt.Println("Upgrade needed")
+			inst := install.Get(cfg.VarDir + "/deviceid")
 			// TODO: Prompt for confirmation?
-			return upgrade.UpgradeSelf()
+			return inst.UpgradeSelf()
 		case 1:
 			fmt.Println("You are already running a prerelease version; not downgrading.")
 		default:

@@ -32,6 +32,7 @@ func (a *FileAtom) Deref(v interface{}) error {
 
 	bs, err := ioutil.ReadFile(a.filename)
 	if os.IsNotExist(err) {
+		// XXX [ATOM JSON CODING]: This assumes a JSON codec.
 		bs = []byte("null")
 		err = nil
 	}

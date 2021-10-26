@@ -15,11 +15,11 @@ import (
 	state "github.com/deref/exo/internal/core/state/api"
 	"github.com/deref/exo/internal/esv"
 	"github.com/deref/exo/internal/gensym"
+	"github.com/deref/exo/internal/install"
 	"github.com/deref/exo/internal/task"
 	taskapi "github.com/deref/exo/internal/task/api"
 	"github.com/deref/exo/internal/telemetry"
 	"github.com/deref/exo/internal/template"
-	"github.com/deref/exo/internal/upgrade"
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/osutil"
 )
@@ -27,8 +27,8 @@ import (
 var dirExistsErr = errutil.HTTPErrorf(409, "Directory already exists.")
 
 type Kernel struct {
-	VarDir      string
 	Store       state.Store
+	Install     *install.Install
 	TaskTracker *task.TaskTracker
 	EsvClient   esv.EsvClient
 }
@@ -156,10 +156,11 @@ func (kern *Kernel) GetVersion(ctx context.Context, input *api.GetVersionInput) 
 }
 
 func (kern *Kernel) Upgrade(ctx context.Context, input *api.UpgradeInput) (*api.UpgradeOutput, error) {
-	if upgrade.IsManaged {
+	if install.IsManaged {
 		return nil, errutil.WithHTTPStatus(http.StatusBadRequest, errors.New("exo installed with system package manager"))
 	}
-	err := upgrade.UpgradeSelf()
+
+	err := kern.Install.UpgradeSelf()
 	if err != nil {
 		return nil, err
 	}

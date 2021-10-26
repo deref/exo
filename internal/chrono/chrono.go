@@ -18,6 +18,10 @@ func NowNano(ctx context.Context) int64 {
 	return Now(ctx).UnixNano()
 }
 
+func NowMillisecond(ctx context.Context) int64 {
+	return Now(ctx).UnixNano() / int64(time.Millisecond)
+}
+
 func NowString(ctx context.Context) string {
 	return IsoNano(Now(ctx))
 }

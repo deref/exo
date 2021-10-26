@@ -13,3 +13,4 @@ const (
 // TODO: Untangle this.
 var Version string
 var Notices embed.FS
+var AmplitudeAPIKey string

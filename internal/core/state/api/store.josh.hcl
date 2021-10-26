@@ -67,7 +67,6 @@ interface "store" {
   method "remove-component" {
     input "id" "string" {}
   }
-
 }
 
 struct "workspace-description" {

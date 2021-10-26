@@ -17,7 +17,7 @@ func (t *Nop) StartSession(_ context.Context) {
 	// Do nothing.
 }
 
-func (t *Nop) SendEvent(_ context.Context, _ event) {
+func (t *Nop) SendEvent(_ context.Context, _ Event) {
 	// Do nothing.
 }
 

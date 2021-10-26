@@ -19,6 +19,7 @@ import (
 	eventdapi "github.com/deref/exo/internal/eventd/api"
 	eventdsqlite "github.com/deref/exo/internal/eventd/sqlite"
 	"github.com/deref/exo/internal/gensym"
+	"github.com/deref/exo/internal/install"
 	"github.com/deref/exo/internal/providers/core/components/log"
 	"github.com/deref/exo/internal/syslogd"
 	"github.com/deref/exo/internal/task"
@@ -47,7 +48,6 @@ func Main(ctx context.Context) {
 
 func RunServer(ctx context.Context, flags map[string]string) {
 	logger := logging.CurrentLogger(ctx)
-	tel := telemetry.FromContext(ctx)
 
 	cfg := &config.Config{}
 	config.MustLoadDefault(cfg)
@@ -56,8 +56,6 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	if err := token.EnsureTokenFile(cfg.TokensFile); err != nil {
 		cmdutil.Fatalf("ensuring token file: %w", err)
 	}
-
-	tel.StartSession(ctx)
 
 	_, forceStdLog := flags["force-std-log"]
 	if !(forceStdLog || isatty.IsTerminal(os.Stdout.Fd())) {
@@ -103,6 +101,22 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	statePath := filepath.Join(cfg.VarDir, "state.json")
 	store := statefile.New(statePath)
 
+	inst := install.Get(filepath.Join(cfg.VarDir, "deviceid"))
+	deviceID, err := inst.GetDeviceID()
+	if err != nil {
+		deviceID = "failed-to-set"
+		logger.Infof("failed to initialize device: %v", err)
+	}
+
+	tel := telemetry.New(ctx, telemetry.Config{
+		Disable:           cfg.Telemetry.Disable,
+		DeviceID:          deviceID,
+		DerefInternalUser: cfg.Telemetry.DerefInternalUser,
+	})
+	ctx = telemetry.ContextWithTelemetry(ctx, tel)
+	tel.StartSession(ctx)
+	tel.SendEvent(ctx, telemetry.SystemInfoIdentifiedEvent())
+
 	dbPath := filepath.Join(cfg.VarDir, "exo.sqlite3")
 	// Fully serialize transactions. Hurts performance, but reasonable for
 	// an embedded database, as long as transactions are kept small.
@@ -131,6 +145,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	}
 
 	kernelCfg := &kernel.Config{
+		Install:     inst,
 		VarDir:      cfg.VarDir,
 		Store:       store,
 		SyslogPort:  cfg.Log.SyslogPort,

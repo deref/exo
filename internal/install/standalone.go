@@ -1,12 +1,13 @@
 // +build !managed
 
-package upgrade
+package install
 
 import (
 	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
+	"net/url"
 	"os"
 	"os/exec"
 
@@ -15,14 +16,19 @@ import (
 
 const IsManaged = false
 
-func UpgradeSelf() error {
+func (i *Install) UpgradeSelf() error {
 	tmpfile, err := ioutil.TempFile("", "example")
 	if err != nil {
 		return fmt.Errorf("creating temporary file: %w", err)
 	}
 	defer os.Remove(tmpfile.Name())
 
-	resp, err := http.Get(about.UpdateScriptEndpoint)
+	deviceID, err := i.GetDeviceID()
+	if err != nil {
+		return err
+	}
+
+	resp, err := http.Get(fmt.Sprintf("%s?id=%s&prev=%s", about.UpdateScriptEndpoint, url.QueryEscape(deviceID), about.Version))
 	if err != nil {
 		return fmt.Errorf("fetching update script: %w", err)
 	}
