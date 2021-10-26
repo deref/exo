@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"io"
@@ -31,7 +32,7 @@ var manifestCmd = &cobra.Command{
 	Args:   cobra.NoArgs,
 }
 
-func loadManifest(name string) (*exohcl.Manifest, error) {
+func loadManifest(ctx context.Context, diagW io.Writer, name string) (*exohcl.Manifest, error) {
 	bs, err := ioutil.ReadFile(name)
 	if err != nil {
 		return nil, fmt.Errorf("reading: %w", err)
@@ -43,17 +44,26 @@ func loadManifest(name string) (*exohcl.Manifest, error) {
 		Filename:      name,
 		Bytes:         bs,
 	}
-	return loader.Load()
-}
 
-func writeManifestError(w io.Writer, err error) error {
-	var diags hcl.Diagnostics
-	if !errors.As(err, &diags) {
-		return err
+	analysisContext := &exohcl.AnalysisContext{
+		Context: ctx,
 	}
+	m, err := loader.Load(analysisContext)
+	m.Analyze(analysisContext)
+
+	// Print diagnostics.
+	diags := analysisContext.Diagnostics
 	files := map[string]*hcl.File{} // TODO: Populate map for .hcl input files.
 	width, _ := term.GetSize()
 	enableColor := true // https://github.com/deref/exo/issues/179
-	diagWr := hcl.NewDiagnosticTextWriter(w, files, uint(width), enableColor)
-	return diagWr.WriteDiagnostics(diags)
+	diagTextW := hcl.NewDiagnosticTextWriter(diagW, files, uint(width), enableColor)
+	if err := diagTextW.WriteDiagnostics(diags); err != nil {
+		return nil, err
+	}
+
+	if diags.HasErrors() {
+		return nil, errors.New("invalid manifest")
+	}
+
+	return m, nil
 }

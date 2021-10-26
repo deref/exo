@@ -1,17 +1,19 @@
 package compose_test
 
 import (
+	"context"
 	"testing"
 
 	"github.com/deref/exo/internal/manifest/compose"
+	"github.com/deref/exo/internal/manifest/exohcl"
 	"github.com/deref/exo/internal/manifest/exohcl/hclgen"
 	"github.com/hashicorp/hcl/v2"
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 )
 
-func TestConvert(t *testing.T) {
+func TestImport(t *testing.T) {
 	// TODO: These tests are badly broken, since this entire approach is badly broken.
-	// The following things that are being tested for here should not appear in converted manifests:
+	// The following things that are being tested for here should not appear in imported manifests:
 	// - prefixed container/volume/network names.
 	// - docker compose labels
 	// - dependencies that can be inferred from the spec body
@@ -111,10 +113,13 @@ components {
 	for _, testCase := range testCases {
 		testCase := testCase
 		t.Run(testCase.Name, func(t *testing.T) {
-			converter := &compose.Converter{ProjectName: projectName}
-			actual, diags := converter.Convert([]byte(testCase.In))
-			if len(diags) > 0 {
-				t.Fatalf("error converting: %v", diags)
+			importer := &compose.Importer{ProjectName: projectName}
+			ctx := &exohcl.AnalysisContext{
+				Context: context.Background(),
+			}
+			actual := importer.Import(ctx, []byte(testCase.In))
+			if len(ctx.Diagnostics) > 0 {
+				t.Fatalf("error converting: %v", ctx.Diagnostics)
 			}
 
 			expected, diags := hclsyntax.ParseConfig([]byte(testCase.Expected), testCase.Name, hcl.InitialPos)

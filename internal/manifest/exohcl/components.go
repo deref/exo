@@ -9,92 +9,86 @@ import (
 )
 
 type ComponentSet struct {
-	m          *Manifest
-	containers hcl.Blocks
-	components []*Component
+	// Analysis inputs.
+	Blocks hcl.Blocks
+
+	// Analysis outputs.
+	Components []*Component
 }
 
-func newComponentSet(m *Manifest, containers hcl.Blocks) *ComponentSet {
-	cs := &ComponentSet{
-		m:          m,
-		containers: containers,
+func NewComponentSet(m *Manifest) *ComponentSet {
+	return &ComponentSet{
+		Blocks: m.Components,
 	}
+}
 
-	if len(containers) > 1 {
-		m.appendDiags(&hcl.Diagnostic{
+func (cs *ComponentSet) Analyze(ctx *AnalysisContext) {
+	if len(cs.Blocks) > 1 {
+		ctx.AppendDiags(&hcl.Diagnostic{
 			Severity: hcl.DiagWarning,
 			Summary:  "Expected at most one components block",
-			Detail:   fmt.Sprintf("Only one components block may appear in a manifest, but found %d", len(containers)),
-			Subject:  containers[1].DefRange.Ptr(),
+			Detail:   fmt.Sprintf("Only one components block may appear in a manifest, but found %d", len(cs.Blocks)),
+			Subject:  cs.Blocks[1].DefRange.Ptr(),
 		})
 	}
 
-	for _, container := range containers {
-		if len(container.Labels) > 0 {
-			m.appendDiags(&hcl.Diagnostic{
+	for _, block := range cs.Blocks {
+		if len(block.Labels) > 0 {
+			ctx.AppendDiags(&hcl.Diagnostic{
 				Severity: hcl.DiagError,
 				Summary:  "Unexpected label on components block",
-				Detail:   fmt.Sprintf("A components block expects no labels, but has %d", len(container.Labels)),
-				Subject:  &container.LabelRanges[0],
+				Detail:   fmt.Sprintf("A components block expects no labels, but has %d", len(block.Labels)),
+				Subject:  &block.LabelRanges[0],
 			})
 		}
-		body, ok := container.Body.(*hclsyntax.Body)
+		body, ok := block.Body.(*hclsyntax.Body)
 		if !ok {
-			m.appendDiags(&hcl.Diagnostic{
+			ctx.AppendDiags(&hcl.Diagnostic{
 				Severity: hcl.DiagError,
 				Summary:  "Malformed components block",
-				Detail:   fmt.Sprintf("Expected components block to be an *hclsyntax.Body, but got %T", container.Body),
-				Subject:  &container.DefRange,
+				Detail:   fmt.Sprintf("Expected components block to be an *hclsyntax.Body, but got %T", block.Body),
+				Subject:  &block.DefRange,
 			})
 			continue
 		}
 		if len(body.Attributes) > 0 {
-			m.appendDiags(&hcl.Diagnostic{
+			ctx.AppendDiags(&hcl.Diagnostic{
 				Severity: hcl.DiagError,
 				Summary:  "Unexpected attributes in components block",
 				Detail:   fmt.Sprintf("A components block expects no attributes, but has %d", len(body.Attributes)),
 				Subject:  body.Attributes.Range().Ptr(),
 			})
 		}
-		cs.components = make([]*Component, len(body.Blocks))
-		for i, block := range body.Blocks {
-			cs.components[i] = newComponent(m, block)
+		for _, componentBlock := range body.Blocks {
+			component := NewComponent(componentBlock)
+			component.Analyze(ctx)
+			cs.Components = append(cs.Components, component)
 		}
 	}
-
-	return cs
-}
-
-func (cs *ComponentSet) Len() int {
-	return len(cs.components)
-}
-
-func (cs *ComponentSet) Index(i int) *Component {
-	return cs.components[i]
 }
 
 type Component struct {
-	m         *Manifest
-	source    *hclsyntax.Block
-	expansion *hclsyntax.Block
-	typ       string
-	name      string
-	spec      string
-	dependsOn []string
+	Source *hclsyntax.Block
+
+	Expansion *hclsyntax.Block
+	Type      string
+	Name      string
+	Spec      string
+	DependsOn []string
 }
 
-func newComponent(m *Manifest, block *hclsyntax.Block) *Component {
-	c := &Component{
-		m:      m,
-		source: block,
+func NewComponent(block *hclsyntax.Block) *Component {
+	return &Component{
+		Source: block,
 	}
+}
 
-	if block.Type != "component" {
-		var diags hcl.Diagnostics
-		block, diags = expandComponent(block)
-		m.appendDiags(diags...)
+func (c *Component) Analyze(ctx *AnalysisContext) {
+	c.Expansion = expandComponent(ctx, c.Source)
+	block := c.Expansion
+	if block == nil {
+		return
 	}
-	c.expansion = block
 
 	content, diags := block.Body.Content(&hcl.BodySchema{
 		Attributes: []hcl.AttributeSchema{
@@ -106,20 +100,20 @@ func newComponent(m *Manifest, block *hclsyntax.Block) *Component {
 			{Type: "spec"},
 		},
 	})
-	m.appendDiags(diags...)
+	ctx.AppendDiags(diags...)
 
 	switch len(block.Labels) {
 	case 0:
-		m.appendDiags(&hcl.Diagnostic{
+		ctx.AppendDiags(&hcl.Diagnostic{
 			Severity: hcl.DiagError,
 			Summary:  "Expected component name",
 			Detail:   `A component block must have exactly one label, which is the name of the component.`,
 			Subject:  block.DefRange().Ptr(),
 		})
 	case 1:
-		c.name = block.Labels[0]
+		c.Name = block.Labels[0]
 	default:
-		m.appendDiags(&hcl.Diagnostic{
+		ctx.AppendDiags(&hcl.Diagnostic{
 			Severity: hcl.DiagError,
 			Summary:  "Unexpected label.",
 			Detail:   `A component block must have exactly one label, which is the name of the component.`,
@@ -130,9 +124,9 @@ func newComponent(m *Manifest, block *hclsyntax.Block) *Component {
 	typeAttr := content.Attributes["type"]
 	if typeAttr != nil {
 		var diag *hcl.Diagnostic
-		c.typ, diag = parseLiteralString(typeAttr.Expr)
+		c.Type, diag = parseLiteralString(typeAttr.Expr)
 		if diag != nil {
-			m.appendDiags(diag)
+			ctx.AppendDiags(diag)
 		}
 	}
 
@@ -141,16 +135,16 @@ func newComponent(m *Manifest, block *hclsyntax.Block) *Component {
 		specBlocks := content.Blocks.OfType("spec")
 		switch len(specBlocks) {
 		case 0:
-			m.appendDiags(&hcl.Diagnostic{
+			ctx.AppendDiags(&hcl.Diagnostic{
 				Severity: hcl.DiagError,
 				Summary:  "Expected component spec",
 				Detail:   `A component block must have either a spec attribute or a nested spec block, but neither was found.`,
 				Subject:  block.DefRange().Ptr(),
 			})
 		case 1:
-			c.spec = string(hclgen.FormatBlock(specBlocks[0]))
+			c.Spec = string(hclgen.FormatBlock(specBlocks[0]))
 		default:
-			m.appendDiags(&hcl.Diagnostic{
+			ctx.AppendDiags(&hcl.Diagnostic{
 				Severity: hcl.DiagError,
 				Summary:  "Expected at most one spec block",
 				Detail:   fmt.Sprintf("Only one spec block may appear in a component, but found %d", len(specBlocks)),
@@ -158,7 +152,7 @@ func newComponent(m *Manifest, block *hclsyntax.Block) *Component {
 			})
 		}
 	} else {
-		c.spec = m.evalString(specAttr.Expr)
+		c.Spec, _ = AnalyzeString(ctx, specAttr.Expr)
 	}
 
 	depsAttr := content.Attributes["depends_on"]
@@ -166,67 +160,50 @@ func newComponent(m *Manifest, block *hclsyntax.Block) *Component {
 		depsExpr := depsAttr.Expr
 		tup, ok := depsExpr.(*hclsyntax.TupleConsExpr)
 		if !ok {
-			m.appendDiags(&hcl.Diagnostic{
+			ctx.AppendDiags(&hcl.Diagnostic{
 				Severity: hcl.DiagError,
 				Summary:  "Expected array of strings",
 				Detail:   fmt.Sprintf("Expected literal array of strings, got %T", depsExpr),
 				Subject:  depsExpr.Range().Ptr(),
 			})
 		}
-		c.dependsOn = make([]string, 0, len(tup.Exprs))
+		c.DependsOn = make([]string, 0, len(tup.Exprs))
 		for _, elem := range tup.Exprs {
 			dep, diag := parseLiteralString(elem)
 			if diag != nil {
-				m.appendDiags(diag)
+				ctx.AppendDiags(diag)
 				continue
 			}
-			c.dependsOn = append(c.dependsOn, dep)
+			c.DependsOn = append(c.DependsOn, dep)
 		}
 	}
-
-	return c
 }
 
-func (c *Component) Name() string {
-	return c.name
-}
-
-func (c *Component) Type() string {
-	return c.typ
-}
-
-func (c *Component) Spec() string {
-	return c.spec
-}
-
-func (c *Component) DependsOn() []string {
-	return c.dependsOn
-}
-
-func expandComponent(block *hclsyntax.Block) (*hclsyntax.Block, hcl.Diagnostics) {
-	var diags hcl.Diagnostics
+func expandComponent(ctx *AnalysisContext, block *hclsyntax.Block) *hclsyntax.Block {
 	body := block.Body
 	var encodefunc string
 	switch block.Type {
+	case "component":
+		return block
 	case "process":
 		encodefunc = "jsonencode"
 	case "container", "volume", "network":
 		encodefunc = "yamlencode"
 	default:
-		diags = append(diags, &hcl.Diagnostic{
+		ctx.AppendDiags(&hcl.Diagnostic{
 			Severity: hcl.DiagError,
 			Summary:  "Unsupported component type",
 			Detail:   fmt.Sprintf(`The component type %q is not recognized.`, block.Type),
 			Subject:  block.DefRange().Ptr(),
 		})
-		return nil, diags
+		return nil
 	}
 	for _, subblock := range body.Blocks {
 		switch subblock.Type {
 		case "_":
 			// TODO: copy content of "meta" blocks in to the expanded output.
 		default:
-			diags = append(diags, &hcl.Diagnostic{
+			ctx.AppendDiags(&hcl.Diagnostic{
 				Severity: hcl.DiagError,
 				Summary:  "Unexpected block",
 				Detail:   fmt.Sprintf(`Unexpected %q block in %q component.`, subblock.Type, block.Type),
@@ -278,5 +255,5 @@ func expandComponent(block *hclsyntax.Block) (*hclsyntax.Block, hcl.Diagnostics)
 		LabelRanges:     block.LabelRanges,
 		OpenBraceRange:  block.OpenBraceRange,
 		CloseBraceRange: block.CloseBraceRange,
-	}, diags
+	}
 }

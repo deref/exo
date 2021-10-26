@@ -125,7 +125,7 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 	if err != nil {
 		return nil, fmt.Errorf("describing workspace: %w", err)
 	}
-	m, err := ws.loadManifest(description.Root, input)
+	m, err := ws.loadManifest(ctx, description.Root, input)
 
 	var diags hcl.Diagnostics
 	invalidManifest := false
@@ -134,11 +134,22 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 	} else {
 		invalidManifest = err != nil
 	}
+	var componentSet *exohcl.ComponentSet
+	if !invalidManifest {
+		analysisContext := &exohcl.AnalysisContext{
+			Context:     ctx,
+			Diagnostics: diags,
+		}
+		componentSet = exohcl.NewComponentSet(m)
+		componentSet.Analyze(analysisContext)
+		diags = analysisContext.Diagnostics
+		err = diags
+		invalidManifest = diags.HasErrors()
+	}
 	if invalidManifest {
 		return nil, errutil.WithHTTPStatus(http.StatusBadRequest, err)
 	}
-	manifestComponents := m.Components()
-	numComponents := manifestComponents.Len()
+	manifestComponents := componentSet.Components
 
 	describeOutput, err := ws.DescribeComponents(ctx, &api.DescribeComponentsInput{})
 	if err != nil {
@@ -174,13 +185,13 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 
 	// 1.
 	allComponents := deps.New()
-	for i := 0; i < numComponents; i++ {
-		c := manifestComponents.Index(i)
+	for i := 0; i < len(manifestComponents); i++ {
+		c := manifestComponents[i]
 		allComponents.AddNode(&componentNode{
 			component: c,
 		})
-		for _, dependency := range c.DependsOn() {
-			allComponents.AddEdge(c.Name(), dependency)
+		for _, dependency := range c.DependsOn {
+			allComponents.AddEdge(c.Name, dependency)
 		}
 	}
 
@@ -242,16 +253,16 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 				return ws.createComponent(t, manifestComponentToCreate(newComponent), gensym.RandomBase32())
 			},
 		})
-		for _, dependency := range newComponent.DependsOn() {
+		for _, dependency := range newComponent.DependsOn {
 			createGraph.AddEdge(name, dependency)
 		}
 		updateSet[name] = struct{}{}
 	}
 
 	// 6.
-	for i := 0; i < numComponents; i++ {
-		newComponent := manifestComponents.Index(i)
-		name := newComponent.Name()
+	for i := 0; i < len(manifestComponents); i++ {
+		newComponent := manifestComponents[i]
+		name := newComponent.Name
 
 		if oldComponent, exists := oldComponents[name]; exists {
 			name := name
@@ -273,7 +284,7 @@ func (ws *Workspace) Apply(ctx context.Context, input *api.ApplyInput) (*api.App
 					return ws.createComponent(t, manifestComponentToCreate(newComponent), gensym.RandomBase32())
 				},
 			})
-			for _, dependency := range newComponent.DependsOn() {
+			for _, dependency := range newComponent.DependsOn {
 				createGraph.AddEdge(name, dependency)
 			}
 		}
@@ -494,10 +505,10 @@ func (ws *Workspace) createComponent(ctx context.Context, input *api.CreateCompo
 
 func manifestComponentToCreate(c *exohcl.Component) *api.CreateComponentInput {
 	return &api.CreateComponentInput{
-		Type:      c.Type(),
-		Name:      c.Name(),
-		Spec:      c.Spec(),
-		DependsOn: c.DependsOn(),
+		Type:      c.Type,
+		Name:      c.Name,
+		Spec:      c.Spec,
+		DependsOn: c.DependsOn,
 	}
 }
 
@@ -1172,5 +1183,5 @@ type componentNode struct {
 }
 
 func (n *componentNode) ID() string {
-	return n.component.Name()
+	return n.component.Name
 }

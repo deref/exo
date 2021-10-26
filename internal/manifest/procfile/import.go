@@ -13,15 +13,16 @@ import (
 const BasePort = 5000
 const PortStep = 100
 
-type Converter struct{}
+type Importer struct{}
 
-func (c *Converter) Convert(bs []byte) (*hcl.File, hcl.Diagnostics) {
-	procfile, diags := Parse(bytes.NewBuffer(bs))
-	if diags.HasErrors() {
-		return nil, diags
-	}
-
+func (imp *Importer) Import(ctx *exohcl.AnalysisContext, bs []byte) *hcl.File {
 	b := exohcl.NewBuilder(bs)
+
+	procfile, diags := Parse(bytes.NewBuffer(bs))
+	ctx.AppendDiags(diags...)
+	if diags.HasErrors() {
+		return b.Build()
+	}
 
 	port := BasePort
 	for _, p := range procfile.Processes {
@@ -38,7 +39,7 @@ func (c *Converter) Convert(bs []byte) (*hcl.File, hcl.Diagnostics) {
 		name := exohcl.MangleName(p.Name)
 		if name != p.Name {
 			var subject *hcl.Range
-			diags = append(diags, exohcl.NewRenameWarning(p.Name, name, subject))
+			ctx.AppendDiags(exohcl.NewRenameWarning(p.Name, name, subject))
 		}
 
 		// Build HCL attributes.
@@ -82,5 +83,5 @@ func (c *Converter) Convert(bs []byte) (*hcl.File, hcl.Diagnostics) {
 			},
 		})
 	}
-	return b.Build(), diags
+	return b.Build()
 }

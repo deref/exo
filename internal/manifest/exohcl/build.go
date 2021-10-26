@@ -20,7 +20,7 @@ func NewBuilder(src []byte) *Builder {
 		Attributes: []*hclsyntax.Attribute{
 			{
 				Name: "exo",
-				Expr: hclgen.NewStringLiteral(Latest.String(), hcl.Range{}),
+				Expr: hclgen.NewStringLiteral(Latest, hcl.Range{}),
 			},
 		},
 	}
