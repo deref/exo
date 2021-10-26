@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"runtime"
 	"sync"
 	"sync/atomic"
 	"unsafe"
@@ -61,6 +62,7 @@ func (t *defaultTelemetry) SendEvent(ctx context.Context, evt Event) {
 		evt.UserProperties = make(map[string]interface{})
 	}
 	evt.UserProperties["isDerefInternalUser"] = t.derefInternalUser
+	evt.UserProperties["osArch"] = fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH)
 
 	if err := t.ampClient.Publish(evt); err != nil {
 		logging.CurrentLogger(ctx).Infof("Could not publish telemetry event %q: %v", evt.Type, err)
