@@ -49,7 +49,7 @@ func loadManifest(ctx context.Context, diagW io.Writer, name string) (*exohcl.Ma
 		Context: ctx,
 	}
 	m, err := loader.Load(analysisContext)
-	m.Analyze(analysisContext)
+	exohcl.Validate(analysisContext, m)
 
 	// Print diagnostics.
 	diags := analysisContext.Diagnostics
