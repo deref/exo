@@ -14,7 +14,11 @@
 <main>
   <nav>
     <header>
-      <NavbarButton title="Home" href="#/" shortcutParams={{ code: 'KeyH' }}>
+      <NavbarButton
+        title="Home"
+        href="#/"
+        shortcutParams={{ code: 'KeyH', alt: true }}
+      >
         {#if import.meta.env.MODE === 'development'}
           <img src="/deref-rounded-icon-dev.png" alt="Deref" height="24px" />
         {:else}
@@ -29,7 +33,7 @@
       <NavbarButton
         title="Preferences"
         href="#/preferences"
-        shortcutParams={{ code: 'KeyP' }}
+        shortcutParams={{ code: 'KeyP', alt: true }}
       >
         <Icon glyph="Preferences" />
       </NavbarButton>
