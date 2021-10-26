@@ -104,7 +104,8 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	inst := install.Get(filepath.Join(cfg.VarDir, "deviceid"))
 	deviceID, err := inst.GetDeviceID()
 	if err != nil {
-		cmdutil.Fatalf("failed to initialize device: %v", err)
+		deviceID = "failed-to-set"
+		logger.Infof("failed to initialize device: %v", err)
 	}
 
 	tel := telemetry.New(ctx, telemetry.Config{
