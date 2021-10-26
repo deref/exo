@@ -1,6 +1,5 @@
 <script lang="ts">
   import * as router from 'svelte-spa-router';
-  import { createEventDispatcher } from 'svelte';
   import { absoluteUrl } from '../lib/regex';
 
   export let type: string | undefined = undefined;
@@ -14,8 +13,6 @@
 
   export let disabled = false;
 
-  const dispatch = createEventDispatcher();
-
   const handleClick = (e: MouseEvent) => {
     if (href) {
       if (!absoluteUrl.test(href)) {
@@ -27,8 +24,6 @@
       window.open(href, '_blank')?.focus();
       return;
     }
-    // No-href default handling.
-    dispatch('click', e);
   };
 </script>
 
@@ -38,6 +33,7 @@
   class:danger
   class:inset
   on:click={handleClick}
+  on:click
   {type}
 >
   <slot />
