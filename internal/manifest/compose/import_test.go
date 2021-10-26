@@ -130,7 +130,7 @@ components {
 			if !hclgen.FileEquiv(expected, &hcl.File{Body: actual.Body}) {
 				t.Errorf("hcl files inequivalent. expected:\n%s\nactual:\n%s",
 					testCase.Expected,
-					string(hclgen.FormatFile(actual)))
+					string(hclgen.FormatFile(hclgen.FileFromStructure(actual))))
 			}
 		})
 	}

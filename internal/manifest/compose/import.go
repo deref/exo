@@ -179,7 +179,7 @@ func (imp *Importer) Import(ctx *exohcl.AnalysisContext, bs []byte) *hcl.File {
 			if condition.Value != "service_started" {
 				var subject *hcl.Range
 				ctx.AppendDiags(exohcl.NewUnsupportedFeatureWarning(
-					fmt.Sprintf("service condition %q", dependency.Service),
+					fmt.Sprintf("service condition %q", dependency.Condition.Value),
 					"only service_started is currently supported",
 					subject,
 				))

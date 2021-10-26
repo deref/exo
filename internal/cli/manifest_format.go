@@ -21,7 +21,7 @@ var manifestFormatCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		_, err = hclgen.WriteTo(os.Stdout, m.File)
+		_, err = hclgen.WriteTo(os.Stdout, hclgen.FileFromStructure(m.File))
 		return err
 	},
 }
