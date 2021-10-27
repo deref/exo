@@ -9,11 +9,11 @@ source "$( dirname "${BASH_SOURCE[0]}" )/.include"
 currentversion="$(cat "${ROOT_DIR}/VERSION")"
 version="$(date -u +'%Y.%m.%d')"
 if [[ "$currentversion" == "${version}"* ]]; then
-    lastbuild="${currentversion#*_}"
+    lastbuild="${currentversion#*-}"
     if [[ "$lastbuild" == "$currentversion" ]]; then
-        version="${version}_1"
+        version="${version}-1"
     else
-        version="${version}_$((lastbuild+1))"
+        version="${version}-$((lastbuild+1))"
     fi
 fi
 
