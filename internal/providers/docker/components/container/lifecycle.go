@@ -346,37 +346,19 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 	}
 
 	for _, mapping := range spec.Ports {
-		target, err := nat.NewPort(mapping.Protocol, mapping.Target.String.Value)
-		if err != nil {
-			return fmt.Errorf("could not parse port: %w", err)
-		}
-
-		targetLow, targetHigh, err := target.Range()
-		if err != nil {
-			return fmt.Errorf("could not parse port range: %w", err)
-		}
-
+		targetLow, targetHigh := int(mapping.Target.Min), int(mapping.Target.Max)
 		for targetPort := targetLow; targetPort <= targetHigh; targetPort += 1 {
-			publishedPort, err := nat.NewPort(mapping.Protocol, mapping.Published.String.Value)
-			if err != nil {
-				return fmt.Errorf("could not parse port range: %w", err)
-			}
-
-			publishedLow, publishedHigh, err := publishedPort.Range()
-			if err != nil {
-				return fmt.Errorf("could not parse port range: %w", err)
-			}
-
+			publishedLow, publishedHigh := int(mapping.Published.Min), int(mapping.Published.Max)
 			publishedDiff, targetDiff := publishedHigh-publishedLow, targetHigh-targetLow
 			if publishedDiff != 1 && publishedDiff != targetDiff {
 				return fmt.Errorf("unexpected number of ports")
 			}
 
-			hostPort := publishedPort.Port()
-			if publishedHigh != publishedLow {
-				hostPort = strconv.Itoa(publishedLow + targetPort - targetLow)
+			target := nat.Port(strconv.Itoa(targetPort))
+			hostPort := strconv.Itoa(publishedLow + publishedDiff)
+			if mapping.Protocol != "" {
+				hostPort += "/" + mapping.Protocol
 			}
-
 			bindings := hostCfg.PortBindings[target]
 			bindings = append(bindings, nat.PortBinding{
 				HostIP:   mapping.HostIP,
@@ -384,9 +366,10 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 			})
 
 			// TODO: Handle mapping.Mode
-			hostCfg.PortBindings[nat.Port(strconv.Itoa(targetPort))] = bindings
+			hostCfg.PortBindings[target] = bindings
 		}
 	}
+
 	networkCfg := &network.NetworkingConfig{
 		EndpointsConfig: make(map[string]*network.EndpointSettings), // Endpoint configs for each connecting network
 	}

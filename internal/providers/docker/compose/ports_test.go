@@ -113,6 +113,20 @@ func TestParsePortMappings(t *testing.T) {
 }
 
 func TestPortYAML(t *testing.T) {
+	testYAML(t, "short_target_host", "6000:6000", PortMapping{
+		IsShortForm: true,
+		String:      MakeString("6000:6000"),
+		PortMappingLongForm: PortMappingLongForm{
+			Target: PortRange{
+				Min: 6000,
+				Max: 6000,
+			},
+			Published: PortRange{
+				Min: 6000,
+				Max: 6000,
+			},
+		},
+	})
 	testYAML(t, "short_target", `6000`, PortMapping{
 		IsShortForm: true,
 		String:      MakeInt(6000).String,
