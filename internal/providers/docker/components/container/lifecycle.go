@@ -13,7 +13,6 @@ import (
 	core "github.com/deref/exo/internal/core/api"
 	"github.com/deref/exo/internal/providers/docker/components/image"
 	"github.com/deref/exo/internal/providers/docker/compose"
-	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/deref/exo/internal/util/pathutil"
 	"github.com/deref/exo/internal/util/yamlutil"
 	"github.com/docker/docker/api/types"
@@ -346,7 +345,6 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 		hostCfg.Mounts[i] = mnt
 	}
 
-	fmt.Printf("ports are: %+v\n", jsonutil.MustMarshalString(spec.Ports))
 	for _, mapping := range spec.Ports {
 		targetLow, targetHigh := int(mapping.Target.Min), int(mapping.Target.Max)
 		for targetPort := targetLow; targetPort <= targetHigh; targetPort += 1 {
@@ -371,8 +369,6 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 			hostCfg.PortBindings[target] = bindings
 		}
 	}
-
-	fmt.Printf("final ports: %+v\n", jsonutil.MustMarshalString(hostCfg.PortBindings))
 
 	networkCfg := &network.NetworkingConfig{
 		EndpointsConfig: make(map[string]*network.EndpointSettings), // Endpoint configs for each connecting network
