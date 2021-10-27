@@ -48,7 +48,7 @@ func (ws *Workspace) AddVault(ctx context.Context, input *api.AddVaultInput) (*a
 		return nil, fmt.Errorf("resolving secrets config file path: %w", err)
 	}
 
-	if err := ioutil.WriteFile(secretConfigPath, []byte(input.Url), 0600); err != nil {
+	if err := ioutil.WriteFile(secretConfigPath, []byte(input.URL), 0600); err != nil {
 		return nil, fmt.Errorf("writing secrets config file: %w", err)
 	}
 
@@ -67,7 +67,7 @@ func (ws *Workspace) DescribeVaults(ctx context.Context, input *api.DescribeVaul
 		_, err = ws.EsvClient.GetWorkspaceSecrets(vaultConfig.url)
 		descriptions[i] = api.VaultDescription{
 			Name:      vaultConfig.name,
-			Url:       vaultConfig.url,
+			URL:       vaultConfig.url,
 			Connected: err == nil,
 			NeedsAuth: errors.Is(err, esv.AuthError),
 		}

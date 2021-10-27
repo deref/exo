@@ -56,7 +56,7 @@ func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]api.Variabl
 		derefSource := &environment.ESV{
 			Client: ws.EsvClient,
 			Name:   vault.Name,
-			URL:    vault.Url,
+			URL:    vault.URL,
 		}
 		if err := derefSource.ExtendEnvironment(b); err != nil {
 			// It's not appropriate to fail on error since this error could just

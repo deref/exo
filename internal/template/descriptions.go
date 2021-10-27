@@ -56,7 +56,7 @@ func GetTemplateDescriptions() []api.TemplateDescription {
 		{Name: "umami", DisplayName: "Umami"},
 	}
 	for i, t := range templates {
-		templates[i].Url = fmt.Sprintf("%s/%s", bucketURL, t.Name)
+		templates[i].URL = fmt.Sprintf("%s/%s", bucketURL, t.Name)
 	}
 	return templates
 }

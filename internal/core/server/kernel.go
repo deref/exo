@@ -47,7 +47,7 @@ func (kern *Kernel) AuthEsv(ctx context.Context, input *api.AuthEsvInput) (*api.
 
 	return &api.AuthEsvOutput{
 		AuthCode: authResponse.UserCode,
-		AuthUrl:  authResponse.AuthURL,
+		AuthURL:  authResponse.AuthURL,
 	}, nil
 }
 
@@ -58,9 +58,9 @@ func (kern *Kernel) CreateProject(ctx context.Context, input *api.CreateProjectI
 	}
 
 	var templateDir string
-	if input.TemplateUrl != nil {
+	if input.TemplateURL != nil {
 		var err error
-		templateDir, err = template.GetTemplateFiles(ctx, *input.TemplateUrl)
+		templateDir, err = template.GetTemplateFiles(ctx, *input.TemplateURL)
 		if err != nil {
 			return nil, fmt.Errorf("getting template files: %w", err)
 		}

@@ -136,7 +136,7 @@ type DescribeVaultsOutput struct {
 
 type AddVaultInput struct {
 	Name string `json:"name"`
-	Url  string `json:"url"`
+	URL  string `json:"url"`
 }
 
 type AddVaultOutput struct {
@@ -565,7 +565,7 @@ type NetworkDescription struct {
 
 type VaultDescription struct {
 	Name      string `json:"name"`
-	Url       string `json:"url"`
+	URL       string `json:"url"`
 	Connected bool   `json:"connected"`
 	NeedsAuth bool   `json:"needsAuth"`
 }

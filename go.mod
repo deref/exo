@@ -9,7 +9,7 @@ require (
 	github.com/alessio/shellescape v1.4.1
 	github.com/aybabtme/rgbterm v0.0.0-20170906152045-cc83f3b3ce59
 	github.com/containerd/containerd v1.5.7 // indirect
-	github.com/deref/inflect-go v0.0.0-20210922215725-28c4e8c11b16
+	github.com/deref/inflect-go v0.0.0-20211018210843-15b876b83b3e
 	github.com/deref/pier v0.0.0-20210928181930-9ee844d69730
 	github.com/deref/util-go v0.0.0-20211005205322-c425b1d73580
 	github.com/docker/docker v20.10.8+incompatible

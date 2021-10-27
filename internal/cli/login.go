@@ -29,7 +29,7 @@ var loginCmd = &cobra.Command{
 		// This link is not opened automatically because it's single use only. That
 		// means if we open it in the wrong browser it becomes worthless.
 		fmt.Println("Open the following URL to authenticate:")
-		fmt.Println(authResult.AuthUrl)
+		fmt.Println(authResult.AuthURL)
 		return nil
 	},
 }

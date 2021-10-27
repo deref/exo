@@ -35,13 +35,13 @@ type AuthEsvInput struct {
 }
 
 type AuthEsvOutput struct {
-	AuthUrl  string `json:"authUrl"`
+	AuthURL  string `json:"authUrl"`
 	AuthCode string `json:"authCode"`
 }
 
 type CreateProjectInput struct {
 	Root        string  `json:"root"`
-	TemplateUrl *string `json:"templateUrl"`
+	TemplateURL *string `json:"templateUrl"`
 }
 
 type CreateProjectOutput struct {
@@ -194,7 +194,7 @@ type TemplateDescription struct {
 	Name        string `json:"name"`
 	DisplayName string `json:"displayName"`
 	IconGlyph   string `json:"iconGlyph"`
-	Url         string `json:"url"`
+	URL         string `json:"url"`
 }
 
 type TaskDescription struct {
