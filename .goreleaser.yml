@@ -1,4 +1,7 @@
 # Documentation for .goreleaser.yml can be found at <https://goreleaser.com>.
+
+# See this issue for more information on required flags for static builds:
+# https://github.com/golang/go/issues/26492
 ---
 env:
   - CGO_ENABLED=1
