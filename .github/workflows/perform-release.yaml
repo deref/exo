@@ -50,6 +50,7 @@ jobs:
               repo: context.repo.repo,
               ref: `refs/tags/v${version}`,
               sha: context.sha
+            })
       - run: git tag ${{ steps.get_version.outputs.release_version }}
 
       - name: Set up Go
