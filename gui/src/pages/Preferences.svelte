@@ -9,21 +9,43 @@
   import { preferences } from '../lib/preferences';
   import { onMount } from 'svelte';
 
-  let prefGroups = [
+  type PreferenceName = keyof Preferences;
+
+  interface PreferenceGroup {
+    title: string;
+    preferences: PreferenceGroupEntry[];
+  }
+
+  interface PreferenceGroupEntry {
+    name: PreferenceName;
+    type: 'quantity' | 'select';
+    units?: string[];
+    options?: string[];
+  }
+
+  const groups: PreferenceGroup[] = [
     {
       title: 'Typography',
-      prefs: [
+      preferences: [
         {
           name: 'main-font-size',
+          type: 'quantity',
+          units: ['px', 'em', 'rem', 'ex', '%'],
         },
         {
           name: 'log-font-size',
+          type: 'quantity',
+          units: ['px', 'em', 'rem', 'ex', '%'],
         },
         {
           name: 'ligatures-logs',
+          type: 'select',
+          options: ['none', 'normal', 'common-ligatures'],
         },
         {
           name: 'ligatures-code',
+          type: 'select',
+          options: ['none', 'normal', 'common-ligatures'],
         },
       ],
     },
@@ -54,7 +76,7 @@
     <div>
       <div class="group">
         <div class="group-header">
-          <h2>Theme &amp; GUI</h2>
+          <h2>{'Theme & GUI'}</h2>
         </div>
         <div class="button-row">
           {#each themeOptions as option}
@@ -68,16 +90,16 @@
         </div>
       </div>
 
-      {#each prefGroups as group}
+      {#each groups as group}
         <div class="group">
           <div class="group-header">
             <h2>{group.title}</h2>
           </div>
-          {#each group.prefs as pref}
+          {#each group.preferences as preference}
             <div class="input-row">
-              <code>{pref.name}</code>
+              <code>{preference.name}</code>
               <Textbox
-                bind:value={dirtyPrefs[pref.name]}
+                bind:value={dirtyPrefs[preference.name]}
                 on:input={() => preferences.apply({ ...dirtyPrefs })}
                 --input-width="100%"
               />

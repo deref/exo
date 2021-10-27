@@ -4,7 +4,7 @@ const key = 'io.deref.exo/preferences';
 
 export type Preferences = Record<string, string>;
 
-let defaults = {
+let defaults: Preferences = {
   'main-font-size': '16px',
   'log-font-size': '15px',
   'ligatures-logs': 'none',
