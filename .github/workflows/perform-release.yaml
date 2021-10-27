@@ -51,7 +51,6 @@ jobs:
               ref: `refs/tags/v${version}`,
               sha: context.sha
             })
-      - run: git tag ${{ steps.get_version.outputs.release_version }}
 
       - name: Set up Go
         uses: actions/setup-go@v2
@@ -70,6 +69,8 @@ jobs:
       - name: Get version from VERSION file
         id: get_version
         run: echo ::set-output name=release_version::$(cat VERSION | tr -d '[:space:]')
+
+      - run: git tag ${{ steps.get_version.outputs.release_version }}
 
       - name: Run GoReleaser
         run: make release
