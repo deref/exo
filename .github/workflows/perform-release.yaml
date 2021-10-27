@@ -85,4 +85,4 @@ jobs:
         with:
           apiToken: ${{ secrets.CF_API_TOKEN }}
           publish: false
-          preCommands: wrangler kv:key put --binding VERSIONS "exo" ${{ steps.get_version.outputs.release_version }}           })
+          preCommands: wrangler kv:key put --binding VERSIONS "exo" ${{ steps.get_version.outputs.release_version }}
