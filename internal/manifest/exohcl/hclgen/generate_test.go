@@ -34,9 +34,8 @@ func TestGenerate(t *testing.T) {
 		if !assert.False(t, diags.HasErrors()) {
 			continue
 		}
-		bs := hclgen.FormatFile(&hcl.File{
-			Body:  f.Body.(*hclsyntax.Body),
-			Bytes: f.Bytes,
+		bs := hclgen.FormatFile(&hclgen.File{
+			Body: hclgen.BodyFromStructure(f.Body),
 		})
 		formatted := string(hclwrite.Format([]byte(src)))
 

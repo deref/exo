@@ -12,13 +12,13 @@ import (
 // Writes an HCL file AST to w. Note that syntax trivia (comments and
 // whitespace) are not preserved, and so this function is only appropriate for
 // conversion/generation use cases.
-func WriteTo(w io.Writer, f *hcl.File) (int64, error) {
+func WriteTo(w io.Writer, f *File) (int64, error) {
 	out := hclwrite.NewEmptyFile()
 	genFileTo(out, f)
 	return out.WriteTo(w)
 }
 
-func FormatFile(f *hcl.File) []byte {
+func FormatFile(f *File) []byte {
 	var buf bytes.Buffer
 	_, err := WriteTo(&buf, f)
 	if err != nil {
@@ -40,12 +40,12 @@ func FormatExpression(x hclsyntax.Expression) []byte {
 	return f.Bytes()
 }
 
-func genFileTo(out *hclwrite.File, in *hcl.File) {
+func genFileTo(out *hclwrite.File, in *File) {
 	genBodyTo(out.Body(), in.Body)
 }
 
 func genBodyTo(out *hclwrite.Body, in hcl.Body) {
-	body := bodyFromStructure(in)
+	body := BodyFromStructure(in)
 	for _, attr := range body.Attributes {
 		out.SetAttributeRaw(attr.Name, TokensForExpression(attr.Expr))
 	}

@@ -10,8 +10,8 @@ func FileEquiv(a, b *hcl.File) bool {
 }
 
 func BodyEquiv(a, b hcl.Body) bool {
-	synA := bodyFromStructure(a).syntaxBody()
-	synB := bodyFromStructure(b).syntaxBody()
+	synA := BodyFromStructure(a).SyntaxBody()
+	synB := BodyFromStructure(b).SyntaxBody()
 	return AttributesEquiv(synA.Attributes, synB.Attributes) && BlocksEquiv(synA.Blocks, synB.Blocks)
 }
 

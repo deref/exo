@@ -10,6 +10,16 @@ import (
 	"github.com/hashicorp/hcl/v2/hclsyntax"
 )
 
+type File struct {
+	Body *Body
+}
+
+func FileFromStructure(file *hcl.File) *File {
+	return &File{
+		Body: BodyFromStructure(file.Body),
+	}
+}
+
 type Block struct {
 	Type   string
 	Labels []string
@@ -21,32 +31,51 @@ type Block struct {
 	CloseBraceRange hcl.Range
 }
 
-func blocksFromSyntax(blocks []*hclsyntax.Block) []*Block {
+func BlocksFromStructure(blocks []*hcl.Block) []*Block {
 	res := make([]*Block, len(blocks))
 	for i, block := range blocks {
-		res[i] = blockFromSyntax(block)
+		res[i] = BlockFromStructure(block)
 	}
 	return res
 }
 
-func blockFromSyntax(in *hclsyntax.Block) *Block {
-	return &Block{
-		Type:   in.Type,
-		Labels: in.Labels,
-		Body:   bodyFromSyntax(in.Body),
+func BlocksFromSyntax(blocks []*hclsyntax.Block) []*Block {
+	res := make([]*Block, len(blocks))
+	for i, block := range blocks {
+		res[i] = BlockFromSyntax(block)
+	}
+	return res
+}
 
-		TypeRange:       in.TypeRange,
-		LabelRanges:     in.LabelRanges,
-		OpenBraceRange:  in.OpenBraceRange,
-		CloseBraceRange: in.CloseBraceRange,
+func BlockFromStructure(block *hcl.Block) *Block {
+	return &Block{
+		Type:   block.Type,
+		Labels: block.Labels,
+		Body:   BodyFromStructure(block.Body),
+
+		TypeRange:   block.TypeRange,
+		LabelRanges: block.LabelRanges,
 	}
 }
 
-func (b *Block) syntaxBlock() *hclsyntax.Block {
+func BlockFromSyntax(block *hclsyntax.Block) *Block {
+	return &Block{
+		Type:   block.Type,
+		Labels: block.Labels,
+		Body:   BodyFromSyntax(block.Body),
+
+		TypeRange:       block.TypeRange,
+		LabelRanges:     block.LabelRanges,
+		OpenBraceRange:  block.OpenBraceRange,
+		CloseBraceRange: block.CloseBraceRange,
+	}
+}
+
+func (b *Block) SyntaxBlock() *hclsyntax.Block {
 	return &hclsyntax.Block{
 		Type:   b.Type,
 		Labels: b.Labels,
-		Body:   b.Body.syntaxBody(),
+		Body:   b.Body.SyntaxBody(),
 
 		TypeRange:       b.TypeRange,
 		LabelRanges:     b.LabelRanges,
@@ -63,10 +92,10 @@ type Body struct {
 	EndRange hcl.Range
 }
 
-func bodyFromStructure(body hcl.Body) *Body {
+func BodyFromStructure(body hcl.Body) *Body {
 	switch body := body.(type) {
 	case *hclsyntax.Body:
-		return bodyFromSyntax(body)
+		return BodyFromSyntax(body)
 	case *Body:
 		return body
 	default:
@@ -74,17 +103,17 @@ func bodyFromStructure(body hcl.Body) *Body {
 	}
 }
 
-func bodyFromSyntax(body *hclsyntax.Body) *Body {
+func BodyFromSyntax(body *hclsyntax.Body) *Body {
 	return &Body{
-		Attributes: attributesFromSytnax(body.Attributes),
-		Blocks:     blocksFromSyntax(body.Blocks),
+		Attributes: AttributesFromSytnax(body.Attributes),
+		Blocks:     BlocksFromSyntax(body.Blocks),
 
 		SrcRange: body.SrcRange,
 		EndRange: body.EndRange,
 	}
 }
 
-func (b *Body) syntaxAttributes() hclsyntax.Attributes {
+func (b *Body) SyntaxAttributes() hclsyntax.Attributes {
 	res := make(hclsyntax.Attributes)
 	for _, attr := range b.Attributes {
 		res[attr.Name] = attr
@@ -92,44 +121,65 @@ func (b *Body) syntaxAttributes() hclsyntax.Attributes {
 	return res
 }
 
-func (b *Body) syntaxBlocks() []*hclsyntax.Block {
+func (b *Body) SyntaxBlocks() []*hclsyntax.Block {
 	res := make([]*hclsyntax.Block, len(b.Blocks))
 	for i, block := range b.Blocks {
-		res[i] = block.syntaxBlock()
+		res[i] = block.SyntaxBlock()
 	}
 	return res
 }
 
-func (b *Body) syntaxBody() *hclsyntax.Body {
+func (b *Body) SyntaxBody() *hclsyntax.Body {
 	return &hclsyntax.Body{
-		Attributes: b.syntaxAttributes(),
-		Blocks:     b.syntaxBlocks(),
+		Attributes: b.SyntaxAttributes(),
+		Blocks:     b.SyntaxBlocks(),
 		SrcRange:   b.SrcRange,
 		EndRange:   b.EndRange,
 	}
 }
 
 func (b *Body) Content(schema *hcl.BodySchema) (*hcl.BodyContent, hcl.Diagnostics) {
-	return b.syntaxBody().Content(schema)
+	return b.SyntaxBody().Content(schema)
 }
 
 func (b *Body) PartialContent(schema *hcl.BodySchema) (*hcl.BodyContent, hcl.Body, hcl.Diagnostics) {
-	return b.syntaxBody().PartialContent(schema)
+	return b.SyntaxBody().PartialContent(schema)
 }
 
 func (b *Body) JustAttributes() (hcl.Attributes, hcl.Diagnostics) {
-	return b.syntaxBody().JustAttributes()
+	return b.SyntaxBody().JustAttributes()
 }
 
 func (b *Body) MissingItemRange() hcl.Range {
-	return b.syntaxBody().MissingItemRange()
+	return b.SyntaxBody().MissingItemRange()
 }
 
 type Attributes []*Attribute
 
 type Attribute = hclsyntax.Attribute
 
-func attributesFromSytnax(attributes hclsyntax.Attributes) Attributes {
+type Expression = hclsyntax.Expression
+
+func AttributesFromStructure(attributes hcl.Attributes) Attributes {
+	res := make(Attributes, 0, len(attributes))
+	for _, attribute := range attributes {
+		res = append(res, AttributeFromStructure(attribute))
+	}
+	sort.Sort(res)
+	return res
+}
+
+func AttributeFromStructure(attribute *hcl.Attribute) *Attribute {
+	return &hclsyntax.Attribute{
+		Name:        attribute.Name,
+		Expr:        ExpressionFromStructure(attribute.Expr),
+		SrcRange:    attribute.Range,
+		NameRange:   attribute.NameRange,
+		EqualsRange: attribute.NameRange,
+	}
+}
+
+func AttributesFromSytnax(attributes hclsyntax.Attributes) Attributes {
 	res := make(Attributes, 0, len(attributes))
 	for _, attribute := range attributes {
 		res = append(res, attribute)
@@ -149,4 +199,8 @@ func (a Attributes) Less(i, j int) bool {
 		return true
 	}
 	return lhs.Name < rhs.Name
+}
+
+func ExpressionFromStructure(expr hcl.Expression) Expression {
+	return expr.(hclsyntax.Expression)
 }
