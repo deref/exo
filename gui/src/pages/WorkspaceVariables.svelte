@@ -65,6 +65,16 @@
                     {:else}
                       Bad vault URL
                     {/if}
+                    <Button
+                      on:click={async (event) => {
+                        await workspace.removeVault({
+                          url: vault.url,
+                        });
+                        window.location.reload();
+                      }}
+                    >
+                      X
+                    </Button>
                   </td>
                 </tr>
               {/each}

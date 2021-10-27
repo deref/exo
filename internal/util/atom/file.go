@@ -51,6 +51,9 @@ func (a *FileAtom) Reset(v interface{}) error {
 	if err != nil {
 		return fmt.Errorf("marshalling: %w", err)
 	}
+	// TODO: Improve atomic.WriteFile, since it always puts the temporary file in
+	// the same directory as the target file. That is OK in some cases, but here
+	// it would be ideal to avoid dirtying the workspace directory.
 	if err := atomic.WriteFile(a.filename, bytes.NewBuffer(bs)); err != nil {
 		return fmt.Errorf("resetting: %w", err)
 	}

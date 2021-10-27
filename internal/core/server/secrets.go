@@ -1,73 +1,62 @@
 package server
 
 import (
-	"bytes"
 	"context"
 	"errors"
-	"fmt"
-	"io/ioutil"
-	"os"
+	"path"
 
 	"github.com/deref/exo/internal/core/api"
 	"github.com/deref/exo/internal/esv"
+	"github.com/deref/exo/internal/manifest/exohcl"
 )
 
-var secretsUrlFile = "exo-secrets-url"
+func (ws *Workspace) getVaultURLs(ctx context.Context) []string {
+	manifest := ws.tryLoadManifest(ctx)
 
-type vaultConfig struct {
-	name string
-	url  string
+	env := exohcl.NewEnvironment(manifest)
+	_ = exohcl.Analyze(ctx, env)
+
+	res := make([]string, 0, len(env.Secrets))
+	for _, secrets := range env.Secrets {
+		if secrets.Source == "" {
+			continue
+		}
+		res = append(res, secrets.Source)
+	}
+
+	return res
 }
 
-func (ws *Workspace) getVaultConfigs(ctx context.Context) ([]vaultConfig, error) {
-	// NOTE: [VAULTS_IN_MANIFEST] Right now getVaultConfigs relies on an
-	// exo-secrets-url file in the workspace root to provide the vault. At the
-	// moment only one is supported. Instead we should add this to the state of
-	// the workspace and support multiple vaults.
-
-	secretConfigPath, err := ws.resolveWorkspacePath(ctx, secretsUrlFile)
-	if err != nil {
-		return nil, fmt.Errorf("resolving secrets config file path: %w", err)
-	}
-	secretsUrlBytes, err := ioutil.ReadFile(secretConfigPath)
-	if os.IsNotExist(err) {
-		return []vaultConfig{}, nil
-	}
-	if err != nil {
-		return nil, fmt.Errorf("reading secrets config: %w", err)
-	}
-	secretsUrl := string(bytes.TrimSpace(secretsUrlBytes))
-	return []vaultConfig{{name: "esv-vault", url: secretsUrl}}, nil
-}
-
-// AddVault performs an upsert for the specified vault name and URL.
 func (ws *Workspace) AddVault(ctx context.Context, input *api.AddVaultInput) (*api.AddVaultOutput, error) {
-	// SEE NOTE [VAULTS_IN_MANIFEST]
-	secretConfigPath, err := ws.resolveWorkspacePath(ctx, secretsUrlFile)
+	err := ws.modifyManifest(ctx, exohcl.AppendSecrets{
+		Source: input.URL,
+	})
 	if err != nil {
-		return nil, fmt.Errorf("resolving secrets config file path: %w", err)
+		return nil, err
 	}
-
-	if err := ioutil.WriteFile(secretConfigPath, []byte(input.URL), 0600); err != nil {
-		return nil, fmt.Errorf("writing secrets config file: %w", err)
-	}
-
 	return &api.AddVaultOutput{}, nil
 }
 
-func (ws *Workspace) DescribeVaults(ctx context.Context, input *api.DescribeVaultsInput) (*api.DescribeVaultsOutput, error) {
-	vaultConfigs, err := ws.getVaultConfigs(ctx)
+func (ws *Workspace) RemoveVault(ctx context.Context, input *api.RemoveVaultInput) (*api.RemoveVaultOutput, error) {
+	err := ws.modifyManifest(ctx, exohcl.RemoveSecrets{
+		Source: input.URL,
+	})
 	if err != nil {
-		return nil, fmt.Errorf("getting vault configs: %w", err)
+		return nil, err
 	}
+	return &api.RemoveVaultOutput{}, nil
+}
 
-	descriptions := make([]api.VaultDescription, len(vaultConfigs))
-	for i, vaultConfig := range vaultConfigs {
+func (ws *Workspace) DescribeVaults(ctx context.Context, input *api.DescribeVaultsInput) (*api.DescribeVaultsOutput, error) {
+	vaultURLs := ws.getVaultURLs(ctx)
+
+	descriptions := make([]api.VaultDescription, len(vaultURLs))
+	for i, vaultURL := range vaultURLs {
 		// TODO: add a status command.
-		_, err = ws.EsvClient.GetWorkspaceSecrets(vaultConfig.url)
+		_, err := ws.EsvClient.GetWorkspaceSecrets(vaultURL)
 		descriptions[i] = api.VaultDescription{
-			Name:      vaultConfig.name,
-			URL:       vaultConfig.url,
+			Name:      path.Base(vaultURL), // XXX
+			URL:       vaultURL,
 			Connected: err == nil,
 			NeedsAuth: errors.Is(err, esv.AuthError),
 		}

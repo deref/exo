@@ -105,6 +105,11 @@ func (c *Workspace) AddVault(ctx context.Context, input *api.AddVaultInput) (out
 	return
 }
 
+func (c *Workspace) RemoveVault(ctx context.Context, input *api.RemoveVaultInput) (output *api.RemoveVaultOutput, err error) {
+	err = c.client.Invoke(ctx, "remove-vault", input, &output)
+	return
+}
+
 func (c *Workspace) Describe(ctx context.Context, input *api.DescribeInput) (output *api.DescribeOutput, err error) {
 	err = c.client.Invoke(ctx, "describe", input, &output)
 	return

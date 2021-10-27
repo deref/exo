@@ -11,6 +11,7 @@ type Rewrite interface {
 	context.Context
 	RewriteManifest(Rewrite, *Manifest) *hclgen.File
 	RewriteEnvironment(Rewrite, *Environment) *hclgen.Block
+	RewriteSecrets(Rewrite, *Secrets) *hclgen.Block
 	RewriteComponents(Rewrite, *ComponentSet) *hclgen.Block
 	RewriteComponent(Rewrite, *Component) *hclgen.Block
 }
@@ -21,6 +22,10 @@ func RewriteManifest(re Rewrite, m *Manifest) *hclgen.File {
 
 func RewriteEnvironment(re Rewrite, env *Environment) *hclgen.Block {
 	return re.RewriteEnvironment(re, env)
+}
+
+func RewriteSecrets(re Rewrite, s *Secrets) *hclgen.Block {
+	return re.RewriteSecrets(re, s)
 }
 
 func RewriteComponents(re Rewrite, cs *ComponentSet) *hclgen.Block {
@@ -83,8 +88,33 @@ func (_ RewriteBase) RewriteEnvironment(re Rewrite, env *Environment) *hclgen.Bl
 	if len(env.Blocks) == 0 {
 		return nil
 	}
-	// TODO: Handle richer environments.
-	return hclgen.BlockFromStructure(env.Blocks[0])
+	children := make([]*hclgen.Block, 0, len(env.Secrets))
+	for _, secretsIn := range env.Secrets {
+		secretsOut := RewriteSecrets(re, secretsIn)
+		if secretsOut == nil {
+			continue
+		}
+		children = append(children, secretsOut)
+	}
+	if len(env.Attributes) == 0 && len(children) == 0 {
+		return nil
+	}
+	return &hclgen.Block{
+		Type:   "environment",
+		Labels: env.Blocks[0].Labels, // XXX OK to discard labels from extra blocks?
+		Body: &hclgen.Body{
+			Attributes: env.Attributes,
+			Blocks:     children,
+		},
+	}
+}
+
+func (_ RewriteBase) RewriteSecrets(re Rewrite, s *Secrets) *hclgen.Block {
+	return &hclgen.Block{
+		Type:   "secrets",
+		Labels: s.Block.Labels,
+		Body:   hclgen.BodyFromStructure(s.Block.Body),
+	}
 }
 
 func (_ RewriteBase) RewriteComponents(re Rewrite, cs *ComponentSet) *hclgen.Block {

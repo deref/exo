@@ -84,6 +84,7 @@ type Workspace interface {
 	Builder
 	DescribeVaults(context.Context, *DescribeVaultsInput) (*DescribeVaultsOutput, error)
 	AddVault(context.Context, *AddVaultInput) (*AddVaultOutput, error)
+	RemoveVault(context.Context, *RemoveVaultInput) (*RemoveVaultOutput, error)
 	// Describes this workspace.
 	Describe(context.Context, *DescribeInput) (*DescribeOutput, error)
 	// Dispose resources, then delete the record of it.
@@ -135,11 +136,17 @@ type DescribeVaultsOutput struct {
 }
 
 type AddVaultInput struct {
-	Name string `json:"name"`
-	URL  string `json:"url"`
+	URL string `json:"url"`
 }
 
 type AddVaultOutput struct {
+}
+
+type RemoveVaultInput struct {
+	URL string `json:"url"`
+}
+
+type RemoveVaultOutput struct {
 }
 
 type DescribeInput struct {
@@ -423,6 +430,9 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	})
 	b.AddMethod("add-vault", func(req *http.Request) interface{} {
 		return factory(req).AddVault
+	})
+	b.AddMethod("remove-vault", func(req *http.Request) interface{} {
+		return factory(req).RemoveVault
 	})
 	b.AddMethod("describe", func(req *http.Request) interface{} {
 		return factory(req).Describe

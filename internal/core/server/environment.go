@@ -46,6 +46,9 @@ func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]api.Variabl
 		Environment: make(map[string]api.VariableDescription),
 	}
 
+	// TODO: Do not use DescribeVaults, instead build up sources from the
+	// environment blocks ASTs. For example, there maybe a `variables` block or
+	// some other environment sources that are not in the DescribeVaults output.
 	describeVaultsResult, err := ws.DescribeVaults(ctx, &api.DescribeVaultsInput{})
 	if err != nil {
 		return nil, fmt.Errorf("getting vaults: %w", err)
@@ -55,7 +58,7 @@ func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]api.Variabl
 	for _, vault := range describeVaultsResult.Vaults {
 		derefSource := &environment.ESV{
 			Client: ws.EsvClient,
-			Name:   vault.Name,
+			Name:   vault.URL, // XXX
 			URL:    vault.URL,
 		}
 		if err := derefSource.ExtendEnvironment(b); err != nil {
@@ -64,7 +67,7 @@ func (ws *Workspace) getEnvironment(ctx context.Context) (map[string]api.Variabl
 			// the secret provider.
 			// TODO: this should really alert the user in a more apparent way that
 			// fetching secrets from the vault has failed.
-			logger.Infof("Could not extend environment from vault %s: %q", vault.Name, err)
+			logger.Infof("Could not extend environment from vault %q: %v", vault.URL, err)
 		}
 	}
 

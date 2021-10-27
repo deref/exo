@@ -4,14 +4,20 @@ import (
 	"fmt"
 
 	"github.com/deref/exo/internal/environment"
+	"github.com/deref/exo/internal/manifest/exohcl/hclgen"
 	"github.com/hashicorp/hcl/v2"
+	"github.com/hashicorp/hcl/v2/hclsyntax"
 	"github.com/zclconf/go-cty/cty"
 )
 
 type Environment struct {
+	// Analysis inputs.
 	Blocks hcl.Blocks
 
-	Variables map[string]string
+	// Analysis outputs.
+	Attributes []*hclgen.Attribute
+	Variables  map[string]string
+	Secrets    []*Secrets // TODO: Should analysis be lazier here?
 }
 
 func NewEnvironment(m *Manifest) *Environment {
@@ -20,7 +26,7 @@ func NewEnvironment(m *Manifest) *Environment {
 	}
 }
 
-func (env Environment) Analyze(ctx *AnalysisContext) {
+func (env *Environment) Analyze(ctx *AnalysisContext) {
 	env.Variables = make(map[string]string)
 
 	if len(env.Blocks) > 1 {
@@ -42,27 +48,42 @@ func (env Environment) Analyze(ctx *AnalysisContext) {
 			})
 		}
 
-		attrs, diags := block.Body.JustAttributes()
-		ctx.AppendDiags(diags...)
+		body := block.Body.(*hclsyntax.Body)
 
-		if !diags.HasErrors() {
-			for _, attr := range attrs {
-				// TODO: Validate attribute name.
-				v, diags := attr.Expr.Value(evalCtx)
-				ctx.AppendDiags(diags...)
-				if diags.HasErrors() {
-					continue
-				}
-				if v.Type() != cty.String {
-					ctx.AppendDiags(&hcl.Diagnostic{
-						Severity: hcl.DiagError,
-						Summary:  "expected environment variable to be a string",
-						Detail:   fmt.Sprintf("environment variable evaluated to %s, but must be a string", v.Type().FriendlyName()),
-						Subject:  attr.Expr.Range().Ptr(),
-						Context:  &attr.Range,
-					})
-				}
-				env.Variables[attr.Name] = v.AsString()
+		for _, attr := range body.Attributes {
+			// TODO: Validate attribute name.
+			v, diags := attr.Expr.Value(evalCtx)
+			ctx.AppendDiags(diags...)
+			if diags.HasErrors() {
+				continue
+			}
+			if v.Type() != cty.String {
+				ctx.AppendDiags(&hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "expected environment variable to be a string",
+					Detail:   fmt.Sprintf("environment variable evaluated to %s, but must be a string", v.Type().FriendlyName()),
+					Subject:  attr.Expr.Range().Ptr(),
+					Context:  &attr.SrcRange,
+				})
+			}
+			env.Attributes = append(env.Attributes, attr)
+			env.Variables[attr.Name] = v.AsString()
+		}
+
+		for _, child := range body.Blocks {
+			switch child.Type {
+			case "secrets":
+				secrets := NewSecrets(child)
+				secrets.Analyze(ctx)
+				env.Secrets = append(env.Secrets, secrets)
+			default:
+				ctx.AppendDiags(&hcl.Diagnostic{
+					Severity: hcl.DiagError,
+					Summary:  "Unexpected block in environment",
+					Detail:   fmt.Sprintf("Unexpected %q block in environment block", child.Type),
+					Subject:  &child.TypeRange,
+					Context:  child.DefRange().Ptr(),
+				})
 			}
 		}
 	}

@@ -37,7 +37,10 @@ interface "workspace" {
   }
 
   method "add-vault" {
-    input "name" "string" {}
+    input "url" "string" {}
+  }
+
+  method "remove-vault" {
     input "url" "string" {}
   }
 
