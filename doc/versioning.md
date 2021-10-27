@@ -4,7 +4,7 @@
 
 exo's core components use [CalVer](https://calver.org/).
 
-Format is `YYYY.0M.0D_MICRO` with the following components:
+Format is `YYYY.0M.0D-MICRO` with the following components:
 
 - `YYYY` - four digit year
 - `0M` - zero-padded, two-digit, month number
