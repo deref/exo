@@ -119,7 +119,7 @@ func (pm *PortMapping) Interpolate(env Environment) error {
 
 func (pm PortMapping) MarshalYAML() (interface{}, error) {
 	if pm.IsShortForm {
-		return pm.Target, nil
+		return pm.String, nil
 	}
 	return pm.PortMappingLongForm, nil
 }
