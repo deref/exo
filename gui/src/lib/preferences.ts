@@ -2,7 +2,7 @@ import { writable } from 'svelte/store';
 
 const key = 'io.deref.exo/preferences';
 
-type Preferences = Record<string, string>;
+export type Preferences = Record<string, string>;
 
 let defaults = {
   'main-font-size': '16px',

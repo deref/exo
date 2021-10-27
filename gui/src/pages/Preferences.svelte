@@ -5,6 +5,7 @@
   import IconButton from '../components/IconButton.svelte';
   import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
   import { theme, themeOptions } from '../lib/theme';
+  import type { Preferences } from '../lib/preferences';
   import { preferences } from '../lib/preferences';
   import { onMount } from 'svelte';
 
@@ -27,8 +28,6 @@
       ],
     },
   ];
-
-  type Preferences = Record<string, string>;
 
   let dirtyPrefs: Preferences = {};
 
