@@ -9,7 +9,7 @@ Format is `YYYY.0M.0D_MICRO` with the following components:
 - `YYYY` - four digit year
 - `0M` - zero-padded, two-digit, month number
 - `0D` - zero-padded, two-digit, day of month
-- `_MICRO` - optional. single-digit, intra-day patch number.
+- `-MICRO` - optional. single-digit, intra-day patch number.
 
 The patch number is omitted for the first release on any given day.
 
@@ -18,5 +18,6 @@ The patch number is omitted for the first release on any given day.
 Data formats are versioned using a SemVer-compatible scheme extended with
 guidance for stable migration paths between major version.
 
-See https://gist.github.com/brandonbloom/465625acaf0120354614e7fc0c117c62 for
-details.
+See
+[https://gist.github.com/brandonbloom/465625acaf0120354614e7fc0c117c62](https://gist.github.com/brandonbloom/465625acaf0120354614e7fc0c117c62)
+for details.
