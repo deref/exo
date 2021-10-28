@@ -12,6 +12,9 @@ import (
 
 func (ws *Workspace) getVaultURLs(ctx context.Context) []string {
 	manifest := ws.tryLoadManifest(ctx)
+	if manifest == nil {
+		return nil
+	}
 
 	env := exohcl.NewEnvironment(manifest)
 	_ = exohcl.Analyze(ctx, env)
