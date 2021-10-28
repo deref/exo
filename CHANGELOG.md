@@ -15,6 +15,11 @@ This project adhears to [CalVer](./doc/versioning.md).
 ### Added
 
 - [#393](https://github.com/deref/exo/pull/393), [#456](https://github.com/deref/exo/pull/456) Initial integration with Deref's secrets service.
+
+## 2021.10.27
+
+### Added
+
 - [#420](https://github.com/deref/exo/pull/420) Support for variable interpolation in compose files.
 - [#418](https://github.com/deref/exo/pull/418), [#444](https://github.com/deref/exo/pull/444), [#445](https://github.com/deref/exo/pull/445) Initial support for `exo.hcl` files.
 
