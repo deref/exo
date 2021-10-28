@@ -10,11 +10,26 @@ This project adhears to [CalVer](./doc/versioning.md).
 
 - Project templates
 
+## 2021.10.28
+
+### Added
+
+- [#393](https://github.com/deref/exo/pull/393), [#456](https://github.com/deref/exo/pull/456) Initial integration with Deref's secrets service.
+- [#420](https://github.com/deref/exo/pull/420) Support for variable interpolation in compose files.
+- [#418](https://github.com/deref/exo/pull/418), [#444](https://github.com/deref/exo/pull/444), [#445](https://github.com/deref/exo/pull/445) Initial support for `exo.hcl` files.
+
+### Changed
+
+- [#429](https://github.com/deref/exo/pull/393) Now licensed as Apache v2.
+
+### Fixed
+
+- [#434](https://github.com/deref/exo/pull/393) Colors not synchronized between components list and log viewer.
+
 ## 2021.10.12
 
 - [#407](https://github.com/deref/exo/pull/407) `exo init` command.
-- [#406] Alpha/undocumented release of `exo.hcl` manifests.
-
+- [#406](https://github.com/deref/exo/pull/406) Alpha/undocumented release of `exo.hcl` manifests.
 
 ## 2021.10.08_1
 
@@ -26,7 +41,6 @@ This project adhears to [CalVer](./doc/versioning.md).
 
 - Race condition in token handling.
 - Context menu behaviors.
-
 
 ## 2021.10.08
 
@@ -61,7 +75,6 @@ This project adhears to [CalVer](./doc/versioning.md).
   logging with popular JavaScript and other libraries.
 - [#336](https://github.com/deref/exo/issues/336) Unbounded growth of log storage.
 
-
 ## 2021.09.14
 
 ### Added
@@ -82,7 +95,6 @@ This project adhears to [CalVer](./doc/versioning.md).
 
 - Various docker-compose parsing issues.
 
-
 ## 2021.09.07
 
 ### Added
@@ -99,7 +111,6 @@ This project adhears to [CalVer](./doc/versioning.md).
 - [#273](https://github.com/deref/exo/pull/273) Truncated output after processes terminate.
 - [e062d58](https://github.com/deref/exo/commit/e062d589fec56fcbefc777444eb6d1ac4ddf0d7d) Fix `run` exiting prematurely on some Mac systems.
 
-
 ## 2021.08.31
 
 ### Fixed
@@ -111,7 +122,6 @@ This project adhears to [CalVer](./doc/versioning.md).
 ### Fixed
 
 - Directory creation race on first run.
-
 
 ## 2021.08.27
 
@@ -126,7 +136,6 @@ Docker Compose compatibility BETA.
 ### Fixed
 
 - Many Docker compose compatibility issues.
-
 
 ## 2021.08.17
 
@@ -148,7 +157,6 @@ Docker Compose compatibility ALPHA.
 - GUI fails gracefully when backend is down.
 - Terminate whole process groups more reliably.
 - Log viewer line wrapping.
-
 
 ## 2021.07.29
 
