@@ -36,7 +36,16 @@ func RewriteComponent(re Rewrite, c *Component) *hclgen.Block {
 	return re.RewriteComponent(re, c)
 }
 
+// RewriteBase is intended embedded in Rewrite implementations to provide
+// default method implementations. The default implementations rewrite
+// structures in to normal form.
 type RewriteBase struct{}
+
+// Normalize lifts RewriteBase to fully satisfy the Rewrite interface.
+type Normalize struct {
+	context.Context
+	RewriteBase
+}
 
 func (_ RewriteBase) RewriteManifest(re Rewrite, m *Manifest) *hclgen.File {
 	skip := make(map[*hcl.Block]bool)
@@ -118,7 +127,11 @@ func (_ RewriteBase) RewriteSecrets(re Rewrite, s *Secrets) *hclgen.Block {
 }
 
 func (_ RewriteBase) RewriteComponents(re Rewrite, cs *ComponentSet) *hclgen.Block {
-	blocks := make([]*hclgen.Block, len(cs.Components))
+	n := len(cs.Components)
+	if n == 0 {
+		return nil
+	}
+	blocks := make([]*hclgen.Block, n)
 	for i, c := range cs.Components {
 		blocks[i] = RewriteComponent(re, c)
 	}
