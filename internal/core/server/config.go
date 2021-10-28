@@ -1,6 +1,7 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -12,9 +13,11 @@ import (
 	"github.com/deref/exo/internal/core/api"
 	"github.com/deref/exo/internal/manifest"
 	"github.com/deref/exo/internal/manifest/exohcl"
+	"github.com/deref/exo/internal/manifest/exohcl/hclgen"
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/osutil"
 	"github.com/deref/exo/internal/util/pathutil"
+	"github.com/natefinch/atomic"
 )
 
 type manifestCandidate struct {
@@ -86,10 +89,31 @@ func (ws *Workspace) loadManifest(ctx context.Context, rootDir string, input *ap
 		Bytes:         []byte(manifestString),
 	}
 	m, err := loader.Load(analysisContext)
-	if err == nil {
+	if err == nil && len(analysisContext.Diagnostics) > 0 {
 		err = analysisContext.Diagnostics
 	}
 	return m, err
+}
+
+func (ws *Workspace) modifyManifest(ctx context.Context, re exohcl.Rewrite) error {
+	wsDesc, err := ws.describe(ctx)
+	if err != nil {
+		return fmt.Errorf("describing workspace: %w", err)
+	}
+	manifest, err := ws.loadManifest(ctx, wsDesc.Root, &api.ApplyInput{})
+	if err != nil {
+		return fmt.Errorf("loading manifest: %w", err)
+	}
+	f := exohcl.RewriteManifest(re, manifest)
+	var buf bytes.Buffer
+	if _, err := hclgen.WriteTo(&buf, f); err != nil {
+		return fmt.Errorf("generating new manifest: %w", err)
+	}
+	manifestPath := filepath.Join(wsDesc.Root, "exo.hcl")
+	if err := atomic.WriteFile(manifestPath, &buf); err != nil {
+		return fmt.Errorf("writing new manifest: %w", err)
+	}
+	return nil
 }
 
 func (ws *Workspace) ResolveManifest(ctx context.Context, input *api.ResolveManifestInput) (*api.ResolveManifestOutput, error) {

@@ -172,7 +172,10 @@ const rpc = async (
 };
 
 export interface AddVaultInput {
-  name: string;
+  url: string;
+}
+
+export interface RemoveVaultInput {
   url: string;
 }
 
@@ -271,6 +274,7 @@ export interface WorkspaceApi {
   describeVolumes(): Promise<VolumeDescription[]>;
   describeNetworks(): Promise<NetworkDescription[]>;
   addVault(input: AddVaultInput): Promise<void>;
+  removeVault(input: RemoveVaultInput): Promise<void>;
 
   destroy(): Promise<void>;
 
@@ -378,6 +382,10 @@ export const api = (() => {
 
       async addVault(input: AddVaultInput) {
         await invoke('add-vault', input);
+      },
+
+      async removeVault(input: RemoveVaultInput) {
+        await invoke('remove-vault', input);
       },
 
       async describeSelf(): Promise<WorkspaceDescription> {

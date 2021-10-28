@@ -27,7 +27,6 @@
     <form
       on:submit={async () => {
         await workspace.addVault({
-          name: 'exo-vault',
           url: vaultUrl,
         });
         await router.push(
