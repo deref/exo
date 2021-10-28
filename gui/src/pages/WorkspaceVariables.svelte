@@ -72,8 +72,9 @@
                         });
                         window.location.reload();
                       }}
+                      small
                     >
-                      X
+                      x
                     </Button>
                   </td>
                 </tr>
