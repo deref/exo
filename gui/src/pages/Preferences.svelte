@@ -42,7 +42,9 @@
           <h2>Deref</h2>
         </div>
         <div>
-          {#await derefUser then user}
+          {#await derefUser}
+            Loading...
+          {:then user}
             {#if user}
               <p>User: {user.email}</p>
               <div class="button-row">
