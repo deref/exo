@@ -35,6 +35,17 @@ type Kernel struct {
 
 var _ api.Kernel = &Kernel{}
 
+func (kern *Kernel) GetEsvUser(ctx context.Context, input *api.GetEsvUserInput) (*api.GetEsvUserOutput, error) {
+	self, err := kern.EsvClient.DescribeSelf(ctx, input.VaultURL)
+	if err != nil {
+		return nil, fmt.Errorf("getting esv user: %w", err)
+	}
+	if self == nil {
+		return nil, nil
+	}
+	return &api.GetEsvUserOutput{Email: self.Me.Email}, nil
+}
+
 func (kern *Kernel) DescribeTemplates(ctx context.Context, input *api.DescribeTemplatesInput) (*api.DescribeTemplatesOutput, error) {
 	return &api.DescribeTemplatesOutput{Templates: template.GetTemplateDescriptions()}, nil
 }
@@ -49,6 +60,13 @@ func (kern *Kernel) AuthEsv(ctx context.Context, input *api.AuthEsvInput) (*api.
 		AuthCode: authResponse.UserCode,
 		AuthURL:  authResponse.AuthURL,
 	}, nil
+}
+func (kern *Kernel) UnauthEsv(ctx context.Context, input *api.UnauthEsvInput) (*api.UnauthEsvOutput, error) {
+	err := kern.EsvClient.Unauthenticate(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("unauthenticating ESV: %w", err)
+	}
+	return nil, nil
 }
 
 func (kern *Kernel) CreateProject(ctx context.Context, input *api.CreateProjectInput) (*api.CreateProjectOutput, error) {

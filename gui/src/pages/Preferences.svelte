@@ -4,6 +4,11 @@
   import IconButton from '../components/IconButton.svelte';
   import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
   import { theme, themeOptions } from '../lib/theme';
+  import { api } from '../lib/api';
+
+  const kernel = api.kernel;
+  const makeRequest = () => kernel.getEsvUser('https://secrets.deref.io');
+  let derefUser = makeRequest();
 </script>
 
 <Layout>
@@ -30,6 +35,30 @@
             </Button>
           {/each}
         </div>
+        <div class="group-header">
+          <h2>Deref</h2>
+        </div>
+        <div>
+          {#await derefUser}
+            Loading...
+          {:then user}
+            {#if user}
+              <p>User: {user.email}</p>
+              <div class="button-row">
+                <Button
+                  on:click={async () => {
+                    await kernel.unauthEsv();
+                    derefUser = makeRequest();
+                  }}
+                >
+                  Unauthenticate</Button
+                >
+              </div>
+            {:else}
+              Not logged in
+            {/if}
+          {/await}
+        </div>
       </div>
     </div>
   </CenterFormPanel>
@@ -47,5 +76,6 @@
     display: grid;
     grid-auto-flow: column;
     gap: 12px;
+    margin-bottom: 2em;
   }
 </style>

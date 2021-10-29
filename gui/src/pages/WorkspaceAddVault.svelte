@@ -12,6 +12,7 @@
 
   const workspaceId = params.workspace;
   const workspace = api.workspace(workspaceId);
+  const kernel = api.kernel;
   const backRoute = `/workspaces/${encodeURIComponent(workspaceId)}/variables`;
 
   // TODO: inject this.
@@ -29,6 +30,18 @@
         await workspace.addVault({
           url: vaultUrl,
         });
+        const user = await kernel.getEsvUser(vaultUrl);
+        if (!user) {
+          const result = await api.kernel.authEsv();
+          window.open(result.authUrl, '_blank')?.focus();
+
+          // This alert is doing two jobs: informing the user of the auth code they
+          // should see in Auth0 as well as providing an indication that the user has
+          // finished authenticating when they dismiss the alert.
+          alert(
+            `You should see the following code in Auth0: ${result.authCode}`,
+          );
+        }
         await router.push(
           `/workspaces/${encodeURIComponent(workspace.id)}/variables`,
         );

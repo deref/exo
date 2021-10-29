@@ -26,6 +26,16 @@ func (c *Kernel) AuthEsv(ctx context.Context, input *api.AuthEsvInput) (output *
 	return
 }
 
+func (c *Kernel) UnauthEsv(ctx context.Context, input *api.UnauthEsvInput) (output *api.UnauthEsvOutput, err error) {
+	err = c.client.Invoke(ctx, "unauth-esv", input, &output)
+	return
+}
+
+func (c *Kernel) GetEsvUser(ctx context.Context, input *api.GetEsvUserInput) (output *api.GetEsvUserOutput, err error) {
+	err = c.client.Invoke(ctx, "get-esv-user", input, &output)
+	return
+}
+
 func (c *Kernel) CreateProject(ctx context.Context, input *api.CreateProjectInput) (output *api.CreateProjectOutput, err error) {
 	err = c.client.Invoke(ctx, "create-project", input, &output)
 	return

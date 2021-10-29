@@ -206,6 +206,10 @@ export interface ComponentDescription {
   spec: string;
 }
 
+export interface EsvUser {
+  email: string;
+}
+
 export interface CreateComponentResponse {
   id: string;
 }
@@ -252,6 +256,8 @@ export interface KernelApi {
   upgrade(): Promise<void>;
   ping(): Promise<void>;
   authEsv(): Promise<AuthEsvResult>;
+  unauthEsv(): Promise<void>;
+  getEsvUser(vaultUrl: string): Promise<EsvUser | null>;
   describeTasks(input?: DescribeTasksInput): Promise<TaskDescription[]>;
 }
 
@@ -370,6 +376,13 @@ export const api = (() => {
 
       async authEsv(): Promise<AuthEsvResult> {
         return (await invoke('auth-esv', {})) as any;
+      },
+      async unauthEsv(): Promise<void> {
+        await invoke('unauth-esv', {});
+      },
+
+      async getEsvUser(vaultUrl: string): Promise<EsvUser | null> {
+        return (await invoke('get-esv-user', { vaultUrl })) as any;
       },
     };
   })();

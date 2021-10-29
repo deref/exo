@@ -19,9 +19,18 @@ import (
 
 var AuthError = errors.New("auth error")
 
+type UserDescription struct {
+	Me struct {
+		ID    string `json:"id"`
+		Email string `json:"email"`
+	} `json:"me"`
+}
+
 type EsvClient interface {
+	Unauthenticate(ctx context.Context) error
 	StartAuthFlow(ctx context.Context) (AuthResponse, error)
 	GetWorkspaceSecrets(vaultURL string) (map[string]string, error)
+	DescribeSelf(ctx context.Context, vaultURL string) (*UserDescription, error)
 }
 
 func NewEsvClient(tokenPath string) *esvClient {
@@ -41,9 +50,41 @@ type esvClient struct {
 	accessTokenExpiration time.Time
 }
 
+var _ EsvClient = &esvClient{}
+
 type AuthResponse struct {
 	UserCode string
 	AuthURL  string
+}
+
+func (c *esvClient) Unauthenticate(ctx context.Context) error {
+	c.tokenMutex.Lock()
+	defer c.tokenMutex.Unlock()
+	if err := os.Remove(c.tokenPath); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("removing token file: %w", err)
+	}
+	c.accessToken = ""
+	c.refreshToken = ""
+	c.accessTokenExpiration = time.Time{}
+	return nil
+}
+
+func (c *esvClient) DescribeSelf(ctx context.Context, vaultURL string) (*UserDescription, error) {
+	resp := &UserDescription{}
+	uri, err := url.Parse(vaultURL)
+	if err != nil {
+		return nil, fmt.Errorf("parsing vault URL: %w", err)
+	}
+
+	esvHost := uri.Scheme + "://" + uri.Host
+	err = c.runCommand(resp, esvHost, "describe-self", nil)
+	if errors.Is(err, AuthError) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("describing self: %w", err)
+	}
+	return resp, nil
 }
 
 func (c *esvClient) StartAuthFlow(ctx context.Context) (AuthResponse, error) {
