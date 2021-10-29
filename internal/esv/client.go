@@ -19,9 +19,17 @@ import (
 
 var AuthError = errors.New("auth error")
 
+type UserDescription struct {
+	Me struct {
+		ID    string `json:"id"`
+		Email string `json:"email"`
+	} `json:"me"`
+}
+
 type EsvClient interface {
 	StartAuthFlow(ctx context.Context) (AuthResponse, error)
 	GetWorkspaceSecrets(vaultURL string) (map[string]string, error)
+	DescribeSelf(ctx context.Context, vaultURL string) (*UserDescription, error)
 }
 
 func NewEsvClient(tokenPath string) *esvClient {
@@ -41,9 +49,30 @@ type esvClient struct {
 	accessTokenExpiration time.Time
 }
 
+var _ EsvClient = &esvClient{}
+
 type AuthResponse struct {
 	UserCode string
 	AuthURL  string
+}
+
+func (c *esvClient) DescribeSelf(ctx context.Context, vaultURL string) (*UserDescription, error) {
+	resp := &UserDescription{}
+	uri, err := url.Parse(vaultURL)
+	if err != nil {
+		return nil, fmt.Errorf("parsing vault URL: %w", err)
+	}
+
+	esvHost := uri.Scheme + "://" + uri.Host
+	fmt.Printf("esvHost: %+v\n", esvHost)
+	err = c.runCommand(resp, esvHost, "describe-self", nil)
+	if errors.Is(err, AuthError) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, fmt.Errorf("describing self: %w", err)
+	}
+	return resp, nil
 }
 
 func (c *esvClient) StartAuthFlow(ctx context.Context) (AuthResponse, error) {

@@ -5,6 +5,11 @@ interface "kernel" {
     output "auth-code" "string" {}
   }
 
+  method "get-esv-user" {
+    input "vault-url" "string" {}
+    output "email" "string" {}
+  }
+
   method "create-project" {
     input "root" "string" {}
     input "template-url" "*string" {}

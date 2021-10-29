@@ -4,6 +4,11 @@
   import IconButton from '../components/IconButton.svelte';
   import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
   import { theme, themeOptions } from '../lib/theme';
+  import { api } from '../lib/api';
+
+  const kernel = api.kernel;
+  // FIXME: this should point at prod.
+  const derefUser = kernel.getEsvUser('http://localhost:5000');
 </script>
 
 <Layout>
@@ -30,6 +35,18 @@
             </Button>
           {/each}
         </div>
+        <div class="group-header">
+          <h2>Deref</h2>
+        </div>
+        <div>
+          {#await derefUser then user}
+            {#if user}
+              Email: {user.email}
+            {:else}
+              Not logged in
+            {/if}
+          {/await}
+        </div>
       </div>
     </div>
   </CenterFormPanel>
@@ -47,5 +64,6 @@
     display: grid;
     grid-auto-flow: column;
     gap: 12px;
+    margin-bottom: 2em;
   }
 </style>

@@ -35,6 +35,14 @@ type Kernel struct {
 
 var _ api.Kernel = &Kernel{}
 
+func (kern *Kernel) GetEsvUser(ctx context.Context, input *api.GetEsvUserInput) (*api.GetEsvUserOutput, error) {
+	self, err := kern.EsvClient.DescribeSelf(ctx, input.VaultURL)
+	if err != nil {
+		return nil, fmt.Errorf("getting esv user: %w", err)
+	}
+	return &api.GetEsvUserOutput{Email: self.Me.Email}, nil
+}
+
 func (kern *Kernel) DescribeTemplates(ctx context.Context, input *api.DescribeTemplatesInput) (*api.DescribeTemplatesOutput, error) {
 	return &api.DescribeTemplatesOutput{Templates: template.GetTemplateDescriptions()}, nil
 }
