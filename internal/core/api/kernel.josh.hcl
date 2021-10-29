@@ -5,6 +5,8 @@ interface "kernel" {
     output "auth-code" "string" {}
   }
 
+  method "unauth-esv" {}
+
   method "get-esv-user" {
     input "vault-url" "string" {}
     output "email" "string" {}

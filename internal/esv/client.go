@@ -27,6 +27,7 @@ type UserDescription struct {
 }
 
 type EsvClient interface {
+	Unauthenticate(ctx context.Context) error
 	StartAuthFlow(ctx context.Context) (AuthResponse, error)
 	GetWorkspaceSecrets(vaultURL string) (map[string]string, error)
 	DescribeSelf(ctx context.Context, vaultURL string) (*UserDescription, error)
@@ -54,6 +55,18 @@ var _ EsvClient = &esvClient{}
 type AuthResponse struct {
 	UserCode string
 	AuthURL  string
+}
+
+func (c *esvClient) Unauthenticate(ctx context.Context) error {
+	c.tokenMutex.Lock()
+	defer c.tokenMutex.Unlock()
+	if err := os.Remove(c.tokenPath); err != nil && !os.IsNotExist(err) {
+		return fmt.Errorf("removing token file: %w", err)
+	}
+	c.accessToken = ""
+	c.refreshToken = ""
+	c.accessTokenExpiration = time.Time{}
+	return nil
 }
 
 func (c *esvClient) DescribeSelf(ctx context.Context, vaultURL string) (*UserDescription, error) {

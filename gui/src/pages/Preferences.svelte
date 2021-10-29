@@ -8,7 +8,10 @@
 
   const kernel = api.kernel;
   // FIXME: this should point at prod.
-  const derefUser = kernel.getEsvUser('http://localhost:5000');
+  const makeRequest = () => {
+    return kernel.getEsvUser('http://localhost:5000');
+  };
+  let derefUser = makeRequest();
 </script>
 
 <Layout>
@@ -41,7 +44,17 @@
         <div>
           {#await derefUser then user}
             {#if user}
-              Email: {user.email}
+              <p>User: {user.email}</p>
+              <div class="button-row">
+                <Button
+                  on:click={async () => {
+                    await kernel.unauthEsv();
+                    derefUser = makeRequest();
+                  }}
+                >
+                  Unauthenticate</Button
+                >
+              </div>
             {:else}
               Not logged in
             {/if}
