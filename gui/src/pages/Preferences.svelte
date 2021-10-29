@@ -7,10 +7,7 @@
   import { api } from '../lib/api';
 
   const kernel = api.kernel;
-  // FIXME: this should point at prod.
-  const makeRequest = () => {
-    return kernel.getEsvUser('https://secrets.deref.io');
-  };
+  const makeRequest = () => kernel.getEsvUser('https://secrets.deref.io');
   let derefUser = makeRequest();
 </script>
 
