@@ -70,8 +70,9 @@ func (imp *Importer) Import(ctx *exohcl.AnalysisContext, bs []byte) *hcl.File {
 				})
 			}
 			attrs = append(attrs, &hclsyntax.Attribute{
-				Name: "environment",
-				Expr: envExpr,
+				Name:     "environment",
+				Expr:     envExpr,
+				SrcRange: p.Range,
 			})
 		}
 
