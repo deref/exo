@@ -10,6 +10,15 @@ This project adhears to [CalVer](./doc/versioning.md).
 
 - Project templates
 
+## 2021.10.29
+
+### Fixed
+
+- [#77](https://github.com/deref/exo/pull/77) Handling of shell-syntax in
+  Procfiles.
+- [#459](https://github.com/deref/exo/pull/459) Compose file parsing of !!int
+  tag in string positions.
+
 ## 2021.10.28
 
 ### Added
