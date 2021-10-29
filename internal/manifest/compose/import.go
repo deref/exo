@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"fmt"
 	"reflect"
+	"strconv"
 	"strings"
 
 	"github.com/deref/exo/internal/manifest/exohcl"
@@ -360,10 +361,18 @@ func yamlToHCL(v interface{}) hclsyntax.Expression {
 			}
 
 		case yaml.ScalarNode:
-			if v.Tag != "" && v.Tag != "!!str" {
+			switch v.Tag {
+			case "", "!!str":
+				return yamlToHCL(v.Value)
+			case "!!int":
+				i, err := strconv.ParseInt(v.Value, 10, 64)
+				if err != nil {
+					return yamlToHCL(v.Value)
+				}
+				return yamlToHCL(i)
+			default:
 				panic(fmt.Errorf("unexpected yaml node tag: %q", v.Tag))
 			}
-			return yamlToHCL(v.Value)
 		default:
 			panic(fmt.Errorf("unexpected yaml node kind: %d", v.Kind))
 		}
