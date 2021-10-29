@@ -77,7 +77,6 @@ func (c *esvClient) DescribeSelf(ctx context.Context, vaultURL string) (*UserDes
 	}
 
 	esvHost := uri.Scheme + "://" + uri.Host
-	fmt.Printf("esvHost: %+v\n", esvHost)
 	err = c.runCommand(resp, esvHost, "describe-self", nil)
 	if errors.Is(err, AuthError) {
 		return nil, nil
