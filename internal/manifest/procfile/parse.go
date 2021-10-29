@@ -129,45 +129,56 @@ func ParseCommand(r io.Reader) (*Process, error) {
 		return nil, errors.New("unsupported: redirection")
 	}
 
-	call, ok := stmt.Cmd.(*syntax.CallExpr)
-	if !ok {
-		return nil, fmt.Errorf("expected simple command, got %T", stmt.Cmd)
-	}
-
 	process := Process{
 		Environment: make(map[string]string),
 	}
 
-	// Parse environment variable assignments.
-	for _, assign := range call.Assigns {
-		name := assign.Name.Value
-		if assign.Append || assign.Naked || assign.Index != nil || assign.Array != nil {
-			return nil, fmt.Errorf("unsupported assignment for %q", name)
+	if call, ok := stmt.Cmd.(*syntax.CallExpr); ok {
+		// Parse environment variable assignments.
+		for _, assign := range call.Assigns {
+			name := assign.Name.Value
+			if assign.Append || assign.Naked || assign.Index != nil || assign.Array != nil {
+				return nil, fmt.Errorf("unsupported assignment for %q", name)
+			}
+			value, err := wordToString(assign.Value)
+			if err != nil {
+				return nil, fmt.Errorf("parsing %q assignment: %w", name, err)
+			}
+			process.Environment[name] = value
 		}
-		value, err := wordToString(assign.Value)
-		if err != nil {
-			return nil, fmt.Errorf("parsing %q assignment: %w", name, err)
-		}
-		process.Environment[name] = value
-	}
 
-	// Parse program.
-	if len(call.Args) < 1 {
-		return nil, errors.New("expected program path")
-	}
-	process.Program, err = wordToString(call.Args[0])
-	if err != nil {
-		return nil, fmt.Errorf("parsing program path: %w", err)
-	}
-
-	// Parse arguments.
-	argWords := call.Args[1:]
-	process.Arguments = make([]string, len(argWords))
-	for i, argWord := range argWords {
-		process.Arguments[i], err = wordToString(argWord)
-		if err != nil {
-			return nil, fmt.Errorf("parsing argument %d: %w", i, err)
+		// Parse program.
+		if len(call.Args) < 1 {
+			return nil, errors.New("expected program path")
 		}
+		process.Program, err = wordToString(call.Args[0])
+		if err != nil {
+			return nil, fmt.Errorf("parsing program path: %w", err)
+		}
+
+		// Parse arguments.
+		argWords := call.Args[1:]
+		process.Arguments = make([]string, len(argWords))
+		for i, argWord := range argWords {
+			process.Arguments[i], err = wordToString(argWord)
+			if err != nil {
+				return nil, fmt.Errorf("parsing argument %d: %w", i, err)
+			}
+		}
+	} else {
+		// Can't parse command, so pass it through to the shell.
+
+		// TODO: If we had a buffer instead of a reader, we could probably just use
+		// the node's positions to simply extract the original text unchanged.
+		var sb strings.Builder
+		printer := syntax.NewPrinter(syntax.SingleLine(true))
+		if err := printer.Print(&sb, stmt); err != nil {
+			panic(fmt.Errorf("printing shell node: %w", err))
+		}
+		code := sb.String()
+
+		process.Program = "/bin/sh"
+		process.Arguments = []string{"-c", code}
 	}
 	return &process, nil
 }
