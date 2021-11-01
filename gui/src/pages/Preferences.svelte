@@ -11,16 +11,23 @@
 
   type PreferenceName = keyof Preferences;
 
-  interface PreferenceGroup {
-    title: string;
-    preferences: PreferenceGroupEntry[];
+  interface QuantityPreference {
+    name: PreferenceName;
+    type: 'quantity';
+    units?: string[];
   }
 
-  interface PreferenceGroupEntry {
+  interface SelectPreference {
     name: PreferenceName;
-    type: 'quantity' | 'select';
-    units?: string[];
-    options?: string[];
+    type: 'select';
+    options: string[];
+  }
+
+  type Preference = QuantityPreference | SelectPreference;
+
+  interface PreferenceGroup {
+    title: string;
+    preferences: Preference[];
   }
 
   const groups: PreferenceGroup[] = [
