@@ -15,4 +15,8 @@ fi
 
 go test ./...
 
+# Run integration tests
+go build .
+go run ./test/ ./exo ./test/image/fixtures
+
 (cd gui && npm run check)
