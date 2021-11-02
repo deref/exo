@@ -1,0 +1,4 @@
+services:
+  t0:
+    image: bash
+    command: sleep infinity
