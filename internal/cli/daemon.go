@@ -9,6 +9,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/deref/exo/internal/about"
 	"github.com/deref/exo/internal/core/client"
 	"github.com/deref/exo/internal/exod"
 	"github.com/deref/exo/internal/util/cmdutil"
@@ -53,7 +54,12 @@ var runState struct {
 // explicitly run one of the following commands to explicitly start a server: `exo daemon`, `exo server`,
 // `exo run`.
 func checkOrEnsureServer() {
-	if checkHealthy() {
+	healthy, version := checkHealthAndVersion()
+	outOfDate := healthy && (version != about.Version)
+	if outOfDate {
+		cmdutil.Fatalf("daemon at %q is not up to date. Please restart the server.", effectiveServerURL())
+	}
+	if healthy {
 		return
 	}
 	if cfg.NoDaemon {
@@ -110,7 +116,7 @@ func ensureDaemon() {
 	ok := false
 	delay := 10 * time.Millisecond
 	for attempt := 0; attempt < 15; attempt++ {
-		if checkHealthy() {
+		if healthy, _ := checkHealthAndVersion(); healthy {
 			ok = true
 			break
 		}
