@@ -11,6 +11,7 @@ import (
 	golog "log"
 
 	"github.com/deref/exo/gui"
+	"github.com/deref/exo/internal/about"
 	"github.com/deref/exo/internal/config"
 	"github.com/deref/exo/internal/core/server"
 	kernel "github.com/deref/exo/internal/core/server"
@@ -154,6 +155,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 		TaskTracker: taskTracker,
 		TokenClient: cfg.GetTokenClient(),
 		EsvClient:   esv.NewEsvClient(cfg.EsvTokenPath),
+		ExoVersion:  about.Version,
 	}
 
 	// As a one-time migration, simply delete all logs in the old Badger format.

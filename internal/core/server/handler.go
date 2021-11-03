@@ -28,6 +28,7 @@ type Config struct {
 	TaskTracker *task.TaskTracker
 	TokenClient token.TokenClient
 	EsvClient   esv.EsvClient
+	ExoVersion  string
 }
 
 func BuildRootMux(prefix string, cfg *Config) *http.ServeMux {
@@ -55,8 +56,16 @@ func BuildRootMux(prefix string, cfg *Config) *http.ServeMux {
 		})
 	}
 
+	versionMiddleware := func(next http.Handler) http.Handler {
+		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
+			w.Header().Add("Exo-Version", cfg.ExoVersion)
+			next.ServeHTTP(w, req)
+		})
+	}
+
 	b := josh.NewMuxBuilder(prefix)
 	b.AddMiddleware(authMiddleware)
+	b.AddMiddleware(versionMiddleware)
 
 	endKernel := b.Begin("kernel")
 	api.BuildKernelMux(b, func(req *http.Request) api.Kernel {
