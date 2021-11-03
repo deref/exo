@@ -22,7 +22,9 @@ var basicT0Test = func(ctx context.Context, t tester.ExoTester) error {
 	if _, _, err := t.RunExo(ctx, "start"); err != nil {
 		return err
 	}
-	return t.WaitTillProcessRunning(ctx, "t0", time.Second*5)
+	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Second*5))
+	defer cancel()
+	return t.WaitTillProcessesRunning(ctx, "t0")
 }
 
 var tests = map[string]tester.ExoTest{
@@ -37,6 +39,23 @@ var tests = map[string]tester.ExoTest{
 	"basic-exo-hcl": {
 		FixtureDir: "basic-exo-hcl",
 		Test:       basicT0Test,
+	},
+	"simple-example": {
+		FixtureDir: "simple-example",
+		Test: func(ctx context.Context, t tester.ExoTester) error {
+			if _, _, err := t.RunExo(ctx, "init"); err != nil {
+				return err
+			}
+			if _, _, err := t.RunExo(ctx, "start"); err != nil {
+				return err
+			}
+			ctx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Second*10))
+			defer cancel()
+			if err := t.WaitTillProcessesRunning(ctx, "web", "echo", "echo-short"); err != nil {
+				return err
+			}
+			return nil
+		},
 	},
 }
 
@@ -57,7 +76,6 @@ func doTest(ctx context.Context, test tester.ExoTest, testName, exoBinPath, fixt
 		return fmt.Errorf("test failed: %w", err)
 	}
 	return nil
-
 }
 
 func main() {
@@ -82,8 +100,6 @@ func main() {
 		if err := doTest(ctx, test, testName, exoBinPath, fixtureBasePath, &outputMutex); err != nil {
 			fmt.Println("Tests failed: ", err)
 			os.Exit(1)
-
 		}
 	}
-
 }
