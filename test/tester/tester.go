@@ -14,6 +14,8 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/sirupsen/logrus"
 )
 
 type ExoTest struct {
@@ -28,20 +30,24 @@ type ExoTester struct {
 	exoHome    string
 	exoBinary  string
 	fixtureDir string
+	logger     *logrus.Logger
+	logBuffer  io.Reader
 }
 
-func (et ExoTester) RunTest(ctx context.Context, test ExoTest) error {
+func (et ExoTester) RunTest(ctx context.Context, test ExoTest) (io.Reader, error) {
 	defer et.StopDaemon(context.Background())
 	if err := et.StartDaemon(ctx); err != nil {
-		return fmt.Errorf("starting daemon: %w", err)
+		return et.logBuffer, fmt.Errorf("starting daemon: %w", err)
 	}
+	et.logger.Debug("Started exo")
 	if err := test.Test(ctx, et); err != nil {
-		return fmt.Errorf("running test: %w", err)
+		return et.logBuffer, fmt.Errorf("running test: %w", err)
 	}
+	et.logger.Debug("Finished test")
 	if err := et.StopDaemon(ctx); err != nil {
-		return fmt.Errorf("stopping daemon: %w", err)
+		return et.logBuffer, fmt.Errorf("stopping daemon: %w", err)
 	}
-	return nil
+	return et.logBuffer, nil
 }
 
 func (et ExoTester) WaitTillProcessRunning(ctx context.Context, name string, timeout time.Duration) error {
@@ -69,11 +75,17 @@ func (et ExoTester) RunExo(ctx context.Context, arguments ...string) (stdout, st
 	cmd.Env = append(cmd.Env, "EXO_HOME="+et.exoHome)
 	cmd.Env = append(cmd.Env, "PATH="+path)
 	var stdoutBuffer, stderrBuffer bytes.Buffer
-	stdoutWriter := io.MultiWriter(&stdoutBuffer, os.Stderr)
-	stderrWriter := io.MultiWriter(&stderrBuffer, os.Stderr)
+	logWriter := et.logger.Writer()
+	defer logWriter.Close()
+	stdoutWriter := io.MultiWriter(&stdoutBuffer, logWriter)
+	stderrWriter := io.MultiWriter(&stderrBuffer, logWriter)
 	cmd.Stderr = stderrWriter
 	cmd.Stdout = stdoutWriter
+	et.logger.Debug("Running exo ", cmd.Args)
+	et.logger.Debug("env ", cmd.Env)
+	et.logger.Debug("wd ", cmd.Dir)
 	err = cmd.Run()
+	et.logger.Debug("exit code: ", cmd.ProcessState.ExitCode())
 	return stdoutBuffer.String(), stderrBuffer.String(), err
 }
 
@@ -155,9 +167,9 @@ func (et ExoTester) StartDaemon(ctx context.Context) error {
 }
 
 func (et ExoTester) StopDaemon(ctx context.Context) error {
-	// FIXME: This is necessary because right now stopping the daemon doesn't
-	// appear to stop the underlying docker images. Killing the daemon should
-	// probably kill all attacked docker images.
+	// FIXME: This explicit "exo stop" is necessary because right now stopping the
+	// daemon doesn't appear to stop the underlying docker images. Killing the
+	// daemon should probably kill all attached docker images.
 	_, _, err := et.RunExo(ctx, "stop", "--timeout=0")
 	if err != nil {
 		return fmt.Errorf("running exo stop: %w", err)
@@ -227,6 +239,15 @@ derefInternalUser = true
 func MakeExoTester(exoBinPath, fixtureBasePath string, test ExoTest) ExoTester {
 	config := getTestConfig()
 
+	logBuffer := &bytes.Buffer{}
+	logger := logrus.New()
+	logger.SetFormatter(&logrus.TextFormatter{
+		DisableTimestamp: true,
+		ForceColors:      true,
+	})
+	logger.SetOutput(logBuffer)
+	logger.SetLevel(logrus.DebugLevel)
+
 	exoBinPath, _ = filepath.Abs(exoBinPath)
 	if _, err := os.Stat(exoBinPath); err != nil {
 		fmt.Println("Cannot stat exo binary:", err)
@@ -244,7 +265,8 @@ func MakeExoTester(exoBinPath, fixtureBasePath string, test ExoTest) ExoTester {
 		fmt.Println("Could not create temp home:", err)
 		os.Exit(1)
 	}
-	fmt.Println(exoHome)
+
+	logger.Infof("EXO_HOME is %q", exoHome)
 
 	err = ioutil.WriteFile(filepath.Join(exoHome, "config.toml"), []byte(config.configContents), 0600)
 	if err != nil {
@@ -258,6 +280,8 @@ func MakeExoTester(exoBinPath, fixtureBasePath string, test ExoTest) ExoTester {
 		exoBinary:  exoBinPath,
 		fixtureDir: fixtureDir,
 		exoHome:    exoHome,
+		logger:     logger,
+		logBuffer:  logBuffer,
 	}
 	return tester
 }
