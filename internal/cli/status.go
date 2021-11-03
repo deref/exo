@@ -33,7 +33,7 @@ var statusCmd = &cobra.Command{
 		if osutil.IsValidPid(runState.Pid) {
 			pid = strconv.Itoa(runState.Pid)
 		}
-		healthy := checkHealthy()
+		healthy, _ := checkHealthAndVersion()
 
 		w := tabwriter.NewWriter(os.Stdout, 4, 8, 3, ' ', 0)
 		_, _ = fmt.Fprintf(w, "healthy:\t%t\n", healthy)
@@ -44,14 +44,15 @@ var statusCmd = &cobra.Command{
 	},
 }
 
-func checkHealthy() bool {
+func checkHealthAndVersion() (bool, string) {
 	res, err := http.Get(effectiveServerURL() + "/_exo/health")
 	if err != nil {
-		return false
+		return false, ""
 	}
 	bs, _ := ioutil.ReadAll(res.Body)
+	version := res.Header.Get("Exo-Version")
 	// See note [HEALTH_CHECK].
-	return string(bytes.TrimSpace(bs)) == "ok"
+	return string(bytes.TrimSpace(bs)) == "ok", version
 }
 
 func effectiveServerURL() string {

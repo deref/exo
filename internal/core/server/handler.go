@@ -101,7 +101,7 @@ func BuildRootMux(prefix string, cfg *Config) *http.ServeMux {
 
 	mux := b.Build()
 
-	mux.Handle(prefix+"health", HandleHealth)
+	mux.Handle(prefix+"health", versionMiddleware(HandleHealth))
 
 	return mux
 }
