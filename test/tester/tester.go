@@ -15,6 +15,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/deref/exo/internal/util/osutil"
 	"github.com/sirupsen/logrus"
 )
 
@@ -183,7 +184,7 @@ func (et ExoTester) StopDaemon(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("getting exo status: %w", err)
 	}
-	if status.Healthy || status.PID != 0 {
+	if status.Healthy || osutil.IsValidPid(status.PID) {
 		return fmt.Errorf("failed to shutdown exo")
 	}
 	return err
