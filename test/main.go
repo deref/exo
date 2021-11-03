@@ -30,9 +30,12 @@ var tests = map[string]tester.ExoTest{
 		FixtureDir: "basic-procfile",
 		Test:       basicT0Test,
 	},
-
 	"basic-dockerfile": {
 		FixtureDir: "basic-dockerfile",
+		Test:       basicT0Test,
+	},
+	"basic-exo-hcl": {
+		FixtureDir: "basic-exo-hcl",
 		Test:       basicT0Test,
 	},
 }
