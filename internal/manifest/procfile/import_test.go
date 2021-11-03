@@ -21,7 +21,7 @@ components {
   process "one" {
     program     = "two"
     arguments   = ["three", "four"]
-    environment = { PORT = "5000", A = "1" }
+    environment = { A = "1", PORT = "5000" }
   }
 }
 `)
