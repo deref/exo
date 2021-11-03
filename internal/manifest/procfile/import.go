@@ -2,6 +2,7 @@ package procfile
 
 import (
 	"bytes"
+	"sort"
 	"strconv"
 
 	"github.com/deref/exo/internal/manifest/exohcl"
@@ -63,10 +64,17 @@ func (imp *Importer) Import(ctx *exohcl.AnalysisContext, bs []byte) *hcl.File {
 			envExpr := &hclsyntax.ObjectConsExpr{
 				SrcRange: p.Range,
 			}
-			for k, v := range environment {
+
+			environmentKeys := make([]string, 0, len(environment))
+			for k := range environment {
+				environmentKeys = append(environmentKeys, k)
+			}
+			sort.Strings(environmentKeys)
+
+			for _, k := range environmentKeys {
 				envExpr.Items = append(envExpr.Items, hclsyntax.ObjectConsItem{
 					KeyExpr:   hclgen.NewObjStringKey(k, p.Range),
-					ValueExpr: hclgen.NewStringLiteral(v, p.Range),
+					ValueExpr: hclgen.NewStringLiteral(environment[k], p.Range),
 				})
 			}
 			attrs = append(attrs, &hclsyntax.Attribute{
