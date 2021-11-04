@@ -108,6 +108,7 @@ type GetVersionOutput struct {
 	Installed string  `json:"installed"`
 	Latest    *string `json:"latest"`
 	Current   bool    `json:"current"`
+	Managed   bool    `json:"managed"`
 }
 
 type UpgradeInput struct {

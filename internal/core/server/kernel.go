@@ -170,6 +170,7 @@ func (kern *Kernel) GetVersion(ctx context.Context, input *api.GetVersionInput) 
 		Installed: installed,
 		Latest:    latest,
 		Current:   current,
+		Managed:   install.IsManaged,
 	}, nil
 }
 
