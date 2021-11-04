@@ -8,21 +8,31 @@
 
   let installedVersion: string | null = null;
   let latestVersion: string | null = null;
+  let isManaged: boolean = false;
   let upgrading = false;
 
   const doUpgrade = async () => {
+    if (isManaged) {
+      alert(
+        'This upgrade procedure only supports installation of exo that were performed with the exo install script. Please upgrade exo with your package manager or by uninstalling and reinstalling with the official exo upgrade script.',
+      );
+      return;
+    }
     upgrading = true;
     await api.kernel.upgrade();
   };
 
   let fetchTimeout: NodeJS.Timeout | null = null;
   const refreshVersion = async () => {
-    const { installed, latest, current } = await api.kernel.getVersion();
+    const { installed, latest, current, managed } =
+      await api.kernel.getVersion();
     // The server just changed installed version - reload.
     if (installedVersion !== null && installedVersion != installed) {
       console.log({ installedVersion, installed });
       // window.location.reload();
     }
+
+    isManaged = managed;
 
     installedVersion = installed;
     if (!current && latest !== undefined) {
