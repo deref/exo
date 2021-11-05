@@ -23,17 +23,19 @@ import (
 func init() {
 	rootCmd.AddCommand(logsCmd)
 	logsCmd.Flags().BoolVarP(&logFlags.System, "system", "", false, "if specified, filter includes workspace system events")
+	logsCmd.Flags().BoolVarP(&logFlags.NoFollow, "no-follow", "", false, "stops tailing when caught up to the end of the log")
 }
 
 var logFlags struct {
-	System bool
+	System   bool
+	NoFollow bool
 }
 
 var logsCmd = &cobra.Command{
 	Hidden: true,
 	Use:    "logs [flags] [refs...]",
 	Short:  "Tails process logs",
-	Long: `Tails process logs.
+	Long: `Tails and follows process logs.
 
 If refs are provided, filters for the logs of those processes.
 
@@ -51,10 +53,14 @@ When filtering, system events are omitted unless --system is given.`,
 
 func tailLogs(ctx context.Context, workspace *client.Workspace, streamRefs []string, stopOnError bool) error {
 	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
 	var eg errgroup.Group
-	eg.Go(func() error {
-		return runTailLogsReader(ctx, cancel)
-	})
+	interactive := !logFlags.NoFollow
+	if interactive {
+		eg.Go(func() error {
+			return runTailLogsReader(ctx, cancel)
+		})
+	}
 	eg.Go(func() error {
 		return runTailLogsWriter(ctx, workspace, streamRefs, stopOnError)
 	})
@@ -210,6 +216,9 @@ func runTailLogsWriter(ctx context.Context, workspace *client.Workspace, streamR
 		}
 
 		if len(output.Items) < 10 { // TODO: OK heuristic?
+			if logFlags.NoFollow {
+				return nil
+			}
 			select {
 			case <-time.After(250 * time.Millisecond):
 			case <-ctx.Done():
