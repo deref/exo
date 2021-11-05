@@ -130,9 +130,8 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 		}
 	}
 	envSlice := []string{}
-	for _, item := range spec.Environment.Items {
-		v := envMap[item.Key]
-		envSlice = append(envSlice, fmt.Sprintf("%s=%s", item.Key, v))
+	for k, v := range envMap {
+		envSlice = append(envSlice, fmt.Sprintf("%s=%s", k, v))
 	}
 
 	containerCfg := &container.Config{
