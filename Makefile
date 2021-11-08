@@ -26,6 +26,10 @@ make-gui:
 mod-tidy:
 	go mod tidy
 
+.PHONY: run-tests
+run-tests: bin/exo
+	go run ./test/main.go ./bin/exo ./test/image/fixtures
+
 .PHONY: release-dry-run
 release-dry-run: make-gui mod-tidy codegen
 	@docker run \
