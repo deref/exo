@@ -51,6 +51,7 @@ interface "kernel" {
     // Current may be nil if telemetry is disabled.
     output "latest" "*string" {}
     output "current" "bool" {}
+    output "managed" "bool" {}
   }
 
   method "upgrade" {

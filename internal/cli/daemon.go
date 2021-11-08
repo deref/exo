@@ -57,7 +57,7 @@ func checkOrEnsureServer() {
 	healthy, version := checkHealthAndVersion()
 	outOfDate := healthy && (version != about.Version)
 	if outOfDate {
-		cmdutil.Fatalf("daemon at %q is not up to date. Please restart the server.", effectiveServerURL())
+		cmdutil.Fatalf("daemon at %q is not up to date. Please restart the server.\ndaemon version: %s\nclient version: %s", effectiveServerURL(), version, about.Version)
 	}
 	if healthy {
 		return

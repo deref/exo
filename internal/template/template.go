@@ -12,8 +12,8 @@ var archiveFolderName = "files"
 var tarName = archiveFolderName + ".tar.gz"
 
 // GetTemplateFiles returns the path to a new temporary directory that contains
-// the intial project template. It is expected that the caller will move or copy the
-// directory to a more permanent location.
+// the initial project template. It is expected that the caller will move or
+// copy the directory to a more permanent location.
 func GetTemplateFiles(ctx context.Context, templateURL string) (string, error) {
 	dir, err := os.MkdirTemp("", "exo-template-clone-")
 	if err != nil {
