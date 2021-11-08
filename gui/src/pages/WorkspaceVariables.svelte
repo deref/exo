@@ -54,7 +54,13 @@
               {#each vaults as vault}
                 <tr>
                   <td>{vault.name}</td>
-                  <td>{vault.url}</td>
+                  <td>
+                    {#if vault.connected}
+                      <a href={vault.url} target="_blank">{vault.url}</a>
+                    {:else}
+                      {vault.url}
+                    {/if}
+                  </td>
                   <td>
                     {#if vault.connected}
                       <Button href={`${vault.url}/create-secret`} small>
