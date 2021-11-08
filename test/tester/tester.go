@@ -53,11 +53,18 @@ func (et ExoTester) RunTest(ctx context.Context, test ExoTest) (io.Reader, error
 	return et.logBuffer, nil
 }
 
+var timeoutError = errors.New("timed out waiting for process to start")
+
 func (et ExoTester) WaitTillProcessesRunning(ctx context.Context, names ...string) error {
 	for {
 		processes, err := et.PS(ctx)
 		if err != nil {
-			return err
+			select {
+			case <-ctx.Done():
+				return timeoutError
+			default:
+				return err
+			}
 		}
 
 		doneProcesses := []string{}
@@ -75,7 +82,7 @@ func (et ExoTester) WaitTillProcessesRunning(ctx context.Context, names ...strin
 
 		select {
 		case <-ctx.Done():
-			return errors.New("timed out waiting for process to start")
+			return timeoutError
 		default:
 			time.Sleep(time.Millisecond * 100)
 		}
