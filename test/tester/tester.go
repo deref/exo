@@ -11,6 +11,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"reflect"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
@@ -51,21 +53,40 @@ func (et ExoTester) RunTest(ctx context.Context, test ExoTest) (io.Reader, error
 	return et.logBuffer, nil
 }
 
-func (et ExoTester) WaitTillProcessRunning(ctx context.Context, name string, timeout time.Duration) error {
-	timeoutTime := time.Now().Add(timeout)
-	for time.Now().Before(timeoutTime) {
+var timeoutError = errors.New("timed out waiting for process to start")
+
+func (et ExoTester) WaitTillProcessesRunning(ctx context.Context, names ...string) error {
+	for {
 		processes, err := et.PS(ctx)
 		if err != nil {
-			return err
-		}
-		for _, proc := range processes {
-			if proc.Name == name && proc.Status == "running" {
-				return nil
+			select {
+			case <-ctx.Done():
+				return timeoutError
+			default:
+				return err
 			}
 		}
-	}
-	return errors.New("timed out waiting for process to start")
 
+		doneProcesses := []string{}
+		for _, proc := range processes {
+			if proc.Status == "running" {
+				doneProcesses = append(doneProcesses, proc.Name)
+			}
+		}
+
+		sort.Strings(names)
+		sort.Strings(doneProcesses)
+		if len(names) == len(doneProcesses) && reflect.DeepEqual(names, doneProcesses) {
+			return nil
+		}
+
+		select {
+		case <-ctx.Done():
+			return timeoutError
+		default:
+			time.Sleep(time.Millisecond * 100)
+		}
+	}
 }
 
 // Runs an exo CLI command and blocks until it terminates.
