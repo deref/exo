@@ -1,3 +1,3 @@
-FROM alpine/socat
+FROM bash:5
 
-CMD ["TCP4-LISTEN:5000,fork", "EXEC:cat"]
+CMD ["nc", "-l", "2001"]
