@@ -21,12 +21,15 @@ func GetTemplateFiles(ctx context.Context, templateURL string) (string, error) {
 	}
 
 	url := fmt.Sprintf("%s/%s", templateURL, tarName)
-
 	resp, err := http.Get(url)
 	if err != nil {
 		return "", fmt.Errorf("getting template files: %w", err)
 	}
 	defer resp.Body.Close()
+
+	if resp.StatusCode != 200 {
+		return "", fmt.Errorf("unexpected status code getting template files: %s", resp.Status)
+	}
 
 	err = uncompress(dir, resp.Body)
 	if err != nil {
