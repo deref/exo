@@ -2,6 +2,9 @@ package main
 
 import (
 	"context"
+	"fmt"
+	"net"
+	"strconv"
 	"time"
 
 	"github.com/deref/exo/test/tester"
@@ -46,6 +49,18 @@ var tests = map[string]tester.ExoTest{
 			if err := t.WaitTillProcessesRunning(ctx, "web", "echo", "echo-short"); err != nil {
 				return err
 			}
+
+			for port := 44222; port <= 44224; port++ {
+				timeout := time.Second
+				conn, err := net.DialTimeout("tcp", net.JoinHostPort("localhost", strconv.Itoa(port)), timeout)
+				if err != nil {
+					return fmt.Errorf("failed to connect to port %d: %v", port, err)
+				}
+				if conn != nil {
+					defer conn.Close()
+				}
+			}
+
 			return nil
 		},
 	},
