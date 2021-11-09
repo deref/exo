@@ -163,7 +163,11 @@ func (c *esvClient) runCommand(output interface{}, host, commandName string, bod
 		return fmt.Errorf("getting access token: %w", err)
 	}
 
-	req, _ := http.NewRequest("POST", host+"/api/_exo/"+commandName, bytes.NewBuffer(marshalledBody))
+	req, err := http.NewRequest("POST", host+"/api/_exo/"+commandName, bytes.NewBuffer(marshalledBody))
+	if err != nil {
+		return fmt.Errorf("creating request: %w", err)
+	}
+
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("Authorization", "Bearer "+c.accessToken)
 

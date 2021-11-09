@@ -19,14 +19,31 @@
   const esvUrl = 'https://secrets.deref.io/organizations';
 
   let vaultUrl: string = '';
+
+  const isValidUrl = (url: string): boolean => {
+    try {
+      const uri = new URL(url);
+      return (
+        uri.hostname === 'localhost' || uri.hostname === 'secrets.deref.io'
+      );
+    } catch (_err: unknown) {
+      return false;
+    }
+  };
 </script>
 
 <Layout>
   <WorkspaceNav {workspaceId} active="Variables" slot="navbar" />
   <CenterFormPanel title="Add Vault" {backRoute}>
-    <h1><Icon glyph="Lock" /> Add Secrets Vault</h1>
+    <h1><Icon glyph="Lock" />Add Secrets Vault</h1>
     <form
       on:submit={async () => {
+        if (!isValidUrl(vaultUrl)) {
+          alert(
+            ' The URL you entered is not a valid URL. Please enter a valid URL.',
+          );
+          return;
+        }
         await workspace.addVault({
           url: vaultUrl,
         });
