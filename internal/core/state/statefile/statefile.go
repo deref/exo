@@ -418,7 +418,6 @@ func (sto *Store) PatchComponent(ctx context.Context, input *state.PatchComponen
 		return nil, err
 	}
 	return &state.PatchComponentOutput{}, nil
-
 }
 
 func (sto *Store) RemoveComponent(ctx context.Context, input *state.RemoveComponentInput) (*state.RemoveComponentOutput, error) {

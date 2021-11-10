@@ -67,8 +67,3 @@ type OperationInvocation struct {
 	DurationMicros int
 	Success        bool
 }
-
-type telemetryRequest struct {
-	Method string                 `json:"method"`
-	Data   map[string]interface{} `json:"data"`
-}

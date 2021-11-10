@@ -692,20 +692,6 @@ func (ws *Workspace) SetComponentState(ctx context.Context, input *api.SetCompon
 	return &api.SetComponentStateOutput{}, nil
 }
 
-func combineLastEventAt(a, b *string) *string {
-	if a == nil {
-		return b
-	}
-	if b == nil {
-		return a
-	}
-	if strings.Compare(*a, *b) < 0 {
-		return a
-	} else {
-		return b
-	}
-}
-
 func (ws *Workspace) GetEvents(ctx context.Context, input *api.GetEventsInput) (*api.GetEventsOutput, error) {
 	streamNames := input.Streams
 	if streamNames == nil {
