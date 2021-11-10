@@ -29,7 +29,6 @@ type ExoTest struct {
 type ExoTester struct {
 	serverPort int
 	guiPort    int
-	pid        int
 	exoHome    string
 	exoBinary  string
 	fixtureDir string

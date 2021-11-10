@@ -1,7 +1,6 @@
 package server
 
 import (
-	"context"
 	"net/http"
 	"path"
 	"reflect"
@@ -19,9 +18,6 @@ type MethodHandler struct {
 	Name    string
 }
 
-const expectedSignature = "expected signature: func (ctx context.Context, input *YourInput) (*YourOutput, error)"
-
-var contextType = reflect.TypeOf((*context.Context)(nil)).Elem()
 var errorType = reflect.TypeOf((*error)(nil)).Elem()
 
 func (handler *MethodHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {

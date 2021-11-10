@@ -25,7 +25,6 @@ import (
 	"github.com/influxdata/go-syslog/v3/rfc5424"
 )
 
-var varDir string
 var pgrp int
 
 func Main() {

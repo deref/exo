@@ -10,10 +10,6 @@ import (
 	"github.com/deref/exo/test/tester"
 )
 
-type exoTestParams struct {
-	exoBinary string
-}
-
 func doTest(ctx context.Context, test tester.ExoTest, testName, exoBinPath, fixtureBasePath string, outputMutex *sync.Mutex) error {
 	tester := tester.MakeExoTester(exoBinPath, fixtureBasePath, test)
 

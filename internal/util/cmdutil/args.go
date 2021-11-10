@@ -38,7 +38,6 @@ func (pa *ParsedArgs) Dump() string {
 type argParser struct {
 	tokens []parseToken
 	idx    int
-	state  parseState
 	out    *ParsedArgs
 	err    error
 }
@@ -56,14 +55,6 @@ const (
 	parseTokenWord parseTokenTag = iota
 	parseTokenLongFlag
 	parseTokenShortFlag
-)
-
-type parseState int
-
-const (
-	parseStateCommand parseState = iota
-	parseStateArg
-	parseStateFlag
 )
 
 func (p *argParser) parse() {

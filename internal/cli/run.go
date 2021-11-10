@@ -17,10 +17,6 @@ func init() {
 	runCmd.Flags().StringVar(&applyFlags.Format, "format", "", "see `exo help apply`")
 }
 
-var runFlags struct {
-	Format string
-}
-
 var runCmd = &cobra.Command{
 	Use:   "run [flags] [manifest-file]",
 	Short: "Runs all processes and tails their logs",
