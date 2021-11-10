@@ -5,8 +5,8 @@ import {
   pendingRequest,
   refetchingResponse,
   successResponse,
-  WorkspaceApi,
 } from '../api';
+import type { WorkspaceApi } from '../api';
 import type { ProcessDescription } from './types';
 
 export const processes = writable(notRequested<ProcessDescription[]>());

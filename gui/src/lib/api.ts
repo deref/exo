@@ -258,6 +258,7 @@ export interface KernelApi {
   authEsv(): Promise<AuthEsvResult>;
   unauthEsv(): Promise<void>;
   getEsvUser(vaultUrl: string): Promise<EsvUser | null>;
+  saveEsvRefreshToken(host: string, refreshToken: string): Promise<void>;
   describeTasks(input?: DescribeTasksInput): Promise<TaskDescription[]>;
 }
 
@@ -325,6 +326,9 @@ export const api = (() => {
     const invoke = (method: string, data?: unknown) =>
       rpc(`/kernel/${method}`, {}, data);
     return {
+      async saveEsvRefreshToken(host: string, refreshToken: string) {
+        await invoke('save-esv-refresh-token', { host, refreshToken });
+      },
       async describeTemplates(): Promise<TemplateDescription[]> {
         const { templates } = (await invoke('describe-templates', {})) as any;
         return templates;

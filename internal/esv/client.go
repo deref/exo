@@ -31,6 +31,7 @@ type EsvClient interface {
 	StartAuthFlow(ctx context.Context) (AuthResponse, error)
 	GetWorkspaceSecrets(vaultURL string) (map[string]string, error)
 	DescribeSelf(ctx context.Context, vaultURL string) (*UserDescription, error)
+	SaveRefreshToken(ctx context.Context, refreshToken string) error
 }
 
 func NewEsvClient(tokenPath string) *esvClient {
@@ -87,6 +88,19 @@ func (c *esvClient) DescribeSelf(ctx context.Context, vaultURL string) (*UserDes
 	return resp, nil
 }
 
+func (c *esvClient) SaveRefreshToken(ctx context.Context, refreshToken string) error {
+	c.tokenMutex.Lock()
+	defer c.tokenMutex.Unlock()
+	c.refreshToken = refreshToken
+	c.accessToken = ""
+
+	err := ioutil.WriteFile(c.tokenPath, []byte(refreshToken), 0600)
+	if err != nil {
+		return fmt.Errorf("writing esv secret: %s", err)
+	}
+	return nil
+}
+
 func (c *esvClient) StartAuthFlow(ctx context.Context) (AuthResponse, error) {
 	codeResponse, err := requestDeviceCode()
 	if err != nil {
@@ -102,14 +116,8 @@ func (c *esvClient) StartAuthFlow(ctx context.Context) (AuthResponse, error) {
 			return
 		}
 
-		c.tokenMutex.Lock()
-		defer c.tokenMutex.Unlock()
-		c.refreshToken = tokens.RefreshToken
-		c.accessToken = ""
-
-		err = ioutil.WriteFile(c.tokenPath, []byte(tokens.RefreshToken), 0600)
-		if err != nil {
-			logger.Infof("writing esv secret: %s", err)
+		if err := c.SaveRefreshToken(ctx, tokens.RefreshToken); err != nil {
+			logger.Infof("got error saving token: %s", err)
 			return
 		}
 	}()
@@ -120,7 +128,7 @@ func (c *esvClient) StartAuthFlow(ctx context.Context) (AuthResponse, error) {
 	}, nil
 }
 
-func (c *esvClient) ensureAccessToken() error {
+func (c *esvClient) ensureAccessToken(host string) error {
 	c.tokenMutex.Lock()
 	defer c.tokenMutex.Unlock()
 
@@ -143,7 +151,7 @@ func (c *esvClient) ensureAccessToken() error {
 		c.refreshToken = strings.TrimSpace(string(tokenBytes))
 	}
 
-	result, err := getNewAccessToken(c.refreshToken)
+	result, err := getNewAccessToken(host, c.refreshToken)
 	if err != nil {
 		return fmt.Errorf("getting access token: %w", err)
 	}
@@ -159,7 +167,7 @@ func (c *esvClient) runCommand(output interface{}, host, commandName string, bod
 		return fmt.Errorf("marshalling command body: %w", err)
 	}
 
-	if err := c.ensureAccessToken(); err != nil {
+	if err := c.ensureAccessToken(host); err != nil {
 		return fmt.Errorf("getting access token: %w", err)
 	}
 

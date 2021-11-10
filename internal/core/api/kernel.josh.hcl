@@ -5,6 +5,10 @@ interface "kernel" {
     output "auth-code" "string" {}
   }
 
+  method "save-esv-refresh-token" {
+    input "refresh-token" "string" {}
+  }
+
   method "unauth-esv" {}
 
   method "get-esv-user" {

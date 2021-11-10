@@ -11,6 +11,7 @@ import (
 
 type Kernel interface {
 	AuthEsv(context.Context, *AuthEsvInput) (*AuthEsvOutput, error)
+	SaveEsvRefreshToken(context.Context, *SaveEsvRefreshTokenInput) (*SaveEsvRefreshTokenOutput, error)
 	UnauthEsv(context.Context, *UnauthEsvInput) (*UnauthEsvOutput, error)
 	GetEsvUser(context.Context, *GetEsvUserInput) (*GetEsvUserOutput, error)
 	CreateProject(context.Context, *CreateProjectInput) (*CreateProjectOutput, error)
@@ -39,6 +40,13 @@ type AuthEsvInput struct {
 type AuthEsvOutput struct {
 	AuthURL  string `json:"authUrl"`
 	AuthCode string `json:"authCode"`
+}
+
+type SaveEsvRefreshTokenInput struct {
+	RefreshToken string `json:"refreshToken"`
+}
+
+type SaveEsvRefreshTokenOutput struct {
 }
 
 type UnauthEsvInput struct {
@@ -159,6 +167,9 @@ type ReadDirOutput struct {
 func BuildKernelMux(b *josh.MuxBuilder, factory func(req *http.Request) Kernel) {
 	b.AddMethod("auth-esv", func(req *http.Request) interface{} {
 		return factory(req).AuthEsv
+	})
+	b.AddMethod("save-esv-refresh-token", func(req *http.Request) interface{} {
+		return factory(req).SaveEsvRefreshToken
 	})
 	b.AddMethod("unauth-esv", func(req *http.Request) interface{} {
 		return factory(req).UnauthEsv

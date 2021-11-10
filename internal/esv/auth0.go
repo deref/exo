@@ -1,6 +1,7 @@
 package esv
 
 import (
+	"bytes"
 	"encoding/json"
 	"fmt"
 	"io/ioutil"
@@ -28,11 +29,11 @@ type tokenResponse struct {
 }
 
 type accessTokenResult struct {
-	AccessToken string
-	Expiry      time.Time
+	AccessToken string    `json:"accessToken"`
+	Expiry      time.Time `json:"accessTokenExpiresAt"`
 }
 
-var clientId = "LNPi71pWh6trIbZOGxxGi5eilI5DakWE"
+var clientId = "BziSYLOmBGkd5Y2GFlhWhGIFWZhJDgga"
 var derefAuth0Domain = "https://deref.us.auth0.com"
 
 func requestDeviceCode() (deviceCodeResponse, error) {
@@ -124,41 +125,40 @@ func requestTokens(deviceCode string, interval int) (tokenResponse, error) {
 	}
 }
 
-func getNewAccessToken(refreshToken string) (accessTokenResult, error) {
-	uri := derefAuth0Domain + "/oauth/token"
-	now := time.Now()
+func getNewAccessToken(host, refreshToken string) (accessTokenResult, error) {
+	body, err := json.Marshal(map[string]string{"refreshToken": refreshToken})
 
-	values := url.Values{}
-	values.Set("client_id", clientId)
-	values.Set("refresh_token", refreshToken)
-	values.Set("grant_type", "refresh_token")
-	payloadString := values.Encode()
-
-	req, err := http.NewRequest("POST", uri, strings.NewReader(payloadString))
+	req, err := http.NewRequest("POST", host+"/api/_exo/get-access-token", bytes.NewBuffer(body))
 	if err != nil {
-		return accessTokenResult{}, fmt.Errorf("building refresh token request: %w", err)
+		return accessTokenResult{}, fmt.Errorf("creating request: %w", err)
 	}
 
-	req.Header.Add("content-type", "application/x-www-form-urlencoded")
+	req.Header.Set("Content-Type", "application/json")
 
-	res, err := http.DefaultClient.Do(req)
+	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		return accessTokenResult{}, fmt.Errorf("performing refresh token request: %w", err)
+		return accessTokenResult{}, fmt.Errorf("making token request: %w", err)
 	}
 
-	defer res.Body.Close()
-	body, _ := ioutil.ReadAll(res.Body)
-
-	if res.StatusCode == 200 {
-		tokens := tokenResponse{}
-		if err := json.Unmarshal(body, &tokens); err != nil {
-			return accessTokenResult{}, fmt.Errorf("unmarshalling auth token response: %w", err)
-		}
-		return accessTokenResult{
-			AccessToken: tokens.AccessToken,
-			Expiry:      now.Add(time.Second * time.Duration(tokens.ExpiresIn)),
-		}, nil
+	if resp.StatusCode == 401 {
+		return accessTokenResult{}, fmt.Errorf("refreshing access token: %w", AuthError)
 	}
 
-	return accessTokenResult{}, fmt.Errorf("unexpected status: %q", res.Status)
+	if resp.StatusCode != 200 && resp.StatusCode != 204 {
+		result, _ := ioutil.ReadAll(resp.Body)
+		fmt.Printf("body: %+v\n", string(result))
+		return accessTokenResult{}, fmt.Errorf("unexpected status code: %d", resp.StatusCode)
+	}
+
+	result, err := ioutil.ReadAll(resp.Body)
+	if err != nil {
+		return accessTokenResult{}, fmt.Errorf("reading command result: %w", err)
+	}
+
+	var output accessTokenResult
+	if err := json.Unmarshal(result, &output); err != nil {
+		return accessTokenResult{}, fmt.Errorf("unmarshalling command result: %w", err)
+	}
+
+	return output, nil
 }
