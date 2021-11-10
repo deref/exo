@@ -35,6 +35,14 @@ type Kernel struct {
 
 var _ api.Kernel = &Kernel{}
 
+func (kern *Kernel) SaveEsvRefreshToken(ctx context.Context, input *api.SaveEsvRefreshTokenInput) (*api.SaveEsvRefreshTokenOutput, error) {
+	err := kern.EsvClient.SaveRefreshToken(ctx, input.RefreshToken)
+	if err != nil {
+		return nil, fmt.Errorf("saving refresh token: %w", err)
+	}
+	return nil, nil
+}
+
 func (kern *Kernel) GetEsvUser(ctx context.Context, input *api.GetEsvUserInput) (*api.GetEsvUserOutput, error) {
 	self, err := kern.EsvClient.DescribeSelf(ctx, input.VaultURL)
 	if err != nil {

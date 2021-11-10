@@ -30,6 +30,13 @@
       return false;
     }
   };
+
+  const authEsv = async () => {
+    const uri = new URL(window.location.href);
+    uri.hash = '/auth-esv';
+    uri.searchParams.set('returnTo', `/workspaces/${workspace.id}/variables`);
+    window.location.href = uri.toString();
+  };
 </script>
 
 <Layout>
@@ -49,15 +56,8 @@
         });
         const user = await kernel.getEsvUser(vaultUrl);
         if (!user) {
-          const result = await api.kernel.authEsv();
-          window.open(result.authUrl, '_blank')?.focus();
-
-          // This alert is doing two jobs: informing the user of the auth code they
-          // should see in Auth0 as well as providing an indication that the user has
-          // finished authenticating when they dismiss the alert.
-          alert(
-            `You should see the following code in Auth0: ${result.authCode}`,
-          );
+          await authEsv();
+          return;
         }
         await router.push(
           `/workspaces/${encodeURIComponent(workspace.id)}/variables`,

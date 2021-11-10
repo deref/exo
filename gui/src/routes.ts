@@ -18,6 +18,7 @@ import ComponentDetails from './pages/ComponentDetails.svelte';
 import Preferences from './pages/Preferences.svelte';
 import Jobs from './pages/Jobs.svelte';
 import Job from './pages/Job.svelte';
+import AuthEsv from './pages/AuthEsv.svelte';
 import NotFound from './pages/NotFound.svelte';
 
 export default {
@@ -41,5 +42,6 @@ export default {
   '/preferences': Preferences,
   '/jobs': Jobs,
   '/jobs/:job': Job,
+  '/auth-esv': AuthEsv,
   '*': NotFound,
 };

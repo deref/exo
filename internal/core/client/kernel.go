@@ -26,6 +26,11 @@ func (c *Kernel) AuthEsv(ctx context.Context, input *api.AuthEsvInput) (output *
 	return
 }
 
+func (c *Kernel) SaveEsvRefreshToken(ctx context.Context, input *api.SaveEsvRefreshTokenInput) (output *api.SaveEsvRefreshTokenOutput, err error) {
+	err = c.client.Invoke(ctx, "save-esv-refresh-token", input, &output)
+	return
+}
+
 func (c *Kernel) UnauthEsv(ctx context.Context, input *api.UnauthEsvInput) (output *api.UnauthEsvOutput, err error) {
 	err = c.client.Invoke(ctx, "unauth-esv", input, &output)
 	return
