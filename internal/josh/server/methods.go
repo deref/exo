@@ -18,8 +18,6 @@ type MethodHandler struct {
 	Name    string
 }
 
-var errorType = reflect.TypeOf((*error)(nil)).Elem()
-
 func (handler *MethodHandler) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 	if req.Method != "POST" {
 		err := errutil.HTTPErrorf(http.StatusMethodNotAllowed, "method not allowed: %q", req.Method)
