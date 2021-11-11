@@ -53,6 +53,7 @@ func (et ExoTester) RunTest(ctx context.Context, test ExoTest) (io.Reader, error
 }
 
 func (et ExoTester) WaitTillProcessesReachState(ctx context.Context, state string, names []string) error {
+	et.logger.Info("Waiting for ", names, " to reach state ", state)
 	errTimeout := fmt.Errorf("timed out waiting for %q to reach %s", strings.Join(names, ", "), state)
 	for {
 		processes, err := et.PS(ctx)
