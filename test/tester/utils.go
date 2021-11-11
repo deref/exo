@@ -1,6 +1,7 @@
 package tester
 
 import (
+	"bytes"
 	"context"
 	"fmt"
 	"io/ioutil"
@@ -42,6 +43,7 @@ func ExpectResponse(ctx context.Context, endpoint string, expectedResponse strin
 		return fmt.Errorf("failed to read response body: %w", err)
 	}
 
+	body = bytes.TrimSpace(body)
 	if string(body) != expectedResponse {
 		return fmt.Errorf("expected response body to be %q, got %q", expectedResponse, string(body))
 	}
