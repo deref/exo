@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/deref/exo/test/tester"
@@ -93,8 +94,10 @@ var tests = map[string]tester.ExoTest{
 		Test: func(ctx context.Context, t tester.ExoTester) error {
 			// FIXME: This doesn't work right now because we don't have an easy way of
 			// removing volumes that are still attached to a previous container.
-			if _, _, err := t.RunCmd(ctx, "docker", []string{"volume", "rm", "e2etest-start-counter"}); err != nil {
-				return err
+			if _, stderr, err := t.RunCmd(ctx, "docker", []string{"volume", "rm", "e2etest-start-counter"}); err != nil {
+				if !strings.Contains(stderr, "No such volume") {
+					return err
+				}
 			}
 
 			if _, _, err := t.RunExo(ctx, "init"); err != nil {
