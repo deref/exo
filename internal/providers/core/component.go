@@ -20,7 +20,6 @@ type ComponentBase struct {
 	WorkspaceRoot        string
 	WorkspaceEnvironment map[string]string
 	Logger               logging.Logger
-	isDeleted            bool
 }
 
 func (c ComponentBase) GetComponentID() string {
