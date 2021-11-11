@@ -40,7 +40,7 @@ func (kern *Kernel) SaveEsvRefreshToken(ctx context.Context, input *api.SaveEsvR
 	if err != nil {
 		return nil, fmt.Errorf("saving refresh token: %w", err)
 	}
-	return nil, nil
+	return &api.SaveEsvRefreshTokenOutput{}, nil
 }
 
 func (kern *Kernel) GetEsvUser(ctx context.Context, input *api.GetEsvUserInput) (*api.GetEsvUserOutput, error) {
@@ -49,7 +49,7 @@ func (kern *Kernel) GetEsvUser(ctx context.Context, input *api.GetEsvUserInput) 
 		return nil, fmt.Errorf("getting esv user: %w", err)
 	}
 	if self == nil {
-		return nil, nil
+		return &api.GetEsvUserOutput{}, nil
 	}
 	return &api.GetEsvUserOutput{Email: self.Me.Email}, nil
 }
@@ -74,7 +74,7 @@ func (kern *Kernel) UnauthEsv(ctx context.Context, input *api.UnauthEsvInput) (*
 	if err != nil {
 		return nil, fmt.Errorf("unauthenticating ESV: %w", err)
 	}
-	return nil, nil
+	return &api.UnauthEsvOutput{}, nil
 }
 
 func (kern *Kernel) CreateProject(ctx context.Context, input *api.CreateProjectInput) (*api.CreateProjectOutput, error) {

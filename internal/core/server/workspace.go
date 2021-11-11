@@ -841,7 +841,7 @@ func (ws *Workspace) RestartComponents(ctx context.Context, input *api.RestartCo
 	// 1. Restart only the component(s) requested. Do not cascade restarts to any other components.
 	// 2. Stop everything that depends on these components in reverse dependency order, restart these components,
 	//    then restart the dependents in normal order again.
-	// 3. Ensure that all dependendencies are started (in normal order), then restart these components (current behaviour).
+	// 3. Ensure that all dependencies are started (in normal order), then restart these components (current behaviour).
 	query := allProcessQuery(withRefs(input.Refs...), withDependencies)
 	jobID := ws.controlEachComponent(ctx, "restart", query, func(desc *api.ComponentDescription) interface{} {
 		if !isRunnableType(desc.Type) {
@@ -955,7 +955,7 @@ func (ws *Workspace) ExportProcfile(ctx context.Context, input *api.ExportProcfi
 
 	// Produce a stable order of processes for export.  Ideally, this would
 	// preserve the original order from an imported Procfile, but that would
-	// require some metadata on components.  Acheiving a stable order on the
+	// require some metadata on components.  Achieving a stable order on the
 	// first export is the next best thing.
 	procfile.Organize(&unixProcs)
 
@@ -978,7 +978,7 @@ func (ws *Workspace) ReadFile(ctx context.Context, input *api.ReadFileInput) (*a
 	content, err := os.ReadFile(resolvedPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, nil
+			return &api.ReadFileOutput{}, nil
 		}
 		return nil, err
 	}
