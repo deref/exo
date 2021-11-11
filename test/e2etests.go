@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/deref/exo/test/tester"
@@ -96,6 +97,48 @@ var tests = map[string]tester.ExoTest{
 				return err
 			}
 			if err := t.WaitTillProcessesReachState(ctx, "stopped", []string{"web", "echo-short"}); err != nil {
+				return err
+			}
+
+			return nil
+		},
+	},
+	"start-counter": {
+		FixtureDir: "start-counter",
+		Test: func(ctx context.Context, t tester.ExoTester) error {
+			// FIXME: This doesn't work right now because we don't have an easy way of
+			// removing volumes that are still attached to a previous container.
+			if _, stderr, err := t.RunCmd(ctx, "docker", []string{"volume", "rm", "e2etest-start-counter"}); err != nil {
+				if !strings.Contains(stderr, "No such volume") {
+					return err
+				}
+			}
+
+			if _, _, err := t.RunExo(ctx, "init"); err != nil {
+				return err
+			}
+			if _, _, err := t.RunExo(ctx, "start"); err != nil {
+				return err
+			}
+
+			if err := t.WaitTillProcessesReachState(ctx, "running", []string{"counter"}); err != nil {
+				return err
+			}
+			if err := tester.ExpectResponse(ctx, "http://localhost:44225/count", "1"); err != nil {
+				return err
+			}
+
+			if _, _, err := t.RunExo(ctx, "stop"); err != nil {
+				return err
+			}
+			if _, _, err := t.RunExo(ctx, "start"); err != nil {
+				return err
+			}
+
+			if err := t.WaitTillProcessesReachState(ctx, "running", []string{"counter"}); err != nil {
+				return err
+			}
+			if err := tester.ExpectResponse(ctx, "http://localhost:44225/count", "2"); err != nil {
 				return err
 			}
 

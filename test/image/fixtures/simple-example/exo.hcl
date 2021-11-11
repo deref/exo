@@ -22,7 +22,4 @@ components {
     }
     env_file = "./env"
   }
-
-  volume "logvolume01" {}
-
 }
