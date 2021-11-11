@@ -52,6 +52,7 @@ func (et ExoTester) RunTest(ctx context.Context, test ExoTest) (io.Reader, error
 }
 
 func (et ExoTester) WaitTillProcessesReachState(ctx context.Context, state string, names []string) error {
+	et.logger.Info("Waiting for ", names, " to reach state ", state)
 	errTimeout := fmt.Errorf("timed out waiting for %q to reach %s", strings.Join(names, ", "), state)
 	for {
 		processes, err := et.PS(ctx)
@@ -86,9 +87,9 @@ func (et ExoTester) WaitTillProcessesReachState(ctx context.Context, state strin
 }
 
 // Runs an exo CLI command and blocks until it terminates.
-func (et ExoTester) RunExo(ctx context.Context, arguments ...string) (stdout, stderr string, err error) {
+func (et ExoTester) RunCmd(ctx context.Context, program string, arguments []string) (stdout, stderr string, err error) {
 	path, _ := os.LookupEnv("PATH")
-	cmd := exec.CommandContext(ctx, et.exoBinary, arguments...)
+	cmd := exec.CommandContext(ctx, program, arguments...)
 	cmd.Dir = et.fixtureDir
 	cmd.Env = append(cmd.Env, "EXO_HOME="+et.exoHome)
 	cmd.Env = append(cmd.Env, "PATH="+path)
@@ -99,12 +100,17 @@ func (et ExoTester) RunExo(ctx context.Context, arguments ...string) (stdout, st
 	stderrWriter := io.MultiWriter(&stderrBuffer, logWriter)
 	cmd.Stderr = stderrWriter
 	cmd.Stdout = stdoutWriter
-	et.logger.Debug("Running exo ", cmd.Args)
-	et.logger.Debug("env ", cmd.Env)
-	et.logger.Debug("wd ", cmd.Dir)
+	et.logger.Debug("Running ", cmd.Args)
+	et.logger.Debug("env: ", cmd.Env)
+	et.logger.Debug("working dir: ", cmd.Dir)
 	err = cmd.Run()
 	et.logger.Debug("exit code: ", cmd.ProcessState.ExitCode())
 	return stdoutBuffer.String(), stderrBuffer.String(), err
+}
+
+// Runs an exo CLI command and blocks until it terminates.
+func (et ExoTester) RunExo(ctx context.Context, arguments ...string) (stdout, stderr string, err error) {
+	return et.RunCmd(ctx, et.exoBinary, arguments)
 }
 
 type psProcessInfo struct {
