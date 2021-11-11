@@ -1,3 +1,9 @@
-FROM bash:5
+FROM golang:1.17
 
-CMD ["nc", "-l", "-p", "44224"]
+WORKDIR /go/src/app
+
+COPY go.mod .
+RUN go mod download
+COPY . .
+RUN ["go", "build", "-o=main", "."]
+CMD ["./main"]

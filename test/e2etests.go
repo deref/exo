@@ -3,7 +3,9 @@ package main
 import (
 	"context"
 	"fmt"
+	"io/ioutil"
 	"net"
+	"net/http"
 	"strconv"
 	"time"
 
@@ -54,11 +56,30 @@ var tests = map[string]tester.ExoTest{
 				timeout := time.Second
 				conn, err := net.DialTimeout("tcp", net.JoinHostPort("localhost", strconv.Itoa(port)), timeout)
 				if err != nil {
-					return fmt.Errorf("failed to connect to port %d: %v", port, err)
+					return fmt.Errorf("failed to connect to port %d: %w", port, err)
 				}
 				if conn != nil {
 					defer conn.Close()
 				}
+			}
+
+			resp, err := http.Get("http://localhost:44224")
+			if err != nil {
+				return fmt.Errorf("failed to get response from port 44224: %w", err)
+			}
+
+			if resp.StatusCode != 200 {
+				return fmt.Errorf("expected status code 200, got %d", resp.StatusCode)
+			}
+
+			body, err := ioutil.ReadAll(resp.Body)
+			if err != nil {
+				return fmt.Errorf("failed to read response body: %w", err)
+			}
+
+			expectedResponse := "Hi!"
+			if string(body) != expectedResponse {
+				return fmt.Errorf("expected response body to be %q, got %q", expectedResponse, string(body))
 			}
 
 			return nil
