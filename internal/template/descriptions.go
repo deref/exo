@@ -12,6 +12,7 @@ func GetTemplateDescriptions() []api.TemplateDescription {
 	// TODO: make this dynamic
 	templates := []api.TemplateDescription{
 		{Name: "typescript-nextjs-prisma-postgres", DisplayName: "Next.js + Prisma"},
+		{Name: "go-gin-webserver", DisplayName: "Golang Webserver"},
 		//{Name: "ackee", DisplayName: "Ackee"},
 		//{Name: "blitzjs", DisplayName: "Blitz.js"},
 		//{Name: "calendso", DisplayName: "Calendso"},
