@@ -19,8 +19,8 @@ components {
     ports = [ "44224:44224" ]
     environment = {
       PORT = "44224"
-      RESPONSE = "Hi!"
     }
+    env_file = "./env"
   }
 
   volume "logvolume01" {}
