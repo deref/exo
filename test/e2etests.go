@@ -121,6 +121,9 @@ var tests = map[string]tester.ExoTest{
 				return err
 			}
 
+			if err := t.WaitTillProcessesReachState(ctx, "running", []string{"counter"}); err != nil {
+				return err
+			}
 			if err := tester.ExpectResponse(ctx, "http://localhost:44225/count", "2"); err != nil {
 				return err
 			}
