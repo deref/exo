@@ -5,10 +5,7 @@
   export let workspaces: WorkspaceDescription[];
 </script>
 
-<!-- TODO: Replace with '#/new-project' when templates are ready. -->
-<button on:click={() => router.push('#/new-project/empty')}>
-  Add new project
-</button>
+<button on:click={() => router.push('#/new-project')}> Add new project </button>
 
 <div>
   {#each workspaces as workspace}
