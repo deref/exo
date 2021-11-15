@@ -66,6 +66,14 @@ func (c *Container) buildImage(ctx context.Context, spec *image.Spec) error {
 	}
 	defer buildContext.Close()
 
+	extraHosts := append([]string{
+		// host.docker.internal is available on Mac, where it is required because
+		// localhost for the Daemon is in a VM. Adding it manually makes it
+		// available for Linux and is harmless to re-add it on Mac.
+		// See <https://github.com/moby/moby/pull/40007> for background.
+		"host.docker.internal:host-gateway",
+	}, spec.Build.ExtraHosts.Values()...)
+
 	opts := types.ImageBuildOptions{
 		//Tags           []string
 		//SuppressOutput bool
@@ -99,7 +107,7 @@ func (c *Container) buildImage(ctx context.Context, spec *image.Spec) error {
 		// specified here do not need to have a valid parent chain to match cache.
 		CacheFrom: spec.Build.CacheFrom.Values(),
 		//SecurityOpt []string
-		ExtraHosts: spec.Build.ExtraHosts.Values(),
+		ExtraHosts: extraHosts,
 		Target:     spec.Build.Target.Value,
 		//SessionID   string
 		Platform: spec.Platform,
