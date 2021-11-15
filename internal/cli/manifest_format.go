@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"fmt"
 	"os"
 
 	"github.com/deref/exo/internal/manifest/exohcl/hclgen"
@@ -12,16 +13,30 @@ func init() {
 }
 
 var manifestFormatCmd = &cobra.Command{
-	Use:   "format <manifest>",
-	Short: "Loads a manifest file and reformats it to standard out.",
-	Args:  cobra.ExactArgs(1),
+	Use:   "format [<manifest>]",
+	Short: "Formats a manifest file",
+	Long: `Reformats a manifest file at the given path.
+
+If the path is not provided, reads from stdin and writes to stdout.`,
+	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := newContext()
-		m, err := loadManifest(ctx, os.Stderr, args[0])
+		in := "/dev/stdin"
+		out := "/dev/stdout"
+		if len(args) > 0 {
+			in = args[0]
+			out = in
+		}
+		m, err := loadManifest(ctx, os.Stderr, in)
 		if err != nil {
 			return err
 		}
-		_, err = hclgen.WriteTo(os.Stdout, hclgen.FileFromStructure(m.File))
+		f, err := os.OpenFile(out, os.O_WRONLY|os.O_TRUNC, 0600)
+		if err != nil {
+			return fmt.Errorf("opening out: %w", err)
+		}
+		defer f.Close()
+		_, err = hclgen.WriteTo(f, hclgen.FileFromStructure(m.File))
 		return err
 	},
 }
