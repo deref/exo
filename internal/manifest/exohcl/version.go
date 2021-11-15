@@ -34,6 +34,13 @@ func NewFormatVersion(m *Manifest) *FormatVersion {
 }
 
 func (ver *FormatVersion) Analyze(ctx *AnalysisContext) {
+	if ver.Attribute == nil {
+		ctx.AppendDiags(&hcl.Diagnostic{
+			Severity: hcl.DiagError,
+			Summary:  "exo version attribute is required",
+		})
+		return
+	}
 	s, diag := parseLiteralString(ver.Attribute.Expr)
 	if diag != nil {
 		ctx.AppendDiags(diag)
