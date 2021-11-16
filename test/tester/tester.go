@@ -80,8 +80,7 @@ func (et ExoTester) WaitTillProcessesReachState(ctx context.Context, state strin
 		select {
 		case <-ctx.Done():
 			return errTimeout
-		default:
-			time.Sleep(time.Millisecond * 100)
+		case <-time.After(100 * time.Millisecond):
 		}
 	}
 }
