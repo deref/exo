@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"os/user"
 	"path"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -198,8 +199,14 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 		// No logging configuration specified, so default to logging to exo's
 		// syslog service.
 		logCfg.Type = "syslog"
+		syslogHost := "localhost"
+		// TODO: Find an OS-agnostic way to figure out the "gateway-host" name as
+		// reachable from the dockerd process.
+		if runtime.GOOS == "darwin" {
+			syslogHost = "host.docker.internal"
+		}
 		logCfg.Config = map[string]string{
-			"syslog-address":  fmt.Sprintf("udp://localhost:%d", c.SyslogPort),
+			"syslog-address":  fmt.Sprintf("udp://%s:%d", syslogHost, c.SyslogPort),
 			"syslog-facility": "1", // "user-level messages"
 			"tag":             c.ComponentID,
 			"syslog-format":   "rfc5424micro",
