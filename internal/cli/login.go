@@ -2,8 +2,9 @@ package cli
 
 import (
 	"fmt"
+	"net/url"
 
-	"github.com/deref/exo/internal/core/api"
+	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
 )
 
@@ -17,19 +18,22 @@ var loginCmd = &cobra.Command{
 	Hidden: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		checkOrEnsureServer()
-		ctx := newContext()
-		cl := newClient()
-		kernel := cl.Kernel()
-
-		authResult, err := kernel.AuthEsv(ctx, &api.AuthEsvInput{})
+		serverURL := effectiveServerURL()
+		uri, err := url.Parse(serverURL)
 		if err != nil {
-			return fmt.Errorf("getting auth url: %w", err)
+			return fmt.Errorf("parsing server url %q: %w", serverURL, err)
 		}
 
-		// This link is not opened automatically because it's single use only. That
-		// means if we open it in the wrong browser it becomes worthless.
-		fmt.Println("Open the following URL to authenticate:")
-		fmt.Println(authResult.AuthURL)
+		uri.Fragment = "/auth-esv"
+		authURL, err := addAuthTokenToURL(uri.String())
+		if err != nil {
+			return fmt.Errorf("adding auth token to url %q: %w", uri.String(), err)
+		}
+
+		fmt.Println("Opening " + authURL)
+		if err := browser.OpenURL(authURL); err != nil {
+			fmt.Println("Failed to open a browser. Please open the above link manually.")
+		}
 		return nil
 	},
 }
