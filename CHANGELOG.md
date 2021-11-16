@@ -4,11 +4,18 @@ All notable changes to this project will be documented in this file.
 
 This project adhears to [CalVer](./doc/versioning.md).
 
-## Unreleased
+### 2021.11.16
 
 ### Added
 
-- Project templates
+- [#337](https://github.com/deref/exo/pull/337), [#343](https://github.com/deref/exo/pull/343), [#504](https://github.com/deref/exo/pull/504) Project templates
+- [#515](https://github.com/deref/exo/pull/515), [#516](https://github.com/deref/exo/pull/516), [#520](https://github.com/deref/exo/pull/520) Authentication CLI for Deref web services (specifically: Secrets)
+- [#477](https://github.com/deref/exo/pull/477) The `logs` command learned `--no-follow`
+
+### Fixed
+
+- [#505](https://github.com/deref/exo/pull/505) Syslog for Docker on both Mac and Linux.
+- [#473](https://github.com/deref/exo/pull/473) Failure on API/CLI mismatches after upgrades.
 
 ## 2021.10.29
 
