@@ -978,7 +978,7 @@ func (ws *Workspace) ReadFile(ctx context.Context, input *api.ReadFileInput) (*a
 	content, err := os.ReadFile(resolvedPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return &api.ReadFileOutput{}, nil
+			return nil, nil
 		}
 		return nil, err
 	}
