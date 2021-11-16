@@ -21,6 +21,18 @@ var guiFlags struct {
 	Print bool
 }
 
+func addAuthTokenToURL(uri string) (string, error) {
+	// Add a token to auth.
+	u, err := url.Parse(uri)
+	if err != nil {
+		return "", fmt.Errorf("parsing endpoint: %w", err)
+	}
+	query := u.Query()
+	query.Add("token", mustGetToken())
+	u.RawQuery = query.Encode()
+	return u.String(), nil
+}
+
 var guiCmd = &cobra.Command{
 	Use:   "gui",
 	Short: "Open exo gui in a web browser",
@@ -49,15 +61,10 @@ If the current directory is part of a workspace, navigates to it.`,
 			endpoint = routes.WorkspaceURL(*output.ID)
 		}
 
-		// Add a token to auth.
-		u, err := url.Parse(endpoint)
+		endpoint, err = addAuthTokenToURL(endpoint)
 		if err != nil {
-			return fmt.Errorf("parsing endpoint: %w", err)
+			return err
 		}
-		query := u.Query()
-		query.Add("token", mustGetToken())
-		u.RawQuery = query.Encode()
-		endpoint = u.String()
 
 		if guiFlags.Print {
 			fmt.Println(endpoint)
