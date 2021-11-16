@@ -48,8 +48,9 @@ For more, checkout the [Exo documentation](https://docs.deref.io/exo/), watch so
 ## Support
 
 Feel free to [open an issue](https://github.com/deref/exo/issues),
-[start a discussion](https://github.com/deref/exo/discussions), or pop-in to our
-[#exo Slack channel](https://join.slack.com/t/deref-community/shared_invite/zt-tu8arun7-qqpVcTe3IDHjpSG_TrSaBQ).
+[tweet at us](https://twitter.com/intent/tweet?via=deref_inc),
+[start a discussion](https://github.com/deref/exo/discussions),
+or pop-in to our [#exo Slack channel](https://join.slack.com/t/deref-community/shared_invite/zt-tu8arun7-qqpVcTe3IDHjpSG_TrSaBQ).
 
 ## Telemetry
 
