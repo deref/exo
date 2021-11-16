@@ -49,7 +49,7 @@ func (kern *Kernel) GetEsvUser(ctx context.Context, input *api.GetEsvUserInput) 
 		return nil, fmt.Errorf("getting esv user: %w", err)
 	}
 	if self == nil {
-		return &api.GetEsvUserOutput{}, nil
+		return nil, nil
 	}
 	return &api.GetEsvUserOutput{Email: self.Me.Email}, nil
 }
