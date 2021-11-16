@@ -89,6 +89,11 @@ func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput)
 }
 
 func (c *Container) create(ctx context.Context, spec *Spec) error {
+	dockerInfo, err := c.Docker.Info(ctx)
+	if err != nil {
+		return fmt.Errorf("getting docker info: %w", err)
+	}
+
 	var healthCfg *container.HealthConfig
 	if spec.Healthcheck != nil {
 		healthCfg = &container.HealthConfig{
@@ -202,7 +207,7 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 		syslogHost := "localhost"
 		// TODO: Find an OS-agnostic way to figure out the "gateway-host" name as
 		// reachable from the dockerd process.
-		if runtime.GOOS == "darwin" {
+		if runtime.GOOS == "darwin" || strings.Contains(dockerInfo.KernelVersion, "microsoft") {
 			syslogHost = "host.docker.internal"
 		}
 		logCfg.Config = map[string]string{
@@ -306,7 +311,6 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 		Init: spec.Init.Ptr(),
 	}
 
-	var err error
 	if hostCfg.IpcMode, err = c.parseIPCMode(spec.IPC.Value); err != nil {
 		return err
 	}
