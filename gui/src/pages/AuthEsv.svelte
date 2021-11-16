@@ -1,10 +1,12 @@
 <script lang="ts">
+  import { onMount } from 'svelte';
+
   import { api } from '../lib/api';
 
   /*const esvHost = 'http://localhost:5000';*/
   const esvHost = 'https://secrets.deref.io';
 
-  (async () => {
+  onMount(async () => {
     const queryParams = new URLSearchParams(window.location.search);
     const returnTo = queryParams.get('returnTo') ?? '/';
     const refreshToken = queryParams.get('refreshToken');
@@ -25,5 +27,5 @@
       `/api/send-to-exo?${params.toString()}`,
     )}`;
     window.location.href = dest;
-  })();
+  });
 </script>
