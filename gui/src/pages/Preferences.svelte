@@ -1,13 +1,14 @@
 <script lang="ts">
   import Button from '../components/Button.svelte';
   import Layout from '../components/Layout.svelte';
-  import Textbox from '../components/Textbox.svelte';
   import IconButton from '../components/IconButton.svelte';
   import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
   import { theme, themeOptions } from '../lib/theme';
   import type { Preferences } from '../lib/preferences';
   import { preferences } from '../lib/preferences';
   import { onMount } from 'svelte';
+  import InputQuantity from '../components/form/InputQuantity.svelte';
+  import InputSelection from '../components/form/InputSelection.svelte';
 
   type PreferenceName = keyof Preferences;
 
@@ -63,6 +64,8 @@
   onMount(() => {
     dirtyPrefs = $preferences;
   });
+
+  let testBindQVal = '215px';
 </script>
 
 <Layout>
@@ -105,15 +108,30 @@
           {#each group.preferences as preference}
             <div class="input-row">
               <code>{preference.name}</code>
-              <Textbox
-                bind:value={dirtyPrefs[preference.name]}
-                on:input={() => preferences.apply({ ...dirtyPrefs })}
-                --input-width="100%"
-              />
+              {#if preference.type === 'quantity'}
+                <InputQuantity
+                  bind:value={dirtyPrefs[preference.name]}
+                  on:input={() => preferences.apply({ ...dirtyPrefs })}
+                  unitOptions={preference.units}
+                />
+              {:else if preference.type === 'select'}
+                <InputSelection
+                  bind:value={dirtyPrefs[preference.name]}
+                  on:input={() => preferences.apply({ ...dirtyPrefs })}
+                  options={preference.options}
+                />
+              {/if}
             </div>
           {/each}
         </div>
       {/each}
+    </div>
+    <hr />
+    <div>
+      <p>
+        testBindQVal = {testBindQVal}
+      </p>
+      <InputQuantity bind:value={testBindQVal} unitOptions={['px', 'rem']} />
     </div>
   </CenterFormPanel>
 </Layout>
