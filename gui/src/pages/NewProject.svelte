@@ -49,7 +49,7 @@
           <button
             on:click={() => {
               router.push(
-                `#/new-project/${template.name}${
+                `#/new-project/${encodeURIComponent(template.name)}${
                   !!root ? `?root=${encodeURIComponent(root)}` : ''
                 }`,
               );
