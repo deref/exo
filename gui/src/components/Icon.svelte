@@ -26,9 +26,11 @@
     | 'LogoFastify'
     | 'LogoFlask'
     | 'LogoGhost'
+    | 'LogoGolang'
     | 'LogoHasura'
     | 'LogoLaravel'
     | 'LogoNext'
+    | 'LogoNginx'
     | 'LogoNode'
     | 'LogoNuxt'
     | 'LogoRuby'
@@ -71,9 +73,11 @@
   import LogoFastifyGlyph from './icon/glyphs/LogoFastify.svelte';
   import LogoFlaskGlyph from './icon/glyphs/LogoFlask.svelte';
   import LogoGhostGlyph from './icon/glyphs/LogoGhost.svelte';
+  import LogoGolangGlyph from './icon/glyphs/LogoGolang.svelte';
   import LogoHasuraGlyph from './icon/glyphs/LogoHasura.svelte';
   import LogoLaravelGlyph from './icon/glyphs/LogoLaravel.svelte';
   import LogoNextGlyph from './icon/glyphs/LogoNext.svelte';
+  import LogoNginxGlyph from './icon/glyphs/LogoNginx.svelte';
   import LogoNodeGlyph from './icon/glyphs/LogoNode.svelte';
   import LogoNuxtGlyph from './icon/glyphs/LogoNuxt.svelte';
   import LogoRubyGlyph from './icon/glyphs/LogoRuby.svelte';
@@ -139,12 +143,16 @@
   <LogoFlaskGlyph />
 {:else if glyph === 'LogoGhost'}
   <LogoGhostGlyph />
+{:else if glyph === 'LogoGolang'}
+  <LogoGolangGlyph />
 {:else if glyph === 'LogoHasura'}
   <LogoHasuraGlyph />
 {:else if glyph === 'LogoLaravel'}
   <LogoLaravelGlyph />
 {:else if glyph === 'LogoNext'}
   <LogoNextGlyph />
+{:else if glyph === 'LogoNginx'}
+  <LogoNginxGlyph />
 {:else if glyph === 'LogoNode'}
   <LogoNodeGlyph />
 {:else if glyph === 'LogoNuxt'}
