@@ -9,6 +9,9 @@
   import * as router from 'svelte-spa-router';
   import type { IconGlyph } from '../components/Icon.svelte';
 
+  const queryString = router.querystring;
+  const root = new URLSearchParams($queryString ?? '').get('root');
+
   let search: string = '';
 
   const logoGlyph = (ig: string) => (ig || 'Doc') as IconGlyph;
@@ -45,7 +48,11 @@
                 .slice(0, search.length) === search.toLocaleLowerCase()) as template}
           <button
             on:click={() => {
-              router.push(`#/new-project/${template.name}`);
+              router.push(
+                `#/new-project/${template.name}${
+                  !!root ? `?root=${encodeURIComponent(root)}` : ''
+                }`,
+              );
             }}
           >
             <Icon glyph={logoGlyph(template.iconGlyph)} />
