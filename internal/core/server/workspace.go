@@ -373,6 +373,12 @@ func (ws *Workspace) DescribeComponents(ctx context.Context, input *api.Describe
 	return output, nil
 }
 
+func (ws *Workspace) initController(ctx context.Context, desc api.ComponentDescription) (Controller, error) {
+	ctrl := ws.newController(ctx, desc)
+	err := ctrl.InitResource()
+	return ctrl, err
+}
+
 // TODO: Argument should be type+id, no spec or state or anything like that.
 func (ws *Workspace) newController(ctx context.Context, desc api.ComponentDescription) Controller {
 	description, err := ws.describe(ctx)
@@ -1089,8 +1095,8 @@ func (ws *Workspace) goControlComponents(t *task.Task, query componentQuery, mak
 }
 
 func (ws *Workspace) query(ctx context.Context, desc api.ComponentDescription, output interface{}, input interface{}) error {
-	ctrl := ws.newController(ctx, desc)
-	if err := ctrl.InitResource(); err != nil {
+	ctrl, err := ws.initController(ctx, desc)
+	if err != nil {
 		return err
 	}
 	out, err := josh.Send(ctx, ctrl, input)
@@ -1099,8 +1105,8 @@ func (ws *Workspace) query(ctx context.Context, desc api.ComponentDescription, o
 }
 
 func (ws *Workspace) control(ctx context.Context, desc api.ComponentDescription, input interface{}) error {
-	ctrl := ws.newController(ctx, desc)
-	if err := ctrl.InitResource(); err != nil {
+	ctrl, err := ws.initController(ctx, desc)
+	if err != nil {
 		return err
 	}
 	// TODO: Figure out how to avoid special-casing destroy.
