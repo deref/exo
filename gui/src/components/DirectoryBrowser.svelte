@@ -72,20 +72,15 @@
 
   .directories {
     margin: 12px 0;
+    max-height: 20rem;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border-radius: 5px;
+    box-shadow: var(--button-shadow);
   }
 
   .directories button {
     border-radius: 0;
-  }
-
-  .directories button:first-of-type {
-    border-top-left-radius: 5px;
-    border-top-right-radius: 5px;
-  }
-
-  .directories button:last-of-type {
-    border-bottom-left-radius: 5px;
-    border-bottom-right-radius: 5px;
   }
 
   button {
@@ -100,8 +95,11 @@
     grid-template-columns: max-content 2fr;
     align-items: center;
     gap: 12px;
-    margin-top: 1px;
     outline: none;
+  }
+
+  button:not(:last-child) {
+    margin-bottom: 1px;
   }
 
   button:disabled {
@@ -121,5 +119,11 @@
   button:focus,
   button:focus-within {
     box-shadow: var(--shadow-focus) !important;
+  }
+
+  .directories button:focus,
+  .directories button:focus-within {
+    margin: 1px 2px;
+    padding: 5px 8px;
   }
 </style>
