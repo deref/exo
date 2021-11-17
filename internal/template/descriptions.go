@@ -11,9 +11,9 @@ var bucketURL = "https://exo-starter-templates.s3.us-west-2.amazonaws.com"
 func GetTemplateDescriptions() []api.TemplateDescription {
 	// TODO: make this dynamic
 	templates := []api.TemplateDescription{
-		{Name: "typescript-nextjs-prisma-postgres", DisplayName: "Next.js + Prisma"},
-		{Name: "go-gin-webserver", DisplayName: "Golang web server"},
-		{Name: "nginx", DisplayName: "Nginx static web server"},
+		{Name: "typescript-nextjs-prisma-postgres", DisplayName: "Next.js + Prisma + Postgres", IconGlyph: "LogoNext"},
+		{Name: "go-gin-webserver", DisplayName: "Go + Gin web server", IconGlyph: "LogoGolang"},
+		{Name: "nginx", DisplayName: "Nginx static web server", IconGlyph: "LogoNginx"},
 		//{Name: "ackee", DisplayName: "Ackee"},
 		//{Name: "blitzjs", DisplayName: "Blitz.js"},
 		//{Name: "calendso", DisplayName: "Calendso"},
