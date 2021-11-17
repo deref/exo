@@ -314,9 +314,23 @@ func (kern *Kernel) ReadDir(ctx context.Context, input *api.ReadDirInput) (*api.
 
 	results := make([]api.DirectoryEntry, len(entries))
 	for i, e := range entries {
+		isDir := e.IsDir()
+		if e.Type()&os.ModeSymlink != 0 {
+			originFile, err := os.Readlink(filepath.Join(input.Path, e.Name()))
+			if err != nil {
+				return nil, fmt.Errorf("resolving symlink: %w", err)
+			}
+			fileInfo, err := os.Stat(originFile)
+			if err != nil {
+				// We shouldn't fail if a symlink happens to be invalid.
+				isDir = false
+			} else {
+				isDir = fileInfo.IsDir()
+			}
+		}
 		results[i] = api.DirectoryEntry{
 			Name:        e.Name(),
-			IsDirectory: e.IsDir(),
+			IsDirectory: isDir,
 			Path:        filepath.Join(input.Path, e.Name()),
 		}
 	}
