@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"os/user"
 	"path"
-	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -89,11 +88,6 @@ func (c *Container) Initialize(ctx context.Context, input *core.InitializeInput)
 }
 
 func (c *Container) create(ctx context.Context, spec *Spec) error {
-	dockerInfo, err := c.Docker.Info(ctx)
-	if err != nil {
-		return fmt.Errorf("getting docker info: %w", err)
-	}
-
 	var healthCfg *container.HealthConfig
 	if spec.Healthcheck != nil {
 		healthCfg = &container.HealthConfig{
@@ -204,12 +198,15 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 		// No logging configuration specified, so default to logging to exo's
 		// syslog service.
 		logCfg.Type = "syslog"
-		syslogHost := "localhost"
-		// TODO: Find an OS-agnostic way to figure out the "gateway-host" name as
-		// reachable from the dockerd process.
-		if runtime.GOOS == "darwin" || strings.Contains(dockerInfo.KernelVersion, "microsoft") {
-			syslogHost = "host.docker.internal"
+		bridge, err := c.Docker.NetworkInspect(ctx, "bridge", types.NetworkInspectOptions{})
+		if err != nil {
+			return fmt.Errorf("inspecting bridge network: %w", err)
 		}
+		if len(bridge.IPAM.Config) != 1 {
+			return fmt.Errorf("bridge network has %d IPAM configs, expected 1", len(bridge.IPAM.Config))
+		}
+		syslogHost := bridge.IPAM.Config[0].Gateway
+
 		logCfg.Config = map[string]string{
 			"syslog-address":  fmt.Sprintf("udp://%s:%d", syslogHost, c.SyslogPort),
 			"syslog-facility": "1", // "user-level messages"
