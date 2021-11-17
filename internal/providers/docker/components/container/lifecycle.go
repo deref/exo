@@ -308,6 +308,7 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 		Init: spec.Init.Ptr(),
 	}
 
+	var err error
 	if hostCfg.IpcMode, err = c.parseIPCMode(spec.IPC.Value); err != nil {
 		return err
 	}
