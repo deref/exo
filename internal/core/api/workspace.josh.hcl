@@ -113,7 +113,6 @@ interface "workspace" {
     input "name" "string" {}
     input "type" "string" {}
     input "spec" "string" {}
-    input "depends-on" "[]string" {}
 
     output "id" "string" {}
     output "job-id" "string" {}
@@ -129,7 +128,6 @@ interface "workspace" {
       doc = "If provided, renames the component."
     }
     input "spec" "string" {}
-    input "depends-on" "[]string" {}
 
     output "job-id" "string" {}
   }

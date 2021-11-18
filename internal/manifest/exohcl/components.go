@@ -74,7 +74,6 @@ type Component struct {
 	Type      string
 	Name      string
 	Spec      string
-	DependsOn []string
 }
 
 func NewComponent(block *hclsyntax.Block) *Component {
@@ -153,29 +152,6 @@ func (c *Component) Analyze(ctx *AnalysisContext) {
 		}
 	} else {
 		c.Spec, _ = AnalyzeString(ctx, specAttr.Expr)
-	}
-
-	depsAttr := content.Attributes["depends_on"]
-	if depsAttr != nil {
-		depsExpr := depsAttr.Expr
-		tup, ok := depsExpr.(*hclsyntax.TupleConsExpr)
-		if !ok {
-			ctx.AppendDiags(&hcl.Diagnostic{
-				Severity: hcl.DiagError,
-				Summary:  "Expected array of strings",
-				Detail:   fmt.Sprintf("Expected literal array of strings, got %T", depsExpr),
-				Subject:  depsExpr.Range().Ptr(),
-			})
-		}
-		c.DependsOn = make([]string, 0, len(tup.Exprs))
-		for _, elem := range tup.Exprs {
-			dep, diag := parseLiteralString(elem)
-			if diag != nil {
-				ctx.AppendDiags(diag)
-				continue
-			}
-			c.DependsOn = append(c.DependsOn, dep)
-		}
 	}
 }
 
