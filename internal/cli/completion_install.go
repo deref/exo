@@ -149,5 +149,5 @@ func completionPathFish() string {
 	if err != nil {
 		return completionFile
 	}
-	return string(output)
+	return string(bytes.TrimSpace(output))
 }
