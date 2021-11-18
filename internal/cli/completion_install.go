@@ -142,9 +142,12 @@ func completionPathZsh() string {
 }
 
 func completionPathFish() string {
-	home, err := os.UserHomeDir()
+	// See https://fishshell.com/docs/current/completions.html
+	completionFile := "/usr/share/fish/vendor_completions.d/exo.fish"
+	cmd := exec.Command("pkg-config", "--variable", "completionsdir", "fish")
+	output, err := cmd.Output()
 	if err != nil {
-		return ""
+		return completionFile
 	}
-	return filepath.Join(home, ".config/fish/completions/exo.fish")
+	return string(output)
 }
