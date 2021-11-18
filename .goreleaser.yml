@@ -154,6 +154,11 @@ brews:
     folder: Formula
     test: |
       system "#{bin}/exo version"
+    install: |-
+      bin.install "exo"
+      bash_completion.install "completions/exo.bash" => "exo"
+      zsh_completion.install "completions/exo.zsh" => "_exo"
+      fish_completion.install "completions/exo.fish"
 
 nfpms:
   - builds:
@@ -163,6 +168,13 @@ nfpms:
       - apk
       - deb
       - rpm
+    contents:
+      - src: ./completions/exo.bash
+        dst: /etc/bash_completion.d/exo
+      - src: ./completions/exo.fish
+        dst: /usr/share/fish/vendor_completions.d/exo.fish
+      - src: ./completions/exo.zsh
+        dst: /usr/local/share/zsh/site-functions/_goreleaser
 
 release:
   github:
