@@ -198,15 +198,11 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 		// No logging configuration specified, so default to logging to exo's
 		// syslog service.
 		logCfg.Type = "syslog"
-		bridge, err := c.Docker.NetworkInspect(ctx, "bridge", types.NetworkInspectOptions{})
-		if err != nil {
-			return fmt.Errorf("inspecting bridge network: %w", err)
+		dockerIsLocal := strings.HasPrefix(c.Docker.DaemonHost(), "unix://")
+		syslogHost := "host.docker.internal"
+		if dockerIsLocal {
+			syslogHost = "localhost"
 		}
-		if len(bridge.IPAM.Config) != 1 {
-			return fmt.Errorf("bridge network has %d IPAM configs, expected 1", len(bridge.IPAM.Config))
-		}
-		syslogHost := bridge.IPAM.Config[0].Gateway
-
 		logCfg.Config = map[string]string{
 			"syslog-address":  fmt.Sprintf("udp://%s:%d", syslogHost, c.SyslogPort),
 			"syslog-facility": "1", // "user-level messages"
