@@ -2,14 +2,14 @@
   import Spinner from '../Spinner.svelte';
   import IconButton from '../IconButton.svelte';
 
-  export let setProcRun: (id: string, run: boolean) => void;
-  export let statusPending: Set<string>;
+  export let setProcRun: (id: string, run: boolean) => Promise<void>;
+  export let statusPending: boolean;
   export let id: string;
   export let running: boolean;
 </script>
 
 <div class="run-controls">
-  {#if statusPending.has(id)}
+  {#if statusPending}
     <Spinner />
   {:else if running}
     <div class="running unhover-only" />
@@ -26,7 +26,7 @@
       <IconButton
         glyph="Play"
         tooltip="Run process"
-        on:click={() => setProcRun(id, true)}
+        on:click={async () => await setProcRun(id, true)}
       />
     </div>
   {/if}

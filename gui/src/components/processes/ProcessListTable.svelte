@@ -30,7 +30,7 @@
     setLogVisibility(processId, visible);
   }
 
-  function setProcRun(id: string, run: boolean) {
+  const setProcRun = async (id: string, run: boolean) => {
     statusPending = statusPending.add(id);
     const proc = data.find((p) => p.id === id);
     if (!proc) {
@@ -38,21 +38,23 @@
       return;
     }
     if (run) {
-      startProcess(workspace, id).then(() => {
-        statusPending.delete(id);
-      });
+      await startProcess(workspace, id);
     } else {
-      stopProcess(workspace, id).then(() => {
-        statusPending.delete(id);
-      });
+      await stopProcess(workspace, id);
     }
-  }
+    statusPending.delete(id);
+  };
 </script>
 
 {#each data as { id, name, running } (id)}
   <div class="card" style={logStyleFromHash(name)}>
     <div>
-      <ProcessRunControls {setProcRun} {statusPending} {id} {running} />
+      <ProcessRunControls
+        {setProcRun}
+        statusPending={statusPending.has(id)}
+        {id}
+        {running}
+      />
     </div>
 
     <div>
