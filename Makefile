@@ -26,12 +26,16 @@ make-gui:
 mod-tidy:
 	go mod tidy
 
+.PHONY: completions
+completions:
+	./script/completions.sh
+
 .PHONY: run-tests
 run-tests: bin/exo
 	go run ./test ./bin/exo ./test/image/fixtures
 
 .PHONY: release-dry-run
-release-dry-run: make-gui mod-tidy codegen
+release-dry-run: make-gui mod-tidy codegen completions
 	@docker run \
 		--privileged \
 		-v /var/run/docker.sock:/var/run/docker.sock \
@@ -41,7 +45,7 @@ release-dry-run: make-gui mod-tidy codegen
 		--rm-dist --skip-validate --skip-publish
 
 .PHONY: release
-release: make-gui mod-tidy codegen
+release: make-gui mod-tidy codegen completions
 	@docker run \
 		--privileged \
 		-e GITHUB_TOKEN \
