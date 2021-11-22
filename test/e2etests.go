@@ -33,6 +33,20 @@ var tests = map[string]tester.ExoTest{
 		FixtureDir: "basic-exo-hcl",
 		Test:       basicT0Test,
 	},
+	"two-containers": {
+		FixtureDir: "basic-exo-hcl",
+		Test: func(ctx context.Context, t tester.ExoTester) error {
+			if _, _, err := t.RunExo(ctx, "init"); err != nil {
+				return err
+			}
+			if _, _, err := t.RunExo(ctx, "start"); err != nil {
+				return err
+			}
+			ctx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Second*5))
+			defer cancel()
+			return t.WaitTillProcessesReachState(ctx, "running", []string{"t0", "t1"})
+		},
+	},
 	"simple-example": {
 		FixtureDir: "simple-example",
 		Test: func(ctx context.Context, t tester.ExoTester) error {
