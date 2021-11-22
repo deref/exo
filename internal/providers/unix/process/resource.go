@@ -68,8 +68,8 @@ func (res *Resource) Create(ctx context.Context, spec string) (iri string, err e
 		Dir:   start.Directory,
 		Env:   env,
 		Files: files,
-		Sys:   &syscall.SysProcAttr{
-			// XXX stuff here.
+		Sys: &syscall.SysProcAttr{
+			Setsid: true,
 		},
 	})
 	if err != nil {
