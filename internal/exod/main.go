@@ -222,7 +222,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 		}()
 	}
 
-	validHosts := []string{fmt.Sprintf("localhost:%d", cfg.HTTPPort)}
+	validHosts := []string{fmt.Sprintf("localhost:%d", cfg.HTTPPort), fmt.Sprintf("host.docker.internal:%d", cfg.HTTPPort)}
 	handler := httputil.HandlerWithContext(ctx, &httputil.HostAllowListHandler{
 		Hosts: validHosts,
 		Next:  mux,
@@ -246,7 +246,8 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	addr := cmdutil.GetAddr(cfg)
 	logger.Infof("listening for API calls at %s", addr)
 	cmdutil.ListenAndServe(ctx, &http.Server{
-		Addr:    addr,
+		// FIXME: this should only bound to necessary interfaces.
+		Addr:    fmt.Sprintf("0.0.0.0:%d", cfg.HTTPPort),
 		Handler: handler,
 	})
 }

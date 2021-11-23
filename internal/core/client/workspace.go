@@ -100,6 +100,11 @@ func (c *Workspace) DescribeVaults(ctx context.Context, input *api.DescribeVault
 	return
 }
 
+func (c *Workspace) GetServiceEndpoints(ctx context.Context, input *api.GetServiceEndpointsInput) (output *api.GetServiceEndpointsOutput, err error) {
+	err = c.client.Invoke(ctx, "get-service-endpoints", input, &output)
+	return
+}
+
 func (c *Workspace) AddVault(ctx context.Context, input *api.AddVaultInput) (output *api.AddVaultOutput, err error) {
 	err = c.client.Invoke(ctx, "add-vault", input, &output)
 	return

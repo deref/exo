@@ -53,6 +53,25 @@ type Workspace struct {
 
 var _ api.Workspace = &Workspace{}
 
+func (ws *Workspace) GetServiceEndpoints(ctx context.Context, _ *api.GetServiceEndpointsInput) (*api.GetServiceEndpointsOutput, error) {
+	processes, err := ws.DescribeProcesses(ctx, &api.DescribeProcessesInput{})
+	if err != nil {
+		return nil, fmt.Errorf("describing processes: %w", err)
+	}
+	endpoints := []api.ServiceEndpoint{}
+	for _, proc := range processes.Processes {
+		if len(proc.Ports) > 0 {
+			endpoints = append(endpoints, api.ServiceEndpoint{
+				Service:  proc.Name,
+				Host:     "localhost",
+				Endpoint: fmt.Sprintf("localhost:%d", proc.Ports[0]),
+				Port:     fmt.Sprintf("%d", proc.Ports[0]),
+			})
+		}
+	}
+	return &api.GetServiceEndpointsOutput{ServiceEndpoints: endpoints}, nil
+}
+
 func (ws *Workspace) logEventf(ctx context.Context, format string, v ...interface{}) {
 	eventStore := log.CurrentEventStore(ctx)
 	input := &eventd.AddEventInput{

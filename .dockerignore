@@ -1,0 +1,6 @@
+/dist
+/gui
+/bin
+.git
+/.dev
+Dockerfile

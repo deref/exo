@@ -83,6 +83,7 @@ type Workspace interface {
 	Process
 	Builder
 	DescribeVaults(context.Context, *DescribeVaultsInput) (*DescribeVaultsOutput, error)
+	GetServiceEndpoints(context.Context, *GetServiceEndpointsInput) (*GetServiceEndpointsOutput, error)
 	AddVault(context.Context, *AddVaultInput) (*AddVaultOutput, error)
 	RemoveVault(context.Context, *RemoveVaultInput) (*RemoveVaultOutput, error)
 	// Describes this workspace.
@@ -133,6 +134,13 @@ type DescribeVaultsInput struct {
 
 type DescribeVaultsOutput struct {
 	Vaults []VaultDescription `json:"vaults"`
+}
+
+type GetServiceEndpointsInput struct {
+}
+
+type GetServiceEndpointsOutput struct {
+	ServiceEndpoints []ServiceEndpoint `json:"serviceEndpoints"`
 }
 
 type AddVaultInput struct {
@@ -428,6 +436,9 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	b.AddMethod("describe-vaults", func(req *http.Request) interface{} {
 		return factory(req).DescribeVaults
 	})
+	b.AddMethod("get-service-endpoints", func(req *http.Request) interface{} {
+		return factory(req).GetServiceEndpoints
+	})
 	b.AddMethod("add-vault", func(req *http.Request) interface{} {
 		return factory(req).AddVault
 	})
@@ -583,4 +594,11 @@ type VaultDescription struct {
 type VariableDescription struct {
 	Value  string `json:"value"`
 	Source string `json:"source"`
+}
+
+type ServiceEndpoint struct {
+	Service  string `json:"service"`
+	Endpoint string `json:"endpoint"`
+	Host     string `json:"host"`
+	Port     string `json:"port"`
 }

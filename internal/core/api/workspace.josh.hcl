@@ -36,6 +36,10 @@ interface "workspace" {
     output "vaults" "[]VaultDescription" {}
   }
 
+  method "get-service-endpoints" {
+    output "service-endpoints" "[]ServiceEndpoint" {}
+  }
+
   method "add-vault" {
     input "url" "string" {}
   }
@@ -332,4 +336,11 @@ struct "vault-description" {
 struct "variable-description" {
   field "value" "string" {}
   field "source" "string" {}
+}
+
+struct "service-endpoint" {
+  field service "string" {}
+  field endpoint "string" {}
+  field host "string" {}
+  field port "string" {}
 }
