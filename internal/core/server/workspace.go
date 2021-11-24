@@ -26,11 +26,13 @@ import (
 	"github.com/deref/exo/internal/providers/core/components/invalid"
 	"github.com/deref/exo/internal/providers/core/components/log"
 	"github.com/deref/exo/internal/providers/docker"
+	"github.com/deref/exo/internal/providers/docker/components/apigateway"
 	"github.com/deref/exo/internal/providers/docker/components/container"
 	"github.com/deref/exo/internal/providers/docker/components/network"
 	"github.com/deref/exo/internal/providers/docker/components/volume"
 	"github.com/deref/exo/internal/providers/unix/components/process"
 	"github.com/deref/exo/internal/task"
+	"github.com/deref/exo/internal/token"
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/deref/exo/internal/util/logging"
@@ -49,6 +51,7 @@ type Workspace struct {
 	Docker      *dockerclient.Client
 	TaskTracker *task.TaskTracker
 	EsvClient   esv.EsvClient
+	TokenClient token.TokenClient
 }
 
 var _ api.Workspace = &Workspace{}
@@ -420,6 +423,17 @@ func (ws *Workspace) newController(ctx context.Context, desc api.ComponentDescri
 		Logger:               ws.Logger,
 	}
 	switch desc.Type {
+	case "apigateway":
+		return &apigateway.APIGateway{
+			TokenClient: ws.TokenClient,
+			Container: container.Container{
+				ComponentBase: docker.ComponentBase{
+					ComponentBase: base,
+					Docker:        ws.Docker,
+				},
+				SyslogPort: ws.SyslogPort,
+			},
+		}
 	case "process":
 		return &process.Process{
 			ComponentBase: base,

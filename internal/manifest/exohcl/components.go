@@ -187,7 +187,7 @@ func expandComponent(ctx *AnalysisContext, block *hclsyntax.Block) *hclsyntax.Bl
 		return block
 	case "process":
 		encodefunc = "jsonencode"
-	case "container", "volume", "network":
+	case "container", "volume", "network", "apigateway":
 		encodefunc = "yamlencode"
 	default:
 		ctx.AppendDiags(&hcl.Diagnostic{

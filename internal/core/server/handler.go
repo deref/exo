@@ -89,6 +89,7 @@ func BuildRootMux(prefix string, cfg *Config) *http.ServeMux {
 			Docker:      cfg.Docker,
 			TaskTracker: cfg.TaskTracker,
 			EsvClient:   cfg.EsvClient,
+			TokenClient: cfg.TokenClient,
 		}
 	})
 	endWorkspace()

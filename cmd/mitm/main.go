@@ -38,15 +38,17 @@ func (shm StaticHostMapper) GetHostMap() HostMap {
 
 func writeScript(hostMap HostMap) error {
 	script := fmt.Sprintf("mapping = %s\n", jsonutil.MustMarshalString(hostMap)) + `
+import urllib.parse
 class Rerouter:
     def request(self, flow):
-        originalHost = flow.request.host_header
-        dest = mapping.get(flow.request.host_header, None)
+        originalHostHeader = flow.request.host_header
+        host = urllib.parse.urlsplit('//' + originalHostHeader).hostname
+        dest = mapping.get(host, None)
         if dest:
             print(dest)
             flow.request.host = dest["host"]
             flow.request.port = int(dest["port"])
-            flow.request.host_header = originalHost
+            flow.request.host_header = originalHostHeader
 
 addons = [Rerouter()]
 `
@@ -113,7 +115,7 @@ func (ehm *ExoHostMapper) RefreshHostMap() {
 	}
 	hostMap := HostMap{}
 	for _, endpoint := range endpoints.ServiceEndpoints {
-		hostMap[fmt.Sprintf("%s.exo.localhost:8080", endpoint.Service)] = HostAndPort{
+		hostMap[fmt.Sprintf("%s.exo.localhost", endpoint.Service)] = HostAndPort{
 			Host: "host.docker.internal",
 			Port: endpoint.Port,
 		}

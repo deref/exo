@@ -41,6 +41,7 @@ func ParsePortMappings(short string) (mappings PortMappings, err error) {
 		mappings = append(mappings, PortMapping{
 			IsShortForm:         true,
 			PortMappingLongForm: mapping,
+			String:              MakeString(short),
 		})
 	}
 	return mappings, nil
