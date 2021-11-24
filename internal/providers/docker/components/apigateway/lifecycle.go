@@ -7,15 +7,16 @@ import (
 	core "github.com/deref/exo/internal/core/api"
 	"github.com/deref/exo/internal/providers/docker/components/container"
 	"github.com/deref/exo/internal/providers/docker/compose"
+	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/deref/exo/internal/util/yamlutil"
 )
 
-func (ag APIGateway) makeContainerSpec() (string, error) {
-	apiPortMappings, err := compose.ParsePortMappings("127.0.0.1:48080:8080")
+func (ag APIGateway) makeContainerSpec(gatewaySpec Spec) (string, error) {
+	apiPortMappings, err := compose.ParsePortMappings(fmt.Sprintf("127.0.0.1:%d:8080", gatewaySpec.APIPort))
 	if err != nil {
 		ag.Logger.Infof("error: bad API gateway port mapping")
 	}
-	webPortMapping, err := compose.ParsePortMappings("127.0.0.1:48081:8081")
+	webPortMapping, err := compose.ParsePortMappings(fmt.Sprintf("127.0.0.1:%d:8081", gatewaySpec.WebPort))
 	if err != nil {
 		ag.Logger.Infof("error: bad API gateway port mapping")
 	}
@@ -45,17 +46,27 @@ func (ag *APIGateway) Dependencies(ctx context.Context, input *core.Dependencies
 }
 
 func (ag *APIGateway) Initialize(ctx context.Context, input *core.InitializeInput) (output *core.InitializeOutput, err error) {
-	spec, err := ag.makeContainerSpec()
-	if err != nil {
-		return nil, fmt.Errorf("getting API gateway spec: %w", err)
+	var spec Spec
+	if err := jsonutil.UnmarshalString(input.Spec, &spec); err != nil {
+		return nil, fmt.Errorf("unmarshalling spec: %w", err)
 	}
-	return ag.Container.Initialize(ctx, &core.InitializeInput{Spec: spec})
+
+	containerSpec, err := ag.makeContainerSpec(spec)
+	if err != nil {
+		return nil, fmt.Errorf("making container spec: %w", err)
+	}
+	return ag.Container.Initialize(ctx, &core.InitializeInput{Spec: containerSpec})
 }
 
 func (ag *APIGateway) Refresh(ctx context.Context, input *core.RefreshInput) (*core.RefreshOutput, error) {
-	spec, err := ag.makeContainerSpec()
-	if err != nil {
-		return nil, fmt.Errorf("getting API gateway spec: %w", err)
+	var spec Spec
+	if err := jsonutil.UnmarshalString(input.Spec, &spec); err != nil {
+		return nil, fmt.Errorf("unmarshalling spec: %w", err)
 	}
-	return ag.Container.Refresh(ctx, &core.RefreshInput{Spec: spec})
+
+	containerSpec, err := ag.makeContainerSpec(spec)
+	if err != nil {
+		return nil, fmt.Errorf("making container spec: %w", err)
+	}
+	return ag.Container.Refresh(ctx, &core.RefreshInput{Spec: containerSpec})
 }
