@@ -5,10 +5,16 @@
   import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
   import { theme, themeOptions } from '../lib/theme';
   import { api } from '../lib/api';
+  import { modal } from '../lib/modal';
+  import ModalTest from '../components/modal/ModalTest.svelte';
 
   const kernel = api.kernel;
   const makeRequest = () => kernel.getEsvUser('https://secrets.deref.io');
   let derefUser = makeRequest();
+
+  const showModal1 = () => {
+    modal.set(ModalTest);
+  };
 </script>
 
 <Layout>
@@ -60,6 +66,11 @@
           {/await}
         </div>
       </div>
+      <section>
+        <h2>Test modal</h2>
+
+        <Button on:click={showModal1}>Show modal 1</Button>
+      </section>
     </div>
   </CenterFormPanel>
 </Layout>

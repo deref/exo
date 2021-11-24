@@ -3,6 +3,8 @@
   import VersionInfo from './VersionInfo.svelte';
   import NavbarButton from './nav/NavbarButton.svelte';
   import { theme, themeOptions } from '../lib/theme';
+  import Modal from './modal/Modal.svelte';
+  import { modal } from '../lib/modal';
 
   $: {
     for (const option of themeOptions) {
@@ -10,6 +12,8 @@
     }
   }
 </script>
+
+<Modal show={$modal} />
 
 <main>
   <nav>

@@ -21,6 +21,7 @@ body.auto {
   --layout-bg-color: #cccccc;
   --secondary-bg-color: #f5f5f5;
   --primary-bg-color: #ffffff;
+  --window-modal-bg-color: #00000044;
   --error-color: #d00000;
   --error-color-faded: #ff1111;
   --link-color: #0066ee;
@@ -99,6 +100,7 @@ body.auto {
   --layout-bg-color: #222222;
   --secondary-bg-color: #050505;
   --primary-bg-color: #000000;
+  --window-modal-bg-color: #000000aa;
   --error-color: #ff1111;
   --error-color-faded: #d00000;
   --link-color: #22aaff;
@@ -176,6 +178,7 @@ body.light {
   --layout-bg-color: #cccccc;
   --secondary-bg-color: #f5f5f5;
   --primary-bg-color: #ffffff;
+  --window-modal-bg-color: #00000044;
   --error-color: #d00000;
   --error-color-faded: #ff1111;
   --link-color: #0066ee;
@@ -253,6 +256,7 @@ body.dark {
   --layout-bg-color: #222222;
   --secondary-bg-color: #050505;
   --primary-bg-color: #000000;
+  --window-modal-bg-color: #000000aa;
   --error-color: #ff1111;
   --error-color-faded: #d00000;
   --link-color: #22aaff;
@@ -330,6 +334,7 @@ body.black {
   --layout-bg-color: #222222;
   --secondary-bg-color: #050505;
   --primary-bg-color: #000000;
+  --window-modal-bg-color: #000000aa;
   --error-color: #ff1111;
   --error-color-faded: #d00000;
   --link-color: #22aaff;
