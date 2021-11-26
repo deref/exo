@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"net/http/httputil"
+	"net/url"
 	"os"
 	"os/exec"
 	"reflect"
@@ -43,20 +45,12 @@ class Rerouter:
     def request(self, flow):
         originalHostHeader = flow.request.host_header
         host = urllib.parse.urlsplit('//' + originalHostHeader).hostname
-        if host == "exo.localhost":
-            flow.request.host = "localhost"
-            flow.request.port = 8081
-            return
-
         dest = mapping.get(host, None)
         if dest:
             print(dest)
             flow.request.host = dest["host"]
             flow.request.port = int(dest["port"])
             flow.request.host_header = originalHostHeader
-
-    def response(self, flow):
-        flow.response.headers["x-frame-options"] = "ALLOW"
 
 addons = [Rerouter()]
 `
@@ -115,6 +109,20 @@ func (ehm *ExoHostMapper) GetHostMap() HostMap {
 	return ehm.hostMap
 }
 
+func startProxy() error {
+	url, err := url.Parse("http://localhost:8081")
+	if err != nil {
+		return err
+	}
+
+	proxy := httputil.NewSingleHostReverseProxy(url)
+	proxy.ModifyResponse = func(res *http.Response) error {
+		res.Header.Del("X-FRAME-OPTIONS")
+		return nil
+	}
+	return http.ListenAndServe(":8082", proxy)
+}
+
 func (ehm *ExoHostMapper) RefreshHostMap() {
 	ws := ehm.exoClient.GetWorkspace(mustGetEnv("EXO_WORKSPACE_ID"))
 	endpoints, err := ws.GetServiceEndpoints(context.TODO(), &api.GetServiceEndpointsInput{})
@@ -149,6 +157,12 @@ func main() {
 		for {
 			exoHostMapper.RefreshHostMap()
 			time.Sleep(time.Second)
+		}
+	}()
+
+	go func() {
+		if err := startProxy(); err != nil {
+			panic(err)
 		}
 	}()
 

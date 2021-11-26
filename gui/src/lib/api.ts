@@ -196,7 +196,8 @@ export interface VaultDescription {
 export interface APIGatewayDescription {
   id: string;
   name: string;
-  port: number;
+  webPort: number;
+  apiPort: number;
 }
 
 export interface WorkspaceDescription {

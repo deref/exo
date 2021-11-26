@@ -6,10 +6,18 @@ import (
 )
 
 type Spec struct {
-	Port int `json:"port"`
+	WebPort int `json:"web_port"`
+	APIPort int `json:"api_port"`
+}
+
+type State struct {
+	WebPort int `json:"web_port"`
+	APIPort int `json:"api_port"`
+	container.State
 }
 
 type APIGateway struct {
 	TokenClient token.TokenClient
 	container.Container
+	State State
 }

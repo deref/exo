@@ -56,7 +56,7 @@
     {#await workspace.describeApiGateways() then gateways}
       {#each gateways as gateway}
         <iframe
-          src={`http://exo.localhost:${gateway.port}/#/flows`}
+          src={`http://localhost:${gateway.webPort}/#/flows`}
           title="Connections"
         />
       {/each}

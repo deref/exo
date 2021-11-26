@@ -65,14 +65,14 @@ func (ws *Workspace) DescribeApiGateways(ctx context.Context, _ *api.DescribeApi
 	}
 	apiGateways := []api.ApiGatewayDescription{}
 	for _, component := range components.Components {
-		fmt.Printf("component: %+v\n", component)
-		spec := apigateway.Spec{}
-		if err := jsonutil.UnmarshalString(component.Spec, &spec); err != nil {
-			return nil, fmt.Errorf("unmarshalling api gateway spec: %w", err)
+		state := apigateway.State{}
+		if err := jsonutil.UnmarshalString(component.State, &state); err != nil {
+			return nil, fmt.Errorf("unmarshalling api gateway state: %w", err)
 		}
 		apiGateways = append(apiGateways, api.ApiGatewayDescription{
-			Name: component.Name,
-			Port: spec.Port,
+			Name:    component.Name,
+			ApiPort: state.APIPort,
+			WebPort: state.WebPort,
 		})
 	}
 	return &api.DescribeApiGatewaysOutput{ApiGateways: apiGateways}, nil
