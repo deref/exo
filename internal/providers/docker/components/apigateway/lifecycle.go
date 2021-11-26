@@ -2,6 +2,7 @@ package apigateway
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	core "github.com/deref/exo/internal/core/api"
@@ -12,15 +13,14 @@ import (
 )
 
 func (ag APIGateway) makeContainerSpec(gatewaySpec Spec) (string, error) {
-	apiPortMappings, err := compose.ParsePortMappings(fmt.Sprintf("127.0.0.1:%d:8080", gatewaySpec.APIPort))
+	if gatewaySpec.Port == 0 {
+		return "", errors.New("API gateway port not specified")
+	}
+
+	portMappings, err := compose.ParsePortMappings(fmt.Sprintf("127.0.0.1:%d:8080", gatewaySpec.Port))
 	if err != nil {
 		ag.Logger.Infof("error: bad API gateway port mapping")
 	}
-	webPortMapping, err := compose.ParsePortMappings(fmt.Sprintf("127.0.0.1:%d:8081", gatewaySpec.WebPort))
-	if err != nil {
-		ag.Logger.Infof("error: bad API gateway port mapping")
-	}
-	portMappings := append(apiPortMappings, webPortMapping...)
 
 	token, err := ag.TokenClient.GetToken()
 	if err != nil {
@@ -28,7 +28,7 @@ func (ag APIGateway) makeContainerSpec(gatewaySpec Spec) (string, error) {
 	}
 
 	return yamlutil.MustMarshalString(container.Spec{
-		Image: compose.MakeString("f0ef8a799ce9"), // FIXME: host this docker image somewhere
+		Image: compose.MakeString("exo/mitm"), // FIXME: host this docker image somewhere
 		Environment: compose.Dictionary{Items: []compose.DictionaryItem{
 			{Key: "EXO_URL", Value: "http://host.docker.internal:44643/_exo/"},
 			{Key: "EXO_TOKEN", Value: token},

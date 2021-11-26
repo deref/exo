@@ -193,6 +193,12 @@ export interface VaultDescription {
   connected: boolean;
 }
 
+export interface APIGatewayDescription {
+  id: string;
+  name: string;
+  port: number;
+}
+
 export interface WorkspaceDescription {
   id: string;
   root: string;
@@ -275,6 +281,7 @@ export interface WorkspaceApi {
     input?: DescribeComponentsInput,
   ): Promise<ComponentDescription[]>;
 
+  describeApiGateways(): Promise<APIGatewayDescription[]>;
   describeEnvironment(): Promise<Record<string, VariableDescription>>;
   describeVaults(): Promise<VaultDescription[]>;
   describeProcesses(): Promise<ProcessDescription[]>;
@@ -408,6 +415,11 @@ export const api = (() => {
       async describeSelf(): Promise<WorkspaceDescription> {
         const { description } = (await invoke('describe')) as any;
         return description;
+      },
+
+      async describeApiGateways(): Promise<APIGatewayDescription[]> {
+        const { apiGateways } = (await invoke('describe-api-gateways')) as any;
+        return apiGateways;
       },
 
       async describeComponents(input = {}): Promise<ComponentDescription[]> {

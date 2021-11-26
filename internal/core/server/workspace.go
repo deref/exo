@@ -56,6 +56,28 @@ type Workspace struct {
 
 var _ api.Workspace = &Workspace{}
 
+func (ws *Workspace) DescribeApiGateways(ctx context.Context, _ *api.DescribeApiGatewaysInput) (*api.DescribeApiGatewaysOutput, error) {
+	query := makeComponentQuery(withTypes("apigateway"))
+	describe := query.describeComponentsInput(ws)
+	components, err := ws.DescribeComponents(ctx, describe)
+	if err != nil {
+		return nil, fmt.Errorf("describing components: %w", err)
+	}
+	apiGateways := []api.ApiGatewayDescription{}
+	for _, component := range components.Components {
+		fmt.Printf("component: %+v\n", component)
+		spec := apigateway.Spec{}
+		if err := jsonutil.UnmarshalString(component.Spec, &spec); err != nil {
+			return nil, fmt.Errorf("unmarshalling api gateway spec: %w", err)
+		}
+		apiGateways = append(apiGateways, api.ApiGatewayDescription{
+			Name: component.Name,
+			Port: spec.Port,
+		})
+	}
+	return &api.DescribeApiGatewaysOutput{ApiGateways: apiGateways}, nil
+}
+
 func (ws *Workspace) GetServiceEndpoints(ctx context.Context, _ *api.GetServiceEndpointsInput) (*api.GetServiceEndpointsOutput, error) {
 	processes, err := ws.DescribeProcesses(ctx, &api.DescribeProcessesInput{})
 	if err != nil {

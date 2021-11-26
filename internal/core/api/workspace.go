@@ -83,6 +83,7 @@ type Workspace interface {
 	Process
 	Builder
 	DescribeVaults(context.Context, *DescribeVaultsInput) (*DescribeVaultsOutput, error)
+	DescribeApiGateways(context.Context, *DescribeApiGatewaysInput) (*DescribeApiGatewaysOutput, error)
 	GetServiceEndpoints(context.Context, *GetServiceEndpointsInput) (*GetServiceEndpointsOutput, error)
 	AddVault(context.Context, *AddVaultInput) (*AddVaultOutput, error)
 	RemoveVault(context.Context, *RemoveVaultInput) (*RemoveVaultOutput, error)
@@ -134,6 +135,13 @@ type DescribeVaultsInput struct {
 
 type DescribeVaultsOutput struct {
 	Vaults []VaultDescription `json:"vaults"`
+}
+
+type DescribeApiGatewaysInput struct {
+}
+
+type DescribeApiGatewaysOutput struct {
+	ApiGateways []ApiGatewayDescription `json:"apiGateways"`
 }
 
 type GetServiceEndpointsInput struct {
@@ -436,6 +444,9 @@ func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Works
 	b.AddMethod("describe-vaults", func(req *http.Request) interface{} {
 		return factory(req).DescribeVaults
 	})
+	b.AddMethod("describe-api-gateways", func(req *http.Request) interface{} {
+		return factory(req).DescribeApiGateways
+	})
 	b.AddMethod("get-service-endpoints", func(req *http.Request) interface{} {
 		return factory(req).GetServiceEndpoints
 	})
@@ -589,6 +600,11 @@ type VaultDescription struct {
 	URL       string `json:"url"`
 	Connected bool   `json:"connected"`
 	NeedsAuth bool   `json:"needsAuth"`
+}
+
+type ApiGatewayDescription struct {
+	Name string `json:"name"`
+	Port int    `json:"port"`
 }
 
 type VariableDescription struct {

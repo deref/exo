@@ -53,5 +53,22 @@
         },
       ]}
     />
+    {#await workspace.describeApiGateways() then gateways}
+      {#each gateways as gateway}
+        <iframe
+          src={`http://exo.localhost:${gateway.port}/#/flows`}
+          title="Connections"
+        />
+      {/each}
+    {/await}
   </Panel>
 </Layout>
+
+<style>
+  iframe {
+    margin-top: 1em;
+    border: none;
+    width: 100%;
+    min-height: 400px;
+  }
+</style>

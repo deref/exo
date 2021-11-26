@@ -6,8 +6,7 @@ import (
 )
 
 type Spec struct {
-	WebPort int `json:"web_port"`
-	APIPort int `json:"api_port"`
+	Port int `json:"port"`
 }
 
 type APIGateway struct {

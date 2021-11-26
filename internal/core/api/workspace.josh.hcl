@@ -36,6 +36,10 @@ interface "workspace" {
     output "vaults" "[]VaultDescription" {}
   }
 
+  method "describe-api-gateways" {
+    output "api-gateways" "[]ApiGatewayDescription" {}
+  }
+
   method "get-service-endpoints" {
     output "service-endpoints" "[]ServiceEndpoint" {}
   }
@@ -331,6 +335,11 @@ struct "vault-description" {
   field "url" "string" {}
   field "connected" "bool" {}
   field "needs-auth" "bool" {}
+}
+
+struct "api-gateway-description" {
+  field "name" "string" {}
+  field "port" "int" {}
 }
 
 struct "variable-description" {
