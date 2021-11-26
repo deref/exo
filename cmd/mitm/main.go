@@ -43,12 +43,20 @@ class Rerouter:
     def request(self, flow):
         originalHostHeader = flow.request.host_header
         host = urllib.parse.urlsplit('//' + originalHostHeader).hostname
+        if host == "exo.localhost":
+            flow.request.host = "localhost"
+            flow.request.port = 8081
+            return
+
         dest = mapping.get(host, None)
         if dest:
             print(dest)
             flow.request.host = dest["host"]
             flow.request.port = int(dest["port"])
             flow.request.host_header = originalHostHeader
+
+    def response(self, flow):
+        flow.response.headers["x-frame-options"] = "ALLOW"
 
 addons = [Rerouter()]
 `
@@ -111,7 +119,8 @@ func (ehm *ExoHostMapper) RefreshHostMap() {
 	ws := ehm.exoClient.GetWorkspace(mustGetEnv("EXO_WORKSPACE_ID"))
 	endpoints, err := ws.GetServiceEndpoints(context.TODO(), &api.GetServiceEndpointsInput{})
 	if err != nil {
-		panic(err)
+		fmt.Println("WARN: could not get service endpoint: %w", err)
+		return
 	}
 	hostMap := HostMap{}
 	for _, endpoint := range endpoints.ServiceEndpoints {
@@ -127,7 +136,8 @@ func (ehm *ExoHostMapper) RefreshHostMap() {
 
 func main() {
 	exoHostMapper := &ExoHostMapper{
-		mu: &sync.Mutex{},
+		mu:      &sync.Mutex{},
+		hostMap: HostMap{},
 		exoClient: &client.Root{
 			HTTP:  http.DefaultClient,
 			URL:   mustGetEnv("EXO_URL"),
