@@ -13,13 +13,16 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-func ListenAndServe(ctx context.Context, svr *http.Server) {
+func ListenAndServe(ctx context.Context, svrs []*http.Server) {
 	eg, ctx := errgroup.WithContext(ctx)
-	eg.Go(svr.ListenAndServe)
-	eg.Go(func() error {
-		ShutdownOnInterrupt(ctx, svr)
-		return nil
-	})
+	for _, svr := range svrs {
+		svr := svr
+		eg.Go(svr.ListenAndServe)
+		eg.Go(func() error {
+			ShutdownOnInterrupt(ctx, svr)
+			return nil
+		})
+	}
 	if err := eg.Wait(); err != nil && err != http.ErrServerClosed {
 		Fatal(err)
 	}

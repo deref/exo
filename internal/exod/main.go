@@ -32,6 +32,7 @@ import (
 	"github.com/deref/exo/internal/util/httputil"
 	"github.com/deref/exo/internal/util/logging"
 	"github.com/deref/exo/internal/util/sysutil"
+	"github.com/docker/docker/api/types"
 	docker "github.com/docker/docker/client"
 	"github.com/jmoiron/sqlx"
 	"github.com/mattn/go-isatty"
@@ -245,11 +246,18 @@ func RunServer(ctx context.Context, flags map[string]string) {
 
 	addr := cmdutil.GetAddr(cfg)
 	logger.Infof("listening for API calls at %s", addr)
-	cmdutil.ListenAndServe(ctx, &http.Server{
-		// FIXME: this should only bound to necessary interfaces.
-		Addr:    fmt.Sprintf("0.0.0.0:%d", cfg.HTTPPort),
+	servers := []*http.Server{&http.Server{
+		Addr:    fmt.Sprintf("127.0.0.1:%d", cfg.HTTPPort),
 		Handler: handler,
-	})
+	}}
+	network, err := dockerClient.NetworkInspect(ctx, "bridge", types.NetworkInspectOptions{})
+	if err == nil && len(network.IPAM.Config) > 0 {
+		servers = append(servers, &http.Server{
+			Addr:    fmt.Sprintf("%s:%d", network.IPAM.Config[0].Gateway, cfg.HTTPPort),
+			Handler: handler,
+		})
+	}
+	cmdutil.ListenAndServe(ctx, servers)
 }
 
 func MustMakeDirectories(cfg *config.Config) {
