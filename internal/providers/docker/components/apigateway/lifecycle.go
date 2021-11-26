@@ -29,7 +29,7 @@ func (ag APIGateway) makeContainerSpec(gatewaySpec Spec) (string, error) {
 	}
 
 	return yamlutil.MustMarshalString(container.Spec{
-		Image: compose.MakeString("exo/mitm"), // FIXME: host this docker image somewhere
+		Image: compose.MakeString("ghcr.io/deref/exo-mitm:latest"),
 		Environment: compose.Dictionary{Items: []compose.DictionaryItem{
 			{Key: "EXO_URL", Value: "http://host.docker.internal:44643/_exo/"},
 			{Key: "EXO_TOKEN", Value: token},
