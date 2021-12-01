@@ -16,7 +16,7 @@ import (
 )
 
 func GetProcessDescription(ctx context.Context, dockerClient *dockerclient.Client, component api.ComponentDescription) (api.ProcessDescription, error) {
-	if component.Type != "container" {
+	if component.Type != "container" && component.Type != "apigateway" {
 		return api.ProcessDescription{}, fmt.Errorf("component not a container")
 	}
 

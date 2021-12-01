@@ -43,7 +43,7 @@ func (ag APIGateway) makeContainerSpec(gatewaySpec Spec) (string, error) {
 }
 
 func (ag *APIGateway) UpdatePorts(ctx context.Context) error {
-	container, err := ag.Docker.ContainerInspect(ctx, ag.Container.State.ContainerID)
+	container, err := ag.Docker.ContainerInspect(ctx, ag.State.ContainerID)
 	if err != nil {
 		return fmt.Errorf("inspecting container: %w", err)
 	}
@@ -90,6 +90,7 @@ func (ag *APIGateway) Initialize(ctx context.Context, input *core.InitializeInpu
 	if err != nil {
 		return nil, err
 	}
+	ag.State.State = ag.Container.State
 
 	if err := ag.UpdatePorts(ctx); err != nil {
 		return nil, fmt.Errorf("updating ports: %w", err)
@@ -112,6 +113,7 @@ func (ag *APIGateway) Refresh(ctx context.Context, input *core.RefreshInput) (*c
 	if err != nil {
 		return nil, err
 	}
+	ag.State.State = ag.Container.State
 
 	if err := ag.UpdatePorts(ctx); err != nil {
 		return nil, fmt.Errorf("updating ports: %w", err)

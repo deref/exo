@@ -69,10 +69,21 @@ func (ws *Workspace) DescribeApiGateways(ctx context.Context, _ *api.DescribeApi
 		if err := jsonutil.UnmarshalString(component.State, &state); err != nil {
 			return nil, fmt.Errorf("unmarshalling api gateway state: %w", err)
 		}
+
+		fmt.Printf("getting process description: %+v\n", component.Name)
+		desc, err := container.GetProcessDescription(ctx, ws.Docker, component)
+		fmt.Printf("%q desc: %+v\n", component.Name, desc)
+		if err != nil {
+			return nil, fmt.Errorf("getting api gateway process description: %w", err)
+		}
+		//fmt.Printf("desc: %+v\n", desc)
+
 		apiGateways = append(apiGateways, api.ApiGatewayDescription{
+			ID:      component.ID,
 			Name:    component.Name,
 			ApiPort: state.APIPort,
 			WebPort: state.WebPort,
+			Running: desc.Running,
 		})
 	}
 	return &api.DescribeApiGatewaysOutput{ApiGateways: apiGateways}, nil

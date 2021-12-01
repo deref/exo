@@ -1,3 +1,10 @@
+export interface ApiGatewayDescription {
+  id: string;
+  name: string;
+  apiPort: number;
+  webPort: number;
+}
+
 export interface ProcessDescription {
   id: string;
   name: string;

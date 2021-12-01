@@ -603,9 +603,11 @@ type VaultDescription struct {
 }
 
 type ApiGatewayDescription struct {
+	ID      string `json:"id"`
 	Name    string `json:"name"`
 	ApiPort int    `json:"apiPort"`
 	WebPort int    `json:"webPort"`
+	Running bool   `json:"running"`
 }
 
 type VariableDescription struct {

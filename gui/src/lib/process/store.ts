@@ -7,7 +7,7 @@ import {
   successResponse,
 } from '../api';
 import type { WorkspaceApi } from '../api';
-import type { ProcessDescription } from './types';
+import type { ApiGatewayDescription, ProcessDescription } from './types';
 
 export const processes = writable(notRequested<ProcessDescription[]>());
 
@@ -61,4 +61,39 @@ export const deleteProcess = async (workspace: WorkspaceApi, id: string) => {
 export const refreshAllProcesses = async (workspace: WorkspaceApi) => {
   await workspace.refreshAllProcesses();
   fetchProcesses(workspace);
+};
+
+export const apiGateways = writable(notRequested<ApiGatewayDescription[]>());
+
+const refetchApiGateways = (workspace: WorkspaceApi) =>
+  workspace
+    .describeApiGateways()
+    .then((data) => {
+      console.log('got data', data);
+      apiGateways.set(successResponse(data));
+    })
+    .catch((err: Error) => {
+      processes.set(errorResponse(err.message));
+    });
+
+export const fetchApiGateways = (workspace: WorkspaceApi) => {
+  apiGateways.update((req) => {
+    switch (req.stage) {
+      case 'idle':
+        refetchApiGateways(workspace);
+        return pendingRequest();
+      case 'pending':
+        // Do not refetch.
+        return req;
+      case 'error':
+        refetchApiGateways(workspace);
+        return pendingRequest();
+      case 'success':
+        refetchApiGateways(workspace);
+        return refetchingResponse(req.data);
+      case 'refetching':
+        // I'm not sure this is right.
+        return req;
+    }
+  });
 };

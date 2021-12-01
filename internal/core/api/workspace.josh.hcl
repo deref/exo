@@ -338,9 +338,11 @@ struct "vault-description" {
 }
 
 struct "api-gateway-description" {
+  field "id" "string" {}
   field "name" "string" {}
   field "api-port" "int" {}
   field "web-port" "int" {}
+  field "running" "bool" {}
 }
 
 struct "variable-description" {
