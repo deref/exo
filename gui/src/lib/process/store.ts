@@ -1,4 +1,5 @@
 import { writable } from 'svelte/store';
+import type { ApiGatewayDescription } from '../api';
 import {
   errorResponse,
   notRequested,
@@ -7,7 +8,7 @@ import {
   successResponse,
 } from '../api';
 import type { WorkspaceApi } from '../api';
-import type { ApiGatewayDescription, ProcessDescription } from './types';
+import type { ProcessDescription } from './types';
 
 export const processes = writable(notRequested<ProcessDescription[]>());
 
@@ -69,7 +70,6 @@ const refetchApiGateways = (workspace: WorkspaceApi) =>
   workspace
     .describeApiGateways()
     .then((data) => {
-      console.log('got data', data);
       apiGateways.set(successResponse(data));
     })
     .catch((err: Error) => {

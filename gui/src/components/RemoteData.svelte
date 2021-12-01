@@ -13,13 +13,15 @@
   }
   interface $$Props {
     data: RequestLifecycle<Item>;
+    name: string;
   }
 
   export let data: RequestLifecycle<Item>;
+  export let name = 'data';
 </script>
 
 {#if data.stage === 'pending'}
-  <slot name="pending">Loading...</slot>
+  <slot name="pending"><p>Loading {name}...</p></slot>
 {:else if data.stage === 'success' || data.stage === 'refetching'}
   <slot name="success" data={data.data} loading={data.stage == 'refetching'}>
     Missing success slot!

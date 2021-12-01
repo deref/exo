@@ -70,13 +70,10 @@ func (ws *Workspace) DescribeApiGateways(ctx context.Context, _ *api.DescribeApi
 			return nil, fmt.Errorf("unmarshalling api gateway state: %w", err)
 		}
 
-		fmt.Printf("getting process description: %+v\n", component.Name)
 		desc, err := container.GetProcessDescription(ctx, ws.Docker, component)
-		fmt.Printf("%q desc: %+v\n", component.Name, desc)
 		if err != nil {
 			return nil, fmt.Errorf("getting api gateway process description: %w", err)
 		}
-		//fmt.Printf("desc: %+v\n", desc)
 
 		apiGateways = append(apiGateways, api.ApiGatewayDescription{
 			ID:      component.ID,
@@ -802,7 +799,7 @@ func (ws *Workspace) GetEvents(ctx context.Context, input *api.GetEventsInput) (
 
 func (ws *Workspace) Start(ctx context.Context, input *api.StartInput) (*api.StartOutput, error) {
 	ws.logEventf(ctx, "starting...")
-	jobID := ws.controlEachComponent(ctx, "starting", allProcessQuery(withDependencies), func(*api.ComponentDescription) interface{} {
+	jobID := ws.controlEachComponent(ctx, "starting", allRunnableQuery(withDependencies), func(*api.ComponentDescription) interface{} {
 		return input
 	}, func(desc *api.ComponentDescription, err error) {
 		ws.logEventf(ctx, "error starting %s: %v", desc.Name, err)
@@ -816,7 +813,7 @@ func (ws *Workspace) StartComponents(ctx context.Context, input *api.StartCompon
 	ws.logEventf(ctx, "starting: %s", input.Refs)
 	// Note that we are only querying Process component types specifically because they are the only
 	// things that are "startable".
-	query := allProcessQuery(withRefs(input.Refs...), withDependencies)
+	query := allRunnableQuery(withRefs(input.Refs...), withDependencies)
 	jobID := ws.controlEachComponent(ctx, "starting", query, func(desc *api.ComponentDescription) interface{} {
 		if !isRunnableType(desc.Type) {
 			return nil
@@ -832,7 +829,7 @@ func (ws *Workspace) StartComponents(ctx context.Context, input *api.StartCompon
 
 func (ws *Workspace) Stop(ctx context.Context, input *api.StopInput) (*api.StopOutput, error) {
 	ws.logEventf(ctx, "stopping...")
-	query := allProcessQuery(withReversedDependencies, withDependents)
+	query := allRunnableQuery(withReversedDependencies, withDependents)
 	jobID := ws.controlEachComponent(ctx, "stopping", query, func(*api.ComponentDescription) interface{} {
 		return input
 	})
@@ -843,7 +840,7 @@ func (ws *Workspace) Stop(ctx context.Context, input *api.StopInput) (*api.StopO
 
 func (ws *Workspace) StopComponents(ctx context.Context, input *api.StopComponentsInput) (*api.StopComponentsOutput, error) {
 	ws.logEventf(ctx, "stopping: %s", input.Refs)
-	query := allProcessQuery(
+	query := allRunnableQuery(
 		withRefs(input.Refs...),
 		withReversedDependencies,
 		withDependents,

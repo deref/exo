@@ -8,11 +8,18 @@
   import MenuItem from './MenuItem.svelte';
   import ProcfileChecker from './processes/ProcfileChecker.svelte';
   import ProcessListTable from './processes/ProcessListTable.svelte';
+  import ApiGatewayListTable from './processes/ApiGatewayListTable.svelte';
   import { onDestroy, onMount } from 'svelte';
-  import type { RequestLifecycle, WorkspaceApi } from '../lib/api';
+  import type {
+    RequestLifecycle,
+    WorkspaceApi,
+    ApiGatewayDescription,
+  } from '../lib/api';
   import type { ProcessDescription } from '../lib/process/types';
   import {
     fetchProcesses,
+    fetchApiGateways,
+    apiGateways,
     processes,
     refreshAllProcesses,
   } from '../lib/process/store';
@@ -29,6 +36,13 @@
     processList = processes;
   });
 
+  let apiGatewayList: RequestLifecycle<ApiGatewayDescription[]> = {
+    stage: 'pending',
+  };
+  apiGateways.subscribe((gateways) => {
+    apiGatewayList = gateways;
+  });
+
   let refreshInterval: any;
 
   let procfileExport: string | null = null;
@@ -41,11 +55,15 @@
 
   onMount(() => {
     fetchProcesses(workspace);
+    fetchApiGateways(workspace);
     checkProcfile();
 
     // TODO: Server-sent events or websockets!
     refreshInterval = setInterval(() => {
       refreshAllProcesses(workspace);
+      // TODO: consider implementing a similar "refreshAllApiGateways" which
+      // calls the component's "refresh" lifecycle method.
+      fetchApiGateways(workspace);
       checkProcfile();
     }, 5000);
   });
@@ -150,13 +168,22 @@
       >
         <Icon glyph="Add" /> Add component
       </button>
-      <RemoteData data={processList} let:data let:error>
+      <RemoteData name="processes" data={processList} let:data let:error>
         <div slot="success">
           <ProcessListTable {data} {workspace} {workspaceId} />
         </div>
 
         <div slot="error">
           Error fetching process list: {error}
+        </div>
+      </RemoteData>
+      <RemoteData name="API gateways" data={apiGatewayList} let:data let:error>
+        <div slot="success">
+          <ApiGatewayListTable {data} {workspace} {workspaceId} />
+        </div>
+
+        <div slot="error">
+          Error fetching API gateway list: {error}
         </div>
       </RemoteData>
       <IfEnabled feature="export procfile">

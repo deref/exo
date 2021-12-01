@@ -3,7 +3,7 @@ export const hashString = (s: string) =>
   s
     .split('')
     .map((c) => c.charCodeAt(0))
-    .reduce((a, c) => a + c);
+    .reduce((a, c) => a + c, 0);
 
 export const hashDegree = (s: string) =>
   Math.round(hashString(s) * Math.PI * 100) % 360;

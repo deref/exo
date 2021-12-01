@@ -55,7 +55,8 @@ var withDependents = componentQueryUpdate(func(q *componentQuery) {
 
 var allComponentsQuery = makeComponentQuery()
 
-var runnableTypes = []string{"process", "container"}
+var processTypes = []string{"process", "container"}
+var runnableTypes = append(processTypes, "apigateway")
 
 func isRunnableType(name string) bool {
 	for _, typ := range runnableTypes {
@@ -67,6 +68,11 @@ func isRunnableType(name string) bool {
 }
 
 func allProcessQuery(updates ...componentQueryUpdate) componentQuery {
+	updates = append([]componentQueryUpdate{withTypes(processTypes...)}, updates...)
+	return makeComponentQuery(updates...)
+}
+
+func allRunnableQuery(updates ...componentQueryUpdate) componentQuery {
 	updates = append([]componentQueryUpdate{withTypes(runnableTypes...)}, updates...)
 	return makeComponentQuery(updates...)
 }
