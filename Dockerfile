@@ -1,4 +1,5 @@
 FROM golang:1.17 AS builder
+LABEL org.opencontainers.image.source https://github.com/deref/exo
 
 WORKDIR /go/src/app
 
