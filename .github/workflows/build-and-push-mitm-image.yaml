@@ -8,7 +8,10 @@ jobs:
     env:
       REGISTRY: ghcr.io
       IMAGE_NAME: deref/exo-mitm
-    permissions: write-all
+    permissions:
+      contents: read
+      packages: write
+
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
@@ -18,7 +21,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ secrets.GH_PAT }}
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v1
       - name: Set up Docker Buildx
