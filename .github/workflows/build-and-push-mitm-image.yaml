@@ -8,10 +8,7 @@ jobs:
     env:
       REGISTRY: ghcr.io
       IMAGE_NAME: deref/exo-mitm
-    permissions:
-      contents: read
-      packages: write
-
+    permissions: write-all
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
