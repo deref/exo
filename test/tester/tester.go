@@ -35,6 +35,22 @@ type ExoTester struct {
 	logBuffer  io.Reader
 }
 
+func (et ExoTester) GetExoLogs() (string, error) {
+	mainLogs, err := ioutil.ReadFile(filepath.Join(et.exoHome, "var", "exod.log"))
+	if err != nil {
+		return "", fmt.Errorf("reading exod.log: %w", err)
+	}
+	stdoutLogs, err := ioutil.ReadFile(filepath.Join(et.exoHome, "var", "exod.stdout"))
+	if err != nil {
+		return "", fmt.Errorf("reading exod.stdout: %w", err)
+	}
+	stderrLogs, err := ioutil.ReadFile(filepath.Join(et.exoHome, "var", "exod.stderr"))
+	if err != nil {
+		return "", fmt.Errorf("reading exod.stderr: %w", err)
+	}
+	return fmt.Sprintf("Daemon logs:\n%s\nStdout logs:\n%s\nStderr logs:\n%s\n", mainLogs, stdoutLogs, stderrLogs), nil
+}
+
 func (et ExoTester) RunTest(ctx context.Context, test ExoTest) (io.Reader, error) {
 	defer et.StopDaemon(context.Background())
 	if err := et.StartDaemon(ctx); err != nil {
