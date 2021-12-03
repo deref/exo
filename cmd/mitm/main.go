@@ -54,7 +54,6 @@ class Rerouter:
 
 addons = [Rerouter()]
 `
-	fmt.Printf("script: %+v\n", script)
 	return ioutil.WriteFile(scriptPath, []byte(script), 0600)
 }
 
@@ -78,7 +77,6 @@ func run(hostMapper HostMapper) {
 	}()
 	for {
 		newHostMap := hostMapper.GetHostMap()
-		fmt.Printf("newHostMap: %+v\n", newHostMap)
 		if !reflect.DeepEqual(hostMap, newHostMap) {
 			hostMap = newHostMap
 			if err := writeScript(hostMap); err != nil {
