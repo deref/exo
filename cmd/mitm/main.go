@@ -51,6 +51,8 @@ class Rerouter:
             flow.request.host = dest["host"]
             flow.request.port = int(dest["port"])
             flow.request.host_header = originalHostHeader
+        else:
+            flow.kill()
 
 addons = [Rerouter()]
 `
