@@ -57,7 +57,7 @@ func main() {
 		exoBinPath := exoBinPath
 		fixtureBasePath := fixtureBasePath
 		if err := doTest(ctx, test, testName, exoBinPath, fixtureBasePath, &outputMutex); err != nil {
-			fmt.Println("Tests failed: ", err)
+			fmt.Println("Tests failed: ", err.Error())
 			os.Exit(1)
 		}
 	}
