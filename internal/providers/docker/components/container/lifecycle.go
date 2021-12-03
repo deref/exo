@@ -415,14 +415,18 @@ func (c *Container) create(ctx context.Context, spec *Spec) error {
 	//}
 	createdBody, err := c.Docker.ContainerCreate(ctx, containerCfg, hostCfg, networkCfg, platform, spec.ContainerName.Value)
 	if err != nil {
-		return err
+		return fmt.Errorf("creating container: %w", err)
 	}
 	c.State.ContainerID = createdBody.ID
 	var netConnects errgroup.Group
 	for _, network := range remainingNetworks {
 		network := network
 		netConnects.Go(func() error {
-			return c.Docker.NetworkConnect(ctx, network.Key, createdBody.ID, c.endpointSettings(network, spec))
+			err := c.Docker.NetworkConnect(ctx, network.Key, createdBody.ID, c.endpointSettings(network, spec))
+			if err != nil {
+				return fmt.Errorf("connecting to network %s: %w", network.Key, err)
+			}
+			return nil
 		})
 	}
 
@@ -476,7 +480,7 @@ func (c *Container) Dispose(ctx context.Context, input *core.DisposeInput) (*cor
 		err = nil
 	}
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("removing container: %w", err)
 	}
 	c.State.ContainerID = ""
 	return &core.DisposeOutput{}, nil
@@ -498,7 +502,7 @@ func (c *Container) removeExistingContainerByName(ctx context.Context, name stri
 		if err := c.Docker.ContainerRemove(ctx, containers[0].ID, types.ContainerRemoveOptions{
 			Force: true,
 		}); err != nil {
-			return err
+			return fmt.Errorf("removing container by name: %w", err)
 		}
 	}
 
