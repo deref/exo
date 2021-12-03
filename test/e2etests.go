@@ -15,9 +15,6 @@ var basicT0Test = func(ctx context.Context, t tester.ExoTester) error {
 	if _, _, err := t.RunExo(ctx, "init"); err != nil {
 		return err
 	}
-	if _, _, err := t.RunExo(ctx, "start"); err != nil {
-		return err
-	}
 	ctx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Second*5))
 	defer cancel()
 	return t.WaitTillProcessesReachState(ctx, "running", []string{"t0"})
@@ -40,9 +37,6 @@ var tests = map[string]tester.ExoTest{
 		FixtureDir: "simple-example",
 		Test: func(ctx context.Context, t tester.ExoTester) error {
 			if _, _, err := t.RunExo(ctx, "init"); err != nil {
-				return err
-			}
-			if _, _, err := t.RunExo(ctx, "start"); err != nil {
 				return err
 			}
 
@@ -95,9 +89,6 @@ var tests = map[string]tester.ExoTest{
 		FixtureDir: "api-gateway",
 		Test: func(ctx context.Context, t tester.ExoTester) error {
 			if _, _, err := t.RunExo(ctx, "init"); err != nil {
-				return err
-			}
-			if _, _, err := t.RunExo(ctx, "start"); err != nil {
 				return err
 			}
 
