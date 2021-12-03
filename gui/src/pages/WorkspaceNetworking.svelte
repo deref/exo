@@ -53,22 +53,5 @@
         },
       ]}
     />
-    {#await workspace.describeApiGateways() then gateways}
-      {#each gateways as gateway}
-        <iframe
-          src={`http://localhost:${gateway.webPort}/#/flows`}
-          title="Connections"
-        />
-      {/each}
-    {/await}
   </Panel>
 </Layout>
-
-<style>
-  iframe {
-    margin-top: 1em;
-    border: none;
-    width: 100%;
-    min-height: 400px;
-  }
-</style>

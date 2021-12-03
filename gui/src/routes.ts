@@ -15,6 +15,7 @@ import NewDockerNetwork from './pages/NewDockerNetwork.svelte';
 import NewDockerVolume from './pages/NewDockerVolume.svelte';
 import EditComponent from './pages/EditComponent.svelte';
 import ComponentDetails from './pages/ComponentDetails.svelte';
+import ApiGatewayDetails from './pages/ApiGatewayDetails.svelte';
 import Preferences from './pages/Preferences.svelte';
 import Jobs from './pages/Jobs.svelte';
 import Job from './pages/Job.svelte';
@@ -39,6 +40,7 @@ export default {
   '/workspaces/:workspace/add-vault': WorkspaceAddVault,
   '/workspaces/:workspace/components/:component/edit': EditComponent,
   '/workspaces/:workspace/components/:component': ComponentDetails,
+  '/workspaces/:workspace/api-gateways/:component': ApiGatewayDetails,
   '/preferences': Preferences,
   '/jobs': Jobs,
   '/jobs/:job': Job,

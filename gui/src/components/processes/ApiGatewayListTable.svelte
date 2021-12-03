@@ -53,7 +53,7 @@
         use:link
         href={`/workspaces/${encodeURIComponent(
           workspaceId,
-        )}/components/${encodeURIComponent(id)}`}
+        )}/api-gateways/${encodeURIComponent(id)}`}
       >
         {name}
       </a>
