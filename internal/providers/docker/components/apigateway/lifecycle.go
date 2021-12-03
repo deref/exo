@@ -31,7 +31,7 @@ func (ag APIGateway) makeContainerSpec(gatewaySpec Spec) (string, error) {
 	return yamlutil.MustMarshalString(container.Spec{
 		Image: compose.MakeString("ghcr.io/deref/exo-mitm:latest"),
 		Environment: compose.Dictionary{Items: []compose.DictionaryItem{
-			{Key: "EXO_URL", Value: "http://host.docker.internal:44643/_exo/"},
+			{Key: "EXO_URL", Value: fmt.Sprintf("http://host.docker.internal:%d/_exo/", ag.HTTPPort)},
 			{Key: "EXO_TOKEN", Value: token},
 			{Key: "EXO_WORKSPACE_ID", Value: ag.WorkspaceID},
 		}},

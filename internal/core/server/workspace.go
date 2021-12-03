@@ -52,6 +52,7 @@ type Workspace struct {
 	TaskTracker *task.TaskTracker
 	EsvClient   esv.EsvClient
 	TokenClient token.TokenClient
+	ExoHTTPPort uint
 }
 
 var _ api.Workspace = &Workspace{}
@@ -455,6 +456,7 @@ func (ws *Workspace) newController(ctx context.Context, desc api.ComponentDescri
 	switch desc.Type {
 	case "apigateway":
 		return &apigateway.APIGateway{
+			HTTPPort:    ws.ExoHTTPPort,
 			TokenClient: ws.TokenClient,
 			Container: container.Container{
 				ComponentBase: docker.ComponentBase{

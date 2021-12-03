@@ -29,6 +29,7 @@ type Config struct {
 	TokenClient token.TokenClient
 	EsvClient   esv.EsvClient
 	ExoVersion  string
+	HTTPPort    uint
 }
 
 func BuildRootMux(prefix string, cfg *Config) *http.ServeMux {
@@ -90,6 +91,7 @@ func BuildRootMux(prefix string, cfg *Config) *http.ServeMux {
 			TaskTracker: cfg.TaskTracker,
 			EsvClient:   cfg.EsvClient,
 			TokenClient: cfg.TokenClient,
+			ExoHTTPPort: cfg.HTTPPort,
 		}
 	})
 	endWorkspace()

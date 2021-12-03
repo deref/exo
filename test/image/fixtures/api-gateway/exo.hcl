@@ -12,5 +12,7 @@ components {
     environment    = { RESPONSE = "b", PORT = "44225" }
     ports          = ["44225:44225"]
   }
-  apigateway "a1" {}
+  apigateway "a1" {
+    api_port = 44544
+  }
 }

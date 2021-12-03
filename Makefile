@@ -10,7 +10,7 @@ all:
 build: bin/exo
 	$(MAKE) -C gui build
 
-.PHONY:
+.PHONY: bin/exo
 bin/exo:
 	go build -o ./bin/exo
 

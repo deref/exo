@@ -157,6 +157,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 		TokenClient: cfg.GetTokenClient(),
 		EsvClient:   esv.NewEsvClient(cfg.EsvTokenPath),
 		ExoVersion:  about.Version,
+		HTTPPort:    cfg.HTTPPort,
 	}
 
 	// As a one-time migration, simply delete all logs in the old Badger format.

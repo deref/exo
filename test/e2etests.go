@@ -1,8 +1,11 @@
 package main
 
 import (
+	"bytes"
 	"context"
 	"fmt"
+	"io/ioutil"
+	"net/http"
 	"time"
 
 	"github.com/deref/exo/test/tester"
@@ -82,6 +85,57 @@ var tests = map[string]tester.ExoTest{
 				return err
 			}
 			if err := t.WaitTillProcessesReachState(ctx, "stopped", []string{"web", "echo-short"}); err != nil {
+				return err
+			}
+
+			return nil
+		},
+	},
+	"api-gateway": {
+		FixtureDir: "api-gateway",
+		Test: func(ctx context.Context, t tester.ExoTester) error {
+			if _, _, err := t.RunExo(ctx, "init"); err != nil {
+				return err
+			}
+			if _, _, err := t.RunExo(ctx, "start"); err != nil {
+				return err
+			}
+
+			ctx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Second*10))
+			defer cancel()
+
+			if err := t.WaitTillProcessesReachState(ctx, "running", []string{"t0", "t1"}); err != nil {
+				return err
+			}
+
+			validateResponse := func(url string, expectedBody string) error {
+				for {
+					resp, err := http.Get(url)
+					if err != nil {
+						return err
+					}
+					if resp.StatusCode == 200 {
+						body, err := ioutil.ReadAll(resp.Body)
+						if err != nil {
+							return err
+						}
+						if string(bytes.TrimSpace(body)) != expectedBody {
+							return fmt.Errorf("unexpected response %s", body)
+						}
+						return nil
+					}
+					select {
+					case <-ctx.Done():
+						return ctx.Err()
+					default:
+					}
+				}
+			}
+
+			if err := validateResponse("http://t0.exo.localhost:44544", "a"); err != nil {
+				return err
+			}
+			if err := validateResponse("http://t1.exo.localhost:44544", "b"); err != nil {
 				return err
 			}
 

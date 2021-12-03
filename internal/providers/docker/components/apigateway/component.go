@@ -17,6 +17,7 @@ type State struct {
 }
 
 type APIGateway struct {
+	HTTPPort    uint
 	TokenClient token.TokenClient
 	container.Container
 	State State

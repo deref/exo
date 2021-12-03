@@ -10,7 +10,7 @@ import (
 	"github.com/deref/exo/test/tester"
 )
 
-func doTest(ctx context.Context, test tester.ExoTest, testName, exoBinPath, fixtureBasePath string, outputMutex *sync.Mutex) error {
+func doTest(ctx context.Context, test tester.ExoTest, testName, exoBinPath, fixtureBasePath string, outputMutex sync.Locker) error {
 	tester := tester.MakeExoTester(exoBinPath, fixtureBasePath, test)
 
 	fmt.Println("running", testName)
@@ -37,6 +37,7 @@ func main() {
 	exoBinPath := os.Args[1]
 	fixtureBasePath := os.Args[2]
 
+	// Guards writing to stdout/stderr so that only one test is printing at a time.
 	var outputMutex sync.Mutex
 
 	ctx := context.Background()
