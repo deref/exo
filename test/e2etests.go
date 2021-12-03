@@ -102,10 +102,7 @@ var tests = map[string]tester.ExoTest{
 			validateResponse := func(url string, expectedBody string) error {
 				for {
 					resp, err := http.Get(url)
-					if err != nil {
-						return err
-					}
-					if resp.StatusCode == 200 {
+					if err == nil && resp.StatusCode == 200 {
 						body, err := ioutil.ReadAll(resp.Body)
 						if err != nil {
 							return err
