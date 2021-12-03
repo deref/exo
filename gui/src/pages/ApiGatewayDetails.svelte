@@ -6,6 +6,7 @@
   import { onDestroy, onMount } from 'svelte';
   import { fetchApiGateways, apiGateways } from '../lib/process/store';
   import type { RequestLifecycle } from '../lib/api';
+  import CheckeredTableWrapper from '../components/CheckeredTableWrapper.svelte';
 
   export let params = { workspace: '', component: '' };
 
@@ -41,7 +42,7 @@
             for (const p of procs) {
               endpoints.push({
                 name: p.name,
-                url: `${p.name}.exo.localhost:${apiGateway.webPort}`,
+                url: `${p.name}.exo.localhost:${apiGateway.apiPort}`,
               });
             }
           }
@@ -65,9 +66,33 @@
   <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
   {#if apiGateway}
     <Panel title={apiGateway.name} backRoute={workspaceRoute}>
-      <p>{JSON.stringify(apiGateway)}</p>
-      <p>{JSON.stringify(endpoints)}</p>
+      <h1>{apiGateway.name} API Gateway</h1>
       {#if apiGateway.running}
+        <CheckeredTableWrapper>
+          <tbody>
+            <table>
+              <thead>
+                <tr>
+                  <th>Name</th>
+                  <th>URL</th>
+                </tr>
+              </thead>
+              {#each endpoints as { name, url }}
+                <tr>
+                  <td>{name}</td>
+                  <td><a href={'//' + url} target="_blank">{url}</a></td>
+                </tr>
+              {:else}
+                <tr><td colspan="2"> Loading... </td></tr>
+              {/each}
+            </table>
+          </tbody>
+        </CheckeredTableWrapper>
+        <p>
+          <a href={`http://localhost:${apiGateway.webPort}`} target="_blank"
+            >Web interface:</a
+          >
+        </p>
         <iframe
           src={`http://localhost:${apiGateway.webPort}/#/flows`}
           title="Connections"
@@ -88,5 +113,10 @@
     border: none;
     width: 100%;
     min-height: 400px;
+  }
+
+  p {
+    margin-top: 3em;
+    margin-bottom: 0;
   }
 </style>
