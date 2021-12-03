@@ -132,7 +132,7 @@ var tests = map[string]tester.ExoTest{
 				}
 			}
 
-			if err := validateResponse("http://t0.exo.localhost:44544", "a"); err != nil {
+			if err := validateResponse("http://localhost:44544", "a"); err != nil {
 				return err
 			}
 			if err := validateResponse("http://t1.exo.localhost:44544", "b"); err != nil {
