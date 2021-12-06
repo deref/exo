@@ -329,7 +329,7 @@
     z-index: 1000;
     top: 1rem;
     right: 1rem;
-    margin: 0;
+    margin: -0.25rem;
     padding: 0;
     width: 1.5rem;
     height: 1.5rem;
@@ -337,10 +337,8 @@
     color: var(--strong-color);
     border-radius: 1.5rem;
     background: var(--primary-bg-color);
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, 1);
-    transition: transform 0.2s cubic-bezier(0.25, 0.1, 0.25, 1),
-      background 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
     -webkit-appearance: none;
+    outline: none;
   }
 
   .close:before,
@@ -354,8 +352,6 @@
     height: 1px;
     background: var(--strong-color);
     transform-origin: center;
-    transition: height 0.2s cubic-bezier(0.25, 0.1, 0.25, 1),
-      background 0.2s cubic-bezier(0.25, 0.1, 0.25, 1);
   }
 
   .close:before {
@@ -373,13 +369,7 @@
   }
 
   .close:hover {
-    background: var(--strong-color);
-  }
-
-  .close:hover:before,
-  .close:hover:after {
-    height: 2px;
-    background: var(--primary-bg-color);
+    background-color: var(--grey-d-color);
   }
 
   .close:focus {
@@ -389,11 +379,5 @@
 
   .close:active {
     transform: scale(0.9);
-  }
-
-  .close:hover,
-  .close:focus,
-  .close:active {
-    outline: none;
   }
 </style>
