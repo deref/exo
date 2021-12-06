@@ -80,7 +80,7 @@ func (et ExoTester) WaitTillProcessesReachState(ctx context.Context, state strin
 			case <-ctx.Done():
 				return errTimeout
 			default:
-				return err
+				return fmt.Errorf("getting processes: %w", err)
 			}
 		}
 
