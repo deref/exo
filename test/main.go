@@ -14,7 +14,7 @@ func doTest(ctx context.Context, test tester.ExoTest, testName, exoBinPath, fixt
 	tester := tester.MakeExoTester(exoBinPath, fixtureBasePath, test)
 
 	fmt.Println("running", testName)
-	if outputReader, err := tester.RunTest(ctx, test); err != nil {
+	if outputReader, workspaceLogs, err := tester.RunTest(ctx, test); err != nil {
 		outputMutex.Lock()
 		defer outputMutex.Unlock()
 
@@ -30,6 +30,9 @@ func doTest(ctx context.Context, test tester.ExoTest, testName, exoBinPath, fixt
 			fmt.Println("failed to get exo logs:", logErr)
 		}
 		fmt.Println(exoLogs)
+
+		fmt.Println("Workspace logs:")
+		fmt.Println(workspaceLogs)
 
 		return fmt.Errorf("test failed: %w", err)
 	}
