@@ -20,8 +20,9 @@ func (c *Container) start(ctx context.Context) error {
 	err := c.Docker.ContainerStart(ctx, c.State.ContainerID, types.ContainerStartOptions{})
 	if err != nil {
 		c.State.Running = true
+		return fmt.Errorf("starting container: %w", err)
 	}
-	return fmt.Errorf("starting container: %w", err)
+	return nil
 }
 
 func (c *Container) Stop(ctx context.Context, input *core.StopInput) (*core.StopOutput, error) {
