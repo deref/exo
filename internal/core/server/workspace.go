@@ -94,12 +94,23 @@ func (ws *Workspace) GetServiceEndpoints(ctx context.Context, _ *api.GetServiceE
 	}
 	endpoints := []api.ServiceEndpoint{}
 	for _, proc := range processes.Processes {
-		if len(proc.Ports) > 0 {
+		var port string
+		if proc.Provider == "unix" {
+			var spec process.Spec
+			if err := jsonutil.UnmarshalStringOrEmpty(proc.Spec, &spec); err != nil {
+				ws.Logger.Infof("unmarshalling process spec: %v\n", err)
+			} else {
+				port = spec.Environment["PORT"]
+			}
+		} else if len(proc.Ports) > 0 {
+			port = fmt.Sprintf("%d", proc.Ports[0])
+		}
+		if port != "" {
 			endpoints = append(endpoints, api.ServiceEndpoint{
 				Service:  proc.Name,
 				Host:     "localhost",
-				Endpoint: fmt.Sprintf("localhost:%d", proc.Ports[0]),
-				Port:     fmt.Sprintf("%d", proc.Ports[0]),
+				Endpoint: fmt.Sprintf("localhost:%s", port),
+				Port:     port,
 			})
 		}
 	}
