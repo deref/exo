@@ -25,9 +25,9 @@ func doTest(ctx context.Context, test tester.ExoTest, testName, exoBinPath, fixt
 
 		fmt.Printf("test output for %q:\n%s\n", testName, string(output))
 
-		exoLogs, err := tester.GetExoLogs()
-		if err != nil {
-			fmt.Println("failed to get exo logs:", err)
+		exoLogs, logErr := tester.GetExoLogs()
+		if logErr != nil {
+			fmt.Println("failed to get exo logs:", logErr)
 		}
 		fmt.Println(exoLogs)
 
