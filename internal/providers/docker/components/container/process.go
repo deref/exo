@@ -42,7 +42,10 @@ func (c *Container) stop(ctx context.Context, timeoutSeconds *uint) error {
 		timeout = &duration
 	}
 
-	return c.Docker.ContainerStop(ctx, c.State.ContainerID, timeout)
+	if err := c.Docker.ContainerStop(ctx, c.State.ContainerID, timeout); err != nil {
+		return fmt.Errorf("stopping container: %w", err)
+	}
+	return nil
 }
 
 func (c *Container) Restart(ctx context.Context, input *core.RestartInput) (*core.RestartOutput, error) {
@@ -58,12 +61,15 @@ func (c *Container) restart(ctx context.Context, timeoutSeconds *uint) error {
 		duration := time.Second * time.Duration(*timeoutSeconds)
 		timeout = &duration
 	}
-	return c.Docker.ContainerRestart(ctx, c.State.ContainerID, timeout)
+	if err := c.Docker.ContainerRestart(ctx, c.State.ContainerID, timeout); err != nil {
+		return fmt.Errorf("restarting container: %w", err)
+	}
+	return nil
 }
 
 func (c *Container) Signal(ctx context.Context, input *core.SignalInput) (*core.SignalOutput, error) {
 	if err := c.Docker.ContainerKill(ctx, c.State.ContainerID, input.Signal); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("signaling container: %w", err)
 	}
 	return &core.SignalOutput{}, nil
 }
