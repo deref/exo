@@ -48,7 +48,11 @@ func (et ExoTester) GetExoLogs() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("reading exod.stderr: %w", err)
 	}
-	return fmt.Sprintf("Daemon logs:\n%s\nStdout logs:\n%s\nStderr logs:\n%s\n", mainLogs, stdoutLogs, stderrLogs), nil
+	workspaceLogs, _, err := et.RunExo(context.TODO(), "logs --no-follow")
+	if err != nil {
+		et.logger.Warn("Failed to get workspace logs: ", err)
+	}
+	return fmt.Sprintf("Daemon logs:\n%s\nStdout logs:\n%s\nStderr logs:\n%s\nWorkspace logs:\n%s\n", mainLogs, stdoutLogs, stderrLogs, workspaceLogs), nil
 }
 
 func (et ExoTester) RunTest(ctx context.Context, test ExoTest) (io.Reader, error) {
