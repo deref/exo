@@ -62,15 +62,16 @@ func (et ExoTester) RunTest(ctx context.Context, test ExoTest) (io.Reader, strin
 		return et.logBuffer, "", fmt.Errorf("starting daemon: %w", err)
 	}
 	et.logger.Debug("Started exo")
-	if err := test.Test(ctx, et); err != nil {
-		return et.logBuffer, "", fmt.Errorf("running test: %w", err)
-	}
+	testErr := test.Test(ctx, et)
 	et.logger.Debug("Finished test")
 	workspaceLogs, _, err := et.RunExo(ctx, "logs", "--no-follow")
 	if err != nil {
-		return et.logBuffer, "", fmt.Errorf("getting workspace logs: %w", err)
+		return et.logBuffer, workspaceLogs, fmt.Errorf("getting workspace logs: %w", err)
 	}
 	et.workspaceLogs = workspaceLogs
+	if testErr != nil {
+		return et.logBuffer, workspaceLogs, fmt.Errorf("running test: %w", testErr)
+	}
 	if err := et.StopDaemon(ctx); err != nil {
 		return et.logBuffer, workspaceLogs, fmt.Errorf("stopping daemon: %w", err)
 	}
