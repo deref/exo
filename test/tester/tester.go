@@ -26,13 +26,18 @@ type ExoTest struct {
 }
 
 type ExoTester struct {
-	serverPort int
-	guiPort    int
-	exoHome    string
-	exoBinary  string
-	fixtureDir string
-	logger     *logrus.Logger
-	logBuffer  io.Reader
+	serverPort    int
+	guiPort       int
+	exoHome       string
+	exoBinary     string
+	fixtureDir    string
+	logger        *logrus.Logger
+	logBuffer     io.Reader
+	workspaceLogs string
+}
+
+func (et ExoTester) GetHomeDir() string {
+	return et.exoHome
 }
 
 func (et ExoTester) GetExoLogs() (string, error) {
@@ -48,11 +53,7 @@ func (et ExoTester) GetExoLogs() (string, error) {
 	if err != nil {
 		return "", fmt.Errorf("reading exod.stderr: %w", err)
 	}
-	workspaceLogs, _, err := et.RunExo(context.TODO(), "logs --no-follow")
-	if err != nil {
-		et.logger.Warn("Failed to get workspace logs: ", err)
-	}
-	return fmt.Sprintf("Daemon logs:\n%s\nStdout logs:\n%s\nStderr logs:\n%s\nWorkspace logs:\n%s\n", mainLogs, stdoutLogs, stderrLogs, workspaceLogs), nil
+	return fmt.Sprintf("Daemon logs:\n%s\nStdout logs:\n%s\nStderr logs:\n%s\nWorkspace logs:\n%s\n", mainLogs, stdoutLogs, stderrLogs, et.workspaceLogs), nil
 }
 
 func (et ExoTester) RunTest(ctx context.Context, test ExoTest) (io.Reader, error) {
@@ -65,6 +66,11 @@ func (et ExoTester) RunTest(ctx context.Context, test ExoTest) (io.Reader, error
 		return et.logBuffer, fmt.Errorf("running test: %w", err)
 	}
 	et.logger.Debug("Finished test")
+	workspaceLogs, _, err := et.RunExo(ctx, "logs", "--no-follow")
+	if err != nil {
+		return et.logBuffer, fmt.Errorf("getting workspace logs: %w", err)
+	}
+	et.workspaceLogs = workspaceLogs
 	if err := et.StopDaemon(ctx); err != nil {
 		return et.logBuffer, fmt.Errorf("stopping daemon: %w", err)
 	}
