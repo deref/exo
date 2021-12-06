@@ -3,6 +3,7 @@ package container
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	core "github.com/deref/exo/internal/core/api"
@@ -43,6 +44,9 @@ func (c *Container) stop(ctx context.Context, timeoutSeconds *uint) error {
 	}
 
 	if err := c.Docker.ContainerStop(ctx, c.State.ContainerID, timeout); err != nil {
+		if strings.Contains(err.Error(), "No such container") {
+			return nil
+		}
 		return fmt.Errorf("stopping container: %w", err)
 	}
 	return nil
