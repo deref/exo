@@ -162,7 +162,7 @@ func (c *Container) buildImage(ctx context.Context, spec *image.Spec) error {
 		}
 	}
 	if err != nil {
-		return err
+		return fmt.Errorf("building container image: %w", err)
 	}
 	if c.State.Image.ID == "" {
 		return fmt.Errorf("did not build an image")

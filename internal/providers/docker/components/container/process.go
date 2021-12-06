@@ -2,6 +2,7 @@ package container
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	core "github.com/deref/exo/internal/core/api"
@@ -20,7 +21,7 @@ func (c *Container) start(ctx context.Context) error {
 	if err != nil {
 		c.State.Running = true
 	}
-	return err
+	return fmt.Errorf("starting container: %w", err)
 }
 
 func (c *Container) Stop(ctx context.Context, input *core.StopInput) (*core.StopOutput, error) {
