@@ -11,8 +11,9 @@ import (
 )
 
 func (c *Container) Start(ctx context.Context, input *core.StartInput) (*core.StartOutput, error) {
+	//c.Initialize(ctx, &core.InitializeInput{Spec: })
 	if err := c.start(ctx); err != nil {
-		return nil, err
+		return nil, fmt.Errorf("starting process container: %w", err)
 	}
 	return &core.StartOutput{}, nil
 }
