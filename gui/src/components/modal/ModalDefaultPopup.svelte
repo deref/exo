@@ -8,3 +8,9 @@
   <h1>{title}</h1>
 {/if}
 <p>{message}</p>
+
+<style>
+  p {
+    white-space: pre-wrap;
+  }
+</style>
