@@ -7,8 +7,8 @@
   import { api } from '../lib/api';
 
   import { modal } from '../lib/modal';
-  import { bind } from '../components/modal/Modal.svelte';
-  import ModalDefaultPopup from '../components/modal/ModalDefaultPopup.svelte';
+  import { bind } from './modal/Modal.svelte';
+  import ModalDefaultPopup from './modal/ModalDefaultPopup.svelte';
 
   let installedVersion: string | null = null;
   let latestVersion: string | null = null;
