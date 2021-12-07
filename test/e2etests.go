@@ -92,9 +92,6 @@ var tests = map[string]tester.ExoTest{
 				return err
 			}
 
-			fmt.Println("sleeping")
-			time.Sleep(time.Hour)
-
 			ctx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Second*10))
 			defer cancel()
 
