@@ -170,7 +170,7 @@ func (p *Process) stop(timeoutSeconds *uint) error {
 	}
 
 	if err := osutil.TerminateGroupWithTimeout(p.Pgid, timeout); err != nil {
-		p.Logger.Infof("terminating process: %w", err)
+		p.Logger.Infof("terminating process: %v", err)
 	}
 
 	p.State.reset()
