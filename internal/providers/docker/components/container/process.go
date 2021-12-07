@@ -3,7 +3,6 @@ package container
 import (
 	"context"
 	"fmt"
-	"strings"
 	"time"
 
 	core "github.com/deref/exo/internal/core/api"
@@ -11,7 +10,6 @@ import (
 )
 
 func (c *Container) Start(ctx context.Context, input *core.StartInput) (*core.StartOutput, error) {
-	//c.Initialize(ctx, &core.InitializeInput{Spec: })
 	if err := c.start(ctx); err != nil {
 		return nil, fmt.Errorf("starting process container: %w", err)
 	}
@@ -45,9 +43,9 @@ func (c *Container) stop(ctx context.Context, timeoutSeconds *uint) error {
 	}
 
 	if err := c.Docker.ContainerStop(ctx, c.State.ContainerID, timeout); err != nil {
-		if strings.Contains(err.Error(), "No such container") {
-			return nil
-		}
+		//if strings.Contains(err.Error(), "No such container") {
+		//return nil
+		//}
 		return fmt.Errorf("stopping container: %w", err)
 	}
 	return nil
