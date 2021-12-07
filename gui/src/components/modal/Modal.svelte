@@ -317,7 +317,7 @@
 
   .content {
     position: relative;
-    padding: 1rem;
+    padding: 2rem;
     max-height: calc(100vh - 4rem);
     overflow: auto;
   }
@@ -329,7 +329,7 @@
     z-index: 1000;
     top: 1rem;
     right: 1rem;
-    margin: -0.25rem;
+    margin: 0;
     padding: 0;
     width: 1.5rem;
     height: 1.5rem;

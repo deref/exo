@@ -3,17 +3,18 @@
   import Layout from '../components/Layout.svelte';
   import IconButton from '../components/IconButton.svelte';
   import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
+  import { bind } from '../components/modal/Modal.svelte';
   import { theme, themeOptions } from '../lib/theme';
   import { api } from '../lib/api';
   import { modal } from '../lib/modal';
-  import ModalTest from '../components/modal/ModalTest.svelte';
+  import ModalDefaultPopup from '../components/modal/ModalDefaultPopup.svelte';
 
   const kernel = api.kernel;
   const makeRequest = () => kernel.getEsvUser('https://secrets.deref.io');
   let derefUser = makeRequest();
 
   const showModal1 = () => {
-    modal.set(ModalTest);
+    modal.set(bind(ModalDefaultPopup, { title: 'Test' }));
   };
 </script>
 
