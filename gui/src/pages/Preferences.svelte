@@ -3,10 +3,11 @@
   import Layout from '../components/Layout.svelte';
   import IconButton from '../components/IconButton.svelte';
   import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
-  import { bind } from '../components/modal/Modal.svelte';
   import { theme, themeOptions } from '../lib/theme';
   import { api } from '../lib/api';
+
   import { modal } from '../lib/modal';
+  import { bind } from '../components/modal/Modal.svelte';
   import ModalDefaultPopup from '../components/modal/ModalDefaultPopup.svelte';
 
   const kernel = api.kernel;
