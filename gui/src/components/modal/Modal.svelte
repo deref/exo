@@ -21,6 +21,8 @@
   import { fade } from 'svelte/transition';
   import { createEventDispatcher } from 'svelte';
 
+  import { modal } from '../../lib/modal';
+
   const dispatch = createEventDispatcher();
 
   const baseSetContext = svelte.setContext;
@@ -155,6 +157,7 @@
     onClose = callback.onClose || onClose;
     onClosed = callback.onClosed || onClosed;
     Component = null;
+    modal.set(null); // Note: experimental SPA router modal re-opening fix.
     enableScroll();
   };
 
