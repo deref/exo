@@ -76,8 +76,8 @@ type ContainerStats struct {
 	} `json:"networks"`
 	NumProcs  int64 `json:"num_procs"`
 	PIDsStats struct {
-		Current int64 `json:"current"`
-		Limit   int64 `json:"limit"`
+		Current uint64 `json:"current"`
+		Limit   uint64 `json:"limit"`
 	} `json:"pids_stats"`
 	PreCPUStats struct {
 		CPUUsage struct {
