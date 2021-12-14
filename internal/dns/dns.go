@@ -24,7 +24,7 @@ func handleRequest(w dns.ResponseWriter, r *dns.Msg) {
 }
 
 func StartDNSServer() error {
-	server := &dns.Server{Addr: ":44453", Net: "udp"}
+	server := &dns.Server{Addr: ":4453", Net: "udp"}
 	dns.HandleFunc(".", handleRequest)
 	return server.ListenAndServe()
 }
