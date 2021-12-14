@@ -31,6 +31,7 @@ require (
 	github.com/matryer/is v1.4.0 // indirect
 	github.com/mattn/go-isatty v0.0.14
 	github.com/mattn/go-sqlite3 v1.14.8
+	github.com/miekg/dns v1.0.14
 	github.com/moby/buildkit v0.9.0 // indirect
 	github.com/moby/moby v20.10.9+incompatible
 	github.com/natefinch/atomic v1.0.1

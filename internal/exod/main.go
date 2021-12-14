@@ -16,6 +16,7 @@ import (
 	"github.com/deref/exo/internal/core/server"
 	kernel "github.com/deref/exo/internal/core/server"
 	"github.com/deref/exo/internal/core/state/statefile"
+	"github.com/deref/exo/internal/dns"
 	"github.com/deref/exo/internal/esv"
 	eventdapi "github.com/deref/exo/internal/eventd/api"
 	eventdsqlite "github.com/deref/exo/internal/eventd/sqlite"
@@ -243,6 +244,12 @@ func RunServer(ctx context.Context, flags map[string]string) {
 			http.Redirect(resp, req, redirectTo, http.StatusMovedPermanently)
 			return
 		}))
+	}()
+
+	go func() {
+		if err := dns.StartDNSServer(); err != nil {
+			cmdutil.Fatalf("error starting dns server: %v", err)
+		}
 	}()
 
 	addr := cmdutil.GetAddr(cfg)
