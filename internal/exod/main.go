@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
+	"runtime"
 	"time"
 
 	golog "log"
@@ -259,7 +260,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 		Handler: handler,
 	}}
 	network, err := dockerClient.NetworkInspect(ctx, "bridge", types.NetworkInspectOptions{})
-	if err == nil && len(network.IPAM.Config) > 0 {
+	if runtime.GOOS == "linux" && err == nil && len(network.IPAM.Config) > 0 {
 		servers = append(servers, &http.Server{
 			Addr:    fmt.Sprintf("%s:%d", network.IPAM.Config[0].Gateway, cfg.HTTPPort),
 			Handler: handler,
