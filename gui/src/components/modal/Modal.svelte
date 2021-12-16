@@ -17,15 +17,19 @@
 </script>
 
 <script lang="ts">
-  import * as svelte from 'svelte';
   import { fade } from 'svelte/transition';
-  import { createEventDispatcher } from 'svelte';
+  import {
+    setContext as svelteSetContext,
+    onMount,
+    onDestroy,
+    createEventDispatcher,
+  } from 'svelte';
 
   import { modal } from '../../lib/modal';
 
   const dispatch = createEventDispatcher();
 
-  const baseSetContext = svelte.setContext;
+  const baseSetContext = svelteSetContext;
 
   export let show: any = null;
 
@@ -233,11 +237,11 @@
     }
   }
 
-  svelte.onDestroy(() => {
+  onDestroy(() => {
     if (isMounted) close();
   });
 
-  svelte.onMount(() => {
+  onMount(() => {
     isMounted = true;
   });
 </script>
