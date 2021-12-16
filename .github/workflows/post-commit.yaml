@@ -11,7 +11,10 @@ on:
 jobs:
   test:
     name: Run all tests
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@v2
       # Enable tmate debugging of manually-triggered workflows if the input option was provided
