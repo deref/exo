@@ -70,21 +70,21 @@
 
   let Component: any = null;
 
-  let background: any;
-  let wrap: any;
-  let modalWindow: any;
-  let scrollY: any;
-  let cssBg: any;
-  let cssWindowWrap: any;
-  let cssWindow: any;
-  let cssContent: any;
-  let cssCloseButton: any;
-  let currentTransitionBg: any;
-  let currentTransitionWindow: any;
-  let prevBodyPosition: any;
-  let prevBodyOverflow: any;
-  let prevBodyWidth: any;
-  let outerClickTarget: any;
+  let background: HTMLDivElement;
+  let wrap: HTMLDivElement;
+  let modalWindow: HTMLDivElement;
+  let scrollY: number;
+  let cssBg: string | undefined;
+  let cssWindowWrap: string | undefined;
+  let cssWindow: string | undefined;
+  let cssContent: string | undefined;
+  let cssCloseButton: string | undefined;
+  let currentTransitionBg: any; // Svelte transitions
+  let currentTransitionWindow: any; // Svelte transitions
+  let prevBodyPosition: string;
+  let prevBodyOverflow: string;
+  let prevBodyWidth: string;
+  let outerClickTarget: EventTarget | null;
 
   const camelCaseToDash = (str: string) =>
     str.replace(/([a-zA-Z])(?=[A-Z])/g, '$1-').toLowerCase();
