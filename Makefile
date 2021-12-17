@@ -32,7 +32,7 @@ completions:
 
 .PHONY: run-tests
 run-tests: bin/exo
-	go run ./test ./bin/exo ./test/image/fixtures
+	go run ./test ./bin/exo ./test/image/fixtures $(test)
 
 .PHONY: release-dry-run
 release-dry-run: make-gui mod-tidy codegen completions
