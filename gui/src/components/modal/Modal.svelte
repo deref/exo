@@ -79,8 +79,8 @@
   let cssWindow: string | undefined;
   let cssContent: string | undefined;
   let cssCloseButton: string | undefined;
-  let currentTransitionBg: any; // Svelte transitions
-  let currentTransitionWindow: any; // Svelte transitions
+  let currentTransitionBg: typeof state.transitionBg; // Svelte transitions
+  let currentTransitionWindow: typeof state.transitionWindow; // Svelte transitions
   let prevBodyPosition: string;
   let prevBodyOverflow: string;
   let prevBodyWidth: string;
