@@ -46,6 +46,10 @@ jobs:
       - uses: docker-practice/actions-setup-docker@e2e6958abd33da9808dbd96cbaf9b4f30b44011c
         if: ${{ matrix.os == 'macos-latest' }}
 
+      - name: Clean up after docker set up
+        if: ${{ matrix.os == 'macos-latest' }}
+        run: rm ./docker.rb
+
       # Enable tmate debugging of manually-triggered workflows if the input option was provided
       - name: Setup tmate session
         uses: mxschmitt/action-tmate@b926bc441c90cceb124409125658bbe544a2e1dd #v3.8
