@@ -43,6 +43,9 @@ jobs:
       - name: Upgrade npm
         run: npm i -g npm@latest
 
+      - uses: docker-practice/actions-setup-docker@e2e6958abd33da9808dbd96cbaf9b4f30b44011c
+        if: ${{ matrix.os == 'macos-latest' }}
+
       - name: Perform tests
         run: script/ci-test.sh
 
