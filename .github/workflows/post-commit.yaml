@@ -59,7 +59,7 @@ jobs:
         run: script/ci-test.sh
 
       - name: Inspect docker containers
-        run: docker inspect t0 t1
+        run: docker inspect t0 t1; docker ps -a
         if: failure()
 
 
