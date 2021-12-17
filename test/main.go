@@ -40,12 +40,16 @@ func doTest(ctx context.Context, test tester.ExoTest, testName, exoBinPath, fixt
 }
 
 func main() {
-	if len(os.Args) != 3 {
-		fmt.Println("Usage: e2etest exoBinPath fixtureBasePath")
+	if len(os.Args) != 3 && len(os.Args) != 4 {
+		fmt.Println("Usage: e2etest exoBinPath fixtureBasePath optionalTestName")
 		os.Exit(1)
 	}
 	exoBinPath := os.Args[1]
 	fixtureBasePath := os.Args[2]
+	testToRun := ""
+	if len(os.Args) == 4 {
+		testToRun = os.Args[3]
+	}
 
 	// Guards writing to stdout/stderr so that only one test is printing at a time.
 	var outputMutex sync.Mutex
@@ -55,13 +59,15 @@ func main() {
 	// FIXME: these tests should be parallelisable but there is evidently a race
 	// that causes issues.
 	for testName := range tests {
-		testName := testName
-		test := tests[testName]
-		exoBinPath := exoBinPath
-		fixtureBasePath := fixtureBasePath
-		if err := doTest(ctx, test, testName, exoBinPath, fixtureBasePath, &outputMutex); err != nil {
-			fmt.Println("Tests failed: ", err.Error())
-			os.Exit(1)
+		if testToRun == "" || testName == testToRun {
+			testName := testName
+			test := tests[testName]
+			exoBinPath := exoBinPath
+			fixtureBasePath := fixtureBasePath
+			if err := doTest(ctx, test, testName, exoBinPath, fixtureBasePath, &outputMutex); err != nil {
+				fmt.Println("Tests failed: ", err.Error())
+				os.Exit(1)
+			}
 		}
 	}
 }
