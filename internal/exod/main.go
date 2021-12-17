@@ -247,11 +247,13 @@ func RunServer(ctx context.Context, flags map[string]string) {
 		}))
 	}()
 
-	go func() {
-		if err := dns.StartDNSServer(); err != nil {
-			cmdutil.Fatalf("error starting dns server: %v", err)
-		}
-	}()
+	if runtime.GOOS == "darwin" {
+		go func() {
+			if err := dns.StartDNSServer(); err != nil {
+				cmdutil.Fatalf("error starting dns server: %v", err)
+			}
+		}()
+	}
 
 	addr := cmdutil.GetAddr(cfg)
 	logger.Infof("listening for API calls at %s", addr)
