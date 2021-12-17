@@ -51,9 +51,9 @@ jobs:
         run: rm ./docker.rb
 
       # Enable tmate debugging of manually-triggered workflows if the input option was provided
-      #- name: Setup tmate session
-        #uses: mxschmitt/action-tmate@b926bc441c90cceb124409125658bbe544a2e1dd #v3.8
-        #if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.debug_enabled }}
+      - name: Setup tmate session
+        uses: mxschmitt/action-tmate@b926bc441c90cceb124409125658bbe544a2e1dd #v3.8
+        if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.debug_enabled }}
 
       - name: Perform tests
         run: script/ci-test.sh
