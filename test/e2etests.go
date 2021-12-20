@@ -95,6 +95,10 @@ var tests = map[string]tester.ExoTest{
 			ctx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Second*10))
 			defer cancel()
 
+			if _, _, err := t.RunExo(ctx, "start"); err != nil {
+				return err
+			}
+
 			if err := t.WaitTillProcessesReachState(ctx, "running", []string{"t0", "t1"}); err != nil {
 				return err
 			}
