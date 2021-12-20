@@ -186,7 +186,9 @@ func (jp *jobPrinter) printTree(w io.Writer, tasks []api.TaskDescription) {
 			suffixW := term.VisualLength(suffix)
 			maxMessageW = termW - maxPrefixW - suffixW
 		}
-		message = term.TrimToVisualLength(message, maxMessageW)
+		if os.Getenv("EXO_NO_TRUNCATE") == "" {
+			message = term.TrimToVisualLength(message, maxMessageW)
+		}
 
 		// Right align suffix.
 		messageW := term.VisualLength(message)

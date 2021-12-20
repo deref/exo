@@ -118,6 +118,7 @@ func (et ExoTester) RunExo(ctx context.Context, arguments ...string) (stdout, st
 	cmd := exec.CommandContext(ctx, et.exoBinary, arguments...)
 	cmd.Dir = et.fixtureDir
 	cmd.Env = append(cmd.Env, "EXO_HOME="+et.exoHome)
+	cmd.Env = append(cmd.Env, "EXO_NO_TRUNCATE=true")
 	cmd.Env = append(cmd.Env, "PATH="+path)
 	var stdoutBuffer, stderrBuffer bytes.Buffer
 	logWriter := et.logger.Writer()
