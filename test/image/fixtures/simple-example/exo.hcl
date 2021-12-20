@@ -4,14 +4,20 @@ components {
   component "echo" {
     type = "process"
     spec = jsonencode({
-      program   = "nc"
-      arguments = ["-l", "-p", "44222"]
+      program   = "python3"
+      arguments = ["./listen.py"]
+      environment = {
+        "PORT": "44222"
+      }
     })
   }
 
   process "echo-short" {
-      program   = "nc"
-      arguments = ["-l", "-p", "44223"]
+    program   = "python3"
+    arguments = ["./listen.py"]
+    environment = {
+      "PORT": "44223"
+    }
   }
 
   container "web" {
@@ -24,5 +30,4 @@ components {
   }
 
   volume "logvolume01" {}
-
 }
