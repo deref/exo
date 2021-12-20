@@ -8,6 +8,10 @@
   import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
   import { api } from '../lib/api';
 
+  import { modal } from '../lib/modal';
+  import { bind } from '../components/modal/Modal.svelte';
+  import ModalDefaultPopup from '../components/modal/ModalDefaultPopup.svelte';
+
   export let params = { workspace: '' };
 
   const workspaceId = params.workspace;
@@ -37,6 +41,16 @@
     uri.searchParams.set('returnTo', `/workspaces/${workspace.id}/variables`);
     window.location.href = uri.toString();
   };
+
+  const showUpdateInstallMethodModal = () => {
+    modal.set(
+      bind(ModalDefaultPopup, {
+        title: 'Invalid URL',
+        message:
+          'The URL you entered is not a valid URL. Please enter a valid URL.',
+      }),
+    );
+  };
 </script>
 
 <Layout>
@@ -46,9 +60,7 @@
     <form
       on:submit={async () => {
         if (!isValidUrl(vaultUrl)) {
-          alert(
-            ' The URL you entered is not a valid URL. Please enter a valid URL.',
-          );
+          showUpdateInstallMethodModal();
           return;
         }
         await workspace.addVault({

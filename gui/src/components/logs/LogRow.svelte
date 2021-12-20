@@ -8,19 +8,27 @@
   import type { LogEvent } from '../../lib/logs/types';
   import { logStyleFromHash } from '../../lib/color';
 
+  import { modal } from '../../lib/modal';
+  import { bind } from '../modal/Modal.svelte';
+  import ModalDefaultPopup from '../modal/ModalDefaultPopup.svelte';
+
   export let getComponentName: GetComponentNameFunc = (id) => null;
   export let event: LogEvent;
 
   const componentName = getComponentName(event.stream) ?? event.stream;
+
+  const showFullTimeModal = () => {
+    modal.set(
+      bind(ModalDefaultPopup, {
+        title: shortTime(event.timestamp),
+        message: `Full timestamp: ${event.timestamp}`,
+      }),
+    );
+  };
 </script>
 
 <tr style={logStyleFromHash(componentName)}>
-  <td
-    class="time"
-    on:click={() => {
-      window.alert(`Full timestamp: ${event.timestamp}`);
-    }}
-  >
+  <td class="time" on:click={showFullTimeModal}>
     {shortTime(event.timestamp)}
   </td>
   <td class="name" title={event.stream}>

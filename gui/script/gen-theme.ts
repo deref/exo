@@ -64,6 +64,7 @@ const themeVariables = {
   'layout-bg-color': ['#cccccc', '#222222', '#222222'],
   'secondary-bg-color': ['#f5f5f5', '#050505', '#050505'],
   'primary-bg-color': ['#ffffff', '#000000', '#000000'],
+  'window-modal-bg-color': ['#00000044', '#000000aa', '#000000aa'],
 
   // Contextual color
   'error-color': ['#d00000', '#ff1111', '#ff1111'],

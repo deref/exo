@@ -6,16 +6,27 @@
   import { onDestroy } from 'svelte';
   import { api } from '../lib/api';
 
+  import { modal } from '../lib/modal';
+  import { bind } from './modal/Modal.svelte';
+  import ModalDefaultPopup from './modal/ModalDefaultPopup.svelte';
+
   let installedVersion: string | null = null;
   let latestVersion: string | null = null;
   let isManaged: boolean = false;
   let upgrading = false;
 
+  const showUpdateInstallMethodModal = () => {
+    modal.set(
+      bind(ModalDefaultPopup, {
+        title: 'Cannot auto-update.',
+        message: `This upgrade procedure only supports installation of exo that were performed with the exo install script.\n\nPlease upgrade exo with your package manager or by uninstalling and reinstalling with the official exo upgrade script.`,
+      }),
+    );
+  };
+
   const doUpgrade = async () => {
     if (isManaged) {
-      alert(
-        'This upgrade procedure only supports installation of exo that were performed with the exo install script. Please upgrade exo with your package manager or by uninstalling and reinstalling with the official exo upgrade script.',
-      );
+      showUpdateInstallMethodModal();
       return;
     }
     upgrading = true;
