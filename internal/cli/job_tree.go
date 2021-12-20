@@ -186,13 +186,16 @@ func (jp *jobPrinter) printTree(w io.Writer, tasks []api.TaskDescription) {
 			suffixW := term.VisualLength(suffix)
 			maxMessageW = termW - maxPrefixW - suffixW
 		}
-		if os.Getenv("EXO_NO_TRUNCATE") == "" {
+		if os.Getenv("EXO_NO_TRUNCATE") != "" {
 			message = term.TrimToVisualLength(message, maxMessageW)
 		}
 
 		// Right align suffix.
 		messageW := term.VisualLength(message)
-		alignSuffix := strings.Repeat(" ", maxMessageW-messageW)
+		var alignSuffix string
+		if os.Getenv("EXO_NO_TRUNCATE") == "" {
+			alignSuffix = strings.Repeat(" ", maxMessageW-messageW)
+		}
 
 		fmt.Fprintf(w, "%s%s%s%s%s\n", prefix, alignMessage, message, alignSuffix, suffix)
 		for i, child := range node.Children {
