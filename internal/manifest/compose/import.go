@@ -370,6 +370,8 @@ func yamlToHCL(v interface{}) hclsyntax.Expression {
 					return yamlToHCL(v.Value)
 				}
 				return yamlToHCL(i)
+			case "!!bool":
+				return yamlToHCL(v.Value == "true")
 			default:
 				panic(fmt.Errorf("unexpected yaml node tag: %q", v.Tag))
 			}
