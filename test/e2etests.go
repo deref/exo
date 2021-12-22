@@ -99,7 +99,7 @@ var tests = map[string]tester.ExoTest{
 				return err
 			}
 
-			if err := t.WaitTillProcessesReachState(ctx, "running", []string{"t0", "t1"}); err != nil {
+			if err := t.WaitTillProcessesReachState(ctx, "running", []string{"t0"}); err != nil {
 				return err
 			}
 
@@ -125,9 +125,6 @@ var tests = map[string]tester.ExoTest{
 			}
 
 			if err := validateResponse("http://t0.exo.localhost:44544", "a"); err != nil {
-				return err
-			}
-			if err := validateResponse("http://t1.exo.localhost:44544", "b"); err != nil {
 				return err
 			}
 
