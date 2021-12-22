@@ -92,7 +92,7 @@ var tests = map[string]tester.ExoTest{
 				return err
 			}
 
-			ctx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Second*10))
+			ctx, cancel := context.WithDeadline(ctx, time.Now().Add(time.Second*30))
 			defer cancel()
 
 			if _, _, err := t.RunExo(ctx, "start"); err != nil {
