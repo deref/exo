@@ -2,12 +2,6 @@
 name: post-commit
 on:
   push: {}
-  workflow_dispatch:
-    inputs:
-      debug_enabled:
-        description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate)'
-        required: false
-        default: "false"
 jobs:
   test:
     name: Run all tests
@@ -18,7 +12,6 @@ jobs:
         os: [ubuntu-latest, macos-latest]
     steps:
       - uses: actions/checkout@v2
-      # Enable tmate debugging of manually-triggered workflows if the input option was provided
       - uses: actions/setup-go@v2
         with:
           go-version: 1.16
@@ -50,7 +43,6 @@ jobs:
         if: ${{ matrix.os == 'macos-latest' }}
         run: rm ./docker.rb
 
-      # Enable tmate debugging of manually-triggered workflows if the input option was provided
       #- name: Setup tmate session
         #uses: mxschmitt/action-tmate@b926bc441c90cceb124409125658bbe544a2e1dd #v3.8
         #if: ${{ github.event_name == 'workflow_dispatch' && github.event.inputs.debug_enabled }}
