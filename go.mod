@@ -21,6 +21,7 @@ require (
 	github.com/go-test/deep v1.0.4 // indirect
 	github.com/gofrs/flock v0.8.1
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
+	github.com/graph-gophers/graphql-go v1.2.0
 	github.com/hashicorp/hcl/v2 v2.10.0
 	github.com/influxdata/go-syslog/v3 v3.0.0
 	github.com/jmoiron/sqlx v1.2.1-0.20190826204134-d7d95172beb5
@@ -39,13 +40,14 @@ require (
 	github.com/pkg/browser v0.0.0-20210706143420-7d21f8c997e2
 	github.com/sergi/go-diff v1.2.0 // indirect
 	github.com/shirou/gopsutil/v3 v3.21.6
+	github.com/shurcooL/graphql v0.0.0-20200928012149-18c5c3165e3a
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.2.1
 	github.com/stretchr/testify v1.7.0
 	github.com/timewasted/go-accept-headers v0.0.0-20130320203746-c78f304b1b09
 	github.com/zclconf/go-cty v1.8.0
 	github.com/zclconf/go-cty-yaml v1.0.2
-	golang.org/x/net v0.0.0-20210825183410-e898025ed96a // indirect
+	golang.org/x/net v0.0.0-20220107192237-5cfca573fb4d // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20210927094055-39ccf1dd6fa6
 	golang.org/x/text v0.3.7 // indirect
