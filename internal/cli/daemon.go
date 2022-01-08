@@ -1,10 +1,12 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"os"
 	"os/exec"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -12,9 +14,13 @@ import (
 	"github.com/deref/exo/internal/about"
 	"github.com/deref/exo/internal/core/client"
 	"github.com/deref/exo/internal/exod"
+	"github.com/deref/exo/internal/resolvers"
 	"github.com/deref/exo/internal/util/cmdutil"
+	"github.com/deref/exo/internal/util/httputil"
 	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/deref/exo/internal/util/osutil"
+	"github.com/jmoiron/sqlx"
+	"github.com/shurcooL/graphql"
 	"github.com/spf13/cobra"
 )
 
@@ -146,17 +152,51 @@ func mustGetToken() string {
 	return token
 }
 
-func newClient() *client.Root {
+func clientURL() string {
 	url := cfg.Client.URL
 	if url == "" {
 		url = runState.URL
 	}
 	// Old state files may contain a url ending in "/".
-	url = strings.TrimSuffix(url, "/") + "/_exo/"
+	return strings.TrimSuffix(url, "/")
+}
 
+// TODO: Remove me after switching fully to graphql.
+func newClient() *client.Root {
 	return &client.Root{
 		HTTP:  http.DefaultClient,
-		URL:   url,
+		URL:   clientURL() + "/_exo/",
 		Token: mustGetToken(),
 	}
+}
+
+func dialGraphQL(ctx context.Context) (client *graphql.Client, shutdown func()) {
+	// XXX this is a hack for testing daemonless. See exod/main.go & reconcile with that.
+	dbPath := filepath.Join(cfg.VarDir, "exo.sqlite3")
+	txMode := "exclusive"
+	connStr := dbPath + "?_txlock=" + txMode
+	db, err := sqlx.Open("sqlite3", connStr)
+	if err != nil {
+		cmdutil.Fatalf("opening sqlite db: %v", err)
+	}
+	shutdown = func() {
+		if err := db.Close(); err != nil {
+			cmdutil.Warnf("error closing sqlite db: %v", err)
+		}
+	}
+
+	root := &resolvers.RootResolver{
+		DB: db,
+	}
+	if err := root.Migrate(ctx); err != nil {
+		cmdutil.Fatalf("migrating db: %w", err)
+	}
+
+	httpClient := &http.Client{
+		Transport: &httputil.NetworklessTransport{
+			Handler: resolvers.NewHandler(root),
+		},
+	}
+	client = graphql.NewClient(clientURL()+"/graphql/", httpClient)
+	return
 }

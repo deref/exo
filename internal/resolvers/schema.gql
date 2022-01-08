@@ -1,0 +1,13 @@
+type Query {
+  getWorkspaceById(id: String!): Workspace
+}
+
+type Workspace {
+  id: String!
+  project: Project
+}
+
+type Project {
+  id: String!
+  displayName: String
+}

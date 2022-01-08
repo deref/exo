@@ -19,7 +19,10 @@ var rootCmd = &cobra.Command{
 	Short: "Exo is a development environment process manager and log viewer.",
 	Long: `A development environment process manager and log viewer.
 For more information, see https://exo.deref.io`,
-	SilenceUsage: true,
+	// Automatic usage and error reporting behave badly, but Cobra Commander's
+	// behavior is stable until v2.
+	SilenceUsage:  true,
+	SilenceErrors: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return cmd.Help()
 	},
