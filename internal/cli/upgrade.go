@@ -20,7 +20,7 @@ var upgradeCmd = &cobra.Command{
 	Long:  `Upgrade exo to the latest version.`,
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		ctx := newContext()
+		ctx := cmd.Context()
 		tel := telemetry.FromContext(ctx)
 		if !tel.IsEnabled() {
 			fmt.Println("Cannot check current version - telemetry disabled.")

@@ -18,7 +18,7 @@ var refreshCmd = &cobra.Command{
 	
 If no components are specified, refreshes all components in the current workspace.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return controlComponents(args, func(ctx context.Context, ws api.Workspace, refs []string) (jobID string, err error) {
+		return controlComponents(cmd, args, func(ctx context.Context, ws api.Workspace, refs []string) (jobID string, err error) {
 			var input api.RefreshComponentsInput
 			if len(args) > 0 {
 				input.Refs = args

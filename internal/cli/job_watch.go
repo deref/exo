@@ -24,7 +24,7 @@ var jobWatchCmd = &cobra.Command{
 	Long:  `Lists a job's tasks as a tree. Rerenders until the job has finished running.`,
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		ctx := newContext()
+		ctx := cmd.Context()
 		checkOrEnsureServer()
 		cl := newClient()
 		kernel := cl.Kernel()

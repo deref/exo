@@ -22,7 +22,7 @@ If root is not provided, the new workspace will be rooted at the current working
 Prints the ID of the newly created workspace.`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		ctx := newContext()
+		ctx := cmd.Context()
 		checkOrEnsureServer()
 		cl := newClient()
 		var root string

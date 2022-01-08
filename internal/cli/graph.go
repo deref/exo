@@ -18,7 +18,7 @@ var graphCmd = &cobra.Command{
 	Args:   cobra.NoArgs,
 	Hidden: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		ctx := newContext()
+		ctx := cmd.Context()
 		checkOrEnsureServer()
 		cl := newClient()
 

@@ -20,7 +20,7 @@ var manifestFormatCmd = &cobra.Command{
 If the path is not provided, reads from stdin and writes to stdout.`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		ctx := newContext()
+		ctx := cmd.Context()
 		in := "/dev/stdin"
 		out := "/dev/stdout"
 		if len(args) > 0 {

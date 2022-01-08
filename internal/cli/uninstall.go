@@ -28,7 +28,7 @@ If this command fails, see <https://github.com/deref/exo/tree/main/doc/uninstall
 for manual uninstall instructions.`,
 	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		ctx := newContext()
+		ctx := cmd.Context()
 		checkOrEnsureServer()
 
 		cl := newClient()

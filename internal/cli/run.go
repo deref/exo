@@ -28,7 +28,7 @@ If a workspace does not exist, one will be created in the current directory.
 `,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		checkOrEnsureServer()
-		ctx := newContext()
+		ctx := cmd.Context()
 		cl := newClient()
 		kernel := cl.Kernel()
 		logger := logging.CurrentLogger(ctx)

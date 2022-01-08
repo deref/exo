@@ -20,7 +20,7 @@ the workspace for the current working directory.
 Deleting a workspace also deletes all resources in that workspace.`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		ctx := newContext()
+		ctx := cmd.Context()
 		checkOrEnsureServer()
 		cl := newClient()
 		kernel := cl.Kernel()

@@ -29,7 +29,7 @@ If no subcommand is given, describes the current workspace.`,
 		if len(args) > 0 {
 			return nil
 		}
-		ctx := newContext()
+		ctx := cmd.Context()
 		checkOrEnsureServer()
 
 		cl := newClient()

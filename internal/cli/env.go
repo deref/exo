@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"sort"
 
@@ -19,7 +20,8 @@ var envCmd = &cobra.Command{
 	Long:  `Prints the workspace's environment variables in .env format.`,
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		envv, err := getEnvv()
+		ctx := cmd.Context()
+		envv, err := getEnvv(ctx)
 		if err != nil {
 			return err
 		}
@@ -30,8 +32,7 @@ var envCmd = &cobra.Command{
 	},
 }
 
-func getEnvv() ([]string, error) {
-	ctx := newContext()
+func getEnvv(ctx context.Context) ([]string, error) {
 	checkOrEnsureServer()
 	cl := newClient()
 	workspace := requireCurrentWorkspace(ctx, cl)

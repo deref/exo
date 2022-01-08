@@ -19,7 +19,7 @@ var exitCmd = &cobra.Command{
 		if cfg.NoDaemon {
 			cmdutil.Fatalf("daemon disabled by config")
 		}
-		ctx := newContext()
+		ctx := cmd.Context()
 		checkOrEnsureServer()
 		cl := newClient()
 		_, err := cl.Kernel().Exit(ctx, &api.ExitInput{})

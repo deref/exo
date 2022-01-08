@@ -26,7 +26,7 @@ a exo.hcl manifest file will be created.
 Prints instructions for using the newly created workspace.`,
 	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		ctx := newContext()
+		ctx := cmd.Context()
 		checkOrEnsureServer()
 		cl := newClient()
 		kernel := cl.Kernel()

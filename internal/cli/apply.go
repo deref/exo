@@ -46,7 +46,7 @@ var applyCmd = &cobra.Command{
 	overidden explicitly with the --format flag.`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		ctx := newContext()
+		ctx := cmd.Context()
 		checkOrEnsureServer()
 
 		cl := newClient()

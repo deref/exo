@@ -20,7 +20,7 @@ var workspaceLSCmd = &cobra.Command{
 	Long:  `Lists workspaces.`,
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		ctx := newContext()
+		ctx := cmd.Context()
 		checkOrEnsureServer()
 		cl := newClient()
 		output, err := cl.Kernel().DescribeWorkspaces(ctx, &api.DescribeWorkspacesInput{})

@@ -42,7 +42,7 @@ If refs are provided, filters for the logs of those processes.
 When filtering, system events are omitted unless --system is given.`,
 	DisableFlagsInUseLine: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		ctx := newContext()
+		ctx := cmd.Context()
 		checkOrEnsureServer()
 		cl := newClient()
 		workspace := requireCurrentWorkspace(ctx, cl)

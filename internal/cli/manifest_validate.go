@@ -15,7 +15,7 @@ var manifestValidateCmd = &cobra.Command{
 	Short: "Loads and validates a manifest file.",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		ctx := newContext()
+		ctx := cmd.Context()
 		_, err := loadManifest(ctx, os.Stdout, args[0])
 		return err
 	},

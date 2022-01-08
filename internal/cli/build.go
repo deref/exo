@@ -17,7 +17,7 @@ var buildCmd = &cobra.Command{
 	Long:   "Build components.",
 	Hidden: true, // Not sure if we want to expose build functionality yet.
 	RunE: func(cmd *cobra.Command, args []string) error {
-		return controlComponents(args, func(ctx context.Context, ws api.Workspace, refs []string) (jobID string, err error) {
+		return controlComponents(cmd, args, func(ctx context.Context, ws api.Workspace, refs []string) (jobID string, err error) {
 			if refs == nil {
 				output, err := ws.Build(ctx, &api.BuildInput{})
 				if output != nil {

@@ -20,7 +20,8 @@ var execCmd = &cobra.Command{
 	Args:                  cobra.MinimumNArgs(1),
 	DisableFlagsInUseLine: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		envv, err := getEnvv()
+		ctx := cmd.Context()
+		envv, err := getEnvv(ctx)
 		if err != nil {
 			return fmt.Errorf("getting environment: %w", err)
 		}

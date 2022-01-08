@@ -25,7 +25,7 @@ var manifestResolveCmd = &cobra.Command{
 		if len(args) > 0 {
 			return nil
 		}
-		ctx := newContext()
+		ctx := cmd.Context()
 		checkOrEnsureServer()
 
 		cl := newClient()

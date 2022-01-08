@@ -18,7 +18,7 @@ var whoamiCmd = &cobra.Command{
 	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		checkOrEnsureServer()
-		ctx := newContext()
+		ctx := cmd.Context()
 		cl := newClient()
 		kernel := cl.Kernel()
 

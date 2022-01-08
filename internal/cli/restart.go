@@ -22,7 +22,7 @@ If no refs are provided, restarts the entire workspace.`,
 		if !cmd.Flags().Lookup("timeout").Changed {
 			timeoutSeconds = nil
 		}
-		return controlComponents(args, func(ctx context.Context, ws api.Workspace, refs []string) (jobID string, err error) {
+		return controlComponents(cmd, args, func(ctx context.Context, ws api.Workspace, refs []string) (jobID string, err error) {
 			if refs == nil {
 				output, err := ws.Restart(ctx, &api.RestartInput{TimeoutSeconds: timeoutSeconds})
 				if output != nil {

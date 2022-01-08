@@ -25,10 +25,12 @@ For more information, see https://exo.deref.io`,
 	},
 }
 
-// newContext creates a global context that is used as the top-level process context.
-// All request-specific contexts are derived from it.
-func newContext() context.Context {
+func Main() {
 	ctx := context.Background()
+
+	if err := config.LoadDefault(cfg); err != nil {
+		cmdutil.Fatalf("loading config: %w", err)
+	}
 
 	logger := logging.Default()
 	ctx = logging.ContextWithLogger(ctx, logger)
@@ -41,14 +43,7 @@ func newContext() context.Context {
 	})
 	ctx = telemetry.ContextWithTelemetry(ctx, tel)
 
-	return ctx
-}
-
-func Main() {
-	if err := config.LoadDefault(cfg); err != nil {
-		cmdutil.Fatalf("loading config: %w", err)
-	}
-	if err := rootCmd.Execute(); err != nil {
+	if err := rootCmd.ExecuteContext(ctx); err != nil {
 		cmdutil.Fatalf("%w", err)
 	}
 }
