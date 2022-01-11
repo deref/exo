@@ -4,11 +4,13 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"reflect"
 	"text/tabwriter"
 
 	"github.com/deref/exo/internal/core/api"
 	"github.com/deref/exo/internal/core/client"
 	"github.com/deref/exo/internal/util/cmdutil"
+	"github.com/shurcooL/graphql"
 	"github.com/spf13/cobra"
 )
 
@@ -32,17 +34,19 @@ If no subcommand is given, describes the current workspace.`,
 		ctx := cmd.Context()
 		checkOrEnsureServer()
 
-		cl := newClient()
-		workspace := requireCurrentWorkspace(ctx, cl)
-		output, err := workspace.Describe(ctx, &api.DescribeInput{})
-		if err != nil {
-			cmdutil.Fatalf("describing workspace: %w", err)
+		cl, shutdown := dialGraphQL(ctx)
+		defer shutdown()
+
+		var q struct {
+			Workspace *struct {
+				ID   string
+				Root string
+			} `graphql:"workspaceByRef(ref: $currentWorkspace)"`
 		}
-		desc := output.Description
+		mustQueryWorkspace(ctx, cl, &q, nil)
 		w := tabwriter.NewWriter(os.Stdout, 4, 8, 3, ' ', 0)
-		_, _ = fmt.Fprintf(w, "id:\t%s\n", desc.ID)
-		_, _ = fmt.Fprintf(w, "path:\t%s\n", desc.Root)
-		_, _ = fmt.Fprintf(w, "display-name:\t%s\n", desc.DisplayName)
+		_, _ = fmt.Fprintf(w, "id:\t%s\n", q.Workspace.ID)
+		_, _ = fmt.Fprintf(w, "path:\t%s\n", q.Workspace.Root)
 		_ = w.Flush()
 		return nil
 	},
@@ -84,4 +88,24 @@ func resolveWorkspace(ctx context.Context, cl *client.Root, ref string) (*client
 		workspace = cl.GetWorkspace(*output.ID)
 	}
 	return workspace, nil
+}
+
+// Supplies the reserved variable "currentWorkspace" and exits if there is no
+// current workspace. The supplied query must have a pointer field named
+// `Workspace` tagged with `graphql:"workspaceByRef(ref: $currentWorkspace)"`.
+func mustQueryWorkspace(ctx context.Context, cl *graphql.Client, q interface{}, vars map[string]interface{}) {
+	effectiveVars := map[string]interface{}{
+		"currentWorkspace": graphql.String(cmdutil.MustGetwd()),
+	}
+	if vars != nil {
+		for k, v := range vars {
+			effectiveVars[k] = v
+		}
+	}
+	if err := cl.Query(ctx, q, effectiveVars); err != nil {
+		cmdutil.Fatalf("query error: %w", err)
+	}
+	if reflect.ValueOf(q).Elem().FieldByName("Workspace").IsNil() {
+		cmdutil.Fatalf("no workspace for current directory")
+	}
 }

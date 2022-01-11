@@ -5,7 +5,6 @@ import (
 	"os"
 	"text/tabwriter"
 
-	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/spf13/cobra"
 )
 
@@ -22,7 +21,7 @@ var projectLSCmd = &cobra.Command{
 		ctx := cmd.Context()
 		checkOrEnsureServer()
 
-		gqlClient, shutdown := dialGraphQL(ctx)
+		cl, shutdown := dialGraphQL(ctx)
 		defer shutdown()
 
 		var q struct {
@@ -31,8 +30,8 @@ var projectLSCmd = &cobra.Command{
 				DisplayName string
 			} `graphql:"allProjects"`
 		}
-		if err := gqlClient.Query(ctx, &q, nil); err != nil {
-			cmdutil.Fatalf("querying: %w", err)
+		if err := cl.Query(ctx, &q, nil); err != nil {
+			return fmt.Errorf("querying: %w", err)
 		}
 		w := tabwriter.NewWriter(os.Stdout, 4, 8, 3, ' ', 0)
 		for _, project := range q.Projects {

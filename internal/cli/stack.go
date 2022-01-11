@@ -5,7 +5,6 @@ import (
 	"os"
 	"text/tabwriter"
 
-	"github.com/shurcooL/graphql"
 	"github.com/spf13/cobra"
 )
 
@@ -27,27 +26,19 @@ workspace.`,
 		ctx := cmd.Context()
 		checkOrEnsureServer()
 
-		joshClient := newClient()
-		workspace := requireCurrentWorkspace(ctx, joshClient)
-		workspaceID := workspace.ID()
-
-		gqlClient, shutdown := dialGraphQL(ctx)
+		cl, shutdown := dialGraphQL(ctx)
 		defer shutdown()
 
 		var q struct {
-			Workspace struct {
+			Workspace *struct {
 				Stack *struct {
 					ID   string
 					Name string
 				}
-			} `graphql:"workspaceById(id: $id)"`
+			} `graphql:"workspaceByRef(ref: $currentWorkspace)"`
 		}
-		err := gqlClient.Query(ctx, &q, map[string]interface{}{
-			"id": graphql.String(workspaceID),
-		})
-		if err != nil {
-			return fmt.Errorf("querying: %w", err)
-		}
+		mustQueryWorkspace(ctx, cl, &q, nil)
+
 		stack := q.Workspace.Stack
 		if stack == nil {
 			return nil

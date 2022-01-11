@@ -25,7 +25,7 @@ Prints the ID of the newly created workspace.`,
 		ctx := cmd.Context()
 		checkOrEnsureServer()
 
-		gqlClient, shutdown := dialGraphQL(ctx)
+		cl, shutdown := dialGraphQL(ctx)
 		defer shutdown()
 
 		var root string
@@ -39,7 +39,7 @@ Prints the ID of the newly created workspace.`,
 				ID string
 			} `graphql:"newWorkspace(root: $root)"`
 		}
-		if err := gqlClient.Mutate(ctx, &m, map[string]interface{}{
+		if err := cl.Mutate(ctx, &m, map[string]interface{}{
 			"root": graphql.String(root),
 		}); err != nil {
 			return err
