@@ -12,6 +12,10 @@ type Query {
   resourceByIri(iri: String!): Resource
 }
 
+type Mutation {
+  newProject(displayName: String!): Project!
+}
+
 type Project {
   id: String!
   displayName: String
