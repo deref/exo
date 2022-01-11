@@ -1,6 +1,11 @@
 package resolvers
 
-import "context"
+import (
+	"context"
+	"fmt"
+
+	"github.com/deref/exo/internal/gensym"
+)
 
 type ProjectResolver struct {
 	Q *QueryResolver
@@ -49,4 +54,22 @@ func (r *QueryResolver) projectByID(ctx context.Context, id *string) (*ProjectRe
 		proj = nil
 	}
 	return proj, err
+}
+
+func (r *MutationResolver) NewProject(ctx context.Context, args struct {
+	DisplayName string
+}) (*ProjectResolver, error) {
+	var row ProjectRow
+	row.ID = gensym.RandomBase32()
+	row.DisplayName = trimmedPtr(&args.DisplayName, row.ID)
+	if _, err := r.DB.ExecContext(ctx, `
+		INSERT INTO project ( id, display_name )
+		VALUES ( ?, ? )
+	`, row.ID, row.DisplayName); err != nil {
+		return nil, fmt.Errorf("inserting: %w", err)
+	}
+	return &ProjectResolver{
+		Q:          r,
+		ProjectRow: row,
+	}, nil
 }
