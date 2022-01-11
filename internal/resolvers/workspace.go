@@ -125,3 +125,9 @@ func (r *WorkspaceResolver) Stack(ctx context.Context) (*StackResolver, error) {
 	}
 	return stacks[0], nil
 }
+
+func (r *WorkspaceResolver) Environment(ctx context.Context) *EnvironmentResolver {
+	return &EnvironmentResolver{
+		Workspace: r,
+	}
+}

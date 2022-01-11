@@ -3,10 +3,8 @@ package cli
 import (
 	"context"
 	"fmt"
-	"sort"
 
 	"github.com/alessio/shellescape"
-	"github.com/deref/exo/internal/core/api"
 	"github.com/spf13/cobra"
 )
 
@@ -34,25 +32,26 @@ var envCmd = &cobra.Command{
 
 func getEnvv(ctx context.Context) ([]string, error) {
 	checkOrEnsureServer()
-	cl := newClient()
-	workspace := requireCurrentWorkspace(ctx, cl)
-	output, err := workspace.DescribeEnvironment(ctx, &api.DescribeEnvironmentInput{})
-	if err != nil {
-		return nil, err
-	}
 
-	keys := make([]string, len(output.Variables))
-	i := 0
-	for key := range output.Variables {
-		keys[i] = key
-		i++
-	}
-	sort.Strings(keys)
+	cl, shutdown := dialGraphQL(ctx)
+	defer shutdown()
 
-	envv := make([]string, i)
-	for i, key := range keys {
-		value := output.Variables[key]
-		envv[i] = fmt.Sprintf("%s=%s", key, shellescape.Quote(value.Value))
+	var q struct {
+		Workspace *struct {
+			Environment struct {
+				Variables []struct {
+					Name  string
+					Value string
+				}
+			}
+		} `graphql:"workspaceByRef(ref: $currentWorkspace)"`
+	}
+	mustQueryWorkspace(ctx, cl, &q, nil)
+
+	envVars := q.Workspace.Environment.Variables
+	envv := make([]string, len(envVars))
+	for i, envVar := range envVars {
+		envv[i] = fmt.Sprintf("%s=%s", envVar.Name, shellescape.Quote(envVar.Value))
 	}
 	return envv, nil
 }
