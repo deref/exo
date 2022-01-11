@@ -29,3 +29,23 @@ func (r *QueryResolver) stackByID(ctx context.Context, id *string) (*StackResolv
 	}
 	return s, err
 }
+
+func (r *QueryResolver) stacksByWorkspace(ctx context.Context, workspaceID string) ([]*StackResolver, error) {
+	var rows []StackRow
+	err := r.DB.SelectContext(ctx, &rows, `
+		SELECT id, project_id, root
+		FROM workspace
+		ORDER BY id ASC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	resolvers := make([]*StackResolver, len(rows))
+	for i, row := range rows {
+		resolvers[i] = &StackResolver{
+			Q:        r,
+			StackRow: row,
+		}
+	}
+	return resolvers, nil
+}

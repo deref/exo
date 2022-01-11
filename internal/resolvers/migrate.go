@@ -64,7 +64,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 
 	if _, err := r.DB.ExecContext(ctx, `
 		CREATE INDEX IF NOT EXISTS
-		component_stack_id_and_name ON stack ( stack_id, name )
+		component_stack_id_and_name ON component ( stack_id, name )
 	`); err != nil {
 		return fmt.Errorf("creating component_stack_id_and_name index: %w", err)
 	}

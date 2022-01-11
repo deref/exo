@@ -1,9 +1,15 @@
 type Query {
+  allProjects: [Project!]!
   projectById(id: String!): Project
+
+  allWorkspaces: [Workspace!]!
   workspaceById(id: String!): Workspace
+
   stackById(id: String!): Stack
+
   componentById(id: String!): Component
-  resourceByIri(iri: String!) Resource
+
+  resourceByIri(iri: String!): Resource
 }
 
 type Project {
@@ -27,7 +33,7 @@ type Stack {
 
 type Component {
   id: String!
-  
+
   stackId: String!
   stack: Stack!
 

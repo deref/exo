@@ -8,8 +8,8 @@ type ResourceResolver struct {
 }
 
 type ResourceRow struct {
-	IRI         string `db:"iri"`
-	ComponentID string `db:"componentID"`
+	IRI         string  `db:"iri"`
+	ComponentID *string `db:"componentID"`
 }
 
 func (r *QueryResolver) ResourceByIRI(ctx context.Context, args struct {
@@ -29,4 +29,8 @@ func (r *QueryResolver) stackByIRI(ctx context.Context, iri *string) (*ResourceR
 		s = nil
 	}
 	return s, err
+}
+
+func (r *ResourceResolver) Component(ctx context.Context) (*ComponentResolver, error) {
+	return r.Q.componentByID(ctx, r.ComponentID)
 }
