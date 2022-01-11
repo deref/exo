@@ -12,13 +12,13 @@ type ProjectRow struct {
 	DisplayName *string `db:"display_name"`
 }
 
-func (r *QueryResolver) GetProjectByID(ctx context.Context, args struct {
+func (r *QueryResolver) ProjectByID(ctx context.Context, args struct {
 	ID string
 }) (*ProjectResolver, error) {
-	return r.getProjectByID(ctx, &args.ID)
+	return r.projectByID(ctx, &args.ID)
 }
 
-func (r *QueryResolver) getProjectByID(ctx context.Context, id *string) (*ProjectResolver, error) {
+func (r *QueryResolver) projectByID(ctx context.Context, id *string) (*ProjectResolver, error) {
 	proj := &ProjectResolver{}
 	err := r.getRowByID(ctx, &proj.ProjectRow, `
 		SELECT id, display_name

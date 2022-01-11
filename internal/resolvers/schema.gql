@@ -1,5 +1,6 @@
 type Query {
-  getWorkspaceById(id: String!): Workspace
+  projectById(id: String!): Project
+  workspaceById(id: String!): Workspace
 }
 
 type Workspace {

@@ -40,7 +40,7 @@ If no subcommand is given, describes the project of the current workspace.`,
 					ID          string
 					DisplayName string
 				}
-			} `graphql:"getWorkspaceById(id: $id)"`
+			} `graphql:"workspaceById(id: $id)"`
 		}
 		err := gqlClient.Query(ctx, &q, map[string]interface{}{
 			"id": graphql.String(workspace.ID()),

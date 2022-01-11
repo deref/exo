@@ -12,13 +12,13 @@ type WorkspaceRow struct {
 	ProjectID *string `db:"project_id"`
 }
 
-func (r *QueryResolver) GetWorkspaceByID(ctx context.Context, args struct {
+func (r *QueryResolver) WorkspaceByID(ctx context.Context, args struct {
 	ID string
 }) (*WorkspaceResolver, error) {
-	return r.getWorkspaceByID(ctx, &args.ID)
+	return r.workspaceByID(ctx, &args.ID)
 }
 
-func (r *QueryResolver) getWorkspaceByID(ctx context.Context, id *string) (*WorkspaceResolver, error) {
+func (r *QueryResolver) workspaceByID(ctx context.Context, id *string) (*WorkspaceResolver, error) {
 	ws := &WorkspaceResolver{}
 	err := r.getRowByID(ctx, &ws.WorkspaceRow, `
 		SELECT id, project_id
@@ -32,5 +32,5 @@ func (r *QueryResolver) getWorkspaceByID(ctx context.Context, id *string) (*Work
 }
 
 func (r *WorkspaceResolver) Project(ctx context.Context) (*ProjectResolver, error) {
-	return r.Q.getProjectByID(ctx, r.ProjectID)
+	return r.Q.projectByID(ctx, r.ProjectID)
 }
