@@ -3,6 +3,9 @@ package resolvers
 import (
 	"context"
 	"errors"
+	"fmt"
+
+	"github.com/deref/exo/internal/gensym"
 )
 
 type WorkspaceResolver struct {
@@ -12,6 +15,7 @@ type WorkspaceResolver struct {
 
 type WorkspaceRow struct {
 	ID        string  `db:"id"`
+	Root      string  `db:"root"`
 	ProjectID *string `db:"project_id"`
 }
 
@@ -52,6 +56,26 @@ func (r *QueryResolver) workspaceByID(ctx context.Context, id *string) (*Workspa
 		ws = nil
 	}
 	return ws, err
+}
+
+func (r *MutationResolver) NewWorkspace(ctx context.Context, args struct {
+	Root      string
+	ProjectID *string
+}) (*WorkspaceResolver, error) {
+	var row WorkspaceRow
+	row.ID = gensym.RandomBase32()
+	row.Root = args.Root
+	row.ProjectID = args.ProjectID
+	if _, err := r.DB.ExecContext(ctx, `
+		INSERT INTO workspace ( id, root, project_id )
+		VALUES ( ?, ?, ? )
+	`, row.ID, row.Root, row.ProjectID); err != nil {
+		return nil, fmt.Errorf("inserting: %w", err)
+	}
+	return &WorkspaceResolver{
+		Q:            r,
+		WorkspaceRow: row,
+	}, nil
 }
 
 func (r *WorkspaceResolver) Project(ctx context.Context) (*ProjectResolver, error) {
