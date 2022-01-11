@@ -4,6 +4,7 @@ type Query {
 
   allWorkspaces: [Workspace!]!
   workspaceById(id: String!): Workspace
+  workspaceByRef(ref: String!): Workspace
 
   stackById(id: String!): Stack
 

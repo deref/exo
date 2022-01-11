@@ -25,7 +25,7 @@ var projectNewCmd = &cobra.Command{
 		ctx := cmd.Context()
 		checkOrEnsureServer()
 
-		gqlClient, shutdown := dialGraphQL(ctx)
+		cl, shutdown := dialGraphQL(ctx)
 		defer shutdown()
 
 		var m struct {
@@ -33,7 +33,7 @@ var projectNewCmd = &cobra.Command{
 				ID string
 			} `graphql:"newProject(displayName: $displayName)"`
 		}
-		if err := gqlClient.Mutate(ctx, &m, map[string]interface{}{
+		if err := cl.Mutate(ctx, &m, map[string]interface{}{
 			"displayName": graphql.String(projectNewFlags.DisplayName),
 		}); err != nil {
 			return err

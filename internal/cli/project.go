@@ -5,7 +5,6 @@ import (
 	"os"
 	"text/tabwriter"
 
-	"github.com/shurcooL/graphql"
 	"github.com/spf13/cobra"
 )
 
@@ -26,30 +25,22 @@ If no subcommand is given, describes the project of the current workspace.`,
 		ctx := cmd.Context()
 		checkOrEnsureServer()
 
-		joshClient := newClient()
-		workspace := requireCurrentWorkspace(ctx, joshClient)
-		workspaceID := workspace.ID()
-
-		gqlClient, shutdown := dialGraphQL(ctx)
+		cl, shutdown := dialGraphQL(ctx)
 		defer shutdown()
 
 		var q struct {
-			Workspace struct {
+			Workspace *struct {
+				ID      string
 				Project *struct {
 					ID          string
 					DisplayName string
 				}
-			} `graphql:"workspaceById(id: $id)"`
+			} `graphql:"workspaceByRef(ref: $workspace)"`
 		}
-		err := gqlClient.Query(ctx, &q, map[string]interface{}{
-			"id": graphql.String(workspaceID),
-		})
-		if err != nil {
-			return fmt.Errorf("querying: %w", err)
-		}
+		mustQueryWorkspace(ctx, cl, &q, nil)
 		project := q.Workspace.Project
 		if project == nil {
-			return fmt.Errorf("no project for workspace %q", workspaceID)
+			return fmt.Errorf("no project for workspace %q", q.Workspace.ID)
 		}
 		w := tabwriter.NewWriter(os.Stdout, 4, 8, 3, ' ', 0)
 		_, _ = fmt.Fprintf(w, "id:\t%s\n", project.ID)

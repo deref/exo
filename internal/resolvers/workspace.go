@@ -6,6 +6,7 @@ import (
 	"fmt"
 
 	"github.com/deref/exo/internal/gensym"
+	"github.com/deref/exo/internal/util/pathutil"
 )
 
 type WorkspaceResolver struct {
@@ -56,6 +57,30 @@ func (r *QueryResolver) workspaceByID(ctx context.Context, id *string) (*Workspa
 		ws = nil
 	}
 	return ws, err
+}
+
+func (r *QueryResolver) WorkspaceByRef(ctx context.Context, args struct {
+	Ref string
+}) (*WorkspaceResolver, error) {
+	workspaces, err := r.AllWorkspaces(ctx)
+	if err != nil {
+		return nil, err
+	}
+	var deepest *WorkspaceResolver
+	maxLen := 0
+	for _, workspace := range workspaces {
+		// Exact match by ID.
+		if workspace.ID == args.Ref {
+			return workspace, nil
+		}
+		// Match by root. Prefer deepest root prefix match.
+		n := len(workspace.Root)
+		if n > maxLen && pathutil.HasFilePathPrefix(args.Ref, workspace.Root) {
+			deepest = workspace
+			maxLen = n
+		}
+	}
+	return deepest, nil
 }
 
 func (r *MutationResolver) NewWorkspace(ctx context.Context, args struct {
