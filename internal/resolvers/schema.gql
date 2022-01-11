@@ -1,14 +1,42 @@
 type Query {
   projectById(id: String!): Project
   workspaceById(id: String!): Workspace
-}
-
-type Workspace {
-  id: String!
-  project: Project
+  stackById(id: String!): Stack
+  componentById(id: String!): Component
+  resourceByIri(iri: String!) Resource
 }
 
 type Project {
   id: String!
   displayName: String
+}
+
+type Workspace {
+  id: String!
+
+  projectID: String
+  project: Project
+
+  stackId: String
+  stack: Stack
+}
+
+type Stack {
+  id: String!
+}
+
+type Component {
+  id: String!
+  
+  stackId: String!
+  stack: Stack!
+
+  name: String!
+}
+
+type Resource {
+  iri: String!
+
+  componentId: String
+  component: Component
 }
