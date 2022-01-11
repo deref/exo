@@ -32,6 +32,8 @@ type Workspace {
 
   stackId: String
   stack: Stack
+
+  environment: Environment!
 }
 
 type Stack {
@@ -45,6 +47,16 @@ type Component {
   stack: Stack!
 
   name: String!
+}
+
+type Environment {
+  variables: [Variable!]!
+}
+
+type Variable {
+  name: String!
+  value: String!
+  source: String!
 }
 
 type Resource {
