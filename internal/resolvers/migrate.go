@@ -21,8 +21,8 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 	if _, err := r.DB.ExecContext(ctx, `
 		CREATE TABLE IF NOT EXISTS workspace (
 			id TEXT NOT NULL PRIMARY KEY,
-			project_id TEXT NOT NULL,
-			root TEXT NOT NULL
+			root TEXT NOT NULL,
+			project_id TEXT
 	);`); err != nil {
 		return fmt.Errorf("creating workspace table: %w", err)
 	}

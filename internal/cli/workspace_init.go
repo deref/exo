@@ -3,8 +3,8 @@ package cli
 import (
 	"fmt"
 
-	"github.com/deref/exo/internal/core/api"
 	"github.com/deref/exo/internal/util/cmdutil"
+	"github.com/shurcooL/graphql"
 	"github.com/spf13/cobra"
 )
 
@@ -24,20 +24,27 @@ Prints the ID of the newly created workspace.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 		checkOrEnsureServer()
-		cl := newClient()
+
+		gqlClient, shutdown := dialGraphQL(ctx)
+		defer shutdown()
+
 		var root string
 		if len(args) < 1 {
 			root = cmdutil.MustGetwd()
 		} else {
 			root = args[0]
 		}
-		output, err := cl.Kernel().CreateWorkspace(ctx, &api.CreateWorkspaceInput{
-			Root: root,
-		})
-		if err != nil {
-			cmdutil.Fatalf("creating workspace: %w", err)
+		var m struct {
+			Workspace struct {
+				ID string
+			} `graphql:"newWorkspace(root: $root)"`
 		}
-		fmt.Println(output.ID)
+		if err := gqlClient.Mutate(ctx, &m, map[string]interface{}{
+			"root": graphql.String(root),
+		}); err != nil {
+			return err
+		}
+		fmt.Println(m.Workspace.ID)
 		return nil
 	},
 }
