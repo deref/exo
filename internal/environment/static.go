@@ -20,7 +20,7 @@ var Default = &Static{
 	Name: "exo",
 	Variables: map[string]string{
 		// Encourage programs to log with colors enabled.  The closest thing to a
-		// standard for this is <https://bixense.com/clicolors/#bug-reports>, but
+		// standard for this is <https://bixense.com/clicolors/>, but
 		// support is spotty. This may grow if there are other popular enviornment
 		// variables to include. If we grow PTY support, this may become unnecessary.
 		"CLICOLOR":       "1",
