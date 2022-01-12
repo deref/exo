@@ -14,6 +14,8 @@ type Query {
 }
 
 type Mutation {
+  stopDaemon(): Void
+
   newProject(displayName: String!): Project!
   newWorkspace(root: String!, projectID: String): Workspace!
 
@@ -29,6 +31,9 @@ type Mutation {
   stopWorkspaceComponents(workspace: String!, components: [String!]!): Job!
   restartWorkspaceComponents(workspace: String!, components: [String!]!): Job!
 }
+
+# Signals no useful result. Encoded as a JSON null value.
+scalar Void
 
 type Project {
   id: String!
