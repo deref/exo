@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/deref/exo/internal/about"
+	gqlclient "github.com/deref/exo/internal/client"
 	"github.com/deref/exo/internal/core/client"
 	"github.com/deref/exo/internal/exod"
 	"github.com/deref/exo/internal/resolvers"
@@ -20,7 +21,6 @@ import (
 	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/deref/exo/internal/util/osutil"
 	"github.com/jmoiron/sqlx"
-	"github.com/shurcooL/graphql"
 	"github.com/spf13/cobra"
 )
 
@@ -170,7 +170,7 @@ func newClient() *client.Root {
 	}
 }
 
-func dialGraphQL(ctx context.Context) (client *graphql.Client, shutdown func()) {
+func dialGraphQL(ctx context.Context) (client *gqlclient.Client, shutdown func()) {
 	// XXX this is a hack for testing daemonless. See exod/main.go & reconcile with that.
 	dbPath := filepath.Join(cfg.VarDir, "exo.sqlite3")
 	txMode := "exclusive"
@@ -197,6 +197,6 @@ func dialGraphQL(ctx context.Context) (client *graphql.Client, shutdown func()) 
 			Handler: resolvers.NewHandler(root),
 		},
 	}
-	client = graphql.NewClient(clientURL()+"/graphql/", httpClient)
+	client = gqlclient.NewClient(clientURL()+"/graphql/", httpClient)
 	return
 }

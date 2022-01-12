@@ -1,31 +1,68 @@
 package cli
 
 import (
-	"context"
+	"bytes"
+	"html/template"
 
-	"github.com/deref/exo/internal/core/api"
+	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/spf13/cobra"
 )
 
-type controlFunc func(ctx context.Context, ws api.Workspace, refs []string) (jobID string, err error)
-
-func controlComponents(cmd *cobra.Command, args []string, f controlFunc) error {
+func controlComponents(cmd *cobra.Command, args []string, workspaceMutation string, componentsMutation string, vars map[string]interface{}) error {
 	ctx := cmd.Context()
 	checkOrEnsureServer()
-	cl := newClient()
-	kernel := cl.Kernel()
-	workspace := requireCurrentWorkspace(ctx, cl)
+	kernel := newClient().Kernel()
 
-	var jobID string
-	var err error
-	if len(args) == 0 {
-		jobID, err = f(ctx, workspace, nil)
-	} else {
-		jobID, err = f(ctx, workspace, args)
+	cl, shutdown := dialGraphQL(ctx)
+	defer shutdown()
+
+	// TODO: It would be nice to have generated mutation methods.
+	var tmpl *template.Template
+	var data struct {
+		Mutation string
 	}
-	if err != nil {
+	vars = jsonutil.Merge(map[string]interface{}{
+		"workspace": currentWorkspaceRef(),
+	}, vars)
+	if len(args) == 0 {
+		tmpl = template.Must(template.New("").Parse(`
+			mutation (
+				$workspace: String!
+			) {
+				{{ .Mutation }}(workspace: $workspace) {
+					id
+				}
+			}
+		`))
+		data.Mutation = workspaceMutation
+	} else {
+		tmpl = template.Must(template.New("").Parse(`
+			mutation (
+				$workspace: String!
+				$components: [String!]!
+			) {
+				{{ .Mutation }}(workspace: $workspace, components: $components) {
+					id
+				}
+			}
+		`))
+		data.Mutation = componentsMutation
+		vars["components"] = args
+	}
+
+	var buf bytes.Buffer
+	if err := tmpl.Execute(&buf, data); err != nil {
+		panic(err)
+	}
+
+	var resp struct {
+		Job struct {
+			ID string
+		}
+	}
+	if err := cl.Run(ctx, buf.String(), &resp, vars); err != nil {
 		return err
 	}
 
-	return watchJob(ctx, kernel, jobID)
+	return watchJob(ctx, kernel, resp.Job.ID)
 }

@@ -7,9 +7,11 @@ import (
 	"reflect"
 	"text/tabwriter"
 
+	gqlclient "github.com/deref/exo/internal/client"
 	"github.com/deref/exo/internal/core/api"
 	"github.com/deref/exo/internal/core/client"
 	"github.com/deref/exo/internal/util/cmdutil"
+	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/shurcooL/graphql"
 	"github.com/spf13/cobra"
 )
@@ -68,12 +70,12 @@ func mustResolveCurrentWorkspace(ctx context.Context, cl *client.Root) *client.W
 	return workspace
 }
 
+func currentWorkspaceRef() string {
+	return cmdutil.MustGetwd()
+}
+
 func resolveCurrentWorkspace(ctx context.Context, cl *client.Root) (*client.Workspace, error) {
-	cwd, err := os.Getwd()
-	if err != nil {
-		return nil, fmt.Errorf("getwd: %w", err)
-	}
-	return resolveWorkspace(ctx, cl, cwd)
+	return resolveWorkspace(ctx, cl, currentWorkspaceRef())
 }
 
 func resolveWorkspace(ctx context.Context, cl *client.Root, ref string) (*client.Workspace, error) {
@@ -93,16 +95,11 @@ func resolveWorkspace(ctx context.Context, cl *client.Root, ref string) (*client
 // Supplies the reserved variable "currentWorkspace" and exits if there is no
 // current workspace. The supplied query must have a pointer field named
 // `Workspace` tagged with `graphql:"workspaceByRef(ref: $currentWorkspace)"`.
-func mustQueryWorkspace(ctx context.Context, cl *graphql.Client, q interface{}, vars map[string]interface{}) {
-	effectiveVars := map[string]interface{}{
+func mustQueryWorkspace(ctx context.Context, cl *gqlclient.Client, q interface{}, vars map[string]interface{}) {
+	vars = jsonutil.Merge(map[string]interface{}{
 		"currentWorkspace": graphql.String(cmdutil.MustGetwd()),
-	}
-	if vars != nil {
-		for k, v := range vars {
-			effectiveVars[k] = v
-		}
-	}
-	if err := cl.Query(ctx, q, effectiveVars); err != nil {
+	}, vars)
+	if err := cl.Query(ctx, q, vars); err != nil {
 		cmdutil.Fatalf("query error: %w", err)
 	}
 	if reflect.ValueOf(q).Elem().FieldByName("Workspace").IsNil() {
