@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"github.com/deref/exo/internal/core/api"
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/spf13/cobra"
 )
@@ -20,12 +19,12 @@ var exitCmd = &cobra.Command{
 			cmdutil.Fatalf("daemon disabled by config")
 		}
 		ctx := cmd.Context()
-		checkOrEnsureServer()
-		cl := newClient()
-		_, err := cl.Kernel().Exit(ctx, &api.ExitInput{})
-		if err != nil {
-			cmdutil.Fatalf("exiting: %w", err)
-		}
-		return nil
+		checkOrEnsureServer() // XXX should not ensure the server if we're trying to exit it!
+
+		cl, shutdown := dialGraphQL(ctx)
+		defer shutdown()
+
+		var resp struct{}
+		return cl.Run(ctx, `mutation { stopDaemon }`, &resp, nil)
 	},
 }
