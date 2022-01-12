@@ -131,3 +131,9 @@ func (r *WorkspaceResolver) Environment(ctx context.Context) *EnvironmentResolve
 		Workspace: r,
 	}
 }
+
+func (r *WorkspaceResolver) FileSystem() *FileSystemResolver {
+	return &FileSystemResolver{
+		hostPath: r.Root,
+	}
+}

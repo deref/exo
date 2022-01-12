@@ -26,6 +26,7 @@ type Project {
 type Workspace {
   id: String!
   root: String!
+  fileSystem: FileSystem!
 
   projectID: String
   project: Project
@@ -64,4 +65,17 @@ type Resource {
 
   componentId: String
   component: Component
+}
+
+type FileSystem {
+  file(path: String!): File
+}
+
+type File {
+  name: String!
+  path: String!
+  isDirectory: Boolean!
+  size: Float!
+  content: String!
+  children: [File!]!
 }
