@@ -16,6 +16,18 @@ type Query {
 type Mutation {
   newProject(displayName: String!): Project!
   newWorkspace(root: String!, projectID: String): Workspace!
+
+  buildWorkspace(workspace: String!): Job!
+  refreshWorkspace(workspace: String!): Job!
+  startWorkspace(workspace: String!): Job!
+  restartWorkspace(workspace: String!): Job!
+  stopWorkspace(workspace: String!): Job!
+
+  buildWorkspaceComponents(workspace: String!, components: [String!]!): Job!
+  refreshWorkspaceComponents(workspace: String!, components: [String!]!): Job!
+  startWorkspaceComponents(workspace: String!, components: [String!]!): Job!
+  stopWorkspaceComponents(workspace: String!, components: [String!]!): Job!
+  restartWorkspaceComponents(workspace: String!, components: [String!]!): Job!
 }
 
 type Project {
@@ -78,4 +90,8 @@ type File {
   size: Float!
   content: String!
   children: [File!]!
+}
+
+type Job {
+  id: String!
 }

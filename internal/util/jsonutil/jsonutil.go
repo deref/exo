@@ -83,3 +83,16 @@ func IsValid(jsonStr string) bool {
 	err := UnmarshalString(jsonStr, &val)
 	return err == nil
 }
+
+func Merge(objs ...map[string]interface{}) map[string]interface{} {
+	res := map[string]interface{}{}
+	for _, o := range objs {
+		if o == nil {
+			continue
+		}
+		for k, v := range o {
+			res[k] = v
+		}
+	}
+	return res
+}

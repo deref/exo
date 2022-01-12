@@ -1,9 +1,6 @@
 package cli
 
 import (
-	"context"
-
-	"github.com/deref/exo/internal/core/api"
 	"github.com/spf13/cobra"
 )
 
@@ -19,26 +16,12 @@ var restartCmd = &cobra.Command{
 
 If no refs are provided, restarts the entire workspace.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if !cmd.Flags().Lookup("timeout").Changed {
-			timeoutSeconds = nil
+		vars := map[string]interface{}{}
+		if cmd.Flags().Lookup("timeout").Changed {
+			vars["timeoutSeconds"] = timeoutSeconds
+		} else {
+			vars["timeoutSeconds"] = nil
 		}
-		return controlComponents(cmd, args, func(ctx context.Context, ws api.Workspace, refs []string) (jobID string, err error) {
-			if refs == nil {
-				output, err := ws.Restart(ctx, &api.RestartInput{TimeoutSeconds: timeoutSeconds})
-				if output != nil {
-					jobID = output.JobID
-				}
-				return jobID, err
-			} else {
-				output, err := ws.RestartComponents(ctx, &api.RestartComponentsInput{
-					TimeoutSeconds: timeoutSeconds,
-					Refs:           refs,
-				})
-				if output != nil {
-					jobID = output.JobID
-				}
-				return jobID, err
-			}
-		})
+		return controlComponents(cmd, args, "restartWorkspace", "restartWorkspaceComponents", vars)
 	},
 }

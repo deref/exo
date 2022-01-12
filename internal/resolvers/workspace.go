@@ -137,3 +137,68 @@ func (r *WorkspaceResolver) FileSystem() *FileSystemResolver {
 		hostPath: r.Root,
 	}
 }
+
+func (r *MutationResolver) BuildWorkspace(ctx context.Context, args struct {
+	Workspace string
+}) (*JobResolver, error) {
+	return nil, errors.New("NOT YET IMPLEMENTED")
+}
+
+func (r *MutationResolver) BuildWorkspaceComponents(ctx context.Context, args struct {
+	Workspace  string
+	Components []string
+}) (*JobResolver, error) {
+	return nil, errors.New("NOT YET IMPLEMENTED")
+}
+
+func (r *MutationResolver) RefreshWorkspace(ctx context.Context, args struct {
+	Workspace string
+}) (*JobResolver, error) {
+	return nil, errors.New("NOT YET IMPLEMENTED")
+}
+
+func (r *MutationResolver) RefreshWorkspaceComponents(ctx context.Context, args struct {
+	Workspace  string
+	Components []string
+}) (*JobResolver, error) {
+	return nil, errors.New("NOT YET IMPLEMENTED")
+}
+
+func (r *MutationResolver) StartWorkspace(ctx context.Context, args struct {
+	Workspace string
+}) (*JobResolver, error) {
+	return nil, errors.New("NOT YET IMPLEMENTED")
+}
+
+func (r *MutationResolver) StartWorkspaceComponents(ctx context.Context, args struct {
+	Workspace  string
+	Components []string
+}) (*JobResolver, error) {
+	return nil, errors.New("NOT YET IMPLEMENTED")
+}
+
+func (r *MutationResolver) RestartWorkspace(ctx context.Context, args struct {
+	Workspace string
+}) (*JobResolver, error) {
+	return nil, errors.New("NOT YET IMPLEMENTED")
+}
+
+func (r *MutationResolver) RestartWorkspaceComponents(ctx context.Context, args struct {
+	Workspace  string
+	Components []string
+}) (*JobResolver, error) {
+	return nil, errors.New("NOT YET IMPLEMENTED")
+}
+
+func (r *MutationResolver) StopWorkspace(ctx context.Context, args struct {
+	Workspace string
+}) (*JobResolver, error) {
+	return nil, errors.New("NOT YET IMPLEMENTED")
+}
+
+func (r *MutationResolver) StopWorkspaceComponents(ctx context.Context, args struct {
+	Workspace  string
+	Components []string
+}) (*JobResolver, error) {
+	return nil, errors.New("NOT YET IMPLEMENTED")
+}
