@@ -16,6 +16,7 @@ type Query {
 
   componentById(id: String!): Component
 
+  allResources: [Resource!]! # TODO: Paginate!
   resourceByIri(iri: String!): Resource
 }
 
@@ -53,6 +54,8 @@ type Project {
   displayName: String
 
   stacks: [Stack!]!
+
+  resources: [Resource!]!
 }
 
 type Workspace {
@@ -67,6 +70,8 @@ type Workspace {
   stack: Stack
 
   environment: Environment!
+
+  resources: [Resource!]!
 }
 
 type Stack {
@@ -92,6 +97,8 @@ type Component {
   stack: Stack!
 
   name: String!
+
+  resources: [Resource!]!
 }
 
 type Environment {

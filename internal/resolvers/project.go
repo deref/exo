@@ -44,7 +44,9 @@ func (r *QueryResolver) ProjectByID(ctx context.Context, args struct {
 }
 
 func (r *QueryResolver) projectByID(ctx context.Context, id *string) (*ProjectResolver, error) {
-	proj := &ProjectResolver{}
+	proj := &ProjectResolver{
+		Q: r,
+	}
 	err := r.getRowByID(ctx, &proj.ProjectRow, `
 		SELECT id, display_name
 		FROM project
@@ -76,4 +78,8 @@ func (r *MutationResolver) NewProject(ctx context.Context, args struct {
 
 func (r *ProjectResolver) Stacks(ctx context.Context) ([]*StackResolver, error) {
 	return r.Q.stacksByProject(ctx, r.ID)
+}
+
+func (r *ProjectResolver) Resources(ctx context.Context) ([]*ResourceResolver, error) {
+	return r.Q.resourcesByProject(ctx, r.ID)
 }
