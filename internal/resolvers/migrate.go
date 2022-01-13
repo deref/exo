@@ -55,7 +55,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 		CREATE TABLE IF NOT EXISTS workspace (
 			id TEXT NOT NULL PRIMARY KEY,
 			root TEXT NOT NULL,
-			project_id TEXT
+			project_id TEXT NOT NULL
 	);`); err != nil {
 		return fmt.Errorf("creating workspace table: %w", err)
 	}

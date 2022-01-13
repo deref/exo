@@ -57,11 +57,11 @@ func (r *QueryResolver) projectByID(ctx context.Context, id *string) (*ProjectRe
 }
 
 func (r *MutationResolver) NewProject(ctx context.Context, args struct {
-	DisplayName string
+	DisplayName *string
 }) (*ProjectResolver, error) {
 	var row ProjectRow
 	row.ID = gensym.RandomBase32()
-	row.DisplayName = trimmedPtr(&args.DisplayName, row.ID)
+	row.DisplayName = trimmedPtr(args.DisplayName, row.ID)
 	if _, err := r.DB.ExecContext(ctx, `
 		INSERT INTO project ( id, display_name )
 		VALUES ( ?, ? )

@@ -15,9 +15,9 @@ type WorkspaceResolver struct {
 }
 
 type WorkspaceRow struct {
-	ID        string  `db:"id"`
-	Root      string  `db:"root"`
-	ProjectID *string `db:"project_id"`
+	ID        string `db:"id"`
+	Root      string `db:"root"`
+	ProjectID string `db:"project_id"`
 }
 
 func (r *QueryResolver) AllWorkspaces(ctx context.Context) ([]*WorkspaceResolver, error) {
@@ -94,7 +94,17 @@ func (r *MutationResolver) NewWorkspace(ctx context.Context, args struct {
 	var row WorkspaceRow
 	row.ID = gensym.RandomBase32()
 	row.Root = args.Root
-	row.ProjectID = args.ProjectID
+
+	if args.ProjectID == nil {
+		proj, err := r.NewProject(ctx, struct{ DisplayName *string }{})
+		if err != nil {
+			return nil, fmt.Errorf("creating new project for workspace: %w", err)
+		}
+		row.ProjectID = proj.ID
+	} else {
+		row.ProjectID = *args.ProjectID
+	}
+
 	if _, err := r.DB.ExecContext(ctx, `
 		INSERT INTO workspace ( id, root, project_id )
 		VALUES ( ?, ?, ? )
@@ -108,7 +118,7 @@ func (r *MutationResolver) NewWorkspace(ctx context.Context, args struct {
 }
 
 func (r *WorkspaceResolver) Project(ctx context.Context) (*ProjectResolver, error) {
-	return r.Q.projectByID(ctx, r.ProjectID)
+	return r.Q.projectByID(ctx, &r.ProjectID)
 }
 
 func (r *WorkspaceResolver) StackID(ctx context.Context) (*string, error) {
