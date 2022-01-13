@@ -2,9 +2,8 @@ package cli
 
 import (
 	"fmt"
-	"os"
-	"text/tabwriter"
 
+	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/spf13/cobra"
 )
 
@@ -63,23 +62,23 @@ Unless --all is set, scopes stacks to the current project.`,
 			stacks = q.Workspace.Project.Stacks
 		}
 
-		w := tabwriter.NewWriter(os.Stdout, 4, 8, 3, ' ', 0)
+		var w *cmdutil.TableWriter
 		if stackLSFlags.All {
-			_, _ = fmt.Fprintln(w, "# ID\tNAME\tPROJECT")
+			w = cmdutil.NewTableWriter("ID", "NAME", "PROJECT")
 			for _, stack := range stacks {
 				project := ""
 				if stack.Project != nil {
 					project = stack.Project.ID
 				}
-				_, _ = fmt.Fprintf(w, "%s\t%s\t%s\n", stack.ID, stack.Name, project)
+				w.WriteRow(stack.ID, stack.Name, project)
 			}
 		} else {
-			_, _ = fmt.Fprintln(w, "# ID\tNAME")
+			w = cmdutil.NewTableWriter("ID", "NAME")
 			for _, stack := range stacks {
-				_, _ = fmt.Fprintf(w, "%s\t%s\n", stack.ID, stack.Name)
+				w.WriteRow(stack.ID, stack.Name)
 			}
 		}
-		_ = w.Flush()
+		w.Flush()
 		return nil
 	},
 }

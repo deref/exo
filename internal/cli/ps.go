@@ -1,11 +1,8 @@
 package cli
 
 import (
-	"fmt"
-	"os"
-	"text/tabwriter"
-
 	"github.com/deref/exo/internal/core/api"
+	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/spf13/cobra"
 )
 
@@ -27,16 +24,15 @@ var psCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		w := tabwriter.NewWriter(os.Stdout, 4, 8, 3, ' ', 0)
-		fmt.Fprintln(w, "# NAME\tID\tSTATE\tPROVIDER")
+		w := cmdutil.NewTableWriter("NAME", "ID", "STATE", "PROVIDER")
 		for _, process := range output.Processes {
 			state := "stopped"
 			if process.Running {
 				state = "running"
 			}
-			_, _ = fmt.Fprintf(w, "%s\t%s\t%s\t%s\n", process.Name, process.ID, state, process.Provider)
+			w.WriteRow(process.Name, process.ID, state, process.Provider)
 		}
-		_ = w.Flush()
+		w.Flush()
 		return nil
 	},
 }

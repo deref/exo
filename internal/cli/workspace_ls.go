@@ -2,9 +2,8 @@ package cli
 
 import (
 	"fmt"
-	"os"
-	"text/tabwriter"
 
+	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/spf13/cobra"
 )
 
@@ -33,12 +32,11 @@ var workspaceLSCmd = &cobra.Command{
 		if err := cl.Query(ctx, &q, nil); err != nil {
 			return fmt.Errorf("querying: %w", err)
 		}
-		w := tabwriter.NewWriter(os.Stdout, 4, 8, 3, ' ', 0)
-		fmt.Fprintln(w, "# ID\tROOT")
+		w := cmdutil.NewTableWriter("ID", "ROOT")
 		for _, ws := range q.Workspaces {
-			_, _ = fmt.Fprintf(w, "%s\t%s\n", ws.ID, ws.Root)
+			w.WriteRow(ws.ID, ws.Root)
 		}
-		_ = w.Flush()
+		w.Flush()
 		return nil
 	},
 }

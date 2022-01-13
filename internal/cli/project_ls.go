@@ -2,9 +2,8 @@ package cli
 
 import (
 	"fmt"
-	"os"
-	"text/tabwriter"
 
+	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/spf13/cobra"
 )
 
@@ -33,12 +32,11 @@ var projectLSCmd = &cobra.Command{
 		if err := cl.Query(ctx, &q, nil); err != nil {
 			return fmt.Errorf("querying: %w", err)
 		}
-		w := tabwriter.NewWriter(os.Stdout, 4, 8, 3, ' ', 0)
-		fmt.Fprintln(w, "# ID\tDISPLAY NAME")
+		w := cmdutil.NewTableWriter("ID", "DISPLAY NAME")
 		for _, project := range q.Projects {
-			_, _ = fmt.Fprintf(w, "%s\t%s\n", project.ID, project.DisplayName)
+			w.WriteRow(project.ID, project.DisplayName)
 		}
-		_ = w.Flush()
+		w.Flush()
 		return nil
 	},
 }
