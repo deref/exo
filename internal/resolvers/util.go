@@ -33,3 +33,7 @@ func trimmedPtr(p *string, fallback string) *string {
 	s := trimmed(*p, fallback)
 	return &s
 }
+
+func stringPtr(s string) *string {
+	return &s
+}

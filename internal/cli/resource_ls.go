@@ -1,21 +1,23 @@
 package cli
 
 import (
-	"errors"
 	"fmt"
 
+	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/spf13/cobra"
 )
 
 func init() {
 	resourceCmd.AddCommand(resourceLSCmd)
 	resourceLSCmd.Flags().BoolVarP(&resourceLSFlags.All, "all", "a", false, "Alias for --scope=all")
-	resourceLSCmd.Flags().StringVar(&resourceLSFlags.Scope, "scope", "stack", "stack, project, all")
+	resourceLSCmd.Flags().StringVar(&resourceLSFlags.Scope, "scope", "", "component, stack, project, or all")
+	resourceLSCmd.Flags().StringVar(&resourceLSFlags.Component, "component", "", "")
 }
 
 var resourceLSFlags struct {
-	All   bool
-	Scope string
+	All       bool
+	Scope     string
+	Component string
 }
 
 var resourceLSCmd = &cobra.Command{
@@ -30,29 +32,41 @@ var resourceLSCmd = &cobra.Command{
 		cl, shutdown := dialGraphQL(ctx)
 		defer shutdown()
 
+		scope := resourceLSFlags.Scope
 		if resourceLSFlags.All {
-			if cmd.Flags().Lookup("scope").Changed {
-				return errors.New("--all and --scope are mutually exclusive")
+			if scope == "" {
+				scope = "all"
+			} else if scope != "all" {
+				return fmt.Errorf("--all conflicts with --scope=%q", scope)
 			}
-			resourceLSFlags.Scope = "all"
+		}
+		if resourceLSFlags.Component != "" {
+			if scope == "" {
+				scope = "component"
+			} else if scope != "component" {
+				return fmt.Errorf("--component conflicts with --scope=%q", scope)
+			}
+		}
+		if scope == "" {
+			scope = "stack"
 		}
 
 		type resourceFragment struct {
-			IRI string
+			IRI     string
+			Project *struct {
+				DisplayName string
+			}
+			Stack *struct {
+				Name string
+			}
+			Component *struct {
+				Name string
+			}
 		}
 		var resources []resourceFragment
+		var columns []string
 
-		switch resourceLSFlags.Scope {
-		case "stack":
-			var q struct {
-				Stack *struct {
-					ID        string
-					Resources []resourceFragment
-				} `graphql:"stackByRef(ref: $currentStack)"`
-			}
-			mustQueryStack(ctx, cl, &q, nil)
-			resources = q.Stack.Resources
-
+		switch scope {
 		case "all":
 			var q struct {
 				Resources []resourceFragment `graphql:"allResources"`
@@ -61,6 +75,7 @@ var resourceLSCmd = &cobra.Command{
 				return err
 			}
 			resources = q.Resources
+			columns = []string{"IRI", "PROJECT", "STACK", "COMPONENT"}
 
 		case "project":
 			var q struct {
@@ -72,14 +87,55 @@ var resourceLSCmd = &cobra.Command{
 			}
 			mustQueryWorkspace(ctx, cl, &q, nil)
 			resources = q.Workspace.Project.Resources
+			columns = []string{"IRI", "STACK", "COMPONENT"}
+
+		case "stack":
+			var q struct {
+				Stack *struct {
+					ID        string
+					Resources []resourceFragment
+				} `graphql:"stackByRef(ref: $currentStack)"`
+			}
+			mustQueryStack(ctx, cl, &q, nil)
+			resources = q.Stack.Resources
+			columns = []string{"IRI", "COMPONENT"}
+
+		case "component":
+			var q struct {
+				Stack *struct {
+					ID        string
+					Resources []resourceFragment
+				} `graphql:"stackByRef(ref: $currentStack)"`
+			}
+			mustQueryStack(ctx, cl, &q, nil)
+			resources = q.Stack.Resources
+			columns = []string{"IRI"}
 
 		default:
 			return fmt.Errorf("unknown scope: %q", resourceLSFlags.Scope)
 		}
 
+		w := cmdutil.NewTableWriter(columns...)
 		for _, resource := range resources {
-			fmt.Println(resource.IRI)
+			data := map[string]string{
+				"IRI": resource.IRI,
+			}
+			if resource.Project != nil {
+				data["PROJECT"] = resource.Project.DisplayName
+			}
+			if resource.Stack != nil {
+				data["STACK"] = resource.Stack.Name
+			}
+			if resource.Component != nil {
+				data["COMPONENT"] = resource.Component.Name
+			}
+			values := make([]string, len(columns))
+			for i, column := range columns {
+				values[i] = data[column]
+			}
+			w.WriteRow(values...)
 		}
+		w.Flush()
 		return nil
 	},
 }

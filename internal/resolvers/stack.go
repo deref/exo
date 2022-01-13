@@ -106,7 +106,15 @@ func (r *QueryResolver) stacksByProject(ctx context.Context, stackID string) ([]
 func (r *QueryResolver) StackByRef(ctx context.Context, args struct {
 	Ref string
 }) (*StackResolver, error) {
-	ws, err := r.workspaceByRef(ctx, args.Ref)
+	return r.stackByRef(ctx, args.Ref)
+}
+
+func (r *QueryResolver) stackByRef(ctx context.Context, ref string) (*StackResolver, error) {
+	stack, err := r.stackByID(ctx, &ref)
+	if stack != nil || err != nil {
+		return stack, err
+	}
+	ws, err := r.workspaceByRef(ctx, ref)
 	if ws == nil || err != nil {
 		return nil, err
 	}
