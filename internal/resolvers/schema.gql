@@ -1,4 +1,6 @@
 type Query {
+  defaultCluster: Cluster
+
   allProjects: [Project!]!
   projectById(id: String!): Project
 
@@ -35,6 +37,12 @@ type Mutation {
 
 # Signals no useful result. Encoded as a JSON null value.
 scalar Void
+
+type Cluster {
+  id: String!
+  name: String!
+  default: Boolean!
+}
 
 type Project {
   id: String!
