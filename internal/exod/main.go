@@ -32,9 +32,9 @@ import (
 	"github.com/deref/exo/internal/util/httputil"
 	"github.com/deref/exo/internal/util/logging"
 	"github.com/deref/exo/internal/util/sysutil"
+	"github.com/deref/exo/internal/util/term"
 	docker "github.com/docker/docker/client"
 	"github.com/jmoiron/sqlx"
-	"github.com/mattn/go-isatty"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
@@ -59,7 +59,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	}
 
 	_, forceStdLog := flags["force-std-log"]
-	if !(forceStdLog || isatty.IsTerminal(os.Stdout.Fd())) {
+	if !(forceStdLog || term.IsInteractive()) {
 		// Replace the standard logger with a logger writes to the var directory
 		// and handles log rotation.
 		golog.SetOutput(&lumberjack.Logger{

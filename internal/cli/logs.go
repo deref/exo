@@ -15,7 +15,6 @@ import (
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/deref/exo/internal/util/term"
 	"github.com/lucasb-eyer/go-colorful"
-	"github.com/mattn/go-isatty"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
 )
@@ -68,14 +67,11 @@ func tailLogs(ctx context.Context, workspace *client.Workspace, streamRefs []str
 }
 
 func runTailLogsReader(ctx context.Context, cancel func()) error {
-	stdin := os.Stdin.Fd()
-	if !isatty.IsTerminal(stdin) {
+	if !term.IsInteractive() {
 		return nil
 	}
 
-	raw := &term.RawMode{
-		FD: stdin,
-	}
+	raw := &term.RawMode{}
 	raw.Enter()
 	defer func() {
 		if err := raw.Exit(); err != nil {
