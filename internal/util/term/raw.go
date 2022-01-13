@@ -11,6 +11,7 @@ import (
 )
 
 type RawMode struct {
+	// Zero value signals stdin.
 	FD uintptr
 
 	oldState *terminal.State
