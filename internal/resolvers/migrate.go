@@ -72,6 +72,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 	if _, err := r.DB.ExecContext(ctx, `
 		CREATE TABLE IF NOT EXISTS stack (
 			id TEXT NOT NULL PRIMARY KEY,
+			cluster_id TEXT NOT NULL,
 			name TEXT NOT NULL,
 			project_id TEXT,
 			workspace_id TEXT

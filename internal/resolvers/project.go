@@ -73,3 +73,7 @@ func (r *MutationResolver) NewProject(ctx context.Context, args struct {
 		ProjectRow: row,
 	}, nil
 }
+
+func (r *ProjectResolver) Stacks(ctx context.Context) ([]*StackResolver, error) {
+	return r.Q.stacksByProject(ctx, r.ID)
+}

@@ -35,12 +35,13 @@ var clusterLSCmd = &cobra.Command{
 			return fmt.Errorf("querying: %w", err)
 		}
 		w := tabwriter.NewWriter(os.Stdout, 4, 8, 3, ' ', 0)
+		fmt.Fprintln(w, "# NAME\tID\tMISC")
 		for _, cluster := range q.Clusters {
 			labels := ""
 			if cluster.Default {
 				labels = "default"
 			}
-			_, _ = fmt.Fprintf(w, "%s\t%s\t%s\n", cluster.ID, cluster.Name, labels)
+			fmt.Fprintf(w, "%s\t%s\t%s\n", cluster.Name, cluster.ID, labels)
 		}
 		_ = w.Flush()
 		return nil

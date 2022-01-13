@@ -28,6 +28,7 @@ var workspaceLSCmd = &cobra.Command{
 			cmdutil.Fatalf("describing workspaces: %w", err)
 		}
 		w := tabwriter.NewWriter(os.Stdout, 4, 8, 3, ' ', 0)
+		fmt.Fprintln(w, "# ID\tROOT")
 		for _, process := range output.Workspaces {
 			_, _ = fmt.Fprintf(w, "%s\t%s\n", process.ID, process.Root)
 		}

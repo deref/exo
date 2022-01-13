@@ -14,6 +14,14 @@ var (
 	cfg *config.Config = &config.Config{}
 )
 
+func init() {
+	rootCmd.PersistentFlags().StringVar(&rootPersistentFlags.Cluster, "cluster", "", "")
+}
+
+var rootPersistentFlags struct {
+	Cluster string
+}
+
 var rootCmd = &cobra.Command{
 	Use:   "exo",
 	Short: "Exo is a development environment process manager and log viewer.",

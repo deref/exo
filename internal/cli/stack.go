@@ -44,11 +44,9 @@ workspace.`,
 		mustQueryStack(ctx, cl, &q, nil)
 
 		stack := q.Stack
-		if stack == nil {
-			return nil
-		}
 		w := tabwriter.NewWriter(os.Stdout, 4, 8, 3, ' ', 0)
 		_, _ = fmt.Fprintf(w, "id:\t%s\n", stack.ID)
+		_, _ = fmt.Fprintf(w, "name:\t%s\n", stack.Name)
 		_ = w.Flush()
 		return nil
 	},
