@@ -7,6 +7,7 @@ type Query {
   workspaceByRef(ref: String!): Workspace
 
   stackById(id: String!): Stack
+  stackByRef(ref: String!): Stack
 
   componentById(id: String!): Component
 
@@ -56,6 +57,15 @@ type Workspace {
 
 type Stack {
   id: String!
+  name: String!
+
+  projectID: String
+  project: Project
+
+  workspaceID: String
+  workspace: Workspace
+
+  resources: [Resource!]!
 }
 
 type Component {
