@@ -62,6 +62,10 @@ func (r *QueryResolver) workspaceByID(ctx context.Context, id *string) (*Workspa
 func (r *QueryResolver) WorkspaceByRef(ctx context.Context, args struct {
 	Ref string
 }) (*WorkspaceResolver, error) {
+	return r.workspaceByRef(ctx, args.Ref)
+}
+
+func (r *QueryResolver) workspaceByRef(ctx context.Context, ref string) (*WorkspaceResolver, error) {
 	workspaces, err := r.AllWorkspaces(ctx)
 	if err != nil {
 		return nil, err
@@ -70,12 +74,12 @@ func (r *QueryResolver) WorkspaceByRef(ctx context.Context, args struct {
 	maxLen := 0
 	for _, workspace := range workspaces {
 		// Exact match by ID.
-		if workspace.ID == args.Ref {
+		if workspace.ID == ref {
 			return workspace, nil
 		}
 		// Match by root. Prefer deepest root prefix match.
 		n := len(workspace.Root)
-		if n > maxLen && pathutil.HasFilePathPrefix(args.Ref, workspace.Root) {
+		if n > maxLen && pathutil.HasFilePathPrefix(ref, workspace.Root) {
 			deepest = workspace
 			maxLen = n
 		}

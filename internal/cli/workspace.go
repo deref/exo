@@ -71,6 +71,7 @@ func mustResolveCurrentWorkspace(ctx context.Context, cl *client.Root) *client.W
 }
 
 func currentWorkspaceRef() string {
+	// Allow override with a persistent flag or other non working-directory state.
 	return cmdutil.MustGetwd()
 }
 
@@ -97,12 +98,12 @@ func resolveWorkspace(ctx context.Context, cl *client.Root, ref string) (*client
 // `Workspace` tagged with `graphql:"workspaceByRef(ref: $currentWorkspace)"`.
 func mustQueryWorkspace(ctx context.Context, cl *gqlclient.Client, q interface{}, vars map[string]interface{}) {
 	vars = jsonutil.Merge(map[string]interface{}{
-		"currentWorkspace": graphql.String(cmdutil.MustGetwd()),
+		"currentWorkspace": graphql.String(currentWorkspaceRef()),
 	}, vars)
 	if err := cl.Query(ctx, q, vars); err != nil {
 		cmdutil.Fatalf("query error: %w", err)
 	}
 	if reflect.ValueOf(q).Elem().FieldByName("Workspace").IsNil() {
-		cmdutil.Fatalf("no workspace for current directory")
+		cmdutil.Fatalf("no current workspace")
 	}
 }

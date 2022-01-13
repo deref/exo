@@ -1,10 +1,16 @@
 package cli
 
 import (
+	"context"
 	"fmt"
 	"os"
+	"reflect"
 	"text/tabwriter"
 
+	gqlclient "github.com/deref/exo/internal/client"
+	"github.com/deref/exo/internal/util/cmdutil"
+	"github.com/deref/exo/internal/util/jsonutil"
+	"github.com/shurcooL/graphql"
 	"github.com/spf13/cobra"
 )
 
@@ -30,16 +36,14 @@ workspace.`,
 		defer shutdown()
 
 		var q struct {
-			Workspace *struct {
-				Stack *struct {
-					ID   string
-					Name string
-				}
-			} `graphql:"workspaceByRef(ref: $currentWorkspace)"`
+			Stack *struct {
+				ID   string
+				Name string
+			} `graphql:"stackByRef(ref: $currentStack)"`
 		}
-		mustQueryWorkspace(ctx, cl, &q, nil)
+		mustQueryStack(ctx, cl, &q, nil)
 
-		stack := q.Workspace.Stack
+		stack := q.Stack
 		if stack == nil {
 			return nil
 		}
@@ -48,4 +52,24 @@ workspace.`,
 		_ = w.Flush()
 		return nil
 	},
+}
+
+func currentStackRef() string {
+	// Allow override with a persistent flag or other non working-directory state.
+	return cmdutil.MustGetwd()
+}
+
+// Supplies the reserved variable "currentStack" and exits if there is no
+// current stack. The supplied query must have a pointer field named
+// `Stack` tagged with `graphql:"stackByRef(ref: $currentStack)"`.
+func mustQueryStack(ctx context.Context, cl *gqlclient.Client, q interface{}, vars map[string]interface{}) {
+	vars = jsonutil.Merge(map[string]interface{}{
+		"currentStack": graphql.String(currentStackRef()),
+	}, vars)
+	if err := cl.Query(ctx, q, vars); err != nil {
+		cmdutil.Fatalf("query error: %w", err)
+	}
+	if reflect.ValueOf(q).Elem().FieldByName("Stack").IsNil() {
+		cmdutil.Fatalf("no current stack")
+	}
 }

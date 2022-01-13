@@ -21,7 +21,7 @@ func (r *QueryResolver) ResourceByIRI(ctx context.Context, args struct {
 func (r *QueryResolver) stackByIRI(ctx context.Context, iri *string) (*ResourceResolver, error) {
 	s := &ResourceResolver{}
 	err := r.getRowByID(ctx, &s.ResourceRow, `
-		SELECT iri
+		SELECT iri, component_id
 		FROM resource
 		WHERE iri = ?
 	`, iri)
@@ -33,4 +33,25 @@ func (r *QueryResolver) stackByIRI(ctx context.Context, iri *string) (*ResourceR
 
 func (r *ResourceResolver) Component(ctx context.Context) (*ComponentResolver, error) {
 	return r.Q.componentByID(ctx, r.ComponentID)
+}
+
+func (r *QueryResolver) resourcesByStack(ctx context.Context, stackID string) ([]*ResourceResolver, error) {
+	var rows []ResourceRow
+	err := r.DB.SelectContext(ctx, &rows, `
+		SELECT iri, component_id
+		FROM resource
+		WHERE stack_id = ?
+		ORDER BY iri ASC
+	`, stackID)
+	if err != nil {
+		return nil, err
+	}
+	resolvers := make([]*ResourceResolver, len(rows))
+	for i, row := range rows {
+		resolvers[i] = &ResourceResolver{
+			Q:           r,
+			ResourceRow: row,
+		}
+	}
+	return resolvers, nil
 }

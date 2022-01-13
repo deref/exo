@@ -39,6 +39,8 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 	if _, err := r.DB.ExecContext(ctx, `
 		CREATE TABLE IF NOT EXISTS stack (
 			id TEXT NOT NULL PRIMARY KEY,
+			name TEXT NOT NULL,
+			project_id TEXT,
 			workspace_id TEXT
 	);`); err != nil {
 		return fmt.Errorf("creating stack table: %w", err)
