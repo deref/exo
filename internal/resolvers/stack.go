@@ -173,7 +173,7 @@ func (r *MutationResolver) NewStack(ctx context.Context, args struct {
 	row.ClusterID = clus.ID
 	if ws != nil {
 		row.WorkspaceID = &ws.ID
-		row.ProjectID = ws.ProjectID
+		row.ProjectID = &ws.ProjectID
 	}
 
 	// TODO: Validate name.
