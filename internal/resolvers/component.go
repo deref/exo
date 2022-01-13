@@ -35,3 +35,7 @@ func (r *QueryResolver) componentByID(ctx context.Context, id *string) (*Compone
 func (r *ComponentResolver) Stack(ctx context.Context) (*StackResolver, error) {
 	return r.Q.stackByID(ctx, &r.StackID)
 }
+
+func (r *ComponentResolver) Resources(ctx context.Context) ([]*ResourceResolver, error) {
+	return r.Q.resourcesByComponent(ctx, r.ID)
+}

@@ -31,7 +31,7 @@ If no subcommand is given, describes the current project.`,
 		var q struct {
 			Workspace *struct {
 				ID      string
-				Project *struct {
+				Project struct {
 					ID          string
 					DisplayName string
 				}
@@ -39,9 +39,6 @@ If no subcommand is given, describes the current project.`,
 		}
 		mustQueryWorkspace(ctx, cl, &q, nil)
 		project := q.Workspace.Project
-		if project == nil {
-			return fmt.Errorf("no project for workspace %q", q.Workspace.ID)
-		}
 		w := tabwriter.NewWriter(os.Stdout, 4, 8, 3, ' ', 0)
 		_, _ = fmt.Fprintf(w, "id:\t%s\n", project.ID)
 		_, _ = fmt.Fprintf(w, "display-name:\t%s\n", project.DisplayName)
