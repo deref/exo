@@ -15,6 +15,7 @@ type Query {
   stackByRef(ref: String!): Stack
 
   componentById(id: String!): Component
+  componentByRef(ref: String!, stack: String): Component
 
   allResources: [Resource!]! # TODO: Paginate!
   resourceByIri(iri: String!): Resource
@@ -38,6 +39,8 @@ type Mutation {
   startWorkspaceComponents(workspace: String!, components: [String!]!): Job!
   stopWorkspaceComponents(workspace: String!, components: [String!]!): Job!
   restartWorkspaceComponents(workspace: String!, components: [String!]!): Job!
+
+  adoptResource(iri: String!, project: String, stack: String, component: String): Resource
 }
 
 # Signals no useful result. Encoded as a JSON null value.
@@ -114,9 +117,19 @@ type Variable {
 type Resource {
   iri: String!
 
-  componentId: String
+  owner: ResourceOwner
+  ownerType: String
+  ownerId: String
+
+  # Owner, if it is a project. Or the stack's project.
+  project: Project
+  # Owner, if it is a stack. Or the component's stack.
+  stack: Stack
+  # Owner, if it is a component.
   component: Component
 }
+
+union ResourceOwner = Component | Stack | Project
 
 type FileSystem {
   file(path: String!): File
