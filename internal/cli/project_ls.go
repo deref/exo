@@ -34,6 +34,7 @@ var projectLSCmd = &cobra.Command{
 			return fmt.Errorf("querying: %w", err)
 		}
 		w := tabwriter.NewWriter(os.Stdout, 4, 8, 3, ' ', 0)
+		fmt.Fprintln(w, "# ID\tDISPLAY NAME")
 		for _, project := range q.Projects {
 			_, _ = fmt.Fprintf(w, "%s\t%s\n", project.ID, project.DisplayName)
 		}

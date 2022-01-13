@@ -20,8 +20,11 @@ var clusterCmd = &cobra.Command{
 	Short: "Create, inspect, and modify clusters",
 	Long: `Contains subcommands for operating on clusters.
 
-If no subcommand is given, describes the cluster of the current stack.  If
-there is no current stack, describes the default cluster.`,
+If no subcommand is given, describes the cluster cluster.
+
+The current cluster can be set explicitly with --cluster, otherwise it comes
+from the current stack.  If there is no current stack, the default cluster is
+used.`,
 	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
@@ -35,25 +38,40 @@ there is no current stack, describes the default cluster.`,
 			Name    string
 			Default bool
 		}
-		var q struct {
-			DefaultCluster *clusterFragment `graphql:"defaultCluster"`
-			Stack          *struct {
-				Cluster clusterFragment
-			} `graphql:"stackByRef(ref: $stack)"`
-		}
-		if err := cl.Query(ctx, &q, map[string]interface{}{
-			"stack": graphql.String(currentStackRef()),
-		}); err != nil {
-			return err
-		}
 
 		var cluster *clusterFragment
-		if q.Stack != nil {
-			cluster = &q.Stack.Cluster
-		} else if q.DefaultCluster != nil {
-			cluster = q.DefaultCluster
+		if cmd.Flags().Lookup("cluster").Changed {
+			var q struct {
+				Cluster *clusterFragment `graphql:"clusterByRef(ref: $cluster)"`
+			}
+			if err := cl.Query(ctx, &q, map[string]interface{}{
+				"cluster": graphql.String(rootPersistentFlags.Cluster),
+			}); err != nil {
+				return err
+			}
+			cluster = q.Cluster
+			if cluster == nil {
+				return fmt.Errorf("no such cluster: %q", rootPersistentFlags.Cluster)
+			}
 		} else {
-			return fmt.Errorf("no current cluster")
+			var q struct {
+				Stack *struct {
+					Cluster clusterFragment
+				} `graphql:"stackByRef(ref: $stack)"`
+				DefaultCluster *clusterFragment `graphql:"defaultCluster"`
+			}
+			if err := cl.Query(ctx, &q, map[string]interface{}{
+				"stack": graphql.String(currentStackRef()),
+			}); err != nil {
+				return err
+			}
+			if q.Stack != nil {
+				cluster = &q.Stack.Cluster
+			} else if q.DefaultCluster != nil {
+				cluster = q.DefaultCluster
+			} else {
+				return fmt.Errorf("no current cluster")
+			}
 		}
 
 		w := tabwriter.NewWriter(os.Stdout, 4, 8, 3, ' ', 0)

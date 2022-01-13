@@ -28,6 +28,7 @@ var psCmd = &cobra.Command{
 			return err
 		}
 		w := tabwriter.NewWriter(os.Stdout, 4, 8, 3, ' ', 0)
+		fmt.Fprintln(w, "# NAME\tID\tSTATE\tPROVIDER")
 		for _, process := range output.Processes {
 			state := "stopped"
 			if process.Running {

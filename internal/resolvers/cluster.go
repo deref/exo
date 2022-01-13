@@ -12,23 +12,26 @@ type ClusterRow struct {
 	Name string `db:"name"`
 }
 
-func (r *QueryResolver) ClusterByName(ctx context.Context, args struct {
-	Name string
+func (r *QueryResolver) ClusterByRef(ctx context.Context, args struct {
+	Ref string
 }) (*ClusterResolver, error) {
-	return r.clusterByName(ctx, args.Name)
+	return r.clusterByRef(ctx, args.Ref)
 }
 
-func (r *QueryResolver) clusterByName(ctx context.Context, name string) (*ClusterResolver, error) {
-	clus := &ClusterResolver{}
-	err := r.getRowByID(ctx, &clus.ClusterRow, `
+func (r *QueryResolver) clusterByRef(ctx context.Context, ref string) (*ClusterResolver, error) {
+	var rows []ClusterRow
+	err := r.DB.SelectContext(ctx, &rows, `
 		SELECT id, name
 		FROM cluster
-		WHERE name = ?
-	`, &name)
-	if clus.ID == "" {
-		clus = nil
+		WHERE id = ? OR name = ?
+	`, ref, ref)
+	if len(rows) == 0 || err != nil {
+		return nil, err
 	}
-	return clus, err
+	return &ClusterResolver{
+		Q:          r,
+		ClusterRow: rows[0],
+	}, err
 }
 
 func (r *QueryResolver) AllClusters(ctx context.Context) ([]*ClusterResolver, error) {
@@ -57,7 +60,7 @@ func (r *QueryResolver) AllClusters(ctx context.Context) ([]*ClusterResolver, er
 const defaultClusterName = "local"
 
 func (r *QueryResolver) DefaultCluster(ctx context.Context) (*ClusterResolver, error) {
-	return r.clusterByName(ctx, "local")
+	return r.clusterByRef(ctx, "local")
 }
 
 // SEE NOTE [DEFAULT_CLUSTER].

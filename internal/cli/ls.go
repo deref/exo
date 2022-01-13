@@ -35,8 +35,9 @@ var lsCmd = &cobra.Command{
 			return err
 		}
 		w := tabwriter.NewWriter(os.Stdout, 4, 8, 3, ' ', 0)
+		fmt.Fprintln(w, "# NAME\tID\tTYPE")
 		for _, component := range output.Components {
-			_, _ = fmt.Fprintf(w, "%s\t%s\t%s\n", component.Name, component.ID, component.Type)
+			fmt.Fprintf(w, "%s\t%s\t%s\n", component.Name, component.ID, component.Type)
 		}
 		_ = w.Flush()
 		return nil

@@ -19,7 +19,7 @@ var projectCmd = &cobra.Command{
 	Short: "Create, inspect, and modify projects",
 	Long: `Contains subcommands for operating on projects.
 
-If no subcommand is given, describes the project of the current workspace.`,
+If no subcommand is given, describes the current project.`,
 	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
@@ -35,7 +35,7 @@ If no subcommand is given, describes the project of the current workspace.`,
 					ID          string
 					DisplayName string
 				}
-			} `graphql:"workspaceByRef(ref: $workspace)"`
+			} `graphql:"workspaceByRef(ref: $currentWorkspace)"`
 		}
 		mustQueryWorkspace(ctx, cl, &q, nil)
 		project := q.Workspace.Project

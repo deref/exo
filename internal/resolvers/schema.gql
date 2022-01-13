@@ -1,6 +1,7 @@
 type Query {
   allClusters: [Cluster!]!
   defaultCluster: Cluster
+  clusterByRef(ref: String!): Cluster
 
   allProjects: [Project!]!
   projectById(id: String!): Project
@@ -9,6 +10,7 @@ type Query {
   workspaceById(id: String!): Workspace
   workspaceByRef(ref: String!): Workspace
 
+  allStacks: [Stack!]!
   stackById(id: String!): Stack
   stackByRef(ref: String!): Stack
 
@@ -22,6 +24,7 @@ type Mutation {
 
   newProject(displayName: String!): Project!
   newWorkspace(root: String!, projectID: String): Workspace!
+  newStack(cluster: String, workspace: String, name: String): Stack!
 
   buildWorkspace(workspace: String!): Job!
   refreshWorkspace(workspace: String!): Job!
@@ -48,6 +51,8 @@ type Cluster {
 type Project {
   id: String!
   displayName: String
+
+  stacks: [Stack!]!
 }
 
 type Workspace {
@@ -67,6 +72,9 @@ type Workspace {
 type Stack {
   id: String!
   name: String!
+
+  clusterID: String!
+  cluster: Cluster!
 
   projectID: String
   project: Project
