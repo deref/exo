@@ -1,11 +1,8 @@
 package cli
 
 import (
-	"fmt"
-	"os"
-	"text/tabwriter"
-
 	"github.com/deref/exo/internal/core/api"
+	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/spf13/cobra"
 )
 
@@ -34,12 +31,11 @@ var lsCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		w := tabwriter.NewWriter(os.Stdout, 4, 8, 3, ' ', 0)
-		fmt.Fprintln(w, "# NAME\tID\tTYPE")
+		w := cmdutil.NewTableWriter("NAME", "ID", "TYPE")
 		for _, component := range output.Components {
-			fmt.Fprintf(w, "%s\t%s\t%s\n", component.Name, component.ID, component.Type)
+			w.WriteRow(component.Name, component.ID, component.Type)
 		}
-		_ = w.Flush()
+		w.Flush()
 		return nil
 	},
 }

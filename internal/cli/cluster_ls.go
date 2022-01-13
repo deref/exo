@@ -2,9 +2,8 @@ package cli
 
 import (
 	"fmt"
-	"os"
-	"text/tabwriter"
 
+	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/spf13/cobra"
 )
 
@@ -34,16 +33,15 @@ var clusterLSCmd = &cobra.Command{
 		if err := cl.Query(ctx, &q, nil); err != nil {
 			return fmt.Errorf("querying: %w", err)
 		}
-		w := tabwriter.NewWriter(os.Stdout, 4, 8, 3, ' ', 0)
-		fmt.Fprintln(w, "# NAME\tID\tMISC")
+		w := cmdutil.NewTableWriter("NAME", "ID", "MISC")
 		for _, cluster := range q.Clusters {
-			labels := ""
+			misc := ""
 			if cluster.Default {
-				labels = "default"
+				misc = "default"
 			}
-			fmt.Fprintf(w, "%s\t%s\t%s\n", cluster.Name, cluster.ID, labels)
+			w.WriteRow(cluster.Name, cluster.ID, misc)
 		}
-		_ = w.Flush()
+		w.Flush()
 		return nil
 	},
 }
