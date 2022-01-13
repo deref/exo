@@ -1,6 +1,9 @@
 package resolvers
 
-import "context"
+import (
+	"context"
+	"fmt"
+)
 
 type ClusterResolver struct {
 	Q *QueryResolver
@@ -10,6 +13,19 @@ type ClusterResolver struct {
 type ClusterRow struct {
 	ID   string `db:"id"`
 	Name string `db:"name"`
+}
+
+func (r *QueryResolver) clusterByID(ctx context.Context, id *string) (*ClusterResolver, error) {
+	clus := &ClusterResolver{}
+	err := r.getRowByID(ctx, &clus.ClusterRow, `
+		SELECT id, name
+		FROM cluster
+		WHERE id = ?
+	`, id)
+	if clus.ID == "" {
+		clus = nil
+	}
+	return clus, err
 }
 
 func (r *QueryResolver) ClusterByRef(ctx context.Context, args struct {
@@ -27,6 +43,9 @@ func (r *QueryResolver) clusterByRef(ctx context.Context, ref string) (*ClusterR
 	`, ref, ref)
 	if len(rows) == 0 || err != nil {
 		return nil, err
+	}
+	if len(rows) > 1 {
+		return nil, fmt.Errorf("ambiguous cluster ref: %q", ref)
 	}
 	return &ClusterResolver{
 		Q:          r,

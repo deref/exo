@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/deref/exo/internal/gensym"
@@ -115,7 +114,7 @@ func (r *QueryResolver) StackByRef(ctx context.Context, args struct {
 }
 
 func (r *StackResolver) Cluster(ctx context.Context) (*ClusterResolver, error) {
-	return nil, errors.New("NOT YET IMPLEMENTED: Stack.Cluster resolver")
+	return r.Q.clusterByID(ctx, &r.ClusterID)
 }
 
 func (r *StackResolver) Project(ctx context.Context) (*ProjectResolver, error) {
@@ -123,7 +122,7 @@ func (r *StackResolver) Project(ctx context.Context) (*ProjectResolver, error) {
 }
 
 func (r *StackResolver) Workspace(ctx context.Context) (*WorkspaceResolver, error) {
-	return nil, errors.New("NOT YET IMPLEMENTED: Stack.Workspace resolver")
+	return r.Q.workspaceByID(ctx, r.WorkspaceID)
 }
 
 func (r *StackResolver) Resources(ctx context.Context) ([]*ResourceResolver, error) {
