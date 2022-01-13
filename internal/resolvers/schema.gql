@@ -1,4 +1,5 @@
 type Query {
+  allClusters: [Cluster!]!
   defaultCluster: Cluster
 
   allProjects: [Project!]!

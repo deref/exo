@@ -31,6 +31,26 @@ func (r *QueryResolver) clusterByName(ctx context.Context, name string) (*Cluste
 	return clus, err
 }
 
+func (r *QueryResolver) AllClusters(ctx context.Context) ([]*ClusterResolver, error) {
+	var rows []ClusterRow
+	err := r.DB.SelectContext(ctx, &rows, `
+		SELECT id, name
+		FROM cluster
+		ORDER BY name ASC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	resolvers := make([]*ClusterResolver, len(rows))
+	for i, row := range rows {
+		resolvers[i] = &ClusterResolver{
+			Q:          r,
+			ClusterRow: row,
+		}
+	}
+	return resolvers, nil
+}
+
 // NOTE [DEFAULT_CLUSTER]: The default cluster should be configurable, or at
 // least optional.  Consider remote/CI use cases where no components/resources
 // should be run locally.
