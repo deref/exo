@@ -19,12 +19,12 @@ type ResourceRow struct {
 
 func (r *MutationResolver) ForgetResource(ctx context.Context, args struct {
 	IRI string
-}) (*Void, error) {
+}) (*VoidResolver, error) {
 	_, err := r.DB.ExecContext(ctx, `
 		DELETE FROM resource
 		WHERE iri = ?
 	`, args.IRI)
-	return &Void{}, err
+	return nil, err
 }
 
 func (r *QueryResolver) AllResources(ctx context.Context) ([]*ResourceResolver, error) {
@@ -275,8 +275,8 @@ func (r *ResourceResolver) Stack(ctx context.Context) (*StackResolver, error) {
 	}).Stack(ctx)
 }
 
-func (r *MutationResolver) DestroyResource(ctx context.Context, args struct {
+func (r *MutationResolver) DisposeResource(ctx context.Context, args struct {
 	IRI string
-}) (*Void, error) {
-	return nil, errors.New("TODO: implement DestroyResource")
+}) (*VoidResolver, error) {
+	return nil, errors.New("TODO: implement DisposeResource")
 }

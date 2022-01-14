@@ -1,3 +1,5 @@
+// XXX This is not graphql specific!
+
 package resolvers
 
 import (
@@ -114,6 +116,28 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 			owner_id TEXT
 	);`); err != nil {
 		return fmt.Errorf("creating resource table: %w", err)
+	}
+
+	// Tasks.
+
+	if _, err := r.DB.ExecContext(ctx, `
+		CREATE TABLE IF NOT EXISTS job (
+			id TEXT NOT NULL PRIMARY KEY,
+			job_id TEXT NOT NULL,
+			parent_id TEXT,
+			mutation TEXT NOT NULL,
+			variables TEXT NOT NULL,
+			worker TEXT NOT NULL,
+			status TEXT NOT NULL,
+			created TEXT NOT NULL,
+			updated TEXT NOT NULL,
+			started TEXT,
+			finished TEXT,
+			progress_current INT,
+			progress_total INT,
+			error TEXT
+	);`); err != nil {
+		return fmt.Errorf("creating job table: %w", err)
 	}
 
 	return nil
