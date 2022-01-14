@@ -28,25 +28,27 @@ type Mutation {
   newWorkspace(root: String!, projectID: String): Workspace!
   newStack(cluster: String, workspace: String, name: String): Stack!
 
-  buildWorkspace(workspace: String!): Job!
-  refreshWorkspace(workspace: String!): Job!
-  startWorkspace(workspace: String!): Job!
-  restartWorkspace(workspace: String!): Job!
-  stopWorkspace(workspace: String!): Job!
+  buildWorkspace(workspace: String!): Void
+  refreshWorkspace(workspace: String!): Void
+  startWorkspace(workspace: String!): Void
+  restartWorkspace(workspace: String!): Void
+  stopWorkspace(workspace: String!): Void
 
-  buildWorkspaceComponents(workspace: String!, components: [String!]!): Job!
-  refreshWorkspaceComponents(workspace: String!, components: [String!]!): Job!
-  startWorkspaceComponents(workspace: String!, components: [String!]!): Job!
-  stopWorkspaceComponents(workspace: String!, components: [String!]!): Job!
-  restartWorkspaceComponents(workspace: String!, components: [String!]!): Job!
+  buildWorkspaceComponents(workspace: String!, components: [String!]!): Void
+  refreshWorkspaceComponents(workspace: String!, components: [String!]!): Void
+  startWorkspaceComponents(workspace: String!, components: [String!]!): Void
+  stopWorkspaceComponents(workspace: String!, components: [String!]!): Void
+  restartWorkspaceComponents(workspace: String!, components: [String!]!): Void
 
   adoptResource(iri: String!, ownerType: String, workspace: String, component: String): Resource
   forgetResource(iri: String!): Void
-  disposeResource(iri: String!): Job
+  disposeResource(iri: String!): Void
 }
 
-# Signals no useful result. Encoded as a JSON null value.
-scalar Void
+# ISO-8601 timestamp in UTC.
+scalar Instant
+
+type Void {}
 
 type Cluster {
   id: String!
@@ -146,6 +148,26 @@ type File {
   children: [File!]!
 }
 
-type Job {
+type Task {
   id: String!
+  jobId: String!
+  job: Task!
+  parentId: String
+  parent: Task
+  worker: String
+  status: String!
+  created: Instant!
+  updated: Instant!
+  started: Instant
+  finished: Instant
+  progress: TaskProgress
+  error: String
+
+  # All tasks associated with this job.
+  jobTasks: [Task!]!
+}
+
+type TaskProgress {
+  current: Int!
+  total: Int!
 }

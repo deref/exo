@@ -22,6 +22,7 @@ require (
 	github.com/gofrs/flock v0.8.1
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
 	github.com/graph-gophers/graphql-go v1.2.0
+	github.com/graphql-go/graphql v0.8.0
 	github.com/hashicorp/hcl/v2 v2.10.0
 	github.com/influxdata/go-syslog/v3 v3.0.0
 	github.com/jmoiron/sqlx v1.2.1-0.20190826204134-d7d95172beb5
