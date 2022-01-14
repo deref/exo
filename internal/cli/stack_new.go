@@ -3,7 +3,6 @@ package cli
 import (
 	"fmt"
 
-	"github.com/shurcooL/graphql"
 	"github.com/spf13/cobra"
 )
 
@@ -38,17 +37,17 @@ cluster.`,
 		defer shutdown()
 
 		vars := map[string]interface{}{
-			"workspace": graphql.String(currentWorkspaceRef()),
+			"workspace": currentWorkspaceRef(),
 		}
 		if cmd.Flags().Lookup("name").Changed {
-			vars["name"] = graphql.String(stackNewFlags.Name)
+			vars["name"] = stackNewFlags.Name
 		} else {
-			vars["name"] = (*graphql.String)(nil)
+			vars["name"] = (*string)(nil)
 		}
 		if cmd.Flags().Lookup("cluster").Changed {
-			vars["cluster"] = graphql.String(stackNewFlags.Cluster)
+			vars["cluster"] = stackNewFlags.Cluster
 		} else {
-			vars["cluster"] = (*graphql.String)(nil)
+			vars["cluster"] = (*string)(nil)
 		}
 		var m struct {
 			Stack struct {

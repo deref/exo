@@ -3,7 +3,6 @@ package cli
 import (
 	"fmt"
 
-	"github.com/shurcooL/graphql"
 	"github.com/spf13/cobra"
 )
 
@@ -57,29 +56,29 @@ current stack or current project.
 			} `graphql:"adoptResource(iri: $iri, workspace: $workspace, ownerType: $ownerType, component: $component)"`
 		}
 		vars := map[string]interface{}{
-			"iri": graphql.String(iri),
+			"iri": iri,
 		}
 		switch ownerType {
 		case "component":
-			vars["ownerType"] = graphql.String("Component")
-			vars["workspace"] = graphql.String(currentWorkspaceRef())
+			vars["ownerType"] = "Component"
+			vars["workspace"] = currentWorkspaceRef()
 			vars["component"] = resourceAdoptFlags.Component
 		case "stack":
-			vars["ownerType"] = graphql.String("Stack")
-			vars["workspace"] = graphql.String(currentWorkspaceRef())
-			vars["component"] = (*graphql.String)(nil)
+			vars["ownerType"] = "Stack"
+			vars["workspace"] = currentWorkspaceRef()
+			vars["component"] = (*string)(nil)
 		case "project":
-			vars["ownerType"] = graphql.String("Project")
-			vars["workspace"] = graphql.String(currentWorkspaceRef())
-			vars["component"] = (*graphql.String)(nil)
+			vars["ownerType"] = "Project"
+			vars["workspace"] = currentWorkspaceRef()
+			vars["component"] = (*string)(nil)
 		case "none":
-			vars["ownerType"] = (*graphql.String)(nil)
-			vars["workspace"] = (*graphql.String)(nil)
-			vars["component"] = (*graphql.String)(nil)
+			vars["ownerType"] = (*string)(nil)
+			vars["workspace"] = (*string)(nil)
+			vars["component"] = (*string)(nil)
 		case "":
-			vars["ownerType"] = (*graphql.String)(nil)
-			vars["workspace"] = graphql.String(currentWorkspaceRef())
-			vars["component"] = (*graphql.String)(nil)
+			vars["ownerType"] = (*string)(nil)
+			vars["workspace"] = currentWorkspaceRef()
+			vars["component"] = (*string)(nil)
 		default:
 			return fmt.Errorf("unexpected value for --owner: %q", ownerType)
 		}

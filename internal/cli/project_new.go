@@ -3,7 +3,6 @@ package cli
 import (
 	"fmt"
 
-	"github.com/shurcooL/graphql"
 	"github.com/spf13/cobra"
 )
 
@@ -34,7 +33,7 @@ var projectNewCmd = &cobra.Command{
 			} `graphql:"newProject(displayName: $displayName)"`
 		}
 		if err := cl.Mutate(ctx, &m, map[string]interface{}{
-			"displayName": graphql.String(projectNewFlags.DisplayName),
+			"displayName": projectNewFlags.DisplayName,
 		}); err != nil {
 			return err
 		}

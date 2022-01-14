@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/deref/exo/internal/util/cmdutil"
-	"github.com/shurcooL/graphql"
 	"github.com/spf13/cobra"
 )
 
@@ -41,7 +40,7 @@ working directory.`,
 			} `graphql:"newWorkspace(root: $root)"`
 		}
 		if err := cl.Mutate(ctx, &m, map[string]interface{}{
-			"root": graphql.String(root),
+			"root": root,
 		}); err != nil {
 			return err
 		}
