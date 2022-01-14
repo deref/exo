@@ -274,3 +274,9 @@ func (r *ResourceResolver) Stack(ctx context.Context) (*StackResolver, error) {
 		Stack(ctx context.Context) (*StackResolver, error)
 	}).Stack(ctx)
 }
+
+func (r *MutationResolver) DestroyResource(ctx context.Context, args struct {
+	IRI string
+}) (*Void, error) {
+	return nil, errors.New("TODO: implement DestroyResource")
+}

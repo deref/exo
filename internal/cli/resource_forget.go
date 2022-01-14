@@ -9,7 +9,7 @@ func init() {
 }
 
 var resourceForgetCmd = &cobra.Command{
-	Use:   "forget <iri>",
+	Use:   "forget <iri>", // TODO: Variadic.
 	Short: "Forget a resource",
 	Long:  `Stop tracking a resource without attempting to destroy it.`,
 	Args:  cobra.ExactArgs(1),
