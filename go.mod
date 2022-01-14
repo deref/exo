@@ -9,6 +9,7 @@ require (
 	github.com/alessio/shellescape v1.4.1
 	github.com/aybabtme/rgbterm v0.0.0-20170906152045-cc83f3b3ce59
 	github.com/containerd/containerd v1.5.7 // indirect
+	github.com/deref/graphql-go v0.0.0-20220114234156-2e6e5c24f11a
 	github.com/deref/inflect-go v0.0.0-20211018210843-15b876b83b3e
 	github.com/deref/pier v0.0.0-20210928181930-9ee844d69730
 	github.com/deref/util-go v0.0.0-20211005205322-c425b1d73580
@@ -42,7 +43,6 @@ require (
 	github.com/pkg/browser v0.0.0-20210706143420-7d21f8c997e2
 	github.com/sergi/go-diff v1.2.0 // indirect
 	github.com/shirou/gopsutil/v3 v3.21.6
-	github.com/shurcooL/graphql v0.0.0-20200928012149-18c5c3165e3a
 	github.com/sirupsen/logrus v1.8.1
 	github.com/spf13/cobra v1.2.1
 	github.com/stretchr/testify v1.7.0

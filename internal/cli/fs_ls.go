@@ -4,7 +4,6 @@ import (
 	"fmt"
 
 	"github.com/deref/exo/internal/util/cmdutil"
-	"github.com/shurcooL/graphql"
 	"github.com/spf13/cobra"
 )
 
@@ -42,7 +41,7 @@ Returns non-zero exit code if the file or directory does not exist.`,
 			} `graphql:"workspaceByRef(ref: $currentWorkspace)"`
 		}
 		mustQueryWorkspace(ctx, cl, &q, map[string]interface{}{
-			"path": graphql.String(args[0]),
+			"path": args[0],
 		})
 		f := q.Workspace.FileSystem.File
 		if f == nil {

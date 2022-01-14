@@ -5,7 +5,6 @@ import (
 	"os"
 	"text/tabwriter"
 
-	"github.com/shurcooL/graphql"
 	"github.com/spf13/cobra"
 )
 
@@ -45,7 +44,7 @@ used.`,
 				Cluster *clusterFragment `graphql:"clusterByRef(ref: $cluster)"`
 			}
 			if err := cl.Query(ctx, &q, map[string]interface{}{
-				"cluster": graphql.String(rootPersistentFlags.Cluster),
+				"cluster": rootPersistentFlags.Cluster,
 			}); err != nil {
 				return err
 			}
@@ -61,7 +60,7 @@ used.`,
 				DefaultCluster *clusterFragment `graphql:"defaultCluster"`
 			}
 			if err := cl.Query(ctx, &q, map[string]interface{}{
-				"stack": graphql.String(currentStackRef()),
+				"stack": currentStackRef(),
 			}); err != nil {
 				return err
 			}

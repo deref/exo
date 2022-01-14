@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"github.com/shurcooL/graphql"
 	"github.com/spf13/cobra"
 )
 
@@ -30,7 +29,7 @@ var resourceRmCmd = &cobra.Command{
 			} `graphql:"disposeResource(iri: $iri)"`
 		}
 		if err := cl.Mutate(ctx, &m, map[string]interface{}{
-			"iri": graphql.String(iri),
+			"iri": iri,
 		}); err != nil {
 			return err
 		}

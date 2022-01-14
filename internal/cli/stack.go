@@ -10,7 +10,6 @@ import (
 	gqlclient "github.com/deref/exo/internal/client"
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/deref/exo/internal/util/jsonutil"
-	"github.com/shurcooL/graphql"
 	"github.com/spf13/cobra"
 )
 
@@ -62,7 +61,7 @@ func currentStackRef() string {
 // `Stack` tagged with `graphql:"stackByRef(ref: $currentStack)"`.
 func mustQueryStack(ctx context.Context, cl *gqlclient.Client, q interface{}, vars map[string]interface{}) {
 	vars = jsonutil.Merge(map[string]interface{}{
-		"currentStack": graphql.String(currentStackRef()),
+		"currentStack": currentStackRef(),
 	}, vars)
 	if err := cl.Query(ctx, q, vars); err != nil {
 		cmdutil.Fatalf("query error: %w", err)

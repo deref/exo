@@ -12,7 +12,6 @@ import (
 	"github.com/deref/exo/internal/core/client"
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/deref/exo/internal/util/jsonutil"
-	"github.com/shurcooL/graphql"
 	"github.com/spf13/cobra"
 )
 
@@ -98,7 +97,7 @@ func resolveWorkspace(ctx context.Context, cl *client.Root, ref string) (*client
 // `Workspace` tagged with `graphql:"workspaceByRef(ref: $currentWorkspace)"`.
 func mustQueryWorkspace(ctx context.Context, cl *gqlclient.Client, q interface{}, vars map[string]interface{}) {
 	vars = jsonutil.Merge(map[string]interface{}{
-		"currentWorkspace": graphql.String(currentWorkspaceRef()),
+		"currentWorkspace": currentWorkspaceRef(),
 	}, vars)
 	if err := cl.Query(ctx, q, vars); err != nil {
 		cmdutil.Fatalf("query error: %w", err)
