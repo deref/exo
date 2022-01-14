@@ -140,6 +140,14 @@ func (r *WorkspaceResolver) Stack(ctx context.Context) (*StackResolver, error) {
 	return stacks[0], nil
 }
 
+func (r *WorkspaceResolver) componentByRef(ctx context.Context, ref string) (*ComponentResolver, error) {
+	stack, err := r.Stack(ctx)
+	if stack == nil || err != nil {
+		return nil, err
+	}
+	return stack.componentByRef(ctx, ref)
+}
+
 func (r *WorkspaceResolver) Environment(ctx context.Context) *EnvironmentResolver {
 	return &EnvironmentResolver{
 		Workspace: r,

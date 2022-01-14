@@ -57,7 +57,7 @@ func (r *QueryResolver) stackByIRI(ctx context.Context, iri *string) (*ResourceR
 }
 
 func (r *ResourceResolver) Component(ctx context.Context) (*ComponentResolver, error) {
-	if r.OwnerType == nil || *r.OwnerType != "component" {
+	if r.OwnerType == nil || *r.OwnerType != "Component" {
 		return nil, nil
 	}
 	return r.Q.componentByID(ctx, r.OwnerID)
@@ -130,71 +130,91 @@ func (r *QueryResolver) resourcesByProject(ctx context.Context, projectID string
 
 func (r *MutationResolver) AdoptResource(ctx context.Context, args struct {
 	IRI       string
-	Project   *string
-	Stack     *string
+	OwnerType *string
+	Workspace *string
 	Component *string
 }) (*ResourceResolver, error) {
 	var row ResourceRow
 	row.IRI = args.IRI
 
+	var workspace *WorkspaceResolver
+	if args.Workspace != nil {
+		var err error
+		workspace, err := r.workspaceByRef(ctx, *args.Workspace)
+		if err != nil {
+			return nil, fmt.Errorf("resolving workspace: %w", err)
+		}
+		if workspace == nil {
+			return nil, errors.New("no such workspace")
+		}
+	}
+
 	var component *ComponentResolver
 	if args.Component != nil {
+		if workspace == nil {
+			return nil, errors.New("workspace is required if component is provided")
+		}
 		var err error
-		component, err = r.componentByRef(ctx, *args.Component, args.Stack)
+		component, err = workspace.componentByRef(ctx, *args.Component)
 		if err != nil {
-			return nil, fmt.Errorf("resolving component: %q", err)
+			return nil, fmt.Errorf("resolving component: %w", err)
 		}
 		if component == nil {
-			return nil, fmt.Errorf("no such component: %q", *args.Component)
+			return nil, errors.New("no such component")
 		}
-		row.OwnerType = stringPtr("component")
-		row.OwnerID = stringPtr(component.ID)
 	}
 
 	var stack *StackResolver
-	if args.Stack != nil || component != nil {
+	if workspace != nil {
 		var err error
-		if args.Stack != nil {
-			stack, err = r.stackByRef(ctx, *args.Stack)
-		} else if component != nil {
-			stack, err = component.Stack(ctx)
-		}
+		stack, err = workspace.Stack(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("resolving stack: %w", err)
-		}
-		if stack == nil {
-			return nil, errors.New("stack not found")
-		}
-		if component != nil && component.StackID != stack.ID {
-			return nil, fmt.Errorf("component %q not part of stack %q", *args.Component, *args.Stack)
-		}
-		if row.OwnerType == nil {
-			row.OwnerType = stringPtr("stack")
-			row.OwnerID = stringPtr(stack.ID)
 		}
 	}
 
 	var project *ProjectResolver
-	if args.Project != nil || stack != nil {
+	if workspace != nil {
 		var err error
-		if args.Project != nil {
-			project, err = r.projectByRef(ctx, *args.Project)
-		} else if stack != nil {
-			project, err = stack.Project(ctx)
-		}
+		project, err = workspace.Project(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("resolving project: %w", err)
+			return nil, fmt.Errorf("resolving stack: %w", err)
 		}
+	}
+
+	effectiveOwnerType := ""
+	if args.OwnerType == nil {
+		if component != nil {
+			effectiveOwnerType = "Component"
+		} else if stack != nil {
+			effectiveOwnerType = "Stack"
+		} else if project != nil {
+			effectiveOwnerType = "Project"
+		}
+	} else {
+		effectiveOwnerType = *args.OwnerType
+	}
+	row.OwnerType = stringPtr(effectiveOwnerType)
+	switch effectiveOwnerType {
+	case "":
+		row.OwnerType = nil
+	case "Component":
+		if component == nil {
+			return nil, errors.New("no component to set owner to")
+		}
+		row.OwnerID = stringPtr(component.ID)
+	case "Stack":
+		if stack == nil {
+			return nil, errors.New("no stack to set owner to")
+		}
+		row.OwnerID = stringPtr(stack.ID)
+	case "Project":
 		if project == nil {
-			return nil, errors.New("project not found")
+			return nil, errors.New("no project to set owner to")
 		}
-		if stack != nil && (stack.ProjectID == nil || *stack.ProjectID != project.ID) {
-			return nil, errors.New("stack does not belong to project")
-		}
-		if row.OwnerType == nil {
-			row.OwnerType = stringPtr("project")
-			row.OwnerID = stringPtr(project.ID)
-		}
+		row.OwnerID = stringPtr(project.ID)
+	default:
+		return nil, fmt.Errorf("unexpected owner type: %q", *args.OwnerType)
 	}
 
 	if _, err := r.DB.ExecContext(ctx, `
@@ -214,11 +234,11 @@ func (r *ResourceResolver) Owner(ctx context.Context) (interface{}, error) {
 		return nil, nil
 	}
 	switch *r.OwnerType {
-	case "component":
+	case "Component":
 		return r.Q.componentByID(ctx, r.OwnerID)
-	case "stack":
+	case "Stack":
 		return r.Q.stackByID(ctx, r.OwnerID)
-	case "project":
+	case "Project":
 		return r.Q.projectByID(ctx, r.OwnerID)
 	default:
 		return nil, fmt.Errorf("unexpected owner type: %q", *r.OwnerType)

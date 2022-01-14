@@ -40,7 +40,7 @@ type Mutation {
   stopWorkspaceComponents(workspace: String!, components: [String!]!): Job!
   restartWorkspaceComponents(workspace: String!, components: [String!]!): Job!
 
-  adoptResource(iri: String!, project: String, stack: String, component: String): Resource
+  adoptResource(iri: String!, ownerType: String, workspace: String, component: String): Resource
 }
 
 # Signals no useful result. Encoded as a JSON null value.
