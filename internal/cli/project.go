@@ -5,6 +5,7 @@ import (
 	"os"
 	"text/tabwriter"
 
+	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/spf13/cobra"
 )
 
@@ -45,4 +46,9 @@ If no subcommand is given, describes the current project.`,
 		_ = w.Flush()
 		return nil
 	},
+}
+
+func currentProjectRef() string {
+	// Allow override with a persistent flag or other non working-directory state.
+	return cmdutil.MustGetwd()
 }

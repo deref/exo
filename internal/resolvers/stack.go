@@ -205,3 +205,7 @@ func (r *MutationResolver) NewStack(ctx context.Context, args struct {
 		StackRow: row,
 	}, nil
 }
+
+func (r *StackResolver) componentByRef(ctx context.Context, ref string) (*ComponentResolver, error) {
+	return r.Q.componentByRef(ctx, ref, stringPtr(r.ID))
+}
