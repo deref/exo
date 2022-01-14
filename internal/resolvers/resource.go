@@ -17,6 +17,16 @@ type ResourceRow struct {
 	OwnerID   *string `db:"owner_id"`
 }
 
+func (r *MutationResolver) ForgetResource(ctx context.Context, args struct {
+	IRI string
+}) (*Void, error) {
+	_, err := r.DB.ExecContext(ctx, `
+		DELETE FROM resource
+		WHERE iri = ?
+	`, args.IRI)
+	return &Void{}, err
+}
+
 func (r *QueryResolver) AllResources(ctx context.Context) ([]*ResourceResolver, error) {
 	var rows []ResourceRow
 	err := r.DB.SelectContext(ctx, &rows, `

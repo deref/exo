@@ -41,6 +41,7 @@ type Mutation {
   restartWorkspaceComponents(workspace: String!, components: [String!]!): Job!
 
   adoptResource(iri: String!, ownerType: String, workspace: String, component: String): Resource
+  forgetResource(iri: String!): Void
 }
 
 # Signals no useful result. Encoded as a JSON null value.
