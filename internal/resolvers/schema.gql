@@ -42,6 +42,7 @@ type Mutation {
 
   adoptResource(iri: String!, ownerType: String, workspace: String, component: String): Resource
   forgetResource(iri: String!): Void
+  disposeResource(iri: String!): Job
 }
 
 # Signals no useful result. Encoded as a JSON null value.

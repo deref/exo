@@ -55,14 +55,14 @@ func controlComponents(cmd *cobra.Command, args []string, workspaceMutation stri
 		panic(err)
 	}
 
-	var resp struct {
+	var m struct {
 		Job struct {
 			ID string
 		}
 	}
-	if err := cl.Run(ctx, buf.String(), &resp, vars); err != nil {
+	if err := cl.Run(ctx, buf.String(), &m, vars); err != nil {
 		return err
 	}
 
-	return watchJob(ctx, kernel, resp.Job.ID)
+	return watchJob(ctx, kernel, m.Job.ID)
 }
