@@ -7,7 +7,7 @@ import (
 	"reflect"
 	"text/tabwriter"
 
-	gqlclient "github.com/deref/exo/internal/client"
+	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/spf13/cobra"
@@ -36,7 +36,7 @@ workspace.`,
 				Name string
 			} `graphql:"stackByRef(ref: $currentStack)"`
 		}
-		mustQueryStack(ctx, client, &q, nil)
+		mustQueryStack(ctx, &q, nil)
 
 		stack := q.Stack
 		w := tabwriter.NewWriter(os.Stdout, 4, 8, 3, ' ', 0)
@@ -55,11 +55,11 @@ func currentStackRef() string {
 // Supplies the reserved variable "currentStack" and exits if there is no
 // current stack. The supplied query must have a pointer field named
 // `Stack` tagged with `graphql:"stackByRef(ref: $currentStack)"`.
-func mustQueryStack(ctx context.Context, cl *gqlclient.Client, q interface{}, vars map[string]interface{}) {
+func mustQueryStack(ctx context.Context, q interface{}, vars map[string]interface{}) {
 	vars = jsonutil.Merge(map[string]interface{}{
 		"currentStack": currentStackRef(),
 	}, vars)
-	if err := cl.Query(ctx, q, vars); err != nil {
+	if err := api.Query(ctx, svc, q, vars); err != nil {
 		cmdutil.Fatalf("query error: %w", err)
 	}
 	if reflect.ValueOf(q).Elem().FieldByName("Stack").IsNil() {

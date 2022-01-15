@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 
+	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/spf13/cobra"
 )
@@ -39,7 +40,7 @@ Unless --all is set, scopes stacks to the current project.`,
 			var q struct {
 				Stacks []stackFragment `graphql:"allStacks"`
 			}
-			if err := client.Query(ctx, &q, nil); err != nil {
+			if err := api.Query(ctx, svc, &q, nil); err != nil {
 				return fmt.Errorf("querying: %w", err)
 			}
 			stacks = q.Stacks
@@ -51,7 +52,7 @@ Unless --all is set, scopes stacks to the current project.`,
 					}
 				} `graphql:"workspaceByRef(ref: $currentWorkspace)"`
 			}
-			mustQueryWorkspace(ctx, client, &q, nil)
+			mustQueryWorkspace(ctx, &q, nil)
 			if q.Workspace.Project == nil {
 				return fmt.Errorf("no current project")
 			}

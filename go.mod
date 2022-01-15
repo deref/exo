@@ -12,7 +12,7 @@ require (
 	github.com/deref/graphql-go v0.0.0-20220114234156-2e6e5c24f11a
 	github.com/deref/inflect-go v0.0.0-20211018210843-15b876b83b3e
 	github.com/deref/pier v0.0.0-20210928181930-9ee844d69730
-	github.com/deref/util-go v0.0.0-20211005205322-c425b1d73580
+	github.com/deref/util-go v0.0.0-20220115012929-ff59eadb1f54
 	github.com/docker/docker v20.10.8+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/docker/go-units v0.4.0

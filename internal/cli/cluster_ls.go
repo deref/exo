@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 
+	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/spf13/cobra"
 )
@@ -26,7 +27,7 @@ var clusterLSCmd = &cobra.Command{
 				Default bool
 			} `graphql:"allClusters"`
 		}
-		if err := client.Query(ctx, &q, nil); err != nil {
+		if err := api.Query(ctx, svc, &q, nil); err != nil {
 			return fmt.Errorf("querying: %w", err)
 		}
 		w := cmdutil.NewTableWriter("NAME", "ID", "MISC")

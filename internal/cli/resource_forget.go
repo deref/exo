@@ -19,12 +19,12 @@ var resourceForgetCmd = &cobra.Command{
 		iri := args[0]
 
 		var resp struct{}
-		return client.Run(ctx, `
+		return svc.Do(ctx, `
 			mutation ($iri: String!) {
 				forgetResource(iri: $iri)
 			}
-		`, &resp, map[string]interface{}{
+		`, map[string]interface{}{
 			"iri": iri,
-		})
+		}, &resp)
 	},
 }

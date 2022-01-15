@@ -2,9 +2,11 @@ package cli
 
 import (
 	"context"
+	"fmt"
 
-	gqlclient "github.com/deref/exo/internal/client"
+	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/config"
+	"github.com/deref/exo/internal/peer"
 	"github.com/deref/exo/internal/telemetry"
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/deref/exo/internal/util/logging"
@@ -37,7 +39,11 @@ For more information, see https://exo.deref.io`,
 		if !offline {
 			// XXX client vs peer behavior.
 			checkOrEnsureServer()
-			client, shutdownClient = dialGraphQL(ctx)
+			var err error
+			svc, err = peer.NewPeer(ctx, cfg.VarDir)
+			if err != nil {
+				return fmt.Errorf("initializing peer: %w", err)
+			}
 		}
 		return nil
 	},
@@ -45,10 +51,12 @@ For more information, see https://exo.deref.io`,
 		return cmd.Help()
 	},
 	PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
-		if shutdownClient != nil {
-			shutdownClient()
-			client = nil
-			shutdownClient = nil
+		ctx := cmd.Context()
+		if svc != nil {
+			if err := svc.Shutdown(ctx); err != nil {
+				cmdutil.Warnf("shutdown error: %w", err)
+			}
+			svc = nil
 		}
 		return nil
 	},
@@ -60,8 +68,7 @@ For more information, see https://exo.deref.io`,
 var offline = false
 
 // Will be initialized automatically, unless offline is true.
-var client *gqlclient.Client
-var shutdownClient func()
+var svc api.Service
 
 func Main() {
 	ctx := context.Background()

@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 
+	"github.com/deref/exo/internal/api"
 	"github.com/spf13/cobra"
 )
 
@@ -50,7 +51,7 @@ cluster.`,
 				ID string
 			} `graphql:"newStack(name: $name, workspace: $workspace, cluster: $cluster)"`
 		}
-		if err := client.Mutate(ctx, &m, vars); err != nil {
+		if err := api.Mutate(ctx, svc, &m, vars); err != nil {
 			return err
 		}
 		fmt.Println(m.Stack.ID)

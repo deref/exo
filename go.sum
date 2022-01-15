@@ -402,6 +402,8 @@ github.com/deref/pier v0.0.0-20210928181930-9ee844d69730 h1:D3shm5SmREyEaVOmotgA
 github.com/deref/pier v0.0.0-20210928181930-9ee844d69730/go.mod h1:ht6ede/cpN2wuY823vX/F+isslxcRIc4eC/WwxylNqs=
 github.com/deref/util-go v0.0.0-20211005205322-c425b1d73580 h1:c/+npVe+/PWgLzdz5sSGoXF5AzcDKl/u7ASlj+GboJk=
 github.com/deref/util-go v0.0.0-20211005205322-c425b1d73580/go.mod h1:qWY9JpUbfLtuKnXHapBYewRn5oCQuYKqpzK2PHyDtlY=
+github.com/deref/util-go v0.0.0-20220115012929-ff59eadb1f54 h1:V+6U2TdVo0bqO0mKvbcGTJjibuksZnHc50tCTFEQIWE=
+github.com/deref/util-go v0.0.0-20220115012929-ff59eadb1f54/go.mod h1:qWY9JpUbfLtuKnXHapBYewRn5oCQuYKqpzK2PHyDtlY=
 github.com/devigned/tab v0.1.1/go.mod h1:XG9mPq0dFghrYvoBF3xdRrJzSTX1b7IQrvaL9mzjeJY=
 github.com/dgrijalva/jwt-go v0.0.0-20170104182250-a601269ab70c/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=

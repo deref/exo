@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 
+	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/spf13/cobra"
 )
@@ -35,7 +36,7 @@ working directory.`,
 				ID string
 			} `graphql:"newWorkspace(root: $root)"`
 		}
-		if err := client.Mutate(ctx, &m, map[string]interface{}{
+		if err := api.Mutate(ctx, svc, &m, map[string]interface{}{
 			"root": root,
 		}); err != nil {
 			return err

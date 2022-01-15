@@ -18,6 +18,7 @@ func UnmarshalString(s string, v interface{}) error {
 	return json.Unmarshal([]byte(s), v)
 }
 
+var MustMarshal = jsonutil.MustMarshal
 var MarshalString = jsonutil.MarshalString
 var MustMarshalString = jsonutil.MustMarshalString
 var MarshalIndentString = jsonutil.MarshalIndentString

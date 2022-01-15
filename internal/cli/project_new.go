@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 
+	"github.com/deref/exo/internal/api"
 	"github.com/spf13/cobra"
 )
 
@@ -28,7 +29,7 @@ var projectNewCmd = &cobra.Command{
 				ID string
 			} `graphql:"newProject(displayName: $displayName)"`
 		}
-		if err := client.Mutate(ctx, &m, map[string]interface{}{
+		if err := api.Mutate(ctx, svc, &m, map[string]interface{}{
 			"displayName": projectNewFlags.DisplayName,
 		}); err != nil {
 			return err

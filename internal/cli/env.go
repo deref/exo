@@ -41,7 +41,7 @@ func getEnvv(ctx context.Context) ([]string, error) {
 			}
 		} `graphql:"workspaceByRef(ref: $currentWorkspace)"`
 	}
-	mustQueryWorkspace(ctx, client, &q, nil)
+	mustQueryWorkspace(ctx, &q, nil)
 
 	envVars := q.Workspace.Environment.Variables
 	envv := make([]string, len(envVars))
