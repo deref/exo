@@ -9,7 +9,7 @@ import (
 
 	gqlclient "github.com/deref/exo/internal/client"
 	"github.com/deref/exo/internal/core/api"
-	"github.com/deref/exo/internal/core/client"
+	joshclient "github.com/deref/exo/internal/core/client"
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/spf13/cobra"
@@ -33,10 +33,6 @@ If no subcommand is given, describes the current workspace.`,
 			return nil
 		}
 		ctx := cmd.Context()
-		checkOrEnsureServer()
-
-		cl, shutdown := dialGraphQL(ctx)
-		defer shutdown()
 
 		var q struct {
 			Workspace *struct {
@@ -44,7 +40,7 @@ If no subcommand is given, describes the current workspace.`,
 				Root string
 			} `graphql:"workspaceByRef(ref: $currentWorkspace)"`
 		}
-		mustQueryWorkspace(ctx, cl, &q, nil)
+		mustQueryWorkspace(ctx, client, &q, nil)
 		w := tabwriter.NewWriter(os.Stdout, 4, 8, 3, ' ', 0)
 		_, _ = fmt.Fprintf(w, "id:\t%s\n", q.Workspace.ID)
 		_, _ = fmt.Fprintf(w, "path:\t%s\n", q.Workspace.Root)
@@ -53,7 +49,7 @@ If no subcommand is given, describes the current workspace.`,
 	},
 }
 
-func requireCurrentWorkspace(ctx context.Context, cl *client.Root) *client.Workspace {
+func requireCurrentWorkspace(ctx context.Context, cl *joshclient.Root) *joshclient.Workspace {
 	workspace := mustResolveCurrentWorkspace(ctx, cl)
 	if workspace == nil {
 		cmdutil.Fatalf("no workspace for current directory")
@@ -61,7 +57,7 @@ func requireCurrentWorkspace(ctx context.Context, cl *client.Root) *client.Works
 	return workspace
 }
 
-func mustResolveCurrentWorkspace(ctx context.Context, cl *client.Root) *client.Workspace {
+func mustResolveCurrentWorkspace(ctx context.Context, cl *joshclient.Root) *joshclient.Workspace {
 	workspace, err := resolveCurrentWorkspace(ctx, cl)
 	if err != nil {
 		cmdutil.Fatalf("error resolving workspace: %v", err)
@@ -74,18 +70,18 @@ func currentWorkspaceRef() string {
 	return cmdutil.MustGetwd()
 }
 
-func resolveCurrentWorkspace(ctx context.Context, cl *client.Root) (*client.Workspace, error) {
+func resolveCurrentWorkspace(ctx context.Context, cl *joshclient.Root) (*joshclient.Workspace, error) {
 	return resolveWorkspace(ctx, cl, currentWorkspaceRef())
 }
 
-func resolveWorkspace(ctx context.Context, cl *client.Root, ref string) (*client.Workspace, error) {
+func resolveWorkspace(ctx context.Context, cl *joshclient.Root, ref string) (*joshclient.Workspace, error) {
 	output, err := cl.Kernel().ResolveWorkspace(ctx, &api.ResolveWorkspaceInput{
 		Ref: ref,
 	})
 	if err != nil {
 		return nil, err
 	}
-	var workspace *client.Workspace
+	var workspace *joshclient.Workspace
 	if output.ID != nil {
 		workspace = cl.GetWorkspace(*output.ID)
 	}

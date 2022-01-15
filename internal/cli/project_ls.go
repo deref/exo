@@ -18,10 +18,6 @@ var projectLSCmd = &cobra.Command{
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		checkOrEnsureServer()
-
-		cl, shutdown := dialGraphQL(ctx)
-		defer shutdown()
 
 		var q struct {
 			Projects []struct {
@@ -29,7 +25,7 @@ var projectLSCmd = &cobra.Command{
 				DisplayName string
 			} `graphql:"allProjects"`
 		}
-		if err := cl.Query(ctx, &q, nil); err != nil {
+		if err := client.Query(ctx, &q, nil); err != nil {
 			return fmt.Errorf("querying: %w", err)
 		}
 		w := cmdutil.NewTableWriter("ID", "DISPLAY NAME")

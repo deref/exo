@@ -15,15 +15,11 @@ var resourceForgetCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		checkOrEnsureServer()
-
-		cl, shutdown := dialGraphQL(ctx)
-		defer shutdown()
 
 		iri := args[0]
 
 		var resp struct{}
-		return cl.Run(ctx, `
+		return client.Run(ctx, `
 			mutation ($iri: String!) {
 				forgetResource(iri: $iri)
 			}

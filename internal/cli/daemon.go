@@ -13,7 +13,7 @@ import (
 
 	"github.com/deref/exo/internal/about"
 	gqlclient "github.com/deref/exo/internal/client"
-	"github.com/deref/exo/internal/core/client"
+	joshclient "github.com/deref/exo/internal/core/client"
 	"github.com/deref/exo/internal/exod"
 	"github.com/deref/exo/internal/resolvers"
 	"github.com/deref/exo/internal/util/cmdutil"
@@ -162,14 +162,15 @@ func clientURL() string {
 }
 
 // TODO: Remove me after switching fully to graphql.
-func newClient() *client.Root {
-	return &client.Root{
+func newClient() *joshclient.Root {
+	return &joshclient.Root{
 		HTTP:  http.DefaultClient,
 		URL:   clientURL() + "/_exo/",
 		Token: mustGetToken(),
 	}
 }
 
+// XXX Clean this up with client vs peer modes.
 func dialGraphQL(ctx context.Context) (client *gqlclient.Client, shutdown func()) {
 	// XXX this is a hack for testing daemonless. See exod/main.go & reconcile with that.
 	dbPath := filepath.Join(cfg.VarDir, "exo.sqlite3")

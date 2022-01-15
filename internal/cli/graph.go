@@ -19,7 +19,6 @@ var graphCmd = &cobra.Command{
 	Hidden: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		checkOrEnsureServer()
 		cl := newClient()
 
 		workspace := requireCurrentWorkspace(ctx, cl)

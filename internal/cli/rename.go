@@ -16,7 +16,6 @@ var renameCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		checkOrEnsureServer()
 		cl := newClient()
 		workspace := requireCurrentWorkspace(ctx, cl)
 		_, err := workspace.RenameComponent(ctx, &api.RenameComponentInput{

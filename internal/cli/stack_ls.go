@@ -25,10 +25,6 @@ Unless --all is set, scopes stacks to the current project.`,
 	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		checkOrEnsureServer()
-
-		cl, shutdown := dialGraphQL(ctx)
-		defer shutdown()
 
 		type stackFragment struct {
 			ID      string
@@ -43,7 +39,7 @@ Unless --all is set, scopes stacks to the current project.`,
 			var q struct {
 				Stacks []stackFragment `graphql:"allStacks"`
 			}
-			if err := cl.Query(ctx, &q, nil); err != nil {
+			if err := client.Query(ctx, &q, nil); err != nil {
 				return fmt.Errorf("querying: %w", err)
 			}
 			stacks = q.Stacks
@@ -55,7 +51,7 @@ Unless --all is set, scopes stacks to the current project.`,
 					}
 				} `graphql:"workspaceByRef(ref: $currentWorkspace)"`
 			}
-			mustQueryWorkspace(ctx, cl, &q, nil)
+			mustQueryWorkspace(ctx, client, &q, nil)
 			if q.Workspace.Project == nil {
 				return fmt.Errorf("no current project")
 			}

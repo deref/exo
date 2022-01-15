@@ -27,10 +27,6 @@ var resourceLSCmd = &cobra.Command{
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		checkOrEnsureServer()
-
-		cl, shutdown := dialGraphQL(ctx)
-		defer shutdown()
 
 		scope := resourceLSFlags.Scope
 		if resourceLSFlags.All {
@@ -71,7 +67,7 @@ var resourceLSCmd = &cobra.Command{
 			var q struct {
 				Resources []resourceFragment `graphql:"allResources"`
 			}
-			if err := cl.Query(ctx, &q, nil); err != nil {
+			if err := client.Query(ctx, &q, nil); err != nil {
 				return err
 			}
 			resources = q.Resources
@@ -85,7 +81,7 @@ var resourceLSCmd = &cobra.Command{
 					}
 				} `graphql:"workspaceByRef(ref: $currentWorkspace)"`
 			}
-			mustQueryWorkspace(ctx, cl, &q, nil)
+			mustQueryWorkspace(ctx, client, &q, nil)
 			resources = q.Workspace.Project.Resources
 			columns = []string{"IRI", "STACK", "COMPONENT"}
 
@@ -96,7 +92,7 @@ var resourceLSCmd = &cobra.Command{
 					Resources []resourceFragment
 				} `graphql:"stackByRef(ref: $currentStack)"`
 			}
-			mustQueryStack(ctx, cl, &q, nil)
+			mustQueryStack(ctx, client, &q, nil)
 			resources = q.Stack.Resources
 			columns = []string{"IRI", "COMPONENT"}
 
@@ -107,7 +103,7 @@ var resourceLSCmd = &cobra.Command{
 					Resources []resourceFragment
 				} `graphql:"stackByRef(ref: $currentStack)"`
 			}
-			mustQueryStack(ctx, cl, &q, nil)
+			mustQueryStack(ctx, client, &q, nil)
 			resources = q.Stack.Resources
 			columns = []string{"IRI"}
 

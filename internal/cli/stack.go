@@ -29,10 +29,6 @@ workspace.`,
 	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		checkOrEnsureServer()
-
-		cl, shutdown := dialGraphQL(ctx)
-		defer shutdown()
 
 		var q struct {
 			Stack *struct {
@@ -40,7 +36,7 @@ workspace.`,
 				Name string
 			} `graphql:"stackByRef(ref: $currentStack)"`
 		}
-		mustQueryStack(ctx, cl, &q, nil)
+		mustQueryStack(ctx, client, &q, nil)
 
 		stack := q.Stack
 		w := tabwriter.NewWriter(os.Stdout, 4, 8, 3, ' ', 0)

@@ -34,10 +34,6 @@ current stack or current project.
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		checkOrEnsureServer()
-
-		cl, shutdown := dialGraphQL(ctx)
-		defer shutdown()
 
 		iri := args[0]
 
@@ -82,6 +78,6 @@ current stack or current project.
 		default:
 			return fmt.Errorf("unexpected value for --owner: %q", ownerType)
 		}
-		return cl.Mutate(ctx, &m, vars)
+		return client.Mutate(ctx, &m, vars)
 	},
 }

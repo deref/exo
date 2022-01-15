@@ -29,7 +29,6 @@ for manual uninstall instructions.`,
 	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		checkOrEnsureServer()
 
 		cl := newClient()
 

@@ -3,6 +3,7 @@ package cli
 import (
 	"context"
 
+	gqlclient "github.com/deref/exo/internal/client"
 	"github.com/deref/exo/internal/config"
 	"github.com/deref/exo/internal/telemetry"
 	"github.com/deref/exo/internal/util/cmdutil"
@@ -31,10 +32,36 @@ For more information, see https://exo.deref.io`,
 	// behavior is stable until v2.
 	SilenceUsage:  true,
 	SilenceErrors: true,
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		ctx := cmd.Context()
+		if !offline {
+			// XXX client vs peer behavior.
+			checkOrEnsureServer()
+			client, shutdownClient = dialGraphQL(ctx)
+		}
+		return nil
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		return cmd.Help()
 	},
+	PersistentPostRunE: func(cmd *cobra.Command, args []string) error {
+		if shutdownClient != nil {
+			shutdownClient()
+			client = nil
+			shutdownClient = nil
+		}
+		return nil
+	},
 }
+
+// Most commands want to connect to the deamon, but those that don't, can set
+// offline to true in their pre-run hook.  TODO: Implement a lazy client, so
+// that offline doesn't need to be set explicitly.
+var offline = false
+
+// Will be initialized automatically, unless offline is true.
+var client *gqlclient.Client
+var shutdownClient func()
 
 func Main() {
 	ctx := context.Background()

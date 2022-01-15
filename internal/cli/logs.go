@@ -11,7 +11,7 @@ import (
 	"github.com/aybabtme/rgbterm"
 	"github.com/deref/exo/internal/chrono"
 	"github.com/deref/exo/internal/core/api"
-	"github.com/deref/exo/internal/core/client"
+	joshclient "github.com/deref/exo/internal/core/client"
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/deref/exo/internal/util/term"
 	"github.com/lucasb-eyer/go-colorful"
@@ -42,7 +42,6 @@ When filtering, system events are omitted unless --system is given.`,
 	DisableFlagsInUseLine: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		checkOrEnsureServer()
 		cl := newClient()
 		workspace := requireCurrentWorkspace(ctx, cl)
 		stopOnError := false
@@ -50,7 +49,7 @@ When filtering, system events are omitted unless --system is given.`,
 	},
 }
 
-func tailLogs(ctx context.Context, workspace *client.Workspace, streamRefs []string, stopOnError bool) error {
+func tailLogs(ctx context.Context, workspace *joshclient.Workspace, streamRefs []string, stopOnError bool) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
 	var eg errgroup.Group
@@ -112,7 +111,7 @@ func runTailLogsReader(ctx context.Context, cancel func()) error {
 	}
 }
 
-func runTailLogsWriter(ctx context.Context, workspace *client.Workspace, streamRefs []string, stopOnError bool) error {
+func runTailLogsWriter(ctx context.Context, workspace *joshclient.Workspace, streamRefs []string, stopOnError bool) error {
 	workspaceID := workspace.ID()
 
 	colors := NewColorCache()

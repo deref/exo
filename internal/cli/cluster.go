@@ -27,10 +27,6 @@ used.`,
 	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		checkOrEnsureServer()
-
-		cl, shutdown := dialGraphQL(ctx)
-		defer shutdown()
 
 		type clusterFragment struct {
 			ID      string
@@ -43,7 +39,7 @@ used.`,
 			var q struct {
 				Cluster *clusterFragment `graphql:"clusterByRef(ref: $cluster)"`
 			}
-			if err := cl.Query(ctx, &q, map[string]interface{}{
+			if err := client.Query(ctx, &q, map[string]interface{}{
 				"cluster": rootPersistentFlags.Cluster,
 			}); err != nil {
 				return err
@@ -59,7 +55,7 @@ used.`,
 				} `graphql:"stackByRef(ref: $stack)"`
 				DefaultCluster *clusterFragment `graphql:"defaultCluster"`
 			}
-			if err := cl.Query(ctx, &q, map[string]interface{}{
+			if err := client.Query(ctx, &q, map[string]interface{}{
 				"stack": currentStackRef(),
 			}); err != nil {
 				return err
