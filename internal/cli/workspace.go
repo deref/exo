@@ -7,8 +7,8 @@ import (
 	"reflect"
 	"text/tabwriter"
 
-	gqlclient "github.com/deref/exo/internal/client"
-	"github.com/deref/exo/internal/core/api"
+	"github.com/deref/exo/internal/api"
+	joshapi "github.com/deref/exo/internal/core/api"
 	joshclient "github.com/deref/exo/internal/core/client"
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/deref/exo/internal/util/jsonutil"
@@ -40,7 +40,7 @@ If no subcommand is given, describes the current workspace.`,
 				Root string
 			} `graphql:"workspaceByRef(ref: $currentWorkspace)"`
 		}
-		mustQueryWorkspace(ctx, client, &q, nil)
+		mustQueryWorkspace(ctx, &q, nil)
 		w := tabwriter.NewWriter(os.Stdout, 4, 8, 3, ' ', 0)
 		_, _ = fmt.Fprintf(w, "id:\t%s\n", q.Workspace.ID)
 		_, _ = fmt.Fprintf(w, "path:\t%s\n", q.Workspace.Root)
@@ -75,7 +75,7 @@ func resolveCurrentWorkspace(ctx context.Context, cl *joshclient.Root) (*joshcli
 }
 
 func resolveWorkspace(ctx context.Context, cl *joshclient.Root, ref string) (*joshclient.Workspace, error) {
-	output, err := cl.Kernel().ResolveWorkspace(ctx, &api.ResolveWorkspaceInput{
+	output, err := cl.Kernel().ResolveWorkspace(ctx, &joshapi.ResolveWorkspaceInput{
 		Ref: ref,
 	})
 	if err != nil {
@@ -91,11 +91,11 @@ func resolveWorkspace(ctx context.Context, cl *joshclient.Root, ref string) (*jo
 // Supplies the reserved variable "currentWorkspace" and exits if there is no
 // current workspace. The supplied query must have a pointer field named
 // `Workspace` tagged with `graphql:"workspaceByRef(ref: $currentWorkspace)"`.
-func mustQueryWorkspace(ctx context.Context, cl *gqlclient.Client, q interface{}, vars map[string]interface{}) {
+func mustQueryWorkspace(ctx context.Context, q interface{}, vars map[string]interface{}) {
 	vars = jsonutil.Merge(map[string]interface{}{
 		"currentWorkspace": currentWorkspaceRef(),
 	}, vars)
-	if err := cl.Query(ctx, q, vars); err != nil {
+	if err := api.Query(ctx, svc, q, vars); err != nil {
 		cmdutil.Fatalf("query error: %w", err)
 	}
 	if reflect.ValueOf(q).Elem().FieldByName("Workspace").IsNil() {

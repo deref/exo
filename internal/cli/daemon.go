@@ -1,26 +1,20 @@
 package cli
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
 
 	"github.com/deref/exo/internal/about"
-	gqlclient "github.com/deref/exo/internal/client"
 	joshclient "github.com/deref/exo/internal/core/client"
 	"github.com/deref/exo/internal/exod"
-	"github.com/deref/exo/internal/resolvers"
 	"github.com/deref/exo/internal/util/cmdutil"
-	"github.com/deref/exo/internal/util/httputil"
 	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/deref/exo/internal/util/osutil"
-	"github.com/jmoiron/sqlx"
 	"github.com/spf13/cobra"
 )
 
@@ -168,36 +162,4 @@ func newClient() *joshclient.Root {
 		URL:   clientURL() + "/_exo/",
 		Token: mustGetToken(),
 	}
-}
-
-// XXX Clean this up with client vs peer modes.
-func dialGraphQL(ctx context.Context) (client *gqlclient.Client, shutdown func()) {
-	// XXX this is a hack for testing daemonless. See exod/main.go & reconcile with that.
-	dbPath := filepath.Join(cfg.VarDir, "exo.sqlite3")
-	txMode := "exclusive"
-	connStr := dbPath + "?_txlock=" + txMode
-	db, err := sqlx.Open("sqlite3", connStr)
-	if err != nil {
-		cmdutil.Fatalf("opening sqlite db: %v", err)
-	}
-	shutdown = func() {
-		if err := db.Close(); err != nil {
-			cmdutil.Warnf("error closing sqlite db: %v", err)
-		}
-	}
-
-	root := &resolvers.RootResolver{
-		DB: db,
-	}
-	if err := root.Migrate(ctx); err != nil {
-		cmdutil.Fatalf("migrating db: %w", err)
-	}
-
-	httpClient := &http.Client{
-		Transport: &httputil.NetworklessTransport{
-			Handler: resolvers.NewHandler(root),
-		},
-	}
-	client = gqlclient.NewClient(clientURL()+"/graphql/", httpClient)
-	return
 }

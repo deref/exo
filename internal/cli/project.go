@@ -34,7 +34,7 @@ If no subcommand is given, describes the current project.`,
 				}
 			} `graphql:"workspaceByRef(ref: $currentWorkspace)"`
 		}
-		mustQueryWorkspace(ctx, client, &q, nil)
+		mustQueryWorkspace(ctx, &q, nil)
 		project := q.Workspace.Project
 		w := tabwriter.NewWriter(os.Stdout, 4, 8, 3, ' ', 0)
 		_, _ = fmt.Fprintf(w, "id:\t%s\n", project.ID)

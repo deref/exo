@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 
+	"github.com/deref/exo/internal/api"
 	"github.com/spf13/cobra"
 )
 
@@ -78,6 +79,6 @@ current stack or current project.
 		default:
 			return fmt.Errorf("unexpected value for --owner: %q", ownerType)
 		}
-		return client.Mutate(ctx, &m, vars)
+		return api.Mutate(ctx, svc, &m, vars)
 	},
 }

@@ -5,6 +5,7 @@ import (
 	"os"
 	"text/tabwriter"
 
+	"github.com/deref/exo/internal/api"
 	"github.com/spf13/cobra"
 )
 
@@ -39,7 +40,7 @@ used.`,
 			var q struct {
 				Cluster *clusterFragment `graphql:"clusterByRef(ref: $cluster)"`
 			}
-			if err := client.Query(ctx, &q, map[string]interface{}{
+			if err := api.Query(ctx, svc, &q, map[string]interface{}{
 				"cluster": rootPersistentFlags.Cluster,
 			}); err != nil {
 				return err
@@ -55,7 +56,7 @@ used.`,
 				} `graphql:"stackByRef(ref: $stack)"`
 				DefaultCluster *clusterFragment `graphql:"defaultCluster"`
 			}
-			if err := client.Query(ctx, &q, map[string]interface{}{
+			if err := api.Query(ctx, svc, &q, map[string]interface{}{
 				"stack": currentStackRef(),
 			}); err != nil {
 				return err

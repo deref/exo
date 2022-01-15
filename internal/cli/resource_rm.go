@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"github.com/deref/exo/internal/api"
 	"github.com/spf13/cobra"
 )
 
@@ -24,7 +25,7 @@ var resourceRmCmd = &cobra.Command{
 				ID string
 			} `graphql:"disposeResource(iri: $iri)"`
 		}
-		if err := client.Mutate(ctx, &m, map[string]interface{}{
+		if err := api.Mutate(ctx, svc, &m, map[string]interface{}{
 			"iri": iri,
 		}); err != nil {
 			return err

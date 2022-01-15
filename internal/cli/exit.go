@@ -26,6 +26,6 @@ var exitCmd = &cobra.Command{
 		// TODO: Fail gracefully if the daemon is already stopped, or if
 		// it exists before the response comes back.
 		var resp struct{}
-		return client.Run(ctx, `mutation { stopDaemon }`, &resp, nil)
+		return svc.Do(ctx, `mutation { stopDaemon }`, nil, &resp)
 	},
 }

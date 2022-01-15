@@ -11,9 +11,14 @@ import (
 //go:embed schema.gql
 var schema string
 
-func NewHandler(resolver *RootResolver) *relay.Handler {
+func NewSchema(r *RootResolver) *graphql.Schema {
+	return graphql.MustParseSchema(schema, r, graphql.UseFieldResolvers())
+}
+
+// XXX move this to server package.
+func NewHandler(r *RootResolver) *relay.Handler {
 	return &relay.Handler{
-		Schema: graphql.MustParseSchema(schema, resolver, graphql.UseFieldResolvers()),
+		Schema: NewSchema(r),
 	}
 }
 

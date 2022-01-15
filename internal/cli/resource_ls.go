@@ -3,6 +3,7 @@ package cli
 import (
 	"fmt"
 
+	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/spf13/cobra"
 )
@@ -67,7 +68,7 @@ var resourceLSCmd = &cobra.Command{
 			var q struct {
 				Resources []resourceFragment `graphql:"allResources"`
 			}
-			if err := client.Query(ctx, &q, nil); err != nil {
+			if err := api.Query(ctx, svc, &q, nil); err != nil {
 				return err
 			}
 			resources = q.Resources
@@ -81,7 +82,7 @@ var resourceLSCmd = &cobra.Command{
 					}
 				} `graphql:"workspaceByRef(ref: $currentWorkspace)"`
 			}
-			mustQueryWorkspace(ctx, client, &q, nil)
+			mustQueryWorkspace(ctx, &q, nil)
 			resources = q.Workspace.Project.Resources
 			columns = []string{"IRI", "STACK", "COMPONENT"}
 
@@ -92,7 +93,7 @@ var resourceLSCmd = &cobra.Command{
 					Resources []resourceFragment
 				} `graphql:"stackByRef(ref: $currentStack)"`
 			}
-			mustQueryStack(ctx, client, &q, nil)
+			mustQueryStack(ctx, &q, nil)
 			resources = q.Stack.Resources
 			columns = []string{"IRI", "COMPONENT"}
 
@@ -103,7 +104,7 @@ var resourceLSCmd = &cobra.Command{
 					Resources []resourceFragment
 				} `graphql:"stackByRef(ref: $currentStack)"`
 			}
-			mustQueryStack(ctx, client, &q, nil)
+			mustQueryStack(ctx, &q, nil)
 			resources = q.Stack.Resources
 			columns = []string{"IRI"}
 
