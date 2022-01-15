@@ -15,11 +15,7 @@ var resourceRmCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		checkOrEnsureServer()
 		kernel := newClient().Kernel()
-
-		cl, shutdown := dialGraphQL(ctx)
-		defer shutdown()
 
 		iri := args[0]
 
@@ -28,7 +24,7 @@ var resourceRmCmd = &cobra.Command{
 				ID string
 			} `graphql:"disposeResource(iri: $iri)"`
 		}
-		if err := cl.Mutate(ctx, &m, map[string]interface{}{
+		if err := client.Mutate(ctx, &m, map[string]interface{}{
 			"iri": iri,
 		}); err != nil {
 			return err

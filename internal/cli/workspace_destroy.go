@@ -21,7 +21,6 @@ Deleting a workspace also deletes all resources in that workspace.`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		checkOrEnsureServer()
 		cl := newClient()
 		kernel := cl.Kernel()
 		var workspace api.Workspace

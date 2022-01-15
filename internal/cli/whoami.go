@@ -17,7 +17,6 @@ var whoamiCmd = &cobra.Command{
 	Short: "Prints the current user's identity.",
 	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		checkOrEnsureServer()
 		ctx := cmd.Context()
 		cl := newClient()
 		kernel := cl.Kernel()

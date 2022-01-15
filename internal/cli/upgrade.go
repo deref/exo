@@ -19,6 +19,10 @@ var upgradeCmd = &cobra.Command{
 	Short: "Upgrade exo",
 	Long:  `Upgrade exo to the latest version.`,
 	Args:  cobra.NoArgs,
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		offline = true
+		return cmd.Parent().PersistentPreRunE(cmd, args)
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 		tel := telemetry.FromContext(ctx)

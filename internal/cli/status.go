@@ -23,6 +23,10 @@ var statusCmd = &cobra.Command{
 	Short: "Report exo status",
 	Long:  `Report exo daemon status.`,
 	Args:  cobra.NoArgs,
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		offline = true
+		return cmd.Parent().PersistentPreRunE(cmd, args)
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		err := loadRunState()
 		if err != nil {

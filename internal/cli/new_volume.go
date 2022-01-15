@@ -30,7 +30,6 @@ docker volume create <name>
 	Args:                  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		checkOrEnsureServer()
 		cl := newClient()
 		workspace := requireCurrentWorkspace(ctx, cl)
 

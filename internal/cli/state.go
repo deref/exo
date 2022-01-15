@@ -36,7 +36,6 @@ var stateGetCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		componentRef := args[0]
 		ctx := cmd.Context()
-		checkOrEnsureServer()
 		cl := newClient()
 
 		workspace := requireCurrentWorkspace(ctx, cl)
@@ -57,7 +56,6 @@ var stateSetCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		componentRef := args[0]
 		ctx := cmd.Context()
-		checkOrEnsureServer()
 		cl := newClient()
 
 		var newState map[string]interface{}
@@ -81,7 +79,6 @@ var stateClearCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		componentRef := args[0]
 		ctx := cmd.Context()
-		checkOrEnsureServer()
 		cl := newClient()
 
 		workspace := requireCurrentWorkspace(ctx, cl)
@@ -101,7 +98,6 @@ var stateEditCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		componentRef := args[0]
 		ctx := cmd.Context()
-		checkOrEnsureServer()
 		cl := newClient()
 
 		workspace := requireCurrentWorkspace(ctx, cl)

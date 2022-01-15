@@ -18,7 +18,6 @@ var rmCmd = &cobra.Command{
 			return nil
 		}
 		ctx := cmd.Context()
-		checkOrEnsureServer()
 		cl := newClient()
 		kernel := cl.Kernel()
 		workspace := requireCurrentWorkspace(ctx, cl)

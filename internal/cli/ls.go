@@ -22,7 +22,6 @@ var lsCmd = &cobra.Command{
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		checkOrEnsureServer()
 		cl := newClient()
 		workspace := requireCurrentWorkspace(ctx, cl)
 		output, err := workspace.DescribeComponents(ctx, &api.DescribeComponentsInput{

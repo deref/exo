@@ -14,7 +14,6 @@ var logoutCmd = &cobra.Command{
 	Args:   cobra.NoArgs,
 	Hidden: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		checkOrEnsureServer()
 		ctx := cmd.Context()
 		cl := newClient()
 		kernel := cl.Kernel()

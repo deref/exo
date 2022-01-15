@@ -26,7 +26,6 @@ var manifestResolveCmd = &cobra.Command{
 			return nil
 		}
 		ctx := cmd.Context()
-		checkOrEnsureServer()
 
 		cl := newClient()
 		workspace := requireCurrentWorkspace(ctx, cl)

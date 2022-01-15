@@ -17,7 +17,6 @@ var loginCmd = &cobra.Command{
 	Args:   cobra.NoArgs,
 	Hidden: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		checkOrEnsureServer()
 		serverURL := effectiveServerURL()
 		uri, err := url.Parse(serverURL)
 		if err != nil {

@@ -20,7 +20,6 @@ var editCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		componentRef := args[0]
 		ctx := cmd.Context()
-		checkOrEnsureServer()
 		cl := newClient()
 		kernel := cl.Kernel()
 

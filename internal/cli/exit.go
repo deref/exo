@@ -14,17 +14,18 @@ var exitCmd = &cobra.Command{
 	Short: "Stop the exo daemon",
 	Long:  `Stop the exo daemon process.`,
 	Args:  cobra.NoArgs,
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		offline = true
+		return cmd.Parent().PersistentPreRunE(cmd, args)
+	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if cfg.NoDaemon {
 			cmdutil.Fatalf("daemon disabled by config")
 		}
 		ctx := cmd.Context()
-		checkOrEnsureServer() // XXX should not ensure the server if we're trying to exit it!
-
-		cl, shutdown := dialGraphQL(ctx)
-		defer shutdown()
-
+		// TODO: Fail gracefully if the daemon is already stopped, or if
+		// it exists before the response comes back.
 		var resp struct{}
-		return cl.Run(ctx, `mutation { stopDaemon }`, &resp, nil)
+		return client.Run(ctx, `mutation { stopDaemon }`, &resp, nil)
 	},
 }

@@ -22,17 +22,13 @@ var projectNewCmd = &cobra.Command{
 	Args:  cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		checkOrEnsureServer()
-
-		cl, shutdown := dialGraphQL(ctx)
-		defer shutdown()
 
 		var m struct {
 			Project struct {
 				ID string
 			} `graphql:"newProject(displayName: $displayName)"`
 		}
-		if err := cl.Mutate(ctx, &m, map[string]interface{}{
+		if err := client.Mutate(ctx, &m, map[string]interface{}{
 			"displayName": projectNewFlags.DisplayName,
 		}); err != nil {
 			return err

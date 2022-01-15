@@ -16,7 +16,6 @@ var disposeCmd = &cobra.Command{
 	Hidden: true, // This command is only really useful for testing controllers.
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		checkOrEnsureServer()
 		cl := newClient()
 		kernel := cl.Kernel()
 		workspace := requireCurrentWorkspace(ctx, cl)

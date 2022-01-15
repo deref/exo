@@ -25,7 +25,6 @@ var jobTreeCmd = &cobra.Command{
 If job-ids are provided, lists all jobs`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		checkOrEnsureServer()
 		cl := newClient()
 		kernel := cl.Kernel()
 

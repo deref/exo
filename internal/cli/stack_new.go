@@ -31,10 +31,6 @@ cluster.`,
 	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		checkOrEnsureServer()
-
-		cl, shutdown := dialGraphQL(ctx)
-		defer shutdown()
 
 		vars := map[string]interface{}{
 			"workspace": currentWorkspaceRef(),
@@ -54,7 +50,7 @@ cluster.`,
 				ID string
 			} `graphql:"newStack(name: $name, workspace: $workspace, cluster: $cluster)"`
 		}
-		if err := cl.Mutate(ctx, &m, vars); err != nil {
+		if err := client.Mutate(ctx, &m, vars); err != nil {
 			return err
 		}
 		fmt.Println(m.Stack.ID)

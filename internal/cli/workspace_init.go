@@ -23,10 +23,6 @@ working directory.`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		checkOrEnsureServer()
-
-		cl, shutdown := dialGraphQL(ctx)
-		defer shutdown()
 
 		var root string
 		if len(args) < 1 {
@@ -39,7 +35,7 @@ working directory.`,
 				ID string
 			} `graphql:"newWorkspace(root: $root)"`
 		}
-		if err := cl.Mutate(ctx, &m, map[string]interface{}{
+		if err := client.Mutate(ctx, &m, map[string]interface{}{
 			"root": root,
 		}); err != nil {
 			return err

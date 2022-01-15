@@ -18,6 +18,10 @@ var serverCmd = &cobra.Command{
 
 Prefer the daemonize command for normal operation.`,
 	Args: cobra.ArbitraryArgs,
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		offline = true
+		return cmd.Parent().PersistentPreRunE(cmd, args)
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
 		exod.Main(ctx)

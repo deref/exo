@@ -22,6 +22,10 @@ var versionCmd = &cobra.Command{
 	Short: "Print the version of exo",
 	Long:  "Print the version of exo.",
 	Args:  cobra.NoArgs,
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		offline = true
+		return cmd.Parent().PersistentPreRunE(cmd, args)
+	},
 	Run: func(cmd *cobra.Command, args []string) {
 		buildInfo, ok := debug.ReadBuildInfo()
 		if !ok {

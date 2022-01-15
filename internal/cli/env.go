@@ -31,11 +31,6 @@ var envCmd = &cobra.Command{
 }
 
 func getEnvv(ctx context.Context) ([]string, error) {
-	checkOrEnsureServer()
-
-	cl, shutdown := dialGraphQL(ctx)
-	defer shutdown()
-
 	var q struct {
 		Workspace *struct {
 			Environment struct {
@@ -46,7 +41,7 @@ func getEnvv(ctx context.Context) ([]string, error) {
 			}
 		} `graphql:"workspaceByRef(ref: $currentWorkspace)"`
 	}
-	mustQueryWorkspace(ctx, cl, &q, nil)
+	mustQueryWorkspace(ctx, client, &q, nil)
 
 	envVars := q.Workspace.Environment.Variables
 	envv := make([]string, len(envVars))

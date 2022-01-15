@@ -22,11 +22,6 @@ Returns non-zero exit code if the file or directory does not exist.`,
 	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		checkOrEnsureServer()
-
-		cl, shutdown := dialGraphQL(ctx)
-		defer shutdown()
-
 		var q struct {
 			Workspace *struct {
 				FileSystem *struct {
@@ -40,7 +35,7 @@ Returns non-zero exit code if the file or directory does not exist.`,
 				}
 			} `graphql:"workspaceByRef(ref: $currentWorkspace)"`
 		}
-		mustQueryWorkspace(ctx, cl, &q, map[string]interface{}{
+		mustQueryWorkspace(ctx, client, &q, map[string]interface{}{
 			"path": args[0],
 		})
 		f := q.Workspace.FileSystem.File
