@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/spf13/cobra"
@@ -44,6 +45,7 @@ func sendMutation(ctx context.Context, mutation string, vars map[string]interfac
 		return err
 	}
 	if rootPersistentFlags.Async {
+		fmt.Println("job:", jobID)
 		return nil
 	}
 	return watchJob(ctx, jobID)

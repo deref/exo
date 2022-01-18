@@ -9,6 +9,7 @@ import (
 	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/resolvers"
 	"github.com/deref/exo/internal/util/cmdutil"
+	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/jmoiron/sqlx"
 )
@@ -52,6 +53,24 @@ func (p *Peer) Do(ctx context.Context, doc string, vars map[string]interface{}, 
 }
 
 func (p *Peer) Enqueue(ctx context.Context, mutation string, vars map[string]interface{}) (jobID string, err error) {
+	var m struct {
+		Job struct {
+			ID string
+		} `graphql:"newTask(mutation: $mutation, variables: $variables)"`
+	}
+	variablesJSON, err := jsonutil.MarshalString(vars)
+	if err != nil {
+		return "", fmt.Errorf("marshaling variables to json: %w", err)
+	}
+	err = api.Mutate(ctx, p, &m, map[string]interface{}{
+		"mutation":  mutation,
+		"variables": variablesJSON,
+	})
+	return m.Job.ID, err
+}
+
+func (p *Peer) Await(ctx context.Context, jobID string) error {
+	// TODO: If there is no worker assigned, start doing it.
 	panic("NOT YET IMPLEMENTED")
 }
 
