@@ -21,7 +21,6 @@ var editCmd = &cobra.Command{
 		componentRef := args[0]
 		ctx := cmd.Context()
 		cl := newClient()
-		kernel := cl.Kernel()
 
 		workspace := requireCurrentWorkspace(ctx, cl)
 		description, err := workspace.DescribeComponents(ctx, &api.DescribeComponentsInput{
@@ -45,6 +44,6 @@ var editCmd = &cobra.Command{
 			Spec: newSpec,
 		})
 		// TODO: This should handle a job id for the update step.
-		return watchJob(ctx, kernel, output.JobID)
+		return watchJob(ctx, output.JobID)
 	},
 }

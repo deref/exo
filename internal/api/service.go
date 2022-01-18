@@ -29,6 +29,7 @@ func doReflective(ctx context.Context, svc Service, typ gql.OperationType, sel i
 			Type:      typ,
 			Selection: sel,
 		},
+		Variables: vars,
 	})
 	res := &encoding.SelectionUnmarshaler{
 		Selection: sel,

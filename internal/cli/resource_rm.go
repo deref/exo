@@ -16,7 +16,6 @@ var resourceRmCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		kernel := newClient().Kernel()
 
 		iri := args[0]
 
@@ -30,6 +29,6 @@ var resourceRmCmd = &cobra.Command{
 		}); err != nil {
 			return err
 		}
-		return watchJob(ctx, kernel, m.Job.ID)
+		return watchJob(ctx, m.Job.ID)
 	},
 }

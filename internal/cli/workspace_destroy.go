@@ -22,7 +22,6 @@ Deleting a workspace also deletes all resources in that workspace.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 		cl := newClient()
-		kernel := cl.Kernel()
 		var workspace api.Workspace
 		if len(args) < 1 {
 			workspace = requireCurrentWorkspace(ctx, cl)
@@ -41,6 +40,6 @@ Deleting a workspace also deletes all resources in that workspace.`,
 		if err != nil {
 			return err
 		}
-		return watchJob(ctx, kernel, output.JobID)
+		return watchJob(ctx, output.JobID)
 	},
 }

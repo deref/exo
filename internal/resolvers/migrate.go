@@ -119,15 +119,16 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 	}
 
 	// Tasks.
+	// TODO: Tasks should be associated with a workspace, etc.
 
 	if _, err := r.DB.ExecContext(ctx, `
-		CREATE TABLE IF NOT EXISTS job (
+		CREATE TABLE IF NOT EXISTS task (
 			id TEXT NOT NULL PRIMARY KEY,
 			job_id TEXT NOT NULL,
 			parent_id TEXT,
 			mutation TEXT NOT NULL,
 			variables TEXT NOT NULL,
-			worker TEXT NOT NULL,
+			worker_id TEXT,
 			status TEXT NOT NULL,
 			created TEXT NOT NULL,
 			updated TEXT NOT NULL,
@@ -135,7 +136,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 			finished TEXT,
 			progress_current INT,
 			progress_total INT,
-			error TEXT
+			message TEXT
 	);`); err != nil {
 		return fmt.Errorf("creating job table: %w", err)
 	}

@@ -83,5 +83,5 @@ func apply(ctx context.Context, kernel api.Kernel, workspace api.Workspace, args
 	if err != nil {
 		return err
 	}
-	return watchJob(ctx, kernel, output.JobID)
+	return watchJob(ctx, output.JobID)
 }
