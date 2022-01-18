@@ -13,6 +13,8 @@ type Service interface {
 	Do(ctx context.Context, doc string, vars map[string]interface{}, res interface{}) error
 	// Schedule asynchronous execution of a GraphQL mutation.
 	Enqueue(ctx context.Context, mutation string, vars map[string]interface{}) (jobID string, err error)
+	// Awaits termiation of a job.
+	Await(ctx context.Context, jobID string) error
 }
 
 func Query(ctx context.Context, svc Service, q interface{}, vars map[string]interface{}) error {

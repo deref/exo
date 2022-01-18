@@ -21,6 +21,9 @@ type Query {
   resourceByIri(iri: String!): Resource
   
   tasksByJobId(jobId: String!): [Task!]!
+
+  # For testing.
+  sleep(seconds: Float!): Void
 }
 
 type Mutation {
@@ -29,6 +32,7 @@ type Mutation {
   newProject(displayName: String): Project!
   newWorkspace(root: String!, projectID: String): Workspace!
   newStack(cluster: String, workspace: String, name: String): Stack!
+  newTask(parentId: String, mutation: String!, variables: String!): Task!
 
   buildWorkspace(workspace: String!): Void
   refreshWorkspace(workspace: String!): Void
