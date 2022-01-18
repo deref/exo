@@ -130,7 +130,7 @@ func (r *WorkspaceResolver) StackID(ctx context.Context) (*string, error) {
 }
 
 func (r *WorkspaceResolver) Stack(ctx context.Context) (*StackResolver, error) {
-	stacks, err := r.Q.stacksByWorkspace(ctx, r.ID)
+	stacks, err := r.Q.stacksByWorkspaceID(ctx, r.ID)
 	if len(stacks) == 0 || err != nil {
 		return nil, err
 	}

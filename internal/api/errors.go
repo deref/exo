@@ -15,6 +15,6 @@ func (errs QueryErrorSet) Error() string {
 	case 1:
 		return errs[0].Error()
 	default:
-		return fmt.Sprintf("<QueryErrorSet len(Errs): %d>", len(errs))
+		return fmt.Sprintf("1st of %d: %v", len(errs), errs[0])
 	}
 }

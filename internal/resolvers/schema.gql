@@ -19,6 +19,8 @@ type Query {
 
   allResources: [Resource!]! # TODO: Paginate!
   resourceByIri(iri: String!): Resource
+  
+  tasksByJobId(jobId: String!): [Task!]!
 }
 
 type Mutation {
@@ -154,20 +156,18 @@ type Task {
   job: Task!
   parentId: String
   parent: Task
-  worker: String
+  label: String!
+  workerId: String
   status: String!
   created: Instant!
   updated: Instant!
   started: Instant
   finished: Instant
-  progress: TaskProgress
-  error: String
-
-  # All tasks associated with this job.
-  jobTasks: [Task!]!
+  progress: Progress
+  message: String
 }
 
-type TaskProgress {
+type Progress {
   current: Int!
   total: Int!
 }

@@ -17,7 +17,6 @@ var disposeCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 		cl := newClient()
-		kernel := cl.Kernel()
 		workspace := requireCurrentWorkspace(ctx, cl)
 		output, err := workspace.DisposeComponents(ctx, &api.DisposeComponentsInput{
 			Refs: args,
@@ -25,6 +24,6 @@ var disposeCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return watchJob(ctx, kernel, output.JobID)
+		return watchJob(ctx, output.JobID)
 	},
 }

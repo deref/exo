@@ -56,6 +56,6 @@ docker network create <name>
 		if err != nil {
 			return err
 		}
-		return watchJob(ctx, cl.Kernel(), output.JobID)
+		return watchJob(ctx, output.JobID)
 	},
 }

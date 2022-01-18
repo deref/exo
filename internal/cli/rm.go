@@ -19,7 +19,6 @@ var rmCmd = &cobra.Command{
 		}
 		ctx := cmd.Context()
 		cl := newClient()
-		kernel := cl.Kernel()
 		workspace := requireCurrentWorkspace(ctx, cl)
 		output, err := workspace.DeleteComponents(ctx, &api.DeleteComponentsInput{
 			Refs: args,
@@ -27,6 +26,6 @@ var rmCmd = &cobra.Command{
 		if err != nil {
 			return err
 		}
-		return watchJob(ctx, kernel, output.JobID)
+		return watchJob(ctx, output.JobID)
 	},
 }

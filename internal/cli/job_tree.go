@@ -7,7 +7,7 @@ import (
 	"strings"
 
 	"github.com/aybabtme/rgbterm"
-	"github.com/deref/exo/internal/core/api"
+	"github.com/deref/exo/internal/api"
 	taskapi "github.com/deref/exo/internal/task/api"
 	"github.com/deref/exo/internal/util/term"
 	"github.com/spf13/cobra"
@@ -17,32 +17,52 @@ func init() {
 	jobCmd.AddCommand(jobTreeCmd)
 }
 
+// TODO: Scope flag: "all", "stack", etc.
+
 var jobTreeCmd = &cobra.Command{
-	Use:   "tree [job-ids...]",
+	Use:   "tree [job-id...]",
 	Short: "Lists jobs with a tree of their tasks",
 	Long: `Lists jobs with a tree of their tasks.
 
-If job-ids are provided, lists all jobs`,
+If no job ids are provided, lists all jobs in the scope.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		cl := newClient()
-		kernel := cl.Kernel()
 
-		input := &api.DescribeTasksInput{}
-		if len(args) > 0 {
-			input.JobIDs = args
+		var tasks []taskFragment
+		var err error
+		if len(args) == 1 {
+			var q struct {
+				Tasks []taskFragment `graphql:"tasksByJobId(jobId: $jobId)"`
+			}
+			err = api.Query(ctx, svc, &q, map[string]interface{}{
+				"jobId": args[0],
+			})
+			tasks = q.Tasks
+		} else {
+			return fmt.Errorf("NOT YET IMPLEMENTED: listing multiple jobs")
 		}
-		output, err := kernel.DescribeTasks(ctx, input)
 		if err != nil {
-			return fmt.Errorf("describing tasks: %w", err)
+			return fmt.Errorf("querying tasks: %w", err)
 		}
 
 		jp := &jobPrinter{
 			ShowJobID: len(args) != 1,
 		}
-		jp.printTree(os.Stdout, output.Tasks)
+		jp.printTree(os.Stdout, tasks)
 		return nil
 	},
+}
+
+type taskFragment struct {
+	ID       string
+	ParentID *string
+	JobID    string
+	Finished *string
+	Created  string
+	Status   string
+	Label    string
+	Message  string
+	Progress *progressFragment
 }
 
 type taskNode struct {
@@ -50,10 +70,15 @@ type taskNode struct {
 	ID       string
 	Created  string
 	Status   string
-	Name     string
+	Label    string
 	Message  string
-	Progress *api.TaskProgress
+	Progress *progressFragment
 	Children []*taskNode
+}
+
+type progressFragment struct {
+	Current int
+	Total   int
 }
 
 type jobPrinter struct {
@@ -62,7 +87,7 @@ type jobPrinter struct {
 	ShowJobID bool
 }
 
-func (jp *jobPrinter) printTree(w io.Writer, tasks []api.TaskDescription) {
+func (jp *jobPrinter) printTree(w io.Writer, tasks []taskFragment) {
 	// TODO: watchJobs calls printTree in a loop, so each go around calls
 	// term.GetSize(), it would be more efficient to listen to terminal size
 	// change events.
@@ -83,7 +108,7 @@ func (jp *jobPrinter) printTree(w io.Writer, tasks []api.TaskDescription) {
 		child := getNode(task.ID)
 		child.ID = task.ID
 		child.Created = task.Created
-		child.Name = task.Name
+		child.Label = task.Label
 		child.Status = task.Status
 		child.Message = task.Message
 		child.Progress = task.Progress
@@ -115,7 +140,7 @@ func (jp *jobPrinter) printTree(w io.Writer, tasks []api.TaskDescription) {
 		statusW := 2
 		indentW := 3
 		padRight := 2
-		width := statusW + (depth-1)*indentW + term.VisualLength(node.Name) + padRight
+		width := statusW + (depth-1)*indentW + term.VisualLength(node.Label) + padRight
 		if jp.ShowJobID {
 			width += 1 + term.VisualLength(node.ID)
 		}
@@ -155,7 +180,7 @@ func (jp *jobPrinter) printTree(w io.Writer, tasks []api.TaskDescription) {
 			}
 		}
 
-		label := node.Name
+		label := node.Label
 		if jp.ShowJobID {
 			label += " " + node.ID
 		}

@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/deref/exo/internal/core/api"
+	"github.com/deref/exo/internal/api"
 	taskapi "github.com/deref/exo/internal/task/api"
 	"github.com/spf13/cobra"
 )
@@ -25,14 +25,11 @@ var jobWatchCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		cl := newClient()
-		kernel := cl.Kernel()
-
-		return watchJob(ctx, kernel, args[0])
+		return watchJob(ctx, args[0])
 	},
 }
 
-func watchJob(ctx context.Context, kernel api.Kernel, jobID string) error {
+func watchJob(ctx context.Context, jobID string) error {
 	out := os.Stdout
 
 	// Print link to job in GUI.
@@ -50,19 +47,23 @@ func watchJob(ctx context.Context, kernel api.Kernel, jobID string) error {
 	jp := &jobPrinter{}
 	jp.Spinner = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
 
-	var job api.TaskDescription
+	var job taskFragment
 loop:
 	for {
 		clearLines(w.LineCount)
 		w.LineCount = 0
 
-		output, err := kernel.DescribeTasks(ctx, &api.DescribeTasksInput{
-			JobIDs: []string{jobID},
+		// TODO: Subscribe instead of polling.
+		var q struct {
+			Tasks []taskFragment `graphql:"tasksByJobId(jobId: $jobId)"`
+		}
+		err := api.Query(ctx, svc, &q, map[string]interface{}{
+			"jobId": jobID,
 		})
 		if err != nil {
-			return fmt.Errorf("describing tasks: %w", err)
+			return fmt.Errorf("querying tasks: %w", err)
 		}
-		for _, task := range output.Tasks {
+		for _, task := range q.Tasks {
 			if task.ID == jobID {
 				job = task
 				break
@@ -72,7 +73,7 @@ loop:
 			return fmt.Errorf("no such job: %q", jobID)
 		}
 
-		jp.printTree(w, output.Tasks)
+		jp.printTree(w, q.Tasks)
 
 		if job.Finished != nil {
 			break

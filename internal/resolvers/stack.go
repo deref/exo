@@ -59,7 +59,7 @@ func (r *QueryResolver) stackByID(ctx context.Context, id *string) (*StackResolv
 	return s, err
 }
 
-func (r *QueryResolver) stacksByWorkspace(ctx context.Context, workspaceID string) ([]*StackResolver, error) {
+func (r *QueryResolver) stacksByWorkspaceID(ctx context.Context, workspaceID string) ([]*StackResolver, error) {
 	var rows []StackRow
 	err := r.DB.SelectContext(ctx, &rows, `
 		SELECT stack.id, stack.name, stack.cluster_id, stack.project_id, workspace_id

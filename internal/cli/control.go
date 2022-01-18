@@ -7,7 +7,6 @@ import (
 
 func controlComponents(cmd *cobra.Command, args []string, workspaceMutation string, componentsMutation string, vars map[string]interface{}) error {
 	ctx := cmd.Context()
-	kernel := newClient().Kernel()
 
 	// TODO: It would be nice to have generated mutation methods.
 	var mutation string
@@ -26,5 +25,5 @@ func controlComponents(cmd *cobra.Command, args []string, workspaceMutation stri
 		return err
 	}
 
-	return watchJob(ctx, kernel, jobID)
+	return watchJob(ctx, jobID)
 }
