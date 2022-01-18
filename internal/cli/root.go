@@ -19,10 +19,12 @@ var (
 
 func init() {
 	rootCmd.PersistentFlags().StringVar(&rootPersistentFlags.Cluster, "cluster", "", "")
+	rootCmd.PersistentFlags().BoolVar(&rootPersistentFlags.Async, "async", false, "Do not await long-running tasks")
 }
 
 var rootPersistentFlags struct {
 	Cluster string
+	Async   bool
 }
 
 var rootCmd = &cobra.Command{
