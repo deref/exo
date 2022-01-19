@@ -4,9 +4,9 @@ import (
 	"context"
 	"fmt"
 	"os"
+	"strconv"
 
 	"github.com/deref/exo/internal/api"
-	"github.com/deref/exo/internal/chrono"
 	"github.com/deref/exo/internal/resolvers"
 	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/graphql-go/graphql/language/ast"
@@ -14,22 +14,22 @@ import (
 	"github.com/graphql-go/graphql/language/printer"
 )
 
-func WorkTask(ctx context.Context, p *Peer, taskID string) error {
+func WorkTask(ctx context.Context, p *Peer, id string) error {
 	workerId := fmt.Sprintf("peer:%d:", os.Getpid())
 
-	var claim struct {
+	var start struct {
 		Task struct {
 			Mutation  string
 			Variables string
-		} `graphql:"claimTask(taskId: $taskId, workerId: $workerId)"`
+		} `graphql:"startTask(id: $id, workerId: $workerId)"`
 	}
-	if err := api.Mutate(ctx, p, &claim, map[string]interface{}{
-		"taskId":   taskID,
+	if err := api.Mutate(ctx, p, &start, map[string]interface{}{
+		"id":       id,
 		"workerId": workerId,
 	}); err != nil {
-		return fmt.Errorf("starting: %q", err)
+		return fmt.Errorf("starting: %w", err)
 	}
-	task := claim.Task
+	task := start.Task
 
 	taskErr := func() error {
 		var vars map[string]interface{}
@@ -37,30 +37,28 @@ func WorkTask(ctx context.Context, p *Peer, taskID string) error {
 			return fmt.Errorf("unmarshaling variables: %w", err)
 		}
 
-		mut := formatVoidMutation(task.Mutation, vars)
-
-		tracker := &resolvers.TaskTracker{
-			DB: p.db,
+		mut, err := formatVoidMutation(task.Mutation, vars)
+		if err != nil {
+			return fmt.Errorf("encoding mutation: %w", err)
 		}
-		doCtx := resolvers.ContextWithTaskTracker(ctx, tracker)
 
+		doCtx := resolvers.ContextWithTaskID(ctx, id)
 		var res struct{}
 		return p.Do(doCtx, mut, vars, &res)
 	}()
 
 	var finish struct {
-		Void struct{} `graphql:"updateTask(id: $id, status: $status, finished: $finished, message: $message)"`
+		Void struct {
+			Typename string `graphql:"__typename"`
+		} `graphql:"finishTask(id: $id, error: $error)"`
 	}
 	vars := map[string]interface{}{
-		"id":       taskID,
-		"finished": chrono.NowString(ctx),
+		"id": id,
 	}
 	if taskErr == nil {
-		vars["status"] = api.TaskStatusSuccess
-		vars["message"] = (*string)(nil)
+		vars["error"] = (*string)(nil)
 	} else {
-		vars["status"] = api.TaskStatusFailure
-		vars["message"] = taskErr.Error()
+		vars["error"] = taskErr.Error()
 	}
 	if err := api.Mutate(ctx, p, &finish, vars); err != nil {
 		return fmt.Errorf("finishing: %w", err)
@@ -68,13 +66,17 @@ func WorkTask(ctx context.Context, p *Peer, taskID string) error {
 	return nil
 }
 
-func formatVoidMutation(mutation string, vars map[string]interface{}) string {
+func formatVoidMutation(mutation string, vars map[string]interface{}) (string, error) {
 	arguments := make([]*ast.Argument, 0, len(vars))
 	for k, v := range vars {
+		value, err := newValueNode(v)
+		if err != nil {
+			return "", fmt.Errorf("encoding value of %q variable: %w", k, err)
+		}
 		arguments = append(arguments, &ast.Argument{
 			Kind:  kinds.Argument,
 			Name:  newNameNode(k),
-			Value: newValueNode(v),
+			Value: value,
 		})
 	}
 	doc := &ast.Document{
@@ -108,7 +110,7 @@ func formatVoidMutation(mutation string, vars map[string]interface{}) string {
 			},
 		},
 	}
-	return printer.Print(doc).(string)
+	return printer.Print(doc).(string), nil
 }
 
 func newNameNode(value string) *ast.Name {
@@ -118,14 +120,27 @@ func newNameNode(value string) *ast.Name {
 	}
 }
 
-func newValueNode(value interface{}) ast.Value {
+func newValueNode(value interface{}) (ast.Value, error) {
 	switch value := value.(type) {
 	case string:
 		return &ast.StringValue{
 			Kind:  kinds.StringValue,
 			Value: value,
-		}
+		}, nil
+
+	case int:
+		return &ast.IntValue{
+			Kind:  kinds.IntValue,
+			Value: strconv.Itoa(value),
+		}, nil
+
+	case float64:
+		return &ast.FloatValue{
+			Kind:  kinds.FloatValue,
+			Value: strconv.FormatFloat(value, 'f', -1, 64),
+		}, nil
+
 	default:
-		panic(fmt.Errorf("cannot convert %T to GraphQL ast node", value))
+		return nil, fmt.Errorf("cannot convert %T to GraphQL ast node", value)
 	}
 }

@@ -18,3 +18,10 @@ func (errs QueryErrorSet) Error() string {
 		return fmt.Sprintf("1st of %d: %v", len(errs), errs[0])
 	}
 }
+
+func (errs QueryErrorSet) Unwrap() error {
+	if len(errs) != 1 {
+		return nil
+	}
+	return errs[0]
+}

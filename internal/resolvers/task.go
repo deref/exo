@@ -6,7 +6,6 @@ import (
 	"fmt"
 
 	"github.com/deref/exo/internal/api"
-	"github.com/deref/exo/internal/chrono"
 	"github.com/deref/exo/internal/gensym"
 )
 
@@ -80,17 +79,18 @@ func (r *MutationResolver) NewTask(ctx context.Context, args struct {
 	}, nil
 }
 
-func (r *MutationResolver) ClaimTask(ctx context.Context, args struct {
-	TaskID   string
+func (r *MutationResolver) StartTask(ctx context.Context, args struct {
+	ID       string
 	WorkerID string
 }) (*TaskResolver, error) {
-	now := chrono.Now(ctx)
+	now := Now(ctx)
+	fmt.Println("NOW:", now)
 	res, err := r.DB.ExecContext(ctx, `
 		UPDATE task
 		SET worker_id = ?, started = ?
 		WHERE id = ?
 		AND worker_id IS NULL
-	`, args.WorkerID, now, args.TaskID)
+	`, args.WorkerID, now, args.ID)
 	if err != nil {
 		return nil, err
 	}
@@ -101,7 +101,53 @@ func (r *MutationResolver) ClaimTask(ctx context.Context, args struct {
 	if n != 1 {
 		return nil, errors.New("task not available")
 	}
-	return r.taskByID(ctx, &args.TaskID)
+	return r.taskByID(ctx, &args.ID)
+}
+
+func (r *MutationResolver) UpdateTask(ctx context.Context, args struct {
+	ID       string
+	Message  *string
+	Progress *ProgressInput
+}) (*VoidResolver, error) {
+	return r.updateTask(ctx, args.ID, args.Message, args.Progress)
+}
+
+func (r *MutationResolver) updateTask(ctx context.Context, id string, message *string, progress *ProgressInput) (*VoidResolver, error) {
+	now := Now(ctx)
+	var progressCurrent, progressTotal *int32
+	if progress != nil {
+		progressCurrent = &progress.Current
+		progressTotal = &progress.Total
+	}
+	_, err := r.DB.ExecContext(ctx, `
+		UPDATE task
+		SET
+			updated = ?,
+			message = COALESCE(?, message),
+			progress_current = COALESCE(?, progress_current),
+			progress_total = COALESCE(?, progress_total)
+		WHERE id = ?
+	`, now, message, progressCurrent, progressTotal)
+	return nil, err
+}
+
+func (r *MutationResolver) FinishTask(ctx context.Context, args struct {
+	ID    string
+	Error *string
+}) (*VoidResolver, error) {
+	now := Now(ctx)
+	var status string
+	if args.Error == nil {
+		status = api.TaskStatusSuccess
+	} else {
+		status = api.TaskStatusFailure
+	}
+	_, err := r.DB.ExecContext(ctx, `
+		UPDATE task
+		SET updated = ?, finished = ?, status = ?, message = ?
+		WHERE id = ?
+	`, now, now, status, args.Error, args.ID)
+	return nil, err
 }
 
 func (r *QueryResolver) taskByID(ctx context.Context, id *string) (*TaskResolver, error) {
