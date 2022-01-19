@@ -77,8 +77,7 @@ type taskNode struct {
 }
 
 type progressFragment struct {
-	Current int
-	Total   int
+	Percent float64
 }
 
 type jobPrinter struct {
@@ -196,9 +195,9 @@ func (jp *jobPrinter) printTree(w io.Writer, tasks []taskFragment) {
 
 		suffix := ""
 		if node.Progress != nil {
-			progress := float64(node.Progress.Current) / float64(node.Progress.Total)
-			if progress < 1 {
-				suffix = fmt.Sprintf("  %2d %% ", int(progress*100.0))
+			percent := node.Progress.Percent
+			if percent < 100 {
+				suffix = fmt.Sprintf("  %2d %% ", int(percent))
 			}
 		}
 

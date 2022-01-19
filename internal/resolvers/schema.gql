@@ -32,7 +32,6 @@ type Mutation {
   newProject(displayName: String): Project!
   newWorkspace(root: String!, projectID: String): Workspace!
   newStack(cluster: String, workspace: String, name: String): Stack!
-  newTask(parentId: String, mutation: String!, variables: String!): Task!
 
   buildWorkspace(workspace: String!): Void
   refreshWorkspace(workspace: String!): Void
@@ -49,6 +48,10 @@ type Mutation {
   adoptResource(iri: String!, ownerType: String, workspace: String, component: String): Resource
   forgetResource(iri: String!): Void
   disposeResource(iri: String!): Void
+
+  newTask(parentId: String, mutation: String!, variables: String!): Task!
+  claimTask(taskId: String!, workerId: String!): Task!
+  updateTask(id: String!, status: String, message: String, started: Instant, finished: Instant, progress: ProgressInput): Void
 }
 
 # ISO-8601 timestamp in UTC.
@@ -172,6 +175,12 @@ type Task {
 }
 
 type Progress {
+  current: Int!
+  total: Int!
+  percent: Float!
+}
+
+input ProgressInput {
   current: Int!
   total: Int!
 }
