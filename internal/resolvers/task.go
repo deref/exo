@@ -84,7 +84,6 @@ func (r *MutationResolver) StartTask(ctx context.Context, args struct {
 	WorkerID string
 }) (*TaskResolver, error) {
 	now := Now(ctx)
-	fmt.Println("NOW:", now)
 	res, err := r.DB.ExecContext(ctx, `
 		UPDATE task
 		SET worker_id = ?, started = ?
