@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
 	"github.com/deref/exo/internal/api"
@@ -54,16 +55,27 @@ func sendMutation(ctx context.Context, mutation string, vars map[string]interfac
 	}
 	var eg errgroup.Group
 
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+
 	// When the CLI is in peer mode, there is generally no worker pool.  When
 	// awaiting job completion, do the work as part of this CLI invocation.
 	if p, ok := svc.(*peer.Peer); ok {
 		eg.Go(func() error {
-			return peer.WorkTask(ctx, p, jobID)
+			err := peer.WorkTask(ctx, p, jobID)
+			if err != nil {
+				cancel()
+			}
+			return err
 		})
 	}
 
 	eg.Go(func() error {
-		return watchJob(ctx, jobID)
+		err := watchJob(ctx, jobID)
+		if errors.Is(err, context.Canceled) {
+			err = nil
+		}
+		return err
 	})
 
 	return eg.Wait()

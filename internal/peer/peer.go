@@ -9,6 +9,8 @@ import (
 	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/resolvers"
 	"github.com/deref/exo/internal/util/cmdutil"
+	"github.com/deref/exo/internal/util/jsonutil"
+	"github.com/deref/exo/internal/util/logging"
 	"github.com/graph-gophers/graphql-go"
 	"github.com/jmoiron/sqlx"
 )
@@ -28,7 +30,8 @@ func NewPeer(ctx context.Context, varDir string) (*Peer, error) {
 		return nil, fmt.Errorf("opening sqlite db: %w", err)
 	}
 	r := &resolvers.RootResolver{
-		DB: db,
+		DB:     db,
+		Logger: logging.CurrentLogger(ctx),
 	}
 	// XXX migration probably shouldn't happen here.
 	if err := r.Migrate(ctx); err != nil {
@@ -41,6 +44,8 @@ func NewPeer(ctx context.Context, varDir string) (*Peer, error) {
 }
 
 func (p *Peer) Do(ctx context.Context, doc string, vars map[string]interface{}, res interface{}) error {
+	vars = jsonutil.MustSimplify(vars).(map[string]interface{})
+
 	resp := p.schema.Exec(ctx, doc, "", vars)
 	if len(resp.Errors) > 0 {
 		return api.QueryErrorSet(resp.Errors)

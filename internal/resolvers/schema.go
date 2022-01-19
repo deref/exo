@@ -3,6 +3,7 @@ package resolvers
 import (
 	_ "embed"
 
+	"github.com/deref/exo/internal/util/logging"
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/jmoiron/sqlx"
@@ -23,7 +24,8 @@ func NewHandler(r *RootResolver) *relay.Handler {
 }
 
 type RootResolver struct {
-	DB *sqlx.DB
+	DB     *sqlx.DB
+	Logger logging.Logger
 }
 
 // While queries and mutations are accessed in disjoint query paths, this

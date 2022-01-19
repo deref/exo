@@ -21,9 +21,6 @@ type Query {
   resourceByIri(iri: String!): Resource
   
   tasksByJobId(jobId: String!): [Task!]!
-
-  # For testing.
-  sleep(seconds: Float!): Void
 }
 
 type Mutation {
@@ -50,8 +47,12 @@ type Mutation {
   disposeResource(iri: String!): Void
 
   newTask(parentId: String, mutation: String!, variables: String!): Task!
-  claimTask(taskId: String!, workerId: String!): Task!
-  updateTask(id: String!, status: String, message: String, started: Instant, finished: Instant, progress: ProgressInput): Void
+  startTask(id: String!, workerId: String!): Task!
+  updateTask(id: String!, message: String, progress: ProgressInput): Void
+  finishTask(id: String!, error: String): Void
+
+  # For testing.
+  sleep(seconds: Float!): Void
 }
 
 # ISO-8601 timestamp in UTC.
@@ -162,6 +163,8 @@ type Task {
   jobId: String!
   job: Task!
   parentId: String
+  mutation: String!
+  variables: String!
   parent: Task
   label: String!
   workerId: String

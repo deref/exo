@@ -18,6 +18,12 @@ func UnmarshalString(s string, v interface{}) error {
 	return json.Unmarshal([]byte(s), v)
 }
 
+func MustUnmarshal(bs []byte, v interface{}) {
+	if err := json.Unmarshal(bs, v); err != nil {
+		panic(err)
+	}
+}
+
 var MustMarshal = jsonutil.MustMarshal
 var MarshalString = jsonutil.MarshalString
 var MustMarshalString = jsonutil.MustMarshalString
@@ -95,5 +101,15 @@ func Merge(objs ...map[string]interface{}) map[string]interface{} {
 			res[k] = v
 		}
 	}
+	return res
+}
+
+// Returns a new JSON value, simplified by replacing marshalable values with
+// the standard JSON-compatible Go types. For example, a (*string)(nil) will be
+// replaced by (interface{})(nil) and json.Marshaler implementations will be
+// replaced by the results of round-tripping their MarshalJSON output.
+func MustSimplify(v interface{}) interface{} {
+	var res interface{}
+	MustUnmarshal(MustMarshal(v), &res)
 	return res
 }
