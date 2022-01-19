@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/spf13/cobra"
 )
@@ -20,7 +21,7 @@ func controlComponents(cmd *cobra.Command, args []string, workspaceMutation stri
 		vars["components"] = args
 	}
 
-	jobID, err := svc.Enqueue(ctx, mutation, vars)
+	jobID, err := api.Enqueue(ctx, svc, mutation, vars)
 	if err != nil {
 		return err
 	}

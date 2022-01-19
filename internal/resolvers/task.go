@@ -2,8 +2,11 @@ package resolvers
 
 import (
 	"context"
+	"errors"
 	"fmt"
 
+	"github.com/deref/exo/internal/api"
+	"github.com/deref/exo/internal/chrono"
 	"github.com/deref/exo/internal/gensym"
 )
 
@@ -29,11 +32,6 @@ type TaskRow struct {
 	Message         *string  `db:"message"`
 }
 
-const TaskStatusPending = "pending"
-const TaskStatusRunning = "running"
-const TaskStatusSuccess = "success"
-const TaskStatusFailure = "failure"
-
 func (r *MutationResolver) NewTask(ctx context.Context, args struct {
 	ParentID  *string
 	Mutation  string
@@ -46,7 +44,7 @@ func (r *MutationResolver) NewTask(ctx context.Context, args struct {
 		ParentID:  args.ParentID,
 		Mutation:  args.Mutation,
 		Variables: args.Variables,
-		Status:    TaskStatusPending,
+		Status:    api.TaskStatusPending,
 		Created:   now,
 		Updated:   now,
 	}
@@ -80,6 +78,30 @@ func (r *MutationResolver) NewTask(ctx context.Context, args struct {
 		Q:       r,
 		TaskRow: row,
 	}, nil
+}
+
+func (r *MutationResolver) ClaimTask(ctx context.Context, args struct {
+	TaskID   string
+	WorkerID string
+}) (*TaskResolver, error) {
+	now := chrono.Now(ctx)
+	res, err := r.DB.ExecContext(ctx, `
+		UPDATE task
+		SET worker_id = ?, started = ?
+		WHERE id = ?
+		AND worker_id IS NULL
+	`, args.WorkerID, now, args.TaskID)
+	if err != nil {
+		return nil, err
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		panic(err)
+	}
+	if n != 1 {
+		return nil, errors.New("task not available")
+	}
+	return r.taskByID(ctx, &args.TaskID)
 }
 
 func (r *QueryResolver) taskByID(ctx context.Context, id *string) (*TaskResolver, error) {

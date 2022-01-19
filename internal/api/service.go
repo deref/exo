@@ -2,7 +2,9 @@ package api
 
 import (
 	"context"
+	"fmt"
 
+	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/deref/graphql-go/encoding"
 	"github.com/deref/graphql-go/gql"
 )
@@ -11,10 +13,6 @@ type Service interface {
 	Shutdown(context.Context) error
 	// Execute a GraphQL operation synchronously.
 	Do(ctx context.Context, doc string, vars map[string]interface{}, res interface{}) error
-	// Schedule asynchronous execution of a GraphQL mutation.
-	Enqueue(ctx context.Context, mutation string, vars map[string]interface{}) (jobID string, err error)
-	// Awaits termiation of a job.
-	Await(ctx context.Context, jobID string) error
 }
 
 func Query(ctx context.Context, svc Service, q interface{}, vars map[string]interface{}) error {
@@ -37,4 +35,22 @@ func doReflective(ctx context.Context, svc Service, typ gql.OperationType, sel i
 		Selection: sel,
 	}
 	return svc.Do(ctx, doc, vars, res)
+}
+
+// Schedule asynchronous execution of a GraphQL mutation.
+func Enqueue(ctx context.Context, svc Service, mutation string, vars map[string]interface{}) (jobID string, err error) {
+	var m struct {
+		Job struct {
+			ID string
+		} `graphql:"newTask(mutation: $mutation, variables: $variables)"`
+	}
+	variablesJSON, err := jsonutil.MarshalString(vars)
+	if err != nil {
+		return "", fmt.Errorf("marshaling variables to json: %w", err)
+	}
+	err = Mutate(ctx, svc, &m, map[string]interface{}{
+		"mutation":  mutation,
+		"variables": variablesJSON,
+	})
+	return m.Job.ID, err
 }
