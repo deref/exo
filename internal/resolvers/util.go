@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func (r *RootResolver) getRowByID(ctx context.Context, dest interface{}, q string, id *string) error {
+func (r *RootResolver) getRowByKey(ctx context.Context, dest interface{}, q string, id *string) error {
 	if id == nil {
 		return nil
 	}

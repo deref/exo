@@ -48,7 +48,7 @@ func (r *QueryResolver) WorkspaceByID(ctx context.Context, args struct {
 
 func (r *QueryResolver) workspaceByID(ctx context.Context, id *string) (*WorkspaceResolver, error) {
 	ws := &WorkspaceResolver{}
-	err := r.getRowByID(ctx, &ws.WorkspaceRow, `
+	err := r.getRowByKey(ctx, &ws.WorkspaceRow, `
 		SELECT id, project_id
 		FROM workspace
 		WHERE id = ?

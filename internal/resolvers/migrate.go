@@ -113,6 +113,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 		CREATE TABLE IF NOT EXISTS resource (
 			id TEXT NOT NULL PRIMARY KEY,
 			type TEXT NOT NULL,
+			iri TEXT,
 			owner_type TEXT,
 			owner_id TEXT,
 			task_id TEXT,
@@ -121,6 +122,13 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 			message TEXT
 	);`); err != nil {
 		return fmt.Errorf("creating resource table: %w", err)
+	}
+
+	if _, err := r.DB.ExecContext(ctx, `
+		CREATE UNIQUE INDEX IF NOT EXISTS
+		resource_iri ON resource ( iri )
+	`); err != nil {
+		return fmt.Errorf("creating cluster_name index: %w", err)
 	}
 
 	// Tasks.
