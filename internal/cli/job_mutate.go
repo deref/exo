@@ -21,14 +21,7 @@ var jobMutateCmd = &cobra.Command{
 	Short: "Run a mutation as a job.",
 	Long: `Run a mutation as a job, waiting or not as per the global --async flag.
 
-Variables form a JSON object and top-level key/value pairs are expressed in one
-of two forms:
-
-variable=string
-variable:=raw
-
-Where variable and string are unquoted JSON strings and raw is an encoded JSON
-value.`,
+Variables are specified as JSON with the same syntax as 'exo json'.`,
 	Hidden: true,
 	Args:   cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {

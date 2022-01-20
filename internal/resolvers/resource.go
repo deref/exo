@@ -4,6 +4,9 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
+	"github.com/deref/exo/internal/gensym"
+	"github.com/deref/exo/internal/util/jsonutil"
 )
 
 type ResourceResolver struct {
@@ -12,27 +15,40 @@ type ResourceResolver struct {
 }
 
 type ResourceRow struct {
-	IRI       string  `db:"iri"`
+	ID        string  `db:"id"`
+	Type      string  `db:"type"`
 	OwnerType *string `db:"owner_type"`
 	OwnerID   *string `db:"owner_id"`
+	TaskID    *string `db:"task_id"`
+	Model     string  `db:"model"`
+	Status    *int    `db:"status"`
+	Message   *string `db:"message"`
 }
 
 func (r *MutationResolver) ForgetResource(ctx context.Context, args struct {
-	IRI string
+	ID string
 }) (*VoidResolver, error) {
 	_, err := r.DB.ExecContext(ctx, `
 		DELETE FROM resource
-		WHERE iri = ?
-	`, args.IRI)
+		WHERE id = ?
+	`, args.ID)
 	return nil, err
 }
 
 func (r *QueryResolver) AllResources(ctx context.Context) ([]*ResourceResolver, error) {
 	var rows []ResourceRow
 	err := r.DB.SelectContext(ctx, &rows, `
-		SELECT iri, owner_type, owner_id
+		SELECT
+			id,
+			type,
+			owner_type,
+			owner_id,
+			task_id,
+			model,
+			status,
+			message
 		FROM resource
-		ORDER BY iri ASC
+		ORDER BY id ASC
 	`)
 	if err != nil {
 		return nil, err
@@ -50,17 +66,25 @@ func (r *QueryResolver) AllResources(ctx context.Context) ([]*ResourceResolver, 
 func (r *QueryResolver) ResourceByIRI(ctx context.Context, args struct {
 	IRI string
 }) (*ResourceResolver, error) {
-	return r.stackByIRI(ctx, &args.IRI)
+	return r.resourceById(ctx, &args.IRI)
 }
 
-func (r *QueryResolver) stackByIRI(ctx context.Context, iri *string) (*ResourceResolver, error) {
+func (r *QueryResolver) resourceById(ctx context.Context, id *string) (*ResourceResolver, error) {
 	s := &ResourceResolver{}
 	err := r.getRowByID(ctx, &s.ResourceRow, `
-		SELECT iri, owner_type, owner_id
+		SELECT
+			id,
+			type,
+			owner_type,
+			owner_id,
+			task_id,
+			model,
+			status,
+			message
 		FROM resource
-		WHERE iri = ?
-	`, iri)
-	if s.IRI == "" {
+		WHERE = ?
+	`, id)
+	if s.ID == "" {
 		s = nil
 	}
 	return s, err
@@ -76,10 +100,18 @@ func (r *ResourceResolver) Component(ctx context.Context) (*ComponentResolver, e
 func (r *QueryResolver) resourcesByStack(ctx context.Context, stackID string) ([]*ResourceResolver, error) {
 	var rows []ResourceRow
 	err := r.DB.SelectContext(ctx, &rows, `
-		SELECT iri, owner_type, owner_id
+		SELECT
+			id,
+			type,
+			owner_type,
+			owner_id,
+			task_id,
+			model,
+			status,
+			message
 		FROM resource
 		WHERE stack_id = ?
-		ORDER BY iri ASC
+		ORDER BY id ASC
 	`, stackID)
 	if err != nil {
 		return nil, err
@@ -97,10 +129,18 @@ func (r *QueryResolver) resourcesByStack(ctx context.Context, stackID string) ([
 func (r *QueryResolver) resourcesByComponent(ctx context.Context, componentID string) ([]*ResourceResolver, error) {
 	var rows []ResourceRow
 	err := r.DB.SelectContext(ctx, &rows, `
-		SELECT iri, owner_type, owner_id
+		SELECT
+			id,
+			type,
+			owner_type,
+			owner_id,
+			task_id,
+			model,
+			status,
+			message
 		FROM resource
 		WHERE component_id = ?
-		ORDER BY iri ASC
+		ORDER BY id ASC
 	`, componentID)
 	if err != nil {
 		return nil, err
@@ -118,12 +158,20 @@ func (r *QueryResolver) resourcesByComponent(ctx context.Context, componentID st
 func (r *QueryResolver) resourcesByProject(ctx context.Context, projectID string) ([]*ResourceResolver, error) {
 	var rows []ResourceRow
 	err := r.DB.SelectContext(ctx, &rows, `
-		SELECT iri, owner_type, owner_id
+		SELECT
+			resource.id,
+			resource.type,
+			resource.owner_type,
+			resource.owner_id,
+			resource.task_id,
+			resource.model,
+			resource.status,
+			resource.message
 		FROM resource
 		INNER JOIN component ON component_id = component.id
 		INNER JOIN stack ON component.stack_id = stack.id
-		WHERE project_id = ?
-		ORDER BY iri ASC
+		WHERE resource.project_id = ?
+		ORDER BY resource.id ASC
 	`, projectID)
 	if err != nil {
 		return nil, err
@@ -138,14 +186,26 @@ func (r *QueryResolver) resourcesByProject(ctx context.Context, projectID string
 	return resolvers, nil
 }
 
-func (r *MutationResolver) AdoptResource(ctx context.Context, args struct {
-	IRI       string
+func (r *MutationResolver) NewResource(ctx context.Context, args struct {
+	Type      string
+	Model     string
 	OwnerType *string
 	Workspace *string
 	Component *string
+	Adopt     *bool
 }) (*ResourceResolver, error) {
 	var row ResourceRow
-	row.IRI = args.IRI
+	row.ID = gensym.RandomBase32()
+	row.Type = args.Type
+
+	// Lock the resource by pre-assigning a task ID.
+	taskID := newTaskID()
+	row.TaskID = &taskID
+
+	adopt := args.Adopt != nil && *args.Adopt
+	if adopt {
+		row.Model = args.Model
+	}
 
 	var workspace *WorkspaceResolver
 	if args.Workspace != nil {
@@ -188,7 +248,7 @@ func (r *MutationResolver) AdoptResource(ctx context.Context, args struct {
 		var err error
 		project, err = workspace.Project(ctx)
 		if err != nil {
-			return nil, fmt.Errorf("resolving stack: %w", err)
+			return nil, fmt.Errorf("resolving project: %w", err)
 		}
 	}
 
@@ -228,14 +288,76 @@ func (r *MutationResolver) AdoptResource(ctx context.Context, args struct {
 	}
 
 	if _, err := r.DB.ExecContext(ctx, `
-		INSERT INTO resource ( iri, owner_type, owner_id )
-		VALUES ( ?, ?, ? )
-	`, row.IRI, row.OwnerType, row.OwnerID); err != nil {
+		INSERT INTO resource (
+			id,
+			type,
+			owner_type,
+			owner_id,
+			task_id,
+			model,
+			status,
+			message
+		) VALUES ( ?, ?, ?, ?, ?, ?, ?, ? )
+	`, row.ID, row.Type, row.OwnerType, row.OwnerID, row.TaskID, row.Model, row.Status, row.Message); err != nil {
 		return nil, fmt.Errorf("inserting: %w", err)
 	}
+
+	parentTaskID := (*string)(nil)
+	var err error
+	if adopt {
+		if _, err := r.newTask(ctx, taskID, parentTaskID, "readExternalResource", jsonutil.MustMarshalString(map[string]interface{}{
+			"internalId": row.ID,
+		})); err != nil {
+			r.Logger.Infof("error starting resource %s adoption: %w", row.ID, err)
+		}
+	} else {
+		if _, err = r.newTask(ctx, taskID, parentTaskID, "createExternalResource", jsonutil.MustMarshalString(map[string]interface{}{
+			"internalId": row.ID,
+			"model":      args.Model,
+		})); err != nil {
+			r.Logger.Infof("error starting resource %s creation: %w", row.ID, err)
+		}
+	}
+
 	return &ResourceResolver{
 		Q:           r,
 		ResourceRow: row,
+	}, nil
+}
+
+func (r *MutationResolver) lockResource(ctx context.Context, resourceID string) (unlock func(), err error) {
+	currentTaskID := CurrentTaskID(ctx)
+	if currentTaskID == nil {
+		return nil, errors.New("synchronous mutations cannot lock resources")
+	}
+	taskID := *currentTaskID
+
+	// Acquire or confirm previous acquisition of resource lock.
+	res, err := r.DB.ExecContext(ctx, `
+		UPDATE resource
+		SET task_id = ?
+		WHERE id = ?
+		AND task_id IS NULL OR task_id = ?
+	`, taskID, resourceID, taskID)
+	if err != nil {
+		return nil, fmt.Errorf("updating resource lock: %w", err)
+	}
+	n, err := res.RowsAffected()
+	if err != nil {
+		panic(err)
+	}
+	if n != 1 {
+		return nil, errors.New("unable to lock resource")
+	}
+
+	return func() {
+		if _, err := r.DB.ExecContext(ctx, `
+			UPDATE resource
+			SET task_id = NULL
+			WHERE task_id = ?
+		`, taskID); err != nil {
+			r.Logger.Infof("task %s failed to unlock resource %s: %w", taskID, resourceID, err)
+		}
 	}, nil
 }
 

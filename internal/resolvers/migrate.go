@@ -111,9 +111,14 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 
 	if _, err := r.DB.ExecContext(ctx, `
 		CREATE TABLE IF NOT EXISTS resource (
-			iri TEXT NOT NULL PRIMARY KEY,
+			id TEXT NOT NULL PRIMARY KEY,
+			type TEXT NOT NULL,
 			owner_type TEXT,
-			owner_id TEXT
+			owner_id TEXT,
+			task_id TEXT,
+			model TEXT NOT NULL,
+			status INT,
+			message TEXT
 	);`); err != nil {
 		return fmt.Errorf("creating resource table: %w", err)
 	}
