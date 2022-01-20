@@ -2,10 +2,13 @@ package resolvers
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/deref/exo/internal/api"
+	"github.com/deref/exo/internal/chrono"
 	"github.com/deref/exo/internal/gensym"
 )
 
@@ -90,6 +93,51 @@ func (r *MutationResolver) newTask(ctx context.Context, id string, parentID *str
 	}, nil
 }
 
+func (r *MutationResolver) AcquireTask(ctx context.Context, args struct {
+	WorkerID      string
+	TimeoutMillis *int
+}) (*TaskResolver, error) {
+	if args.TimeoutMillis != nil {
+		var cancel func()
+		ctx, cancel = context.WithTimeout(ctx, time.Duration(*args.TimeoutMillis)*time.Microsecond)
+		defer cancel()
+	}
+	var row TaskRow
+	delay := 1
+	for {
+		fmt.Println("querying")
+		err := r.DB.GetContext(ctx, &row, `
+		UPDATE task
+		SET worker_id = ?
+		WHERE id IN (
+			SELECT id
+			FROM task
+			WHERE worker_id IS NULL
+		)
+		RETURNING *
+	`, args.WorkerID)
+		if errors.Is(err, sql.ErrNoRows) {
+			chrono.Sleep(ctx, time.Duration(delay)*time.Millisecond)
+			delay *= 2
+			if delay > 1000 {
+				delay = 1000
+			}
+			continue
+		}
+		if errors.Is(err, context.DeadlineExceeded) {
+			return nil, nil
+		}
+		if err != nil {
+			return nil, err
+		}
+		break
+	}
+	return &TaskResolver{
+		Q:       r,
+		TaskRow: row,
+	}, nil
+}
+
 func (r *MutationResolver) StartTask(ctx context.Context, args struct {
 	ID       string
 	WorkerID string
@@ -99,8 +147,8 @@ func (r *MutationResolver) StartTask(ctx context.Context, args struct {
 		UPDATE task
 		SET worker_id = ?, started = ?
 		WHERE id = ?
-		AND worker_id IS NULL
-	`, args.WorkerID, now, args.ID)
+		AND (worker_id = ? OR worker_id IS NULL)
+	`, args.WorkerID, now, args.ID, args.WorkerID)
 	if err != nil {
 		return nil, err
 	}

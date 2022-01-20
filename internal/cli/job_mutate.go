@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"os"
 
 	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/peer"
@@ -55,7 +56,8 @@ func sendMutation(ctx context.Context, mutation string, vars map[string]interfac
 	// awaiting job completion, do the work as part of this CLI invocation.
 	if p, ok := svc.(*peer.Peer); ok {
 		eg.Go(func() error {
-			err := peer.WorkTask(ctx, p, jobID)
+			workerID := fmt.Sprintf("peer:%d:inline", os.Getpid())
+			err := peer.WorkTask(ctx, p, jobID, workerID)
 			if err != nil {
 				cancel()
 			}

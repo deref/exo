@@ -3,7 +3,6 @@ package peer
 import (
 	"context"
 	"fmt"
-	"os"
 	"strconv"
 
 	"github.com/deref/exo/internal/api"
@@ -14,9 +13,7 @@ import (
 	"github.com/graphql-go/graphql/language/printer"
 )
 
-func WorkTask(ctx context.Context, p *Peer, id string) error {
-	workerId := fmt.Sprintf("peer:%d:", os.Getpid())
-
+func WorkTask(ctx context.Context, p *Peer, id string, workerID string) error {
 	var start struct {
 		Task struct {
 			Mutation  string
@@ -25,7 +22,7 @@ func WorkTask(ctx context.Context, p *Peer, id string) error {
 	}
 	if err := api.Mutate(ctx, p, &start, map[string]interface{}{
 		"id":       id,
-		"workerId": workerId,
+		"workerId": workerID,
 	}); err != nil {
 		return fmt.Errorf("starting: %w", err)
 	}
