@@ -20,7 +20,7 @@ type ProjectRow struct {
 func (r *QueryResolver) AllProjects(ctx context.Context) ([]*ProjectResolver, error) {
 	var rows []ProjectRow
 	err := r.DB.SelectContext(ctx, &rows, `
-		SELECT id, display_name
+		SELECT *
 		FROM project
 		ORDER BY id ASC
 	`)
@@ -48,7 +48,7 @@ func (r *QueryResolver) projectByID(ctx context.Context, id *string) (*ProjectRe
 		Q: r,
 	}
 	err := r.getRowByKey(ctx, &proj.ProjectRow, `
-		SELECT id, display_name
+		SELECT *
 		FROM project
 		WHERE id = ?
 	`, id)

@@ -18,7 +18,7 @@ type ClusterRow struct {
 func (r *QueryResolver) clusterByID(ctx context.Context, id *string) (*ClusterResolver, error) {
 	clus := &ClusterResolver{}
 	err := r.getRowByKey(ctx, &clus.ClusterRow, `
-		SELECT id, name
+		SELECT *
 		FROM cluster
 		WHERE id = ?
 	`, id)
@@ -37,7 +37,7 @@ func (r *QueryResolver) ClusterByRef(ctx context.Context, args struct {
 func (r *QueryResolver) clusterByRef(ctx context.Context, ref string) (*ClusterResolver, error) {
 	var rows []ClusterRow
 	err := r.DB.SelectContext(ctx, &rows, `
-		SELECT id, name
+		SELECT *
 		FROM cluster
 		WHERE id = ? OR name = ?
 	`, ref, ref)
@@ -56,7 +56,7 @@ func (r *QueryResolver) clusterByRef(ctx context.Context, ref string) (*ClusterR
 func (r *QueryResolver) AllClusters(ctx context.Context) ([]*ClusterResolver, error) {
 	var rows []ClusterRow
 	err := r.DB.SelectContext(ctx, &rows, `
-		SELECT id, name
+		SELECT *
 		FROM cluster
 		ORDER BY name ASC
 	`)

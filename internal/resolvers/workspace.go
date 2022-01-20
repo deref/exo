@@ -23,7 +23,7 @@ type WorkspaceRow struct {
 func (r *QueryResolver) AllWorkspaces(ctx context.Context) ([]*WorkspaceResolver, error) {
 	var rows []WorkspaceRow
 	err := r.DB.SelectContext(ctx, &rows, `
-		SELECT id, project_id, root
+		SELECT *
 		FROM workspace
 		ORDER BY id ASC
 	`)
@@ -49,7 +49,7 @@ func (r *QueryResolver) WorkspaceByID(ctx context.Context, args struct {
 func (r *QueryResolver) workspaceByID(ctx context.Context, id *string) (*WorkspaceResolver, error) {
 	ws := &WorkspaceResolver{}
 	err := r.getRowByKey(ctx, &ws.WorkspaceRow, `
-		SELECT id, project_id
+		SELECT *
 		FROM workspace
 		WHERE id = ?
 	`, id)

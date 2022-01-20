@@ -23,7 +23,7 @@ type StackRow struct {
 func (r *QueryResolver) AllStacks(ctx context.Context) ([]*StackResolver, error) {
 	var rows []StackRow
 	err := r.DB.SelectContext(ctx, &rows, `
-		SELECT id, name, cluster_id, project_id, workspace_id
+		SELECT *
 		FROM stack
 		ORDER BY id ASC
 	`)
@@ -49,7 +49,7 @@ func (r *QueryResolver) StackByID(ctx context.Context, args struct {
 func (r *QueryResolver) stackByID(ctx context.Context, id *string) (*StackResolver, error) {
 	s := &StackResolver{}
 	err := r.getRowByKey(ctx, &s.StackRow, `
-		SELECT id, name, cluster_id, project_id, workspace_id
+		SELECT *
 		FROM stack
 		WHERE id = ?
 	`, id)
@@ -62,7 +62,7 @@ func (r *QueryResolver) stackByID(ctx context.Context, id *string) (*StackResolv
 func (r *QueryResolver) stacksByWorkspaceID(ctx context.Context, workspaceID string) ([]*StackResolver, error) {
 	var rows []StackRow
 	err := r.DB.SelectContext(ctx, &rows, `
-		SELECT stack.id, stack.name, stack.cluster_id, stack.project_id, workspace_id
+		SELECT stack.*
 		FROM stack
 		INNER JOIN workspace ON stack.workspace_id = workspace.id
 		WHERE workspace.id = ?
