@@ -105,10 +105,7 @@ func (r *MutationResolver) NewWorkspace(ctx context.Context, args struct {
 		row.ProjectID = *args.ProjectID
 	}
 
-	if _, err := r.DB.ExecContext(ctx, `
-		INSERT INTO workspace ( id, root, project_id )
-		VALUES ( ?, ?, ? )
-	`, row.ID, row.Root, row.ProjectID); err != nil {
+	if err := r.insertRow(ctx, "workspace", row); err != nil {
 		return nil, fmt.Errorf("inserting: %w", err)
 	}
 	return &WorkspaceResolver{

@@ -75,10 +75,7 @@ func (r *MutationResolver) NewProject(ctx context.Context, args struct {
 	var row ProjectRow
 	row.ID = gensym.RandomBase32()
 	row.DisplayName = trimmedPtr(args.DisplayName, row.ID)
-	if _, err := r.DB.ExecContext(ctx, `
-		INSERT INTO project ( id, display_name )
-		VALUES ( ?, ? )
-	`, row.ID, row.DisplayName); err != nil {
+	if err := r.insertRow(ctx, "project", row); err != nil {
 		return nil, fmt.Errorf("inserting: %w", err)
 	}
 	return &ProjectResolver{
