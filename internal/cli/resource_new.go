@@ -93,7 +93,8 @@ To set the owner to a component, supply '--component=ref', which implies
 
 		var m struct {
 			Resource struct {
-				IRI string
+				ID     string
+				TaskID *string
 			} `graphql:"newResource(type: $type, model: $model, workspace: $workspace, ownerType: $ownerType, component: $component, adopt: $adopt)"`
 		}
 		vars := map[string]interface{}{
@@ -125,6 +126,13 @@ To set the owner to a component, supply '--component=ref', which implies
 		default:
 			return fmt.Errorf("unexpected value for --owner: %q", ownerType)
 		}
-		return api.Mutate(ctx, svc, &m, vars)
+		if err := api.Mutate(ctx, svc, &m, vars); err != nil {
+			return err
+		}
+		fmt.Println("resource:", m.Resource.ID)
+		if rootPersistentFlags.Async {
+			return nil
+		}
+		return watchJob(ctx, *m.Resource.TaskID)
 	},
 }
