@@ -36,26 +36,37 @@ func (r *MutationResolver) NewTask(ctx context.Context, args struct {
 	Mutation  string
 	Variables string
 }) (*TaskResolver, error) {
-	id := gensym.RandomBase32()
+	id := newTaskID()
+	return r.newTask(ctx, id, args.ParentID, args.Mutation, args.Variables)
+}
+
+var newTaskID = gensym.RandomBase32
+
+// The id is passed as a parameter to allow callers to use a pre-allocated id
+// in a database field to establish a mutual exclusion lock.
+func (r *MutationResolver) newTask(ctx context.Context, id string, parentID *string, mutation string, variables string) (*TaskResolver, error) {
+	if id == "" {
+		panic("id is required")
+	}
 	now := Now(ctx)
 	row := TaskRow{
 		ID:        id,
-		ParentID:  args.ParentID,
-		Mutation:  args.Mutation,
-		Variables: args.Variables,
+		ParentID:  parentID,
+		Mutation:  mutation,
+		Variables: variables,
 		Status:    api.TaskStatusPending,
 		Created:   now,
 		Updated:   now,
 	}
-	if args.ParentID == nil {
+	if parentID == nil {
 		row.JobID = id
 	} else {
-		parent, err := r.taskByID(ctx, args.ParentID)
+		parent, err := r.taskByID(ctx, parentID)
 		if err != nil {
 			return nil, fmt.Errorf("resolving parent: %w", err)
 		}
 		if parent == nil {
-			return nil, fmt.Errorf("no such parent: %q", *args.ParentID)
+			return nil, fmt.Errorf("no such parent: %q", *parentID)
 		}
 		row.JobID = parent.JobID
 	}
