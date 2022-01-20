@@ -48,7 +48,7 @@ func (r *QueryResolver) StackByID(ctx context.Context, args struct {
 
 func (r *QueryResolver) stackByID(ctx context.Context, id *string) (*StackResolver, error) {
 	s := &StackResolver{}
-	err := r.getRowByID(ctx, &s.StackRow, `
+	err := r.getRowByKey(ctx, &s.StackRow, `
 		SELECT id, name, cluster_id, project_id, workspace_id
 		FROM stack
 		WHERE id = ?

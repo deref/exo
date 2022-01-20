@@ -47,7 +47,7 @@ func (r *QueryResolver) projectByID(ctx context.Context, id *string) (*ProjectRe
 	proj := &ProjectResolver{
 		Q: r,
 	}
-	err := r.getRowByID(ctx, &proj.ProjectRow, `
+	err := r.getRowByKey(ctx, &proj.ProjectRow, `
 		SELECT id, display_name
 		FROM project
 		WHERE id = ?

@@ -17,7 +17,7 @@ type ClusterRow struct {
 
 func (r *QueryResolver) clusterByID(ctx context.Context, id *string) (*ClusterResolver, error) {
 	clus := &ClusterResolver{}
-	err := r.getRowByID(ctx, &clus.ClusterRow, `
+	err := r.getRowByKey(ctx, &clus.ClusterRow, `
 		SELECT id, name
 		FROM cluster
 		WHERE id = ?

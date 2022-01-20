@@ -49,7 +49,9 @@ var resourceLSCmd = &cobra.Command{
 		}
 
 		type resourceFragment struct {
-			IRI     string
+			ID      string
+			IRI     *string
+			Type    string
 			Project *struct {
 				DisplayName string
 			}
@@ -59,6 +61,7 @@ var resourceLSCmd = &cobra.Command{
 			Component *struct {
 				Name string
 			}
+			Operation *string
 		}
 		var resources []resourceFragment
 		var columns []string
@@ -72,7 +75,7 @@ var resourceLSCmd = &cobra.Command{
 				return err
 			}
 			resources = q.Resources
-			columns = []string{"IRI", "PROJECT", "STACK", "COMPONENT"}
+			columns = []string{"RESOURCE", "TYPE", "PROJECT", "STACK", "COMPONENT", "OPERATION"}
 
 		case "project":
 			var q struct {
@@ -84,7 +87,7 @@ var resourceLSCmd = &cobra.Command{
 			}
 			mustQueryWorkspace(ctx, &q, nil)
 			resources = q.Workspace.Project.Resources
-			columns = []string{"IRI", "STACK", "COMPONENT"}
+			columns = []string{"RESOURCE", "TYPE", "STACK", "COMPONENT", "OPERATION"}
 
 		case "stack":
 			var q struct {
@@ -95,7 +98,7 @@ var resourceLSCmd = &cobra.Command{
 			}
 			mustQueryStack(ctx, &q, nil)
 			resources = q.Stack.Resources
-			columns = []string{"IRI", "COMPONENT"}
+			columns = []string{"RESOURCE", "COMPONENT"}
 
 		case "component":
 			var q struct {
@@ -106,7 +109,7 @@ var resourceLSCmd = &cobra.Command{
 			}
 			mustQueryStack(ctx, &q, nil)
 			resources = q.Stack.Resources
-			columns = []string{"IRI"}
+			columns = []string{"RESOURCE"}
 
 		default:
 			return fmt.Errorf("unknown scope: %q", resourceLSFlags.Scope)
@@ -114,8 +117,12 @@ var resourceLSCmd = &cobra.Command{
 
 		w := cmdutil.NewTableWriter(columns...)
 		for _, resource := range resources {
+			ident := resource.ID
+			if resource.IRI != nil {
+				ident = *resource.IRI
+			}
 			data := map[string]string{
-				"IRI": resource.IRI,
+				"RESOURCE": ident,
 			}
 			if resource.Project != nil {
 				data["PROJECT"] = resource.Project.DisplayName
@@ -125,6 +132,9 @@ var resourceLSCmd = &cobra.Command{
 			}
 			if resource.Component != nil {
 				data["COMPONENT"] = resource.Component.Name
+			}
+			if resource.Operation != nil {
+				data["OPERATION"] = *resource.Operation
 			}
 			values := make([]string, len(columns))
 			for i, column := range columns {

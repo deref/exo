@@ -106,6 +106,7 @@ var stateEditCmd = &cobra.Command{
 			return err
 		}
 
+		// TODO: pretty-print / minify json.
 		oldState := output.State
 		newState, err := term.EditString("state.*.json", oldState)
 

@@ -43,16 +43,17 @@ type Mutation {
   restartWorkspaceComponents(workspace: String!, components: [String!]!): Void
 
   newResource(type: String!, model: String!, ownerType: String, workspace: String, component: String, adopt: Boolean): Resource!
-  refreshResource(id: String!): Resource!
-  updateResource(id: String!, model: String!): Resource!
-  disposeResource(id: String!): Void
-  forgetResource(id: String!): Void
+  refreshResource(ref: String!): Resource!
+  updateResource(ref: String!, model: String!): Resource!
+  disposeResource(ref: String!): Resource!
+  cancelResourceOperation(ref: String!): Resource!
+  forgetResource(ref: String!): Void
 
   # These must be run asynchronously and take an exclusive lock on a resource.
-  createExternalResource(internalId: String!, model: String!): Void
-  readExternalResource(internalId: String!): Void
-  updateExternalResource(internalId: String!, model: String!): Void
-  deleteExternalResource(internalId: String!): Void
+  createExternalResource(ref: String!, model: String!): Void
+  readExternalResource(ref: String!): Void
+  updateExternalResource(ref: String!, model: String!): Void
+  deleteExternalResource(ref: String!): Void
 
   newTask(parentId: String, mutation: String!, variables: String!): Task!
   startTask(id: String!, workerId: String!): Task!
@@ -140,6 +141,8 @@ type Resource {
   id: String!
   type: String!
 
+  iri: String
+
   owner: ResourceOwner
   ownerType: String
   ownerId: String
@@ -154,16 +157,12 @@ type Resource {
   # If non-null, task has a lock on resource and state will not be "idle".
   taskId: String
   task: Task
-  
-  state: String # idle, creating, adopting, refreshing, updating, or disposing.
-  
-  # Model observed after a CRUD operation.
-  observed: String
-  # Desired model after a CRUD operation.
-  desired: String
+  operation: String # creating, adopting, refreshing, updating, or disposing.
+
+  model: String!
 
   # HTTP error code from previous finished task.
-  status: Int
+  status: Int!
   # Error message from previous finished task.
   message: String
 }

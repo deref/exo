@@ -162,7 +162,7 @@ func (r *MutationResolver) FinishTask(ctx context.Context, args struct {
 
 func (r *QueryResolver) taskByID(ctx context.Context, id *string) (*TaskResolver, error) {
 	t := &TaskResolver{}
-	err := r.getRowByID(ctx, &t.TaskRow, `
+	err := r.getRowByKey(ctx, &t.TaskRow, `
 		SELECT
 			id, job_id, parent_id, mutation, variables, worker_id, status, created,
 			updated, started, finished, progress_current, progress_total, message
@@ -228,4 +228,9 @@ func (r *TaskResolver) Progress() (*ProgressResolver, error) {
 		Current: *r.ProgressCurrent,
 		Total:   *r.ProgressTotal,
 	}, nil
+}
+
+func (r *MutationResolver) cancelTask(ctx context.Context, id string) error {
+	r.Logger.Infof("TODO: Implement cancelTask")
+	return nil
 }

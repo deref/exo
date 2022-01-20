@@ -44,7 +44,7 @@ func NewPeer(ctx context.Context, varDir string) (*Peer, error) {
 }
 
 func (p *Peer) Do(ctx context.Context, doc string, vars map[string]interface{}, res interface{}) error {
-	vars = jsonutil.MustSimplify(vars).(map[string]interface{})
+	vars, _ = jsonutil.MustSimplify(vars).(map[string]interface{})
 
 	resp := p.schema.Exec(ctx, doc, "", vars)
 	if len(resp.Errors) > 0 {

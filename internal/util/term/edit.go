@@ -8,7 +8,6 @@ import (
 	"os/exec"
 	"strings"
 
-	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/deref/exo/internal/util/which"
 )
 
@@ -19,7 +18,7 @@ func EditString(tempPattern string, oldValue string) (string, error) {
 	}
 	defer os.Remove(tmpfile.Name())
 
-	if err := jsonutil.PrettyPrintJSONString(tmpfile, oldValue); err != nil {
+	if _, err := tmpfile.WriteString(oldValue); err != nil {
 		return "", fmt.Errorf("writing to temporary file: %w", err)
 	}
 	if err := tmpfile.Close(); err != nil {

@@ -15,16 +15,16 @@ var resourceForgetCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-
-		iri := args[0]
-
+		ref := args[0]
 		var resp struct{}
 		return svc.Do(ctx, `
-			mutation ($iri: String!) {
-				forgetResource(iri: $iri)
+			mutation ($ref: String!) {
+				forgetResource(ref: $ref) {
+					__typename
+				}
 			}
 		`, map[string]interface{}{
-			"iri": iri,
+			"ref": ref,
 		}, &resp)
 	},
 }
