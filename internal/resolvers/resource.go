@@ -283,19 +283,7 @@ func (r *MutationResolver) NewResource(ctx context.Context, args struct {
 		return nil, fmt.Errorf("unexpected owner type: %q", *args.OwnerType)
 	}
 
-	if _, err := r.DB.ExecContext(ctx, `
-		INSERT INTO resource (
-			id,
-			type,
-			iri,
-			owner_type,
-			owner_id,
-			task_id,
-			model,
-			status,
-			message
-		) VALUES ( ?, ?, ?, ?, ?, ?, ?, ?, ? )
-	`, row.ID, row.Type, row.IRI, row.OwnerType, row.OwnerID, row.TaskID, row.Model, row.Status, row.Message); err != nil {
+	if err := r.insertRow(ctx, "resource", row); err != nil {
 		return nil, fmt.Errorf("inserting: %w", err)
 	}
 
