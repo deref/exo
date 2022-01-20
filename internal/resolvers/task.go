@@ -105,7 +105,6 @@ func (r *MutationResolver) AcquireTask(ctx context.Context, args struct {
 	var row TaskRow
 	delay := 1
 	for {
-		fmt.Println("querying")
 		err := r.DB.GetContext(ctx, &row, `
 		UPDATE task
 		SET worker_id = ?
@@ -211,9 +210,7 @@ func (r *MutationResolver) FinishTask(ctx context.Context, args struct {
 func (r *QueryResolver) taskByID(ctx context.Context, id *string) (*TaskResolver, error) {
 	t := &TaskResolver{}
 	err := r.getRowByKey(ctx, &t.TaskRow, `
-		SELECT
-			id, job_id, parent_id, mutation, variables, worker_id, status, created,
-			updated, started, finished, progress_current, progress_total, message
+		SELECT *
 		FROM task
 		WHERE id = ?
 	`, id)
@@ -232,9 +229,7 @@ func (r *QueryResolver) TasksByJobID(ctx context.Context, args struct {
 func (r *QueryResolver) tasksByJobID(ctx context.Context, jobID string) ([]*TaskResolver, error) {
 	var rows []TaskRow
 	err := r.DB.SelectContext(ctx, &rows, `
-		SELECT
-			id, job_id, parent_id, mutation, variables, worker_id, status, created,
-			updated, started, finished, progress_current, progress_total, message
+		SELECT *
 		FROM task
 		WHERE job_id = ?
 		ORDER BY task.id ASC

@@ -41,16 +41,7 @@ func (r *MutationResolver) ForgetResource(ctx context.Context, args struct {
 func (r *QueryResolver) AllResources(ctx context.Context) ([]*ResourceResolver, error) {
 	var rows []ResourceRow
 	err := r.DB.SelectContext(ctx, &rows, `
-		SELECT
-			id,
-			type,
-			iri,
-			owner_type,
-			owner_id,
-			task_id,
-			model,
-			status,
-			message
+		SELECT *
 		FROM resource
 		ORDER BY id ASC
 	`)
@@ -76,16 +67,7 @@ func (r *QueryResolver) ResourceByID(ctx context.Context, args struct {
 func (r *QueryResolver) resourceByID(ctx context.Context, id *string) (*ResourceResolver, error) {
 	s := &ResourceResolver{}
 	err := r.getRowByKey(ctx, &s.ResourceRow, `
-		SELECT
-			id,
-			type,
-			iri,
-			owner_type,
-			owner_id,
-			task_id,
-			model,
-			status,
-			message
+		SELECT *
 		FROM resource
 		WHERE id = ?
 	`, id)
@@ -104,16 +86,7 @@ func (r *QueryResolver) ResourceByIRI(ctx context.Context, args struct {
 func (r *QueryResolver) resourceByIRI(ctx context.Context, iri *string) (*ResourceResolver, error) {
 	s := &ResourceResolver{}
 	err := r.getRowByKey(ctx, &s.ResourceRow, `
-		SELECT
-			id,
-			type,
-			iri,
-			owner_type,
-			owner_id,
-			task_id,
-			model,
-			status,
-			message
+		SELECT *
 		FROM resource
 		WHERE iri = ?
 	`, iri)
@@ -147,16 +120,7 @@ func (r *ResourceResolver) Component(ctx context.Context) (*ComponentResolver, e
 func (r *QueryResolver) resourcesByStack(ctx context.Context, stackID string) ([]*ResourceResolver, error) {
 	var rows []ResourceRow
 	err := r.DB.SelectContext(ctx, &rows, `
-		SELECT
-			id,
-			type,
-			iri,
-			owner_type,
-			owner_id,
-			task_id,
-			model,
-			status,
-			message
+		SELECT *
 		FROM resource
 		WHERE stack_id = ?
 		ORDER BY id ASC
@@ -177,16 +141,7 @@ func (r *QueryResolver) resourcesByStack(ctx context.Context, stackID string) ([
 func (r *QueryResolver) resourcesByComponent(ctx context.Context, componentID string) ([]*ResourceResolver, error) {
 	var rows []ResourceRow
 	err := r.DB.SelectContext(ctx, &rows, `
-		SELECT
-			id,
-			type,
-			iri,
-			owner_type,
-			owner_id,
-			task_id,
-			model,
-			status,
-			message
+		SELECT *
 		FROM resource
 		WHERE component_id = ?
 		ORDER BY id ASC
@@ -207,16 +162,7 @@ func (r *QueryResolver) resourcesByComponent(ctx context.Context, componentID st
 func (r *QueryResolver) resourcesByProject(ctx context.Context, projectID string) ([]*ResourceResolver, error) {
 	var rows []ResourceRow
 	err := r.DB.SelectContext(ctx, &rows, `
-		SELECT
-			resource.id,
-			resource.type,
-			resource.iri,
-			resource.owner_type,
-			resource.owner_id,
-			resource.task_id,
-			resource.model,
-			resource.status,
-			resource.message
+		SELECT resource.*
 		FROM resource
 		INNER JOIN component ON component_id = component.id
 		INNER JOIN stack ON component.stack_id = stack.id

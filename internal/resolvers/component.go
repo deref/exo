@@ -26,7 +26,7 @@ func (r *QueryResolver) ComponentByID(ctx context.Context, args struct {
 func (r *QueryResolver) componentByID(ctx context.Context, id *string) (*ComponentResolver, error) {
 	component := &ComponentResolver{}
 	err := r.getRowByKey(ctx, &component.ComponentRow, `
-		SELECT id, stack_id, name
+		SELECT *
 		FROM component
 		WHERE id = ?
 	`, id)
@@ -45,7 +45,7 @@ func (r *QueryResolver) componentByName(ctx context.Context, stack string, name 
 
 	component := &ComponentResolver{}
 	err = r.DB.GetContext(ctx, &component.ComponentRow, `
-		SELECT id, stack_id, name
+		SELECT *
 		FROM component
 		WHERE stack_id = ?
 		AND name = ?
