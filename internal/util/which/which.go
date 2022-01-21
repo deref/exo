@@ -44,6 +44,7 @@ func (q Query) Run() (string, error) {
 }
 
 // Uses the ambiant working directory and PATH variable.
+// This should be equiviliant to the exec.LookPath stdlib function.
 func Which(program string) (string, error) {
 	wd, err := os.Getwd()
 	if err != nil {

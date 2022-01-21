@@ -11,6 +11,8 @@ import (
 	"github.com/deref/exo/internal/util/jsonutil"
 )
 
+// TODO: Make part of the resource controller?
+
 func GetProcessDescription(ctx context.Context, component api.ComponentDescription) (api.ProcessDescription, error) {
 	var state State
 	if err := jsonutil.UnmarshalStringOrEmpty(component.State, &state); err != nil {
