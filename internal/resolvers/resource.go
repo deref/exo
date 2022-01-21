@@ -4,11 +4,13 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 
 	"github.com/deref/exo/internal/gensym"
 	"github.com/deref/exo/internal/providers/sdk"
 	"github.com/deref/exo/internal/util/jsonutil"
+	"github.com/deref/util-go/httputil"
 )
 
 type ResourceResolver struct {
@@ -411,145 +413,121 @@ func (r *MutationResolver) NewResource(ctx context.Context, args struct {
 	}, nil
 }
 
-func (r *MutationResolver) lockResource(ctx context.Context, ref string) (row *ResourceRow, unlock func(), err error) {
-	currentTaskID := CurrentTaskID(ctx)
-	if currentTaskID == nil {
-		return nil, nil, errors.New("synchronous mutations cannot lock resources")
-	}
-	taskID := *currentTaskID
-
-	// Acquire or confirm previous acquisition of resource lock.
-	var lockedRow ResourceRow
-	if err := r.DB.GetContext(ctx, &lockedRow, `
-		UPDATE resource
-		SET task_id = ?
-		WHERE (id = ? OR iri = ?)
-		AND (task_id IS NULL OR task_id = ?)
-		RETURNING *
-	`, taskID, ref, ref, taskID); err != nil {
-		return nil, nil, fmt.Errorf("updating resource lock: %w", err)
-	}
-	row = &lockedRow
-
-	unlock = func() {
-		if _, err := r.DB.ExecContext(ctx, `
-			UPDATE resource
-			SET task_id = NULL
-			WHERE task_id = ?
-		`, taskID); err != nil {
-			r.Logger.Infof("task %s failed to unlock resource %q: %w", taskID, ref, err)
-		}
-		// XXX if the task failed, record that status on the resource somehow.
-	}
-	return
-}
+type resourceOperation func(ctx context.Context, row *ResourceRow, controller *sdk.Controller) (model string, err error)
 
 func (r *MutationResolver) InitializeResource(ctx context.Context, args struct {
 	Ref   string
 	Model string
 }) (*ResourceResolver, error) {
-	resource, unlock, err := r.lockResource(ctx, args.Ref)
-	if err != nil {
-		return nil, err
-	}
-	defer unlock()
-
-	c, err := getResourceController(ctx, resource.Type)
-	if err != nil {
-		return nil, err
-	}
-	updatedModel, err := c.Create(ctx, args.Model)
-	if err != nil {
-		return nil, fmt.Errorf("controller error: %w", err)
-	}
-	return r.endResourceOperation(ctx, resource.ID, resource.IRI, updatedModel, c)
+	return r.doResourceOperation(ctx, args.Ref,
+		func(ctx context.Context, row *ResourceRow, c *sdk.Controller) (string, error) {
+			return c.Create(ctx, row.Model)
+		},
+	)
 }
 
 func (r *MutationResolver) RefreshResource(ctx context.Context, args struct {
 	Ref string
 }) (*ResourceResolver, error) {
-	resource, unlock, err := r.lockResource(ctx, args.Ref)
-	if err != nil {
-		return nil, err
-	}
-	defer unlock()
-
-	c, err := getResourceController(ctx, resource.Type)
-	if err != nil {
-		return nil, err
-	}
-	updatedModel, err := c.Read(ctx, resource.Model)
-	if err != nil {
-		return nil, fmt.Errorf("controller error: %w", err)
-	}
-	return r.endResourceOperation(ctx, resource.ID, resource.IRI, updatedModel, c)
+	return r.doResourceOperation(ctx, args.Ref,
+		func(ctx context.Context, row *ResourceRow, c *sdk.Controller) (string, error) {
+			return c.Read(ctx, row.Model)
+		},
+	)
 }
 
 func (r *MutationResolver) UpdateResource(ctx context.Context, args struct {
 	Ref   string
 	Model string
 }) (*ResourceResolver, error) {
-	resource, unlock, err := r.lockResource(ctx, args.Ref)
-	if err != nil {
-		return nil, err
-	}
-	defer unlock()
-
-	c, err := getResourceController(ctx, resource.Type)
-	if err != nil {
-		return nil, err
-	}
-	updatedModel, err := c.Update(ctx, resource.Model, args.Model)
-	if err != nil {
-		return nil, fmt.Errorf("controller error: %w", err)
-	}
-	return r.endResourceOperation(ctx, resource.ID, resource.IRI, updatedModel, c)
+	return r.doResourceOperation(ctx, args.Ref,
+		func(ctx context.Context, row *ResourceRow, c *sdk.Controller) (string, error) {
+			return c.Update(ctx, row.Model, args.Model)
+		},
+	)
 }
 
 func (r *MutationResolver) DisposeResource(ctx context.Context, args struct {
 	Ref string
 }) (*VoidResolver, error) {
-	resource, unlock, err := r.lockResource(ctx, args.Ref)
-	if err != nil {
-		return nil, err
-	}
-	defer unlock()
-
-	c, err := getResourceController(ctx, resource.Type)
-	if err != nil {
-		return nil, err
-	}
-	if err := c.Delete(ctx, resource.Model); err != nil {
-		return nil, fmt.Errorf("controller error: %w", err)
-	}
-	if _, err := r.endResourceOperation(ctx, resource.ID, resource.IRI, resource.Model, c); err != nil {
+	if _, err := r.doResourceOperation(ctx, args.Ref,
+		func(ctx context.Context, row *ResourceRow, c *sdk.Controller) (string, error) {
+			err := c.Delete(ctx, row.Model)
+			return row.Model, err
+		},
+	); err != nil {
 		return nil, err
 	}
 	return r.forgetResource(ctx, args.Ref)
 }
 
-func (r *MutationResolver) endResourceOperation(ctx context.Context, id string, oldIRI *string, model string, c *sdk.Controller) (*ResourceResolver, error) {
-	iri := oldIRI
-	newIRI, identifyErr := c.Identify(ctx, model)
-	newIRI = strings.TrimSpace(newIRI)
-	if identifyErr == nil && newIRI != "" {
-		if oldIRI == nil {
-			iri = &newIRI
+func (r *MutationResolver) doResourceOperation(ctx context.Context, ref string, op resourceOperation) (_ *ResourceResolver, doErr error) {
+	currentTaskID := CurrentTaskID(ctx)
+	if currentTaskID == nil {
+		return nil, errors.New("resource operations must be asynchronous")
+	}
+	taskID := *currentTaskID
+
+	// Acquire resource lock or confirm prior acquisition.
+	// For resource initialization, the lock will be pre-acquired, so that
+	// newResource can return a resource ID synchronously.
+	var row ResourceRow
+	if err := r.DB.GetContext(ctx, &row, `
+		UPDATE resource
+		SET task_id = ?, status = 0, message = NULL
+		WHERE (id = ? OR iri = ?)
+		AND (task_id IS NULL OR task_id = ?)
+		RETURNING *
+	`, taskID, ref, ref, taskID); err != nil {
+		return nil, fmt.Errorf("updating resource lock: %w", err)
+	}
+
+	finish := func() {
+		var status int
+		var message *string
+		if doErr == nil {
+			status = http.StatusOK
 		} else {
-			iri = oldIRI
-			if oldIRI != nil && *oldIRI != newIRI {
-				identifyErr = fmt.Errorf("cannot change IRI from %q to %q", *oldIRI, newIRI)
+			status = httputil.StatusOf(doErr)
+			message = stringPtr(doErr.Error())
+		}
+		if _, err := r.DB.ExecContext(ctx, `
+			UPDATE resource
+			SET task_id = NULL, status = ?, message = ?
+			WHERE task_id = ?
+		`, status, message, taskID); err != nil {
+			r.Logger.Infof("task %s failed to unlock resource %q: %w", taskID, ref, err)
+		}
+	}
+	defer finish()
+
+	c := getResourceController(ctx, row.Type)
+	if c == nil {
+		return nil, fmt.Errorf("no controller for resource type: %s", row.Type)
+	}
+
+	model, err := op(ctx, &row, c)
+	if err != nil {
+		return nil, fmt.Errorf("controller failed: %w", err)
+	}
+
+	iri, identifyErr := c.Identify(ctx, model)
+	iri = strings.TrimSpace(iri)
+	if identifyErr == nil && iri != "" {
+		if row.IRI != nil {
+			iri = *row.IRI
+			if row.IRI != nil && *row.IRI != iri {
+				identifyErr = fmt.Errorf("cannot change IRI from %q to %q", *row.IRI, iri)
 			}
 		}
 	}
 
-	var row ResourceRow
 	if err := r.DB.GetContext(ctx, &row, `
 		UPDATE resource
 		SET model = ?, iri = ?
 		WHERE id = ?
 		RETURNING *
-	`, model, iri, id); err != nil {
+	`, model, iri, row.ID); err != nil {
 		return nil, fmt.Errorf("recording model: %w", err)
 	}
 	if identifyErr != nil {
@@ -580,7 +558,7 @@ func (r *MutationResolver) CancelResourceOperation(ctx context.Context, args str
 
 		if _, err := r.DB.ExecContext(ctx, `
 			UPDATE resource
-			SET task_id = NULL
+			SET task_id = NULL, status = 500, message = 'interrupted'
 			WHERE id = ? OR iri = ?
 		`, args.Ref, args.Ref); err != nil {
 			return nil, fmt.Errorf("releasing resource lock: %w", err)

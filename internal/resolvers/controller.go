@@ -2,19 +2,18 @@ package resolvers
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/deref/exo/internal/providers/os/resources/file"
 	"github.com/deref/exo/internal/providers/os/resources/process"
 	"github.com/deref/exo/internal/providers/sdk"
 )
 
-func getResourceController(ctx context.Context, typ string) (*sdk.Controller, error) {
+func getResourceController(ctx context.Context, typ string) *sdk.Controller {
 	impl := getResourceControllerImpl(ctx, typ)
 	if impl == nil {
-		return nil, fmt.Errorf("no resource controller for type: %s", typ)
+		return nil
 	}
-	return sdk.NewController(impl), nil
+	return sdk.NewController(impl)
 }
 
 // TODO: Dynamic registry with qualified type identifiers.
