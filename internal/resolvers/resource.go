@@ -126,6 +126,12 @@ func isIRI(s string) bool {
 	return strings.Contains(s, ":")
 }
 
+func (r *QueryResolver) ResourceByRef(ctx context.Context, args struct {
+	Ref string
+}) (*ResourceResolver, error) {
+	return r.resourceByRef(ctx, &args.Ref)
+}
+
 func (r *QueryResolver) resourceByRef(ctx context.Context, ref *string) (*ResourceResolver, error) {
 	if ref == nil {
 		return nil, nil

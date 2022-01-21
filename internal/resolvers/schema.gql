@@ -19,6 +19,7 @@ type Query {
 
   allResources: [Resource!]! # TODO: Paginate!
   resourceById(id: String!): Resource
+  resourceByRef(ref: String!): Resource
   
   tasksByJobId(jobId: String!): [Task!]!
 }
