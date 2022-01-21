@@ -123,6 +123,7 @@ var resourceLSCmd = &cobra.Command{
 			}
 			data := map[string]string{
 				"RESOURCE": ident,
+				"TYPE":     resource.Type,
 			}
 			if resource.Project != nil {
 				data["PROJECT"] = resource.Project.DisplayName
