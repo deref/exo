@@ -125,7 +125,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 	}
 
 	if _, err := r.DB.ExecContext(ctx, `
-		CREATE UNIQUE INDEX IF NOT EXISTS
+		CREATE INDEX IF NOT EXISTS
 		resource_iri ON resource ( iri )
 	`); err != nil {
 		return fmt.Errorf("creating cluster_name index: %w", err)
