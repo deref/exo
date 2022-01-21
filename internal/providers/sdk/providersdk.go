@@ -99,7 +99,7 @@ func (c *Controller) Read(ctx context.Context, model string) (updatedModel strin
 
 func (c *Controller) Update(ctx context.Context, prev string, cur string) (updatedModel string, err error) {
 	defer errutil.RecoverTo(&err)
-	method := c.v.MethodByName("Read")
+	method := c.v.MethodByName("Update")
 	unmarshaledPrev, err := unmarshalModel(ctx, "previous model", method.Type().In(1), prev)
 	if err != nil {
 		return "", err

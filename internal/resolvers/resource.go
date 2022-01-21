@@ -264,13 +264,13 @@ func (r *ResourceResolver) Operation(ctx context.Context) (*string, error) {
 	}
 	var operation string
 	switch task.Mutation {
-	case "createExternalResource":
+	case "initializeResource":
 		operation = "creating"
-	case "readExternalResource":
+	case "refreshResource":
 		operation = "reading"
-	case "updateExternalResource":
+	case "updateResource":
 		operation = "updating"
-	case "deleteExternalResource":
+	case "deleteResource":
 		operation = "deleting"
 	default:
 		operation = "unknown"
@@ -386,15 +386,15 @@ func (r *MutationResolver) NewResource(ctx context.Context, args struct {
 	parentTaskID := (*string)(nil)
 	var err error
 	if adopt {
-		if _, err := r.newTask(ctx, taskID, parentTaskID, "readExternalResource", jsonutil.MustMarshalString(map[string]interface{}{
-			"internalId": row.ID,
+		if _, err := r.newTask(ctx, taskID, parentTaskID, "refreshResource", jsonutil.MustMarshalString(map[string]interface{}{
+			"ref": row.ID,
 		})); err != nil {
 			r.Logger.Infof("error starting resource %s adoption: %w", row.ID, err)
 		}
 	} else {
-		if _, err = r.newTask(ctx, taskID, parentTaskID, "createExternalResource", jsonutil.MustMarshalString(map[string]interface{}{
-			"internalId": row.ID,
-			"model":      args.Model,
+		if _, err = r.newTask(ctx, taskID, parentTaskID, "initializeResource", jsonutil.MustMarshalString(map[string]interface{}{
+			"ref":   row.ID,
+			"model": args.Model,
 		})); err != nil {
 			r.Logger.Infof("error starting resource %s creation: %w", row.ID, err)
 		}
@@ -439,7 +439,7 @@ func (r *MutationResolver) lockResource(ctx context.Context, ref string) (row *R
 	return
 }
 
-func (r *MutationResolver) CreateExternalResource(ctx context.Context, args struct {
+func (r *MutationResolver) InitializeResource(ctx context.Context, args struct {
 	Ref   string
 	Model string
 }) (*ResourceResolver, error) {
