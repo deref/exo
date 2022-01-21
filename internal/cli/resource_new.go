@@ -133,6 +133,6 @@ To set the owner to a component, supply '--component=ref', which implies
 		if rootPersistentFlags.Async {
 			return nil
 		}
-		return watchJob(ctx, *m.Resource.TaskID)
+		return watchOwnJob(ctx, *m.Resource.TaskID)
 	},
 }
