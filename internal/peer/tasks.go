@@ -8,12 +8,52 @@ import (
 	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/resolvers"
 	"github.com/deref/exo/internal/util/jsonutil"
+	"github.com/deref/exo/internal/util/logging"
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/graphql-go/graphql/language/kinds"
 	"github.com/graphql-go/graphql/language/printer"
 )
 
-func WorkTask(ctx context.Context, p *Peer, id string, workerID string) error {
+func RunWorker(ctx context.Context, p *Peer, workerID string, jobID *string) error {
+	logger := logging.CurrentLogger(ctx)
+	var timeout *int
+	// Stop working tasks when a new task for this job hasn't appeared in a
+	// while.  Note that this only works correclty when no other workers are
+	// taking tasks for this job.
+	// TODO: Would be better to acquire tasks until the job's status is finished.
+	if jobID != nil {
+		n := 1000
+		timeout = &n
+	}
+	acquireVars := map[string]interface{}{
+		"workerId": workerID,
+		"jobId":    jobID,
+		"timeout":  timeout,
+	}
+	for {
+		var acquired struct {
+			Task struct {
+				ID string
+			} `graphql:"acquireTask(workerId: $workerId, timeout: $timeout, jobId: $jobId)"`
+		}
+		if err := api.Mutate(ctx, p, &acquired, acquireVars); err != nil {
+			return fmt.Errorf("acquiring task: %w", err)
+		}
+		taskID := acquired.Task.ID
+		if taskID == "" {
+			return nil
+		}
+		logger.Infof("acquired task: %s", taskID)
+		err := WorkTask(ctx, p, workerID, taskID)
+		if err == nil {
+			logger.Infof("completed task: %s", taskID)
+		} else {
+			logger.Infof("task %s failure: %v", taskID, err)
+		}
+	}
+}
+
+func WorkTask(ctx context.Context, p *Peer, workerID string, id string) error {
 	var start struct {
 		Task struct {
 			Mutation  string

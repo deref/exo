@@ -57,7 +57,7 @@ func sendMutation(ctx context.Context, mutation string, vars map[string]interfac
 	if p, ok := svc.(*peer.Peer); ok {
 		eg.Go(func() error {
 			workerID := fmt.Sprintf("peer:%d:inline", os.Getpid())
-			err := peer.WorkTask(ctx, p, jobID, workerID)
+			err := peer.RunWorker(ctx, p, workerID, &jobID)
 			if err != nil {
 				cancel()
 			}
