@@ -18,7 +18,7 @@ func RunWorker(ctx context.Context, p *Peer, workerID string, jobID *string) err
 	logger := logging.CurrentLogger(ctx)
 	var timeout *int
 	// Stop working tasks when a new task for this job hasn't appeared in a
-	// while.  Note that this only works correclty when no other workers are
+	// while.  Note that this only works correctly when no other workers are
 	// taking tasks for this job.
 	// TODO: Would be better to acquire tasks until the job's status is finished.
 	if jobID != nil {
