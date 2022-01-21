@@ -16,7 +16,7 @@ func (c *Controller) Identify(ctx context.Context, m *Model) (string, error) {
 	if m.Pid == nil {
 		return "", nil
 	}
-	return fmt.Sprintf("exo:hosts/%s/processes/%d", m.HostID, *m.Pid), nil
+	return fmt.Sprintf("exo:/hosts/%s/processes/%d", m.HostID, *m.Pid), nil
 }
 
 func (c *Controller) Create(ctx context.Context, m *Model) error {
