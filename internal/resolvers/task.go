@@ -94,12 +94,13 @@ func (r *MutationResolver) newTask(ctx context.Context, id string, parentID *str
 }
 
 func (r *MutationResolver) AcquireTask(ctx context.Context, args struct {
-	WorkerID      string
-	TimeoutMillis *int
+	WorkerID string
+	JobID    *string
+	Timeout  *int32
 }) (*TaskResolver, error) {
-	if args.TimeoutMillis != nil {
+	if args.Timeout != nil {
 		var cancel func()
-		ctx, cancel = context.WithTimeout(ctx, time.Duration(*args.TimeoutMillis)*time.Microsecond)
+		ctx, cancel = context.WithTimeout(ctx, time.Duration(*args.Timeout)*time.Microsecond)
 		defer cancel()
 	}
 	var row TaskRow
@@ -112,9 +113,10 @@ func (r *MutationResolver) AcquireTask(ctx context.Context, args struct {
 			SELECT id
 			FROM task
 			WHERE worker_id IS NULL
+			AND COALESCE(?, job_id) = job_id
 		)
 		RETURNING *
-	`, args.WorkerID)
+	`, args.WorkerID, args.JobID)
 		if errors.Is(err, sql.ErrNoRows) {
 			chrono.Sleep(ctx, time.Duration(delay)*time.Millisecond)
 			delay *= 2
