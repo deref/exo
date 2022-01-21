@@ -46,3 +46,12 @@ func (c *Controller) Update(ctx context.Context, prev *Model, cur *Model) error 
 	}
 	return os.WriteFile(cur.Path, []byte(cur.Content), 0600)
 }
+
+func (c *Controller) Delete(ctx context.Context, m *Model) error {
+	// TODO: Verify current host id.
+	err := os.Remove(m.Path)
+	if errors.Is(err, os.ErrNotExist) {
+		err = nil
+	}
+	return err
+}
