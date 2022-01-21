@@ -50,10 +50,10 @@ type Mutation {
   forgetResource(ref: String!): Void
 
   # These must be run asynchronously and take an exclusive lock on a resource.
-  createExternalResource(ref: String!, model: String!): Void
-  readExternalResource(ref: String!): Void
-  updateExternalResource(ref: String!, model: String!): Void
-  deleteExternalResource(ref: String!): Void
+  createExternalResource(internalId: String!, model: String!): Void
+  readExternalResource(internalId: String!): Void
+  updateExternalResource(internalId: String!, model: String!): Void
+  deleteExternalResource(internalId: String!): Void
 
   newTask(parentId: String, mutation: String!, variables: String!): Task!
   acquireTask(workerId: String!): Task

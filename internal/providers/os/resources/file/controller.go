@@ -17,7 +17,7 @@ func (c *Controller) Identify(ctx context.Context, m *Model) (string, error) {
 
 func (c *Controller) Create(ctx context.Context, m *Model) error {
 	// TODO: Verify current host id.
-	f, err := os.OpenFile(m.Path, os.O_CREATE|os.O_EXCL, 0600)
+	f, err := os.OpenFile(m.Path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0600)
 	if err != nil {
 		return err
 	}

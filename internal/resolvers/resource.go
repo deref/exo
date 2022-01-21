@@ -459,27 +459,47 @@ func (r *MutationResolver) CancelResourceOperation(ctx context.Context, args str
 }
 
 func (r *MutationResolver) CreateExternalResource(ctx context.Context, args struct {
-	Ref   string
-	Model string
+	InternalID string
+	Model      string
 }) (*VoidResolver, error) {
-	return nil, errors.New("TODO: implement CreateExternalResource")
+	resource, err := r.resourceByID(ctx, &args.InternalID)
+	if err != nil {
+		return nil, fmt.Errorf("resolving resource: %w", err)
+	}
+	if resource == nil {
+		return nil, errors.New("no such resource")
+	}
+	c := getResourceController(ctx, resource.Type)
+	updatedModel, err := c.Create(ctx, args.Model)
+	if err != nil {
+		return nil, fmt.Errorf("controller error: %w", err)
+	}
+	if _, err := r.DB.ExecContext(ctx, `
+		UPDATE resource
+		SET model = ?
+		WHERE id = ?
+	`, updatedModel, args.InternalID); err != nil {
+		return nil, fmt.Errorf("recording updated model: %w", err)
+	}
+	// TODO: Identify resource.
+	return nil, nil
 }
 
 func (r *MutationResolver) ReadExternalResource(ctx context.Context, args struct {
-	Ref string
+	InternalID string
 }) (*VoidResolver, error) {
 	return nil, errors.New("TODO: implement ReadExternalResource")
 }
 
 func (r *MutationResolver) UpdateExternalResource(ctx context.Context, args struct {
-	Ref   string
-	Model string
+	InternalID string
+	Model      string
 }) (*VoidResolver, error) {
 	return nil, errors.New("TODO: implement UpdateExternalResource")
 }
 
 func (r *MutationResolver) DeleteExternalResource(ctx context.Context, args struct {
-	Ref string
+	InternalID string
 }) (*VoidResolver, error) {
 	return nil, errors.New("TODO: implement DeleteExternalResource")
 }

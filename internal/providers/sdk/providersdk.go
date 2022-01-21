@@ -29,7 +29,7 @@ func NewController(v interface{}) *Controller {
 }
 
 func unmarshalModel(ctx context.Context, label string, typ reflect.Type, s string) (Model, error) {
-	m := reflect.New(typ).Interface().(Model)
+	m := reflect.New(typ.Elem()).Interface().(Model)
 	err := m.UnmarshalModel(ctx, s)
 	if err != nil {
 		err = fmt.Errorf("unmarshaling %s: %w", label, err)
@@ -47,81 +47,72 @@ func marshalModel(ctx context.Context, typ reflect.Type, m Model) (string, error
 
 func (c *Controller) Identify(ctx context.Context, model string) (iri string, err error) {
 	defer errutil.RecoverTo(&err)
-	typ := c.v.Type()
-	methodName := "Identify"
-	method, _ := typ.MethodByName(methodName)
-	unmarshaledModel, err := unmarshalModel(ctx, "model", method.Type.In(1), model)
+	method := c.v.MethodByName("Identify")
+	unmarshaledModel, err := unmarshalModel(ctx, "model", method.Type().In(1), model)
 	if err != nil {
 		return "", err
 	}
-	res := c.v.MethodByName(methodName).Call([]reflect.Value{
+	res := method.Call([]reflect.Value{
 		reflect.ValueOf(ctx),
 		reflect.ValueOf(unmarshaledModel),
 	})
 	iri = res[0].Interface().(string)
-	err = res[1].Interface().(error)
-	return
+	err, _ = res[1].Interface().(error)
+	return iri, err
 }
 
 func (c *Controller) Create(ctx context.Context, model string) (updatedModel string, err error) {
 	defer errutil.RecoverTo(&err)
-	typ := c.v.Type()
-	methodName := "Create"
-	method, _ := typ.MethodByName(methodName)
-	unmarshaledModel, err := unmarshalModel(ctx, "model", method.Type.In(1), model)
+	method := c.v.MethodByName("Create")
+	unmarshaledModel, err := unmarshalModel(ctx, "model", method.Type().In(1), model)
 	if err != nil {
 		return "", err
 	}
-	res := c.v.MethodByName(methodName).Call([]reflect.Value{
+	res := method.Call([]reflect.Value{
 		reflect.ValueOf(ctx),
 		reflect.ValueOf(unmarshaledModel),
 	})
-	err = res[0].Interface().(error)
+	err, _ = res[0].Interface().(error)
 	if err != nil {
 		return
 	}
-	updatedModel, err = unmarshaledModel.MarshalModel(ctx)
-	return
+	return unmarshaledModel.MarshalModel(ctx)
 }
 
 func (c *Controller) Read(ctx context.Context, prev string, cur string) (updatedModel string, err error) {
 	defer errutil.RecoverTo(&err)
-	typ := c.v.Type()
-	methodName := "Read"
-	method, _ := typ.MethodByName(methodName)
-	unmarshaledPrev, err := unmarshalModel(ctx, "previous model", method.Type.In(1), prev)
+	method := c.v.MethodByName("Read")
+	unmarshaledPrev, err := unmarshalModel(ctx, "previous model", method.Type().In(1), prev)
 	if err != nil {
 		return "", err
 	}
-	unmarshaledCur, err := unmarshalModel(ctx, "current model", method.Type.In(2), cur)
+	unmarshaledCur, err := unmarshalModel(ctx, "current model", method.Type().In(2), cur)
 	if err != nil {
 		return "", err
 	}
-	res := c.v.MethodByName(methodName).Call([]reflect.Value{
+	res := method.Call([]reflect.Value{
 		reflect.ValueOf(ctx),
 		reflect.ValueOf(unmarshaledPrev),
 		reflect.ValueOf(unmarshaledCur),
 	})
-	err = res[0].Interface().(error)
+	err, _ = res[0].Interface().(error)
 	if err != nil {
 		return
 	}
-	updatedModel, err = unmarshaledCur.MarshalModel(ctx)
-	return
+	return unmarshaledCur.MarshalModel(ctx)
 }
 
 func (c *Controller) Delete(ctx context.Context, model string) (err error) {
 	defer errutil.RecoverTo(&err)
-	typ := c.v.Type()
-	methodName := "Delete"
-	method, _ := typ.MethodByName(methodName)
-	unmarshaledModel, err := unmarshalModel(ctx, "model", method.Type.In(1), model)
+	method := c.v.MethodByName("Delete")
+	unmarshaledModel, err := unmarshalModel(ctx, "model", method.Type().In(1), model)
 	if err != nil {
 		return err
 	}
-	res := c.v.MethodByName(methodName).Call([]reflect.Value{
+	res := method.Call([]reflect.Value{
 		reflect.ValueOf(ctx),
 		reflect.ValueOf(unmarshaledModel),
 	})
-	return res[0].Interface().(error)
+	err, _ = res[0].Interface().(error)
+	return err
 }
