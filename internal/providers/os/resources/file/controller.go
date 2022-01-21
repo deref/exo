@@ -22,7 +22,7 @@ func (c *Controller) Create(ctx context.Context, m *Model) error {
 		return err
 	}
 	defer f.Close()
-	_, err = f.WriteString(m.Contents)
+	_, err = f.WriteString(m.Content)
 	return err
 }
 
@@ -32,7 +32,7 @@ func (c *Controller) Read(ctx context.Context, m *Model) error {
 	if err != nil {
 		return err
 	}
-	m.Contents = string(bs)
+	m.Content = string(bs)
 	return nil
 }
 
@@ -41,8 +41,8 @@ func (c *Controller) Update(ctx context.Context, prev *Model, cur *Model) error 
 		return errors.New("moving file would change identity")
 	}
 	// TODO: Verify current host id.
-	if prev.Contents == cur.Contents {
+	if prev.Content == cur.Content {
 		return nil
 	}
-	return os.WriteFile(cur.Path, []byte(cur.Contents), 0600)
+	return os.WriteFile(cur.Path, []byte(cur.Content), 0600)
 }

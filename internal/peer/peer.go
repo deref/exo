@@ -20,6 +20,8 @@ type Peer struct {
 	schema *graphql.Schema
 }
 
+var _ api.Service = (*Peer)(nil)
+
 func NewPeer(ctx context.Context, varDir string) (*Peer, error) {
 	// XXX reconsile SQL DB opening with exod/main.go
 	dbPath := filepath.Join(varDir, "exo.sqlite3")
@@ -62,5 +64,3 @@ func (p *Peer) Shutdown(ctx context.Context) error {
 	}
 	return nil
 }
-
-var _ api.Service = (*Peer)(nil)
