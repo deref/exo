@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"strconv"
 
 	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/util/cmdutil"
@@ -62,6 +63,8 @@ var resourceLSCmd = &cobra.Command{
 				Name string
 			}
 			Operation *string
+			Status    int
+			Message   *string
 		}
 		var resources []resourceFragment
 		var columns []string
@@ -75,7 +78,7 @@ var resourceLSCmd = &cobra.Command{
 				return err
 			}
 			resources = q.Resources
-			columns = []string{"RESOURCE", "TYPE", "PROJECT", "STACK", "COMPONENT", "OPERATION"}
+			columns = []string{"RESOURCE", "TYPE", "PROJECT", "STACK", "COMPONENT", "STATUS"}
 
 		case "project":
 			var q struct {
@@ -87,7 +90,7 @@ var resourceLSCmd = &cobra.Command{
 			}
 			mustQueryWorkspace(ctx, &q, nil)
 			resources = q.Workspace.Project.Resources
-			columns = []string{"RESOURCE", "TYPE", "STACK", "COMPONENT", "OPERATION"}
+			columns = []string{"RESOURCE", "TYPE", "STACK", "COMPONENT", "STATUS"}
 
 		case "stack":
 			var q struct {
@@ -135,7 +138,13 @@ var resourceLSCmd = &cobra.Command{
 				data["COMPONENT"] = resource.Component.Name
 			}
 			if resource.Operation != nil {
-				data["OPERATION"] = *resource.Operation
+				data["STATUS"] = *resource.Operation
+			} else if resource.Status != 0 {
+				status := strconv.Itoa(resource.Status)
+				if resource.Message != nil {
+					status += " " + *resource.Message
+				}
+				data["STATUS"] = status
 			}
 			values := make([]string, len(columns))
 			for i, column := range columns {
