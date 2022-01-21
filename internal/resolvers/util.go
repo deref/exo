@@ -47,15 +47,17 @@ func (r *RootResolver) insertRow(ctx context.Context, table string, row interfac
 	typ := v.Type()
 	n := typ.NumField()
 	columns := make([]string, 0, n)
+	values := make([]interface{}, 0, n)
 	for i := 0; i < n; i++ {
 		tag := typ.Field(i).Tag.Get("db")
 		columns = append(columns, tag)
+		values = append(values, v.Field(i).Interface())
 	}
 
 	var q strings.Builder
-	q.WriteString("INERT INTO ")
+	q.WriteString("INSERT INTO ")
 	q.WriteString(table)
-	q.WriteString("(")
+	q.WriteString(" (")
 	prefix := " "
 	for _, column := range columns {
 		q.WriteString(prefix)
@@ -70,6 +72,6 @@ func (r *RootResolver) insertRow(ctx context.Context, table string, row interfac
 	}
 	q.WriteString(" )")
 
-	_, err := r.DB.ExecContext(ctx, q.String(), row)
+	_, err := r.DB.ExecContext(ctx, q.String(), values...)
 	return err
 }
