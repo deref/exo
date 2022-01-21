@@ -49,7 +49,7 @@ type Mutation {
 
   # These operations must be called asynchronously.
   # They take an exclusive lock on the resource.
-  createExternalResource(ref: String!, model: String!): Void
+  initializeResource(ref: String!, model: String!): Void
   refreshResource(ref: String!): Resource!
   updateResource(ref: String!, model: String!): Resource!
   disposeResource(ref: String!): Void

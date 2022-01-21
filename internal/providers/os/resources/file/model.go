@@ -2,6 +2,7 @@ package file
 
 import (
 	"bufio"
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -28,17 +29,21 @@ func (m *Model) UnmarshalModel(ctx context.Context, s string) error {
 	m.Path = hdr.Get("Path")
 	content, _ := ioutil.ReadAll(r)
 
-	length, err := strconv.Atoi(hdr.Get("Content-Length"))
-	switch {
-	case err != nil:
-		// Ignore invalid length.
-	case len(content) < length:
-		return errors.New("content truncated")
-	case length < len(content):
-		// Primarily to chop off a trailing newline.
-		content = content[:length]
+	lengthStr := hdr.Get("Content-Length")
+	if lengthStr != "" {
+		length, err := strconv.Atoi(lengthStr)
+		trimmed := trimEOL(content)
+		switch {
+		case err != nil:
+			return fmt.Errorf("parsing Content-Length: %w", err)
+		case len(content) < length:
+			return errors.New("content truncated")
+		case length == len(trimmed):
+			content = trimmed
+		case length != len(content):
+			return errors.New("content length mismatch")
+		}
 	}
-
 	m.Content = string(content)
 	return nil
 }
@@ -51,4 +56,8 @@ func (m *Model) MarshalModel(ctx context.Context) (string, error) {
 	fmt.Fprintln(&sb)
 	sb.WriteString(m.Content)
 	return sb.String(), nil
+}
+
+func trimEOL(bs []byte) []byte {
+	return bytes.TrimSuffix(bytes.TrimSuffix(bs, []byte("\n")), []byte("\r"))
 }
