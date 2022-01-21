@@ -58,6 +58,27 @@ func (r *QueryResolver) AllResources(ctx context.Context) ([]*ResourceResolver, 
 	return resolvers, nil
 }
 
+func (r *QueryResolver) resourcesByIRI(ctx context.Context, iri string) ([]*ResourceResolver, error) {
+	var rows []ResourceRow
+	err := r.DB.SelectContext(ctx, &rows, `
+		SELECT *
+		FROM resource
+		WHERE iri = ?
+		ORDER BY id ASC
+	`, iri)
+	if err != nil {
+		return nil, err
+	}
+	resolvers := make([]*ResourceResolver, len(rows))
+	for i, row := range rows {
+		resolvers[i] = &ResourceResolver{
+			Q:           r,
+			ResourceRow: row,
+		}
+	}
+	return resolvers, nil
+}
+
 func (r *QueryResolver) ResourceByID(ctx context.Context, args struct {
 	ID string
 }) (*ResourceResolver, error) {
@@ -84,16 +105,21 @@ func (r *QueryResolver) ResourceByIRI(ctx context.Context, args struct {
 }
 
 func (r *QueryResolver) resourceByIRI(ctx context.Context, iri *string) (*ResourceResolver, error) {
-	s := &ResourceResolver{}
-	err := r.getRowByKey(ctx, &s.ResourceRow, `
-		SELECT *
-		FROM resource
-		WHERE iri = ?
-	`, iri)
-	if s.ID == "" {
-		s = nil
+	if iri == nil {
+		return nil, nil
 	}
-	return s, err
+	resources, err := r.resourcesByIRI(ctx, *iri)
+	if err != nil {
+		return nil, err
+	}
+	switch len(resources) {
+	case 0:
+		return nil, nil
+	case 1:
+		return resources[0], nil
+	default:
+		return nil, errors.New("ambiguous")
+	}
 }
 
 func isIRI(s string) bool {
