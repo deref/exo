@@ -44,17 +44,15 @@ type Mutation {
   restartWorkspaceComponents(workspace: String!, components: [String!]!): Void
 
   newResource(type: String!, model: String!, ownerType: String, workspace: String, component: String, adopt: Boolean): Resource!
+  forgetResource(ref: String!): Void
+  cancelResourceOperation(ref: String!): Resource!
+
+  # These operations must be called asynchronously.
+  # They take an exclusive lock on the resource.
+  createExternalResource(ref: String!, model: String!): Void
   refreshResource(ref: String!): Resource!
   updateResource(ref: String!, model: String!): Resource!
-  disposeResource(ref: String!): Resource!
-  cancelResourceOperation(ref: String!): Resource!
-  forgetResource(ref: String!): Void
-
-  # These must be run asynchronously and take an exclusive lock on a resource.
-  createExternalResource(internalId: String!, model: String!): Void
-  readExternalResource(internalId: String!): Void
-  updateExternalResource(internalId: String!, model: String!): Void
-  deleteExternalResource(internalId: String!): Void
+  disposeResource(ref: String!): Void
 
   newTask(parentId: String, mutation: String!, variables: String!): Task!
   acquireTask(workerId: String!, jobId: String, timeout: Int): Task

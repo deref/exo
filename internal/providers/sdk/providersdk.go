@@ -79,7 +79,25 @@ func (c *Controller) Create(ctx context.Context, model string) (updatedModel str
 	return unmarshaledModel.MarshalModel(ctx)
 }
 
-func (c *Controller) Read(ctx context.Context, prev string, cur string) (updatedModel string, err error) {
+func (c *Controller) Read(ctx context.Context, model string) (updatedModel string, err error) {
+	defer errutil.RecoverTo(&err)
+	method := c.v.MethodByName("Read")
+	unmarshaledModel, err := unmarshalModel(ctx, "model", method.Type().In(1), model)
+	if err != nil {
+		return "", err
+	}
+	res := method.Call([]reflect.Value{
+		reflect.ValueOf(ctx),
+		reflect.ValueOf(unmarshaledModel),
+	})
+	err, _ = res[0].Interface().(error)
+	if err != nil {
+		return
+	}
+	return unmarshaledModel.MarshalModel(ctx)
+}
+
+func (c *Controller) Update(ctx context.Context, prev string, cur string) (updatedModel string, err error) {
 	defer errutil.RecoverTo(&err)
 	method := c.v.MethodByName("Read")
 	unmarshaledPrev, err := unmarshalModel(ctx, "previous model", method.Type().In(1), prev)

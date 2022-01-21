@@ -214,6 +214,70 @@ func (r *QueryResolver) resourcesByProject(ctx context.Context, projectID string
 	return resolvers, nil
 }
 
+func (r *ResourceResolver) Owner(ctx context.Context) (interface{}, error) {
+	if r.OwnerType == nil {
+		return nil, nil
+	}
+	switch *r.OwnerType {
+	case "Component":
+		return r.Q.componentByID(ctx, r.OwnerID)
+	case "Stack":
+		return r.Q.stackByID(ctx, r.OwnerID)
+	case "Project":
+		return r.Q.projectByID(ctx, r.OwnerID)
+	default:
+		return nil, fmt.Errorf("unexpected owner type: %q", *r.OwnerType)
+	}
+}
+
+func (r *ResourceResolver) Project(ctx context.Context) (*ProjectResolver, error) {
+	owner, err := r.Owner(ctx)
+	if owner == nil || err != nil {
+		return nil, err
+	}
+	return owner.(interface {
+		Project(ctx context.Context) (*ProjectResolver, error)
+	}).Project(ctx)
+}
+
+func (r *ResourceResolver) Stack(ctx context.Context) (*StackResolver, error) {
+	owner, err := r.Owner(ctx)
+	if owner == nil || err != nil {
+		return nil, err
+	}
+	return owner.(interface {
+		Stack(ctx context.Context) (*StackResolver, error)
+	}).Stack(ctx)
+}
+
+func (r *ResourceResolver) Task(ctx context.Context) (*TaskResolver, error) {
+	return r.Q.taskByID(ctx, r.TaskID)
+}
+
+func (r *ResourceResolver) Operation(ctx context.Context) (*string, error) {
+	task, err := r.Task(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("resolving task: %w", err)
+	}
+	if task == nil {
+		return nil, nil
+	}
+	var operation string
+	switch task.Mutation {
+	case "createExternalResource":
+		operation = "creating"
+	case "readExternalResource":
+		operation = "reading"
+	case "updateExternalResource":
+		operation = "updating"
+	case "deleteExternalResource":
+		operation = "deleting"
+	default:
+		operation = "unknown"
+	}
+	return &operation, err
+}
+
 func (r *MutationResolver) NewResource(ctx context.Context, args struct {
 	Type      string
 	Model     string
@@ -342,123 +406,135 @@ func (r *MutationResolver) NewResource(ctx context.Context, args struct {
 	}, nil
 }
 
-func (r *MutationResolver) lockResource(ctx context.Context, resourceID string) (unlock func(), err error) {
+func (r *MutationResolver) lockResource(ctx context.Context, ref string) (row *ResourceRow, unlock func(), err error) {
 	currentTaskID := CurrentTaskID(ctx)
 	if currentTaskID == nil {
-		return nil, errors.New("synchronous mutations cannot lock resources")
+		return nil, nil, errors.New("synchronous mutations cannot lock resources")
 	}
 	taskID := *currentTaskID
 
 	// Acquire or confirm previous acquisition of resource lock.
-	res, err := r.DB.ExecContext(ctx, `
+	var lockedRow ResourceRow
+	if err := r.DB.GetContext(ctx, &lockedRow, `
 		UPDATE resource
 		SET task_id = ?
-		WHERE id = ?
+		WHERE id = ? OR iri = ?
 		AND task_id IS NULL OR task_id = ?
-	`, taskID, resourceID, taskID)
-	if err != nil {
-		return nil, fmt.Errorf("updating resource lock: %w", err)
+		RETURNING *
+	`, taskID, ref, ref, taskID); err != nil {
+		return nil, nil, fmt.Errorf("updating resource lock: %w", err)
 	}
-	n, err := res.RowsAffected()
-	if err != nil {
-		panic(err)
-	}
-	if n != 1 {
-		return nil, errors.New("unable to lock resource")
-	}
+	row = &lockedRow
 
-	return func() {
+	unlock = func() {
 		if _, err := r.DB.ExecContext(ctx, `
 			UPDATE resource
 			SET task_id = NULL
 			WHERE task_id = ?
 		`, taskID); err != nil {
-			r.Logger.Infof("task %s failed to unlock resource %s: %w", taskID, resourceID, err)
+			r.Logger.Infof("task %s failed to unlock resource %q: %w", taskID, ref, err)
 		}
-	}, nil
-}
-
-func (r *ResourceResolver) Owner(ctx context.Context) (interface{}, error) {
-	if r.OwnerType == nil {
-		return nil, nil
+		// XXX if the task failed, record that status on the resource somehow.
 	}
-	switch *r.OwnerType {
-	case "Component":
-		return r.Q.componentByID(ctx, r.OwnerID)
-	case "Stack":
-		return r.Q.stackByID(ctx, r.OwnerID)
-	case "Project":
-		return r.Q.projectByID(ctx, r.OwnerID)
-	default:
-		return nil, fmt.Errorf("unexpected owner type: %q", *r.OwnerType)
-	}
+	return
 }
 
-func (r *ResourceResolver) Project(ctx context.Context) (*ProjectResolver, error) {
-	owner, err := r.Owner(ctx)
-	if owner == nil || err != nil {
-		return nil, err
-	}
-	return owner.(interface {
-		Project(ctx context.Context) (*ProjectResolver, error)
-	}).Project(ctx)
-}
-
-func (r *ResourceResolver) Stack(ctx context.Context) (*StackResolver, error) {
-	owner, err := r.Owner(ctx)
-	if owner == nil || err != nil {
-		return nil, err
-	}
-	return owner.(interface {
-		Stack(ctx context.Context) (*StackResolver, error)
-	}).Stack(ctx)
-}
-
-func (r *ResourceResolver) Task(ctx context.Context) (*TaskResolver, error) {
-	return r.Q.taskByID(ctx, r.TaskID)
-}
-
-func (r *ResourceResolver) Operation(ctx context.Context) (*string, error) {
-	task, err := r.Task(ctx)
+func (r *MutationResolver) CreateExternalResource(ctx context.Context, args struct {
+	Ref   string
+	Model string
+}) (*ResourceResolver, error) {
+	resource, unlock, err := r.lockResource(ctx, args.Ref)
 	if err != nil {
-		return nil, fmt.Errorf("resolving task: %w", err)
+		return nil, err
 	}
-	if task == nil {
-		return nil, nil
+	defer unlock()
+
+	c, err := getResourceController(ctx, resource.Type)
+	if err != nil {
+		return nil, err
 	}
-	var operation string
-	switch task.Mutation {
-	case "createExternalResource":
-		operation = "creating"
-	case "readExternalResource":
-		operation = "reading"
-	case "updateExternalResource":
-		operation = "updating"
-	case "deleteExternalResource":
-		operation = "deleting"
-	default:
-		operation = "unknown"
+	updatedModel, err := c.Create(ctx, args.Model)
+	if err != nil {
+		return nil, fmt.Errorf("controller error: %w", err)
 	}
-	return &operation, err
+	return r.setResourceModel(ctx, resource.ID, updatedModel)
 }
 
 func (r *MutationResolver) RefreshResource(ctx context.Context, args struct {
 	Ref string
 }) (*ResourceResolver, error) {
-	return nil, errors.New("TODO: implement refresh resource")
+	resource, unlock, err := r.lockResource(ctx, args.Ref)
+	if err != nil {
+		return nil, err
+	}
+	defer unlock()
+
+	c, err := getResourceController(ctx, resource.Type)
+	if err != nil {
+		return nil, err
+	}
+	updatedModel, err := c.Read(ctx, resource.Model)
+	if err != nil {
+		return nil, fmt.Errorf("controller error: %w", err)
+	}
+	return r.setResourceModel(ctx, resource.ID, updatedModel)
 }
 
 func (r *MutationResolver) UpdateResource(ctx context.Context, args struct {
 	Ref   string
 	Model string
 }) (*ResourceResolver, error) {
-	return nil, errors.New("TODO: implement update resource")
+	resource, unlock, err := r.lockResource(ctx, args.Ref)
+	if err != nil {
+		return nil, err
+	}
+	defer unlock()
+
+	c, err := getResourceController(ctx, resource.Type)
+	if err != nil {
+		return nil, err
+	}
+	updatedModel, err := c.Update(ctx, resource.Model, args.Model)
+	if err != nil {
+		return nil, fmt.Errorf("controller error: %w", err)
+	}
+	return r.setResourceModel(ctx, resource.ID, updatedModel)
+}
+
+func (r *MutationResolver) setResourceModel(ctx context.Context, id string, model string) (*ResourceResolver, error) {
+	var row ResourceRow
+	if err := r.DB.GetContext(ctx, &row, `
+		UPDATE resource
+		SET model = ?
+		WHERE id = ?
+		RETURNING *
+	`, model, id); err != nil {
+		return nil, fmt.Errorf("recording model: %w", err)
+	}
+	// TODO: (re-)identify resource.
+	return &ResourceResolver{
+		Q:           r,
+		ResourceRow: row,
+	}, nil
 }
 
 func (r *MutationResolver) DisposeResource(ctx context.Context, args struct {
 	Ref string
-}) (*ResourceResolver, error) {
-	return nil, errors.New("TODO: implement DisposeResource")
+}) (*VoidResolver, error) {
+	resource, unlock, err := r.lockResource(ctx, args.Ref)
+	if err != nil {
+		return nil, err
+	}
+	defer unlock()
+
+	c, err := getResourceController(ctx, resource.Type)
+	if err != nil {
+		return nil, err
+	}
+	if err := c.Delete(ctx, resource.Model); err != nil {
+		return nil, fmt.Errorf("controller error: %w", err)
+	}
+	return nil, nil
 }
 
 func (r *MutationResolver) CancelResourceOperation(ctx context.Context, args struct {
@@ -488,50 +564,4 @@ func (r *MutationResolver) CancelResourceOperation(ctx context.Context, args str
 	}
 
 	return resource, nil
-}
-
-func (r *MutationResolver) CreateExternalResource(ctx context.Context, args struct {
-	InternalID string
-	Model      string
-}) (*VoidResolver, error) {
-	resource, err := r.resourceByID(ctx, &args.InternalID)
-	if err != nil {
-		return nil, fmt.Errorf("resolving resource: %w", err)
-	}
-	if resource == nil {
-		return nil, errors.New("no such resource")
-	}
-	c := getResourceController(ctx, resource.Type)
-	updatedModel, err := c.Create(ctx, args.Model)
-	if err != nil {
-		return nil, fmt.Errorf("controller error: %w", err)
-	}
-	if _, err := r.DB.ExecContext(ctx, `
-		UPDATE resource
-		SET model = ?
-		WHERE id = ?
-	`, updatedModel, args.InternalID); err != nil {
-		return nil, fmt.Errorf("recording updated model: %w", err)
-	}
-	// TODO: Identify resource.
-	return nil, nil
-}
-
-func (r *MutationResolver) ReadExternalResource(ctx context.Context, args struct {
-	InternalID string
-}) (*VoidResolver, error) {
-	return nil, errors.New("TODO: implement ReadExternalResource")
-}
-
-func (r *MutationResolver) UpdateExternalResource(ctx context.Context, args struct {
-	InternalID string
-	Model      string
-}) (*VoidResolver, error) {
-	return nil, errors.New("TODO: implement UpdateExternalResource")
-}
-
-func (r *MutationResolver) DeleteExternalResource(ctx context.Context, args struct {
-	InternalID string
-}) (*VoidResolver, error) {
-	return nil, errors.New("TODO: implement DeleteExternalResource")
 }
