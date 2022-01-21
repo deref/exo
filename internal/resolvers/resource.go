@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/deref/exo/internal/gensym"
+	"github.com/deref/exo/internal/providers/sdk"
 	"github.com/deref/exo/internal/util/jsonutil"
 )
 
@@ -30,11 +31,15 @@ type ResourceRow struct {
 func (r *MutationResolver) ForgetResource(ctx context.Context, args struct {
 	Ref string
 }) (*VoidResolver, error) {
+	return r.forgetResource(ctx, args.Ref)
+}
+
+func (r *MutationResolver) forgetResource(ctx context.Context, ref string) (*VoidResolver, error) {
 	_, err := r.DB.ExecContext(ctx, `
 		DELETE FROM resource
 		WHERE id = ?
 		OR iri = ?
-	`, args.Ref, args.Ref)
+	`, ref, ref)
 	return nil, err
 }
 
@@ -418,8 +423,8 @@ func (r *MutationResolver) lockResource(ctx context.Context, ref string) (row *R
 	if err := r.DB.GetContext(ctx, &lockedRow, `
 		UPDATE resource
 		SET task_id = ?
-		WHERE id = ? OR iri = ?
-		AND task_id IS NULL OR task_id = ?
+		WHERE (id = ? OR iri = ?)
+		AND (task_id IS NULL OR task_id = ?)
 		RETURNING *
 	`, taskID, ref, ref, taskID); err != nil {
 		return nil, nil, fmt.Errorf("updating resource lock: %w", err)
@@ -457,7 +462,7 @@ func (r *MutationResolver) InitializeResource(ctx context.Context, args struct {
 	if err != nil {
 		return nil, fmt.Errorf("controller error: %w", err)
 	}
-	return r.setResourceModel(ctx, resource.ID, updatedModel)
+	return r.endResourceOperation(ctx, resource.ID, resource.IRI, updatedModel, c)
 }
 
 func (r *MutationResolver) RefreshResource(ctx context.Context, args struct {
@@ -477,7 +482,7 @@ func (r *MutationResolver) RefreshResource(ctx context.Context, args struct {
 	if err != nil {
 		return nil, fmt.Errorf("controller error: %w", err)
 	}
-	return r.setResourceModel(ctx, resource.ID, updatedModel)
+	return r.endResourceOperation(ctx, resource.ID, resource.IRI, updatedModel, c)
 }
 
 func (r *MutationResolver) UpdateResource(ctx context.Context, args struct {
@@ -498,24 +503,7 @@ func (r *MutationResolver) UpdateResource(ctx context.Context, args struct {
 	if err != nil {
 		return nil, fmt.Errorf("controller error: %w", err)
 	}
-	return r.setResourceModel(ctx, resource.ID, updatedModel)
-}
-
-func (r *MutationResolver) setResourceModel(ctx context.Context, id string, model string) (*ResourceResolver, error) {
-	var row ResourceRow
-	if err := r.DB.GetContext(ctx, &row, `
-		UPDATE resource
-		SET model = ?
-		WHERE id = ?
-		RETURNING *
-	`, model, id); err != nil {
-		return nil, fmt.Errorf("recording model: %w", err)
-	}
-	// TODO: (re-)identify resource.
-	return &ResourceResolver{
-		Q:           r,
-		ResourceRow: row,
-	}, nil
+	return r.endResourceOperation(ctx, resource.ID, resource.IRI, updatedModel, c)
 }
 
 func (r *MutationResolver) DisposeResource(ctx context.Context, args struct {
@@ -534,7 +522,44 @@ func (r *MutationResolver) DisposeResource(ctx context.Context, args struct {
 	if err := c.Delete(ctx, resource.Model); err != nil {
 		return nil, fmt.Errorf("controller error: %w", err)
 	}
-	return nil, nil
+	if _, err := r.endResourceOperation(ctx, resource.ID, resource.IRI, resource.Model, c); err != nil {
+		return nil, err
+	}
+	return r.forgetResource(ctx, args.Ref)
+}
+
+func (r *MutationResolver) endResourceOperation(ctx context.Context, id string, oldIRI *string, model string, c *sdk.Controller) (*ResourceResolver, error) {
+	iri := oldIRI
+	newIRI, identifyErr := c.Identify(ctx, model)
+	newIRI = strings.TrimSpace(newIRI)
+	if identifyErr == nil && newIRI != "" {
+		if oldIRI == nil {
+			iri = &newIRI
+		} else {
+			iri = oldIRI
+			if oldIRI != nil && *oldIRI != newIRI {
+				identifyErr = fmt.Errorf("cannot change IRI from %q to %q", *oldIRI, newIRI)
+			}
+		}
+	}
+
+	var row ResourceRow
+	if err := r.DB.GetContext(ctx, &row, `
+		UPDATE resource
+		SET model = ?, iri = ?
+		WHERE id = ?
+		RETURNING *
+	`, model, iri, id); err != nil {
+		return nil, fmt.Errorf("recording model: %w", err)
+	}
+	if identifyErr != nil {
+		return nil, fmt.Errorf("identifying: %w", identifyErr)
+	}
+
+	return &ResourceResolver{
+		Q:           r,
+		ResourceRow: row,
+	}, nil
 }
 
 func (r *MutationResolver) CancelResourceOperation(ctx context.Context, args struct {
@@ -556,8 +581,8 @@ func (r *MutationResolver) CancelResourceOperation(ctx context.Context, args str
 		if _, err := r.DB.ExecContext(ctx, `
 			UPDATE resource
 			SET task_id = NULL
-			WHERE id = ?
-		`, args.Ref); err != nil {
+			WHERE id = ? OR iri = ?
+		`, args.Ref, args.Ref); err != nil {
 			return nil, fmt.Errorf("releasing resource lock: %w", err)
 		}
 		resource.TaskID = nil

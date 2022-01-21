@@ -12,7 +12,7 @@ type Controller struct{}
 
 func (c *Controller) Identify(ctx context.Context, m *Model) (string, error) {
 	// TODO: Validate host id & path.
-	return path.Join(fmt.Sprintf("exo:hosts/%s/files", m.Path)), nil
+	return path.Join(fmt.Sprintf("exo:/hosts/%s/files", m.HostID), m.Path), nil
 }
 
 func (c *Controller) Create(ctx context.Context, m *Model) error {
