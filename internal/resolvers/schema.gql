@@ -57,8 +57,9 @@ type Mutation {
   newTask(parentId: String, mutation: String!, variables: String!): Task!
   acquireTask(workerId: String!, jobId: String, timeout: Int): Task
   startTask(id: String!, workerId: String!): Task!
-  updateTask(id: String!, message: String, progress: ProgressInput): Void
+  updateTask(id: String!, workerId: String!, message: String, progress: ProgressInput): Task!
   finishTask(id: String!, error: String): Void
+  cancelJob(id: String!): Void
 
   # For testing.
   sleep(seconds: Float!): Void
@@ -154,9 +155,9 @@ type Resource {
   # Owner, if it is a component.
   component: Component
   
-  # If non-null, task has a lock on resource and state will not be "idle".
-  taskId: String
-  task: Task
+  # If non-null, job has a lock on resource and state will not be "idle".
+  jobId: String
+  job: Task
   operation: String # creating, adopting, refreshing, updating, or disposing.
 
   model: String!
@@ -196,6 +197,7 @@ type Task {
   created: Instant!
   updated: Instant!
   started: Instant
+  canceled: Instant
   finished: Instant
   progress: Progress
   message: String

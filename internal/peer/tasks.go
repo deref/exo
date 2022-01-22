@@ -2,16 +2,20 @@ package peer
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"strconv"
+	"time"
 
 	"github.com/deref/exo/internal/api"
+	"github.com/deref/exo/internal/chrono"
 	"github.com/deref/exo/internal/resolvers"
 	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/deref/exo/internal/util/logging"
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/graphql-go/graphql/language/kinds"
 	"github.com/graphql-go/graphql/language/printer"
+	"golang.org/x/sync/errgroup"
 )
 
 func RunWorker(ctx context.Context, p *Peer, workerID string, jobID *string) error {
@@ -56,6 +60,8 @@ func RunWorker(ctx context.Context, p *Peer, workerID string, jobID *string) err
 func WorkTask(ctx context.Context, p *Peer, workerID string, id string) error {
 	var start struct {
 		Task struct {
+			ID        string
+			JobID     string
 			Mutation  string
 			Variables string
 		} `graphql:"startTask(id: $id, workerId: $workerId)"`
@@ -68,39 +74,85 @@ func WorkTask(ctx context.Context, p *Peer, workerID string, id string) error {
 	}
 	task := start.Task
 
-	taskErr := func() error {
-		var vars map[string]interface{}
-		if err := jsonutil.UnmarshalString(task.Variables, &vars); err != nil {
-			return fmt.Errorf("unmarshaling variables: %w", err)
+	taskCtx := resolvers.ContextWithTask(ctx, resolvers.TaskContext{
+		ID:       task.ID,
+		JobID:    task.JobID,
+		WorkerID: workerID,
+	})
+
+	cancelableCtx, cancel := context.WithCancel(taskCtx)
+	defer cancel()
+	var res struct{}
+
+	var eg errgroup.Group
+
+	// Poll for cancellation and act as worker heartbeat.
+	eg.Go(func() error {
+		defer cancel()
+		vars := map[string]interface{}{
+			"id":       id,
+			"workerId": workerID,
 		}
-
-		mut, err := formatVoidMutation(task.Mutation, vars)
-		if err != nil {
-			return fmt.Errorf("encoding mutation: %w", err)
+		for {
+			var m struct {
+				Task struct {
+					ID       string
+					Finished string
+					Canceled string
+				} `graphql:"updateTask(id: $id, workerId: $workerId)"`
+			}
+			err := api.Mutate(taskCtx, p, &m, vars)
+			if errors.Is(err, context.Canceled) {
+				return nil
+			}
+			if err != nil {
+				return fmt.Errorf("heartbeat failed: %w", err)
+			}
+			if m.Task.Canceled != "" || m.Task.Finished != "" {
+				return nil
+			}
+			chrono.Sleep(cancelableCtx, time.Second)
 		}
+	})
 
-		doCtx := resolvers.ContextWithTaskID(ctx, id)
-		var res struct{}
-		return p.Do(doCtx, mut, vars, &res)
-	}()
+	// Do the actual work and record the results.
+	eg.Go(func() error {
+		defer cancel()
 
-	var finish struct {
-		Void struct {
-			Typename string `graphql:"__typename"`
-		} `graphql:"finishTask(id: $id, error: $error)"`
-	}
-	vars := map[string]interface{}{
-		"id": id,
-	}
-	if taskErr == nil {
-		vars["error"] = (*string)(nil)
-	} else {
-		vars["error"] = taskErr.Error()
-	}
-	if err := api.Mutate(ctx, p, &finish, vars); err != nil {
-		return fmt.Errorf("finishing: %w", err)
-	}
-	return nil
+		taskErr := func() error {
+			var vars map[string]interface{}
+			if err := jsonutil.UnmarshalString(task.Variables, &vars); err != nil {
+				return fmt.Errorf("unmarshaling variables: %w", err)
+			}
+
+			mut, err := formatVoidMutation(task.Mutation, vars)
+			if err != nil {
+				return fmt.Errorf("encoding mutation: %w", err)
+			}
+
+			return p.Do(cancelableCtx, mut, vars, &res)
+		}()
+
+		var finish struct {
+			Void struct {
+				Typename string `graphql:"__typename"`
+			} `graphql:"finishTask(id: $id, error: $error)"`
+		}
+		vars := map[string]interface{}{
+			"id": id,
+		}
+		if taskErr == nil {
+			vars["error"] = (*string)(nil)
+		} else {
+			vars["error"] = taskErr.Error()
+		}
+		if err := api.Mutate(taskCtx, p, &finish, vars); err != nil {
+			return fmt.Errorf("finishing: %w", err)
+		}
+		return nil
+	})
+
+	return eg.Wait()
 }
 
 func formatVoidMutation(mutation string, vars map[string]interface{}) (string, error) {

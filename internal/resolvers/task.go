@@ -28,6 +28,7 @@ type TaskRow struct {
 	Created         Instant  `db:"created"`
 	Updated         Instant  `db:"updated"`
 	Started         *Instant `db:"started"`
+	Canceled        *Instant `db:"canceled"`
 	Finished        *Instant `db:"finished"`
 	ProgressCurrent *int32   `db:"progress_current"`
 	ProgressTotal   *int32   `db:"progress_total"`
@@ -44,6 +45,11 @@ func (r *MutationResolver) NewTask(ctx context.Context, args struct {
 }
 
 var newTaskID = gensym.RandomBase32
+
+func (r *MutationResolver) newJob(ctx context.Context, id string, mutation string, variables string) (*TaskResolver, error) {
+	parentID := (*string)(nil)
+	return r.newTask(ctx, id, parentID, mutation, variables)
+}
 
 // The id is passed as a parameter to allow callers to use a pre-allocated id
 // in a database field to establish a mutual exclusion lock.
@@ -165,20 +171,22 @@ func (r *MutationResolver) StartTask(ctx context.Context, args struct {
 
 func (r *MutationResolver) UpdateTask(ctx context.Context, args struct {
 	ID       string
+	WorkerID string
 	Message  *string
 	Progress *ProgressInput
-}) (*VoidResolver, error) {
-	return r.updateTask(ctx, args.ID, args.Message, args.Progress)
+}) (*TaskResolver, error) {
+	return r.updateTask(ctx, args.ID, args.WorkerID, args.Message, args.Progress)
 }
 
-func (r *MutationResolver) updateTask(ctx context.Context, id string, message *string, progress *ProgressInput) (*VoidResolver, error) {
+func (r *MutationResolver) updateTask(ctx context.Context, id string, workerID string, message *string, progress *ProgressInput) (*TaskResolver, error) {
 	now := Now(ctx)
 	var progressCurrent, progressTotal *int32
 	if progress != nil {
 		progressCurrent = &progress.Current
 		progressTotal = &progress.Total
 	}
-	_, err := r.DB.ExecContext(ctx, `
+	var row TaskRow
+	err := r.DB.GetContext(ctx, &row, `
 		UPDATE task
 		SET
 			updated = ?,
@@ -186,8 +194,16 @@ func (r *MutationResolver) updateTask(ctx context.Context, id string, message *s
 			progress_current = COALESCE(?, progress_current),
 			progress_total = COALESCE(?, progress_total)
 		WHERE id = ?
-	`, now, message, progressCurrent, progressTotal)
-	return nil, err
+		AND worker_id = ?
+		RETURNING *
+	`, now, message, progressCurrent, progressTotal, id, workerID)
+	if err != nil {
+		return nil, err
+	}
+	return &TaskResolver{
+		Q:       r,
+		TaskRow: row,
+	}, nil
 }
 
 func (r *MutationResolver) FinishTask(ctx context.Context, args struct {
@@ -220,6 +236,14 @@ func (r *QueryResolver) taskByID(ctx context.Context, id *string) (*TaskResolver
 		t = nil
 	}
 	return t, err
+}
+
+func (r *QueryResolver) jobByID(ctx context.Context, id *string) (*TaskResolver, error) {
+	task, err := r.taskByID(ctx, id)
+	if task != nil && task.JobID != task.ID {
+		task = nil
+	}
+	return task, err
 }
 
 func (r *QueryResolver) TasksByJobID(ctx context.Context, args struct {
@@ -275,7 +299,18 @@ func (r *TaskResolver) Progress() (*ProgressResolver, error) {
 	}, nil
 }
 
-func (r *MutationResolver) cancelTask(ctx context.Context, id string) error {
-	r.Logger.Infof("TODO: Implement cancelTask")
-	return nil
+func (r *MutationResolver) CancelJob(ctx context.Context, args struct {
+	ID string
+}) error {
+	return r.cancelJob(ctx, args.ID)
+}
+
+func (r *MutationResolver) cancelJob(ctx context.Context, id string) error {
+	now := Now(ctx)
+	_, err := r.DB.ExecContext(ctx, `
+		UPDATE task
+		SET canceled = COALESCE(canceled, ?)
+		WHERE job_id = ?
+	`, now, id)
+	return err
 }
