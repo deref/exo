@@ -33,7 +33,7 @@ var networkSpec network.Spec
 var newNetworkCmd = &cobra.Command{
 	Use:   "network <name> [options]",
 	Short: "Creates a new network",
-	Long: `Creates a new network.
+	Long: `Creates a new network component.
 
 Similar in spirit to:
 
