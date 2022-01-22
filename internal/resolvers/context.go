@@ -8,13 +8,17 @@ const (
 	taskIDKey contextKey = iota + 1
 )
 
-func ContextWithTaskID(ctx context.Context, id string) context.Context {
-	return context.WithValue(ctx, taskIDKey, id)
+type TaskContext struct {
+	JobID    string
+	ID       string
+	WorkerID string
 }
 
-func CurrentTaskID(ctx context.Context) *string {
-	if taskID, ok := ctx.Value(taskIDKey).(string); ok {
-		return &taskID
-	}
-	return nil
+func ContextWithTask(ctx context.Context, tc TaskContext) context.Context {
+	return context.WithValue(ctx, taskIDKey, &tc)
+}
+
+func CurrentTask(ctx context.Context) *TaskContext {
+	tc, _ := ctx.Value(taskIDKey).(*TaskContext)
+	return tc
 }

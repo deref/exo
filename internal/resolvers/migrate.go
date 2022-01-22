@@ -116,7 +116,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 			iri TEXT,
 			owner_type TEXT,
 			owner_id TEXT,
-			task_id TEXT,
+			job_id TEXT,
 			model TEXT NOT NULL,
 			status INT,
 			message TEXT
@@ -146,6 +146,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 			created TEXT NOT NULL,
 			updated TEXT NOT NULL,
 			started TEXT,
+			canceled TEXT,
 			finished TEXT,
 			progress_current INT,
 			progress_total INT,

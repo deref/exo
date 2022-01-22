@@ -19,10 +19,10 @@ func (r *ProgressResolver) Percent() float64 {
 }
 
 func (r *MutationResolver) reportProgress(ctx context.Context, message *string, progress *ProgressInput) {
-	taskID := CurrentTaskID(ctx)
-	if taskID == nil {
+	t := CurrentTask(ctx)
+	if t == nil {
 		return
 	}
-	_, err := r.updateTask(ctx, *taskID, message, progress)
+	_, err := r.updateTask(ctx, t.ID, t.WorkerID, message, progress)
 	r.Logger.Infof("error reporting progress on task %q: %v", err)
 }

@@ -17,7 +17,7 @@ func init() {
 	jobCmd.AddCommand(jobTreeCmd)
 }
 
-// TODO: Scope flag: "all", "stack", etc.
+// TODO: Scope flag: "all", "stack", etc. Default to current stack.
 
 var jobTreeCmd = &cobra.Command{
 	Use:   "tree [job-id...]",
