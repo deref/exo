@@ -20,7 +20,7 @@ var volumeSpec volume.Spec
 var newVolumeCmd = &cobra.Command{
 	Use:   "volume <name> [options]",
 	Short: "Creates a new volume",
-	Long: `Creates a new volume.
+	Long: `Creates a new volume component.
 
 Similar in spirit to:
 

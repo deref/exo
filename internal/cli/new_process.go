@@ -24,7 +24,7 @@ var processSpec = process.Spec{}
 var newProcessCmd = &cobra.Command{
 	Use:   "process <name> [options] [--] [name=value ...] <program> [args ...]",
 	Short: "Creates a new process",
-	Long: `Creates a new process.
+	Long: `Creates a new process component.
 	
 The double dash separator is recommended to avoid flag confusion between
 exo flags and options for your program.

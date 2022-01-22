@@ -131,7 +131,7 @@ var containerSpec container.Spec
 var newContainerCmd = &cobra.Command{
 	Use:   "container <name> [options] <image> [-- command [args...]]", // TODO: Handle most `docker run` arguments.
 	Short: "Creates a new container",
-	Long: `Creates a new container.
+	Long: `Creates a new container component.
 	
 Similar in spirit to:
 
