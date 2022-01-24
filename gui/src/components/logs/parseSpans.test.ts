@@ -44,17 +44,17 @@ test('parseSpans', () => {
     },
   ]);
 
-  check('\u001b[31mRed\u001b[32mGreen\u001b34mBlue', [
+  check('\u001b[31mRed\u001b[32mGreen\u001b[34mBlue', [
     {
-      foreground: '#ff0000',
+      foreground: 'rgb(170, 0, 0)',
       text: 'Red',
     },
     {
-      foreground: '#00ff00',
+      foreground: 'rgb(0, 170, 0)',
       text: 'Green',
     },
     {
-      foreground: '#0000ff',
+      foreground: 'rgb(0, 0, 170)',
       text: 'Blue',
     },
   ]);
