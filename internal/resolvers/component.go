@@ -37,7 +37,7 @@ func (r *QueryResolver) componentByID(ctx context.Context, id *string) (*Compone
 }
 
 func (r *QueryResolver) componentByName(ctx context.Context, stack string, name string) (*ComponentResolver, error) {
-	stackResolver, err := r.stackByRef(ctx, stack)
+	stackResolver, err := r.stackByRef(ctx, &stack)
 	if stackResolver == nil || err != nil {
 		return nil, err
 	}

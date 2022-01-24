@@ -4,8 +4,12 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 	"reflect"
 	"strings"
+
+	"github.com/deref/exo/internal/util/errutil"
+	"github.com/jmoiron/sqlx"
 )
 
 func (r *RootResolver) getRowByKey(ctx context.Context, dest interface{}, q string, id *string) error {
@@ -74,4 +78,21 @@ func (r *RootResolver) insertRow(ctx context.Context, table string, row interfac
 
 	_, err := r.DB.ExecContext(ctx, q.String(), values...)
 	return err
+}
+
+func transact(ctx context.Context, db *sqlx.DB, f func(tx *sqlx.Tx) error) error {
+	tx, err := db.BeginTxx(ctx, nil)
+	if err != nil {
+		return fmt.Errorf("beginning transaction: %w", err)
+	}
+	if err := errutil.Recovering(func() error {
+		return f(tx)
+	}); err != nil {
+		tx.Rollback()
+		return err
+	}
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("committing: %q", err)
+	}
+	return nil
 }

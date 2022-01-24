@@ -309,7 +309,7 @@ func (r *MutationResolver) NewResource(ctx context.Context, args struct {
 	var workspace *WorkspaceResolver
 	if args.Workspace != nil {
 		var err error
-		workspace, err := r.workspaceByRef(ctx, *args.Workspace)
+		workspace, err := r.workspaceByRef(ctx, args.Workspace)
 		if err != nil {
 			return nil, fmt.Errorf("resolving workspace: %w", err)
 		}

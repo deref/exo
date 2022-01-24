@@ -59,7 +59,7 @@ func (r *QueryResolver) projectByID(ctx context.Context, id *string) (*ProjectRe
 }
 
 func (r *QueryResolver) projectByRef(ctx context.Context, ref string) (*ProjectResolver, error) {
-	workspace, err := r.workspaceByRef(ctx, ref)
+	workspace, err := r.workspaceByRef(ctx, &ref)
 	if err != nil {
 		return nil, err
 	}
