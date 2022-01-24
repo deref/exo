@@ -14,6 +14,7 @@ type ComponentResolver struct {
 type ComponentRow struct {
 	ID      string `db:"id"`
 	StackID string `db:"stack_id"`
+	Type    string `db:"type"`
 	Name    string `db:"name"`
 }
 
@@ -75,6 +76,27 @@ func (r *QueryResolver) componentByRef(ctx context.Context, ref string, stack *s
 		component, err = r.componentByName(ctx, *stack, ref)
 	}
 	return component, err
+}
+
+func (r *QueryResolver) componentsByStack(ctx context.Context, stackID string) ([]*ComponentResolver, error) {
+	var rows []ComponentRow
+	err := r.DB.SelectContext(ctx, &rows, `
+		SELECT *
+		FROM component
+		WHERE stack_id = ?
+		ORDER BY id ASC
+	`, stackID)
+	if err != nil {
+		return nil, err
+	}
+	resolvers := make([]*ComponentResolver, len(rows))
+	for i, row := range rows {
+		resolvers[i] = &ComponentResolver{
+			Q:            r,
+			ComponentRow: row,
+		}
+	}
+	return resolvers, nil
 }
 
 func (r *ComponentResolver) Stack(ctx context.Context) (*StackResolver, error) {

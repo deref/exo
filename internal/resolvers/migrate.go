@@ -95,6 +95,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 		CREATE TABLE IF NOT EXISTS component (
 			id TEXT NOT NULL PRIMARY KEY,
 			stack_id TEXT NOT NULL,
+			type TEXT NOT NULL,
 			name TEXT NOT NULL
 	);`); err != nil {
 		return fmt.Errorf("creating component table: %w", err)

@@ -226,6 +226,14 @@ func (r *MutationResolver) StopWorkspaceComponents(ctx context.Context, args str
 	return nil, errors.New("NOT YET IMPLEMENTED")
 }
 
+func (r *WorkspaceResolver) Components(ctx context.Context) ([]*ComponentResolver, error) {
+	stack, err := r.Stack(ctx)
+	if stack == nil || err != nil {
+		return nil, err
+	}
+	return stack.Components(ctx)
+}
+
 func (r *WorkspaceResolver) Resources(ctx context.Context) ([]*ResourceResolver, error) {
 	stack, err := r.Stack(ctx)
 	if stack == nil || err != nil {
