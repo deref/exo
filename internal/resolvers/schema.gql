@@ -100,6 +100,7 @@ type Workspace {
 
   environment: Environment!
 
+  components: [Component!]!
   resources: [Resource!]!
 }
 
@@ -116,6 +117,7 @@ type Stack {
   workspaceID: String
   workspace: Workspace
 
+  components: [Component!]!
   resources: [Resource!]!
 }
 
@@ -125,6 +127,7 @@ type Component {
   stackId: String!
   stack: Stack!
 
+  type: String!
   name: String!
 
   resources: [Resource!]!

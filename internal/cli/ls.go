@@ -1,18 +1,12 @@
 package cli
 
 import (
-	"github.com/deref/exo/internal/core/api"
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/spf13/cobra"
 )
 
 func init() {
 	rootCmd.AddCommand(lsCmd)
-	lsCmd.Flags().StringArrayVar(&lsFlags.Types, "type", nil, "filter by type")
-}
-
-var lsFlags struct {
-	Types []string
 }
 
 var lsCmd = &cobra.Command{
@@ -22,16 +16,18 @@ var lsCmd = &cobra.Command{
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		cl := newClient()
-		workspace := requireCurrentWorkspace(ctx, cl)
-		output, err := workspace.DescribeComponents(ctx, &api.DescribeComponentsInput{
-			Types: lsFlags.Types,
-		})
-		if err != nil {
-			return err
+		var q struct {
+			Stack *struct {
+				Components []struct {
+					ID   string
+					Name string
+					Type string
+				}
+			} `graphql:"stackByRef(ref: $currentStack)"`
 		}
+		mustQueryStack(ctx, &q, nil)
 		w := cmdutil.NewTableWriter("NAME", "ID", "TYPE")
-		for _, component := range output.Components {
+		for _, component := range q.Stack.Components {
 			w.WriteRow(component.Name, component.ID, component.Type)
 		}
 		w.Flush()

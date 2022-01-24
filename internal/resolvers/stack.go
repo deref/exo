@@ -136,6 +136,10 @@ func (r *StackResolver) Workspace(ctx context.Context) (*WorkspaceResolver, erro
 	return r.Q.workspaceByID(ctx, r.WorkspaceID)
 }
 
+func (r *StackResolver) Components(ctx context.Context) ([]*ComponentResolver, error) {
+	return r.Q.componentsByStack(ctx, r.ID)
+}
+
 func (r *StackResolver) Resources(ctx context.Context) ([]*ResourceResolver, error) {
 	return r.Q.resourcesByStack(ctx, r.ID)
 }
