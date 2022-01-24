@@ -2,9 +2,12 @@ package resolvers
 
 import (
 	"context"
+	"database/sql"
+	"errors"
 	"fmt"
 
 	"github.com/deref/exo/internal/gensym"
+	"github.com/jmoiron/sqlx"
 )
 
 type StackResolver struct {
@@ -106,11 +109,11 @@ func (r *QueryResolver) stacksByProject(ctx context.Context, stackID string) ([]
 func (r *QueryResolver) StackByRef(ctx context.Context, args struct {
 	Ref string
 }) (*StackResolver, error) {
-	return r.stackByRef(ctx, args.Ref)
+	return r.stackByRef(ctx, &args.Ref)
 }
 
-func (r *QueryResolver) stackByRef(ctx context.Context, ref string) (*StackResolver, error) {
-	stack, err := r.stackByID(ctx, &ref)
+func (r *QueryResolver) stackByRef(ctx context.Context, ref *string) (*StackResolver, error) {
+	stack, err := r.stackByID(ctx, ref)
 	if stack != nil || err != nil {
 		return stack, err
 	}
@@ -145,7 +148,7 @@ func (r *MutationResolver) NewStack(ctx context.Context, args struct {
 	var ws *WorkspaceResolver
 	if args.Workspace != nil {
 		var err error
-		ws, err = r.workspaceByRef(ctx, *args.Workspace)
+		ws, err = r.workspaceByRef(ctx, args.Workspace)
 		if err != nil {
 			return nil, fmt.Errorf("resolving workspace ref: %w", err)
 		}
@@ -208,4 +211,54 @@ func (r *MutationResolver) NewStack(ctx context.Context, args struct {
 
 func (r *StackResolver) componentByRef(ctx context.Context, ref string) (*ComponentResolver, error) {
 	return r.Q.componentByRef(ctx, ref, stringPtr(r.ID))
+}
+
+func (r *MutationResolver) SetWorkspaceStack(ctx context.Context, args struct {
+	Workspace string
+	Stack     *string
+}) (*StackResolver, error) {
+	workspace, err := r.workspaceByRef(ctx, &args.Workspace)
+	if err != nil {
+		return nil, fmt.Errorf("resolving workspace: %w", err)
+	}
+	if workspace == nil {
+		return nil, fmt.Errorf("no such workspace: %q", args.Workspace)
+	}
+	var stackID *string
+	if args.Stack != nil {
+		stack, err := r.stackByRef(ctx, args.Stack)
+		if err != nil {
+			return nil, fmt.Errorf("resolving stack: %w", err)
+		}
+		if stack == nil {
+			return nil, fmt.Errorf("no such stack: %q", *args.Stack)
+		}
+		stackID = &stack.ID
+	}
+	var stackRow StackRow
+	err = transact(ctx, r.DB, func(tx *sqlx.Tx) error {
+		if _, err := tx.ExecContext(ctx, `
+			UPDATE stack
+			SET workspace_id = null
+			WHERE workspace_id = ?;
+		`, workspace.ID); err != nil {
+			return err
+		}
+		return tx.GetContext(ctx, &stackRow, `
+			UPDATE stack
+			SET workspace_id = ?
+			WHERE id = ?
+			RETURNING *;
+		`, workspace.ID, stackID)
+	})
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &StackResolver{
+		Q:        r,
+		StackRow: stackRow,
+	}, nil
 }
