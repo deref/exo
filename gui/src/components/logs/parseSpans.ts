@@ -164,10 +164,13 @@ export const parseSpans = (input: string): Span[] => {
     }
 
     // Handle control sequences.
-    const control = rest.match(/^\u001b\[([\d;]+)m/);
+    const control = rest.match(/^\u001b\[([\d;]*)m/);
     if (control) {
       emitSpan();
-      let codes = control[1].split(';').map((n) => parseInt(n, 10));
+      let codes = control[1]
+        .split(';')
+        .filter((n) => n !== '')
+        .map((n) => parseInt(n, 10));
       if (codes.length === 0) {
         codes = [0];
       }
