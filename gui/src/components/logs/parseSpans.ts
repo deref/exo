@@ -32,7 +32,7 @@ const isLinkCloseBoundary = (c: string) => {
     case '':
     case ' ':
     case '\n':
-    case '<':
+    case '>':
       return true;
     default:
       return false;
