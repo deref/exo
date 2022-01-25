@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"fmt"
 )
 
 type ComponentResolver struct {
@@ -12,10 +13,12 @@ type ComponentResolver struct {
 }
 
 type ComponentRow struct {
-	ID      string `db:"id"`
-	StackID string `db:"stack_id"`
-	Type    string `db:"type"`
-	Name    string `db:"name"`
+	ID       string   `db:"id"`
+	StackID  string   `db:"stack_id"`
+	Name     string   `db:"name"`
+	Type     string   `db:"type"`
+	Spec     string   `db:"spec"`
+	Disposed *Instant `db:"disposed"`
 }
 
 func (r *QueryResolver) ComponentByID(ctx context.Context, args struct {
@@ -105,4 +108,35 @@ func (r *ComponentResolver) Stack(ctx context.Context) (*StackResolver, error) {
 
 func (r *ComponentResolver) Resources(ctx context.Context) ([]*ResourceResolver, error) {
 	return r.Q.resourcesByComponent(ctx, r.ID)
+}
+
+func (r *MutationResolver) CreateComponent(ctx context.Context, args struct {
+	Stack string
+	Name  string
+	Type  string
+	Spec  string
+}) (*ReconciliationResolver, error) {
+	return nil, fmt.Errorf("TODO: CreateComponent")
+}
+
+func (r *MutationResolver) ReconcileComponent(ctx context.Context, args struct {
+	Stack *string
+	Ref   string
+}) (*ReconciliationResolver, error) {
+	return nil, fmt.Errorf("TODO: ReconcileComponent")
+}
+
+func (r *MutationResolver) UpdateComponent(ctx context.Context, args struct {
+	Stack *string
+	Ref   string
+	Spec  string
+}) (*ReconciliationResolver, error) {
+	return nil, fmt.Errorf("TODO: UpdateComponent")
+}
+
+func (r *MutationResolver) DisposeComponent(ctx context.Context, args struct {
+	Stack *string
+	Ref   string
+}) (*ReconciliationResolver, error) {
+	return nil, fmt.Errorf("TODO: DisposeComponent")
 }

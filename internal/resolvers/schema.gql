@@ -27,9 +27,12 @@ type Query {
 type Mutation {
   stopDaemon(): Void
 
+  # TODO: Rename newWhatever mutations to createdWhatever.
+
   newProject(displayName: String): Project!
+  
   newWorkspace(root: String!, projectID: String): Workspace!
-  newStack(cluster: String, workspace: String, name: String): Stack!
+  setWorkspaceStack(workspace: String!, stack: String): Stack
 
   buildWorkspace(workspace: String!): Void
   refreshWorkspace(workspace: String!): Void
@@ -42,8 +45,6 @@ type Mutation {
   startWorkspaceComponents(workspace: String!, components: [String!]!): Void
   stopWorkspaceComponents(workspace: String!, components: [String!]!): Void
   restartWorkspaceComponents(workspace: String!, components: [String!]!): Void
-  
-  setWorkspaceStack(workspace: String!, stack: String): Stack
 
   newResource(type: String!, model: String!, ownerType: String, workspace: String, component: String, adopt: Boolean): Resource!
   forgetResource(ref: String!): Void
@@ -62,6 +63,13 @@ type Mutation {
   updateTask(id: String!, workerId: String!, message: String, progress: ProgressInput): Task!
   finishTask(id: String!, error: String): Void
   cancelJob(id: String!): Void
+
+  newStack(cluster: String, workspace: String, name: String): Stack!
+
+  createComponent(stack: String!, name: String! type: String! spec: String!): Reconciliation!
+  reconcileComponent(stack: String, ref: String!): Reconciliation!
+  updateComponent(stack: String, ref: String!, spec: String!): Reconciliation!
+  disposeComponent(stack: String, ref: String!): Reconciliation!
 
   # For testing.
   sleep(seconds: Float!): Void
@@ -133,6 +141,11 @@ type Component {
   resources: [Resource!]!
 }
 
+type Reconciliation {
+  component: Component!
+  job: Task!
+}
+
 type Environment {
   variables: [Variable!]!
 }
@@ -194,7 +207,7 @@ type Task {
   job: Task!
   parentId: String
   mutation: String!
-  variables: String!
+  variables: String! # XXX should be _arguments_, not arbitrary gql variables.
   parent: Task
   label: String!
   workerId: String

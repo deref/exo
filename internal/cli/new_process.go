@@ -3,9 +3,7 @@ package cli
 import (
 	"strings"
 
-	"github.com/deref/exo/internal/core/api"
 	"github.com/deref/exo/internal/providers/unix/components/process"
-	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/spf13/cobra"
 )
 
@@ -36,8 +34,6 @@ before the program name.
 	Args:                  cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		cl := newClient()
-		workspace := requireCurrentWorkspace(ctx, cl)
 
 		name := args[0]
 		args = args[1:]
@@ -63,14 +59,6 @@ before the program name.
 		processSpec.Program = args[0]
 		processSpec.Arguments = args[1:]
 
-		output, err := workspace.CreateComponent(ctx, &api.CreateComponentInput{
-			Name: name,
-			Type: "process",
-			Spec: jsonutil.MustMarshalIndentString(processSpec),
-		})
-		if err != nil {
-			return err
-		}
-		return watchJob(ctx, output.JobID)
+		return createComponent(ctx, name, "process", processSpec)
 	},
 }
