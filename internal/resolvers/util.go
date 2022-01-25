@@ -96,3 +96,12 @@ func transact(ctx context.Context, db *sqlx.DB, f func(tx *sqlx.Tx) error) error
 	}
 	return nil
 }
+
+func mustSqlIn(query string, args ...interface{}) (string, []interface{}) {
+	var err error
+	query, args, err = sqlx.In(query, args...)
+	if err != nil {
+		panic(err)
+	}
+	return query, args
+}
