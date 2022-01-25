@@ -50,5 +50,5 @@ func createComponent(ctx context.Context, name, typ string, spec interface{}) er
 		return err
 	}
 	fmt.Println("Component-ID:", m.Reconciliation.Component.ID)
-	return watchJob(ctx, m.Reconciliation.Job.ID)
+	return watchOwnJob(ctx, m.Reconciliation.Job.ID)
 }

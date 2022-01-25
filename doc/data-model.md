@@ -15,7 +15,7 @@ The hierarchy diagram shows the ideal, where resources are owned by components.
 However, components may also be owned by stacks or projects. Additionally, they
 may be ownerless - aka "orphans".
 
-## Components vs Resources
+## Components and Resources
 
 Resources represent external entities manipulated by imperative operations. Exo
 tracks resource records associated with Components, which abstractly represent
