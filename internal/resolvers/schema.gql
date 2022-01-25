@@ -65,9 +65,10 @@ type Mutation {
   createStack(cluster: String, workspace: String, name: String): Stack!
 
   createComponent(stack: String!, name: String! type: String! spec: String!): Reconciliation!
-  reconcileComponent(stack: String, ref: String!): Reconciliation!
   updateComponent(stack: String, ref: String!, spec: String!): Reconciliation!
   disposeComponent(stack: String, ref: String!): Reconciliation!
+
+  reconcileComponent(stack: String, ref: String!): Void
 
   # For testing.
   sleep(seconds: Float!): Void

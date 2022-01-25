@@ -9,7 +9,6 @@ import (
 
 	"github.com/deref/exo/internal/gensym"
 	"github.com/deref/exo/internal/providers/sdk"
-	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/deref/util-go/httputil"
 )
 
@@ -392,16 +391,16 @@ func (r *MutationResolver) CreateResource(ctx context.Context, args struct {
 
 	var err error
 	if adopt {
-		if _, err := r.createJob(ctx, jobID, "refreshResource", jsonutil.MustMarshalString(map[string]interface{}{
+		if _, err := r.createJob(ctx, jobID, "refreshResource", map[string]interface{}{
 			"ref": row.ID,
-		})); err != nil {
+		}); err != nil {
 			r.Logger.Infof("error starting resource %s adoption: %w", row.ID, err)
 		}
 	} else {
-		if _, err = r.createJob(ctx, jobID, "initializeResource", jsonutil.MustMarshalString(map[string]interface{}{
+		if _, err = r.createJob(ctx, jobID, "initializeResource", map[string]interface{}{
 			"ref":   row.ID,
 			"model": args.Model,
-		})); err != nil {
+		}); err != nil {
 			r.Logger.Infof("error starting resource %s creation: %w", row.ID, err)
 		}
 	}

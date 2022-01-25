@@ -10,6 +10,7 @@ import (
 	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/chrono"
 	"github.com/deref/exo/internal/gensym"
+	"github.com/deref/exo/internal/util/jsonutil"
 )
 
 type TaskResolver struct {
@@ -41,19 +42,23 @@ func (r *MutationResolver) CreateTask(ctx context.Context, args struct {
 	Arguments string
 }) (*TaskResolver, error) {
 	id := newTaskID()
-	return r.createTask(ctx, id, args.ParentID, args.Mutation, args.Arguments)
+	var taskArgs map[string]interface{}
+	if err := jsonutil.UnmarshalString(args.Arguments, &taskArgs); err != nil {
+		return nil, fmt.Errorf("unmarshaling task arguments: %w", err)
+	}
+	return r.createTask(ctx, id, args.ParentID, args.Mutation, taskArgs)
 }
 
 var newTaskID = gensym.RandomBase32
 
-func (r *MutationResolver) createJob(ctx context.Context, id string, mutation string, args string) (*TaskResolver, error) {
+func (r *MutationResolver) createJob(ctx context.Context, id string, mutation string, args map[string]interface{}) (*TaskResolver, error) {
 	parentID := (*string)(nil)
 	return r.createTask(ctx, id, parentID, mutation, args)
 }
 
 // The id is passed as a parameter to allow callers to use a pre-allocated id
 // in a database field to establish a mutual exclusion lock.
-func (r *MutationResolver) createTask(ctx context.Context, id string, parentID *string, mutation string, args string) (*TaskResolver, error) {
+func (r *MutationResolver) createTask(ctx context.Context, id string, parentID *string, mutation string, args map[string]interface{}) (*TaskResolver, error) {
 	if id == "" {
 		panic("id is required")
 	}
@@ -62,7 +67,7 @@ func (r *MutationResolver) createTask(ctx context.Context, id string, parentID *
 		ID:        id,
 		ParentID:  parentID,
 		Mutation:  mutation,
-		Arguments: args,
+		Arguments: jsonutil.MustMarshalString(args),
 		Status:    api.TaskStatusPending,
 		Created:   now,
 		Updated:   now,

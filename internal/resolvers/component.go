@@ -5,6 +5,8 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+
+	"github.com/deref/exo/internal/gensym"
 )
 
 type ComponentResolver struct {
@@ -116,14 +118,25 @@ func (r *MutationResolver) CreateComponent(ctx context.Context, args struct {
 	Type  string
 	Spec  string
 }) (*ReconciliationResolver, error) {
-	return nil, fmt.Errorf("TODO: CreateComponent")
-}
+	stack, err := r.stackByRef(ctx, &args.Stack)
+	if err != nil {
+		return nil, fmt.Errorf("resolving stack: %w", err)
+	}
+	if stack == nil {
+		return nil, fmt.Errorf("no such stack: %q", args.Stack)
+	}
 
-func (r *MutationResolver) ReconcileComponent(ctx context.Context, args struct {
-	Stack *string
-	Ref   string
-}) (*ReconciliationResolver, error) {
-	return nil, fmt.Errorf("TODO: ReconcileComponent")
+	row := ComponentRow{
+		ID:      gensym.RandomBase32(),
+		StackID: stack.ID,
+		Name:    args.Name,
+		Type:    args.Type,
+		Spec:    args.Spec,
+	}
+	if err := r.insertRow(ctx, "component", row); err != nil {
+		return nil, fmt.Errorf("inserting: %w", err)
+	}
+	return r.beginComponentReconciliation(ctx, row)
 }
 
 func (r *MutationResolver) UpdateComponent(ctx context.Context, args struct {
@@ -139,4 +152,20 @@ func (r *MutationResolver) DisposeComponent(ctx context.Context, args struct {
 	Ref   string
 }) (*ReconciliationResolver, error) {
 	return nil, fmt.Errorf("TODO: DisposeComponent")
+}
+
+func (r *MutationResolver) beginComponentReconciliation(ctx context.Context, row ComponentRow) (*ReconciliationResolver, error) {
+	job, err := r.createJob(ctx, newTaskID(), "reconcileComponent", map[string]interface{}{
+		"component": row.ID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("creating reconciliation job: %w", err)
+	}
+	return &ReconciliationResolver{
+		Component: &ComponentResolver{
+			Q:            r,
+			ComponentRow: row,
+		},
+		Job: job,
+	}, nil
 }
