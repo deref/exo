@@ -95,7 +95,7 @@ To set the owner to a component, supply '--component=ref', which implies
 			Resource struct {
 				ID     string
 				TaskID *string
-			} `graphql:"newResource(type: $type, model: $model, workspace: $workspace, ownerType: $ownerType, component: $component, adopt: $adopt)"`
+			} `graphql:"createResource(type: $type, model: $model, workspace: $workspace, ownerType: $ownerType, component: $component, adopt: $adopt)"`
 		}
 		vars := map[string]interface{}{
 			"type":  typ,

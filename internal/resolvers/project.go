@@ -69,7 +69,7 @@ func (r *QueryResolver) projectByRef(ctx context.Context, ref string) (*ProjectR
 	return workspace.Project(ctx)
 }
 
-func (r *MutationResolver) NewProject(ctx context.Context, args struct {
+func (r *MutationResolver) CreateProject(ctx context.Context, args struct {
 	DisplayName *string
 }) (*ProjectResolver, error) {
 	var row ProjectRow

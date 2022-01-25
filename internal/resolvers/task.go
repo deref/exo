@@ -35,25 +35,25 @@ type TaskRow struct {
 	Message         *string  `db:"message"`
 }
 
-func (r *MutationResolver) NewTask(ctx context.Context, args struct {
+func (r *MutationResolver) CreateTask(ctx context.Context, args struct {
 	ParentID  *string
 	Mutation  string
 	Variables string
 }) (*TaskResolver, error) {
 	id := newTaskID()
-	return r.newTask(ctx, id, args.ParentID, args.Mutation, args.Variables)
+	return r.createTask(ctx, id, args.ParentID, args.Mutation, args.Variables)
 }
 
 var newTaskID = gensym.RandomBase32
 
-func (r *MutationResolver) newJob(ctx context.Context, id string, mutation string, variables string) (*TaskResolver, error) {
+func (r *MutationResolver) createJob(ctx context.Context, id string, mutation string, variables string) (*TaskResolver, error) {
 	parentID := (*string)(nil)
-	return r.newTask(ctx, id, parentID, mutation, variables)
+	return r.createTask(ctx, id, parentID, mutation, variables)
 }
 
 // The id is passed as a parameter to allow callers to use a pre-allocated id
 // in a database field to establish a mutual exclusion lock.
-func (r *MutationResolver) newTask(ctx context.Context, id string, parentID *string, mutation string, variables string) (*TaskResolver, error) {
+func (r *MutationResolver) createTask(ctx context.Context, id string, parentID *string, mutation string, variables string) (*TaskResolver, error) {
 	if id == "" {
 		panic("id is required")
 	}

@@ -34,7 +34,7 @@ working directory.`,
 		var m struct {
 			Workspace struct {
 				ID string
-			} `graphql:"newWorkspace(root: $root)"`
+			} `graphql:"createWorkspace(root: $root)"`
 		}
 		if err := api.Mutate(ctx, svc, &m, map[string]interface{}{
 			"root": root,

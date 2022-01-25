@@ -42,7 +42,7 @@ func Enqueue(ctx context.Context, svc Service, mutation string, vars map[string]
 	var m struct {
 		Job struct {
 			ID string
-		} `graphql:"newTask(mutation: $mutation, variables: $variables)"`
+		} `graphql:"createTask(mutation: $mutation, variables: $variables)"`
 	}
 	variablesJSON, err := jsonutil.MarshalString(vars)
 	if err != nil {

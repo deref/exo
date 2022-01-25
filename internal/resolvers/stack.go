@@ -144,7 +144,7 @@ func (r *StackResolver) Resources(ctx context.Context) ([]*ResourceResolver, err
 	return r.Q.resourcesByStack(ctx, r.ID)
 }
 
-func (r *MutationResolver) NewStack(ctx context.Context, args struct {
+func (r *MutationResolver) CreateStack(ctx context.Context, args struct {
 	Workspace *string
 	Name      *string
 	Cluster   *string

@@ -49,7 +49,7 @@ cluster.`,
 		var m struct {
 			Stack struct {
 				ID string
-			} `graphql:"newStack(name: $name, workspace: $workspace, cluster: $cluster)"`
+			} `graphql:"createStack(name: $name, workspace: $workspace, cluster: $cluster)"`
 		}
 		if err := api.Mutate(ctx, svc, &m, vars); err != nil {
 			return err

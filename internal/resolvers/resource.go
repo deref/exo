@@ -285,7 +285,7 @@ func (r *ResourceResolver) Operation(ctx context.Context) (*string, error) {
 	return &operation, err
 }
 
-func (r *MutationResolver) NewResource(ctx context.Context, args struct {
+func (r *MutationResolver) CreateResource(ctx context.Context, args struct {
 	Type      string
 	Model     string
 	OwnerType *string
@@ -392,13 +392,13 @@ func (r *MutationResolver) NewResource(ctx context.Context, args struct {
 
 	var err error
 	if adopt {
-		if _, err := r.newJob(ctx, jobID, "refreshResource", jsonutil.MustMarshalString(map[string]interface{}{
+		if _, err := r.createJob(ctx, jobID, "refreshResource", jsonutil.MustMarshalString(map[string]interface{}{
 			"ref": row.ID,
 		})); err != nil {
 			r.Logger.Infof("error starting resource %s adoption: %w", row.ID, err)
 		}
 	} else {
-		if _, err = r.newJob(ctx, jobID, "initializeResource", jsonutil.MustMarshalString(map[string]interface{}{
+		if _, err = r.createJob(ctx, jobID, "initializeResource", jsonutil.MustMarshalString(map[string]interface{}{
 			"ref":   row.ID,
 			"model": args.Model,
 		})); err != nil {
@@ -473,7 +473,7 @@ func (r *MutationResolver) doResourceOperation(ctx context.Context, ref string, 
 
 	// Acquire resource lock or confirm prior acquisition.
 	// For resource initialization, the lock will be pre-acquired, so that
-	// newResource can return a resource ID synchronously.
+	// createResource can return a resource ID synchronously.
 	var row ResourceRow
 	if err := r.DB.GetContext(ctx, &row, `
 		UPDATE resource
