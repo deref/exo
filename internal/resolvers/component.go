@@ -156,7 +156,7 @@ func (r *MutationResolver) DisposeComponent(ctx context.Context, args struct {
 
 func (r *MutationResolver) beginComponentReconciliation(ctx context.Context, row ComponentRow) (*ReconciliationResolver, error) {
 	job, err := r.createJob(ctx, newTaskID(), "reconcileComponent", map[string]interface{}{
-		"component": row.ID,
+		"ref": row.ID,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("creating reconciliation job: %w", err)
