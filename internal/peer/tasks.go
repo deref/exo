@@ -63,7 +63,7 @@ func WorkTask(ctx context.Context, p *Peer, workerID string, id string) error {
 			ID        string
 			JobID     string
 			Mutation  string
-			Variables string
+			Arguments string
 		} `graphql:"startTask(id: $id, workerId: $workerId)"`
 	}
 	if err := api.Mutate(ctx, p, &start, map[string]interface{}{
@@ -120,17 +120,17 @@ func WorkTask(ctx context.Context, p *Peer, workerID string, id string) error {
 		defer cancel()
 
 		taskErr := func() error {
-			var vars map[string]interface{}
-			if err := jsonutil.UnmarshalString(task.Variables, &vars); err != nil {
-				return fmt.Errorf("unmarshaling variables: %w", err)
+			var args map[string]interface{}
+			if err := jsonutil.UnmarshalString(task.Arguments, &args); err != nil {
+				return fmt.Errorf("unmarshaling arguments: %w", err)
 			}
 
-			mut, err := formatVoidMutation(task.Mutation, vars)
+			mut, err := formatVoidMutation(task.Mutation, args)
 			if err != nil {
 				return fmt.Errorf("encoding mutation: %w", err)
 			}
 
-			return p.Do(cancelableCtx, mut, vars, &res)
+			return p.Do(cancelableCtx, mut, args, &res)
 		}()
 
 		var finish struct {

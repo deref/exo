@@ -22,7 +22,7 @@ type TaskRow struct {
 	JobID           string   `db:"job_id"`
 	ParentID        *string  `db:"parent_id"`
 	Mutation        string   `db:"mutation"`
-	Variables       string   `db:"variables"`
+	Arguments       string   `db:"arguments"`
 	WorkerID        *string  `db:"worker_id"`
 	Status          string   `db:"status"`
 	Created         Instant  `db:"created"`
@@ -38,22 +38,22 @@ type TaskRow struct {
 func (r *MutationResolver) CreateTask(ctx context.Context, args struct {
 	ParentID  *string
 	Mutation  string
-	Variables string
+	Arguments string
 }) (*TaskResolver, error) {
 	id := newTaskID()
-	return r.createTask(ctx, id, args.ParentID, args.Mutation, args.Variables)
+	return r.createTask(ctx, id, args.ParentID, args.Mutation, args.Arguments)
 }
 
 var newTaskID = gensym.RandomBase32
 
-func (r *MutationResolver) createJob(ctx context.Context, id string, mutation string, variables string) (*TaskResolver, error) {
+func (r *MutationResolver) createJob(ctx context.Context, id string, mutation string, args string) (*TaskResolver, error) {
 	parentID := (*string)(nil)
-	return r.createTask(ctx, id, parentID, mutation, variables)
+	return r.createTask(ctx, id, parentID, mutation, args)
 }
 
 // The id is passed as a parameter to allow callers to use a pre-allocated id
 // in a database field to establish a mutual exclusion lock.
-func (r *MutationResolver) createTask(ctx context.Context, id string, parentID *string, mutation string, variables string) (*TaskResolver, error) {
+func (r *MutationResolver) createTask(ctx context.Context, id string, parentID *string, mutation string, args string) (*TaskResolver, error) {
 	if id == "" {
 		panic("id is required")
 	}
@@ -62,7 +62,7 @@ func (r *MutationResolver) createTask(ctx context.Context, id string, parentID *
 		ID:        id,
 		ParentID:  parentID,
 		Mutation:  mutation,
-		Variables: variables,
+		Arguments: args,
 		Status:    api.TaskStatusPending,
 		Created:   now,
 		Updated:   now,
@@ -81,14 +81,14 @@ func (r *MutationResolver) createTask(ctx context.Context, id string, parentID *
 	}
 	if _, err := r.DB.ExecContext(ctx, `
 		INSERT INTO task (
-			id, job_id, parent_id, mutation, variables, worker_id, status, created,
+			id, job_id, parent_id, mutation, arguments, worker_id, status, created,
 			updated, started, finished, progress_current, progress_total, message
 		)
 		VALUES (
 			?, ?, ?, ?, ?, ?, ?, ?,
 			?, ?, ?, ?, ?, ?
 		)
-	`, row.ID, row.JobID, row.ParentID, row.Mutation, row.Variables, row.WorkerID, row.Status, row.Created,
+	`, row.ID, row.JobID, row.ParentID, row.Mutation, row.Arguments, row.WorkerID, row.Status, row.Created,
 		row.Updated, row.Started, row.Finished, row.ProgressCurrent, row.ProgressTotal, row.Message,
 	); err != nil {
 		return nil, err

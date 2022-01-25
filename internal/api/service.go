@@ -42,15 +42,15 @@ func Enqueue(ctx context.Context, svc Service, mutation string, vars map[string]
 	var m struct {
 		Job struct {
 			ID string
-		} `graphql:"createTask(mutation: $mutation, variables: $variables)"`
+		} `graphql:"createTask(mutation: $mutation, arguments: $arguments)"`
 	}
 	variablesJSON, err := jsonutil.MarshalString(vars)
 	if err != nil {
-		return "", fmt.Errorf("marshaling variables to json: %w", err)
+		return "", fmt.Errorf("marshaling arguments to json: %w", err)
 	}
 	err = Mutate(ctx, svc, &m, map[string]interface{}{
 		"mutation":  mutation,
-		"variables": variablesJSON,
+		"arguments": variablesJSON,
 	})
 	return m.Job.ID, err
 }

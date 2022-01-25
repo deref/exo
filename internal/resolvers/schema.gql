@@ -55,7 +55,7 @@ type Mutation {
   updateResource(ref: String!, model: String!): Resource!
   disposeResource(ref: String!): Void
 
-  createTask(parentId: String, mutation: String!, variables: String!): Task!
+  createTask(parentId: String, mutation: String!, arguments: String!): Task!
   acquireTask(workerId: String!, jobId: String, timeout: Int): Task
   startTask(id: String!, workerId: String!): Task!
   updateTask(id: String!, workerId: String!, message: String, progress: ProgressInput): Task!
@@ -205,7 +205,7 @@ type Task {
   job: Task!
   parentId: String
   mutation: String!
-  variables: String! # XXX should be _arguments_, not arbitrary gql variables.
+  arguments: String!
   parent: Task
   label: String!
   workerId: String
