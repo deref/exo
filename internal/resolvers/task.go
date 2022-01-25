@@ -251,6 +251,26 @@ func (r *QueryResolver) jobByID(ctx context.Context, id *string) (*TaskResolver,
 	return task, err
 }
 
+func (r *QueryResolver) AllTasks(ctx context.Context) ([]*TaskResolver, error) {
+	var rows []TaskRow
+	err := r.DB.SelectContext(ctx, &rows, `
+		SELECT *
+		FROM task
+		ORDER BY task.id ASC
+	`)
+	if err != nil {
+		return nil, err
+	}
+	resolvers := make([]*TaskResolver, len(rows))
+	for i, row := range rows {
+		resolvers[i] = &TaskResolver{
+			Q:       r,
+			TaskRow: row,
+		}
+	}
+	return resolvers, nil
+}
+
 func (r *QueryResolver) TasksByJobID(ctx context.Context, args struct {
 	JobID string
 }) ([]*TaskResolver, error) {
@@ -258,15 +278,28 @@ func (r *QueryResolver) TasksByJobID(ctx context.Context, args struct {
 }
 
 func (r *QueryResolver) tasksByJobID(ctx context.Context, jobID string) ([]*TaskResolver, error) {
+	return r.tasksByJobIDs(ctx, []string{jobID})
+}
+
+func (r *QueryResolver) TasksByJobIDs(ctx context.Context, args struct {
+	JobIDs []string
+}) ([]*TaskResolver, error) {
+	return r.tasksByJobIDs(ctx, args.JobIDs)
+}
+
+func (r *QueryResolver) tasksByJobIDs(ctx context.Context, jobIDs []string) ([]*TaskResolver, error) {
 	var rows []TaskRow
-	err := r.DB.SelectContext(ctx, &rows, `
-		SELECT *
-		FROM task
-		WHERE job_id = ?
-		ORDER BY task.id ASC
-  `, jobID)
-	if err != nil {
-		return nil, err
+	if len(jobIDs) > 0 {
+		query, args := mustSqlIn(`
+			SELECT *
+			FROM task
+			WHERE job_id IN (?)
+			ORDER BY task.id ASC
+		`, jobIDs)
+		err := r.DB.SelectContext(ctx, &rows, query, args...)
+		if err != nil {
+			return nil, err
+		}
 	}
 	resolvers := make([]*TaskResolver, len(rows))
 	for i, row := range rows {

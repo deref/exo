@@ -21,7 +21,9 @@ type Query {
   resourceById(id: String!): Resource
   resourceByRef(ref: String!): Resource
   
+  allTasks: [Task!]!
   tasksByJobId(jobId: String!): [Task!]!
+  tasksByJobIds(jobIds: [String!]!): [Task!]!
 }
 
 type Mutation {

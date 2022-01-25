@@ -30,16 +30,21 @@ If no job ids are provided, lists all jobs in the scope.`,
 
 		var tasks []taskFragment
 		var err error
-		if len(args) == 1 {
+		// TODO: Filter by scope.
+		if len(args) == 0 {
 			var q struct {
-				Tasks []taskFragment `graphql:"tasksByJobId(jobId: $jobId)"`
+				Tasks []taskFragment `graphql:"allTasks"`
 			}
-			err = api.Query(ctx, svc, &q, map[string]interface{}{
-				"jobId": args[0],
-			})
+			err = api.Query(ctx, svc, &q, nil)
 			tasks = q.Tasks
 		} else {
-			return fmt.Errorf("NOT YET IMPLEMENTED: listing multiple jobs")
+			var q struct {
+				Tasks []taskFragment `graphql:"tasksByJobIds(jobIds: $jobIds)"`
+			}
+			err = api.Query(ctx, svc, &q, map[string]interface{}{
+				"jobIds": args,
+			})
+			tasks = q.Tasks
 		}
 		if err != nil {
 			return fmt.Errorf("querying tasks: %w", err)
