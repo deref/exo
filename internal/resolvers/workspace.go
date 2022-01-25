@@ -91,7 +91,7 @@ func (r *QueryResolver) workspaceByRef(ctx context.Context, ref *string) (*Works
 	return deepest, nil
 }
 
-func (r *MutationResolver) NewWorkspace(ctx context.Context, args struct {
+func (r *MutationResolver) CreateWorkspace(ctx context.Context, args struct {
 	Root      string
 	ProjectID *string
 }) (*WorkspaceResolver, error) {
@@ -100,7 +100,7 @@ func (r *MutationResolver) NewWorkspace(ctx context.Context, args struct {
 	row.Root = args.Root
 
 	if args.ProjectID == nil {
-		proj, err := r.NewProject(ctx, struct{ DisplayName *string }{})
+		proj, err := r.CreateProject(ctx, struct{ DisplayName *string }{})
 		if err != nil {
 			return nil, fmt.Errorf("creating new project for workspace: %w", err)
 		}

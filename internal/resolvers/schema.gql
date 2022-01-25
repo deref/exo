@@ -27,11 +27,9 @@ type Query {
 type Mutation {
   stopDaemon(): Void
 
-  # TODO: Rename newWhatever mutations to createdWhatever.
-
-  newProject(displayName: String): Project!
+  createProject(displayName: String): Project!
   
-  newWorkspace(root: String!, projectID: String): Workspace!
+  createWorkspace(root: String!, projectID: String): Workspace!
   setWorkspaceStack(workspace: String!, stack: String): Stack
 
   buildWorkspace(workspace: String!): Void
@@ -46,7 +44,7 @@ type Mutation {
   stopWorkspaceComponents(workspace: String!, components: [String!]!): Void
   restartWorkspaceComponents(workspace: String!, components: [String!]!): Void
 
-  newResource(type: String!, model: String!, ownerType: String, workspace: String, component: String, adopt: Boolean): Resource!
+  createResource(type: String!, model: String!, ownerType: String, workspace: String, component: String, adopt: Boolean): Resource!
   forgetResource(ref: String!): Void
   cancelResourceOperation(ref: String!): Resource!
 
@@ -57,14 +55,14 @@ type Mutation {
   updateResource(ref: String!, model: String!): Resource!
   disposeResource(ref: String!): Void
 
-  newTask(parentId: String, mutation: String!, variables: String!): Task!
+  createTask(parentId: String, mutation: String!, variables: String!): Task!
   acquireTask(workerId: String!, jobId: String, timeout: Int): Task
   startTask(id: String!, workerId: String!): Task!
   updateTask(id: String!, workerId: String!, message: String, progress: ProgressInput): Task!
   finishTask(id: String!, error: String): Void
   cancelJob(id: String!): Void
 
-  newStack(cluster: String, workspace: String, name: String): Stack!
+  createStack(cluster: String, workspace: String, name: String): Stack!
 
   createComponent(stack: String!, name: String! type: String! spec: String!): Reconciliation!
   reconcileComponent(stack: String, ref: String!): Reconciliation!

@@ -27,7 +27,7 @@ var projectNewCmd = &cobra.Command{
 		var m struct {
 			Project struct {
 				ID string
-			} `graphql:"newProject(displayName: $displayName)"`
+			} `graphql:"createProject(displayName: $displayName)"`
 		}
 		if err := api.Mutate(ctx, svc, &m, map[string]interface{}{
 			"displayName": projectNewFlags.DisplayName,
