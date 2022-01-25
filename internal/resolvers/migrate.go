@@ -143,7 +143,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 			job_id TEXT NOT NULL,
 			parent_id TEXT,
 			mutation TEXT NOT NULL,
-			variables TEXT NOT NULL,
+			arguments TEXT NOT NULL,
 			worker_id TEXT,
 			status TEXT NOT NULL,
 			created TEXT NOT NULL,

@@ -18,11 +18,11 @@ func init() {
 }
 
 var jobMutateCmd = &cobra.Command{
-	Use:   "mutate <mutation> <variable...>",
+	Use:   "mutate <mutation> <arguments...>",
 	Short: "Run a mutation as a job.",
 	Long: `Run a mutation as a job, waiting or not as per the global --async flag.
 
-Variables are specified as JSON with the same syntax as 'exo json'.`,
+Arguments are specified as JSON with the same syntax as 'exo json'.`,
 	Hidden: true,
 	Args:   cobra.MinimumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
