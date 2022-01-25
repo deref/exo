@@ -112,6 +112,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 
 	// Resource.
 
+	// TODO: Consider dropping job_id field in favor of table for reified locks.
 	if _, err := r.DB.ExecContext(ctx, `
 		CREATE TABLE IF NOT EXISTS resource (
 			id TEXT NOT NULL PRIMARY KEY,

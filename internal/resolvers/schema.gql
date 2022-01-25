@@ -172,6 +172,7 @@ type Resource {
   component: Component
   
   # If non-null, job has a lock on resource and state will not be "idle".
+  # TODO: Consider explicit Lock type.
   jobId: String
   job: Task
   operation: String # creating, adopting, refreshing, updating, or disposing.
