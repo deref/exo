@@ -13,6 +13,7 @@ var ErrResourceGone = errutil.NewHTTPError(http.StatusGone, "resource gone")
 
 // TODO: Improve validation and error reporting for reflective calls.
 
+// TODO: Rename to ResourceController, or move to a resource-specific package.
 type Controller struct {
 	v reflect.Value
 }

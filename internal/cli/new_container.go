@@ -3,10 +3,8 @@ package cli
 import (
 	"fmt"
 
-	"github.com/deref/exo/internal/core/api"
 	"github.com/deref/exo/internal/providers/docker/components/container"
 	"github.com/deref/exo/internal/providers/docker/compose"
-	"github.com/deref/exo/internal/util/yamlutil"
 	"github.com/spf13/cobra"
 )
 
@@ -144,8 +142,6 @@ exo flags and options for your docker container command.
 	Args:                  cobra.MinimumNArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		cl := newClient()
-		workspace := requireCurrentWorkspace(ctx, cl)
 
 		name := args[0]
 
@@ -157,14 +153,6 @@ exo flags and options for your docker container command.
 			return fmt.Errorf("invalid publish option value: %w", err)
 		}
 
-		output, err := workspace.CreateComponent(ctx, &api.CreateComponentInput{
-			Name: name,
-			Type: "container",
-			Spec: yamlutil.MustMarshalString(containerSpec),
-		})
-		if err != nil {
-			return err
-		}
-		return watchJob(ctx, output.JobID)
+		return createComponent(ctx, name, "container", containerSpec)
 	},
 }
