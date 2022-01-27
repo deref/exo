@@ -89,7 +89,8 @@ func (r *QueryResolver) componentsByStack(ctx context.Context, stackID string) (
 		SELECT *
 		FROM component
 		WHERE stack_id = ?
-		ORDER BY id ASC
+		AND disposed IS NULL
+		ORDER BY name ASC
 	`, stackID)
 	if err != nil {
 		return nil, err

@@ -14,18 +14,21 @@ var ErrResourceGone = errutil.NewHTTPError(http.StatusGone, "resource gone")
 // TODO: Improve validation and error reporting for reflective calls.
 
 // TODO: Rename to ResourceController, or move to a resource-specific package.
-type Controller struct {
-	v reflect.Value
+type ResourceController struct {
+	impl reflect.Value
 }
 
+// TODO: Most models are JSON, so this interface is a pain. Instead, check
+// for json.Marshaler, then encoding.TextMarshaler, and finally just do normal
+// JSON marshaling. Similar for unmarshaling.
 type Model interface {
 	UnmarshalModel(ctx context.Context, s string) error
 	MarshalModel(ctx context.Context) (string, error)
 }
 
-func NewController(v interface{}) *Controller {
-	return &Controller{
-		v: reflect.ValueOf(v),
+func NewResourceController(impl interface{}) *ResourceController {
+	return &ResourceController{
+		impl: reflect.ValueOf(impl),
 	}
 }
 
@@ -46,9 +49,9 @@ func marshalModel(ctx context.Context, typ reflect.Type, m Model) (string, error
 	return s, err
 }
 
-func (c *Controller) Identify(ctx context.Context, model string) (iri string, err error) {
+func (c *ResourceController) Identify(ctx context.Context, model string) (iri string, err error) {
 	defer errutil.RecoverTo(&err)
-	method := c.v.MethodByName("Identify")
+	method := c.impl.MethodByName("Identify")
 	unmarshaledModel, err := unmarshalModel(ctx, "model", method.Type().In(1), model)
 	if err != nil {
 		return "", err
@@ -62,9 +65,9 @@ func (c *Controller) Identify(ctx context.Context, model string) (iri string, er
 	return iri, err
 }
 
-func (c *Controller) Create(ctx context.Context, model string) (updatedModel string, err error) {
+func (c *ResourceController) Create(ctx context.Context, model string) (updatedModel string, err error) {
 	defer errutil.RecoverTo(&err)
-	method := c.v.MethodByName("Create")
+	method := c.impl.MethodByName("Create")
 	unmarshaledModel, err := unmarshalModel(ctx, "model", method.Type().In(1), model)
 	if err != nil {
 		return "", err
@@ -80,9 +83,9 @@ func (c *Controller) Create(ctx context.Context, model string) (updatedModel str
 	return unmarshaledModel.MarshalModel(ctx)
 }
 
-func (c *Controller) Read(ctx context.Context, model string) (updatedModel string, err error) {
+func (c *ResourceController) Read(ctx context.Context, model string) (updatedModel string, err error) {
 	defer errutil.RecoverTo(&err)
-	method := c.v.MethodByName("Read")
+	method := c.impl.MethodByName("Read")
 	unmarshaledModel, err := unmarshalModel(ctx, "model", method.Type().In(1), model)
 	if err != nil {
 		return "", err
@@ -98,9 +101,9 @@ func (c *Controller) Read(ctx context.Context, model string) (updatedModel strin
 	return unmarshaledModel.MarshalModel(ctx)
 }
 
-func (c *Controller) Update(ctx context.Context, prev string, cur string) (updatedModel string, err error) {
+func (c *ResourceController) Update(ctx context.Context, prev string, cur string) (updatedModel string, err error) {
 	defer errutil.RecoverTo(&err)
-	method := c.v.MethodByName("Update")
+	method := c.impl.MethodByName("Update")
 	unmarshaledPrev, err := unmarshalModel(ctx, "previous model", method.Type().In(1), prev)
 	if err != nil {
 		return "", err
@@ -121,9 +124,9 @@ func (c *Controller) Update(ctx context.Context, prev string, cur string) (updat
 	return unmarshaledCur.MarshalModel(ctx)
 }
 
-func (c *Controller) Delete(ctx context.Context, model string) (err error) {
+func (c *ResourceController) Delete(ctx context.Context, model string) (err error) {
 	defer errutil.RecoverTo(&err)
-	method := c.v.MethodByName("Delete")
+	method := c.impl.MethodByName("Delete")
 	unmarshaledModel, err := unmarshalModel(ctx, "model", method.Type().In(1), model)
 	if err != nil {
 		return err

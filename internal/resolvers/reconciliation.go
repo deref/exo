@@ -22,6 +22,20 @@ func (r *MutationResolver) ReconcileComponent(ctx context.Context, args struct {
 	if component == nil {
 		return nil, errors.New("no such component")
 	}
-	// XXX reconcile here.
+
+	ctrl := getComponentController(ctx, component.Type)
+	if ctrl == nil {
+		return nil, fmt.Errorf("no controller for component type: %s", component.Type)
+	}
+
+	spec, err := component.evalSpec(ctx)
+
+	rendered, err := ctrl.Render(ctx, spec)
+	if err != nil {
+		return nil, fmt.Errorf("rendering: %w", err)
+	}
+
+	fmt.Printf("!!! RENDERED: %#v\n", rendered)
+
 	return nil, nil
 }
