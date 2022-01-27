@@ -7,6 +7,7 @@ import (
 	"fmt"
 
 	"github.com/deref/exo/internal/gensym"
+	"github.com/deref/exo/internal/manifest/exocue"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -50,7 +51,9 @@ func (r *QueryResolver) StackByID(ctx context.Context, args struct {
 }
 
 func (r *QueryResolver) stackByID(ctx context.Context, id *string) (*StackResolver, error) {
-	s := &StackResolver{}
+	s := &StackResolver{
+		Q: r,
+	}
 	err := r.getRowByKey(ctx, &s.StackRow, `
 		SELECT *
 		FROM stack
@@ -265,4 +268,26 @@ func (r *MutationResolver) SetWorkspaceStack(ctx context.Context, args struct {
 		Q:        r,
 		StackRow: stackRow,
 	}, nil
+}
+
+func (r *StackResolver) Configuration(ctx context.Context) (string, error) {
+	cfg, err := r.configuration(ctx)
+	if err != nil {
+		return "", err
+	}
+	return exocue.FormatString(cfg.Eval())
+}
+
+// TODO: It might be valuable to cache this for multiple
+// ComponentResolver.evalSpec calls.
+func (r *StackResolver) configuration(ctx context.Context) (*exocue.Configuration, error) {
+	components, err := r.Components(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("resolving components: %w", err)
+	}
+	b := exocue.NewBuilder()
+	for _, component := range components {
+		b.AddComponent(component.Name, component.Type, component.Spec)
+	}
+	return b.Build(), nil
 }

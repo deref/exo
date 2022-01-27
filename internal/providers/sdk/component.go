@@ -19,7 +19,7 @@ func NewComponentController(impl interface{}) *ComponentController {
 	}
 }
 
-func unmarshalSpec(ctx context.Context, typ reflect.Type, v cue.Value) (interface{}, error) {
+func unmarshalComponentConfig(ctx context.Context, typ reflect.Type, v cue.Value) (interface{}, error) {
 	out := reflect.New(typ.Elem()).Interface()
 	err := v.Decode(out)
 	if err != nil {
@@ -28,10 +28,10 @@ func unmarshalSpec(ctx context.Context, typ reflect.Type, v cue.Value) (interfac
 	return out, err
 }
 
-func (c *ComponentController) Render(ctx context.Context, spec cue.Value) (_ *RenderResult, err error) {
+func (c *ComponentController) Render(ctx context.Context, cfg cue.Value) (_ *RenderResult, err error) {
 	defer errutil.RecoverTo(&err)
 	method := c.impl.MethodByName("Render")
-	unmarshaledSpec, err := unmarshalSpec(ctx, method.Type().In(1), spec)
+	unmarshaledSpec, err := unmarshalComponentConfig(ctx, method.Type().In(1), cfg)
 	if err != nil {
 		return nil, err
 	}

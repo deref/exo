@@ -1,3 +1,4 @@
+// TODO: can/should manifests close various structures?
 $Manifest: {
   //exo: string
   environment: $Environment
@@ -17,6 +18,9 @@ $Component: {
   type: string
   name: string
   spec: {}
+  environment: $Environment & {
+    EXO_COMPONENT: name
+  }
 }
 
 $Stack: {
@@ -25,13 +29,14 @@ $Stack: {
 }
 
 // TODO: Move to os package, prefix type string, etc.
-$Daemon: $Component & {
+$Daemon: $component=($Component & {
   type: "daemon"
   spec: {
     program: string
     arguments: [...string] | *[]
-    environment: $stack.environment
+    environment: $component.environment
   }
-}
+  environment: $stack.environment
+})
 
 $stack: $Stack
