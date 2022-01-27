@@ -2,10 +2,12 @@ package exocue
 
 import (
 	_ "embed"
+	"fmt"
 
 	"cuelang.org/go/cue/ast"
 	"cuelang.org/go/cue/cuecontext"
 	"cuelang.org/go/cue/parser"
+	"cuelang.org/go/cue/token"
 )
 
 //go:embed schema.cue
@@ -16,39 +18,64 @@ type Builder struct {
 }
 
 func NewBuilder() *Builder {
-	b := &Builder{}
 	schema, err := parser.ParseFile("schema.cue", schema)
 	if err != nil {
 		panic(err)
 	}
-	b.addDecls(schema.Decls...)
-	return b
+	return &Builder{
+		decls: append([]ast.Decl{}, schema.Decls...),
+	}
 }
 
-func (b *Builder) addDecls(decls ...ast.Decl) {
-	b.decls = append(b.decls, decls...)
+func declsToStruct(decls []ast.Decl) *ast.StructLit {
+	return &ast.StructLit{
+		Lbrace: token.NoSpace.Pos(),
+		Elts:   decls,
+	}
 }
 
-func (b *Builder) AddManifest(s string) {
-	manifest, err := parser.ParseFile("exo.cue", s, parser.ParseComments)
+func parseFileAsStruct(fname, s string) *ast.StructLit {
+	f, err := parser.ParseFile("exo.cue", s, parser.ParseComments)
 	if err != nil {
 		panic(err) // XXX
 	}
-	b.addDecls(&ast.StructLit{
-		Elts: []ast.Decl{
-			&ast.Field{
-				Label: ast.NewString("$stack"),
-				Value: &ast.StructLit{
-					Elts: manifest.Decls,
-				},
-			},
-		},
-	})
+	return declsToStruct(f.Decls)
+}
+
+func (b *Builder) addDecl(path []string, decl ast.Decl) {
+	for i := len(path) - 1; i >= 0; i-- {
+		decl = ast.NewStruct(path[i], decl)
+	}
+	b.decls = append(b.decls, decl)
+}
+
+func (b *Builder) AddManifest(s string) {
+	manifest := parseFileAsStruct("exo.cue", s)
+	b.addDecl([]string{"$stack"}, manifest)
+}
+
+func (b *Builder) AddComponent(name string, typ string, spec string) {
+	fname := fmt.Sprintf("components/%s.cue", name)
+	specNode := parseFileAsStruct(fname, spec)
+	res := ast.NewStruct(
+		"type", ast.NewString(typ),
+		"spec", specNode,
+	)
+	var decl ast.Expr
+	switch typ {
+	case "daemon":
+		decl = newAnd(ast.NewIdent("$Daemon"), res)
+	default:
+		panic("TODO: type lookup schema voodoo")
+	}
+	b.addDecl([]string{"$stack", "components", name}, decl)
+}
+
+func newAnd(xs ...ast.Expr) ast.Expr {
+	return ast.NewBinExpr(token.AND, xs...)
 }
 
 func (b *Builder) Build() *Configuration {
 	cc := cuecontext.New()
-	return &Configuration{
-		v: cc.BuildExpr(&ast.StructLit{Elts: b.decls}),
-	}
+	return NewConfiguration(cc.BuildExpr(declsToStruct(b.decls)))
 }

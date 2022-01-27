@@ -6,7 +6,9 @@ import (
 	"errors"
 	"fmt"
 
+	"cuelang.org/go/cue"
 	"github.com/deref/exo/internal/gensym"
+	"github.com/deref/exo/internal/manifest/exocue"
 )
 
 type ComponentResolver struct {
@@ -30,7 +32,9 @@ func (r *QueryResolver) ComponentByID(ctx context.Context, args struct {
 }
 
 func (r *QueryResolver) componentByID(ctx context.Context, id *string) (*ComponentResolver, error) {
-	component := &ComponentResolver{}
+	component := &ComponentResolver{
+		Q: r,
+	}
 	err := r.getRowByKey(ctx, &component.ComponentRow, `
 		SELECT *
 		FROM component
@@ -49,7 +53,9 @@ func (r *QueryResolver) componentByName(ctx context.Context, stack string, name 
 	}
 	stackID := stackResolver.ID
 
-	component := &ComponentResolver{}
+	component := &ComponentResolver{
+		Q: r,
+	}
 	err = r.DB.GetContext(ctx, &component.ComponentRow, `
 		SELECT *
 		FROM component
@@ -169,4 +175,24 @@ func (r *MutationResolver) beginComponentReconciliation(ctx context.Context, row
 		},
 		Job: job,
 	}, nil
+}
+
+func (r *ComponentResolver) Configuration(ctx context.Context) (string, error) {
+	cfg, err := r.configuration(ctx)
+	if err != nil {
+		return "", err
+	}
+	return exocue.FormatString(cfg)
+}
+
+func (r *ComponentResolver) configuration(ctx context.Context) (cue.Value, error) {
+	stack, err := r.Stack(ctx)
+	if err != nil {
+		return cue.Value{}, fmt.Errorf("resolving stack: %w", err)
+	}
+	cfg, err := stack.configuration(ctx)
+	if err != nil {
+		return cue.Value{}, err
+	}
+	return cfg.Component(r.Name), nil
 }

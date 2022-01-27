@@ -28,9 +28,9 @@ func (r *MutationResolver) ReconcileComponent(ctx context.Context, args struct {
 		return nil, fmt.Errorf("no controller for component type: %s", component.Type)
 	}
 
-	spec, err := component.evalSpec(ctx)
+	cfg, err := component.configuration(ctx)
 
-	rendered, err := ctrl.Render(ctx, spec)
+	rendered, err := ctrl.Render(ctx, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("rendering: %w", err)
 	}

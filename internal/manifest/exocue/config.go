@@ -12,9 +12,17 @@ func NewConfiguration(v cue.Value) *Configuration {
 	}
 }
 
+func (cfg *Configuration) Eval() cue.Value {
+	return cfg.v.Eval()
+}
+
 func (cfg *Configuration) evalPath(selectors ...cue.Selector) cue.Value {
 	path := cue.MakePath(selectors...)
 	return cfg.v.LookupPath(path).Eval()
+}
+
+func (cfg *Configuration) Component(name string) cue.Value {
+	return cfg.evalPath(cue.Str("$stack"), cue.Str("components"), cue.Str(name))
 }
 
 func (cfg *Configuration) ComponentSpec(name string) cue.Value {
