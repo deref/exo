@@ -3,11 +3,13 @@ module github.com/deref/exo
 go 1.16
 
 require (
+	cuelang.org/go v0.4.1
 	github.com/BurntSushi/toml v0.3.1
 	github.com/Nerdmaster/terminal v0.12.1
 	github.com/ProtonMail/go-crypto v0.0.0-20210512092938-c05353c2d58c // indirect
 	github.com/alessio/shellescape v1.4.1
 	github.com/aybabtme/rgbterm v0.0.0-20170906152045-cc83f3b3ce59
+	github.com/cockroachdb/apd/v2 v2.0.2 // indirect
 	github.com/containerd/containerd v1.5.7 // indirect
 	github.com/deref/graphql-go v0.0.0-20220114234156-2e6e5c24f11a
 	github.com/deref/inflect-go v0.0.0-20211018210843-15b876b83b3e
