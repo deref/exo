@@ -3,7 +3,7 @@ package cli
 import (
 	"fmt"
 
-	"github.com/deref/exo/internal/core/api"
+	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/util/term"
 	"github.com/spf13/cobra"
 )
@@ -18,32 +18,34 @@ var editCmd = &cobra.Command{
 	Long:  "Edit component spec using your preferred editor.",
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
-		componentRef := args[0]
 		ctx := cmd.Context()
-		cl := newClient()
+		ref := args[0]
 
-		workspace := requireCurrentWorkspace(ctx, cl)
-		description, err := workspace.DescribeComponents(ctx, &api.DescribeComponentsInput{
-			Refs: []string{componentRef},
-		})
+		var q struct {
+			Component *struct {
+				ID   string
+				Spec string
+			} `graphql:"componentByRef(ref: $ref, stack: $stack)"`
+		}
+		if err := api.Query(ctx, svc, &q, map[string]interface{}{
+			"ref":   ref,
+			"stack": currentStackRef(),
+		}); err != nil {
+			return err
+		}
+		if q.Component == nil {
+			return fmt.Errorf("no such component: %q", ref)
+		}
+
+		oldSpec := q.Component.Spec
+		newSpec, err := term.EditString(ref+".*.cue", oldSpec) // TODO: Correct file extension.
 		if err != nil {
-			return fmt.Errorf("describing components: %w", err)
+			return fmt.Errorf("editing: %w", err)
 		}
-		if len(description.Components) != 1 {
-			return fmt.Errorf("no such component: %q", componentRef)
-		}
-		component := description.Components[0]
 
-		// TODO: add textprotocol.Headers to create a mime-message with appropriate
-		// content-type, to allow editing of name, etc.
-		oldSpec := component.Spec
-		newSpec, err := term.EditString("spec.*", oldSpec) // TODO: Correct file extension.
-
-		output, err := workspace.UpdateComponent(ctx, &api.UpdateComponentInput{
-			Ref:  component.ID,
-			Spec: newSpec,
+		return sendMutation(ctx, "updateComponent", map[string]interface{}{
+			"ref":  q.Component.ID,
+			"spec": newSpec,
 		})
-		// TODO: This should handle a job id for the update step.
-		return watchJob(ctx, output.JobID)
 	},
 }

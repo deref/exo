@@ -151,7 +151,23 @@ func (r *MutationResolver) UpdateComponent(ctx context.Context, args struct {
 	Ref   string
 	Spec  string
 }) (*ReconciliationResolver, error) {
-	return nil, fmt.Errorf("TODO: UpdateComponent")
+	component, err := r.componentByRef(ctx, args.Ref, args.Stack)
+	if err != nil {
+		return nil, fmt.Errorf("resolving component: %w", err)
+	}
+	if component == nil {
+		return nil, errors.New("no such component")
+	}
+	// TODO: Validate spec at all?
+	var row ComponentRow
+	if _, err := r.DB.ExecContext(ctx, `
+		UPDATE component
+		SET spec = ?
+		WHERE id = ?
+	`, args.Spec, component.ID); err != nil {
+		return nil, err
+	}
+	return r.beginComponentReconciliation(ctx, row)
 }
 
 func (r *MutationResolver) DisposeComponent(ctx context.Context, args struct {
