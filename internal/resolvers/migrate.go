@@ -136,7 +136,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 		return fmt.Errorf("creating cluster_name index: %w", err)
 	}
 
-	// Tasks.
+	// Task.
 	// TODO: Tasks should be associated with a workspace, etc.
 
 	if _, err := r.DB.ExecContext(ctx, `
@@ -158,6 +158,39 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 			message TEXT
 	);`); err != nil {
 		return fmt.Errorf("creating job table: %w", err)
+	}
+
+	// Stream.
+
+	if _, err := r.DB.ExecContext(ctx, `
+		CREATE TABLE IF NOT EXISTS stream (
+			id TEXT PRIMARY KEY,
+			owner_type TEXT NOT NULL,
+			owner_id TEXT NOT NULL,
+			created TEXT NOT NULL,
+			truncated TEXT
+		);
+	`); err != nil {
+		return fmt.Errorf("creating stream table: %w", err)
+	}
+
+	// Event.
+
+	if _, err := r.DB.ExecContext(ctx, `
+		CREATE TABLE IF NOT EXISTS event (
+			ulid TEXT PRIMARY KEY,
+			stream_id TEXT NOT NULL,
+			message TEXT NOT NULL,
+			tags TEXT NOT NULL
+	);`); err != nil {
+		return fmt.Errorf("creating event table: %w", err)
+	}
+
+	if _, err := r.DB.ExecContext(ctx, `
+		CREATE UNIQUE INDEX IF NOT EXISTS stream_event
+		ON event ( stream_id, ulid )
+	`); err != nil {
+		return fmt.Errorf("creating stream_event index: %w", err)
 	}
 
 	return nil

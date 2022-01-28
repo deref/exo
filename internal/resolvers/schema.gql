@@ -71,6 +71,8 @@ type Mutation {
   disposeComponent(stack: String, ref: String!): Reconciliation!
 
   reconcileComponent(stack: String, ref: String!): Void
+  
+  createEvent(ownerType: String!, ownerId: String!, message: String!, tags: Tags): Event!
 
   # For testing.
   sleep(seconds: Float!): Void
@@ -238,3 +240,33 @@ input ProgressInput {
   current: Int!
   total: Int!
 }
+
+type Stream {
+  ownerType: String!
+  ownerId: String!
+  owner: StreamOwner
+  events(filter: String, cursor: String, prev: Int, next: Int): EventPage!
+}
+
+type StreamOwner = Task | Resource | Component | Stack | Cluster
+
+type EventPage {
+  items: [Event!]!
+  prevCursor: String!
+  nextCursor: String!
+}
+
+type Event {
+  id: String! # Alias for ulid.
+  ulid: ULID!
+  stream: String!
+  timestamp: Instant! # Extracted from ulid.
+  message: String!
+  tags: Tags!
+}
+
+# See <https://github.com/ulid/spec>.
+scalar ULID
+
+# JSON Record<string, string>.
+scalar Tags

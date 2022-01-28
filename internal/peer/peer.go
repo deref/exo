@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 
 	"github.com/deref/exo/internal/api"
+	"github.com/deref/exo/internal/gensym"
 	"github.com/deref/exo/internal/resolvers"
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/deref/exo/internal/util/jsonutil"
@@ -33,8 +34,9 @@ func NewPeer(ctx context.Context, varDir string) (*Peer, error) {
 		return nil, fmt.Errorf("opening sqlite db: %w", err)
 	}
 	r := &resolvers.RootResolver{
-		DB:     db,
-		Logger: logging.CurrentLogger(ctx),
+		DB:            db,
+		Logger:        logging.CurrentLogger(ctx),
+		ULIDGenerator: gensym.NewULIDGenerator(ctx),
 	}
 	// XXX migration probably shouldn't happen here.
 	if err := r.Migrate(ctx); err != nil {
