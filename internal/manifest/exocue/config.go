@@ -2,25 +2,25 @@ package exocue
 
 import "cuelang.org/go/cue"
 
-type Configuration struct {
+type Stack struct {
 	v cue.Value
 }
 
-func NewConfiguration(v cue.Value) *Configuration {
-	return &Configuration{
+func NewStack(v cue.Value) *Stack {
+	return &Stack{
 		v: v,
 	}
 }
 
-func (cfg *Configuration) Eval() cue.Value {
-	return cfg.v.Eval()
+func (s *Stack) Eval() cue.Value {
+	return s.v.Eval()
 }
 
-func (cfg *Configuration) evalPath(selectors ...cue.Selector) cue.Value {
+func (s *Stack) evalPath(selectors ...cue.Selector) cue.Value {
 	path := cue.MakePath(selectors...)
-	return cfg.v.LookupPath(path).Eval()
+	return s.v.LookupPath(path).Eval()
 }
 
-func (cfg *Configuration) Component(name string) cue.Value {
-	return cfg.evalPath(cue.Str("$stack"), cue.Str("components"), cue.Str(name))
+func (s *Stack) Component(name string) cue.Value {
+	return s.evalPath(cue.Str("components"), cue.Str(name))
 }

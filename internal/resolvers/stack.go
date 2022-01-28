@@ -280,7 +280,7 @@ func (r *StackResolver) Configuration(ctx context.Context) (string, error) {
 
 // TODO: It might be valuable to cache this for multiple
 // ComponentResolver.evalSpec calls.
-func (r *StackResolver) configuration(ctx context.Context) (*exocue.Configuration, error) {
+func (r *StackResolver) configuration(ctx context.Context) (*exocue.Stack, error) {
 	components, err := r.Components(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("resolving components: %w", err)
