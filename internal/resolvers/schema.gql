@@ -60,7 +60,7 @@ type Mutation {
   createTask(parentId: String, mutation: String!, arguments: String!): Task!
   acquireTask(workerId: String!, jobId: String, timeout: Int): Task
   startTask(id: String!, workerId: String!): Task!
-  updateTask(id: String!, workerId: String!, message: String, progress: ProgressInput): Task!
+  updateTask(id: String!, workerId: String!, progress: ProgressInput): Task!
   finishTask(id: String!, error: String): Void
   cancelJob(id: String!): Void
 
@@ -227,7 +227,7 @@ type Task {
   canceled: Instant
   finished: Instant
   progress: Progress
-  message: String
+  message: String!
 }
 
 type Progress {
@@ -244,11 +244,15 @@ input ProgressInput {
 type Stream {
   ownerType: String!
   ownerId: String!
-  owner: StreamOwner
+  owner: StreamOwner!
   events(filter: String, cursor: String, prev: Int, next: Int): EventPage!
+  # Message of the most recent event, or empty.
+  message: String!
 }
 
-type StreamOwner = Task | Resource | Component | Stack | Cluster
+interface StreamOwner {
+  stream: Stream!
+}
 
 type EventPage {
   items: [Event!]!
@@ -257,7 +261,7 @@ type EventPage {
 }
 
 type Event {
-  id: String! # Alias for ulid.
+  id: String! # Untyped alias for ulid.
   ulid: ULID!
   stream: String!
   timestamp: Instant! # Extracted from ulid.
