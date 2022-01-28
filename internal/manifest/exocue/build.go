@@ -4,6 +4,7 @@ import (
 	_ "embed"
 	"fmt"
 
+	"cuelang.org/go/cue"
 	"cuelang.org/go/cue/ast"
 	"cuelang.org/go/cue/cuecontext"
 	"cuelang.org/go/cue/parser"
@@ -75,7 +76,8 @@ func newAnd(xs ...ast.Expr) ast.Expr {
 	return ast.NewBinExpr(token.AND, xs...)
 }
 
-func (b *Builder) Build() *Configuration {
+func (b *Builder) Build() *Stack {
 	cc := cuecontext.New()
-	return NewConfiguration(cc.BuildExpr(declsToStruct(b.decls)))
+	cfg := cc.BuildExpr(declsToStruct(b.decls))
+	return NewStack(cfg.LookupPath(cue.MakePath(cue.Str("$stack"))))
 }
