@@ -24,7 +24,3 @@ func (cfg *Configuration) evalPath(selectors ...cue.Selector) cue.Value {
 func (cfg *Configuration) Component(name string) cue.Value {
 	return cfg.evalPath(cue.Str("$stack"), cue.Str("components"), cue.Str(name))
 }
-
-func (cfg *Configuration) ComponentSpec(name string) cue.Value {
-	return cfg.evalPath(cue.Str("$stack"), cue.Str("components"), cue.Str(name), cue.Str("spec"))
-}
