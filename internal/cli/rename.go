@@ -1,7 +1,6 @@
 package cli
 
 import (
-	"github.com/deref/exo/internal/core/api"
 	"github.com/spf13/cobra"
 )
 
@@ -16,12 +15,12 @@ var renameCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(2),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		cl := newClient()
-		workspace := requireCurrentWorkspace(ctx, cl)
-		_, err := workspace.RenameComponent(ctx, &api.RenameComponentInput{
-			Ref:  args[0],
-			Name: args[1],
+		ref := args[0]
+		newName := args[1]
+		return sendMutation(ctx, "updateComponent", map[string]interface{}{
+			"stack":   currentStackRef(),
+			"ref":     ref,
+			"newName": newName,
 		})
-		return err
 	},
 }
