@@ -114,6 +114,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 	// Resource.
 
 	// TODO: Consider dropping job_id field in favor of table for reified locks.
+	// XXX remove message field; use events.
 	if _, err := r.DB.ExecContext(ctx, `
 		CREATE TABLE IF NOT EXISTS resource (
 			id TEXT NOT NULL PRIMARY KEY,
@@ -172,6 +173,13 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 		);
 	`); err != nil {
 		return fmt.Errorf("creating stream table: %w", err)
+	}
+
+	if _, err := r.DB.ExecContext(ctx, `
+		CREATE UNIQUE INDEX IF NOT EXISTS stream_owner
+		ON stream ( owner_type, owner_id )
+	`); err != nil {
+		return fmt.Errorf("creating stream_owner index: %w", err)
 	}
 
 	// Event.

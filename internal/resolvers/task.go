@@ -33,7 +33,6 @@ type TaskRow struct {
 	Finished        *Instant `db:"finished"`
 	ProgressCurrent *int32   `db:"progress_current"`
 	ProgressTotal   *int32   `db:"progress_total"`
-	Message         *string  `db:"message"`
 }
 
 func (r *MutationResolver) CreateTask(ctx context.Context, args struct {
@@ -84,18 +83,7 @@ func (r *MutationResolver) createTask(ctx context.Context, id string, parentID *
 		}
 		row.JobID = parent.JobID
 	}
-	if _, err := r.DB.ExecContext(ctx, `
-		INSERT INTO task (
-			id, job_id, parent_id, mutation, arguments, worker_id, status, created,
-			updated, started, finished, progress_current, progress_total, message
-		)
-		VALUES (
-			?, ?, ?, ?, ?, ?, ?, ?,
-			?, ?, ?, ?, ?, ?
-		)
-	`, row.ID, row.JobID, row.ParentID, row.Mutation, row.Arguments, row.WorkerID, row.Status, row.Created,
-		row.Updated, row.Started, row.Finished, row.ProgressCurrent, row.ProgressTotal, row.Message,
-	); err != nil {
+	if err := r.insertRow(ctx, "task", row); err != nil {
 		return nil, err
 	}
 	return &TaskResolver{
@@ -177,13 +165,12 @@ func (r *MutationResolver) StartTask(ctx context.Context, args struct {
 func (r *MutationResolver) UpdateTask(ctx context.Context, args struct {
 	ID       string
 	WorkerID string
-	Message  *string
 	Progress *ProgressInput
 }) (*TaskResolver, error) {
-	return r.updateTask(ctx, args.ID, args.WorkerID, args.Message, args.Progress)
+	return r.updateTask(ctx, args.ID, args.WorkerID, args.Progress)
 }
 
-func (r *MutationResolver) updateTask(ctx context.Context, id string, workerID string, message *string, progress *ProgressInput) (*TaskResolver, error) {
+func (r *MutationResolver) updateTask(ctx context.Context, id string, workerID string, progress *ProgressInput) (*TaskResolver, error) {
 	now := Now(ctx)
 	var progressCurrent, progressTotal *int32
 	if progress != nil {
@@ -195,13 +182,12 @@ func (r *MutationResolver) updateTask(ctx context.Context, id string, workerID s
 		UPDATE task
 		SET
 			updated = ?,
-			message = COALESCE(?, message),
 			progress_current = COALESCE(?, progress_current),
 			progress_total = COALESCE(?, progress_total)
 		WHERE id = ?
 		AND worker_id = ?
 		RETURNING *
-	`, now, message, progressCurrent, progressTotal, id, workerID)
+	`, now, progressCurrent, progressTotal, id, workerID)
 	if err != nil {
 		return nil, err
 	}
@@ -335,6 +321,18 @@ func (r *TaskResolver) Progress() (*ProgressResolver, error) {
 		Current: *r.ProgressCurrent,
 		Total:   *r.ProgressTotal,
 	}, nil
+}
+
+func (r *TaskResolver) Stream(ctx context.Context) (*StreamResolver, error) {
+	return r.Q.streamByOwner(ctx, "Task", r.ID)
+}
+
+func (r *TaskResolver) Message(ctx context.Context) (string, error) {
+	stream, err := r.Stream(ctx)
+	if err != nil {
+		return "", fmt.Errorf("resolving stream: %w", err)
+	}
+	return stream.Message(ctx)
 }
 
 func (r *MutationResolver) CancelJob(ctx context.Context, args struct {

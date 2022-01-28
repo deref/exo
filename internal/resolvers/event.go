@@ -11,10 +11,10 @@ type EventResolver struct {
 }
 
 type EventRow struct {
-	ULID     ULID
-	StreamID string
-	Message  string
-	Tags     Tags
+	ULID     ULID   `db:"ulid"`
+	StreamID string `db:"stream_id"`
+	Message  string `db:"message"`
+	Tags     Tags   `db:"tags"`
 }
 
 func (r *EventResolver) ID() string {
@@ -42,12 +42,4 @@ func (r *MutationResolver) CreateEvent(ctx context.Context, args struct {
 		Q:        r,
 		EventRow: row,
 	}, nil
-}
-
-func (r *MutationResolver) mustNextULID(ctx context.Context) ULID {
-	res, err := r.ULIDGenerator.NextID(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return ULID(res)
 }

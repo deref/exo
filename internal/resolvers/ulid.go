@@ -1,6 +1,7 @@
 package resolvers
 
 import (
+	"context"
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
@@ -52,4 +53,12 @@ func (u ULID) MarshalJSON() ([]byte, error) {
 
 func (u ULID) String() string {
 	return ulid.ULID(u).String()
+}
+
+func (r *MutationResolver) mustNextULID(ctx context.Context) ULID {
+	res, err := r.ULIDGenerator.NextID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return ULID(res)
 }

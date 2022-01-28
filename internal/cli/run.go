@@ -17,6 +17,9 @@ func init() {
 	runCmd.Flags().StringVar(&applyFlags.Format, "format", "", "see `exo help apply`")
 }
 
+// TODO: Rework this for a world with stacks. If there is already a stack,
+// fail. Otherwise, create a temporary one.
+
 var runCmd = &cobra.Command{
 	Use:   "run [flags] [manifest-file]",
 	Short: "Runs all processes and tails their logs",

@@ -43,11 +43,20 @@ func stringPtr(s string) *string {
 	return &s
 }
 
+// See insertRowEx.
 func (r *RootResolver) insertRow(ctx context.Context, table string, row interface{}) error {
+	return r.insertRowEx(ctx, table, row, "")
+}
+
+// If row is a pointer, it will be updated with the results of `RETURNING *`.
+func (r *RootResolver) insertRowEx(ctx context.Context, table string, row interface{}, extra string) error {
 	v := reflect.ValueOf(row)
+	returning := false
 	if v.Kind() == reflect.Ptr {
 		v = v.Elem()
+		returning = true
 	}
+
 	typ := v.Type()
 	n := typ.NumField()
 	columns := make([]string, 0, n)
@@ -58,26 +67,38 @@ func (r *RootResolver) insertRow(ctx context.Context, table string, row interfac
 		values = append(values, v.Field(i).Interface())
 	}
 
-	var q strings.Builder
-	q.WriteString("INSERT INTO ")
-	q.WriteString(table)
-	q.WriteString(" (")
+	var b strings.Builder
+	b.WriteString("INSERT INTO ")
+	b.WriteString(table)
+	b.WriteString(" (")
 	prefix := " "
 	for _, column := range columns {
-		q.WriteString(prefix)
-		q.WriteString(column)
+		b.WriteString(prefix)
+		b.WriteString(column)
 		prefix = ", "
 	}
-	q.WriteString(" ) VALUES (")
+	b.WriteString(" ) VALUES (")
 	placeholder := " ?"
 	for range columns {
-		q.WriteString(placeholder)
+		b.WriteString(placeholder)
 		placeholder = ", ?"
 	}
-	q.WriteString(" )")
+	b.WriteString(" )")
 
-	_, err := r.DB.ExecContext(ctx, q.String(), values...)
-	return err
+	b.WriteString(extra)
+
+	if returning {
+		b.WriteString(" RETURNING *")
+	}
+
+	q := b.String()
+
+	if returning {
+		return r.DB.GetContext(ctx, row, q, values...)
+	} else {
+		_, err := r.DB.ExecContext(ctx, q, values...)
+		return err
+	}
 }
 
 func transact(ctx context.Context, db *sqlx.DB, f func(tx *sqlx.Tx) error) error {
