@@ -37,9 +37,10 @@ func main() {
 		IDGen: gensym.NewULIDGenerator(ctx),
 	}
 
-	if err := store.Migrate(ctx); err != nil {
-		cmdutil.Fatalf("error migrating: %v", err)
-	}
+	// Commented out while transitioning to graphql implementation.
+	//if err := store.Migrate(ctx); err != nil {
+	//	cmdutil.Fatalf("error migrating: %v", err)
+	//}
 
 	mb := josh.NewMuxBuilder("/")
 	api.BuildStoreMux(mb, func(req *http.Request) api.Store {

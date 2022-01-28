@@ -172,9 +172,10 @@ func RunServer(ctx context.Context, flags map[string]string) {
 		IDGen: gensym.NewULIDGenerator(ctx),
 	}
 
-	if err := eventStore.Migrate(ctx); err != nil {
-		cmdutil.Fatalf("migrating event store: %v", err)
-	}
+	// Commented out while transitioning to graphql implementation.
+	//if err := eventStore.Migrate(ctx); err != nil {
+	//	cmdutil.Fatalf("migrating event store: %v", err)
+	//}
 
 	syslogServer := &syslogd.Server{
 		SyslogPort: kernelCfg.SyslogPort,
