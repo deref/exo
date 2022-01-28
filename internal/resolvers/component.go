@@ -133,6 +133,8 @@ func (r *MutationResolver) CreateComponent(ctx context.Context, args struct {
 		return nil, fmt.Errorf("no such stack: %q", args.Stack)
 	}
 
+	// TODO: Validate name & spec.
+
 	row := ComponentRow{
 		ID:      gensym.RandomBase32(),
 		StackID: stack.ID,
@@ -147,9 +149,10 @@ func (r *MutationResolver) CreateComponent(ctx context.Context, args struct {
 }
 
 func (r *MutationResolver) UpdateComponent(ctx context.Context, args struct {
-	Stack *string
-	Ref   string
-	Spec  string
+	Stack   *string
+	Ref     string
+	NewSpec *string
+	NewName *string
 }) (*ReconciliationResolver, error) {
 	component, err := r.componentByRef(ctx, args.Ref, args.Stack)
 	if err != nil {
@@ -158,13 +161,25 @@ func (r *MutationResolver) UpdateComponent(ctx context.Context, args struct {
 	if component == nil {
 		return nil, errors.New("no such component")
 	}
-	// TODO: Validate spec at all?
+
+	spec := component.Spec
+	if args.NewSpec != nil {
+		spec = *args.NewSpec
+	}
+
+	name := component.Name
+	if args.NewName != nil {
+		name = *args.NewName
+	}
+
+	// TODO: Validate name and spec.
+
 	var row ComponentRow
 	if _, err := r.DB.ExecContext(ctx, `
 		UPDATE component
-		SET spec = ?
+		SET spec = ?, name = ?
 		WHERE id = ?
-	`, args.Spec, component.ID); err != nil {
+	`, spec, name, component.ID); err != nil {
 		return nil, err
 	}
 	return r.beginComponentReconciliation(ctx, row)

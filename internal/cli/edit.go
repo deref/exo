@@ -44,8 +44,8 @@ var editCmd = &cobra.Command{
 		}
 
 		return sendMutation(ctx, "updateComponent", map[string]interface{}{
-			"ref":  q.Component.ID,
-			"spec": newSpec,
+			"ref":     q.Component.ID,
+			"newSpec": newSpec,
 		})
 	},
 }
