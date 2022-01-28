@@ -6,9 +6,8 @@ import (
 	"io/ioutil"
 	"os"
 	"os/exec"
-	"strings"
 
-	"github.com/deref/exo/internal/util/which"
+	"github.com/alessio/shellescape"
 )
 
 func EditString(tempPattern string, oldValue string) (string, error) {
@@ -25,35 +24,19 @@ func EditString(tempPattern string, oldValue string) (string, error) {
 		return "", fmt.Errorf("closing temporary file: %w", err)
 	}
 
-	editor := os.Getenv("EDITOR")
+	editor, err := GetEditor()
+	if err != nil {
+		return "", fmt.Errorf("getting editor: %w", err)
+	}
 	if editor == "" {
-
-		for _, candidateEditor := range []string{
-			"sensible-editor",
-			"editor",
-			"code",
-			"vim",
-			"nano",
-			"vi",
-			"emacs",
-			"ee",
-		} {
-			found, err := which.Which(candidateEditor)
-			if err != nil && !strings.Contains(err.Error(), "not found") {
-				return "", fmt.Errorf("looking up candidate editor %q: %w", candidateEditor, err)
-			}
-			if found != "" {
-				editor = found
-				break
-			}
-		}
-
-		if editor == "" {
-			return "", errors.New("no editor available")
-		}
+		return "", errors.New("no editor found")
 	}
 
-	edit := exec.Command(editor, tmpfile.Name())
+	// In an attempt to match the behavior of other popular CLI tools, this uses
+	// bash, allows passing arguments, handles filenames with spaces and other
+	// special shell characters, and bypasses aliases via `command`.
+	command := fmt.Sprintf("command %s %s", editor, shellescape.Quote(tmpfile.Name()))
+	edit := exec.Command("bash", "-c", command)
 	edit.Stdin = os.Stdin
 	edit.Stdout = os.Stdout
 	edit.Stderr = os.Stderr
@@ -67,4 +50,51 @@ func EditString(tempPattern string, oldValue string) (string, error) {
 	}
 
 	return string(newValue), nil
+}
+
+// Returns the preferred command to execute for editing a file.
+func GetEditor() (string, error) {
+	if editor := os.Getenv("VISUAL"); editor != "" {
+		return editor, nil
+	}
+	if editor := os.Getenv("EDITOR"); editor != "" {
+		return editor, nil
+	}
+	return LookEditor()
+}
+
+// Try to find an editor command in $PATH.
+func LookEditor() (string, error) {
+	type Candidate struct {
+		Name string
+		Rest string
+	}
+	for _, candidate := range []Candidate{
+		{"sensible-editor", ""},
+		{"code", "--wait"},
+		{"nvim", ""},
+		{"vim", ""},
+		{"nano", ""},
+		{"vi", ""},
+		{"emacs", ""},
+		{"pico", ""},
+		{"qe", ""},
+		{"mg", ""},
+		{"jed", ""},
+		{"gedit", ""},
+		{"gvim", ""},
+		{"ee", ""},
+	} {
+		found, err := exec.LookPath(candidate.Name)
+		if errors.Is(err, exec.ErrNotFound) {
+			err = nil
+		}
+		if err != nil {
+			return "", fmt.Errorf("looking for %q: %w", candidate, err)
+		}
+		if found != "" {
+			return fmt.Sprintf("%s %s", found, candidate.Rest), nil
+		}
+	}
+	return "", nil
 }
