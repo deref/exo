@@ -25,12 +25,6 @@ func EditString(tempPattern string, oldValue string) (string, error) {
 		return "", fmt.Errorf("closing temporary file: %w", err)
 	}
 
-	stat, err := os.Stat(tmpfile.Name())
-	if err != nil {
-		return "", fmt.Errorf("checking modification time: %w", err)
-	}
-	originalModTime := stat.ModTime()
-
 	editor := os.Getenv("EDITOR")
 	if editor == "" {
 
@@ -65,15 +59,6 @@ func EditString(tempPattern string, oldValue string) (string, error) {
 	edit.Stderr = os.Stderr
 	if err := edit.Run(); err != nil {
 		return "", fmt.Errorf("editing file: %w", err)
-	}
-
-	if stat, err = os.Stat(tmpfile.Name()); err != nil {
-		return "", fmt.Errorf("checking modification time: %w", err)
-	}
-	newModTime := stat.ModTime()
-	if !newModTime.After(originalModTime) {
-		fmt.Fprintf(os.Stderr, "file unmodified - not updating.\n")
-		return oldValue, nil
 	}
 
 	newValue, err := os.ReadFile(tmpfile.Name())
