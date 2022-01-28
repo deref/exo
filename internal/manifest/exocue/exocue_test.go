@@ -14,7 +14,7 @@ func TestInjectComponent(t *testing.T) {
 	t.Skip("TODO")
 }
 
-func TestComponentSpec(t *testing.T) {
+func TestManifestToComponent(t *testing.T) {
 	b := NewBuilder()
 	b.AddManifest(`
 		environment: {
@@ -32,21 +32,31 @@ func TestComponentSpec(t *testing.T) {
 		}
 	`)
 	cfg := b.Build()
-	spec := cfg.ComponentSpec("backend")
+	spec := cfg.Component("backend")
 	assert.NoError(t, spec.Err())
 	type Spec struct {
 		Program     string
 		Arguments   []string
 		Environment map[string]interface{}
 	}
-	var actual Spec
+	type Component struct {
+		Name string
+		Type string
+		Spec Spec
+	}
+	var actual Component
 	assert.NoError(t, spec.Decode(&actual))
-	assert.Equal(t, Spec{
-		Program:   "./run-backend.sh",
-		Arguments: []string{},
-		Environment: map[string]interface{}{
-			"PORT":   "1234",
-			"COMMON": "VAR",
+	assert.Equal(t, Component{
+		Name: "backend",
+		Type: "daemon",
+		Spec: Spec{
+			Program:   "./run-backend.sh",
+			Arguments: []string{},
+			Environment: map[string]interface{}{
+				"PORT":          "1234",
+				"COMMON":        "VAR",
+				"EXO_COMPONENT": "backend",
+			},
 		},
 	}, actual)
 }
