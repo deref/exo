@@ -72,7 +72,7 @@ type Mutation {
 
   reconcileComponent(stack: String, ref: String!): Void
   
-  createEvent(ownerType: String!, ownerId: String!, message: String!, tags: Tags): Event!
+  createEvent(sourceType: String!, sourceId: String!, message: String!, tags: Tags): Event!
 
   # For testing.
   sleep(seconds: Float!): Void
@@ -242,15 +242,15 @@ input ProgressInput {
 }
 
 type Stream {
-  ownerType: String!
-  ownerId: String!
-  owner: StreamOwner!
+  sourceType: String!
+  sourceId: String!
+  source: StreamSource!
   events(filter: String, cursor: String, prev: Int, next: Int): EventPage!
   # Message of the most recent event, or empty.
   message: String!
 }
 
-interface StreamOwner {
+interface StreamSource {
   stream: Stream!
 }
 

@@ -166,8 +166,8 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 	if _, err := r.DB.ExecContext(ctx, `
 		CREATE TABLE IF NOT EXISTS stream (
 			id TEXT PRIMARY KEY,
-			owner_type TEXT NOT NULL,
-			owner_id TEXT NOT NULL,
+			source_type TEXT NOT NULL,
+			source_id TEXT NOT NULL,
 			created TEXT NOT NULL,
 			truncated TEXT
 		);
@@ -176,10 +176,10 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 	}
 
 	if _, err := r.DB.ExecContext(ctx, `
-		CREATE UNIQUE INDEX IF NOT EXISTS stream_owner
-		ON stream ( owner_type, owner_id )
+		CREATE UNIQUE INDEX IF NOT EXISTS stream_source
+		ON stream ( source_type, source_id )
 	`); err != nil {
-		return fmt.Errorf("creating stream_owner index: %w", err)
+		return fmt.Errorf("creating stream_source index: %w", err)
 	}
 
 	// Event.
