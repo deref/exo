@@ -37,7 +37,8 @@ func RunWorker(ctx context.Context, p *Peer, workerID string, jobID *string) err
 	for {
 		var acquired struct {
 			Task struct {
-				ID string
+				ID       string
+				Mutation string
 			} `graphql:"acquireTask(workerId: $workerId, timeout: $timeout, jobId: $jobId)"`
 		}
 		if err := api.Mutate(ctx, p, &acquired, acquireVars); err != nil {
@@ -47,7 +48,7 @@ func RunWorker(ctx context.Context, p *Peer, workerID string, jobID *string) err
 		if taskID == "" {
 			return nil
 		}
-		logger.Infof("acquired task: %s", taskID)
+		logger.Infof("acquired %s task: %s", acquired.Task.Mutation, taskID)
 		err := WorkTask(ctx, p, workerID, taskID)
 		if err == nil {
 			logger.Infof("completed task: %s", taskID)
