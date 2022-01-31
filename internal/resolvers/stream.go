@@ -14,9 +14,9 @@ type StreamResolver struct {
 }
 
 type StreamRow struct {
-	ID        string `db:"id"`
-	OwnerType string `db:"owner_type"`
-	OwnerID   string `db:"owner_id"`
+	ID         string `db:"id"`
+	SourceType string `db:"source_type"`
+	SourceID   string `db:"source_id"`
 }
 
 func (r *QueryResolver) StreamByOwner(ctx context.Context, args struct {
@@ -28,12 +28,12 @@ func (r *QueryResolver) StreamByOwner(ctx context.Context, args struct {
 
 func (r *QueryResolver) streamByOwner(ctx context.Context, typ string, id string) (*StreamResolver, error) {
 	row := StreamRow{
-		ID:        gensym.RandomBase32(),
-		OwnerType: typ,
-		OwnerID:   id,
+		ID:         gensym.RandomBase32(),
+		SourceType: typ,
+		SourceID:   id,
 	}
 	if err := r.insertRowEx(ctx, "stream", &row, `
-		ON CONFLICT (owner_type, owner_id)
+		ON CONFLICT (source_type, source_id)
 		DO NOTHING
 	`); err != nil {
 		return nil, fmt.Errorf("upserting: %w", err)
