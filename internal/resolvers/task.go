@@ -33,6 +33,7 @@ type TaskRow struct {
 	Finished        *Instant `db:"finished"`
 	ProgressCurrent *int32   `db:"progress_current"`
 	ProgressTotal   *int32   `db:"progress_total"`
+	ErrorMessage    *string  `db:"error_message"`
 }
 
 func (r *MutationResolver) CreateTask(ctx context.Context, args struct {
@@ -324,10 +325,13 @@ func (r *TaskResolver) Progress() (*ProgressResolver, error) {
 }
 
 func (r *TaskResolver) Stream(ctx context.Context) (*StreamResolver, error) {
-	return r.Q.streamByOwner(ctx, "Task", r.ID)
+	return r.Q.findOrCreateStream(ctx, "Task", r.ID)
 }
 
 func (r *TaskResolver) Message(ctx context.Context) (string, error) {
+	if r.ErrorMessage != nil {
+		return *r.ErrorMessage, nil
+	}
 	stream, err := r.Stream(ctx)
 	if err != nil {
 		return "", fmt.Errorf("resolving stream: %w", err)

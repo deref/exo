@@ -149,14 +149,14 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 			arguments TEXT NOT NULL,
 			worker_id TEXT,
 			status TEXT NOT NULL,
+			error_message TEXT,
 			created TEXT NOT NULL,
 			updated TEXT NOT NULL,
 			started TEXT,
 			canceled TEXT,
 			finished TEXT,
 			progress_current INT,
-			progress_total INT,
-			message TEXT
+			progress_total INT
 	);`); err != nil {
 		return fmt.Errorf("creating job table: %w", err)
 	}
