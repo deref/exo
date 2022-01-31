@@ -1,4 +1,6 @@
 type Query {
+  findEntity(type: String!, id: String!): Entity
+
   allClusters: [Cluster!]!
   defaultCluster: Cluster
   clusterByRef(ref: String!): Cluster
@@ -72,7 +74,9 @@ type Mutation {
 
   reconcileComponent(stack: String, ref: String!): Void
   
-  createEvent(sourceType: String!, sourceId: String!, message: String!, tags: Tags): Event!
+  findOrCreateStream(sourceType: String!, sourceId: String!): Stream
+
+  createEvent(streamId: String!, message: String!, tags: Tags): Event!
 
   # For testing.
   sleep(seconds: Float!): Void
@@ -82,6 +86,10 @@ type Mutation {
 scalar Instant
 
 type Void {}
+
+interface Entity {
+  id: String!
+}
 
 type Cluster {
   id: String!
@@ -245,7 +253,7 @@ type Stream {
   sourceType: String!
   sourceId: String!
   source: StreamSource!
-  events(filter: String, cursor: String, prev: Int, next: Int): EventPage!
+  events(cursor: String, prev: Int, next: Int, filter: String): EventPage!
   # Message of the most recent event, or empty.
   message: String!
 }
@@ -263,7 +271,7 @@ type EventPage {
 type Event {
   id: String! # Untyped alias for ulid.
   ulid: ULID!
-  stream: String!
+  stream: Stream!
   timestamp: Instant! # Extracted from ulid.
   message: String!
   tags: Tags!

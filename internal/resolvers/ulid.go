@@ -6,6 +6,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"time"
 
 	"github.com/graph-gophers/graphql-go/decode"
 	"github.com/oklog/ulid/v2"
@@ -61,4 +62,9 @@ func (r *MutationResolver) mustNextULID(ctx context.Context) ULID {
 		panic(err)
 	}
 	return ULID(res)
+}
+
+func (u ULID) Timestamp() Instant {
+	ms := int64(ulid.ULID([16]byte(u)).Time())
+	return Instant{time.Unix(0, ms*int64(time.Millisecond))}
 }
