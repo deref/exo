@@ -1,6 +1,7 @@
 package logging
 
 import (
+	"fmt"
 	golog "log"
 )
 
@@ -14,7 +15,7 @@ type GoLogger struct {
 }
 
 func (l *GoLogger) Infof(format string, v ...interface{}) {
-	l.Underlying.Printf(format, v...)
+	l.Underlying.Output(3, fmt.Sprintf(format, v...))
 }
 
 func (l *GoLogger) Sublogger(prefix string) Logger {
