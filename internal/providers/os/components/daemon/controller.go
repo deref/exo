@@ -2,10 +2,15 @@ package daemon
 
 import (
 	"context"
-	"errors"
+	"fmt"
 
 	"github.com/deref/exo/internal/providers/sdk"
 )
+
+type Component struct {
+	sdk.ComponentConfig
+	Spec Spec `json:"spec"`
+}
 
 type Spec struct {
 	Directory       string            `json:"directory,omitempty"`
@@ -17,6 +22,6 @@ type Spec struct {
 
 type Controller struct{}
 
-func (c *Controller) Render(ctx context.Context, spec *Spec) (*sdk.RenderResult, error) {
-	return nil, errors.New("TODO: Render daemon")
+func (ctrl *Controller) Render(ctx context.Context, component *Component) (*sdk.RenderResult, error) {
+	return nil, fmt.Errorf("TODO: Render daemon: %#v", component)
 }

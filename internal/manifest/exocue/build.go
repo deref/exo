@@ -55,10 +55,11 @@ func (b *Builder) AddManifest(s string) {
 	b.addDecl([]string{"$stack"}, manifest)
 }
 
-func (b *Builder) AddComponent(name string, typ string, spec string) {
+func (b *Builder) AddComponent(id string, name string, typ string, spec string) {
 	fname := fmt.Sprintf("components/%s.cue", name)
 	specNode := parseFileAsStruct(fname, spec)
 	res := ast.NewStruct(
+		"id", ast.NewString(id),
 		"type", ast.NewString(typ),
 		"spec", specNode,
 	)
