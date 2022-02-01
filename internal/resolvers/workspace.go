@@ -118,6 +118,10 @@ func (r *MutationResolver) CreateWorkspace(ctx context.Context, args struct {
 	}, nil
 }
 
+func (r *WorkspaceResolver) URL() string {
+	return r.Q.Routes.workspaceURL(r.ID)
+}
+
 func (r *WorkspaceResolver) Project(ctx context.Context) (*ProjectResolver, error) {
 	return r.Q.projectByID(ctx, &r.ProjectID)
 }

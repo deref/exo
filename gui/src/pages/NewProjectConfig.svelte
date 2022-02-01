@@ -15,7 +15,7 @@
   const { starter } = params;
 
   const queryString = router.querystring;
-  const root = new URLSearchParams($queryString ?? '').get('root');
+  const workspace = new URLSearchParams($queryString ?? '').get('workspace');
 
   let name = starter;
   let error: Error | null = null;
@@ -31,8 +31,8 @@
   let dirPromise: Promise<ReadDirResult> = api.kernel
     .getUserHomeDir()
     .then((dir) => {
-      if (root) {
-        dir = root;
+      if (workspace) {
+        dir = workspace;
       }
       setWorkingDirectory(dir);
       homeDirectory = dir;

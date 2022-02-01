@@ -42,7 +42,10 @@ For more information, see https://exo.deref.io`,
 			// XXX client vs peer behavior.
 			checkOrEnsureServer()
 			var err error
-			svc, err = peer.NewPeer(ctx, cfg.VarDir)
+			svc, err = peer.NewPeer(ctx, peer.PeerConfig{
+				VarDir:      cfg.VarDir,
+				GUIEndpoint: effectiveServerURL(),
+			})
 			if err != nil {
 				return fmt.Errorf("initializing peer: %w", err)
 			}

@@ -54,7 +54,9 @@ If a workspace does not exist, one will be created in the current directory.
 				return fmt.Errorf("describing workspace: %w", err)
 			}
 			routes := newGUIRoutes()
-			fmt.Println("GUI available at:", routes.WorkspaceURL(output.Description.ID))
+			fmt.Println("GUI available at:", routes.WorkspaceURL(struct{ ID string }{
+				ID: output.Description.ID,
+			}))
 		}
 
 		// Apply manifest.
