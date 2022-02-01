@@ -3,30 +3,30 @@ package cli
 import (
 	"strings"
 
-	"github.com/deref/exo/internal/providers/unix/components/process"
+	"github.com/deref/exo/internal/providers/os/components/daemon"
 	"github.com/spf13/cobra"
 )
 
 func init() {
-	newCmd.AddCommand(newProcessCmd)
-	newProcessCmd.Flags().StringVarP(
-		&processSpec.Directory,
+	newCmd.AddCommand(newDaemonCmd)
+	newDaemonCmd.Flags().StringVarP(
+		&daemonSpec.Directory,
 		"directory", "d",
 		"",
-		"set the working directory for the process",
+		"set the working directory for the daemon",
 	)
 }
 
-var processSpec = process.Spec{}
+var daemonSpec = daemon.Spec{}
 
-var newProcessCmd = &cobra.Command{
-	Use:   "process <name> [options] [--] [name=value ...] <program> [args ...]",
-	Short: "Creates a new process",
-	Long: `Creates a new process component.
-	
+var newDaemonCmd = &cobra.Command{
+	Use:   "daemon <name> [options] [--] [name=value ...] <program> [args ...]",
+	Short: "Creates a new daemon",
+	Long: `Creates a new daemon component, running a host os process.
+
 The double dash separator is recommended to avoid flag confusion between
 exo flags and options for your program.
-	
+
 Environment variables may be specified by providing name=value pairs
 before the program name.
 `,
@@ -47,18 +47,18 @@ before the program name.
 			args = args[1:]
 			name := strings.TrimSpace(parts[0])
 			value := strings.TrimSpace(parts[1])
-			if processSpec.Environment == nil {
-				processSpec.Environment = make(map[string]string)
+			if daemonSpec.Environment == nil {
+				daemonSpec.Environment = make(map[string]string)
 			}
-			processSpec.Environment[name] = value
+			daemonSpec.Environment[name] = value
 		}
 
 		if len(args) == 0 {
 			return cmd.Usage()
 		}
-		processSpec.Program = args[0]
-		processSpec.Arguments = args[1:]
+		daemonSpec.Program = args[0]
+		daemonSpec.Arguments = args[1:]
 
-		return createComponent(ctx, name, "process", processSpec)
+		return createComponent(ctx, name, "daemon", daemonSpec)
 	},
 }

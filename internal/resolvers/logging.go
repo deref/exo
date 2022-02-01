@@ -23,6 +23,8 @@ var _ logging.Logger = (*TaskLogger)(nil)
 
 func (tl *TaskLogger) Infof(format string, v ...interface{}) {
 	message := fmt.Sprintf(format, v...)
+	// XXX Remove this after watchJob and tailLogs are unified.
+	tl.SystemLog.Infof("XXX TEMPORARY LOGGING task=%s: %s", tl.TaskID, message)
 	if err := tl.createEvent(message); err != nil {
 		tl.SystemLog.Infof("error logging event for task %s: %w", tl.TaskID, err)
 		tl.SystemLog.Infof("attempted message was: %s", message)
