@@ -121,6 +121,14 @@ type Workspace {
 
   components: [Component!]!
   resources: [Resource!]!
+
+  manifest(format: String): Manifest
+}
+
+type Manifest {
+  format: String!
+  file: File!
+  hostPath: String!
 }
 
 type Stack {
@@ -211,7 +219,10 @@ type FileSystem {
 
 type File {
   name: String!
+  # Path relative to root of filesystem.
   path: String!
+  # Path to file on host machine.
+  hostPath: String!
   isDirectory: Boolean!
   size: Float!
   content: String!

@@ -241,3 +241,13 @@ func (r *WorkspaceResolver) Resources(ctx context.Context) ([]*ResourceResolver,
 	}
 	return stack.Resources(ctx)
 }
+
+func (r *WorkspaceResolver) Manifest(ctx context.Context, args struct {
+	Format *string
+}) (*ManifestResolver, error) {
+	format := ""
+	if args.Format != nil {
+		format = *args.Format
+	}
+	return r.Q.findManifest(ctx, r.FileSystem(), format)
+}
