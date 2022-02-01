@@ -287,7 +287,7 @@ func (r *StackResolver) configuration(ctx context.Context) (*exocue.Stack, error
 	}
 	b := exocue.NewBuilder()
 	for _, component := range components {
-		b.AddComponent(component.Name, component.Type, component.Spec)
+		b.AddComponent(component.ID, component.Name, component.Type, component.Spec)
 	}
 	return b.Build(), nil
 }
