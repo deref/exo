@@ -2,6 +2,7 @@ package api
 
 import (
 	"fmt"
+	"strings"
 
 	"github.com/graph-gophers/graphql-go/errors"
 )
@@ -13,10 +14,23 @@ func (errs QueryErrorSet) Error() string {
 	case 0:
 		return "<empty QueryErrorSet>"
 	case 1:
-		return errs[0].Error()
+		return queryErrorString(errs[0])
 	default:
-		return fmt.Sprintf("1st of %d: %v", len(errs), errs[0])
+		return fmt.Sprintf("1st of %d: %s", len(errs), queryErrorString(errs[0]))
 	}
+}
+
+// Mimics errors.QueryError.Error(), but without the "graphql: " prefix.
+func queryErrorString(err *errors.QueryError) string {
+	if err == nil {
+		return "<nil>"
+	}
+	var b strings.Builder
+	b.WriteString(err.Message)
+	for _, loc := range err.Locations {
+		fmt.Fprintf(&b, " (line %d, column %d)", loc.Line, loc.Column)
+	}
+	return b.String()
 }
 
 func (errs QueryErrorSet) Unwrap() error {
