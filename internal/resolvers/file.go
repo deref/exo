@@ -10,14 +10,14 @@ import (
 
 type FileResolver struct {
 	Path     string
-	hostPath string
+	HostPath string
 	info     fs.FileInfo
 }
 
-func openFileResolver(exposedPath, hostPath string) (*FileResolver, error) {
+func resolveFile(exposedPath, hostPath string) (*FileResolver, error) {
 	r := FileResolver{
 		Path:     exposedPath,
-		hostPath: hostPath,
+		HostPath: hostPath,
 	}
 	f, err := os.Open(hostPath)
 	if f != nil {
@@ -48,7 +48,7 @@ func (r *FileResolver) Size() float64 {
 }
 
 func (r *FileResolver) Content() (string, error) {
-	bs, err := ioutil.ReadFile(r.hostPath)
+	bs, err := ioutil.ReadFile(r.HostPath)
 	return string(bs), err
 }
 
@@ -56,7 +56,7 @@ func (r *FileResolver) Children() ([]*FileResolver, error) {
 	if !r.info.IsDir() {
 		return nil, nil
 	}
-	f, err := os.Open(r.hostPath)
+	f, err := os.Open(r.HostPath)
 	if err != nil {
 		return nil, err
 	}
@@ -69,8 +69,8 @@ func (r *FileResolver) Children() ([]*FileResolver, error) {
 	for i, entry := range entries {
 		name := entry.Name()
 		exposedPath := path.Join(r.Path, name)
-		hostPath := path.Join(r.hostPath, name)
-		res[i], err = openFileResolver(exposedPath, hostPath)
+		hostPath := path.Join(r.HostPath, name)
+		res[i], err = resolveFile(exposedPath, hostPath)
 		if err != nil {
 			return nil, err
 		}

@@ -37,5 +37,5 @@ func (r *FileSystemResolver) file(ctx context.Context, exposedPath string) (*Fil
 	if !pathutil.HasPathPrefix(hostPath, r.hostPath) {
 		return nil, errors.New("path escapes filesystem root")
 	}
-	return openFileResolver(exposedPath, hostPath)
+	return resolveFile(exposedPath, hostPath)
 }

@@ -3,7 +3,6 @@ package cli
 import (
 	"fmt"
 
-	"github.com/deref/exo/internal/core/api"
 	"github.com/spf13/cobra"
 )
 
@@ -22,21 +21,23 @@ var manifestResolveCmd = &cobra.Command{
 	Long:  `Resolves the workspace's manifest file and prints its path.`,
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) > 0 {
-			return nil
-		}
 		ctx := cmd.Context()
-
-		cl := newClient()
-		workspace := requireCurrentWorkspace(ctx, cl)
-		output, err := workspace.ResolveManifest(ctx, &api.ResolveManifestInput{
-			Format: manifestResolveFlags.Format,
-		})
-		if err != nil {
-			return err
+		var q struct {
+			Workspace *struct {
+				Manifest *struct {
+					HostPath string
+				}
+			} `graphql:"workspaceByRef(ref: $currentWorkspace)"`
 		}
-		if output.Path != "" {
-			fmt.Println(output.Path)
+
+		vars := map[string]interface{}{}
+		if manifestResolveFlags.Format != "" {
+			vars["format"] = manifestResolveFlags.Format
+		}
+		mustQueryWorkspace(ctx, &q, vars)
+		manifest := q.Workspace.Manifest
+		if manifest != nil {
+			fmt.Println(manifest.HostPath)
 		}
 		return nil
 	},
