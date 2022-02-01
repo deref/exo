@@ -3,6 +3,7 @@ package peer
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"path/filepath"
 
@@ -10,10 +11,11 @@ import (
 	"github.com/deref/exo/internal/gensym"
 	"github.com/deref/exo/internal/resolvers"
 	"github.com/deref/exo/internal/util/cmdutil"
+	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/deref/exo/internal/util/logging"
 	"github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/errors"
+	gqlerrors "github.com/graph-gophers/graphql-go/errors"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -59,8 +61,13 @@ func NewPeer(ctx context.Context, cfg PeerConfig) (*Peer, error) {
 func (p *Peer) Do(ctx context.Context, doc string, vars map[string]interface{}, res interface{}) error {
 	vars, _ = jsonutil.MustSimplify(vars).(map[string]interface{})
 	resp := p.schema.Exec(ctx, doc, "", vars)
-	for _, err := range resp.Errors {
-		sanitizeError(&err)
+	for i, err := range resp.Errors {
+		externalErr := sanitizeQueryError(err)
+		if err == externalErr {
+			continue
+		}
+		logging.Infof(ctx, "internal graphql error: %v", err)
+		resp.Errors[i] = externalErr
 	}
 	if len(resp.Errors) > 0 {
 		return api.QueryErrorSet(resp.Errors)
@@ -78,6 +85,46 @@ func (p *Peer) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-func sanitizeError(err **errors.QueryError) {
-	// TODO: Hide internal error messages, log them, etc.
+func sanitizeQueryError(original *gqlerrors.QueryError) *gqlerrors.QueryError {
+	sanitized := gqlerrors.QueryError{
+		Locations: original.Locations,
+		Path:      original.Path,
+	}
+	if original.ResolverError != nil {
+		sanitized.ResolverError = sanitizeError(original.ResolverError)
+		if sanitized.ResolverError == original.ResolverError {
+			return original
+		}
+		sanitized.Err = sanitized.ResolverError
+	} else if original.Err != nil {
+		sanitized.Err = sanitizeError(original.Err)
+		if sanitized.Err == original.Err {
+			return original
+		}
+	} else {
+		sanitized.Err = sanitizeError(errors.New(original.Message))
+	}
+	sanitized.Message = sanitized.Err.Error()
+	sanitized.Extensions = errorExtensions(sanitized.Err)
+	return &sanitized
+}
+
+func sanitizeError(err error) error {
+	if isExternalError(err) {
+		return err
+	}
+	return errutil.InternalServerError
+}
+
+func isExternalError(err error) bool {
+	_, ok := err.(errutil.HTTPError)
+	return ok
+}
+
+func errorExtensions(err error) map[string]interface{} {
+	iface, ok := err.(interface{ Extensions() map[string]interface{} })
+	if !ok {
+		return nil
+	}
+	return iface.Extensions()
 }
