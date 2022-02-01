@@ -24,5 +24,5 @@ func (r *MutationResolver) reportProgress(ctx context.Context, progress Progress
 		return
 	}
 	_, err := r.updateTask(ctx, t.ID, t.WorkerID, &progress)
-	r.Logger.Infof("error reporting progress on task %q: %v", err)
+	r.SystemLog.Infof("error reporting progress on task %q: %v", err)
 }

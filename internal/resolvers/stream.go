@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"github.com/deref/exo/internal/gensym"
@@ -18,9 +17,11 @@ type StreamResolver struct {
 }
 
 type StreamRow struct {
-	ID         string `db:"id"`
-	SourceType string `db:"source_type"`
-	SourceID   string `db:"source_id"`
+	ID         string   `db:"id"`
+	SourceType string   `db:"source_type"`
+	SourceID   string   `db:"source_id"`
+	Created    Instant  `db:"created"`
+	Truncated  *Instant `db:"truncated"`
 }
 
 func (r *QueryResolver) streamById(ctx context.Context, id *string) (*StreamResolver, error) {
@@ -48,10 +49,12 @@ func (r *MutationResolver) findOrCreateStream(ctx context.Context, sourceType st
 		ID:         gensym.RandomBase32(),
 		SourceType: sourceType,
 		SourceID:   sourceId,
+		Created:    Now(ctx),
 	}
+	// The no-op `DO UPDATE` is required because `DO NOTHING` returns no rows.
 	if err := r.insertRowEx(ctx, "stream", &row, `
 		ON CONFLICT (source_type, source_id)
-		DO NOTHING
+		DO UPDATE SET created = created
 	`); err != nil {
 		return nil, fmt.Errorf("upserting: %w", err)
 	}
@@ -71,7 +74,11 @@ func (r *StreamResolver) Source(ctx context.Context) (source StreamSource, err e
 }
 
 func (r *StreamResolver) Message(ctx context.Context) (string, error) {
-	return "", errors.New("TODO: StreamResolver.Message")
+	event, err := r.Q.latestEvent(ctx, []string{r.ID})
+	if event == nil || err != nil {
+		return "", err
+	}
+	return event.Message, nil
 }
 
 func (r *StreamResolver) Events(ctx context.Context, args struct {

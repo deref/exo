@@ -7,7 +7,6 @@ import (
 	"fmt"
 
 	"github.com/deref/exo/internal/util/mathutil"
-	"github.com/jmoiron/sqlx"
 )
 
 type EventResolver struct {
@@ -22,22 +21,26 @@ type EventRow struct {
 	Tags     Tags   `db:"tags"`
 }
 
-func (r *EventResolver) ID() string {
+func (r *EventRow) ID() string {
 	return r.ULID.String()
 }
 
-func (r *MutationResolver) CreateEvent(ctx context.Context, args struct {
+type createEventArgs struct {
 	StreamID  string
 	Timestamp *Instant
 	Message   string
 	Tags      *Tags
-}) (*EventResolver, error) {
+}
+
+func (r *MutationResolver) CreateEvent(ctx context.Context, args createEventArgs) (*EventResolver, error) {
 	row := EventRow{
 		StreamID: args.StreamID,
 		ULID:     r.mustNextULID(ctx),
 		Message:  args.Message,
 	}
-	if args.Tags != nil {
+	if args.Tags == nil {
+		row.Tags = make(Tags)
+	} else {
 		row.Tags = *args.Tags
 	}
 	if err := r.insertRow(ctx, "event", row); err != nil {
@@ -113,9 +116,9 @@ func (r *QueryResolver) findEvents(ctx context.Context, q eventQuery) (*EventPag
 			SELECT *
 			FROM event
 			WHERE stream_id IN (?)
-			AND id < ?
+			AND ulid < ?
 			AND instr(lower(message), ?) <> 0
-			ORDER BY id DESC
+			ORDER BY ulid DESC
 			LIMIT ?
 		`
 	} else {
@@ -123,9 +126,9 @@ func (r *QueryResolver) findEvents(ctx context.Context, q eventQuery) (*EventPag
 			SELECT *
 			FROM event
 			WHERE stream_id IN (?)
-			AND ? < id
+			AND ? < ulid
 			AND instr(lower(message), ?) <> 0
-			ORDER BY id ASC
+			ORDER BY ulid ASC
 			LIMIT ?
 		`
 	}
@@ -152,7 +155,7 @@ func (r *QueryResolver) findEvents(ctx context.Context, q eventQuery) (*EventPag
 	output.NextCursor = cursor
 	if len(output.Items) > 0 {
 		output.PrevCursor = rows[0].ULID.String()
-		output.NextCursor = incrementEventCursor(rows[len(output.Items)-1].ULID.String())
+		output.NextCursor = incrementEventCursor(rows[len(output.Items)-1].ID())
 	}
 
 	output.Items = make([]*EventResolver, len(rows))
@@ -166,27 +169,33 @@ func (r *QueryResolver) findEvents(ctx context.Context, q eventQuery) (*EventPag
 }
 
 func (r *QueryResolver) latestEventCursor(ctx context.Context, streamIDs []string) (string, error) {
-	if len(streamIDs) == 0 {
-		return r.mustNextULID(ctx).String(), nil
-	}
-	query, args, err := sqlx.In(`
-		SELECT COALESCE(MAX(id), "")
-		FROM event
-		WHERE stream IN (?)
-	`, streamIDs)
-	if err != nil {
-		panic(err)
-	}
-	var id string
-	err = r.DB.QueryRowContext(ctx, query, args...).Scan(&id)
-	switch {
-	case err == sql.ErrNoRows:
-		return "", nil
-	case err != nil:
+	event, err := r.latestEvent(ctx, streamIDs)
+	if event == nil || err != nil {
 		return "", err
-	default:
-		return incrementEventCursor(id), nil
 	}
+	return incrementEventCursor(event.ID()), nil
+}
+
+func (r *QueryResolver) latestEvent(ctx context.Context, streamIDs []string) (*EventResolver, error) {
+	q, args := mustSqlIn(`
+		SELECT *
+		FROM event
+		WHERE stream_id IN (?)
+		ORDER BY ulid DESC
+		LIMIT 1
+	`, streamIDs)
+	var row EventRow
+	err := r.DB.GetContext(ctx, &row, q, args...)
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	return &EventResolver{
+		Q:        r,
+		EventRow: row,
+	}, nil
 }
 
 func incrementEventCursor(id string) string {

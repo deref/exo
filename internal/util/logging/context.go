@@ -15,3 +15,8 @@ func ContextWithLogger(ctx context.Context, logger Logger) context.Context {
 func CurrentLogger(ctx context.Context) Logger {
 	return ctx.Value(loggerKey).(Logger)
 }
+
+func Infof(ctx context.Context, format string, v ...interface{}) {
+	logger := CurrentLogger(ctx)
+	logger.Infof(format, v...)
+}

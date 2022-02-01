@@ -211,7 +211,7 @@ func (r *MutationResolver) FinishTask(ctx context.Context, args struct {
 	}
 	_, err := r.DB.ExecContext(ctx, `
 		UPDATE task
-		SET updated = ?, finished = ?, status = ?, message = ?
+		SET updated = ?, finished = ?, status = ?, error_message = ?
 		WHERE id = ?
 	`, now, now, status, args.Error, args.ID)
 	return nil, err

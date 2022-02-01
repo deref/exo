@@ -26,7 +26,7 @@ func NewHandler(r *RootResolver) *relay.Handler {
 
 type RootResolver struct {
 	DB            *sqlx.DB
-	Logger        logging.Logger
+	SystemLog     logging.Logger
 	ULIDGenerator *gensym.ULIDGenerator
 }
 
