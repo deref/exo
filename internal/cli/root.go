@@ -94,6 +94,6 @@ func Main() {
 	ctx = telemetry.ContextWithTelemetry(ctx, tel)
 
 	if err := rootCmd.ExecuteContext(ctx); err != nil {
-		cmdutil.Fatalf("%w", err)
+		cmdutil.Fatalf("error: %w", err)
 	}
 }

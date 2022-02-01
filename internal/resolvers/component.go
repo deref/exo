@@ -143,6 +143,9 @@ func (r *MutationResolver) CreateComponent(ctx context.Context, args struct {
 		Spec:    args.Spec,
 	}
 	if err := r.insertRow(ctx, "component", row); err != nil {
+		if isSqlConflict(err) {
+			return nil, conflictErrorf("a component named %q already exists", row.Name)
+		}
 		return nil, fmt.Errorf("inserting: %w", err)
 	}
 	return r.beginComponentReconciliation(ctx, row)
