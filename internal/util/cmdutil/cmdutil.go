@@ -3,9 +3,20 @@ package cmdutil
 import (
 	"fmt"
 	"os"
+	"strings"
 
 	"github.com/deref/exo/internal/config"
 )
+
+// Print a string with a trailing newline.
+// Avoid printing an _extra_ newline.
+func Show(s string) {
+	if strings.HasSuffix(s, "\n") {
+		fmt.Print(s)
+	} else if s != "" {
+		fmt.Println(s)
+	}
+}
 
 func Warnf(format string, v ...interface{}) {
 	fmt.Fprintf(os.Stderr, "%v\n", fmt.Errorf(format, v...))

@@ -216,7 +216,7 @@ func (r *ComponentResolver) Configuration(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return exocue.FormatString(cfg)
+	return exocue.FormatString(exocue.StructToFile(cfg))
 }
 
 func (r *ComponentResolver) configuration(ctx context.Context) (cue.Value, error) {
