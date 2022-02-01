@@ -67,7 +67,7 @@ func (b *Builder) AddComponent(name string, typ string, spec string) {
 	case "daemon":
 		decl = newAnd(ast.NewIdent("$Daemon"), res)
 	default:
-		panic("TODO: type lookup schema voodoo")
+		panic(fmt.Errorf("TODO: type lookup schema voodoo. typ=%q", typ))
 	}
 	b.addDecl([]string{"$stack", "components", name}, decl)
 }
