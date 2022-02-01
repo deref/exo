@@ -49,3 +49,5 @@ func NewHTTPError(status int, message string) HTTPError {
 func HTTPErrorf(status int, format string, v ...interface{}) HTTPError {
 	return WithHTTPStatus(status, fmt.Errorf(format, v...))
 }
+
+var InternalServerError = NewHTTPError(http.StatusInternalServerError, "internal server error")
