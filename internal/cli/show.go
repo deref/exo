@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	"github.com/deref/exo/internal/api"
+	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/spf13/cobra"
 )
 
@@ -33,7 +34,7 @@ var showCmd = &cobra.Command{
 		if q.Component == nil {
 			return fmt.Errorf("no such component: %q", ref)
 		}
-		fmt.Println(q.Component.Configuration)
+		cmdutil.Show(q.Component.Configuration)
 		return nil
 	},
 }
