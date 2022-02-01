@@ -9,7 +9,7 @@ import (
 	"strconv"
 	"text/tabwriter"
 
-	"github.com/deref/exo/internal/gui"
+	"github.com/deref/exo/internal/resolvers"
 	"github.com/deref/exo/internal/util/osutil"
 	"github.com/spf13/cobra"
 )
@@ -67,8 +67,7 @@ func effectiveServerURL() string {
 	return url
 }
 
-func newGUIRoutes() *gui.Routes {
-	return &gui.Routes{
-		URL: effectiveServerURL(),
-	}
+// XXX Do not utilize resolvers directly.
+func newGUIRoutes() *resolvers.RoutesResolver {
+	return resolvers.NewRoutesResolver(effectiveServerURL())
 }

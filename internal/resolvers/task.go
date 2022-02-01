@@ -298,6 +298,10 @@ func (r *QueryResolver) tasksByJobIDs(ctx context.Context, jobIDs []string) ([]*
 	return resolvers, nil
 }
 
+func (r *TaskResolver) JobURL() string {
+	return r.Q.Routes.jobURL(r.JobID)
+}
+
 func (r *TaskResolver) Job(ctx context.Context) (*TaskResolver, error) {
 	return r.Q.taskByID(ctx, &r.JobID)
 }

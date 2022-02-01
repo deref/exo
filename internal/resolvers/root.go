@@ -28,6 +28,7 @@ type RootResolver struct {
 	DB            *sqlx.DB
 	SystemLog     logging.Logger
 	ULIDGenerator *gensym.ULIDGenerator
+	Routes        *RoutesResolver
 }
 
 // While queries and mutations are accessed in disjoint query paths, this

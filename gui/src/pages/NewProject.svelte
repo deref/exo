@@ -10,7 +10,7 @@
   import type { IconGlyph } from '../components/Icon.svelte';
 
   const queryString = router.querystring;
-  const root = new URLSearchParams($queryString ?? '').get('root');
+  const workspace = new URLSearchParams($queryString ?? '').get('workspace');
 
   let search: string = '';
 
@@ -50,7 +50,9 @@
             on:click={() => {
               router.push(
                 `#/new-project/${encodeURIComponent(template.name)}${
-                  !!root ? `?root=${encodeURIComponent(root)}` : ''
+                  !!workspace
+                    ? `?workspace=${encodeURIComponent(workspace)}`
+                    : ''
                 }`,
               );
             }}

@@ -25,9 +25,14 @@ type Peer struct {
 
 var _ api.Service = (*Peer)(nil)
 
-func NewPeer(ctx context.Context, varDir string) (*Peer, error) {
+type PeerConfig struct {
+	VarDir      string
+	GUIEndpoint string
+}
+
+func NewPeer(ctx context.Context, cfg PeerConfig) (*Peer, error) {
 	// XXX reconsile SQL DB opening with exod/main.go
-	dbPath := filepath.Join(varDir, "exo.sqlite3")
+	dbPath := filepath.Join(cfg.VarDir, "exo.sqlite3")
 	txMode := "exclusive"
 	connStr := dbPath + "?_txlock=" + txMode
 	db, err := sqlx.Open("sqlite3", connStr)
@@ -38,6 +43,7 @@ func NewPeer(ctx context.Context, varDir string) (*Peer, error) {
 		DB:            db,
 		SystemLog:     logging.CurrentLogger(ctx),
 		ULIDGenerator: gensym.NewULIDGenerator(ctx),
+		Routes:        resolvers.NewRoutesResolver(cfg.GUIEndpoint),
 	}
 	// XXX migration probably shouldn't happen here.
 	if err := r.Migrate(ctx); err != nil {

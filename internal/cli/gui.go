@@ -6,7 +6,7 @@ import (
 	"net/url"
 	"os"
 
-	"github.com/deref/exo/internal/core/api"
+	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/pkg/browser"
 	"github.com/spf13/cobra"
@@ -42,25 +42,30 @@ If the current directory is part of a workspace, navigates to it.`,
 	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := context.Background()
-		cl := newClient()
 
-		cwd := cmdutil.MustGetwd()
-		output, err := cl.Kernel().ResolveWorkspace(ctx, &api.ResolveWorkspaceInput{
-			Ref: cwd,
-		})
-		if err != nil {
-			return fmt.Errorf("resolving workspace: %w", err)
+		var q struct {
+			Routes struct {
+				NewProjectURL string `graphql:"newProjectUrl(workspace: $cwd)"`
+			}
+			Workspace *struct {
+				URL string
+			} `graphql:"workspaceByRef(ref: $cwd)"`
+		}
+		if err := api.Query(ctx, svc, &q, map[string]interface{}{
+			"cwd": cmdutil.MustGetwd(),
+		}); err != nil {
+			return fmt.Errorf("querying: %w", err)
 		}
 
-		routes := newGUIRoutes()
 		var endpoint string
-		if output.ID == nil {
-			endpoint = routes.NewWorkspaceURL(cwd)
+		if q.Workspace == nil {
+			endpoint = q.Workspace.URL
 		} else {
-			endpoint = routes.WorkspaceURL(*output.ID)
+			endpoint = q.Routes.NewProjectURL
 		}
 
-		endpoint, err = addAuthTokenToURL(endpoint)
+		// TODO: Add auth-token server-side?
+		endpoint, err := addAuthTokenToURL(endpoint)
 		if err != nil {
 			return err
 		}

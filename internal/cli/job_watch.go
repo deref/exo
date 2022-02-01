@@ -34,7 +34,9 @@ func watchJob(ctx context.Context, jobID string) error {
 
 	// Print link to job in GUI.
 	routes := newGUIRoutes()
-	fmt.Fprintln(out, "Job URL:", routes.JobURL(jobID))
+	fmt.Fprintln(out, "Job URL:", routes.JobURL(struct{ ID string }{
+		ID: jobID,
+	}))
 
 	// Refresh rate starts fast, in case the job completes fast, but will
 	// slow over time to minimize overhead and UI flicker.
