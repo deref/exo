@@ -18,6 +18,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
+// If jobID is set, only work tasks for that job. Otherwise, work any task.
 func RunWorker(ctx context.Context, p *Peer, workerID string, jobID *string) error {
 	logger := logging.CurrentLogger(ctx)
 	var timeout *int
@@ -59,6 +60,8 @@ func RunWorker(ctx context.Context, p *Peer, workerID string, jobID *string) err
 }
 
 func WorkTask(ctx context.Context, p *Peer, workerID string, id string) error {
+	logger := logging.CurrentLogger(ctx)
+
 	var start struct {
 		Task struct {
 			ID        string
@@ -102,23 +105,28 @@ func WorkTask(ctx context.Context, p *Peer, workerID string, id string) error {
 					Canceled string
 				} `graphql:"updateTask(id: $id, workerId: $workerId)"`
 			}
-			err := api.Mutate(taskCtx, p, &m, vars)
-			if errors.Is(err, context.Canceled) {
-				return nil
-			}
-			if err != nil {
+			if err := api.Mutate(taskCtx, p, &m, vars); err != nil {
 				return fmt.Errorf("heartbeat failed: %w", err)
 			}
 			if m.Task.Canceled != "" || m.Task.Finished != "" {
 				return nil
 			}
-			chrono.Sleep(cancelableCtx, time.Second)
+			err := chrono.Sleep(cancelableCtx, time.Second)
+			if errors.Is(err, context.Canceled) {
+				return nil
+			}
 		}
 	})
 
 	// Do the actual work and record the results.
 	eg.Go(func() error {
 		defer cancel()
+
+		workCtx := logging.ContextWithLogger(cancelableCtx, &resolvers.TaskLogger{
+			Root:      p.root,
+			SystemLog: logger,
+			TaskID:    task.ID,
+		})
 
 		taskErr := func() error {
 			var args map[string]interface{}
@@ -131,7 +139,7 @@ func WorkTask(ctx context.Context, p *Peer, workerID string, id string) error {
 				return fmt.Errorf("encoding mutation: %w", err)
 			}
 
-			return p.Do(cancelableCtx, mut, args, &res)
+			return p.Do(workCtx, mut, args, &res)
 		}()
 
 		var finish struct {

@@ -19,6 +19,7 @@ import (
 
 type Peer struct {
 	db     *sqlx.DB
+	root   *resolvers.RootResolver
 	schema *graphql.Schema
 }
 
@@ -35,7 +36,7 @@ func NewPeer(ctx context.Context, varDir string) (*Peer, error) {
 	}
 	r := &resolvers.RootResolver{
 		DB:            db,
-		Logger:        logging.CurrentLogger(ctx),
+		SystemLog:     logging.CurrentLogger(ctx),
 		ULIDGenerator: gensym.NewULIDGenerator(ctx),
 	}
 	// XXX migration probably shouldn't happen here.
@@ -44,6 +45,7 @@ func NewPeer(ctx context.Context, varDir string) (*Peer, error) {
 	}
 	return &Peer{
 		db:     db,
+		root:   r,
 		schema: resolvers.NewSchema(r),
 	}, nil
 }

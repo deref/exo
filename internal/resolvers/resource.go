@@ -9,6 +9,7 @@ import (
 
 	"github.com/deref/exo/internal/gensym"
 	"github.com/deref/exo/internal/providers/sdk"
+	"github.com/deref/exo/internal/util/logging"
 	"github.com/deref/util-go/httputil"
 )
 
@@ -394,14 +395,14 @@ func (r *MutationResolver) CreateResource(ctx context.Context, args struct {
 		if _, err := r.createJob(ctx, jobID, "refreshResource", map[string]interface{}{
 			"ref": row.ID,
 		}); err != nil {
-			r.Logger.Infof("error starting resource %s adoption: %w", row.ID, err)
+			logging.Infof(ctx, "error starting resource %s adoption: %w", row.ID, err)
 		}
 	} else {
 		if _, err = r.createJob(ctx, jobID, "initializeResource", map[string]interface{}{
 			"ref":   row.ID,
 			"model": args.Model,
 		}); err != nil {
-			r.Logger.Infof("error starting resource %s creation: %w", row.ID, err)
+			logging.Infof(ctx, "error starting resource %s creation: %w", row.ID, err)
 		}
 	}
 
@@ -498,7 +499,7 @@ func (r *MutationResolver) doResourceOperation(ctx context.Context, ref string, 
 			SET job_id = NULL, status = ?, message = ?
 			WHERE job_id = ?
 		`, status, message, jobID); err != nil {
-			r.Logger.Infof("task %s failed to unlock resource %q: %w", jobID, ref, err)
+			logging.Infof(ctx, "task %s failed to unlock resource %q: %w", jobID, ref, err)
 		}
 	}
 	defer finish()
