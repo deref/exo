@@ -22,6 +22,7 @@ func Warnf(format string, v ...interface{}) {
 	fmt.Fprintf(os.Stderr, "%v\n", fmt.Errorf(format, v...))
 }
 
+// TODO: Many usages of this should panic, not hard-exit.
 func Fatalf(format string, v ...interface{}) {
 	Warnf(format, v...)
 	os.Exit(1)

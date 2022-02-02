@@ -38,10 +38,6 @@ $ exo json name=Alice
 
 $ exo json status:=404 'message:="not found"'
 { "status": 404, "message": "not found" }`,
-	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		offline = true
-		return cmd.Parent().PersistentPostRunE(cmd, args)
-	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		obj, err := cmdutil.ArgsToJsonObject(args)
 		if err != nil {

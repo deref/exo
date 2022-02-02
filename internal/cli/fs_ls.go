@@ -1,9 +1,9 @@
 package cli
 
 import (
+	"errors"
 	"fmt"
 
-	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/spf13/cobra"
 )
 
@@ -40,7 +40,7 @@ Returns non-zero exit code if the file or directory does not exist.`,
 		})
 		f := q.Workspace.FileSystem.File
 		if f == nil {
-			cmdutil.Fatalf("no such file or directory")
+			return errors.New("no such file or directory")
 		}
 		if f.IsDirectory {
 			for _, child := range f.Children {
