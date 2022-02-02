@@ -5,6 +5,7 @@ import (
 	"syscall"
 
 	"github.com/deref/exo/internal/util/cmdutil"
+	"github.com/deref/exo/internal/util/osutil"
 	"github.com/deref/exo/internal/util/which"
 	"github.com/spf13/cobra"
 )
@@ -21,15 +22,12 @@ var execCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		envv, err := getEnvv(ctx)
-		if err != nil {
-			return fmt.Errorf("getting environment: %w", err)
-		}
+		env := osutil.EnvMapToEnvv(getEnvMap(ctx))
 		program, err := which.Which(args[0])
 		if err != nil {
 			return fmt.Errorf("resolving program: %w", err)
 		}
-		err = syscall.Exec(program, args, envv)
+		err = syscall.Exec(program, args, env)
 		cmdutil.Fatalf("%v", err)
 		panic("unreachable")
 	},

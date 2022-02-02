@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"github.com/alessio/shellescape"
+	"github.com/deref/exo/internal/util/osutil"
 	"github.com/spf13/cobra"
 )
 
@@ -19,18 +19,15 @@ var envCmd = &cobra.Command{
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		envv, err := getEnvv(ctx)
-		if err != nil {
-			return err
-		}
-		for _, kvp := range envv {
+		env := osutil.EnvMapToDotEnv(getEnvMap(ctx))
+		for _, kvp := range env {
 			fmt.Println(kvp)
 		}
 		return nil
 	},
 }
 
-func getEnvv(ctx context.Context) ([]string, error) {
+func getEnvMap(ctx context.Context) map[string]string {
 	var q struct {
 		Workspace *struct {
 			Environment struct {
@@ -42,11 +39,10 @@ func getEnvv(ctx context.Context) ([]string, error) {
 		} `graphql:"workspaceByRef(ref: $currentWorkspace)"`
 	}
 	mustQueryWorkspace(ctx, &q, nil)
-
-	envVars := q.Workspace.Environment.Variables
-	envv := make([]string, len(envVars))
-	for i, envVar := range envVars {
-		envv[i] = fmt.Sprintf("%s=%s", envVar.Name, shellescape.Quote(envVar.Value))
+	vars := q.Workspace.Environment.Variables
+	m := make(map[string]string, len(vars))
+	for _, v := range vars {
+		m[v.Name] = v.Value
 	}
-	return envv, nil
+	return m
 }
