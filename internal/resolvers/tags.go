@@ -41,7 +41,7 @@ func (t *Tags) UnmarshalGraphQL(input interface{}) (err error) {
 func (t *Tags) Scan(src interface{}) error {
 	s, ok := src.(string)
 	if !ok {
-		return errors.New("expected string")
+		return fmt.Errorf("expected string, got %T", src)
 	}
 	return json.Unmarshal([]byte(s), (*map[string]string)(t))
 }

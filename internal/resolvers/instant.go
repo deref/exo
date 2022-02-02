@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"time"
 
 	"github.com/deref/exo/internal/chrono"
@@ -40,7 +40,7 @@ func (inst *Instant) Scan(src interface{}) error {
 func (inst *Instant) unmarshal(v interface{}) (err error) {
 	s, ok := v.(string)
 	if !ok {
-		return errors.New("expected string")
+		return fmt.Errorf("expected string, got %T", v)
 	}
 	inst.t, err = chrono.ParseIsoNano(s)
 	return

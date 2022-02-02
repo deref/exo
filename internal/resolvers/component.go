@@ -17,12 +17,14 @@ type ComponentResolver struct {
 }
 
 type ComponentRow struct {
-	ID       string   `db:"id"`
-	StackID  string   `db:"stack_id"`
-	Name     string   `db:"name"`
-	Type     string   `db:"type"`
-	Spec     string   `db:"spec"`
-	Disposed *Instant `db:"disposed"`
+	ID       string     `db:"id"`
+	StackID  string     `db:"stack_id"`
+	ParentID string     `db:"parent_id"`
+	Name     string     `db:"name"`
+	Type     string     `db:"type"`
+	Spec     string     `db:"spec"`
+	State    JSONObject `db:"state"`
+	Disposed *Instant   `db:"disposed"`
 }
 
 func (r *QueryResolver) ComponentByID(ctx context.Context, args struct {
@@ -115,6 +117,10 @@ func (r *ComponentResolver) Stack(ctx context.Context) (*StackResolver, error) {
 	return r.Q.stackByID(ctx, &r.StackID)
 }
 
+func (r *ComponentResolver) Parent(ctx context.Context) (*ComponentResolver, error) {
+	return r.Q.componentByID(ctx, &r.ParentID)
+}
+
 func (r *ComponentResolver) Resources(ctx context.Context) ([]*ResourceResolver, error) {
 	return r.Q.resourcesByComponent(ctx, r.ID)
 }
@@ -141,6 +147,7 @@ func (r *MutationResolver) CreateComponent(ctx context.Context, args struct {
 		Name:    args.Name,
 		Type:    args.Type,
 		Spec:    args.Spec,
+		State:   make(JSONObject),
 	}
 	if err := r.insertRow(ctx, "component", row); err != nil {
 		if isSqlConflict(err) {
