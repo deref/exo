@@ -3,7 +3,7 @@ package cli
 import (
 	"strings"
 
-	"github.com/deref/exo/internal/providers/os/components/daemon"
+	"github.com/deref/exo/internal/providers/os/daemon"
 	"github.com/spf13/cobra"
 )
 

@@ -23,9 +23,9 @@ func (r *MutationResolver) ReconcileComponent(ctx context.Context, args struct {
 		return nil, errors.New("no such component")
 	}
 
-	ctrl := getComponentController(ctx, component.Type)
+	ctrl := getController(ctx, component.Type)
 	if ctrl == nil {
-		return nil, fmt.Errorf("no controller for component type: %s", component.Type)
+		return nil, fmt.Errorf("no controller for type: %q", component.Type)
 	}
 
 	cfg, err := component.configuration(ctx)

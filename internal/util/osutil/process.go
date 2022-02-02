@@ -1,6 +1,8 @@
 package osutil
 
 import (
+	"context"
+	"fmt"
 	"os"
 	"syscall"
 	"time"
@@ -33,6 +35,14 @@ func SignalGroup(pgid int, sig os.Signal) error {
 	return SignalProcess(-pgid, sig)
 }
 
+func TerminateProcess(pid int) error {
+	return SignalProcess(pid, syscall.SIGTERM)
+}
+
+func TerminateGroup(pgid int) error {
+	return SignalGroup(pgid, syscall.SIGTERM)
+}
+
 func KillProcess(pid int) error {
 	return SignalProcess(pid, syscall.SIGKILL)
 }
@@ -45,23 +55,35 @@ func WaitProcess(pid int) (*os.ProcessState, error) {
 	return FindProcess(pid).Wait()
 }
 
-func TerminateProcessWithTimeout(pid int, timeout time.Duration) error {
-	_ = SignalProcess(pid, syscall.SIGTERM)
-
+// Terminates pid, then if context is cancelled, kills pid.
+func ShutdownProcess(ctx context.Context, pid int) error {
+	if err := TerminateGroup(pid); err != nil {
+		return fmt.Errorf("terminating: %w", err)
+	}
 	done := make(chan struct{})
 	go func() {
 		_, _ = WaitProcess(pid)
 		close(done)
 	}()
-
-	timer := time.NewTimer(timeout)
 	select {
-	case <-timer.C:
-		return KillProcess(pid)
+	case <-ctx.Done():
+		if err := KillGroup(pid); err != nil {
+			return fmt.Errorf("killing: %w", err)
+		}
 	case <-done:
-		timer.Stop()
-		return nil
+		// no-op.
 	}
+	return nil
+}
+
+func ShutdownGroup(ctx context.Context, gpid int) error {
+	return ShutdownProcess(ctx, -gpid)
+}
+
+func TerminateProcessWithTimeout(pid int, timeout time.Duration) error {
+	ctx, cancel := context.WithTimeout(context.Background(), timeout)
+	defer cancel()
+	return ShutdownProcess(ctx, pid)
 }
 
 func TerminateGroupWithTimeout(pgid int, timeout time.Duration) error {

@@ -18,6 +18,7 @@ $Component: {
   type: string
   name: string
   spec: {}
+  run: bool | *true
   environment: $Environment & {
     EXO_COMPONENT: name
   }

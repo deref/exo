@@ -412,14 +412,14 @@ func (r *MutationResolver) CreateResource(ctx context.Context, args struct {
 	}, nil
 }
 
-type resourceOperation func(ctx context.Context, row *ResourceRow, controller *sdk.ResourceController) (model string, err error)
+type resourceOperation func(ctx context.Context, row *ResourceRow, controller *sdk.Controller) (model string, err error)
 
 func (r *MutationResolver) InitializeResource(ctx context.Context, args struct {
 	Ref   string
 	Model string
 }) (*ResourceResolver, error) {
 	return r.doResourceOperation(ctx, args.Ref,
-		func(ctx context.Context, row *ResourceRow, ctrl *sdk.ResourceController) (string, error) {
+		func(ctx context.Context, row *ResourceRow, ctrl *sdk.Controller) (string, error) {
 			return ctrl.Create(ctx, row.Model)
 		},
 	)
@@ -429,7 +429,7 @@ func (r *MutationResolver) RefreshResource(ctx context.Context, args struct {
 	Ref string
 }) (*ResourceResolver, error) {
 	return r.doResourceOperation(ctx, args.Ref,
-		func(ctx context.Context, row *ResourceRow, ctrl *sdk.ResourceController) (string, error) {
+		func(ctx context.Context, row *ResourceRow, ctrl *sdk.Controller) (string, error) {
 			return ctrl.Read(ctx, row.Model)
 		},
 	)
@@ -440,7 +440,7 @@ func (r *MutationResolver) UpdateResource(ctx context.Context, args struct {
 	Model string
 }) (*ResourceResolver, error) {
 	return r.doResourceOperation(ctx, args.Ref,
-		func(ctx context.Context, row *ResourceRow, ctrl *sdk.ResourceController) (string, error) {
+		func(ctx context.Context, row *ResourceRow, ctrl *sdk.Controller) (string, error) {
 			return ctrl.Update(ctx, row.Model, args.Model)
 		},
 	)
@@ -450,7 +450,7 @@ func (r *MutationResolver) DisposeResource(ctx context.Context, args struct {
 	Ref string
 }) (*VoidResolver, error) {
 	if _, err := r.doResourceOperation(ctx, args.Ref,
-		func(ctx context.Context, row *ResourceRow, ctrl *sdk.ResourceController) (string, error) {
+		func(ctx context.Context, row *ResourceRow, ctrl *sdk.Controller) (string, error) {
 			err := ctrl.Delete(ctx, row.Model)
 			return row.Model, err
 		},
@@ -504,9 +504,9 @@ func (r *MutationResolver) doResourceOperation(ctx context.Context, ref string, 
 	}
 	defer finish()
 
-	ctrl := getResourceController(ctx, row.Type)
+	ctrl := getController(ctx, row.Type)
 	if ctrl == nil {
-		return nil, fmt.Errorf("no controller for resource type: %s", row.Type)
+		return nil, fmt.Errorf("no controller for type: %q", row.Type)
 	}
 
 	model, err := op(ctx, &row, ctrl)

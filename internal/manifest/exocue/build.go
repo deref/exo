@@ -79,6 +79,6 @@ func newAnd(xs ...ast.Expr) ast.Expr {
 
 func (b *Builder) Build() *Stack {
 	cc := cuecontext.New()
-	cfg := cc.BuildExpr(declsToStruct(b.decls))
+	cfg := cc.BuildExpr(declsToStruct(b.decls)).Eval()
 	return NewStack(cfg.LookupPath(cue.MakePath(cue.Str("$stack"))))
 }
