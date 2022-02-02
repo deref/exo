@@ -12,15 +12,13 @@ import (
 type Controller struct{}
 
 func (c *Controller) Identify(ctx context.Context, m *Model) (string, error) {
-	// TODO: Validate host id.
 	if m.Pid == nil {
 		return "", nil
 	}
-	return fmt.Sprintf("exo:/hosts/%s/processes/%d", m.HostID, *m.Pid), nil
+	return fmt.Sprintf("exo:/processes/%d", *m.Pid), nil
 }
 
 func (c *Controller) Create(ctx context.Context, m *Model) error {
-	// TODO: Verify current host id.
 	cmd := &exec.Cmd{
 		Path: m.Program,
 		Args: append([]string{m.Program}, m.Arguments...),
