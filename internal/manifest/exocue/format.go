@@ -27,9 +27,17 @@ func FormatString(v interface{}) (string, error) {
 }
 
 func StructToFile(v cue.Value) *ast.File {
-	lit := v.Syntax().(*ast.StructLit)
+	var decls []ast.Decl
+	switch x := v.Syntax().(type) {
+	case *ast.StructLit:
+		decls = x.Elts
+	case *ast.BottomLit:
+		decls = []ast.Decl{x}
+	default:
+		panic(fmt.Errorf("cannot convert %T to file", x))
+	}
 	return &ast.File{
-		Decls: lit.Elts,
+		Decls: decls,
 	}
 }
 
