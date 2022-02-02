@@ -166,6 +166,7 @@ type Component {
 
   parentId: String
   parent: Component
+  children: [Component!]!
 
   type: String!
   name: String!

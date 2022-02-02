@@ -19,9 +19,10 @@ type ComponentResolver struct {
 type ComponentRow struct {
 	ID       string     `db:"id"`
 	StackID  string     `db:"stack_id"`
-	ParentID string     `db:"parent_id"`
-	Name     string     `db:"name"`
+	ParentID *string    `db:"parent_id"`
 	Type     string     `db:"type"`
+	Name     string     `db:"name"`
+	Key      string     `db:"key"`
 	Spec     string     `db:"spec"`
 	State    JSONObject `db:"state"`
 	Disposed *Instant   `db:"disposed"`
@@ -113,12 +114,38 @@ func (r *QueryResolver) componentsByStack(ctx context.Context, stackID string) (
 	return resolvers, nil
 }
 
+func (r *QueryResolver) componentsByParent(ctx context.Context, stackID string) ([]*ComponentResolver, error) {
+	var rows []ComponentRow
+	err := r.DB.SelectContext(ctx, &rows, `
+		SELECT *
+		FROM component
+		WHERE parent_id = ?
+		AND disposed IS NULL
+		ORDER BY name ASC
+	`, stackID)
+	if err != nil {
+		return nil, err
+	}
+	resolvers := make([]*ComponentResolver, len(rows))
+	for i, row := range rows {
+		resolvers[i] = &ComponentResolver{
+			Q:            r,
+			ComponentRow: row,
+		}
+	}
+	return resolvers, nil
+}
+
 func (r *ComponentResolver) Stack(ctx context.Context) (*StackResolver, error) {
 	return r.Q.stackByID(ctx, &r.StackID)
 }
 
 func (r *ComponentResolver) Parent(ctx context.Context) (*ComponentResolver, error) {
-	return r.Q.componentByID(ctx, &r.ParentID)
+	return r.Q.componentByID(ctx, r.ParentID)
+}
+
+func (r *ComponentResolver) Children(ctx context.Context) ([]*ComponentResolver, error) {
+	return r.Q.componentsByParent(ctx, r.ID)
 }
 
 func (r *ComponentResolver) Resources(ctx context.Context) ([]*ResourceResolver, error) {

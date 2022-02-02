@@ -7,6 +7,7 @@ type Stack struct {
 }
 
 func NewStack(v cue.Value) *Stack {
+	dumpValue(v)
 	return &Stack{
 		v: v,
 	}
@@ -16,11 +17,8 @@ func (s *Stack) Eval() cue.Value {
 	return s.v.Eval()
 }
 
-func (s *Stack) evalPath(selectors ...cue.Selector) cue.Value {
-	path := cue.MakePath(selectors...)
-	return s.v.LookupPath(path).Eval()
-}
-
 func (s *Stack) Component(name string) cue.Value {
-	return s.evalPath(cue.Str("components"), cue.Str(name))
+	componentPath := cue.MakePath(cue.Str("components"), cue.Str(name))
+	res := s.v.LookupPath(componentPath)
+	return res
 }

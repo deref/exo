@@ -6,6 +6,7 @@ import (
 	"net/http"
 )
 
+// TODO: Stop abusing this for internal vs external errors.
 type HTTPError interface {
 	error
 	HTTPStatus() int

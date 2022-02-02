@@ -7,8 +7,6 @@ import (
 	"path"
 )
 
-type Controller struct{}
-
 func (c *Controller) Identify(ctx context.Context, m *Model) (string, error) {
 	return path.Join("exo:/files", m.Path), nil
 }
