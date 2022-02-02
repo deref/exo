@@ -10,17 +10,8 @@ import (
 
 func main() {
 	args := os.Args[1:]
-	wd, err := os.Getwd()
-	if err != nil {
-		cmdutil.Fatalf("getting working directory: %w", err)
-	}
-	pathVar, _ := os.LookupEnv("PATH")
 	for _, arg := range args {
-		found, err := which.Query{
-			WorkingDirectory: wd,
-			PathVariable:     pathVar,
-			Program:          arg,
-		}.Run()
+		found, err := which.Which(arg)
 		if err != nil {
 			cmdutil.Fatal(err)
 		}
