@@ -17,10 +17,6 @@ var licenseCmd = &cobra.Command{
 	Use:   "license",
 	Short: "Display license and legal notices",
 	Long:  `Displays license and required legal notices.`,
-	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		offline = true
-		return cmd.Parent().PersistentPreRunE(cmd, args)
-	},
 	Run: func(cmd *cobra.Command, args []string) {
 		entries, err := about.Notices.ReadDir(".")
 		if err != nil {

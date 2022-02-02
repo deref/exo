@@ -14,10 +14,6 @@ var exitCmd = &cobra.Command{
 	Short: "Stop the exo daemon",
 	Long:  `Stop the exo daemon process.`,
 	Args:  cobra.NoArgs,
-	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
-		offline = true
-		return cmd.Parent().PersistentPreRunE(cmd, args)
-	},
 	RunE: func(cmd *cobra.Command, args []string) error {
 		if cfg.NoDaemon {
 			cmdutil.Fatalf("daemon disabled by config")

@@ -36,7 +36,7 @@ Prints instructions for using the newly created workspace.`,
 			Root: root,
 		})
 		if err != nil {
-			cmdutil.Fatalf("creating workspace: %w", err)
+			return fmt.Errorf("creating workspace: %w", err)
 		}
 		workspaceID := createOutput.ID
 		workspace := cl.GetWorkspace(workspaceID)
@@ -46,7 +46,7 @@ Prints instructions for using the newly created workspace.`,
 		fmt.Println()
 		manifestOutput, err := workspace.ResolveManifest(ctx, &api.ResolveManifestInput{})
 		if err != nil {
-			cmdutil.Fatalf("resolving manifest: %w", err)
+			return fmt.Errorf("resolving manifest: %w", err)
 		}
 
 		if manifestOutput.Path == "" {
