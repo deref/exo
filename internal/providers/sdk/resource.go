@@ -21,6 +21,7 @@ type ResourceController struct {
 // TODO: Most models are JSON, so this interface is a pain. Instead, check
 // for json.Marshaler, then encoding.TextMarshaler, and finally just do normal
 // JSON marshaling. Similar for unmarshaling.
+// TODO: Should we just _insist_ that models are JSON?
 type Model interface {
 	UnmarshalModel(ctx context.Context, s string) error
 	MarshalModel(ctx context.Context) (string, error)

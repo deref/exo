@@ -5,7 +5,7 @@ import (
 	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
-	"errors"
+	"fmt"
 	"time"
 
 	"github.com/graph-gophers/graphql-go/decode"
@@ -34,7 +34,7 @@ func (u *ULID) Scan(src interface{}) error {
 func (u *ULID) unmarshal(v interface{}) error {
 	s, ok := v.(string)
 	if !ok {
-		return errors.New("expected string")
+		return fmt.Errorf("expected string, got %T", v)
 	}
 	parsed, err := ulid.ParseStrict(s)
 	if err != nil {

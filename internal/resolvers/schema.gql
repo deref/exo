@@ -164,6 +164,9 @@ type Component {
   stackId: String!
   stack: Stack!
 
+  parentId: String
+  parent: Component
+
   type: String!
   name: String!
 
@@ -171,6 +174,8 @@ type Component {
   
   spec: String!
   configuration: String!
+
+  state: JSONObject!
 }
 
 type Reconciliation {
@@ -302,3 +307,5 @@ scalar ULID
 
 # JSON Record<string, string>.
 scalar Tags
+
+scalar JSONObject

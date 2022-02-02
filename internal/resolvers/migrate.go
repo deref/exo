@@ -95,9 +95,11 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 		CREATE TABLE IF NOT EXISTS component (
 			id TEXT NOT NULL PRIMARY KEY,
 			stack_id TEXT NOT NULL,
+			parent_id TEXT,
 			name TEXT NOT NULL,
 			type TEXT NOT NULL,
 			spec TEXT NOT NULL,
+			state TEXT NOT NULL,
 			disposed TEXT
 	);`); err != nil {
 		return fmt.Errorf("creating component table: %w", err)
@@ -105,7 +107,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 
 	if _, err := r.DB.ExecContext(ctx, `
 		CREATE UNIQUE INDEX IF NOT EXISTS
-		component_stack_id_and_name ON component ( stack_id, name )
+		component_path ON component ( stack_id, parent_id, name )
 		WHERE disposed IS NULL
 	`); err != nil {
 		return fmt.Errorf("creating component_stack_id_and_name index: %w", err)
