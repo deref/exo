@@ -7,8 +7,7 @@ import (
 )
 
 type Model struct {
-	HostID string `json:"hostId"`
-	Pid    *int   `json:"pid"`
+	Pid *int `json:"pid"`
 	// Absolute path to program to run on host.
 	Program     string            `json:"program"`
 	Arguments   []string          `json:"arguments"`

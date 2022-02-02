@@ -13,7 +13,6 @@ import (
 )
 
 type Model struct {
-	HostID  string
 	Path    string
 	Content string
 }
@@ -25,7 +24,6 @@ func (m *Model) UnmarshalModel(ctx context.Context, s string) error {
 	if err != nil {
 		return fmt.Errorf("reading header: %w", err)
 	}
-	m.HostID = hdr.Get("Host-ID")
 	m.Path = hdr.Get("Path")
 	content, _ := ioutil.ReadAll(r)
 
@@ -50,7 +48,6 @@ func (m *Model) UnmarshalModel(ctx context.Context, s string) error {
 
 func (m *Model) MarshalModel(ctx context.Context) (string, error) {
 	var sb strings.Builder
-	fmt.Fprintf(&sb, "Host-ID: %s\n", m.HostID)
 	fmt.Fprintf(&sb, "Path: %s\n", m.Path) // TODO: Validate no line breaks.
 	fmt.Fprintf(&sb, "Content-Length: %d\n", len(m.Content))
 	fmt.Fprintln(&sb)
