@@ -59,6 +59,16 @@ func NewPeer(ctx context.Context, cfg PeerConfig) (*Peer, error) {
 }
 
 func (p *Peer) Do(ctx context.Context, doc string, vars map[string]interface{}, res interface{}) error {
+	ctxVars := api.CurrentContextVariables(ctx)
+	if ctxVars != nil && ctxVars.TaskID != "" {
+		ctx = logging.ContextWithLogger(ctx, &api.EventLogger{
+			Service:    p,
+			SystemLog:  p.root.SystemLog,
+			SourceType: "Task",
+			SourceID:   ctxVars.TaskID,
+		})
+	}
+
 	vars, _ = jsonutil.MustSimplify(vars).(map[string]interface{})
 	resp := p.schema.Exec(ctx, doc, "", vars)
 	for i, err := range resp.Errors {

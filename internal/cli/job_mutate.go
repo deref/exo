@@ -64,7 +64,7 @@ func watchOwnJob(ctx context.Context, jobID string) error {
 	if p, ok := svc.(*peer.Peer); ok {
 		eg.Go(func() error {
 			workerID := fmt.Sprintf("peer:%d:inline", os.Getpid())
-			err := peer.RunWorker(ctx, p, workerID, &jobID)
+			err := api.RunWorker(ctx, p, workerID, &jobID)
 			if err != nil {
 				cancel()
 			}

@@ -5,10 +5,6 @@ import (
 	"fmt"
 )
 
-type StreamSourceResolver interface {
-	Stream(context.Context) *StreamResolver
-}
-
 type StreamResolver struct {
 	Q          *RootResolver
 	SourceType string `db:"source_type"`
@@ -32,9 +28,7 @@ func (r *StreamResolver) Source(ctx context.Context) (source StreamSourceResolve
 	return
 }
 
-func (r *StreamResolver) eventPrototype(ctx context.Context) createEventArgs {
-}
-
+// TODO: Consider delegating to source?
 func (r *StreamResolver) eventFilter() eventFilter {
 	var res eventFilter
 	var p *string

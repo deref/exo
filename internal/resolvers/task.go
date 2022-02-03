@@ -10,7 +10,6 @@ import (
 	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/chrono"
 	"github.com/deref/exo/internal/gensym"
-	"github.com/deref/exo/internal/util/jsonutil"
 )
 
 type TaskResolver struct {
@@ -19,46 +18,42 @@ type TaskResolver struct {
 }
 
 type TaskRow struct {
-	ID              string   `db:"id"`
-	JobID           string   `db:"job_id"`
-	ParentID        *string  `db:"parent_id"`
-	Mutation        string   `db:"mutation"`
-	Arguments       string   `db:"arguments"`
-	WorkerID        *string  `db:"worker_id"`
-	Status          string   `db:"status"`
-	Created         Instant  `db:"created"`
-	Updated         Instant  `db:"updated"`
-	Started         *Instant `db:"started"`
-	Canceled        *Instant `db:"canceled"`
-	Finished        *Instant `db:"finished"`
-	ProgressCurrent *int32   `db:"progress_current"`
-	ProgressTotal   *int32   `db:"progress_total"`
-	ErrorMessage    *string  `db:"error_message"`
+	ID              string     `db:"id"`
+	JobID           string     `db:"job_id"`
+	ParentID        *string    `db:"parent_id"`
+	Mutation        string     `db:"mutation"`
+	Arguments       JSONObject `db:"arguments"`
+	WorkerID        *string    `db:"worker_id"`
+	Status          string     `db:"status"`
+	Created         Instant    `db:"created"`
+	Updated         Instant    `db:"updated"`
+	Started         *Instant   `db:"started"`
+	Canceled        *Instant   `db:"canceled"`
+	Finished        *Instant   `db:"finished"`
+	ProgressCurrent *int32     `db:"progress_current"`
+	ProgressTotal   *int32     `db:"progress_total"`
+	ErrorMessage    *string    `db:"error_message"`
 }
 
 func (r *MutationResolver) CreateTask(ctx context.Context, args struct {
 	ParentID  *string
 	Mutation  string
-	Arguments string
+	Arguments JSONObject
 }) (*TaskResolver, error) {
 	id := newTaskID()
-	var taskArgs map[string]interface{}
-	if err := jsonutil.UnmarshalString(args.Arguments, &taskArgs); err != nil {
-		return nil, fmt.Errorf("unmarshaling task arguments: %w", err)
-	}
-	return r.createTask(ctx, id, args.ParentID, args.Mutation, taskArgs)
+	return r.createTask(ctx, id, args.ParentID, args.Mutation, args.Arguments)
 }
 
 var newTaskID = gensym.RandomBase32
 
-func (r *MutationResolver) createJob(ctx context.Context, id string, mutation string, args map[string]interface{}) (*TaskResolver, error) {
+func (r *MutationResolver) createJob(ctx context.Context, id string, mutation string, arguments map[string]interface{}) (*TaskResolver, error) {
 	parentID := (*string)(nil)
-	return r.createTask(ctx, id, parentID, mutation, args)
+	return r.createTask(ctx, id, parentID, mutation, arguments)
 }
 
 // The id is passed as a parameter to allow callers to use a pre-allocated id
 // in a database field to establish a mutual exclusion lock.
-func (r *MutationResolver) createTask(ctx context.Context, id string, parentID *string, mutation string, args map[string]interface{}) (*TaskResolver, error) {
+func (r *MutationResolver) createTask(ctx context.Context, id string, parentID *string, mutation string, arguments map[string]interface{}) (*TaskResolver, error) {
 	if id == "" {
 		panic("id is required")
 	}
@@ -67,7 +62,7 @@ func (r *MutationResolver) createTask(ctx context.Context, id string, parentID *
 		ID:        id,
 		ParentID:  parentID,
 		Mutation:  mutation,
-		Arguments: jsonutil.MustMarshalString(args),
+		Arguments: arguments,
 		Status:    api.TaskStatusPending,
 		Created:   now,
 		Updated:   now,

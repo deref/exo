@@ -1,4 +1,4 @@
-package peer
+package api
 
 import (
 	"context"
@@ -7,9 +7,7 @@ import (
 	"strconv"
 	"time"
 
-	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/chrono"
-	"github.com/deref/exo/internal/resolvers"
 	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/deref/exo/internal/util/logging"
 	"github.com/graphql-go/graphql/language/ast"
@@ -19,7 +17,7 @@ import (
 )
 
 // If jobID is set, only work tasks for that job. Otherwise, work any task.
-func RunWorker(ctx context.Context, p *Peer, workerID string, jobID *string) error {
+func RunWorker(ctx context.Context, svc Service, workerID string, jobID *string) error {
 	logger := logging.CurrentLogger(ctx)
 	var timeout *int
 	// Stop working tasks when a new task for this job hasn't appeared in a
@@ -42,7 +40,7 @@ func RunWorker(ctx context.Context, p *Peer, workerID string, jobID *string) err
 				Mutation string
 			} `graphql:"acquireTask(workerId: $workerId, timeout: $timeout, jobId: $jobId)"`
 		}
-		if err := api.Mutate(ctx, p, &acquired, acquireVars); err != nil {
+		if err := Mutate(ctx, svc, &acquired, acquireVars); err != nil {
 			return fmt.Errorf("acquiring task: %w", err)
 		}
 		taskID := acquired.Task.ID
@@ -50,7 +48,7 @@ func RunWorker(ctx context.Context, p *Peer, workerID string, jobID *string) err
 			return nil
 		}
 		logger.Infof("acquired %s task: %s", acquired.Task.Mutation, taskID)
-		err := WorkTask(ctx, p, workerID, taskID)
+		err := WorkTask(ctx, svc, workerID, taskID)
 		if err == nil {
 			logger.Infof("completed task: %s", taskID)
 		} else {
@@ -59,9 +57,7 @@ func RunWorker(ctx context.Context, p *Peer, workerID string, jobID *string) err
 	}
 }
 
-func WorkTask(ctx context.Context, p *Peer, workerID string, id string) error {
-	logger := logging.CurrentLogger(ctx)
-
+func WorkTask(ctx context.Context, svc Service, workerID string, id string) error {
 	var start struct {
 		Task struct {
 			ID        string
@@ -70,7 +66,7 @@ func WorkTask(ctx context.Context, p *Peer, workerID string, id string) error {
 			Arguments string
 		} `graphql:"startTask(id: $id, workerId: $workerId)"`
 	}
-	if err := api.Mutate(ctx, p, &start, map[string]interface{}{
+	if err := Mutate(ctx, svc, &start, map[string]interface{}{
 		"id":       id,
 		"workerId": workerID,
 	}); err != nil {
@@ -78,21 +74,13 @@ func WorkTask(ctx context.Context, p *Peer, workerID string, id string) error {
 	}
 	task := start.Task
 
-	taskCtx := resolvers.ContextWithTask(ctx, resolvers.TaskContext{
-		ID:       task.ID,
-		JobID:    task.JobID,
-		WorkerID: workerID,
-	})
-
-	cancelableCtx, cancel := context.WithCancel(taskCtx)
-	defer cancel()
-	var res struct{}
-
 	var eg errgroup.Group
 
-	// Poll for cancellation and act as worker heartbeat.
+	// Poll for task cancellation and to act as worker heartbeat.
+	waitCtx, stopPolling := context.WithCancel(ctx)
+	defer stopPolling()
 	eg.Go(func() error {
-		defer cancel()
+		defer stopPolling()
 		vars := map[string]interface{}{
 			"id":       id,
 			"workerId": workerID,
@@ -105,13 +93,13 @@ func WorkTask(ctx context.Context, p *Peer, workerID string, id string) error {
 					Canceled string
 				} `graphql:"updateTask(id: $id, workerId: $workerId)"`
 			}
-			if err := api.Mutate(taskCtx, p, &m, vars); err != nil {
+			if err := Mutate(ctx, svc, &m, vars); err != nil {
 				return fmt.Errorf("heartbeat failed: %w", err)
 			}
 			if m.Task.Canceled != "" || m.Task.Finished != "" {
 				return nil
 			}
-			err := chrono.Sleep(cancelableCtx, time.Second)
+			err := chrono.Sleep(waitCtx, time.Second)
 			if errors.Is(err, context.Canceled) {
 				return nil
 			}
@@ -119,14 +107,9 @@ func WorkTask(ctx context.Context, p *Peer, workerID string, id string) error {
 	})
 
 	// Do the actual work and record the results.
+	var res struct{}
 	eg.Go(func() error {
-		defer cancel()
-
-		workCtx := logging.ContextWithLogger(cancelableCtx, &resolvers.TaskLogger{
-			Root:      p.root,
-			SystemLog: logger,
-			TaskID:    task.ID,
-		})
+		defer stopPolling()
 
 		taskErr := func() error {
 			var args map[string]interface{}
@@ -139,7 +122,12 @@ func WorkTask(ctx context.Context, p *Peer, workerID string, id string) error {
 				return fmt.Errorf("encoding mutation: %w", err)
 			}
 
-			return p.Do(workCtx, mut, args, &res)
+			taskCtx := ContextWithVariables(ctx, ContextVariables{
+				TaskID:   task.ID,
+				JobID:    task.JobID,
+				WorkerID: workerID,
+			})
+			return svc.Do(taskCtx, mut, args, &res)
 		}()
 
 		var finish struct {
@@ -155,7 +143,7 @@ func WorkTask(ctx context.Context, p *Peer, workerID string, id string) error {
 		} else {
 			vars["error"] = taskErr.Error()
 		}
-		if err := api.Mutate(taskCtx, p, &finish, vars); err != nil {
+		if err := Mutate(ctx, svc, &finish, vars); err != nil {
 			return fmt.Errorf("finishing: %w", err)
 		}
 		return nil

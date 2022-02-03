@@ -200,7 +200,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 			CREATE UNIQUE INDEX IF NOT EXISTS %s_event
 			ON event ( %s_id, ulid )
 			WHERE %s_id IS NOT NULL
-		`, related)); err != nil {
+		`, related, related, related)); err != nil {
 			return fmt.Errorf("creating %s_event index: %w", related, err)
 		}
 	}
