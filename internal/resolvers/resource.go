@@ -257,20 +257,20 @@ func (r *ResourceResolver) Stack(ctx context.Context) (*StackResolver, error) {
 	}).Stack(ctx)
 }
 
-func (r *ResourceResolver) Job(ctx context.Context) (*TaskResolver, error) {
-	return r.Q.jobByID(ctx, r.JobID)
+func (r *ResourceResolver) Job() *JobResolver {
+	return r.Q.jobByID(r.JobID)
 }
 
 func (r *ResourceResolver) Operation(ctx context.Context) (*string, error) {
-	job, err := r.Job(ctx)
+	task, err := r.Job().Task(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("resolving job: %w", err)
+		return nil, fmt.Errorf("resolving task: %w", err)
 	}
-	if job == nil {
+	if task == nil {
 		return nil, nil
 	}
 	var operation string
-	switch job.Mutation {
+	switch task.Mutation {
 	case "initializeResource":
 		operation = "creating"
 	case "refreshResource":

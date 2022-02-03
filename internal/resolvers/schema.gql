@@ -75,13 +75,13 @@ type Mutation {
   disposeComponent(stack: String, ref: String!): Reconciliation!
 
   reconcileComponent(stack: String, ref: String!): Void
-  
-  findOrCreateStream(sourceType: String!, sourceId: String!): Stream
-
-  createEvent(streamId: String!, message: String!, tags: Tags): Event!
 
   # For testing.
   sleep(seconds: Float!): Void
+}
+
+type Subscription {
+  jobEvents(jobID: String!): Event!
 }
 
 # ISO-8601 timestamp in UTC.
@@ -243,11 +243,17 @@ type File {
   children: [File!]!
 }
 
+type Job {
+  # Same as root task ID.
+  id: String!
+  task: Task!
+  url: String!
+}
+
 type Task {
   id: String!
   jobId: String!
-  job: Task!
-  jobUrl: String!
+  job: Job!
   parentId: String
   mutation: String!
   arguments: String!
@@ -279,7 +285,7 @@ type Stream {
   sourceType: String!
   sourceId: String!
   source: StreamSource!
-  events(cursor: String, prev: Int, next: Int, filter: String): EventPage!
+  events(cursor: String, prev: Int, next: Int, icontains: String): EventPage!
   # Message of the most recent event, or empty.
   message: String!
 }
@@ -301,6 +307,18 @@ type Event {
   timestamp: Instant! # Extracted from ulid.
   message: String!
   tags: Tags!
+
+  source: StreamSource!
+  workspaceID: String
+  workspace: Workspace
+  stackID: String
+  stack: Stack
+  componentID: String
+  component: Component
+  jobID: String
+  job: Job
+  taskID: String
+  task: Task
 }
 
 # See <https://github.com/ulid/spec>.

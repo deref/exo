@@ -3,78 +3,61 @@ package resolvers
 import (
 	"context"
 	"fmt"
-
-	"github.com/deref/exo/internal/gensym"
 )
 
-type StreamSource interface {
-	Stream(context.Context) (*StreamResolver, error)
+type StreamSourceResolver interface {
+	Stream(context.Context) *StreamResolver
 }
 
 type StreamResolver struct {
-	Q *RootResolver
-	StreamRow
+	Q          *RootResolver
+	SourceType string `db:"source_type"`
+	SourceID   string `db:"source_id"`
 }
 
-type StreamRow struct {
-	ID         string   `db:"id"`
-	SourceType string   `db:"source_type"`
-	SourceID   string   `db:"source_id"`
-	Created    Instant  `db:"created"`
-	Truncated  *Instant `db:"truncated"`
-}
-
-func (r *QueryResolver) streamById(ctx context.Context, id *string) (*StreamResolver, error) {
-	stream := &StreamResolver{}
-	err := r.getRowByKey(ctx, &stream.StreamRow, `
-		SELECT *
-		FROM stream
-		WHERE id = ?
-	`, id)
-	if stream.ID == "" {
-		stream = nil
-	}
-	return stream, err
-}
-
-func (r *MutationResolver) FindOrCreateStream(ctx context.Context, args struct {
-	SourceType string
-	SourceID   string
-}) (*StreamResolver, error) {
-	return r.findOrCreateStream(ctx, args.SourceType, args.SourceID)
-}
-
-func (r *MutationResolver) findOrCreateStream(ctx context.Context, sourceType string, sourceId string) (*StreamResolver, error) {
-	row := StreamRow{
-		ID:         gensym.RandomBase32(),
-		SourceType: sourceType,
-		SourceID:   sourceId,
-		Created:    Now(ctx),
-	}
-	// The no-op `DO UPDATE` is required because `DO NOTHING` returns no rows.
-	if err := r.insertRowEx(ctx, "stream", &row, `
-		ON CONFLICT (source_type, source_id)
-		DO UPDATE SET created = created
-	`); err != nil {
-		return nil, fmt.Errorf("upserting: %w", err)
-	}
+func (r *QueryResolver) streamForSource(typ string, id string) *StreamResolver {
 	return &StreamResolver{
-		Q:         r,
-		StreamRow: row,
-	}, nil
+		Q:          r,
+		SourceType: typ,
+		SourceID:   id,
+	}
 }
 
-func (r *StreamResolver) Source(ctx context.Context) (source StreamSource, err error) {
+func (r *StreamResolver) Source(ctx context.Context) (source StreamSourceResolver, err error) {
 	var entity *Entity
 	entity, err = r.Q.findEntity(ctx, r.SourceType, r.SourceID)
 	if entity != nil {
-		source = entity.Underlying.(StreamSource)
+		source = entity.Underlying.(StreamSourceResolver)
 	}
 	return
 }
 
+func (r *StreamResolver) eventPrototype(ctx context.Context) createEventArgs {
+}
+
+func (r *StreamResolver) eventFilter() eventFilter {
+	var res eventFilter
+	var p *string
+	switch r.SourceType {
+	case "Workspace":
+		p = &res.WorkspaceID
+	case "Stack":
+		p = &res.StackID
+	case "Component":
+		p = &res.ComponentID
+	case "Job":
+		p = &res.JobID
+	case "Task":
+		p = &res.TaskID
+	default:
+		panic(fmt.Errorf("unexpected stream source type: %q", r.SourceType))
+	}
+	*p = r.SourceID
+	return res
+}
+
 func (r *StreamResolver) Message(ctx context.Context) (string, error) {
-	event, err := r.Q.latestEvent(ctx, []string{r.ID})
+	event, err := r.Q.latestEvent(ctx, r.eventFilter())
 	if event == nil || err != nil {
 		return "", err
 	}
@@ -82,13 +65,13 @@ func (r *StreamResolver) Message(ctx context.Context) (string, error) {
 }
 
 func (r *StreamResolver) Events(ctx context.Context, args struct {
-	Cursor *string
-	Prev   *int32
-	Next   *int32
-	Filter *string
+	Cursor    *string
+	Prev      *int32
+	Next      *int32
+	IContains *string
 }) (*EventPageResolver, error) {
 	q := eventQuery{
-		StreamIDs: []string{r.ID},
+		Filter: r.eventFilter(),
 	}
 	if args.Cursor != nil {
 		q.Cursor = *args.Cursor
@@ -99,8 +82,8 @@ func (r *StreamResolver) Events(ctx context.Context, args struct {
 	if args.Next != nil {
 		q.Next = int(*args.Next)
 	}
-	if args.Filter != nil {
-		q.Filter = *args.Filter
+	if args.IContains != nil {
+		q.Filter.IContains = *args.IContains
 	}
 	return r.Q.findEvents(ctx, q)
 }

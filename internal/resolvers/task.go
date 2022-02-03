@@ -230,14 +230,6 @@ func (r *QueryResolver) taskByID(ctx context.Context, id *string) (*TaskResolver
 	return t, err
 }
 
-func (r *QueryResolver) jobByID(ctx context.Context, id *string) (*TaskResolver, error) {
-	task, err := r.taskByID(ctx, id)
-	if task != nil && task.JobID != task.ID {
-		task = nil
-	}
-	return task, err
-}
-
 func (r *QueryResolver) AllTasks(ctx context.Context) ([]*TaskResolver, error) {
 	var rows []TaskRow
 	err := r.DB.SelectContext(ctx, &rows, `
@@ -298,12 +290,8 @@ func (r *QueryResolver) tasksByJobIDs(ctx context.Context, jobIDs []string) ([]*
 	return resolvers, nil
 }
 
-func (r *TaskResolver) JobURL() string {
-	return r.Q.Routes.jobURL(r.JobID)
-}
-
-func (r *TaskResolver) Job(ctx context.Context) (*TaskResolver, error) {
-	return r.Q.taskByID(ctx, &r.JobID)
+func (r *TaskResolver) Job() *JobResolver {
+	return r.Q.jobByID(&r.JobID)
 }
 
 func (r *TaskResolver) Parent(ctx context.Context) (*TaskResolver, error) {
@@ -328,19 +316,15 @@ func (r *TaskResolver) Progress() (*ProgressResolver, error) {
 	}, nil
 }
 
-func (r *TaskResolver) Stream(ctx context.Context) (*StreamResolver, error) {
-	return r.Q.findOrCreateStream(ctx, "Task", r.ID)
+func (r *TaskResolver) Stream() *StreamResolver {
+	return r.Q.streamForSource("Task", r.ID)
 }
 
 func (r *TaskResolver) Message(ctx context.Context) (string, error) {
 	if r.ErrorMessage != nil {
 		return *r.ErrorMessage, nil
 	}
-	stream, err := r.Stream(ctx)
-	if err != nil {
-		return "", fmt.Errorf("resolving stream: %w", err)
-	}
-	return stream.Message(ctx)
+	return r.Stream().Message(ctx)
 }
 
 func (r *MutationResolver) CancelJob(ctx context.Context, args struct {
@@ -357,4 +341,14 @@ func (r *MutationResolver) cancelJob(ctx context.Context, id string) error {
 		WHERE job_id = ?
 	`, now, id)
 	return err
+}
+
+func (r *SubscriptionResolver) JobEvents(ctx context.Context, args struct {
+	JobID string
+}) (<-chan *EventResolver, error) {
+	return r.events(ctx, eventSubscription{
+		Filter: eventFilter{
+			JobID: args.JobID,
+		},
+	})
 }
