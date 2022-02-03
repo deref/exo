@@ -60,8 +60,10 @@ type Mutation {
   refreshResource(ref: String!): Resource!
   updateResource(ref: String!, model: String!): Resource!
   disposeResource(ref: String!): Void
+  
+  createEvent(sourceType: String!, sourceID: String!, type: String!, message: String!): Event!
 
-  createTask(parentId: String, mutation: String!, arguments: String!): Task!
+  createTask(parentId: String, mutation: String!, arguments: JSONObject!): Task!
   acquireTask(workerId: String!, jobId: String, timeout: Int): Task
   startTask(id: String!, workerId: String!): Task!
   updateTask(id: String!, workerId: String!, progress: ProgressInput): Task!
@@ -213,8 +215,9 @@ type Resource {
   
   # If non-null, job has a lock on resource and state will not be "idle".
   # TODO: Consider explicit Lock type.
+  # TODO: Consider locking by task, not job.
   jobId: String
-  job: Task
+  job: Job
   operation: String # creating, adopting, refreshing, updating, or disposing.
 
   model: String!
@@ -256,7 +259,7 @@ type Task {
   job: Job!
   parentId: String
   mutation: String!
-  arguments: String!
+  arguments: JSONObject!
   parent: Task
   label: String!
   workerId: String
@@ -303,12 +306,10 @@ type EventPage {
 type Event {
   id: String! # Untyped alias for ulid.
   ulid: ULID!
-  stream: Stream!
   timestamp: Instant! # Extracted from ulid.
   message: String!
   tags: Tags!
 
-  source: StreamSource!
   workspaceID: String
   workspace: Workspace
   stackID: String

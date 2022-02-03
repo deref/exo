@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/peer"
 	"github.com/spf13/cobra"
 )
@@ -40,6 +41,6 @@ when the job terminates.
 		if workerFlags.Job != "" {
 			jobID = &workerFlags.Job
 		}
-		return peer.RunWorker(ctx, p, workerID, jobID)
+		return api.RunWorker(ctx, p, workerID, jobID)
 	},
 }

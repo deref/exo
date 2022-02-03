@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"strings"
 
+	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/gensym"
 	"github.com/deref/exo/internal/providers/sdk"
 	"github.com/deref/exo/internal/util/logging"
@@ -461,13 +462,14 @@ func (r *MutationResolver) DisposeResource(ctx context.Context, args struct {
 }
 
 func (r *MutationResolver) doResourceOperation(ctx context.Context, ref string, op resourceOperation) (_ *ResourceResolver, doErr error) {
-	task := CurrentTask(ctx)
-	if task == nil {
+	ctxVars := api.CurrentContextVariables(ctx)
+	if ctxVars == nil || ctxVars.TaskID == "" {
 		return nil, errors.New("resource operations must be asynchronous")
 	}
-	jobID := task.JobID
-	if task.ID != jobID {
+	jobID := ctxVars.JobID
+	if ctxVars.TaskID != jobID {
 		// Sanity check to avoid re-entering lock.
+		// TODO: Should resources by locked by tasks instead of jobs? Probably, so that these tasks can occur as part of reconciliation jobs.
 		return nil, errors.New("resource operation tasks must be top-level job")
 	}
 

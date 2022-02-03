@@ -31,25 +31,40 @@ func (r *EventRow) ID() string {
 	return r.ULID.String()
 }
 
-type createEventArgs struct {
-	Source    StreamSourceResolver
-	Timestamp *Instant
-	Type      string
-	Message   string
-	Tags      *Tags
+func (r *MutationResolver) CreateEvent(ctx context.Context, args struct {
+	SourceType string
+	SourceID   string
+	Type       string
+	Message    string
+}) (*EventResolver, error) {
+	source, err := r.findEventSource(ctx, args.SourceType, args.SourceID)
+	if err != nil {
+		return nil, fmt.Errorf("resolving source: %w", err)
+	}
+	if source == nil {
+		return nil, fmt.Errorf("cannot find event source: type=%q id=%q", args.SourceType, args.SourceID)
+	}
+	return r.createEvent(ctx, source, args.Type, args.Message)
 }
 
-func (r *MutationResolver) CreateEvent(ctx context.Context, args createEventArgs) (*EventResolver, error) {
-	row := EventRow{
-		ULID:    r.mustNextULID(ctx),
-		Type:    args.Type,
-		Message: args.Message,
-		XXX:     SET_RELATED_IDS,
+func (r *MutationResolver) createEvent(ctx context.Context, source StreamSourceResolver, typ string, message string) (*EventResolver, error) {
+	prototype, err := source.eventPrototype(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("resolving event prototype: %w", err)
 	}
-	if args.Tags == nil {
+	prototype.Type = typ
+	prototype.Message = message
+	return r.createEventFromPrototype(ctx, prototype)
+}
+
+func (r *MutationResolver) createEventFromPrototype(ctx context.Context, prototype EventRow) (*EventResolver, error) {
+	row := prototype
+	row.ULID = r.mustNextULID(ctx)
+	if row.Type == "" {
+		return nil, fmt.Errorf("invalid event type: %q", row.Type)
+	}
+	if row.Tags == nil {
 		row.Tags = make(Tags)
-	} else {
-		row.Tags = *args.Tags
 	}
 	if err := r.insertRow(ctx, "event", row); err != nil {
 		return nil, fmt.Errorf("inserting: %w", err)
@@ -122,11 +137,11 @@ func (r *QueryResolver) findEvents(ctx context.Context, q eventQuery) (*EventPag
 			SELECT *
 			FROM event
 			WHERE (
-					 (? IS NOT NULL AND workspace_id = ?)
-				OR (? IS NOT NULL AND stack_id = ?)
-				OR (? IS NOT NULL AND component_id = ?)
-				OR (? IS NOT NULL AND job_id = ?)
-				OR (? IS NOT NULL AND task_id = ?)
+					 (? != '' AND workspace_id = ?)
+				OR (? != '' AND stack_id = ?)
+				OR (? != '' AND component_id = ?)
+				OR (? != '' AND job_id = ?)
+				OR (? != '' AND task_id = ?)
 			)
 			AND instr(lower(message), ?) <> 0
 			AND ulid < ?
@@ -138,11 +153,11 @@ func (r *QueryResolver) findEvents(ctx context.Context, q eventQuery) (*EventPag
 			SELECT *
 			FROM event
 			WHERE (
-					 (? IS NOT NULL AND workspace_id = ?)
-				OR (? IS NOT NULL AND stack_id = ?)
-				OR (? IS NOT NULL AND component_id = ?)
-				OR (? IS NOT NULL AND job_id = ?)
-				OR (? IS NOT NULL AND task_id = ?)
+					 (? != '' AND workspace_id = ?)
+				OR (? != '' AND stack_id = ?)
+				OR (? != '' AND component_id = ?)
+				OR (? != '' AND job_id = ?)
+				OR (? != '' AND task_id = ?)
 			)
 			AND instr(lower(message), ?) <> 0
 			AND ? < ulid
@@ -207,11 +222,11 @@ func (r *QueryResolver) latestEvent(ctx context.Context, filter eventFilter) (*E
 		SELECT *
 		FROM event
 		WHERE (
-			   (? IS NOT NULL AND workspace_id = ?)
-			OR (? IS NOT NULL AND stack_id = ?)
-			OR (? IS NOT NULL AND component_id = ?)
-			OR (? IS NOT NULL AND job_id = ?)
-			OR (? IS NOT NULL AND task_id = ?)
+			   (? != '' workspace_id = ?)
+			OR (? != '' stack_id = ?)
+			OR (? != '' component_id = ?)
+			OR (? != '' job_id = ?)
+			OR (? != '' task_id = ?)
 		)
 		AND instr(lower(message), ?) <> 0
 		ORDER BY ulid DESC
@@ -252,18 +267,18 @@ func (r *SubscriptionResolver) events(ctx context.Context, sub eventSubscription
 		defer close(c)
 
 		// Poll for events.
-		cursor := sub.Cursor
+		q := eventQuery{
+			Filter: sub.Filter,
+			Cursor: sub.Cursor,
+		}
 		for {
-			page, err := r.findEvents(ctx, eventQuery{
-				RelevantTo: sub.RelevantTo,
-				Cursor:     cursor,
-			})
+			page, err := r.findEvents(ctx, q)
 			if err != nil {
 				logger.Infof("error finding events: %v", err)
 				return
 			}
 			events := page.Items
-			cursor = page.NextCursor
+			q.Cursor = page.NextCursor
 
 			// Emit events.
 			for _, event := range events {

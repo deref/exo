@@ -2,6 +2,8 @@ package resolvers
 
 import (
 	"context"
+
+	"github.com/deref/exo/internal/api"
 )
 
 type ProgressResolver struct {
@@ -19,10 +21,10 @@ func (r *ProgressResolver) Percent() float64 {
 }
 
 func (r *MutationResolver) reportProgress(ctx context.Context, progress ProgressInput) {
-	t := CurrentTask(ctx)
-	if t == nil {
+	ctxVars := api.CurrentContextVariables(ctx)
+	if ctxVars == nil || ctxVars.TaskID == "" {
 		return
 	}
-	_, err := r.updateTask(ctx, t.ID, t.WorkerID, &progress)
+	_, err := r.updateTask(ctx, ctxVars.TaskID, ctxVars.WorkerID, &progress)
 	r.SystemLog.Infof("error reporting progress on task %q: %v", err)
 }

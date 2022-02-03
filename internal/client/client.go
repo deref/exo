@@ -4,6 +4,7 @@ import (
 	"context"
 	"net/http"
 
+	"github.com/deref/exo/internal/api"
 	machinebox "github.com/machinebox/graphql"
 )
 
@@ -21,6 +22,10 @@ func (cl *Client) Do(ctx context.Context, doc string, vars map[string]interface{
 	req := machinebox.NewRequest(doc)
 	for k, v := range vars {
 		req.Var(k, v)
+	}
+	ctxVars := api.CurrentContextVariables(ctx)
+	if ctxVars != nil {
+		panic("TODO: add context variables to request (as headers?)")
 	}
 	return cl.gql.Run(ctx, req, res)
 }
