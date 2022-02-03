@@ -11,6 +11,11 @@ type Entity struct {
 	Underlying interface{}
 }
 
+type EntityRef struct {
+	Type string
+	ID   string
+}
+
 func (r *QueryResolver) FindEntity(ctx context.Context, args struct {
 	Type string
 	ID   string

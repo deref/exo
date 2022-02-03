@@ -31,9 +31,13 @@ type RootResolver struct {
 	Routes        *RoutesResolver
 }
 
-// While queries and mutations are accessed in disjoint query paths, this
-// GraphQL library assumes that their names will not conflict and therefore all
-// resolvers go on the same struct. We use the following aliases for clarity.
-// See <https://github.com/graph-gophers/graphql-go/pull/182>.
+// While queries, mutations, and subscriptions are accessed in disjoint query
+// paths, this GraphQL library assumes that their names will not conflict and
+// therefore all resolvers go on the same struct. We use the following aliases
+// for clarity. See <https://github.com/graph-gophers/graphql-go/pull/182> for
+// more details. Note that even if this were not required, it's still
+// convenient to be able to access query methods from mutations and
+// subscriptions.
 type QueryResolver = RootResolver
 type MutationResolver = RootResolver
+type SubscriptionResolver = RootResolver

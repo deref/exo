@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"time"
 
 	"github.com/deref/exo/internal/util/mathutil"
 )
@@ -15,10 +16,15 @@ type EventResolver struct {
 }
 
 type EventRow struct {
-	ULID     ULID   `db:"ulid"`
-	StreamID string `db:"stream_id"`
-	Message  string `db:"message"`
-	Tags     Tags   `db:"tags"`
+	ULID        ULID    `db:"ulid"`
+	Type        string  `db:"type"`
+	Message     string  `db:"message"`
+	Tags        Tags    `db:"tags"`
+	WorkspaceID *string `db:"workspace_id"`
+	StackID     *string `db:"stack_id"`
+	ComponentID *string `db:"component_id"`
+	JobID       *string `db:"job_id"`
+	TaskID      *string `db:"task_id"`
 }
 
 func (r *EventRow) ID() string {
@@ -26,17 +32,19 @@ func (r *EventRow) ID() string {
 }
 
 type createEventArgs struct {
-	StreamID  string
+	Source    StreamSourceResolver
 	Timestamp *Instant
+	Type      string
 	Message   string
 	Tags      *Tags
 }
 
 func (r *MutationResolver) CreateEvent(ctx context.Context, args createEventArgs) (*EventResolver, error) {
 	row := EventRow{
-		StreamID: args.StreamID,
-		ULID:     r.mustNextULID(ctx),
-		Message:  args.Message,
+		ULID:    r.mustNextULID(ctx),
+		Type:    args.Type,
+		Message: args.Message,
+		XXX:     SET_RELATED_IDS,
 	}
 	if args.Tags == nil {
 		row.Tags = make(Tags)
@@ -52,20 +60,24 @@ func (r *MutationResolver) CreateEvent(ctx context.Context, args createEventArgs
 	}, nil
 }
 
-func (r *EventResolver) Stream(ctx context.Context) (*StreamResolver, error) {
-	return r.Q.streamById(ctx, &r.StreamID)
-}
-
 func (r *EventResolver) Timestamp() Instant {
 	return r.ULID.Timestamp()
 }
 
 type eventQuery struct {
-	StreamIDs []string
-	Cursor    string
-	Prev      int
-	Next      int
-	Filter    string
+	Filter eventFilter
+	Cursor string
+	Prev   int
+	Next   int
+}
+
+type eventFilter struct {
+	WorkspaceID string
+	StackID     string
+	ComponentID string
+	JobID       string
+	TaskID      string
+	IContains   string
 }
 
 type EventPageResolver struct {
@@ -83,16 +95,10 @@ func (r *QueryResolver) findEvents(ctx context.Context, q eventQuery) (*EventPag
 	cursor := q.Cursor
 	if q.Cursor == "" {
 		var err error
-		cursor, err = r.latestEventCursor(ctx, q.StreamIDs)
+		cursor, err = r.latestEventCursor(ctx, q.Filter)
 		if err != nil {
 			return nil, fmt.Errorf("getting latest cursor: %w", err)
 		}
-	}
-
-	if len(q.StreamIDs) == 0 {
-		output.PrevCursor = cursor
-		output.NextCursor = cursor
-		return output, nil
 	}
 
 	limit := defaultEventPageSize
@@ -115,9 +121,15 @@ func (r *QueryResolver) findEvents(ctx context.Context, q eventQuery) (*EventPag
 		query = `
 			SELECT *
 			FROM event
-			WHERE stream_id IN (?)
-			AND ulid < ?
+			WHERE (
+					 (? IS NOT NULL AND workspace_id = ?)
+				OR (? IS NOT NULL AND stack_id = ?)
+				OR (? IS NOT NULL AND component_id = ?)
+				OR (? IS NOT NULL AND job_id = ?)
+				OR (? IS NOT NULL AND task_id = ?)
+			)
 			AND instr(lower(message), ?) <> 0
+			AND ulid < ?
 			ORDER BY ulid DESC
 			LIMIT ?
 		`
@@ -125,17 +137,30 @@ func (r *QueryResolver) findEvents(ctx context.Context, q eventQuery) (*EventPag
 		query = `
 			SELECT *
 			FROM event
-			WHERE stream_id IN (?)
-			AND ? < ulid
+			WHERE (
+					 (? IS NOT NULL AND workspace_id = ?)
+				OR (? IS NOT NULL AND stack_id = ?)
+				OR (? IS NOT NULL AND component_id = ?)
+				OR (? IS NOT NULL AND job_id = ?)
+				OR (? IS NOT NULL AND task_id = ?)
+			)
 			AND instr(lower(message), ?) <> 0
+			AND ? < ulid
 			ORDER BY ulid ASC
 			LIMIT ?
 		`
 	}
-	query, args := mustSqlIn(query, q.StreamIDs, cursor, q.Filter, limit)
-
 	var rows []EventRow
-	if err := r.DB.SelectContext(ctx, &rows, query, args...); err != nil {
+	filter := q.Filter
+	if err := r.DB.SelectContext(ctx, &rows, query,
+		filter.WorkspaceID, filter.WorkspaceID,
+		filter.StackID, filter.StackID,
+		filter.ComponentID, filter.ComponentID,
+		filter.JobID, filter.JobID,
+		filter.TaskID, filter.TaskID,
+		filter.IContains,
+		cursor, limit,
+	); err != nil {
 		return nil, fmt.Errorf("querying: %w", err)
 	}
 
@@ -168,24 +193,37 @@ func (r *QueryResolver) findEvents(ctx context.Context, q eventQuery) (*EventPag
 	return output, nil
 }
 
-func (r *QueryResolver) latestEventCursor(ctx context.Context, streamIDs []string) (string, error) {
-	event, err := r.latestEvent(ctx, streamIDs)
+func (r *QueryResolver) latestEventCursor(ctx context.Context, filter eventFilter) (string, error) {
+	event, err := r.latestEvent(ctx, filter)
 	if event == nil || err != nil {
 		return "", err
 	}
 	return incrementEventCursor(event.ID()), nil
 }
 
-func (r *QueryResolver) latestEvent(ctx context.Context, streamIDs []string) (*EventResolver, error) {
-	q, args := mustSqlIn(`
+func (r *QueryResolver) latestEvent(ctx context.Context, filter eventFilter) (*EventResolver, error) {
+	var row EventRow
+	err := r.DB.GetContext(ctx, &row, `
 		SELECT *
 		FROM event
-		WHERE stream_id IN (?)
+		WHERE (
+			   (? IS NOT NULL AND workspace_id = ?)
+			OR (? IS NOT NULL AND stack_id = ?)
+			OR (? IS NOT NULL AND component_id = ?)
+			OR (? IS NOT NULL AND job_id = ?)
+			OR (? IS NOT NULL AND task_id = ?)
+		)
+		AND instr(lower(message), ?) <> 0
 		ORDER BY ulid DESC
 		LIMIT 1
-	`, streamIDs)
-	var row EventRow
-	err := r.DB.GetContext(ctx, &row, q, args...)
+	`,
+		filter.WorkspaceID, filter.WorkspaceID,
+		filter.StackID, filter.StackID,
+		filter.ComponentID, filter.ComponentID,
+		filter.JobID, filter.JobID,
+		filter.TaskID, filter.TaskID,
+		filter.IContains,
+	)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil
 	}
@@ -200,4 +238,71 @@ func (r *QueryResolver) latestEvent(ctx context.Context, streamIDs []string) (*E
 
 func incrementEventCursor(id string) string {
 	return id + "0"
+}
+
+type eventSubscription struct {
+	Filter eventFilter
+	Cursor string
+}
+
+func (r *SubscriptionResolver) events(ctx context.Context, sub eventSubscription) (<-chan *EventResolver, error) {
+	logger := r.SystemLog.Sublogger("events subscription")
+	c := make(chan *EventResolver)
+	go func() {
+		defer close(c)
+
+		// Poll for events.
+		cursor := sub.Cursor
+		for {
+			page, err := r.findEvents(ctx, eventQuery{
+				RelevantTo: sub.RelevantTo,
+				Cursor:     cursor,
+			})
+			if err != nil {
+				logger.Infof("error finding events: %v", err)
+				return
+			}
+			events := page.Items
+			cursor = page.NextCursor
+
+			// Emit events.
+			for _, event := range events {
+				select {
+				case <-ctx.Done():
+					return
+				case c <- event:
+				}
+			}
+
+			// Allow time for additional events to occur.
+			if len(events) == 0 {
+				select {
+				case <-ctx.Done():
+					return
+				case <-time.After(30 * time.Millisecond):
+				}
+			}
+		}
+	}()
+	return c, nil
+}
+
+func (r *EventResolver) Workspace(ctx context.Context) (*WorkspaceResolver, error) {
+	return r.Q.workspaceByID(ctx, r.WorkspaceID)
+}
+
+func (r *EventResolver) Stack(ctx context.Context) (*StackResolver, error) {
+	return r.Q.stackByID(ctx, r.StackID)
+}
+
+func (r *EventResolver) Component(ctx context.Context) (*ComponentResolver, error) {
+	return r.Q.componentByID(ctx, r.ComponentID)
+}
+
+func (r *EventResolver) Job() *JobResolver {
+	return r.Q.jobByID(r.JobID)
+}
+
+func (r *EventResolver) Task(ctx context.Context) (*TaskResolver, error) {
+	return r.Q.taskByID(ctx, r.TaskID)
 }

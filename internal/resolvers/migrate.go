@@ -172,44 +172,37 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 		return fmt.Errorf("creating job table: %w", err)
 	}
 
-	// Stream.
-
-	if _, err := r.DB.ExecContext(ctx, `
-		CREATE TABLE IF NOT EXISTS stream (
-			id TEXT PRIMARY KEY,
-			source_type TEXT NOT NULL,
-			source_id TEXT NOT NULL,
-			created TEXT NOT NULL,
-			truncated TEXT
-		);
-	`); err != nil {
-		return fmt.Errorf("creating stream table: %w", err)
-	}
-
-	if _, err := r.DB.ExecContext(ctx, `
-		CREATE UNIQUE INDEX IF NOT EXISTS stream_source
-		ON stream ( source_type, source_id )
-	`); err != nil {
-		return fmt.Errorf("creating stream_source index: %w", err)
-	}
-
 	// Event.
 
 	if _, err := r.DB.ExecContext(ctx, `
 		CREATE TABLE IF NOT EXISTS event (
 			ulid TEXT PRIMARY KEY,
-			stream_id TEXT NOT NULL,
+			type TEXT NOT NULL,
 			message TEXT NOT NULL,
-			tags TEXT NOT NULL
+			tags TEXT NOT NULL,
+			workspace_id TEXT,
+			stack_id TEXT,
+			component_id TEXT,
+			job_id TEXT,
+			task_id TEXT
 	);`); err != nil {
 		return fmt.Errorf("creating event table: %w", err)
 	}
 
-	if _, err := r.DB.ExecContext(ctx, `
-		CREATE UNIQUE INDEX IF NOT EXISTS stream_event
-		ON event ( stream_id, ulid )
-	`); err != nil {
-		return fmt.Errorf("creating stream_event index: %w", err)
+	for _, related := range []string{
+		"workspace",
+		"stack",
+		"component",
+		"job",
+		"task",
+	} {
+		if _, err := r.DB.ExecContext(ctx, fmt.Sprintf(`
+			CREATE UNIQUE INDEX IF NOT EXISTS %s_event
+			ON event ( %s_id, ulid )
+			WHERE %s_id IS NOT NULL
+		`, related)); err != nil {
+			return fmt.Errorf("creating %s_event index: %w", related, err)
+		}
 	}
 
 	return nil
