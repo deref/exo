@@ -171,9 +171,11 @@ func (p *Peer) Shutdown(ctx context.Context) error {
 }
 
 func sanitizeQueryError(original *gqlerrors.QueryError) *gqlerrors.QueryError {
+	if len(original.Locations) > 0 {
+		return original
+	}
 	sanitized := gqlerrors.QueryError{
-		Locations: original.Locations,
-		Path:      original.Path,
+		Path: original.Path,
 	}
 	if original.ResolverError != nil {
 		sanitized.ResolverError = sanitizeError(original.ResolverError)
