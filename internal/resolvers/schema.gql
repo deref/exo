@@ -85,7 +85,9 @@ type Mutation {
 }
 
 type Subscription {
-  watchJob(id: String!, after: ULID): WatchJobOutput!
+  # Always emits an initial JobWatched event, so that clients can get the full
+  # job tree, even if no events have occured.
+  watchJob(id: String!, after: ULID): Event!
 
   # Debug/testing.
   tick(limit: Int): Instant!
@@ -259,11 +261,6 @@ type Job {
   url: String!
 }
 
-type WatchJobOutput {
-  job: Job!
-  event: Event
-}
-
 type Task {
   id: String!
   jobId: String!
@@ -318,6 +315,7 @@ type Event {
   id: String! # Untyped alias for ulid.
   ulid: ULID!
   timestamp: Instant! # Extracted from ulid.
+  type: String!
   message: String!
   tags: Tags!
 

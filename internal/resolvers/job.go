@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"fmt"
 
 	. "github.com/deref/exo/internal/scalars"
 )
@@ -31,7 +32,14 @@ func (r *JobResolver) URL() string {
 }
 
 func (r *JobResolver) RootTask(ctx context.Context) (*TaskResolver, error) {
-	return r.Q.taskByID(ctx, &r.ID)
+	task, err := r.Q.taskByID(ctx, &r.ID)
+	if err != nil {
+		return nil, err
+	}
+	if task == nil {
+		return nil, fmt.Errorf("cannot find root task: %w", err)
+	}
+	return task, nil
 }
 
 func (r *JobResolver) Tasks(ctx context.Context) ([]*TaskResolver, error) {
@@ -57,7 +65,7 @@ func (r *MutationResolver) cancelJob(ctx context.Context, id string) error {
 func (r *SubscriptionResolver) WatchJob(ctx context.Context, args struct {
 	ID    string
 	After *ULID
-}) (<-chan *WatchJobOutput, error) {
+}) (<-chan *EventResolver, error) {
 	jobID := args.ID
 	job := r.jobByID(&jobID)
 
@@ -68,36 +76,45 @@ func (r *SubscriptionResolver) WatchJob(ctx context.Context, args struct {
 	if args.After != nil {
 		filter.After = *args.After
 	}
-	eventC, err := r.events(ctx, filter)
+	events, err := r.events(ctx, filter)
 	if err != nil {
 		return nil, err
 	}
 
-	// Create output channel with initial output.
-	outputC := make(chan *WatchJobOutput, 1)
-	outputC <- &WatchJobOutput{
-		Job: job,
+	// Create output channel with synthetic initial event.
+	c := make(chan *EventResolver, 1)
+	{
+		watched, err := job.eventPrototype(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("resolving initial event: %w", err)
+		}
+		watched.ULID = r.mustNextULID(ctx)
+		watched.Type = "JobWatched"
+		c <- &EventResolver{
+			Q:        r,
+			EventRow: watched,
+		}
 	}
 
 	// Pipe events to output.
 	go func() {
-		defer close(outputC)
-		for event := range eventC {
+		defer close(c)
+		for event := range events {
 			select {
-			case outputC <- &WatchJobOutput{
-				Job:   job,
-				Event: event,
-			}:
+			case c <- event:
 			case <-ctx.Done():
 				return
 			}
 		}
 	}()
 
-	return outputC, nil
+	return c, nil
 }
 
-type WatchJobOutput struct {
-	Job   *JobResolver
-	Event *EventResolver
+func (r *JobResolver) eventPrototype(ctx context.Context) (row EventRow, err error) {
+	task, err := r.RootTask(ctx)
+	if err != nil {
+		return EventRow{}, fmt.Errorf("resolving root task: %w", err)
+	}
+	return task.eventPrototype(ctx)
 }

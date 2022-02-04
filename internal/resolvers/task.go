@@ -226,7 +226,9 @@ func (r *MutationResolver) FinishTask(ctx context.Context, args struct {
 }
 
 func (r *QueryResolver) taskByID(ctx context.Context, id *string) (*TaskResolver, error) {
-	t := &TaskResolver{}
+	t := &TaskResolver{
+		Q: r,
+	}
 	err := r.getRowByKey(ctx, &t.TaskRow, `
 		SELECT *
 		FROM task
