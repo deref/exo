@@ -16,9 +16,24 @@ func (r *QueryResolver) Now(ctx context.Context) Instant {
 func (r *MutationResolver) Sleep(ctx context.Context, args struct {
 	Seconds float64
 }) (*VoidResolver, error) {
-	// TODO: If sleeping over a certain amount of time, report "progress".
-	// XXX
-	return nil, chrono.Sleep(ctx, time.Duration(args.Seconds)*time.Second)
+	start := chrono.Now(ctx)
+	end := start.Add(time.Duration(args.Seconds) * time.Second)
+	deadline, cancel := context.WithDeadline(ctx, end)
+	progress := ProgressInput{
+		Total: int32(end.Sub(start).Milliseconds()),
+	}
+	defer cancel()
+	for {
+		select {
+		case <-deadline.Done():
+			progress.Current = progress.Total
+			r.reportProgress(ctx, progress)
+			return nil, nil
+		case <-time.After(250 * time.Millisecond):
+			progress.Current = int32(chrono.Now(ctx).Sub(start).Milliseconds())
+			r.reportProgress(ctx, progress)
+		}
+	}
 }
 
 func (r *MutationResolver) Tick(ctx context.Context, args struct {

@@ -25,6 +25,7 @@ func (r *MutationResolver) reportProgress(ctx context.Context, progress Progress
 	if ctxVars == nil || ctxVars.TaskID == "" {
 		return
 	}
-	_, err := r.updateTask(ctx, ctxVars.TaskID, ctxVars.WorkerID, &progress)
-	r.SystemLog.Infof("error reporting progress on task %q: %v", err)
+	if _, err := r.updateTask(ctx, ctxVars.TaskID, ctxVars.WorkerID, &progress); err != nil {
+		r.SystemLog.Infof("error reporting progress on task %q: %v", ctxVars.TaskID, err)
+	}
 }

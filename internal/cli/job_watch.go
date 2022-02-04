@@ -98,8 +98,10 @@ watching:
 			tickC = ticker.C
 			defer ticker.Stop()
 
+		case "JobUpdated":
+			// No-op.
+
 		default:
-			fmt.Println("event type: ", event.Type)
 			// XXX print with colored header etc a la logs.
 			fmt.Fprintln(out, event.Message)
 		}

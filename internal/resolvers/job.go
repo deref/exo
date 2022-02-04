@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	"time"
 
 	. "github.com/deref/exo/internal/scalars"
 )
@@ -81,29 +82,42 @@ func (r *SubscriptionResolver) WatchJob(ctx context.Context, args struct {
 		return nil, err
 	}
 
+	prototype, err := job.eventPrototype(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("resolving event prototype: %w", err)
+	}
+
 	// Create output channel with synthetic initial event.
 	c := make(chan *EventResolver, 1)
 	{
-		watched, err := job.eventPrototype(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("resolving initial event: %w", err)
-		}
-		watched.ULID = r.mustNextULID(ctx)
+		watched := prototype
 		watched.Type = "JobWatched"
-		c <- &EventResolver{
-			Q:        r,
-			EventRow: watched,
-		}
+		c <- r.newSyntheticEvent(ctx, watched)
 	}
 
 	// Pipe events to output.
 	go func() {
 		defer close(c)
-		for event := range events {
+
+		ticker := time.NewTicker(200 * time.Millisecond)
+		defer ticker.Stop()
+
+		for {
+			var event *EventResolver
 			select {
-			case c <- event:
 			case <-ctx.Done():
 				return
+			case event = <-events:
+			case <-ticker.C:
+				updated := prototype
+				updated.Type = "JobUpdated"
+				event = r.newSyntheticEvent(ctx, updated)
+			}
+
+			select {
+			case <-ctx.Done():
+				return
+			case c <- event:
 			}
 		}
 	}()

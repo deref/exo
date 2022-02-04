@@ -77,6 +77,14 @@ func (r *MutationResolver) createEventFromPrototype(ctx context.Context, prototy
 	}, nil
 }
 
+func (r *MutationResolver) newSyntheticEvent(ctx context.Context, row EventRow) *EventResolver {
+	row.ULID = r.mustNextULID(ctx)
+	return &EventResolver{
+		Q:        r,
+		EventRow: row,
+	}
+}
+
 func (r *MutationResolver) mustNextULID(ctx context.Context) api.ULID {
 	res, err := r.ULIDGenerator.NextID(ctx)
 	if err != nil {
