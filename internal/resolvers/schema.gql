@@ -259,6 +259,7 @@ type Job {
   rootTask: Task!
   tasks: [Task!]!
   url: String!
+  updated: Instant!
 }
 
 type Task {

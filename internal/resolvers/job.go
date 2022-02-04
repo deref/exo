@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/deref/exo/internal/chrono"
 	. "github.com/deref/exo/internal/scalars"
 )
 
@@ -90,16 +91,20 @@ func (r *SubscriptionResolver) WatchJob(ctx context.Context, args struct {
 	// Create output channel with synthetic initial event.
 	c := make(chan *EventResolver, 1)
 	{
-		watched := prototype
-		watched.Type = "JobWatched"
-		c <- r.newSyntheticEvent(ctx, watched)
+		jobWatchedEvent := prototype
+		jobWatchedEvent.Type = "JobWatched"
+		c <- r.newSyntheticEvent(ctx, jobWatchedEvent)
 	}
 
-	// Pipe events to output.
+	t := chrono.Now(ctx)
+
+	// Pipe events to output. Also periodically emits synthetic events for
+	// reporting progress without having to have a physical event for every task
+	// progress update.
 	go func() {
 		defer close(c)
 
-		ticker := time.NewTicker(200 * time.Millisecond)
+		ticker := time.NewTicker(20 * time.Millisecond)
 		defer ticker.Stop()
 
 		for {
@@ -109,11 +114,24 @@ func (r *SubscriptionResolver) WatchJob(ctx context.Context, args struct {
 				return
 			case event = <-events:
 			case <-ticker.C:
-				updated := prototype
-				updated.Type = "JobUpdated"
-				event = r.newSyntheticEvent(ctx, updated)
+				// Check for progress.
+				updated, err := job.Updated(ctx)
+				if err != nil {
+					r.SystemLog.Infof("resolving job updated time: %v", err)
+					break
+				}
+				if !updated.GoTime().After(t) {
+					continue
+				}
+				t = updated.GoTime()
+
+				// Emit periodic progress event.
+				jobUpdatedEvent := prototype
+				jobUpdatedEvent.Type = "JobUpdated"
+				event = r.newSyntheticEvent(ctx, jobUpdatedEvent)
 			}
 
+			// Forward event.
 			select {
 			case <-ctx.Done():
 				return
@@ -131,4 +149,17 @@ func (r *JobResolver) eventPrototype(ctx context.Context) (row EventRow, err err
 		return EventRow{}, fmt.Errorf("resolving root task: %w", err)
 	}
 	return task.eventPrototype(ctx)
+}
+
+func (r *JobResolver) Updated(ctx context.Context) (Instant, error) {
+	var res Instant
+	if err := r.Q.DB.GetContext(ctx, &res, `
+		SELECT MAX(updated)
+		FROM task
+		WHERE job_id = ?
+	`, r.ID,
+	); err != nil {
+		return Instant{}, err
+	}
+	return res, nil
 }

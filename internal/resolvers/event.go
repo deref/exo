@@ -93,7 +93,7 @@ func (r *MutationResolver) mustNextULID(ctx context.Context) api.ULID {
 	return ULID(res)
 }
 
-func (r *EventResolver) Timestamp() Instant {
+func (r *EventRow) Timestamp() Instant {
 	return r.ULID.Timestamp()
 }
 

@@ -93,12 +93,11 @@ watching:
 			if tickC != nil {
 				return errors.New("already received JobWatched event")
 			}
-			// XXX ticker := time.NewTicker(time.Second / time.Duration(len(jp.Spinner)))
-			ticker := time.NewTicker(time.Second / time.Duration(len(jp.Spinner)) * 4)
+			ticker := time.NewTicker(time.Second / time.Duration(len(jp.Spinner)))
 			tickC = ticker.C
 			defer ticker.Stop()
 
-		case "JobUpdated":
+		case "JobUpdated", "TaskFinished":
 			// No-op.
 
 		default:
