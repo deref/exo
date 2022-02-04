@@ -106,6 +106,8 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 		return fmt.Errorf("creating component table: %w", err)
 	}
 
+	// TODO: Validate that these indexes are getting hit.
+
 	if _, err := r.DB.ExecContext(ctx, `
 		CREATE UNIQUE INDEX IF NOT EXISTS
 		component_path ON component ( stack_id, parent_id, name )
@@ -196,6 +198,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 		"job",
 		"task",
 	} {
+		// TODO: Validate that these indexes are getting hit.
 		if _, err := r.DB.ExecContext(ctx, fmt.Sprintf(`
 			CREATE UNIQUE INDEX IF NOT EXISTS %s_event
 			ON event ( %s_id, ulid )

@@ -55,10 +55,14 @@ func checkHealthAndVersion() (bool, string) {
 	return string(bytes.TrimSpace(bs)) == "ok", version
 }
 
+// XXX This is confused for API and GUI, which may not be on the same port.
 func effectiveServerURL() string {
 	url := cfg.Client.URL
 	if url == "" {
 		url = runState.URL
+	}
+	if url == "" {
+		url = fmt.Sprintf("http://localhost:%d", cfg.GUI.Port)
 	}
 	return url
 }

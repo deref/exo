@@ -15,9 +15,10 @@ func (r *QueryResolver) findEventSource(ctx context.Context, typ string, id stri
 	if entity == nil || err != nil {
 		return nil, err
 	}
-	source, ok := entity.Underlying.(StreamSourceResolver)
+	underlying := entity.Underlying
+	source, ok := underlying.(StreamSourceResolver)
 	if !ok {
-		return nil, fmt.Errorf("not a stream source: %T", entity)
+		return nil, fmt.Errorf("not a stream source: %T", underlying)
 	}
 	return source, nil
 }

@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/deref/exo/internal/chrono"
-	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/deref/exo/internal/util/logging"
 	"github.com/graphql-go/graphql/language/ast"
 	"github.com/graphql-go/graphql/language/kinds"
@@ -63,7 +62,7 @@ func WorkTask(ctx context.Context, svc Service, workerID string, id string) erro
 			ID        string
 			JobID     string
 			Mutation  string
-			Arguments string
+			Arguments JSONObject
 		} `graphql:"startTask(id: $id, workerId: $workerId)"`
 	}
 	if err := Mutate(ctx, svc, &start, map[string]interface{}{
@@ -112,11 +111,7 @@ func WorkTask(ctx context.Context, svc Service, workerID string, id string) erro
 		defer stopPolling()
 
 		taskErr := func() error {
-			var args map[string]interface{}
-			if err := jsonutil.UnmarshalString(task.Arguments, &args); err != nil {
-				return fmt.Errorf("unmarshaling arguments: %w", err)
-			}
-
+			args := (map[string]interface{})(task.Arguments)
 			mut, err := formatVoidMutation(task.Mutation, args)
 			if err != nil {
 				return fmt.Errorf("encoding mutation: %w", err)
@@ -127,7 +122,7 @@ func WorkTask(ctx context.Context, svc Service, workerID string, id string) erro
 				JobID:    task.JobID,
 				WorkerID: workerID,
 			})
-			return svc.Do(taskCtx, mut, args, &res)
+			return svc.Do(taskCtx, &res, mut, args)
 		}()
 
 		var finish struct {

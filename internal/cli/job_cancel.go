@@ -16,7 +16,7 @@ var jobCancelCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 		var res struct{}
-		return svc.Do(ctx, `
+		return svc.Do(ctx, &res, `
 			mutation ($id: String!) {
 				cancelJob(id: $id) {
 					__typename
@@ -24,6 +24,6 @@ var jobCancelCmd = &cobra.Command{
 			}
 		`, map[string]interface{}{
 			"id": args[0],
-		}, &res)
+		})
 	},
 }

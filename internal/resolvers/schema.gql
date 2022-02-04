@@ -28,6 +28,8 @@ type Query {
   allTasks: [Task!]!
   tasksByJobId(jobId: String!): [Task!]!
   tasksByJobIds(jobIds: [String!]!): [Task!]!
+
+  now: Instant!
 }
 
 type Mutation {
@@ -78,12 +80,15 @@ type Mutation {
 
   reconcileComponent(stack: String, ref: String!): Void
 
-  # For testing.
+  # Debug/testing.
   sleep(seconds: Float!): Void
 }
 
 type Subscription {
-  jobEvents(jobID: String!): Event!
+  watchJob(id: String!, after: ULID): WatchJobOutput!
+
+  # Debug/testing.
+  tick(limit: Int): Instant!
 }
 
 # ISO-8601 timestamp in UTC.
@@ -249,8 +254,14 @@ type File {
 type Job {
   # Same as root task ID.
   id: String!
-  task: Task!
+  rootTask: Task!
+  tasks: [Task!]!
   url: String!
+}
+
+type WatchJobOutput {
+  job: Job!
+  event: Event
 }
 
 type Task {
@@ -288,7 +299,7 @@ type Stream {
   sourceType: String!
   sourceId: String!
   source: StreamSource!
-  events(cursor: String, prev: Int, next: Int, icontains: String): EventPage!
+  events(cursor: ULID, prev: Int, next: Int, icontains: String): EventPage!
   # Message of the most recent event, or empty.
   message: String!
 }
@@ -299,8 +310,8 @@ interface StreamSource {
 
 type EventPage {
   items: [Event!]!
-  prevCursor: String!
-  nextCursor: String!
+  prevCursor: ULID!
+  nextCursor: ULID!
 }
 
 type Event {

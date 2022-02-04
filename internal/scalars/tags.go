@@ -1,22 +1,17 @@
-package resolvers
+package scalars
 
 import (
-	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
 	"fmt"
 
 	"github.com/deref/exo/internal/util/jsonutil"
-	"github.com/graph-gophers/graphql-go/decode"
 )
 
 type Tags map[string]string
 
-var _ decode.Unmarshaler = &Tags{}
-var _ json.Marshaler = Tags{}
-var _ sql.Scanner = &Tags{}
-var _ driver.Valuer = Tags{}
+var _ Scalar = &Tags{}
 
 func (_ Tags) ImplementsGraphQLType(name string) bool {
 	return name == "Tags"
@@ -52,4 +47,8 @@ func (t Tags) Value() (driver.Value, error) {
 
 func (t Tags) MarshalJSON() ([]byte, error) {
 	return json.Marshal((map[string]string)(t))
+}
+
+func (t *Tags) UnmarshalJSON(bs []byte) (err error) {
+	return json.Unmarshal(bs, (*map[string]string)(t))
 }

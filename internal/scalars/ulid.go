@@ -1,23 +1,18 @@
-package resolvers
+package scalars
 
 import (
-	"context"
-	"database/sql"
+	"bytes"
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
 	"time"
 
-	"github.com/graph-gophers/graphql-go/decode"
 	"github.com/oklog/ulid/v2"
 )
 
 type ULID [16]byte
 
-var _ decode.Unmarshaler = &ULID{}
-var _ json.Marshaler = ULID{}
-var _ sql.Scanner = &ULID{}
-var _ driver.Valuer = ULID{}
+var _ Scalar = &ULID{}
 
 func (_ ULID) ImplementsGraphQLType(name string) bool {
 	return name == "ULID"
@@ -48,6 +43,14 @@ func (u ULID) Value() (driver.Value, error) {
 	return u.String(), nil
 }
 
+func (u ULID) UnmarshalJSON(bs []byte) (err error) {
+	var s string
+	if err := json.Unmarshal(bs, &s); err != nil {
+		return err
+	}
+	return u.unmarshal(s)
+}
+
 func (u ULID) MarshalJSON() ([]byte, error) {
 	return json.Marshal(u.String())
 }
@@ -56,15 +59,38 @@ func (u ULID) String() string {
 	return ulid.ULID(u).String()
 }
 
-func (r *MutationResolver) mustNextULID(ctx context.Context) ULID {
-	res, err := r.ULIDGenerator.NextID(ctx)
-	if err != nil {
-		panic(err)
-	}
-	return ULID(res)
-}
-
 func (u ULID) Timestamp() Instant {
 	ms := int64(ulid.ULID([16]byte(u)).Time())
 	return Instant{time.Unix(0, ms*int64(time.Millisecond))}
+}
+
+var MaxULIDValue = ULID{0xFF, 0xFF, 0xFF, 0xFF, 0xFF, 0xFF}
+
+func ULIDMin(a, b ULID) ULID {
+	if bytes.Compare(a[:], b[:]) < 0 {
+		return a
+	}
+	return b
+}
+
+func ULIDMax(a, b ULID) ULID {
+	if bytes.Compare(a[:], b[:]) < 0 {
+		return b
+	}
+	return a
+}
+
+func IncrementULID(id ULID) ULID {
+	bs := id[:]
+	res := id
+	for i := len(bs) - 1; i >= 0; i-- {
+		b := bs[i]
+		if b == 255 {
+			res[i] = 0
+		} else {
+			res[i] = b + 1
+			return ULID(res)
+		}
+	}
+	panic("overflow")
 }

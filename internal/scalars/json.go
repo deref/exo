@@ -1,22 +1,17 @@
-package resolvers
+package scalars
 
 import (
-	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
 	"fmt"
 
 	"github.com/deref/exo/internal/util/jsonutil"
-	"github.com/graph-gophers/graphql-go/decode"
 )
 
 type JSONObject map[string]interface{}
 
-var _ decode.Unmarshaler = &JSONObject{}
-var _ json.Marshaler = JSONObject{}
-var _ sql.Scanner = &JSONObject{}
-var _ driver.Valuer = JSONObject{}
+var _ Scalar = &JSONObject{}
 
 func (_ JSONObject) ImplementsGraphQLType(name string) bool {
 	return name == "JSONObject"
@@ -41,6 +36,10 @@ func (obj *JSONObject) Scan(src interface{}) error {
 
 func (obj JSONObject) Value() (driver.Value, error) {
 	return jsonutil.MarshalString((map[string]interface{})(obj))
+}
+
+func (obj *JSONObject) UnmarshalJSON(bs []byte) (err error) {
+	return json.Unmarshal(bs, (*map[string]interface{})(obj))
 }
 
 func (obj JSONObject) MarshalJSON() ([]byte, error) {

@@ -1,25 +1,24 @@
-package resolvers
+package scalars
 
 import (
 	"context"
-	"database/sql"
 	"database/sql/driver"
 	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/deref/exo/internal/chrono"
-	"github.com/graph-gophers/graphql-go/decode"
 )
 
 type Instant struct {
 	t time.Time
 }
 
-var _ decode.Unmarshaler = &Instant{}
-var _ json.Marshaler = Instant{}
-var _ sql.Scanner = &Instant{}
-var _ driver.Valuer = Instant{}
+var _ Scalar = &Instant{}
+
+func GoTimeToInstant(t time.Time) Instant {
+	return Instant{t.UTC()}
+}
 
 func Now(ctx context.Context) Instant {
 	return Instant{chrono.Now(ctx)}
@@ -31,6 +30,14 @@ func (_ Instant) ImplementsGraphQLType(name string) bool {
 
 func (inst *Instant) UnmarshalGraphQL(input interface{}) (err error) {
 	return inst.unmarshal(input)
+}
+
+func (inst *Instant) UnmarshalJSON(bs []byte) (err error) {
+	var v interface{}
+	if err := json.Unmarshal(bs, &v); err != nil {
+		return err
+	}
+	return inst.unmarshal(v)
 }
 
 func (inst *Instant) Scan(src interface{}) error {

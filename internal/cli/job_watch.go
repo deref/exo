@@ -20,27 +20,36 @@ func init() {
 
 var jobWatchCmd = &cobra.Command{
 	Use:   "watch <job-id>",
-	Short: "Lists a job's tasks until completion",
-	Long:  `Lists a job's tasks as a tree. Rerenders until the job has finished running.`,
-	Args:  cobra.ExactArgs(1),
+	Short: "Watch a job's progress",
+	Long: `Tails the events from all tasks in a job and continuously renders a task
+tree until the job has finished running.`,
+	Args: cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 		return watchJob(ctx, args[0])
 	},
 }
 
+type eventFragment struct {
+	Message string
+}
+
 func watchJob(ctx context.Context, jobID string) error {
 	out := os.Stdout
 
-	// Print link to job in GUI.
-	routes := newGUIRoutes()
-	fmt.Fprintln(out, "Job URL:", routes.JobURL(struct{ ID string }{
-		ID: jobID,
-	}))
-
-	// Refresh rate starts fast, in case the job completes fast, but will
-	// slow over time to minimize overhead and UI flicker.
-	delay := 5.0
+	var res struct {
+		Output struct {
+			Job struct {
+				URL   string
+				Tasks []taskFragment
+			}
+			Event *eventFragment
+		} `graphql:"watchJob(id: $id)"`
+	}
+	sub := api.Subscribe(ctx, svc, &res, map[string]interface{}{
+		"id": jobID,
+	})
+	defer sub.Stop()
 
 	w := &lineCountingWriter{
 		Underlying: out,
@@ -49,59 +58,77 @@ func watchJob(ctx context.Context, jobID string) error {
 	jp := &jobPrinter{}
 	jp.Spinner = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
 
-	var job taskFragment
-loop:
+	first := true
+	var root taskFragment
+
+	// Periodically tick to keep spinner animation lively, even when
+	// there are no events. Start ticking only after the first event.
+	var tickC <-chan time.Time
+
+watching:
 	for {
-		clearLines(w.LineCount)
+		fmt.Println("watch loop")
+		var event *eventFragment
+		select {
+		case more, _ := <-sub.C():
+			fmt.Println("more?", more)
+			fmt.Printf("res= %#v\n", res)
+			if !more {
+				break watching
+			}
+			event = res.Output.Event
+		case <-tickC:
+			fmt.Println("tickC")
+			event = nil
+		}
+		job := res.Output.Job
+
+		if first {
+			fmt.Fprintln(out, "Job URL:", job.URL)
+			first = false
+			ticker := time.NewTicker(time.Second / time.Duration(len(jp.Spinner)))
+			tickC = ticker.C
+			defer ticker.Stop()
+		}
+
+		//clearLines(w.LineCount)
 		w.LineCount = 0
 
-		// TODO: Subscribe instead of polling.
-		var q struct {
-			Tasks []taskFragment `graphql:"tasksByJobId(jobId: $jobId)"`
+		if event != nil {
+			// XXX print with colored header etc a la logs.
+			fmt.Fprintln(out, event.Message)
 		}
-		err := api.Query(ctx, svc, &q, map[string]interface{}{
-			"jobId": jobID,
-		})
-		if err != nil {
-			return fmt.Errorf("querying tasks: %w", err)
-		}
-		for _, task := range q.Tasks {
-			if task.ID == jobID {
-				job = task
+
+		for _, task := range job.Tasks {
+			if task.ParentID == nil {
+				root = task
 				break
 			}
 		}
-		if job.ID == "" {
-			return fmt.Errorf("no such job: %q", jobID)
+		if root.ID == "" {
+			return errors.New("root task missing")
 		}
 
-		jp.printTree(w, q.Tasks)
+		jp.printTree(w, job.Tasks)
 
-		if job.Finished != nil {
+		if root.Finished != nil {
 			break
 		}
-		select {
-		case <-ctx.Done():
-			break loop
-		case <-time.After(time.Duration(delay) * time.Millisecond):
-			if delay < 100 {
-				delay *= 1.3
-			}
-		}
+		// XXX smooth out animation
 		jp.Iteration++
 	}
 
-	switch job.Status {
+	switch root.Status {
 	case taskapi.StatusFailure:
-		if job.Message == "" {
+		if root.Message == "" {
 			return errors.New("job failed")
 		} else {
-			return fmt.Errorf("job failure: %s", job.Message)
+			return fmt.Errorf("job failure: %s", root.Message)
 		}
 	case taskapi.StatusSuccess:
 		return nil
 	default:
-		return fmt.Errorf("unexpected job status: %q", job.Status)
+		return fmt.Errorf("unexpected job status: %q", root.Status)
 	}
 }
 

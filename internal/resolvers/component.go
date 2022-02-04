@@ -9,6 +9,7 @@ import (
 	"cuelang.org/go/cue"
 	"github.com/deref/exo/internal/gensym"
 	"github.com/deref/exo/internal/manifest/exocue"
+	. "github.com/deref/exo/internal/scalars"
 )
 
 type ComponentResolver struct {
