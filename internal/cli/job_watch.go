@@ -30,21 +30,21 @@ tree until the job has finished running.`,
 	},
 }
 
-type eventFragment struct {
+type jobEventFragment struct {
+	Type    string
 	Message string
+	Job     struct {
+		URL      string
+		Tasks    []taskFragment
+		RootTask taskFragment
+	}
 }
 
 func watchJob(ctx context.Context, jobID string) error {
 	out := os.Stdout
 
 	var res struct {
-		Output struct {
-			Job struct {
-				URL   string
-				Tasks []taskFragment
-			}
-			Event *eventFragment
-		} `graphql:"watchJob(id: $id)"`
+		Event jobEventFragment `graphql:"watchJob(id: $id)"`
 	}
 	sub := api.Subscribe(ctx, svc, &res, map[string]interface{}{
 		"id": jobID,
@@ -58,8 +58,7 @@ func watchJob(ctx context.Context, jobID string) error {
 	jp := &jobPrinter{}
 	jp.Spinner = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
 
-	first := true
-	var root taskFragment
+	var prev jobEventFragment
 
 	// Periodically tick to keep spinner animation lively, even when
 	// there are no events. Start ticking only after the first event.
@@ -67,57 +66,54 @@ func watchJob(ctx context.Context, jobID string) error {
 
 watching:
 	for {
-		fmt.Println("watch loop")
-		var event *eventFragment
+		var event jobEventFragment
 		select {
 		case more, _ := <-sub.C():
-			fmt.Println("more?", more)
-			fmt.Printf("res= %#v\n", res)
 			if !more {
 				break watching
 			}
-			event = res.Output.Event
+			event = res.Event
 		case <-tickC:
-			fmt.Println("tickC")
-			event = nil
+			event = jobEventFragment{
+				Type: "Tick",
+				Job:  prev.Job,
+			}
 		}
-		job := res.Output.Job
+		job := event.Job
 
-		if first {
-			fmt.Fprintln(out, "Job URL:", job.URL)
-			first = false
-			ticker := time.NewTicker(time.Second / time.Duration(len(jp.Spinner)))
-			tickC = ticker.C
-			defer ticker.Stop()
-		}
-
-		//clearLines(w.LineCount)
+		clearLines(w.LineCount)
 		w.LineCount = 0
 
-		if event != nil {
+		switch event.Type {
+		case "Tick":
+			jp.Iteration++
+
+		case "JobWatched":
+			fmt.Fprintln(out, "Job URL:", job.URL)
+			if tickC != nil {
+				return errors.New("already received JobWatched event")
+			}
+			// XXX ticker := time.NewTicker(time.Second / time.Duration(len(jp.Spinner)))
+			ticker := time.NewTicker(time.Second / time.Duration(len(jp.Spinner)) * 4)
+			tickC = ticker.C
+			defer ticker.Stop()
+
+		default:
+			fmt.Println("event type: ", event.Type)
 			// XXX print with colored header etc a la logs.
 			fmt.Fprintln(out, event.Message)
 		}
 
-		for _, task := range job.Tasks {
-			if task.ParentID == nil {
-				root = task
-				break
-			}
-		}
-		if root.ID == "" {
-			return errors.New("root task missing")
-		}
-
 		jp.printTree(w, job.Tasks)
 
-		if root.Finished != nil {
-			break
+		if job.RootTask.Finished != nil {
+			sub.Stop()
 		}
-		// XXX smooth out animation
-		jp.Iteration++
+
+		prev = event
 	}
 
+	root := prev.Job.RootTask
 	switch root.Status {
 	case taskapi.StatusFailure:
 		if root.Message == "" {

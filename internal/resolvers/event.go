@@ -119,18 +119,7 @@ const defaultEventPageSize = 500
 const maxEventPageSize = 10000
 
 func (r *QueryResolver) findEvents(ctx context.Context, q eventQuery) (*EventPageResolver, error) {
-	output := &EventPageResolver{}
-
-	// XXX Is this right? Clients should be able to specify rewind vs not.
 	cursor := q.Cursor
-	if q.Cursor == (ULID{}) {
-		var err error
-		cursor, err = r.latestEventCursor(ctx, q.Filter)
-		if err != nil {
-			return nil, fmt.Errorf("getting latest cursor: %w", err)
-		}
-	}
-
 	limit := defaultEventPageSize
 	reverse := false
 	if q.Next > 0 {
@@ -150,7 +139,7 @@ func (r *QueryResolver) findEvents(ctx context.Context, q eventQuery) (*EventPag
 	after := filter.After
 	before := filter.Before
 	if before == (ULID{}) {
-		before = MaxULIDValue
+		before = InfiniteULID
 	}
 
 	var query string
@@ -197,40 +186,44 @@ func (r *QueryResolver) findEvents(ctx context.Context, q eventQuery) (*EventPag
 		filter.JobID, filter.JobID,
 		filter.TaskID, filter.TaskID,
 		filter.IContains,
-		after, before, limit,
+		after.String(), before.String(), limit,
 	); err != nil {
 		return nil, fmt.Errorf("querying: %w", err)
 	}
 
 	if reverse {
 		l := 0
-		r := len(output.Items) - 1
+		r := len(rows) - 1
 		for l < r {
-			tmp := output.Items[l]
-			output.Items[l] = output.Items[r]
-			output.Items[r] = tmp
+			tmp := rows[l]
+			rows[l] = rows[r]
+			rows[r] = tmp
 			l++
 			r--
 		}
 	}
 
-	output.PrevCursor = cursor
-	output.NextCursor = cursor
-	if len(output.Items) > 0 {
-		output.PrevCursor = rows[0].ULID
-		output.NextCursor = IncrementULID(rows[len(output.Items)-1].ULID)
+	output := &EventPageResolver{
+		Items: make([]*EventResolver, len(rows)),
 	}
-
-	output.Items = make([]*EventResolver, len(rows))
 	for i, row := range rows {
 		output.Items[i] = &EventResolver{
 			Q:        r,
 			EventRow: row,
 		}
 	}
+
+	output.PrevCursor = cursor
+	output.NextCursor = cursor
+	if len(rows) > 0 {
+		output.PrevCursor = rows[0].ULID
+		output.NextCursor = IncrementULID(rows[len(rows)-1].ULID)
+	}
+
 	return output, nil
 }
 
+// XXX When if ever is it appropriate to use this?
 func (r *QueryResolver) latestEventCursor(ctx context.Context, filter eventFilter) (ULID, error) {
 	event, err := r.latestEvent(ctx, filter)
 	if event == nil || err != nil {

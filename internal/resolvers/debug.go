@@ -17,6 +17,7 @@ func (r *MutationResolver) Sleep(ctx context.Context, args struct {
 	Seconds float64
 }) (*VoidResolver, error) {
 	// TODO: If sleeping over a certain amount of time, report "progress".
+	// XXX
 	return nil, chrono.Sleep(ctx, time.Duration(args.Seconds)*time.Second)
 }
 

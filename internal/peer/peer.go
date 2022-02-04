@@ -60,7 +60,6 @@ func NewPeer(ctx context.Context, cfg PeerConfig) (*Peer, error) {
 
 func (p *Peer) Do(ctx context.Context, out interface{}, doc string, vars map[string]interface{}) error {
 	ctx, operationName, vars := p.prepareOperation(ctx, vars)
-	fmt.Printf("vars: %#v\n", vars)
 	resp := p.schema.Exec(ctx, doc, operationName, vars)
 	return p.handleResponse(ctx, out, resp)
 }
