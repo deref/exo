@@ -12,16 +12,18 @@ type Logger interface {
 
 type GoLogger struct {
 	Underlying *golog.Logger
+	CallDepth  int
 }
 
 func (l *GoLogger) Infof(format string, v ...interface{}) {
-	l.Underlying.Output(3, fmt.Sprintf(format, v...))
+	l.Underlying.Output(2+l.CallDepth, fmt.Sprintf(format, v...))
 }
 
 func (l *GoLogger) Sublogger(prefix string) Logger {
 	return &Sublogger{
 		Underlying: l,
 		Prefix:     prefix,
+		CallDepth:  1,
 	}
 }
 
@@ -34,6 +36,7 @@ func Default() Logger {
 type Sublogger struct {
 	Underlying Logger
 	Prefix     string
+	CallDepth  int
 }
 
 func (l *Sublogger) Infof(format string, v ...interface{}) {
@@ -44,5 +47,6 @@ func (l *Sublogger) Sublogger(prefix string) Logger {
 	return &Sublogger{
 		Underlying: l,
 		Prefix:     l.Prefix + " " + prefix,
+		CallDepth:  l.CallDepth + 1,
 	}
 }
