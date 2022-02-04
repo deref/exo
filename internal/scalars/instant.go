@@ -18,6 +18,10 @@ var _ Scalar = &Instant{}
 
 func GoTimeToInstant(t time.Time) Instant {
 	return Instant{t.UTC()}
+
+}
+func (inst Instant) GoTime() time.Time {
+	return inst.t
 }
 
 func Now(ctx context.Context) Instant {

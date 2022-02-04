@@ -219,7 +219,7 @@ func (r *MutationResolver) FinishTask(ctx context.Context, args struct {
 		Q:       r,
 		TaskRow: row,
 	}
-	if _, err := r.createEvent(ctx, task, "TaskFinished", "task finished: "+status); err != nil {
+	if _, err := r.createEvent(ctx, task, "TaskFinished", ""); err != nil {
 		return nil, fmt.Errorf("creating finish event: %w", err)
 	}
 	return nil, nil

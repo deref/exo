@@ -50,3 +50,11 @@ func (l *Sublogger) Sublogger(prefix string) Logger {
 		CallDepth:  l.CallDepth + 1,
 	}
 }
+
+type NopLogger struct{}
+
+func (nop *NopLogger) Infof(format string, v ...interface{}) {}
+
+func (nop *NopLogger) Sublogger(prefix string) Logger {
+	return nop
+}

@@ -157,7 +157,7 @@ func (jp *jobPrinter) printTree(w io.Writer, tasks []taskFragment) {
 	rec = func(idx int, node *taskNode) {
 
 		prefix := ""
-		if node.Parent != nil {
+		if node.Parent != nil || len(node.Children) == 0 {
 			switch node.Status {
 			case taskapi.StatusPending:
 				prefix += rgbterm.FgString("·", 0, 123, 211)
@@ -173,6 +173,9 @@ func (jp *jobPrinter) printTree(w io.Writer, tasks []taskFragment) {
 				}
 			}
 			prefix += " "
+		}
+
+		if node.Parent != nil {
 
 			depth := depthOf(node)
 			prefix += strings.Repeat("│  ", depth-2)
