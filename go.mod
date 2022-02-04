@@ -11,7 +11,7 @@ require (
 	github.com/aybabtme/rgbterm v0.0.0-20170906152045-cc83f3b3ce59
 	github.com/cockroachdb/apd/v2 v2.0.2 // indirect
 	github.com/containerd/containerd v1.5.7 // indirect
-	github.com/deref/graphql-go v0.0.0-20220114234156-2e6e5c24f11a
+	github.com/deref/graphql-go v0.0.0-20220204035606-e2b473959845
 	github.com/deref/inflect-go v0.0.0-20211018210843-15b876b83b3e
 	github.com/deref/pier v0.0.0-20210928181930-9ee844d69730
 	github.com/deref/util-go v0.0.0-20220115012929-ff59eadb1f54
