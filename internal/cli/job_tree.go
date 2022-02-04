@@ -92,7 +92,7 @@ type jobPrinter struct {
 }
 
 func (jp *jobPrinter) printTree(w io.Writer, tasks []taskFragment) {
-	// TODO: watchJobs calls printTree in a loop, so each go around calls
+	// TODO: watchJob calls printTree in a loop, so each go around calls
 	// term.GetSize(), it would be more efficient to listen to terminal size
 	// change events.
 	termW, _ := term.GetSize()

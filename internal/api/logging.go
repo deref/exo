@@ -20,7 +20,7 @@ var _ logging.Logger = (*EventLogger)(nil)
 func (el *EventLogger) Infof(format string, v ...interface{}) {
 	message := fmt.Sprintf(format, v...)
 	if err := el.createEvent(message); err != nil {
-		el.SystemLog.Infof("error logging event for %s %s: %w", el.SourceType, el.SourceID, err)
+		el.SystemLog.Infof("error logging event for %s %s: %v", el.SourceType, el.SourceID, err)
 		el.SystemLog.Infof("attempted message was: %s", message)
 	}
 }

@@ -263,7 +263,7 @@ func (r *ResourceResolver) Job() *JobResolver {
 }
 
 func (r *ResourceResolver) Operation(ctx context.Context) (*string, error) {
-	task, err := r.Job().Task(ctx)
+	task, err := r.Job().RootTask(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("resolving task: %w", err)
 	}

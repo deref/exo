@@ -11,29 +11,47 @@ type Service interface {
 	Shutdown(context.Context) error
 	// Execute a GraphQL operation synchronously.
 	// Implementations should also respect CurrentContextVariables.
-	Do(ctx context.Context, doc string, vars map[string]interface{}, res interface{}) error
+	Do(ctx context.Context, res interface{}, doc string, vars map[string]interface{}) error
+	// Begin a GraphQL subscription operation. Replaces res each time
+	// subscription.Next returns. Consumer must call Stop() to cleanup.
+	Subscribe(ctx context.Context, res interface{}, doc string, vars map[string]interface{}) Subscription
+}
+
+type Subscription interface {
+	// Yields true each time an event is received and Service.Subscribe's res
+	// argument is replaced. Closes when the subscription ends.
+	C() <-chan bool
+	Err() error
+	Stop()
 }
 
 func Query(ctx context.Context, svc Service, q interface{}, vars map[string]interface{}) error {
-	return doReflective(ctx, svc, gql.Query, q, vars)
+	res, doc := buildReflectiveOperation(gql.Query, q, vars)
+	return svc.Do(ctx, res, doc, vars)
 }
 
 func Mutate(ctx context.Context, svc Service, m interface{}, vars map[string]interface{}) error {
-	return doReflective(ctx, svc, gql.Mutation, m, vars)
+	res, doc := buildReflectiveOperation(gql.Mutation, m, vars)
+	return svc.Do(ctx, res, doc, vars)
 }
 
-func doReflective(ctx context.Context, svc Service, typ gql.OperationType, sel interface{}, vars map[string]interface{}) error {
-	doc := encoding.MustMarshalOperation(&gql.Operation{
+func Subscribe(ctx context.Context, svc Service, s interface{}, vars map[string]interface{}) Subscription {
+	res, doc := buildReflectiveOperation(gql.Subscription, s, vars)
+	return svc.Subscribe(ctx, res, doc, vars)
+}
+
+func buildReflectiveOperation(typ gql.OperationType, sel interface{}, vars map[string]interface{}) (res interface{}, doc string) {
+	res = &encoding.SelectionUnmarshaler{
+		Selection: sel,
+	}
+	doc = encoding.MustMarshalOperation(&gql.Operation{
 		OperationDefinition: gql.OperationDefinition{
 			Type:      typ,
 			Selection: sel,
 		},
 		Variables: vars,
 	})
-	res := &encoding.SelectionUnmarshaler{
-		Selection: sel,
-	}
-	return svc.Do(ctx, doc, vars, res)
+	return
 }
 
 // Schedule asynchronous execution of a GraphQL mutation.
@@ -45,7 +63,7 @@ func Enqueue(ctx context.Context, svc Service, mutation string, arguments map[st
 	}
 	err = Mutate(ctx, svc, &m, map[string]interface{}{
 		"mutation":  mutation,
-		"arguments": arguments,
+		"arguments": JSONObject(arguments),
 	})
 	return m.Job.ID, err
 }

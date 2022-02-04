@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/deref/exo/internal/api"
+	. "github.com/deref/exo/internal/scalars"
 	"github.com/deref/exo/internal/util/mathutil"
 )
 
@@ -75,20 +77,32 @@ func (r *MutationResolver) createEventFromPrototype(ctx context.Context, prototy
 	}, nil
 }
 
+func (r *MutationResolver) mustNextULID(ctx context.Context) api.ULID {
+	res, err := r.ULIDGenerator.NextID(ctx)
+	if err != nil {
+		panic(err)
+	}
+	return ULID(res)
+}
+
 func (r *EventResolver) Timestamp() Instant {
 	return r.ULID.Timestamp()
 }
 
 type eventQuery struct {
 	Filter eventFilter
-	Cursor string
+	Cursor ULID
 	Prev   int
 	Next   int
 }
 
 type eventFilter struct {
+	Before      ULID
+	After       ULID
 	WorkspaceID string
 	StackID     string
+	// TODO: If ComponentID and StackID are both set, probably want to remove
+	// events from encapsulated components by checking component.parent_id is null.
 	ComponentID string
 	JobID       string
 	TaskID      string
@@ -97,8 +111,8 @@ type eventFilter struct {
 
 type EventPageResolver struct {
 	Items      []*EventResolver
-	PrevCursor string
-	NextCursor string
+	PrevCursor ULID
+	NextCursor ULID
 }
 
 const defaultEventPageSize = 500
@@ -107,8 +121,9 @@ const maxEventPageSize = 10000
 func (r *QueryResolver) findEvents(ctx context.Context, q eventQuery) (*EventPageResolver, error) {
 	output := &EventPageResolver{}
 
+	// XXX Is this right? Clients should be able to specify rewind vs not.
 	cursor := q.Cursor
-	if q.Cursor == "" {
+	if q.Cursor == (ULID{}) {
 		var err error
 		cursor, err = r.latestEventCursor(ctx, q.Filter)
 		if err != nil {
@@ -131,6 +146,13 @@ func (r *QueryResolver) findEvents(ctx context.Context, q eventQuery) (*EventPag
 	}
 	limit = mathutil.IntClamp(limit, 0, maxEventPageSize)
 
+	filter := q.Filter
+	after := filter.After
+	before := filter.Before
+	if before == (ULID{}) {
+		before = MaxULIDValue
+	}
+
 	var query string
 	if reverse {
 		query = `
@@ -144,10 +166,11 @@ func (r *QueryResolver) findEvents(ctx context.Context, q eventQuery) (*EventPag
 				OR (? != '' AND task_id = ?)
 			)
 			AND instr(lower(message), ?) <> 0
-			AND ulid < ?
+			AND ulid BETWEEN ? AND ?
 			ORDER BY ulid DESC
 			LIMIT ?
 		`
+		before = ULIDMax(before, cursor)
 	} else {
 		query = `
 			SELECT *
@@ -160,13 +183,13 @@ func (r *QueryResolver) findEvents(ctx context.Context, q eventQuery) (*EventPag
 				OR (? != '' AND task_id = ?)
 			)
 			AND instr(lower(message), ?) <> 0
-			AND ? < ulid
+			AND ulid BETWEEN ? AND ?
 			ORDER BY ulid ASC
 			LIMIT ?
 		`
+		after = ULIDMax(after, cursor)
 	}
 	var rows []EventRow
-	filter := q.Filter
 	if err := r.DB.SelectContext(ctx, &rows, query,
 		filter.WorkspaceID, filter.WorkspaceID,
 		filter.StackID, filter.StackID,
@@ -174,7 +197,7 @@ func (r *QueryResolver) findEvents(ctx context.Context, q eventQuery) (*EventPag
 		filter.JobID, filter.JobID,
 		filter.TaskID, filter.TaskID,
 		filter.IContains,
-		cursor, limit,
+		after, before, limit,
 	); err != nil {
 		return nil, fmt.Errorf("querying: %w", err)
 	}
@@ -194,8 +217,8 @@ func (r *QueryResolver) findEvents(ctx context.Context, q eventQuery) (*EventPag
 	output.PrevCursor = cursor
 	output.NextCursor = cursor
 	if len(output.Items) > 0 {
-		output.PrevCursor = rows[0].ULID.String()
-		output.NextCursor = incrementEventCursor(rows[len(output.Items)-1].ID())
+		output.PrevCursor = rows[0].ULID
+		output.NextCursor = IncrementULID(rows[len(output.Items)-1].ULID)
 	}
 
 	output.Items = make([]*EventResolver, len(rows))
@@ -208,12 +231,12 @@ func (r *QueryResolver) findEvents(ctx context.Context, q eventQuery) (*EventPag
 	return output, nil
 }
 
-func (r *QueryResolver) latestEventCursor(ctx context.Context, filter eventFilter) (string, error) {
+func (r *QueryResolver) latestEventCursor(ctx context.Context, filter eventFilter) (ULID, error) {
 	event, err := r.latestEvent(ctx, filter)
 	if event == nil || err != nil {
-		return "", err
+		return ULID{}, err
 	}
-	return incrementEventCursor(event.ID()), nil
+	return IncrementULID(event.ULID), nil
 }
 
 func (r *QueryResolver) latestEvent(ctx context.Context, filter eventFilter) (*EventResolver, error) {
@@ -222,11 +245,11 @@ func (r *QueryResolver) latestEvent(ctx context.Context, filter eventFilter) (*E
 		SELECT *
 		FROM event
 		WHERE (
-			   (? != '' workspace_id = ?)
-			OR (? != '' stack_id = ?)
-			OR (? != '' component_id = ?)
-			OR (? != '' job_id = ?)
-			OR (? != '' task_id = ?)
+			   (? != '' AND workspace_id = ?)
+			OR (? != '' AND stack_id = ?)
+			OR (? != '' AND component_id = ?)
+			OR (? != '' AND job_id = ?)
+			OR (? != '' AND task_id = ?)
 		)
 		AND instr(lower(message), ?) <> 0
 		ORDER BY ulid DESC
@@ -257,10 +280,10 @@ func incrementEventCursor(id string) string {
 
 type eventSubscription struct {
 	Filter eventFilter
-	Cursor string
+	Cursor ULID
 }
 
-func (r *SubscriptionResolver) events(ctx context.Context, sub eventSubscription) (<-chan *EventResolver, error) {
+func (r *SubscriptionResolver) events(ctx context.Context, filter eventFilter) (<-chan *EventResolver, error) {
 	logger := r.SystemLog.Sublogger("events subscription")
 	c := make(chan *EventResolver)
 	go func() {
@@ -268,8 +291,7 @@ func (r *SubscriptionResolver) events(ctx context.Context, sub eventSubscription
 
 		// Poll for events.
 		q := eventQuery{
-			Filter: sub.Filter,
-			Cursor: sub.Cursor,
+			Filter: filter,
 		}
 		for {
 			page, err := r.findEvents(ctx, q)

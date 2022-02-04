@@ -7,7 +7,6 @@ import (
 	"os"
 
 	"github.com/deref/exo/internal/api"
-	"github.com/deref/exo/internal/peer"
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
@@ -47,9 +46,7 @@ func sendMutation(ctx context.Context, mutation string, vars map[string]interfac
 }
 
 // Watch a job that we just enqueued.
-//
-// When the CLI is in peer mode, there is generally no worker pool.  While we
-// await job completion, we also do the work as part of this CLI invocation.
+// If so configured, also runs a worker to complete the job.
 func watchOwnJob(ctx context.Context, jobID string) error {
 	if rootPersistentFlags.Async {
 		fmt.Println("job:", jobID)
@@ -61,10 +58,10 @@ func watchOwnJob(ctx context.Context, jobID string) error {
 	defer cancel()
 
 	// TODO: Avoid interference between logging from the worker and watchJob.
-	if p, ok := svc.(*peer.Peer); ok {
+	if workOwnJobs {
 		eg.Go(func() error {
-			workerID := fmt.Sprintf("peer:%d:inline", os.Getpid())
-			err := api.RunWorker(ctx, p, workerID, &jobID)
+			workerID := fmt.Sprintf("cli:%d", os.Getpid())
+			err := api.RunWorker(ctx, svc, workerID, &jobID)
 			if err != nil {
 				cancel()
 			}

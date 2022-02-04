@@ -3,6 +3,8 @@ package resolvers
 import (
 	"context"
 	"fmt"
+
+	. "github.com/deref/exo/internal/scalars"
 )
 
 type StreamResolver struct {
@@ -59,7 +61,7 @@ func (r *StreamResolver) Message(ctx context.Context) (string, error) {
 }
 
 func (r *StreamResolver) Events(ctx context.Context, args struct {
-	Cursor    *string
+	Cursor    *ULID
 	Prev      *int32
 	Next      *int32
 	IContains *string

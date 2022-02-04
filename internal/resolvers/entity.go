@@ -24,8 +24,16 @@ func (r *QueryResolver) FindEntity(ctx context.Context, args struct {
 }
 
 func (r *QueryResolver) findEntity(ctx context.Context, typ string, id string) (*Entity, error) {
+	var res Entity
+	var err error
 	switch typ {
+	case "Task":
+		res.Underlying, err = r.taskByID(ctx, &id)
 	default:
 		return nil, fmt.Errorf("cannot find entities of type: %q", typ)
 	}
+	if res.Underlying == nil || err != nil {
+		return nil, err
+	}
+	return &res, nil
 }

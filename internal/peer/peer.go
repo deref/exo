@@ -58,7 +58,48 @@ func NewPeer(ctx context.Context, cfg PeerConfig) (*Peer, error) {
 	}, nil
 }
 
-func (p *Peer) Do(ctx context.Context, doc string, vars map[string]interface{}, res interface{}) error {
+func (p *Peer) Do(ctx context.Context, out interface{}, doc string, vars map[string]interface{}) error {
+	ctx, operationName, vars := p.prepareOperation(ctx, vars)
+	fmt.Printf("vars: %#v\n", vars)
+	resp := p.schema.Exec(ctx, doc, operationName, vars)
+	return p.handleResponse(ctx, out, resp)
+}
+
+func (p *Peer) Subscribe(ctx context.Context, out interface{}, doc string, vars map[string]interface{}) api.Subscription {
+	ctx, operationName, vars := p.prepareOperation(ctx, vars)
+	ctx, cancel := context.WithCancel(ctx)
+
+	respC, err := p.schema.Subscribe(ctx, doc, operationName, vars)
+	if err != nil {
+		// Only schema configuration errors are checked synchronously.
+		panic(err)
+	}
+
+	moreC := make(chan bool)
+	errC := make(chan error, 1)
+	go func() {
+		defer close(moreC)
+		defer cancel()
+		for resp := range respC {
+			if err := p.handleResponse(ctx, out, resp.(*graphql.Response)); err != nil {
+				errC <- err
+				return
+			}
+			select {
+			case moreC <- true:
+			case <-ctx.Done():
+				return
+			}
+		}
+	}()
+	return &Subscription{
+		moreC:  moreC,
+		errC:   errC,
+		cancel: cancel,
+	}
+}
+
+func (p *Peer) prepareOperation(ctx context.Context, vars map[string]interface{}) (_ context.Context, operationName string, _ map[string]interface{}) {
 	ctxVars := api.CurrentContextVariables(ctx)
 	if ctxVars != nil && ctxVars.TaskID != "" {
 		ctx = logging.ContextWithLogger(ctx, &api.EventLogger{
@@ -69,8 +110,18 @@ func (p *Peer) Do(ctx context.Context, doc string, vars map[string]interface{}, 
 		})
 	}
 
-	vars, _ = jsonutil.MustSimplify(vars).(map[string]interface{})
-	resp := p.schema.Exec(ctx, doc, "", vars)
+	operationName = "" // TODO: Allow caller to specify somehow?
+
+	if vars == nil {
+		vars = make(map[string]interface{})
+	} else {
+		vars = jsonutil.MustSimplify(vars).(map[string]interface{})
+	}
+
+	return ctx, operationName, vars
+}
+
+func (p *Peer) handleResponse(ctx context.Context, out interface{}, resp *graphql.Response) error {
 	for i, err := range resp.Errors {
 		externalErr := sanitizeQueryError(err)
 		if err == externalErr {
@@ -82,10 +133,35 @@ func (p *Peer) Do(ctx context.Context, doc string, vars map[string]interface{}, 
 	if len(resp.Errors) > 0 {
 		return api.QueryErrorSet(resp.Errors)
 	}
-	if err := json.Unmarshal(resp.Data, res); err != nil {
+	if err := json.Unmarshal(resp.Data, out); err != nil {
 		return err
 	}
 	return nil
+}
+
+type Subscription struct {
+	moreC  <-chan bool
+	errC   <-chan error
+	err    error
+	cancel func()
+}
+
+func (sub *Subscription) C() <-chan bool {
+	return sub.moreC
+}
+
+func (sub *Subscription) Err() error {
+	if sub.err == nil {
+		select {
+		case sub.err = <-sub.errC:
+		default:
+		}
+	}
+	return sub.err
+}
+
+func (sub *Subscription) Stop() {
+	sub.cancel()
 }
 
 func (p *Peer) Shutdown(ctx context.Context) error {

@@ -20,7 +20,7 @@ var jsonFlags struct {
 var jsonCmd = &cobra.Command{
 	Use:    "json [properties...]",
 	Hidden: true,
-	Short:  "Builds a JSON object.",
+	Short:  "Builds a JSON object",
 	Long: `Builds a JSON object of the properties specified as command line arguments.
 
 Arguments pairs are expressed in one of two forms:

@@ -44,6 +44,9 @@ For more information, see https://exo.deref.io`,
 // Will be initialized automatically, unless offline is true.
 var svc api.Service
 
+// Should this CLI invocation double as a task worker for jobs it starts?
+var workOwnJobs bool
+
 func Main() {
 	ctx := context.Background()
 
@@ -62,16 +65,24 @@ func Main() {
 	})
 	ctx = telemetry.ContextWithTelemetry(ctx, tel)
 
-	// XXX TODO: if client, do checkOrEnsureServer() instead of peer.NewPeer
 	svc = newLazyService(func() api.Service {
-		svc, err := peer.NewPeer(ctx, peer.PeerConfig{
-			VarDir:      cfg.VarDir,
-			GUIEndpoint: effectiveServerURL(),
-		})
-		if err != nil {
-			cmdutil.Fatalf("initializing peer: %w", err)
+		peerMode := true // XXX configurable.
+		if peerMode {
+			// When the CLI is in peer mode, there is generally no worker pool.
+			// For development convenience, always work our own jobs from a peer CLI.
+			workOwnJobs = true
+
+			svc, err := peer.NewPeer(ctx, peer.PeerConfig{
+				VarDir:      cfg.VarDir,
+				GUIEndpoint: effectiveServerURL(),
+			})
+			if err != nil {
+				cmdutil.Fatalf("initializing peer: %w", err)
+			}
+			return svc
+		} else {
+			panic("TODO: checkOrEnsureServer")
 		}
-		return svc
 	})
 	defer func() {
 		if err := svc.Shutdown(ctx); err != nil {
@@ -107,9 +118,14 @@ func (svc *lazyService) force() {
 	svc.value = thunk()
 }
 
-func (svc *lazyService) Do(ctx context.Context, doc string, vars map[string]interface{}, res interface{}) error {
+func (svc *lazyService) Do(ctx context.Context, res interface{}, doc string, vars map[string]interface{}) error {
 	svc.force()
-	return svc.value.Do(ctx, doc, vars, res)
+	return svc.value.Do(ctx, res, doc, vars)
+}
+
+func (svc *lazyService) Subscribe(ctx context.Context, res interface{}, doc string, vars map[string]interface{}) api.Subscription {
+	svc.force()
+	return svc.value.Subscribe(ctx, res, doc, vars)
 }
 
 func (svc *lazyService) Shutdown(ctx context.Context) error {

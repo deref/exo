@@ -10,6 +10,7 @@ import (
 	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/chrono"
 	"github.com/deref/exo/internal/gensym"
+	. "github.com/deref/exo/internal/scalars"
 )
 
 type TaskResolver struct {
@@ -204,12 +205,24 @@ func (r *MutationResolver) FinishTask(ctx context.Context, args struct {
 	} else {
 		status = api.TaskStatusFailure
 	}
-	_, err := r.DB.ExecContext(ctx, `
+	var row TaskRow
+	if err := r.DB.GetContext(ctx, &row, `
 		UPDATE task
 		SET updated = ?, finished = ?, status = ?, error_message = ?
 		WHERE id = ?
-	`, now, now, status, args.Error, args.ID)
-	return nil, err
+		RETURNING *
+	`, now, now, status, args.Error, args.ID,
+	); err != nil {
+		return nil, fmt.Errorf("marking task as finished: %w", err)
+	}
+	task := &TaskResolver{
+		Q:       r,
+		TaskRow: row,
+	}
+	if _, err := r.createEvent(ctx, task, "TaskFinished", "task finished: "+status); err != nil {
+		return nil, fmt.Errorf("creating finish event: %w", err)
+	}
+	return nil, nil
 }
 
 func (r *QueryResolver) taskByID(ctx context.Context, id *string) (*TaskResolver, error) {
@@ -315,35 +328,16 @@ func (r *TaskResolver) Stream() *StreamResolver {
 	return r.Q.streamForSource("Task", r.ID)
 }
 
+func (r *TaskResolver) eventPrototype(ctx context.Context) (row EventRow, err error) {
+	// XXX set row's WorkspaceID, StackID, and ComponentID appropriately.
+	row.JobID = &r.JobID
+	row.TaskID = &r.ID
+	return row, nil
+}
+
 func (r *TaskResolver) Message(ctx context.Context) (string, error) {
 	if r.ErrorMessage != nil {
 		return *r.ErrorMessage, nil
 	}
 	return r.Stream().Message(ctx)
-}
-
-func (r *MutationResolver) CancelJob(ctx context.Context, args struct {
-	ID string
-}) error {
-	return r.cancelJob(ctx, args.ID)
-}
-
-func (r *MutationResolver) cancelJob(ctx context.Context, id string) error {
-	now := Now(ctx)
-	_, err := r.DB.ExecContext(ctx, `
-		UPDATE task
-		SET canceled = COALESCE(canceled, ?)
-		WHERE job_id = ?
-	`, now, id)
-	return err
-}
-
-func (r *SubscriptionResolver) JobEvents(ctx context.Context, args struct {
-	JobID string
-}) (<-chan *EventResolver, error) {
-	return r.events(ctx, eventSubscription{
-		Filter: eventFilter{
-			JobID: args.JobID,
-		},
-	})
 }
