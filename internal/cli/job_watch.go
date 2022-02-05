@@ -113,6 +113,9 @@ watching:
 
 		prev = event
 	}
+	if sub.Err() != nil {
+		return fmt.Errorf("subscription error: %w", sub.Err())
+	}
 
 	root := prev.Job.RootTask
 	switch root.Status {

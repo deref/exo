@@ -64,6 +64,7 @@ func watchOwnJob(ctx context.Context, jobID string) error {
 			// concurrent rendering of job events and progress.  Task execution log
 			// messages will produce events that will be displayed in the normal
 			// watchJob output.
+			// TODO: It would be better to direct this logging _somewhere_.
 			ctx := logging.ContextWithLogger(ctx, &logging.NopLogger{})
 
 			workerID := fmt.Sprintf("cli:%d", os.Getpid())
