@@ -198,6 +198,30 @@ func (r *MutationResolver) FinishTask(ctx context.Context, args struct {
 	ID    string
 	Error *string
 }) (*VoidResolver, error) {
+	taskID := args.ID
+
+	var errMessage *string
+	if args.Error != nil {
+		errMessage = args.Error
+	}
+
+	if errMessage == nil {
+		outstanding := 0
+		if err := r.DB.GetContext(ctx, &outstanding, `
+			SELECT COUNT(id)
+			FROM task
+			WHERE parent_id = ?
+			AND finished IS NULL
+		`, args.ID,
+		); err != nil {
+			return nil, fmt.Errorf("counting outstanding tasks: %w", err)
+		}
+		if outstanding > 0 {
+			msg := "task finished before children"
+			errMessage = &msg
+		}
+	}
+
 	now := Now(ctx)
 	var status string
 	if args.Error == nil {
@@ -211,7 +235,7 @@ func (r *MutationResolver) FinishTask(ctx context.Context, args struct {
 		SET updated = ?, finished = ?, status = ?, error_message = ?
 		WHERE id = ?
 		RETURNING *
-	`, now, now, status, args.Error, args.ID,
+	`, now, now, status, errMessage, taskID,
 	); err != nil {
 		return nil, fmt.Errorf("marking task as finished: %w", err)
 	}
