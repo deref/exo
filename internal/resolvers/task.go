@@ -225,6 +225,12 @@ func (r *MutationResolver) FinishTask(ctx context.Context, args struct {
 	return nil, nil
 }
 
+func (r *QueryResolver) TaskByID(ctx context.Context, args struct {
+	ID string
+}) (*TaskResolver, error) {
+	return r.taskByID(ctx, &args.ID)
+}
+
 func (r *QueryResolver) taskByID(ctx context.Context, id *string) (*TaskResolver, error) {
 	t := &TaskResolver{
 		Q: r,
@@ -247,6 +253,27 @@ func (r *QueryResolver) AllTasks(ctx context.Context) ([]*TaskResolver, error) {
 		FROM task
 		ORDER BY task.id ASC
 	`)
+	if err != nil {
+		return nil, err
+	}
+	resolvers := make([]*TaskResolver, len(rows))
+	for i, row := range rows {
+		resolvers[i] = &TaskResolver{
+			Q:       r,
+			TaskRow: row,
+		}
+	}
+	return resolvers, nil
+}
+
+func (r *QueryResolver) tasksByParentID(ctx context.Context, parentID string) ([]*TaskResolver, error) {
+	var rows []TaskRow
+	err := r.DB.SelectContext(ctx, &rows, `
+		SELECT *
+		FROM task
+		WHERE parent_id = ?
+		ORDER BY task.id ASC
+	`, parentID)
 	if err != nil {
 		return nil, err
 	}
@@ -306,6 +333,10 @@ func (r *TaskResolver) Job() *JobResolver {
 
 func (r *TaskResolver) Parent(ctx context.Context) (*TaskResolver, error) {
 	return r.Q.taskByID(ctx, r.ParentID)
+}
+
+func (r *TaskResolver) Children(ctx context.Context) ([]*TaskResolver, error) {
+	return r.Q.tasksByParentID(ctx, r.ID)
 }
 
 func (r *TaskResolver) Label() string {
