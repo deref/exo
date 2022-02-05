@@ -40,6 +40,6 @@ Arguments are specified as JSON with the same syntax as 'exo json'.`,
 				return fmt.Errorf("encoding result: %w", err)
 			}
 		}
-		return nil
+		return sub.Err()
 	},
 }
