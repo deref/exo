@@ -174,6 +174,13 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 		return fmt.Errorf("creating job table: %w", err)
 	}
 
+	if _, err := r.DB.ExecContext(ctx, `
+		CREATE INDEX IF NOT EXISTS
+		task_parent_id ON task ( parent_id )
+	`); err != nil {
+		return fmt.Errorf("creating task_parent_id index: %w", err)
+	}
+
 	// Event.
 
 	if _, err := r.DB.ExecContext(ctx, `

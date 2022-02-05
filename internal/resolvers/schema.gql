@@ -26,6 +26,7 @@ type Query {
   resourceByRef(ref: String!): Resource
   
   allTasks: [Task!]!
+  taskByID(id: String!): Task
   tasksByJobId(jobId: String!): [Task!]!
   tasksByJobIds(jobIds: [String!]!): [Task!]!
 
@@ -267,9 +268,10 @@ type Task {
   jobId: String!
   job: Job!
   parentId: String
+  parent: Task
+  children: [Task!]!
   mutation: String!
   arguments: JSONObject!
-  parent: Task
   label: String!
   workerId: String
   status: String!
