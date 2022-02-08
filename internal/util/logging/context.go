@@ -18,5 +18,12 @@ func CurrentLogger(ctx context.Context) Logger {
 
 func Infof(ctx context.Context, format string, v ...interface{}) {
 	logger := CurrentLogger(ctx)
+	if goLogger, ok := logger.(*GoLogger); ok {
+		logger = &GoLogger{
+			Prefix:     goLogger.Prefix,
+			Underlying: goLogger.Underlying,
+			CallDepth:  goLogger.CallDepth + 1,
+		}
+	}
 	logger.Infof(format, v...)
 }
