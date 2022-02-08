@@ -13,11 +13,13 @@ type EventLogger struct {
 	SystemLog  logging.Logger
 	SourceType string
 	SourceID   string
+	Prefix     string
 }
 
 var _ logging.Logger = (*EventLogger)(nil)
 
 func (el *EventLogger) Infof(format string, v ...interface{}) {
+	format = logging.Prefix(el.Prefix, format)
 	message := fmt.Sprintf(format, v...)
 	if err := el.createEvent(message); err != nil {
 		el.SystemLog.Infof("error logging event for %s %s: %v", el.SourceType, el.SourceID, err)
@@ -44,8 +46,7 @@ func (el *EventLogger) createEvent(message string) error {
 }
 
 func (sl *EventLogger) Sublogger(prefix string) logging.Logger {
-	return &logging.Sublogger{
-		Underlying: sl,
-		Prefix:     prefix,
-	}
+	sub := *sl
+	sub.Prefix = logging.Prefix(sl.Prefix, prefix)
+	return &sub
 }
