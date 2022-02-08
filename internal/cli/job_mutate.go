@@ -2,7 +2,6 @@ package cli
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"os"
 
@@ -77,11 +76,7 @@ func watchOwnJob(ctx context.Context, jobID string) error {
 	}
 
 	eg.Go(func() error {
-		err := watchJob(ctx, jobID)
-		if errors.Is(err, context.Canceled) {
-			err = nil
-		}
-		return err
+		return watchJob(ctx, jobID)
 	})
 
 	return eg.Wait()
