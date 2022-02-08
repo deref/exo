@@ -50,6 +50,14 @@ If no job ids are provided, lists all jobs in the scope.`,
 			return fmt.Errorf("querying tasks: %w", err)
 		}
 
+		for _, task := range tasks {
+			fmt.Printf("task=%s", task.ID)
+			if task.ParentID != nil {
+				fmt.Printf(" parent=%s", *task.ParentID)
+			}
+			fmt.Println()
+		}
+
 		jp := &jobPrinter{
 			ShowJobID: len(args) != 1,
 		}
@@ -153,8 +161,8 @@ func (jp *jobPrinter) printTree(w io.Writer, tasks []taskFragment) {
 		}
 	}
 
-	var rec func(idx int, node *taskNode)
-	rec = func(idx int, node *taskNode) {
+	var printTask func(idx int, node *taskNode)
+	printTask = func(idx int, node *taskNode) {
 
 		prefix := ""
 		if node.Parent != nil || len(node.Children) == 0 {
@@ -175,17 +183,20 @@ func (jp *jobPrinter) printTree(w io.Writer, tasks []taskFragment) {
 			prefix += " "
 		}
 
-		if node.Parent != nil {
-
-			depth := depthOf(node)
-			prefix += strings.Repeat("│  ", depth-2)
+		var printTracks func(node *taskNode, end, more string)
+		printTracks = func(node *taskNode, end, more string) {
+			if node.Parent == nil {
+				return
+			}
 			last := idx == len(node.Parent.Children)-1
+			printTracks(node.Parent, "   ", "│  ")
 			if last {
-				prefix += "└─ "
+				prefix += end
 			} else {
-				prefix += "├─ "
+				prefix += more
 			}
 		}
+		printTracks(node, "└─ ", "├─ ")
 
 		label := node.Label
 		if jp.ShowJobID {
@@ -225,10 +236,10 @@ func (jp *jobPrinter) printTree(w io.Writer, tasks []taskFragment) {
 
 		fmt.Fprintf(w, "%s%s%s%s%s\n", prefix, alignMessage, message, alignSuffix, suffix)
 		for i, child := range node.Children {
-			rec(i, child)
+			printTask(i, child)
 		}
 	}
 	for _, job := range jobNodes {
-		rec(0, job)
+		printTask(0, job)
 	}
 }
