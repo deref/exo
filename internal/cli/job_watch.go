@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/deref/exo/internal/api"
+	"github.com/deref/exo/internal/scalars"
 	taskapi "github.com/deref/exo/internal/task/api"
 	"github.com/spf13/cobra"
 )
@@ -31,32 +32,46 @@ tree until the job has finished running.`,
 }
 
 type jobEventFragment struct {
-	Type    string
-	Message string
-	Job     struct {
+	Type      string
+	Message   string
+	Timestamp scalars.Instant
+	Job       struct {
 		URL      string
 		Tasks    []taskFragment
 		RootTask taskFragment
 	}
+	JobID  *string `graphql:"jobID"`
+	TaskID *string `graphql:"taskID"`
 }
 
 func watchJob(ctx context.Context, jobID string) error {
 	out := os.Stdout
 
-	var res struct {
+	type watchJobSubscription struct {
 		Event jobEventFragment `graphql:"watchJob(id: $id)"`
 	}
+	var res watchJobSubscription
 	sub := api.Subscribe(ctx, svc, &res, map[string]interface{}{
 		"id": jobID,
 	})
 	defer sub.Stop()
 
-	w := &lineCountingWriter{
+	el := &EventLogger{
+		W: out,
+	}
+	el.Init()
+
+	lcw := &lineCountingWriter{
 		Underlying: out,
 	}
 
-	jp := &jobPrinter{}
-	jp.Spinner = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
+	interactive := isInteractive()
+
+	var jp *jobPrinter
+	if interactive {
+		jp = &jobPrinter{}
+		jp.Spinner = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
+	}
 
 	var prev jobEventFragment
 
@@ -68,11 +83,11 @@ watching:
 	for {
 		var event jobEventFragment
 		select {
-		case more, _ := <-sub.C():
-			if !more {
+		case eventInterface, ok := <-sub.Events():
+			if !ok {
 				break watching
 			}
-			event = res.Event
+			event = api.OperationData(eventInterface).(jobEventFragment)
 		case <-tickC:
 			event = jobEventFragment{
 				Type: "Tick",
@@ -81,8 +96,10 @@ watching:
 		}
 		job := event.Job
 
-		clearLines(w.LineCount)
-		w.LineCount = 0
+		if interactive {
+			clearLines(lcw.LineCount)
+			lcw.LineCount = 0
+		}
 
 		switch event.Type {
 		case "Tick":
@@ -93,22 +110,46 @@ watching:
 			if tickC != nil {
 				return errors.New("already received JobWatched event")
 			}
-			ticker := time.NewTicker(time.Second / time.Duration(len(jp.Spinner)))
-			tickC = ticker.C
-			defer ticker.Stop()
+			if interactive {
+				ticker := time.NewTicker(time.Second / time.Duration(len(jp.Spinner)))
+				tickC = ticker.C
+				defer ticker.Stop()
+			}
 
-		case "JobUpdated", "TaskFinished":
-			// No-op.
+		case "JobUpdated":
+			if !interactive {
+				// XXX only print occassionally.
+				// XXX include progress info.
+				sourceID := *event.JobID
+				el.LogEvent(sourceID, event.Timestamp.GoTime(), sourceID, "JobUpdated")
+			}
+
+		case "TaskStarted":
+			if !interactive {
+				sourceID := *event.TaskID
+				el.LogEvent(sourceID, event.Timestamp.GoTime(), sourceID, "Task Started")
+			}
+
+		case "TaskFinished":
+			if !interactive {
+				sourceID := *event.TaskID
+				el.LogEvent(sourceID, event.Timestamp.GoTime(), sourceID, "Task Finished")
+			}
+			if *event.TaskID == *event.JobID {
+				sub.Stop()
+			}
 
 		default:
-			// XXX print with colored header etc a la logs.
-			fmt.Fprintln(out, event.Message)
+			sourceID := "UNKNOWN" // XXX
+			message := event.Type
+			if event.Message != "" {
+				message = fmt.Sprintf("%s: %s", message, event.Message)
+			}
+			el.LogEvent(sourceID, event.Timestamp.GoTime(), sourceID, message)
 		}
 
-		jp.printTree(w, job.Tasks)
-
-		if job.RootTask.Finished != nil {
-			sub.Stop()
+		if interactive {
+			jp.printTree(lcw, job.Tasks)
 		}
 
 		prev = event

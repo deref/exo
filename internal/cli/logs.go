@@ -2,19 +2,17 @@ package cli
 
 import (
 	"context"
-	"crypto/md5"
 	"fmt"
 	"os"
 	"time"
 
 	"github.com/Nerdmaster/terminal"
-	"github.com/aybabtme/rgbterm"
 	"github.com/deref/exo/internal/chrono"
 	"github.com/deref/exo/internal/core/api"
 	joshclient "github.com/deref/exo/internal/core/client"
 	"github.com/deref/exo/internal/util/cmdutil"
+	"github.com/deref/exo/internal/util/mathutil"
 	"github.com/deref/exo/internal/util/term"
-	"github.com/lucasb-eyer/go-colorful"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
 )
@@ -114,8 +112,6 @@ func runTailLogsReader(ctx context.Context, cancel func()) error {
 func runTailLogsWriter(ctx context.Context, workspace *joshclient.Workspace, streamRefs []string, stopOnError bool) error {
 	workspaceID := workspace.ID()
 
-	colors := NewColorCache()
-
 	showName := len(streamRefs) != 1
 
 	resolved, err := workspace.Resolve(ctx, &api.ResolveInput{
@@ -142,14 +138,16 @@ func runTailLogsWriter(ctx context.Context, workspace *joshclient.Workspace, str
 	if err != nil {
 		return fmt.Errorf("describing processes: %w", err)
 	}
-	labelWidth := 0
+
+	el := &EventLogger{
+		W: os.Stdout,
+	}
+
 	streamToLabel := make(map[string]string, len(descriptions.Processes))
 	streamToLabel[workspaceID] = "EXO"
 	for _, process := range descriptions.Processes {
 		streamToLabel[process.ID] = process.Name
-		if labelWidth < len(process.Name) {
-			labelWidth = len(process.Name)
-		}
+		el.LabelWidth = mathutil.IntMax(el.LabelWidth, len(process.Name))
 	}
 
 	limit := 500
@@ -169,28 +167,16 @@ func runTailLogsWriter(ctx context.Context, workspace *joshclient.Workspace, str
 				cmdutil.Warnf("invalid event timestamp: %q", event.Timestamp)
 				continue
 			}
-			timestamp := t.Local().Format("15:04:05")
 
-			var prefix string
+			var label string
 			if showName {
-				label := event.Stream
+				label = event.Stream
 				if componentName := streamToLabel[event.Stream]; componentName != "" {
 					label = componentName
-				} else if labelWidth < len(label) {
-					labelWidth = len(label)
 				}
-				label = fmt.Sprintf("%*s", labelWidth, label)
-				color := colors.Color(event.Stream)
-				r, g, b := color.RGB255()
-				prefix = rgbterm.FgString(
-					fmt.Sprintf("%s %s", timestamp, label),
-					r, g, b,
-				)
-			} else {
-				prefix = timestamp
 			}
 
-			fmt.Printf("%s %s%s\r\n", prefix, event.Message, termReset)
+			el.LogEvent(event.Stream, t, label, event.Message)
 		}
 		in.Cursor = &output.NextCursor
 		in.Prev = nil
@@ -222,37 +208,3 @@ func runTailLogsWriter(ctx context.Context, workspace *joshclient.Workspace, str
 		}
 	}
 }
-
-type ColorCache struct {
-	palette []colorful.Color
-	colors  map[string]colorful.Color
-}
-
-func NewColorCache() *ColorCache {
-	pal, err := colorful.HappyPalette(256)
-	if err != nil {
-		// An error should only be possible if the number of colours requested is
-		// too high. Since this is a fixed constant this panic should be impossible.
-		panic(err)
-	}
-	return &ColorCache{
-		palette: pal,
-		colors:  make(map[string]colorful.Color),
-	}
-}
-
-func (cache *ColorCache) Color(key string) colorful.Color {
-	color := cache.colors[key]
-	if colorIsBlack(color) {
-		b := md5.Sum([]byte(key))[0]
-		color = cache.palette[b]
-		cache.colors[key] = color
-	}
-	return color
-}
-
-func colorIsBlack(c colorful.Color) bool {
-	return c.R == 0 && c.G == 0 && c.B == 0
-}
-
-const termReset = "\u001b[0m"

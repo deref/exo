@@ -56,7 +56,7 @@ func (r *MutationResolver) createJob(ctx context.Context, id string, mutation st
 // in a database field to establish a mutual exclusion lock.
 func (r *MutationResolver) createTask(ctx context.Context, id string, parentID *string, mutation string, arguments map[string]interface{}) (*TaskResolver, error) {
 	if id == "" {
-		panic("id is required")
+		id = gensym.RandomBase32()
 	}
 	now := Now(ctx)
 	row := TaskRow{
@@ -156,7 +156,14 @@ func (r *MutationResolver) StartTask(ctx context.Context, args struct {
 	if n != 1 {
 		return nil, errors.New("task not available")
 	}
-	return r.taskByID(ctx, &args.ID)
+	task, err := r.taskByID(ctx, &args.ID)
+	if task == nil || err != nil {
+		return task, err
+	}
+	if _, err := r.createEvent(ctx, task, "TaskStarted", ""); err != nil {
+		return nil, fmt.Errorf("creating started event: %w", err)
+	}
+	return task, nil
 }
 
 func (r *MutationResolver) UpdateTask(ctx context.Context, args struct {
@@ -205,6 +212,8 @@ func (r *MutationResolver) FinishTask(ctx context.Context, args struct {
 		errMessage = args.Error
 	}
 
+	// XXX instead of erroring, await children to finish.
+	// XXX cancel tree if parent failed before children.
 	if errMessage == nil {
 		outstanding := 0
 		if err := r.DB.GetContext(ctx, &outstanding, `

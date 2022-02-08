@@ -64,36 +64,38 @@ func (p *Peer) Do(ctx context.Context, out interface{}, doc string, vars map[str
 	return p.handleResponse(ctx, out, resp)
 }
 
-func (p *Peer) Subscribe(ctx context.Context, out interface{}, doc string, vars map[string]interface{}) api.Subscription {
+func (p *Peer) Subscribe(ctx context.Context, newRes func() interface{}, doc string, vars map[string]interface{}) api.Subscription {
 	ctx, operationName, vars := p.prepareOperation(ctx, vars)
 	ctx, cancel := context.WithCancel(ctx)
 
-	respC, err := p.schema.Subscribe(ctx, doc, operationName, vars)
+	source, err := p.schema.Subscribe(ctx, doc, operationName, vars)
 	if err != nil {
 		// Only schema configuration errors are checked synchronously.
 		panic(err)
 	}
 
-	moreC := make(chan bool)
-	errC := make(chan error, 1)
+	sink := make(chan interface{})
+	errs := make(chan error, 1)
 	go func() {
-		defer close(moreC)
+		defer close(sink)
 		defer cancel()
-		for resp := range respC {
-			if err := p.handleResponse(ctx, out, resp.(*graphql.Response)); err != nil {
-				errC <- err
+		for resp := range source {
+			out := newRes()
+			resp := resp.(*graphql.Response)
+			if err := p.handleResponse(ctx, out, resp); err != nil {
+				errs <- err
 				return
 			}
 			select {
-			case moreC <- true:
+			case sink <- out:
 			case <-ctx.Done():
 				return
 			}
 		}
 	}()
 	return &Subscription{
-		moreC:  moreC,
-		errC:   errC,
+		events: sink,
+		errs:   errs,
 		cancel: cancel,
 	}
 }
@@ -132,27 +134,24 @@ func (p *Peer) handleResponse(ctx context.Context, out interface{}, resp *graphq
 	if len(resp.Errors) > 0 {
 		return api.QueryErrorSet(resp.Errors)
 	}
-	if err := json.Unmarshal(resp.Data, out); err != nil {
-		return err
-	}
-	return nil
+	return json.Unmarshal(resp.Data, out)
 }
 
 type Subscription struct {
-	moreC  <-chan bool
-	errC   <-chan error
+	events <-chan interface{}
+	errs   <-chan error
 	err    error
 	cancel func()
 }
 
-func (sub *Subscription) C() <-chan bool {
-	return sub.moreC
+func (sub *Subscription) Events() <-chan interface{} {
+	return sub.events
 }
 
 func (sub *Subscription) Err() error {
 	if sub.err == nil {
 		select {
-		case sub.err = <-sub.errC:
+		case sub.err = <-sub.errs:
 		default:
 		}
 	}
