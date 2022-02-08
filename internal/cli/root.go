@@ -10,6 +10,7 @@ import (
 	"github.com/deref/exo/internal/telemetry"
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/deref/exo/internal/util/logging"
+	"github.com/deref/exo/internal/util/term"
 	"github.com/spf13/cobra"
 )
 
@@ -20,11 +21,23 @@ var (
 func init() {
 	rootCmd.PersistentFlags().StringVar(&rootPersistentFlags.Cluster, "cluster", "", "")
 	rootCmd.PersistentFlags().BoolVar(&rootPersistentFlags.Async, "async", false, "Do not await long-running tasks")
+	rootCmd.PersistentFlags().BoolVar(&rootPersistentFlags.NoColor, "no-color", false, "disable color tty output")
+	rootCmd.PersistentFlags().BoolVar(&rootPersistentFlags.NonInteractive, "non-interactive", false, "disable interactive tty behaviors")
 }
 
 var rootPersistentFlags struct {
-	Cluster string
-	Async   bool
+	Cluster        string
+	Async          bool
+	NoColor        bool
+	NonInteractive bool
+}
+
+func useColor() bool {
+	return !rootPersistentFlags.NoColor && term.IsColorEnabled()
+}
+
+func isInteractive() bool {
+	return !rootPersistentFlags.NonInteractive && term.IsInteractive()
 }
 
 var rootCmd = &cobra.Command{
@@ -123,9 +136,9 @@ func (svc *lazyService) Do(ctx context.Context, res interface{}, doc string, var
 	return svc.value.Do(ctx, res, doc, vars)
 }
 
-func (svc *lazyService) Subscribe(ctx context.Context, res interface{}, doc string, vars map[string]interface{}) api.Subscription {
+func (svc *lazyService) Subscribe(ctx context.Context, newRes func() interface{}, doc string, vars map[string]interface{}) api.Subscription {
 	svc.force()
-	return svc.value.Subscribe(ctx, res, doc, vars)
+	return svc.value.Subscribe(ctx, newRes, doc, vars)
 }
 
 func (svc *lazyService) Shutdown(ctx context.Context) error {

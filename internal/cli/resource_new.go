@@ -68,7 +68,7 @@ To set the owner to a component, supply '--component=ref', which implies
 			if err == nil {
 				model = jsonutil.MustMarshalString(obj)
 			}
-		} else if term.IsInteractive() {
+		} else if isInteractive() {
 			model, err = term.EditString("resource.*.txt", "")
 		} else {
 			var bs []byte

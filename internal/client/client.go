@@ -30,6 +30,6 @@ func (cl *Client) Do(ctx context.Context, res interface{}, doc string, vars map[
 	return cl.gql.Run(ctx, req, res)
 }
 
-func (cl *Client) Subscribe(ctx context.Context, res interface{}, doc string, vars map[string]interface{}) api.Subscription {
+func (cl *Client) Subscribe(ctx context.Context, newRes func() interface{}, doc string, vars map[string]interface{}) api.Subscription {
 	panic("TODO: Client.Subscribe")
 }

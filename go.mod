@@ -8,6 +8,7 @@ require (
 	github.com/Nerdmaster/terminal v0.12.1
 	github.com/ProtonMail/go-crypto v0.0.0-20210512092938-c05353c2d58c // indirect
 	github.com/alessio/shellescape v1.4.1
+	// This starts two unnecessary go routines for "InterpretingWriter" objects. TODO: fork/fix.
 	github.com/aybabtme/rgbterm v0.0.0-20170906152045-cc83f3b3ce59
 	github.com/cockroachdb/apd/v2 v2.0.2 // indirect
 	github.com/containerd/containerd v1.5.7 // indirect

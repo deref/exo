@@ -59,9 +59,11 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	}
 
 	_, forceStdLog := flags["force-std-log"]
+	// TODO: Use `isInteractive` from main package.
 	if !(forceStdLog || term.IsInteractive()) {
 		// Replace the standard logger with a logger writes to the var directory
 		// and handles log rotation.
+		// XXX remove this, log to the sqlite db, panic when logging fails.
 		golog.SetOutput(&lumberjack.Logger{
 			Filename:   filepath.Join(cfg.VarDir, "exod.log"),
 			MaxSize:    20, // megabytes
@@ -71,7 +73,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 
 		// Panics will still write to stderr and some malbehaved code may write to
 		// stdout or stderr. Redirect these file descriptors to truncated,
-		// non-rotating, log files in the var directory. These logs  won't be
+		// non-rotating, log files in the var directory. These logs won't be
 		// preserved across runs, but can help us debug crashes where there is no
 		// terminal attached.
 		for _, redirect := range []struct {
