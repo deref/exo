@@ -82,7 +82,11 @@ func (p *Peer) Subscribe(ctx context.Context, newRes func() interface{}, doc str
 		for resp := range source {
 			out := newRes()
 			resp := resp.(*graphql.Response)
-			if err := p.handleResponse(ctx, out, resp); err != nil {
+			err := p.handleResponse(ctx, out, resp)
+			if errors.Is(err, context.Canceled) {
+				return
+			}
+			if err != nil {
 				errs <- err
 				return
 			}
@@ -124,6 +128,14 @@ func (p *Peer) prepareOperation(ctx context.Context, vars map[string]interface{}
 
 func (p *Peer) handleResponse(ctx context.Context, out interface{}, resp *graphql.Response) error {
 	for i, err := range resp.Errors {
+		if errors.Is(err, context.Canceled) {
+			// Unfortunately, there is no way to differentiate overall execution
+			// errors from resolver errors. Least bad option is to treat cancelation
+			// as coming from the overall execution, even though it may incorrectly
+			// capture cancelations leaking out internal use within an individual
+			// resolver.
+			return err
+		}
 		externalErr := sanitizeQueryError(err)
 		if err == externalErr {
 			continue
