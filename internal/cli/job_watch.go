@@ -11,7 +11,6 @@ import (
 
 	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/scalars"
-	taskapi "github.com/deref/exo/internal/task/api"
 	"github.com/spf13/cobra"
 )
 
@@ -44,8 +43,8 @@ type jobEventFragment struct {
 	}
 	JobID *string
 	Task  *struct {
-		ID     string
-		Status string
+		ID    string
+		Error *string
 	}
 }
 
@@ -102,6 +101,7 @@ watching:
 			}
 		}
 		job := event.Job
+		task := event.Task
 
 		if interactive {
 			clearLines(lcw.LineCount)
@@ -140,16 +140,23 @@ watching:
 			}
 
 		case "TaskFinished":
-			task := event.Task
+			if !interactive && isDebugMode() {
+				var message string
+				if task.Error == nil {
+					message = "task finished; awaiting children for completion"
+				} else {
+					message = fmt.Sprintf("task failed: %s", *task.Error)
+				}
+				w.PrintEvent(sourceID, event.Timestamp.GoTime(), sourceLabel, message)
+			}
+
+		case "TaskCompleted":
 			if !interactive {
 				var message string
-				switch task.Status {
-				case api.TaskStatusSuccess:
-					message = "task complete"
-				case api.TaskStatusFailure:
-					message = "task failed"
-				default:
-					message = fmt.Sprintf("unexpected task status: %q", task.Status)
+				if task.Error == nil {
+					message = "task completed successfully"
+				} else {
+					message = fmt.Sprintf("task failed: %s", *task.Error)
 				}
 				w.PrintEvent(sourceID, event.Timestamp.GoTime(), sourceLabel, message)
 			}
@@ -183,18 +190,10 @@ watching:
 	}
 
 	root := prev.Job.RootTask
-	switch root.Status {
-	case taskapi.StatusFailure:
-		if root.Message == "" {
-			return errors.New("job failed")
-		} else {
-			return fmt.Errorf("job failure: %s", root.Message)
-		}
-	case taskapi.StatusSuccess:
-		return nil
-	default:
-		return fmt.Errorf("unexpected job status: %q", root.Status)
+	if root.Error != nil {
+		return fmt.Errorf("job failure: %s", *root.Error)
 	}
+	return nil
 }
 
 const esc = 27

@@ -83,6 +83,7 @@ func Main() {
 			svc, err := peer.NewPeer(ctx, peer.PeerConfig{
 				VarDir:      cfg.VarDir,
 				GUIEndpoint: effectiveServerURL(),
+				Debug:       isDebugMode(),
 			})
 			if err != nil {
 				cmdutil.Fatalf("initializing peer: %w", err)

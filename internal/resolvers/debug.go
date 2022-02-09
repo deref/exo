@@ -19,8 +19,13 @@ func (r *QueryResolver) Now(ctx context.Context) Instant {
 func (r *MutationResolver) Sleep(ctx context.Context, args struct {
 	Seconds float64
 }) (*VoidResolver, error) {
+	err := r.sleep(ctx, args.Seconds)
+	return nil, err
+}
+
+func (r *MutationResolver) sleep(ctx context.Context, seconds float64) error {
 	start := chrono.Now(ctx)
-	end := start.Add(time.Duration(args.Seconds) * time.Second)
+	end := start.Add(time.Duration(seconds) * time.Second)
 	deadline, cancel := context.WithDeadline(ctx, end)
 	progress := ProgressInput{
 		Total: int32(end.Sub(start).Milliseconds()),
@@ -31,7 +36,7 @@ func (r *MutationResolver) Sleep(ctx context.Context, args struct {
 		case <-deadline.Done():
 			progress.Current = progress.Total
 			r.reportProgress(ctx, progress)
-			return nil, nil
+			return nil
 		case <-time.After(250 * time.Millisecond):
 			progress.Current = int32(chrono.Now(ctx).Sub(start).Milliseconds())
 			r.reportProgress(ctx, progress)
@@ -97,14 +102,12 @@ func (r *MutationResolver) BusyWork(ctx context.Context, args struct {
 		length = int(*args.Length)
 	}
 
+	logging.Infof(ctx, "width=%d depth=%d length=%d", width, depth, length)
+
 	for i := 0; i < width; i++ {
 		d := rand.Intn(depth + 1)
 		var err error
-		if d == 0 {
-			_, err = r.createTask(ctx, "", taskID, "sleep", map[string]interface{}{
-				"seconds": rand.Intn(length + 1),
-			})
-		} else {
+		if d > 0 {
 			w := rand.Intn(width + 1)
 			_, err = r.createTask(ctx, "", taskID, "busyWork", map[string]interface{}{
 				"size":   args.Size,
@@ -117,5 +120,7 @@ func (r *MutationResolver) BusyWork(ctx context.Context, args struct {
 			return nil, fmt.Errorf("creating subtask: %w", err)
 		}
 	}
-	return nil, nil
+
+	err := r.sleep(ctx, rand.Float64()*float64(length))
+	return nil, err
 }

@@ -8,7 +8,7 @@ import (
 
 	"github.com/aybabtme/rgbterm"
 	"github.com/deref/exo/internal/api"
-	taskapi "github.com/deref/exo/internal/task/api"
+	"github.com/deref/exo/internal/scalars"
 	"github.com/deref/exo/internal/util/term"
 	"github.com/spf13/cobra"
 )
@@ -67,15 +67,42 @@ If no job ids are provided, lists all jobs in the scope.`,
 }
 
 type taskFragment struct {
-	ID       string
-	ParentID *string
-	JobID    string
-	Finished *string
-	Created  string
-	Status   string
-	Label    string
-	Message  string
-	Progress *progressFragment
+	ID         string
+	ParentID   *string
+	JobID      string
+	Finished   *string
+	Created    string
+	Label      string
+	Message    string
+	Started    *scalars.Instant
+	Completed  *scalars.Instant
+	Successful *bool
+	Error      *string
+	Progress   *progressFragment
+}
+
+const (
+	taskStatusQueue = "queue"
+	taskStatusRun   = "run"
+	taskStatusWait  = "wait"
+	taskStatusOK    = "ok"
+	taskStatusErr   = "err"
+)
+
+func classifyTaskStatus(task taskFragment) string {
+	if task.Error != nil {
+		return taskStatusErr
+	}
+	if task.Started == nil {
+		return taskStatusQueue
+	}
+	if task.Finished == nil {
+		return taskStatusRun
+	}
+	if task.Completed == nil {
+		return taskStatusWait
+	}
+	return taskStatusOK
 }
 
 type taskNode struct {
@@ -121,7 +148,7 @@ func (jp *jobPrinter) printTree(w io.Writer, tasks []taskFragment) {
 		child.ID = task.ID
 		child.Created = task.Created
 		child.Label = task.Label
-		child.Status = task.Status
+		child.Status = classifyTaskStatus(task)
 		child.Message = task.Message
 		child.Progress = task.Progress
 
@@ -167,7 +194,7 @@ func (jp *jobPrinter) printTree(w io.Writer, tasks []taskFragment) {
 		// Collapse nodes when all children finish successfully.
 		showChildren := false
 		for _, child := range node.Children {
-			if child.Status != api.TaskStatusSuccess {
+			if child.Status != taskStatusOK {
 				showChildren = true
 			}
 		}
@@ -175,18 +202,22 @@ func (jp *jobPrinter) printTree(w io.Writer, tasks []taskFragment) {
 		prefix := ""
 		if node.Parent != nil || !showChildren {
 			switch node.Status {
-			case taskapi.StatusPending:
+			case taskStatusQueue:
 				prefix += rgbterm.FgString("·", 0, 123, 211)
-			case taskapi.StatusSuccess:
-				prefix += rgbterm.FgString("✓", 28, 196, 22)
-			case taskapi.StatusFailure:
-				prefix += rgbterm.FgString("⨯", 215, 55, 30)
-			case taskapi.StatusRunning:
+			case taskStatusRun:
 				if len(jp.Spinner) > 0 {
 					offset := jp.Iteration + idx
 					frame := jp.Spinner[offset%len(jp.Spinner)]
 					prefix += rgbterm.FgString(frame, 172, 66, 199)
 				}
+			case taskStatusWait:
+				prefix += rgbterm.FgString("○", 0, 123, 211)
+			case taskStatusOK:
+				prefix += rgbterm.FgString("✓", 28, 196, 22)
+			case taskStatusErr:
+				prefix += rgbterm.FgString("⨯", 215, 55, 30)
+			default:
+				panic(fmt.Sprintf("unexpected task status: %q", node.Status))
 			}
 			prefix += " "
 		}

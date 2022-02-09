@@ -126,3 +126,12 @@ func mustSqlIn(query string, args ...interface{}) (string, []interface{}) {
 	}
 	return query, args
 }
+
+func rowsAffected(res sql.Result) int64 {
+	n, err := res.RowsAffected()
+	if err != nil {
+		// Sqlite supports this, so should not fail.
+		panic(err)
+	}
+	return n
+}
