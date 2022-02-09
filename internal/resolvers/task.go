@@ -114,7 +114,7 @@ func (r *MutationResolver) AcquireTask(ctx context.Context, args struct {
 		RETURNING *
 	`, args.WorkerID, args.JobID)
 		if errors.Is(err, sql.ErrNoRows) {
-			chrono.Sleep(ctx, time.Duration(delay)*time.Millisecond)
+			err = chrono.Sleep(ctx, time.Duration(delay)*time.Millisecond)
 			delay *= 2
 			if delay > 1000 {
 				delay = 1000
@@ -207,33 +207,14 @@ func (r *MutationResolver) FinishTask(ctx context.Context, args struct {
 }) (*VoidResolver, error) {
 	taskID := args.ID
 
-	var errMessage *string
-	if args.Error != nil {
-		errMessage = args.Error
-	}
-
-	// XXX instead of erroring, await children to finish.
-	// XXX cancel tree if parent failed before children.
-	if errMessage == nil {
-		outstanding := 0
-		if err := r.DB.GetContext(ctx, &outstanding, `
-			SELECT COUNT(id)
-			FROM task
-			WHERE parent_id = ?
-			AND finished IS NULL
-		`, args.ID,
-		); err != nil {
-			return nil, fmt.Errorf("counting outstanding tasks: %w", err)
-		}
-		if outstanding > 0 {
-			msg := "task finished before children"
-			errMessage = &msg
-		}
+	// XXX if a subtask failed, should we also fail?
+	if err := r.awaitSubtasks(ctx, taskID); err != nil {
+		return nil, fmt.Errorf("awaiting subtasks: %w", err)
 	}
 
 	now := Now(ctx)
 	var status string
-	if errMessage == nil {
+	if args.Error == nil {
 		status = api.TaskStatusSuccess
 	} else {
 		status = api.TaskStatusFailure
@@ -244,7 +225,7 @@ func (r *MutationResolver) FinishTask(ctx context.Context, args struct {
 		SET updated = ?, finished = ?, status = ?, error_message = ?
 		WHERE id = ?
 		RETURNING *
-	`, now, now, status, errMessage, taskID,
+	`, now, now, status, args.Error, taskID,
 	); err != nil {
 		return nil, fmt.Errorf("marking task as finished: %w", err)
 	}
@@ -396,6 +377,7 @@ func (r *TaskResolver) Stream() *StreamResolver {
 
 func (r *TaskResolver) eventPrototype(ctx context.Context) (row EventRow, err error) {
 	// XXX set row's WorkspaceID, StackID, and ComponentID appropriately.
+	row.SourceType = "Task"
 	row.JobID = &r.JobID
 	row.TaskID = &r.ID
 	return row, nil
@@ -406,4 +388,73 @@ func (r *TaskResolver) Message(ctx context.Context) (string, error) {
 		return *r.ErrorMessage, nil
 	}
 	return r.Stream().Message(ctx)
+}
+
+func (r *MutationResolver) CancelTask(ctx context.Context, args struct {
+	ID string
+}) error {
+	return r.cancelTask(ctx, args.ID)
+}
+
+// See also cancelJob and cancelSubtasks.
+func (r *MutationResolver) cancelTask(ctx context.Context, id string) error {
+	now := Now(ctx)
+	_, err := r.DB.ExecContext(ctx, `
+		UPDATE task
+		SET canceled = COALESCE(canceled, ?)
+		WHERE id IN (
+			WITH RECURSIVE rec (id) AS (
+				SELECT ?
+				UNION
+				SELECT id FROM task, rec WHERE task.parent_id = rec.id
+			)
+			SELECT id FROM rec
+		) AND finished IS NULL
+	`, now, id)
+	return err
+}
+
+// See also cancelJob and cancelTask.
+func (r *MutationResolver) cancelSubtasks(ctx context.Context, parentTaskID string) error {
+	now := Now(ctx)
+	_, err := r.DB.ExecContext(ctx, `
+		UPDATE task
+		SET canceled = COALESCE(canceled, ?)
+		WHERE id IN (
+			WITH RECURSIVE rec (id) AS (
+				SELECT id FROM task WHERE parent_id = ?
+				UNION
+				SELECT id FROM task, rec WHERE task.parent_id = rec.id
+			)
+			SELECT id FROM rec
+		) AND finished IS NULL
+	`, now, parentTaskID)
+	return err
+}
+
+func (r *QueryResolver) awaitSubtasks(ctx context.Context, parentTaskID string) error {
+	for {
+		outstanding, err := r.outstandingSubtaskCount(ctx, parentTaskID)
+		if err != nil {
+			return fmt.Errorf("counting outstanding: %w", err)
+		}
+		if outstanding == 0 {
+			return nil
+		}
+		if err := chrono.Sleep(ctx, 100*time.Millisecond); err != nil {
+			return err
+		}
+	}
+}
+
+func (r *QueryResolver) outstandingSubtaskCount(ctx context.Context, parentTaskID string) (int, error) {
+	var res int
+	err := r.DB.GetContext(ctx, &res, `
+			SELECT COUNT(id)
+			FROM task
+			WHERE parent_id = ?
+			AND finished IS NULL
+		`, parentTaskID,
+	)
+	return res, err
 }

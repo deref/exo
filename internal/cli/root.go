@@ -23,6 +23,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&rootPersistentFlags.Async, "async", false, "Do not await long-running tasks")
 	rootCmd.PersistentFlags().BoolVar(&rootPersistentFlags.NoColor, "no-color", false, "disable color tty output")
 	rootCmd.PersistentFlags().BoolVar(&rootPersistentFlags.NonInteractive, "non-interactive", false, "disable interactive tty behaviors")
+	rootCmd.PersistentFlags().BoolVar(&rootPersistentFlags.Debug, "debug", false, "enable debug logging")
 }
 
 var rootPersistentFlags struct {
@@ -30,6 +31,7 @@ var rootPersistentFlags struct {
 	Async          bool
 	NoColor        bool
 	NonInteractive bool
+	Debug          bool
 }
 
 func useColor() bool {
@@ -38,6 +40,10 @@ func useColor() bool {
 
 func isInteractive() bool {
 	return !rootPersistentFlags.NonInteractive && term.IsInteractive()
+}
+
+func isDebugMode() bool {
+	return rootPersistentFlags.Debug
 }
 
 var rootCmd = &cobra.Command{

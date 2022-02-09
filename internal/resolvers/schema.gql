@@ -28,7 +28,7 @@ type Query {
   resourceByRef(ref: String!): Resource
   
   allTasks: [Task!]!
-  taskByID(id: String!): Task
+  taskById(id: String!): Task
   tasksByJobId(jobId: String!): [Task!]!
   tasksByJobIds(jobIds: [String!]!): [Task!]!
 
@@ -40,7 +40,7 @@ type Mutation {
 
   createProject(displayName: String): Project!
   
-  createWorkspace(root: String!, projectID: String): Workspace!
+  createWorkspace(root: String!, projectId: String): Workspace!
   setWorkspaceStack(workspace: String!, stack: String): Stack
 
   buildWorkspace(workspace: String!): Void
@@ -66,7 +66,7 @@ type Mutation {
   updateResource(ref: String!, model: String!): Resource!
   disposeResource(ref: String!): Void
   
-  createEvent(sourceType: String!, sourceID: String!, type: String!, message: String!): Event!
+  createEvent(sourceType: String!, sourceId: String!, type: String!, message: String!): Event!
 
   createTask(parentId: String, mutation: String!, arguments: JSONObject!): Task!
   acquireTask(workerId: String!, jobId: String, timeout: Int): Task
@@ -74,6 +74,7 @@ type Mutation {
   updateTask(id: String!, workerId: String!, progress: ProgressInput): Task!
   finishTask(id: String!, error: String): Void
   cancelJob(id: String!): Void
+  cancelTask(id: String!): Void
 
   createStack(cluster: String, workspace: String, name: String): Stack!
 
@@ -91,7 +92,7 @@ type Mutation {
 type Subscription {
   # Always emits an initial JobWatched event, so that clients can get the full
   # job tree, even if no events have occured.
-  watchJob(id: String!, after: ULID): Event!
+  watchJob(id: String!, after: ULID, debug: Boolean): Event!
 
   # TODO: events for cli logs.
 
@@ -139,7 +140,7 @@ type Workspace {
   root: String!
   fileSystem: FileSystem!
 
-  projectID: String!
+  projectId: String!
   project: Project!
 
   stackId: String
@@ -163,13 +164,13 @@ type Stack {
   id: String!
   name: String!
 
-  clusterID: String!
+  clusterId: String!
   cluster: Cluster!
 
-  projectID: String
+  projectId: String
   project: Project
 
-  workspaceID: String
+  workspaceId: String
   workspace: Workspace
 
   components: [Component!]!
@@ -333,15 +334,19 @@ type Event {
   tags: JSONObject!
 
   # Event source hierarchy.
-  workspaceID: String
+  sourceType: String!
+  sourceId: String!
+  source: StreamSource!
+  stream: Stream!
+  workspaceId: String
   workspace: Workspace
-  stackID: String
+  stackId: String
   stack: Stack
-  componentID: String
+  componentId: String
   component: Component
-  jobID: String
+  jobId: String
   job: Job
-  taskID: String
+  taskId: String
   task: Task
 }
 

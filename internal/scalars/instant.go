@@ -68,3 +68,7 @@ func (inst Instant) MarshalJSON() ([]byte, error) {
 func (inst Instant) String() string {
 	return chrono.IsoNano(inst.t)
 }
+
+func (inst Instant) UnixMilli() int64 {
+	return inst.t.UnixMilli()
+}

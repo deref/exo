@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/deref/exo/internal/chrono"
+	"github.com/deref/exo/internal/scalars"
 	. "github.com/deref/exo/internal/scalars"
 )
 
@@ -54,12 +55,14 @@ func (r *MutationResolver) CancelJob(ctx context.Context, args struct {
 	return r.cancelJob(ctx, args.ID)
 }
 
+// See also cancelTask and cancelSubtasks.
 func (r *MutationResolver) cancelJob(ctx context.Context, id string) error {
 	now := Now(ctx)
 	_, err := r.DB.ExecContext(ctx, `
 		UPDATE task
 		SET canceled = COALESCE(canceled, ?)
 		WHERE job_id = ?
+		AND finished IS NULL
 	`, now, id)
 	return err
 }
@@ -67,16 +70,26 @@ func (r *MutationResolver) cancelJob(ctx context.Context, id string) error {
 func (r *SubscriptionResolver) WatchJob(ctx context.Context, args struct {
 	ID    string
 	After *ULID
+	Debug *bool
 }) (<-chan *EventResolver, error) {
 	jobID := args.ID
 	job := r.jobByID(&jobID)
+	rootTask, err := job.RootTask(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("resolving root task: %w", err)
+	}
 
 	// Subscribe to events.
 	filter := eventFilter{
 		JobID: jobID,
 	}
-	if args.After != nil {
+	if args.After == nil {
+		filter.After = scalars.InstantToULID(rootTask.Created)
+	} else {
 		filter.After = *args.After
+	}
+	if args.Debug != nil && *args.Debug {
+		filter.System = true
 	}
 	events, err := r.events(ctx, filter)
 	if err != nil {
@@ -148,7 +161,9 @@ func (r *JobResolver) eventPrototype(ctx context.Context) (row EventRow, err err
 	if err != nil {
 		return EventRow{}, fmt.Errorf("resolving root task: %w", err)
 	}
-	return task.eventPrototype(ctx)
+	prototype, err := task.eventPrototype(ctx)
+	prototype.SourceType = "Job"
+	return prototype, err
 }
 
 func (r *JobResolver) Updated(ctx context.Context) (Instant, error) {

@@ -33,11 +33,11 @@ func (el *EventLogger) createEvent(message string) error {
 	var createEvent struct {
 		Event struct {
 			ID string
-		} `graphql:"createEvent(sourceType: $sourceType, sourceID: $sourceID, type: $type, message: $message)"`
+		} `graphql:"createEvent(sourceType: $sourceType, sourceId: $sourceId, type: $type, message: $message)"`
 	}
 	return Mutate(ctx, el.Service, &createEvent, map[string]interface{}{
 		"sourceType": el.SourceType,
-		"sourceID":   el.SourceID,
+		"sourceId":   el.SourceID,
 		"type":       "Message",
 		"message":    message,
 	})
@@ -54,5 +54,6 @@ func NewSystemLogger(svc Service) *EventLogger {
 		Service:    svc,
 		SystemLog:  &logging.NopLogger{}, // Avoid infinite regress.
 		SourceType: "System",
+		SourceID:   "SYSTEM",
 	}
 }

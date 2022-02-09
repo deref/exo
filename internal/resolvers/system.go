@@ -11,9 +11,11 @@ func (r *RootResolver) System() *SystemResolver {
 }
 
 func (r *SystemResolver) Stream() *StreamResolver {
-	return r.Q.streamForSource("System", "")
+	return r.Q.streamForSource("System", "SYSTEM")
 }
 
 func (r *SystemResolver) eventPrototype(ctx context.Context) (EventRow, error) {
-	return EventRow{}, nil
+	return EventRow{
+		SourceType: "System",
+	}, nil
 }

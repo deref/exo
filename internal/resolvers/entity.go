@@ -24,7 +24,10 @@ func (r *QueryResolver) FindEntity(ctx context.Context, args struct {
 }
 
 func (r *QueryResolver) findEntity(ctx context.Context, typ string, id string) (*Entity, error) {
-	var res Entity
+	res := Entity{
+		Type: typ,
+		ID:   id,
+	}
 	var err error
 	switch typ {
 	case "System":

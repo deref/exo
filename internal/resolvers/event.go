@@ -22,6 +22,7 @@ type EventRow struct {
 	Type        string     `db:"type"`
 	Message     string     `db:"message"`
 	Tags        JSONObject `db:"tags"`
+	SourceType  string     `db:"source_type"`
 	WorkspaceID *string    `db:"workspace_id"`
 	StackID     *string    `db:"stack_id"`
 	ComponentID *string    `db:"component_id"`
@@ -65,6 +66,9 @@ func (r *MutationResolver) createEventFromPrototype(ctx context.Context, prototy
 	if row.Type == "" {
 		return nil, fmt.Errorf("invalid event type: %q", row.Type)
 	}
+	if row.SourceType == "" {
+		return nil, errors.New("source type is required")
+	}
 	if row.Tags == nil {
 		row.Tags = make(JSONObject)
 	}
@@ -105,9 +109,9 @@ type eventQuery struct {
 }
 
 type eventFilter struct {
-	Before ULID
-	After  ULID
-	// TODO: System bool
+	Before      ULID
+	After       ULID
+	System      bool
 	WorkspaceID string
 	StackID     string
 	// TODO: If ComponentID and StackID are both set, probably want to remove
@@ -157,7 +161,8 @@ func (r *QueryResolver) findEvents(ctx context.Context, q eventQuery) (*EventPag
 			SELECT *
 			FROM event
 			WHERE (
-					 (? != '' AND workspace_id = ?)
+				(? AND source_type == 'System')
+				OR (? != '' AND workspace_id = ?)
 				OR (? != '' AND stack_id = ?)
 				OR (? != '' AND component_id = ?)
 				OR (? != '' AND job_id = ?)
@@ -174,7 +179,8 @@ func (r *QueryResolver) findEvents(ctx context.Context, q eventQuery) (*EventPag
 			SELECT *
 			FROM event
 			WHERE (
-					 (? != '' AND workspace_id = ?)
+				(? AND source_type == 'System')
+				OR (? != '' AND workspace_id = ?)
 				OR (? != '' AND stack_id = ?)
 				OR (? != '' AND component_id = ?)
 				OR (? != '' AND job_id = ?)
@@ -189,6 +195,7 @@ func (r *QueryResolver) findEvents(ctx context.Context, q eventQuery) (*EventPag
 	}
 	var rows []EventRow
 	if err := r.DB.SelectContext(ctx, &rows, query,
+		filter.System,
 		filter.WorkspaceID, filter.WorkspaceID,
 		filter.StackID, filter.StackID,
 		filter.ComponentID, filter.ComponentID,
@@ -247,7 +254,8 @@ func (r *QueryResolver) latestEvent(ctx context.Context, filter eventFilter) (*E
 		SELECT *
 		FROM event
 		WHERE (
-			   (? != '' AND workspace_id = ?)
+			(? AND source_type == 'System')
+			OR (? != '' AND workspace_id = ?)
 			OR (? != '' AND stack_id = ?)
 			OR (? != '' AND component_id = ?)
 			OR (? != '' AND job_id = ?)
@@ -257,6 +265,7 @@ func (r *QueryResolver) latestEvent(ctx context.Context, filter eventFilter) (*E
 		ORDER BY ulid DESC
 		LIMIT 1
 	`,
+		filter.System,
 		filter.WorkspaceID, filter.WorkspaceID,
 		filter.StackID, filter.StackID,
 		filter.ComponentID, filter.ComponentID,
@@ -344,4 +353,25 @@ func (r *EventResolver) Job() *JobResolver {
 
 func (r *EventResolver) Task(ctx context.Context) (*TaskResolver, error) {
 	return r.Q.taskByID(ctx, r.TaskID)
+}
+
+func (r *EventResolver) SourceID() string {
+	switch r.SourceType {
+	case "System":
+		return "SYSTEM"
+	case "Job":
+		return *r.JobID
+	case "Task":
+		return *r.TaskID
+	default:
+		panic(fmt.Errorf("unexpected source type: %q", r.SourceType))
+	}
+}
+
+func (r *EventResolver) Stream() *StreamResolver {
+	return r.Q.streamForSource(r.SourceType, r.SourceID())
+}
+
+func (r *EventResolver) Source(ctx context.Context) (source StreamSourceResolver, err error) {
+	return r.Stream().Source(ctx)
 }
