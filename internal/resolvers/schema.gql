@@ -330,8 +330,9 @@ type Event {
   timestamp: Instant! # Extracted from ulid.
   type: String!
   message: String!
-  tags: Tags!
+  tags: JSONObject!
 
+  # Event source hierarchy.
   workspaceID: String
   workspace: Workspace
   stackID: String
