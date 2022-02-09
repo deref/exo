@@ -18,15 +18,15 @@ type EventResolver struct {
 }
 
 type EventRow struct {
-	ULID        ULID    `db:"ulid"`
-	Type        string  `db:"type"`
-	Message     string  `db:"message"`
-	Tags        Tags    `db:"tags"`
-	WorkspaceID *string `db:"workspace_id"`
-	StackID     *string `db:"stack_id"`
-	ComponentID *string `db:"component_id"`
-	JobID       *string `db:"job_id"`
-	TaskID      *string `db:"task_id"`
+	ULID        ULID       `db:"ulid"`
+	Type        string     `db:"type"`
+	Message     string     `db:"message"`
+	Tags        JSONObject `db:"tags"`
+	WorkspaceID *string    `db:"workspace_id"`
+	StackID     *string    `db:"stack_id"`
+	ComponentID *string    `db:"component_id"`
+	JobID       *string    `db:"job_id"`
+	TaskID      *string    `db:"task_id"`
 }
 
 func (r *EventRow) ID() string {
@@ -66,7 +66,7 @@ func (r *MutationResolver) createEventFromPrototype(ctx context.Context, prototy
 		return nil, fmt.Errorf("invalid event type: %q", row.Type)
 	}
 	if row.Tags == nil {
-		row.Tags = make(Tags)
+		row.Tags = make(JSONObject)
 	}
 	if err := r.insertRow(ctx, "event", row); err != nil {
 		return nil, fmt.Errorf("inserting: %w", err)
