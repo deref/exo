@@ -285,14 +285,20 @@ type Task {
   arguments: JSONObject!
   label: String!
   workerId: String
-  status: String!
   created: Instant!
   updated: Instant!
+  # If null, task is queued.
   started: Instant
+  # If not null, task will be interrupted and will soon become finished.
   canceled: Instant
+  # When task has finished running, even if subtasks are not yet complete.
   finished: Instant
+  # When this task and all its subtasks have finished.
+  completed: Instant
   progress: Progress
+  error: String
   message: String!
+  successful: Boolean
 }
 
 type Progress {

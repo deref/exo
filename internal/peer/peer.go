@@ -23,6 +23,7 @@ type Peer struct {
 	db     *sqlx.DB
 	root   *resolvers.RootResolver
 	schema *graphql.Schema
+	debug  bool
 }
 
 var _ api.Service = (*Peer)(nil)
@@ -30,6 +31,7 @@ var _ api.Service = (*Peer)(nil)
 type PeerConfig struct {
 	VarDir      string
 	GUIEndpoint string
+	Debug       bool
 }
 
 func NewPeer(ctx context.Context, cfg PeerConfig) (*Peer, error) {
@@ -55,6 +57,7 @@ func NewPeer(ctx context.Context, cfg PeerConfig) (*Peer, error) {
 		db:     db,
 		root:   r,
 		schema: resolvers.NewSchema(r),
+		debug:  cfg.Debug,
 	}, nil
 }
 
@@ -136,7 +139,7 @@ func (p *Peer) handleResponse(ctx context.Context, out interface{}, resp *graphq
 			// resolver.
 			return err
 		}
-		externalErr := sanitizeQueryError(err)
+		externalErr := p.sanitizeQueryError(err)
 		if err == externalErr {
 			continue
 		}
@@ -181,7 +184,7 @@ func (p *Peer) Shutdown(ctx context.Context) error {
 	return nil
 }
 
-func sanitizeQueryError(original *gqlerrors.QueryError) *gqlerrors.QueryError {
+func (p *Peer) sanitizeQueryError(original *gqlerrors.QueryError) *gqlerrors.QueryError {
 	if len(original.Locations) > 0 {
 		return original
 	}
@@ -189,26 +192,26 @@ func sanitizeQueryError(original *gqlerrors.QueryError) *gqlerrors.QueryError {
 		Path: original.Path,
 	}
 	if original.ResolverError != nil {
-		sanitized.ResolverError = sanitizeError(original.ResolverError)
+		sanitized.ResolverError = p.sanitizeError(original.ResolverError)
 		if sanitized.ResolverError == original.ResolverError {
 			return original
 		}
 		sanitized.Err = sanitized.ResolverError
 	} else if original.Err != nil {
-		sanitized.Err = sanitizeError(original.Err)
+		sanitized.Err = p.sanitizeError(original.Err)
 		if sanitized.Err == original.Err {
 			return original
 		}
 	} else {
-		sanitized.Err = sanitizeError(errors.New(original.Message))
+		sanitized.Err = p.sanitizeError(errors.New(original.Message))
 	}
 	sanitized.Message = sanitized.Err.Error()
 	sanitized.Extensions = errorExtensions(sanitized.Err)
 	return &sanitized
 }
 
-func sanitizeError(err error) error {
-	if isExternalError(err) {
+func (p *Peer) sanitizeError(err error) error {
+	if p.debug || isExternalError(err) {
 		return err
 	}
 	return errutil.InternalServerError
