@@ -164,8 +164,16 @@ func (jp *jobPrinter) printTree(w io.Writer, tasks []taskFragment) {
 	var printTask func(idx int, node *taskNode)
 	printTask = func(idx int, node *taskNode) {
 
+		// Collapse nodes when all children finish successfully.
+		showChildren := false
+		for _, child := range node.Children {
+			if child.Status != api.TaskStatusSuccess {
+				showChildren = true
+			}
+		}
+
 		prefix := ""
-		if node.Parent != nil || len(node.Children) == 0 {
+		if node.Parent != nil || !showChildren {
 			switch node.Status {
 			case taskapi.StatusPending:
 				prefix += rgbterm.FgString("·", 0, 123, 211)
@@ -235,8 +243,10 @@ func (jp *jobPrinter) printTree(w io.Writer, tasks []taskFragment) {
 		alignSuffix := strings.Repeat(" ", maxMessageW-messageW)
 
 		fmt.Fprintf(w, "%s%s%s%s%s\n", prefix, alignMessage, message, alignSuffix, suffix)
-		for i, child := range node.Children {
-			printTask(i, child)
+		if showChildren {
+			for i, child := range node.Children {
+				printTask(i, child)
+			}
 		}
 	}
 	for _, job := range jobNodes {

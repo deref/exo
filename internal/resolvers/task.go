@@ -233,7 +233,7 @@ func (r *MutationResolver) FinishTask(ctx context.Context, args struct {
 
 	now := Now(ctx)
 	var status string
-	if args.Error == nil {
+	if errMessage == nil {
 		status = api.TaskStatusSuccess
 	} else {
 		status = api.TaskStatusFailure
