@@ -56,10 +56,10 @@ func watchJob(ctx context.Context, jobID string) error {
 	})
 	defer sub.Stop()
 
-	el := &EventLogger{
+	w := &EventWriter{
 		W: out,
 	}
-	el.Init()
+	w.Init()
 
 	lcw := &lineCountingWriter{
 		Underlying: out,
@@ -121,19 +121,19 @@ watching:
 				// XXX only print occassionally.
 				// XXX include progress info.
 				sourceID := *event.JobID
-				el.LogEvent(sourceID, event.Timestamp.GoTime(), sourceID, "JobUpdated")
+				w.PrintEvent(sourceID, event.Timestamp.GoTime(), sourceID, "JobUpdated")
 			}
 
 		case "TaskStarted":
 			if !interactive {
 				sourceID := *event.TaskID
-				el.LogEvent(sourceID, event.Timestamp.GoTime(), sourceID, "Task Started")
+				w.PrintEvent(sourceID, event.Timestamp.GoTime(), sourceID, "Task Started")
 			}
 
 		case "TaskFinished":
 			if !interactive {
 				sourceID := *event.TaskID
-				el.LogEvent(sourceID, event.Timestamp.GoTime(), sourceID, "Task Finished")
+				w.PrintEvent(sourceID, event.Timestamp.GoTime(), sourceID, "Task Finished")
 			}
 			if *event.TaskID == *event.JobID {
 				sub.Stop()
@@ -145,7 +145,7 @@ watching:
 			if event.Message != "" {
 				message = fmt.Sprintf("%s: %s", message, event.Message)
 			}
-			el.LogEvent(sourceID, event.Timestamp.GoTime(), sourceID, message)
+			w.PrintEvent(sourceID, event.Timestamp.GoTime(), sourceID, message)
 		}
 
 		if interactive {
