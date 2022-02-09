@@ -105,8 +105,9 @@ type eventQuery struct {
 }
 
 type eventFilter struct {
-	Before      ULID
-	After       ULID
+	Before ULID
+	After  ULID
+	// TODO: System bool
 	WorkspaceID string
 	StackID     string
 	// TODO: If ComponentID and StackID are both set, probably want to remove

@@ -19,12 +19,12 @@ import (
 
 func init() {
 	rootCmd.AddCommand(logsCmd)
-	logsCmd.Flags().BoolVarP(&logFlags.System, "system", "", false, "if specified, filter includes workspace system events")
 	logsCmd.Flags().BoolVarP(&logFlags.NoFollow, "no-follow", "", false, "stops tailing when caught up to the end of the log")
+	// TODO: Flag for including system events.
+	// TODO: Elsewhere, add a dedicated command for viewing _just_ system events.
 }
 
 var logFlags struct {
-	System   bool
 	NoFollow bool
 }
 
@@ -34,9 +34,7 @@ var logsCmd = &cobra.Command{
 	Short:  "Tails process logs",
 	Long: `Tails and follows process logs.
 
-If refs are provided, filters for the logs of those processes.
-
-When filtering, system events are omitted unless --system is given.`,
+If refs are provided, filters for the logs of those processes.`,
 	DisableFlagsInUseLine: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
@@ -121,11 +119,8 @@ func runTailLogsWriter(ctx context.Context, workspace *joshclient.Workspace, str
 		return fmt.Errorf("resolving refs: %w", err)
 	}
 	var streamNames []string
-	if logFlags.System || len(streamRefs) > 0 {
+	if len(streamRefs) > 0 {
 		streamNames = make([]string, 0, 1+len(streamRefs))
-		if logFlags.System {
-			streamNames = append(streamNames, workspaceID)
-		}
 		for _, logID := range resolved.IDs {
 			if logID != nil {
 				streamNames = append(streamNames, *logID)
@@ -176,6 +171,8 @@ func runTailLogsWriter(ctx context.Context, workspace *joshclient.Workspace, str
 				}
 			}
 
+			// TODO: Visually differentiate stdout from stderr and output messages from exo
+			// system events.
 			w.PrintEvent(event.Stream, t, label, event.Message)
 		}
 		in.Cursor = &output.NextCursor

@@ -17,7 +17,7 @@ import (
 
 // If jobID is set, only work tasks for that job. Otherwise, work any task.
 func RunWorker(ctx context.Context, svc Service, workerID string, jobID *string) error {
-	logger := logging.CurrentLogger(ctx)
+	logger := logging.CurrentLogger(ctx).Sublogger(fmt.Sprintf("worker %s", workerID))
 	var timeout *int
 	// Stop working tasks when a new task for this job hasn't appeared in a
 	// while.  Note that this only works correctly when no other workers are

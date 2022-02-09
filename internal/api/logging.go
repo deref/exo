@@ -22,13 +22,11 @@ func (el *EventLogger) Infof(format string, v ...interface{}) {
 	format = logging.Prefix(el.Prefix, format)
 	message := fmt.Sprintf(format, v...)
 	if err := el.createEvent(message); err != nil {
-		el.SystemLog.Infof("error logging event for %s %s: %v", el.SourceType, el.SourceID, err)
-		el.SystemLog.Infof("attempted message was: %s", message)
+		panic(err)
 	}
 }
 
 func (el *EventLogger) createEvent(message string) error {
-	// Avoid infinite regress, should Service perform any logging.
 	ctx := context.Background()
 	ctx = logging.ContextWithLogger(ctx, el.SystemLog)
 
@@ -49,4 +47,12 @@ func (sl *EventLogger) Sublogger(prefix string) logging.Logger {
 	sub := *sl
 	sub.Prefix = logging.Prefix(sl.Prefix, prefix)
 	return &sub
+}
+
+func NewSystemLogger(svc Service) *EventLogger {
+	return &EventLogger{
+		Service:    svc,
+		SystemLog:  &logging.NopLogger{}, // Avoid infinite regress.
+		SourceType: "System",
+	}
 }

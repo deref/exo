@@ -7,7 +7,6 @@ import (
 
 	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/util/cmdutil"
-	"github.com/deref/exo/internal/util/logging"
 	"github.com/spf13/cobra"
 	"golang.org/x/sync/errgroup"
 )
@@ -59,13 +58,6 @@ func watchOwnJob(ctx context.Context, jobID string) error {
 
 	if workOwnJobs {
 		eg.Go(func() error {
-			// Disable logging for the worker itself to avoid interfering with
-			// concurrent rendering of job events and progress.  Task execution log
-			// messages will produce events that will be displayed in the normal
-			// watchJob output.
-			// TODO: It would be better to direct this logging _somewhere_.
-			ctx := logging.ContextWithLogger(ctx, &logging.NopLogger{})
-
 			workerID := fmt.Sprintf("cli:%d", os.Getpid())
 			err := api.RunWorker(ctx, svc, workerID, &jobID)
 			if err != nil {

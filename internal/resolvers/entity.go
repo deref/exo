@@ -27,6 +27,8 @@ func (r *QueryResolver) findEntity(ctx context.Context, typ string, id string) (
 	var res Entity
 	var err error
 	switch typ {
+	case "System":
+		res.Underlying = r.System()
 	case "Task":
 		res.Underlying, err = r.taskByID(ctx, &id)
 	default:

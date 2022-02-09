@@ -67,17 +67,6 @@ func Main() {
 		cmdutil.Fatalf("loading config: %w", err)
 	}
 
-	logger := logging.Default()
-	ctx = logging.ContextWithLogger(ctx, logger)
-
-	// This telemetry object will be replaced by one that includes the
-	// device ID when the daemon starts. For one-off commands, it is
-	// fine for the ID to not be populated.
-	tel := telemetry.New(ctx, telemetry.Config{
-		Disable: cfg.Telemetry.Disable,
-	})
-	ctx = telemetry.ContextWithTelemetry(ctx, tel)
-
 	svc = newLazyService(func() api.Service {
 		peerMode := true // XXX configurable.
 		if peerMode {
@@ -102,6 +91,16 @@ func Main() {
 			cmdutil.Warnf("shutdown error: %w", err)
 		}
 	}()
+
+	ctx = logging.ContextWithLogger(ctx, api.NewSystemLogger(svc))
+
+	// This telemetry object will be replaced by one that includes the
+	// device ID when the daemon starts. For one-off commands, it is
+	// fine for the ID to not be populated.
+	tel := telemetry.New(ctx, telemetry.Config{
+		Disable: cfg.Telemetry.Disable,
+	})
+	ctx = telemetry.ContextWithTelemetry(ctx, tel)
 
 	if err := rootCmd.ExecuteContext(ctx); err != nil {
 		cmdutil.Fatalf("error: %w", err)
