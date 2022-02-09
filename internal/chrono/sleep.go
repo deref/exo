@@ -10,6 +10,6 @@ func Sleep(ctx context.Context, duration time.Duration) error {
 	case <-time.After(duration):
 		return nil
 	case <-ctx.Done():
-		return context.Canceled
+		return ctx.Err()
 	}
 }

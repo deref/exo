@@ -32,15 +32,17 @@ tree until the job has finished running.`,
 }
 
 type jobEventFragment struct {
-	Type      string
-	Message   string
-	Timestamp scalars.Instant
-	Job       struct {
+	Type       string
+	Message    string
+	Timestamp  scalars.Instant
+	SourceType string
+	SourceID   string
+	Job        struct {
 		URL      string
 		Tasks    []taskFragment
 		RootTask taskFragment
 	}
-	JobID *string `graphql:"jobID"`
+	JobID *string
 	Task  *struct {
 		ID     string
 		Status string
@@ -51,11 +53,12 @@ func watchJob(ctx context.Context, jobID string) error {
 	out := os.Stdout
 
 	type watchJobSubscription struct {
-		Event jobEventFragment `graphql:"watchJob(id: $id)"`
+		Event jobEventFragment `graphql:"watchJob(id: $id, debug: $debug)"`
 	}
 	var res watchJobSubscription
 	sub := api.Subscribe(ctx, svc, &res, map[string]interface{}{
-		"id": jobID,
+		"id":    jobID,
+		"debug": isDebugMode(),
 	})
 	defer sub.Stop()
 
@@ -80,6 +83,7 @@ func watchJob(ctx context.Context, jobID string) error {
 
 	// Periodically tick to keep spinner animation lively, even when
 	// there are no events. Start ticking only after the first event.
+	initialized := false
 	var tickC <-chan time.Time
 
 watching:
@@ -104,13 +108,16 @@ watching:
 			lcw.LineCount = 0
 		}
 
+		sourceID := event.SourceID
+		sourceLabel := sourceID // XXX
+
 		switch event.Type {
 		case "Tick":
 			jp.Iteration++
 
 		case "JobWatched":
 			fmt.Fprintln(out, "Job URL:", job.URL)
-			if tickC != nil {
+			if initialized {
 				return errors.New("already received JobWatched event")
 			}
 			if interactive {
@@ -118,25 +125,23 @@ watching:
 				tickC = ticker.C
 				defer ticker.Stop()
 			}
+			initialized = true
 
 		case "JobUpdated":
 			if !interactive {
 				// XXX only print occassionally.
 				// XXX include progress info.
-				sourceID := *event.JobID
-				w.PrintEvent(sourceID, event.Timestamp.GoTime(), sourceID, "JobUpdated")
+				w.PrintEvent(sourceID, event.Timestamp.GoTime(), sourceLabel, "JobUpdated")
 			}
 
 		case "TaskStarted":
 			if !interactive {
-				sourceID := event.Task.ID
-				w.PrintEvent(sourceID, event.Timestamp.GoTime(), sourceID, "Task Started")
+				w.PrintEvent(sourceID, event.Timestamp.GoTime(), sourceLabel, "Task Started")
 			}
 
 		case "TaskFinished":
 			task := event.Task
 			if !interactive {
-				sourceID := task.ID
 				var message string
 				switch task.Status {
 				case api.TaskStatusSuccess:
@@ -146,22 +151,28 @@ watching:
 				default:
 					message = fmt.Sprintf("unexpected task status: %q", task.Status)
 				}
-				w.PrintEvent(sourceID, event.Timestamp.GoTime(), sourceID, message)
+				w.PrintEvent(sourceID, event.Timestamp.GoTime(), sourceLabel, message)
 			}
 			if task.ID == *event.JobID {
 				sub.Stop()
 			}
 
+		case "Message":
+			w.PrintEvent(sourceID, event.Timestamp.GoTime(), sourceLabel, event.Message)
+
 		default:
-			sourceID := "UNKNOWN" // XXX
 			message := event.Type
 			if event.Message != "" {
 				message = fmt.Sprintf("%s: %s", message, event.Message)
 			}
-			w.PrintEvent(sourceID, event.Timestamp.GoTime(), sourceID, message)
+			w.PrintEvent(sourceID, event.Timestamp.GoTime(), sourceLabel, message)
 		}
 
 		if interactive {
+			if initialized {
+				// Skip line between log output and task tree.
+				fmt.Fprintln(lcw)
+			}
 			jp.printTree(lcw, job.Tasks)
 		}
 

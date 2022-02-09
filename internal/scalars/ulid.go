@@ -14,6 +14,12 @@ type ULID [16]byte
 
 var _ Scalar = &ULID{}
 
+func InstantToULID(inst Instant) ULID {
+	var id ulid.ULID
+	id.SetTime(uint64(inst.UnixMilli()))
+	return ULID(id)
+}
+
 func (_ ULID) ImplementsGraphQLType(name string) bool {
 	return name == "ULID"
 }

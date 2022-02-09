@@ -189,6 +189,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 			type TEXT NOT NULL,
 			message TEXT NOT NULL,
 			tags TEXT NOT NULL,
+			source_type TEXT NOT NULL,
 			workspace_id TEXT,
 			stack_id TEXT,
 			component_id TEXT,
@@ -213,6 +214,14 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 		`, related, related, related)); err != nil {
 			return fmt.Errorf("creating %s_event index: %w", related, err)
 		}
+	}
+
+	if _, err := r.DB.ExecContext(ctx, fmt.Sprintf(`
+		CREATE UNIQUE INDEX IF NOT EXISTS system_event
+		ON event ( ulid )
+		WHERE source_type = 'System'
+	`)); err != nil {
+		return fmt.Errorf("creating system_event index: %w", err)
 	}
 
 	return nil
