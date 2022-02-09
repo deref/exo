@@ -40,8 +40,11 @@ type jobEventFragment struct {
 		Tasks    []taskFragment
 		RootTask taskFragment
 	}
-	JobID  *string `graphql:"jobID"`
-	TaskID *string `graphql:"taskID"`
+	JobID *string `graphql:"jobID"`
+	Task  *struct {
+		ID     string
+		Status string
+	}
 }
 
 func watchJob(ctx context.Context, jobID string) error {
@@ -126,16 +129,26 @@ watching:
 
 		case "TaskStarted":
 			if !interactive {
-				sourceID := *event.TaskID
+				sourceID := event.Task.ID
 				w.PrintEvent(sourceID, event.Timestamp.GoTime(), sourceID, "Task Started")
 			}
 
 		case "TaskFinished":
+			task := event.Task
 			if !interactive {
-				sourceID := *event.TaskID
-				w.PrintEvent(sourceID, event.Timestamp.GoTime(), sourceID, "Task Finished")
+				sourceID := task.ID
+				var message string
+				switch task.Status {
+				case api.TaskStatusSuccess:
+					message = "task complete"
+				case api.TaskStatusFailure:
+					message = "task failed"
+				default:
+					message = fmt.Sprintf("unexpected task status: %q", task.Status)
+				}
+				w.PrintEvent(sourceID, event.Timestamp.GoTime(), sourceID, message)
 			}
-			if *event.TaskID == *event.JobID {
+			if task.ID == *event.JobID {
 				sub.Stop()
 			}
 
