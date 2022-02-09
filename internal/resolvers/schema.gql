@@ -1,4 +1,6 @@
 type Query {
+  system: System!
+
   findEntity(type: String!, id: String!): Entity
 
   routes: Routes!
@@ -91,6 +93,8 @@ type Subscription {
   # job tree, even if no events have occured.
   watchJob(id: String!, after: ULID): Event!
 
+  # TODO: events for cli logs.
+
   # Debug/testing.
   tick(limit: Int): Instant!
 }
@@ -99,6 +103,11 @@ type Subscription {
 scalar Instant
 
 type Void {}
+
+type System {
+  # TODO: Version info, etc.
+  stream: Stream!
+}
 
 interface Entity {
   id: String!
