@@ -139,7 +139,7 @@ func runTailLogsWriter(ctx context.Context, workspace *joshclient.Workspace, str
 		return fmt.Errorf("describing processes: %w", err)
 	}
 
-	el := &EventLogger{
+	w := &EventWriter{
 		W: os.Stdout,
 	}
 
@@ -147,7 +147,7 @@ func runTailLogsWriter(ctx context.Context, workspace *joshclient.Workspace, str
 	streamToLabel[workspaceID] = "EXO"
 	for _, process := range descriptions.Processes {
 		streamToLabel[process.ID] = process.Name
-		el.LabelWidth = mathutil.IntMax(el.LabelWidth, len(process.Name))
+		w.LabelWidth = mathutil.IntMax(w.LabelWidth, len(process.Name))
 	}
 
 	limit := 500
@@ -176,7 +176,7 @@ func runTailLogsWriter(ctx context.Context, workspace *joshclient.Workspace, str
 				}
 			}
 
-			el.LogEvent(event.Stream, t, label, event.Message)
+			w.PrintEvent(event.Stream, t, label, event.Message)
 		}
 		in.Cursor = &output.NextCursor
 		in.Prev = nil

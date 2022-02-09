@@ -10,7 +10,7 @@ import (
 	"github.com/deref/exo/internal/util/term"
 )
 
-type EventLogger struct {
+type EventWriter struct {
 	W io.Writer
 	// Labels will be right-aligned within this width.  Will grow throughout
 	// logging, but may be initialized to keep the initial output aligned.
@@ -19,28 +19,28 @@ type EventLogger struct {
 	colors *term.ColorCache
 }
 
-func (el *EventLogger) Init() {
-	el.LabelWidth = mathutil.IntMax(el.LabelWidth, 10)
+func (w *EventWriter) Init() {
+	w.LabelWidth = mathutil.IntMax(w.LabelWidth, 10)
 
 	if useColor() {
-		el.colors = term.NewColorCache()
+		w.colors = term.NewColorCache()
 	}
 }
 
-func (el *EventLogger) LogEvent(sourceID string, t time.Time, label string, message string) {
+func (w *EventWriter) PrintEvent(sourceID string, t time.Time, label string, message string) {
 	var prefix, suffix string
 	timestamp := t.Local().Format("15:04:05")
 	if label == "" {
 		prefix = timestamp
 	} else {
-		el.LabelWidth = mathutil.IntMax(el.LabelWidth, len(label))
-		label = fmt.Sprintf("%*s", el.LabelWidth, label)
+		w.LabelWidth = mathutil.IntMax(w.LabelWidth, len(label))
+		label = fmt.Sprintf("%*s", w.LabelWidth, label)
 		prefix = fmt.Sprintf("%s %s", timestamp, label)
-		if el.colors != nil {
-			r, g, b := el.colors.Color(sourceID).RGB255()
+		if w.colors != nil {
+			r, g, b := w.colors.Color(sourceID).RGB255()
 			prefix = rgbterm.FgString(prefix, r, g, b)
 			suffix = term.ResetCode
 		}
 	}
-	fmt.Fprintf(el.W, "%s %s%s\r\n", prefix, message, suffix)
+	fmt.Fprintf(w.W, "%s %s%s\r\n", prefix, message, suffix)
 }
