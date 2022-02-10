@@ -50,14 +50,6 @@ If no job ids are provided, lists all jobs in the scope.`,
 			return fmt.Errorf("querying tasks: %w", err)
 		}
 
-		for _, task := range tasks {
-			fmt.Printf("task=%s", task.ID)
-			if task.ParentID != nil {
-				fmt.Printf(" parent=%s", *task.ParentID)
-			}
-			fmt.Println()
-		}
-
 		jp := &jobPrinter{
 			ShowJobID: len(args) != 1,
 		}
