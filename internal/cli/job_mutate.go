@@ -62,6 +62,7 @@ func watchOwnJob(ctx context.Context, jobID string) error {
 				Service:      svc,
 				Concurrency:  concurrencyLimit(),
 				WorkerPrefix: fmt.Sprintf("cli:%d", os.Getpid()),
+				JobID:        jobID,
 			}
 			err := pool.Run(ctx)
 			if err != nil {
