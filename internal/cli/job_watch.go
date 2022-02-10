@@ -128,7 +128,17 @@ watching:
 		}
 
 		sourceID := event.SourceID
-		sourceLabel := sourceID // XXX
+		sourceLabel := fmt.Sprintf("%s:%s", event.SourceType, sourceID)
+		switch event.SourceType {
+		case "System":
+			sourceLabel = "system"
+		case "Job":
+			// We're only tracking one job, so no need to repeatedly show its name.
+			sourceLabel = "job"
+		case "Task":
+			// For any given job, a short prefix is extremely likely to be unique.
+			sourceLabel = fmt.Sprintf("task:%s", sourceID[:5])
+		}
 
 		switch event.Type {
 		case "Tick":
@@ -148,6 +158,7 @@ watching:
 
 		case "JobUpdated":
 			if verbose {
+				w.PrintEvent(sourceID, event.Timestamp.GoTime(), sourceLabel, "job updated")
 				// Ocassionally print task progress updates.
 				const maxReportsPerTask = 20
 				const reportThreshold = 100.0 / float64(maxReportsPerTask)
@@ -159,11 +170,10 @@ watching:
 					progress.Current = task.Progress.Percent
 					if progress.Current < 100 && progress.Reported+reportThreshold < progress.Current {
 						progress.Reported = progress.Current
-						message := fmt.Sprintf("task %q progress: %2d%%", task.ID, int(progress.Current))
+						message := fmt.Sprintf("task %s progress: %2d%%", task.ID, int(progress.Current))
 						w.PrintEvent(sourceID, event.Timestamp.GoTime(), sourceLabel, message)
 					}
 				}
-				w.PrintEvent(sourceID, event.Timestamp.GoTime(), sourceLabel, "JobUpdated")
 			}
 
 		case "TaskStarted":
@@ -195,7 +205,8 @@ watching:
 
 		case "JobCompleted":
 			if verbose {
-				w.PrintEvent(sourceID, event.Timestamp.GoTime(), sourceLabel, "job completed")
+				message := fmt.Sprintf("job %s completed", jobID)
+				w.PrintEvent(sourceID, event.Timestamp.GoTime(), sourceLabel, message)
 			}
 			sub.Stop()
 
