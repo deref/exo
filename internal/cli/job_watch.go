@@ -1,6 +1,7 @@
 package cli
 
 import (
+	"bytes"
 	"context"
 	"errors"
 	"fmt"
@@ -49,7 +50,12 @@ type jobEventFragment struct {
 }
 
 func watchJob(ctx context.Context, jobID string) error {
-	out := os.Stdout
+	// Buffer output to minimize terminal flicker when redrawing tree.
+	var buf bytes.Buffer
+	flush := func() {
+		os.Stdout.Write(buf.Bytes())
+		buf.Reset()
+	}
 
 	type watchJobSubscription struct {
 		Event jobEventFragment `graphql:"watchJob(id: $id, debug: $debug)"`
@@ -62,12 +68,12 @@ func watchJob(ctx context.Context, jobID string) error {
 	defer sub.Stop()
 
 	w := &EventWriter{
-		W: out,
+		W: &buf,
 	}
 	w.Init()
 
 	lcw := &lineCountingWriter{
-		Underlying: out,
+		Underlying: &buf,
 	}
 
 	interactive := isInteractive()
@@ -88,6 +94,8 @@ func watchJob(ctx context.Context, jobID string) error {
 
 watching:
 	for {
+		flush()
+
 		var event jobEventFragment
 		select {
 		case eventInterface, ok := <-sub.Events():
@@ -117,7 +125,7 @@ watching:
 			jp.Iteration++
 
 		case "JobWatched":
-			fmt.Fprintln(out, "Job URL:", job.URL)
+			fmt.Fprintln(&buf, "Job URL:", job.URL)
 			if initialized {
 				return errors.New("already received JobWatched event")
 			}
