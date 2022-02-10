@@ -167,8 +167,8 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 			canceled TEXT,
 			finished TEXT,
 			completed TEXT,
-			progress_current INT,
-			progress_total INT,
+			progress_current INT NOT NULL,
+			progress_total INT NOT NULL,
 			error TEXT
 	);`); err != nil {
 		return fmt.Errorf("creating job table: %w", err)

@@ -30,8 +30,8 @@ type TaskRow struct {
 	Canceled        *Instant   `db:"canceled"`
 	Finished        *Instant   `db:"finished"`
 	Completed       *Instant   `db:"completed"`
-	ProgressCurrent *int32     `db:"progress_current"`
-	ProgressTotal   *int32     `db:"progress_total"`
+	ProgressCurrent int32      `db:"progress_current"`
+	ProgressTotal   int32      `db:"progress_total"`
 	Error           *string    `db:"error"`
 }
 
@@ -170,18 +170,18 @@ func (r *MutationResolver) UpdateTask(ctx context.Context, args struct {
 
 func (r *MutationResolver) updateTask(ctx context.Context, id string, workerID string, progress *ProgressInput) (*TaskResolver, error) {
 	now := Now(ctx)
-	var progressCurrent, progressTotal *int32
+	var progressCurrent, progressTotal int32
 	if progress != nil {
-		progressCurrent = &progress.Current
-		progressTotal = &progress.Total
+		progressCurrent = progress.Current
+		progressTotal = progress.Total
 	}
 	var row TaskRow
 	err := r.DB.GetContext(ctx, &row, `
 		UPDATE task
 		SET
 			updated = ?,
-			progress_current = COALESCE(?, progress_current),
-			progress_total = COALESCE(?, progress_total)
+			progress_current = MAX(?, progress_current),
+			progress_total = MAX(?, progress_total)
 		WHERE id = ?
 		AND worker_id = ?
 		RETURNING *
@@ -380,12 +380,12 @@ func (r *TaskResolver) Label() string {
 }
 
 func (r *TaskResolver) Progress() (*ProgressResolver, error) {
-	if r.ProgressCurrent == nil || r.ProgressTotal == nil {
+	if r.ProgressCurrent <= 0 || r.ProgressTotal <= 0 {
 		return nil, nil
 	}
 	return &ProgressResolver{
-		Current: *r.ProgressCurrent,
-		Total:   *r.ProgressTotal,
+		Current: r.ProgressCurrent,
+		Total:   r.ProgressTotal,
 	}, nil
 }
 
