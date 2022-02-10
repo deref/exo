@@ -178,3 +178,7 @@ func (r *JobResolver) Updated(ctx context.Context) (Instant, error) {
 	}
 	return res, nil
 }
+
+func (r *QueryResolver) isJobCompleted(ctx context.Context, jobID string) (bool, error) {
+	return r.isTaskCompleted(ctx, jobID)
+}

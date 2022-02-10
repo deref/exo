@@ -31,16 +31,16 @@ when the job terminates.
 	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		p, ok := svc.(*peer.Peer)
-		if !ok {
+		if !peerMode() {
 			return errors.New("worker command only available in peer mode")
 		}
+		p := svc.(*peer.Peer)
 
-		workerID := fmt.Sprintf("peer:%d:worker", os.Getpid())
-		var jobID *string
-		if workerFlags.Job != "" {
-			jobID = &workerFlags.Job
+		worker := &api.Worker{
+			Service: p,
+			ID:      fmt.Sprintf("peer:%d:worker", os.Getpid()),
+			JobID:   workerFlags.Job,
 		}
-		return api.RunWorker(ctx, p, workerID, jobID)
+		return worker.Run(ctx, ctx)
 	},
 }

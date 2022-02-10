@@ -69,7 +69,10 @@ type Mutation {
   createEvent(sourceType: String!, sourceId: String!, type: String!, message: String!): Event!
 
   createTask(parentId: String, mutation: String!, arguments: JSONObject!): Task!
-  acquireTask(workerId: String!, jobId: String, timeout: Int): Task
+  # Assigns an available task to the given worker.
+  # Blocks until a task can be acquired. If jobId is specified, returns null
+  # after the job has been completed.
+  acquireTask(workerId: String!, jobId: String): Task
   startTask(id: String!, workerId: String!): Task!
   updateTask(id: String!, workerId: String!, progress: ProgressInput): Task!
   finishTask(id: String!, error: String): Void
