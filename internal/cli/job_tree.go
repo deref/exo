@@ -98,14 +98,15 @@ func classifyTaskStatus(task taskFragment) string {
 }
 
 type taskNode struct {
-	Parent   *taskNode
-	ID       string
-	Created  string
-	Status   string
-	Label    string
-	Message  string
-	Progress *progressFragment
-	Children []*taskNode
+	Parent     *taskNode
+	ID         string
+	Created    string
+	Status     string
+	Label      string
+	Message    string
+	Progress   *progressFragment
+	ChildIndex int
+	Children   []*taskNode
 }
 
 type progressFragment struct {
@@ -150,6 +151,7 @@ func (jp *jobPrinter) printTree(w io.Writer, tasks []taskFragment) {
 		} else {
 			parent = getNode(*task.ParentID)
 			child.Parent = parent
+			child.ChildIndex = len(parent.Children)
 			parent.Children = append(parent.Children, child)
 		}
 	}
@@ -180,8 +182,8 @@ func (jp *jobPrinter) printTree(w io.Writer, tasks []taskFragment) {
 		}
 	}
 
-	var printTask func(idx int, node *taskNode)
-	printTask = func(idx int, node *taskNode) {
+	var printTask func(node *taskNode)
+	printTask = func(node *taskNode) {
 
 		// Collapse nodes when all children finish successfully.
 		showChildren := false
@@ -198,9 +200,11 @@ func (jp *jobPrinter) printTree(w io.Writer, tasks []taskFragment) {
 				prefix += rgbterm.FgString("·", 0, 123, 211)
 			case taskStatusRun:
 				if len(jp.Spinner) > 0 {
-					offset := jp.Iteration + idx
+					offset := jp.Iteration + node.ChildIndex
 					frame := jp.Spinner[offset%len(jp.Spinner)]
 					prefix += rgbterm.FgString(frame, 172, 66, 199)
+				} else {
+					prefix += " "
 				}
 			case taskStatusWait:
 				prefix += rgbterm.FgString("○", 0, 123, 211)
@@ -219,7 +223,7 @@ func (jp *jobPrinter) printTree(w io.Writer, tasks []taskFragment) {
 			if node.Parent == nil {
 				return
 			}
-			last := idx == len(node.Parent.Children)-1
+			last := node.ChildIndex == len(node.Parent.Children)-1
 			printTracks(node.Parent, "   ", "│  ")
 			if last {
 				prefix += end
@@ -267,12 +271,12 @@ func (jp *jobPrinter) printTree(w io.Writer, tasks []taskFragment) {
 
 		fmt.Fprintf(w, "%s%s%s%s%s\n", prefix, alignMessage, message, alignSuffix, suffix)
 		if showChildren {
-			for i, child := range node.Children {
-				printTask(i, child)
+			for _, child := range node.Children {
+				printTask(child)
 			}
 		}
 	}
 	for _, job := range jobNodes {
-		printTask(0, job)
+		printTask(job)
 	}
 }
