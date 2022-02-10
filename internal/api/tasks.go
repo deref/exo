@@ -74,6 +74,9 @@ func (worker *Worker) Run(acquireCtx context.Context, workCtx context.Context) e
 			} `graphql:"acquireTask(workerId: $workerId, jobId: $jobId)"`
 		}
 		if err := Mutate(acquireCtx, worker.Service, &acquired, acquireVars); err != nil {
+			if errors.Is(err, context.Canceled) {
+				return nil
+			}
 			return fmt.Errorf("acquiring task: %w", err)
 		}
 		task := acquired.Task
@@ -86,11 +89,10 @@ func (worker *Worker) Run(acquireCtx context.Context, workCtx context.Context) e
 		logger.Infof("acquired %s task: %s", task.Mutation, task.ID)
 		// XXX The way this is currently set up, it doesn't make much sense for
 		// acquireTask and startTask to be separate.
-		err := worker.workTask(workCtx, task.ID)
-		if err == nil {
-			logger.Infof("completed task: %s", task.ID)
-		} else {
+		if err := worker.workTask(workCtx, task.ID); err != nil {
 			logger.Infof("task %s failure: %v", task.ID, err)
+		} else {
+			logger.Infof("completed task: %s", task.ID)
 		}
 	}
 }
