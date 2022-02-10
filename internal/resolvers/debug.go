@@ -77,25 +77,24 @@ func (r *MutationResolver) BusyWork(ctx context.Context, args struct {
 	Depth  *int32
 	Length *int32
 }) (*VoidResolver, error) {
-	n := int(args.Size)
+	size := int(args.Size)
 
-	width := n
+	width := size
 	if args.Width != nil {
 		width = int(*args.Width)
 	}
-	width = rand.Intn(width + 1)
 
-	depth := n
+	depth := size
 	if args.Depth != nil {
 		depth = int(*args.Depth)
 	}
 
-	length := n
+	length := size
 	if args.Length != nil {
 		length = int(*args.Length)
 	}
 
-	logging.Infof(ctx, "width=%d depth=%d length=%d", width, depth, length)
+	logging.Infof(ctx, "size=%d width=%d depth=%d length=%d", size, width, depth, length)
 
 	for i := 0; i < width; i++ {
 		d := rand.Intn(depth + 1)
