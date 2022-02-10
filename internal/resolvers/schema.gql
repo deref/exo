@@ -92,7 +92,7 @@ type Mutation {
 
   # Debug/testing.
   sleep(seconds: Float!): Void
-  busyWork(size: Int!, depth: Int, width: Int, length: Int): Void
+  busyWork(size: Int!, depth: Int, width: Int, length: Int, failRate: Float): Void
 }
 
 type Subscription {

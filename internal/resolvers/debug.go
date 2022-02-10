@@ -72,10 +72,11 @@ func (r *MutationResolver) Tick(ctx context.Context, args struct {
 }
 
 func (r *MutationResolver) BusyWork(ctx context.Context, args struct {
-	Size   int32
-	Width  *int32
-	Depth  *int32
-	Length *int32
+	Size     int32
+	Width    *int32
+	Depth    *int32
+	Length   *int32
+	FailRate *float64
 }) (*VoidResolver, error) {
 	size := int(args.Size)
 
@@ -94,6 +95,16 @@ func (r *MutationResolver) BusyWork(ctx context.Context, args struct {
 		length = int(*args.Length)
 	}
 
+	failRate := 0.0
+	if args.FailRate != nil {
+		failRate = *args.FailRate
+	}
+
+	failRoll := rand.Float64()
+	if failRoll < failRate {
+		return nil, fmt.Errorf("random failure: %v", failRoll)
+	}
+
 	logging.Infof(ctx, "size=%d width=%d depth=%d length=%d", size, width, depth, length)
 
 	for i := 0; i < width; i++ {
@@ -102,10 +113,11 @@ func (r *MutationResolver) BusyWork(ctx context.Context, args struct {
 		if d > 0 {
 			w := rand.Intn(width + 1)
 			_, err = r.createTask(ctx, "busyWork", map[string]interface{}{
-				"size":   args.Size,
-				"width":  w,
-				"depth":  d,
-				"length": length,
+				"size":     args.Size,
+				"width":    w,
+				"depth":    d,
+				"length":   length,
+				"failRate": failRate,
 			})
 		}
 		if err != nil {
