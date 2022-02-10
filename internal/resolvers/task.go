@@ -259,11 +259,23 @@ func (r *MutationResolver) FinishTask(ctx context.Context, args struct {
 	return nil, nil
 }
 
+// Walks up the task hierarchy, marking tasks as complete if all of their
+// subtasks are complete.  When a subtask fails, propagates its error to the
+// parent. If more than one task or its children fail, the first error is
+// preserved.
 func (r *MutationResolver) maybeCompleteTask(ctx context.Context, task *TaskResolver) error {
 	now := Now(ctx)
 	res, err := r.DB.ExecContext(ctx, `
 		UPDATE task
-		SET completed = ?
+		SET
+			completed = ?,
+			error = COALESCE(error, (
+				SELECT child.error
+				FROM task AS child
+				WHERE child.parent_id = task.id
+				AND error IS NOT NULL
+				LIMIT 1
+			))
 		WHERE id = ?
 		AND completed IS NULL
 		AND finished IS NOT NULL

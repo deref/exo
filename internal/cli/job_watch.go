@@ -83,8 +83,10 @@ func watchJob(ctx context.Context, jobID string) error {
 
 	var jp *jobPrinter
 	if interactive {
-		jp = &jobPrinter{}
-		jp.Spinner = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
+		jp = &jobPrinter{
+			Spinner:            []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"},
+			CollapseSuccessful: true,
+		}
 	}
 
 	var job *jobEventJobFragment

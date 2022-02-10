@@ -114,9 +114,10 @@ type progressFragment struct {
 }
 
 type jobPrinter struct {
-	Spinner   []string
-	Iteration int
-	ShowJobID bool
+	Spinner            []string
+	Iteration          int
+	ShowJobID          bool
+	CollapseSuccessful bool
 }
 
 func (jp *jobPrinter) printTree(w io.Writer, tasks []taskFragment) {
@@ -185,11 +186,13 @@ func (jp *jobPrinter) printTree(w io.Writer, tasks []taskFragment) {
 	var printTask func(node *taskNode)
 	printTask = func(node *taskNode) {
 
-		// Collapse nodes when all children finish successfully.
-		showChildren := false
-		for _, child := range node.Children {
-			if child.Status != taskStatusOK {
-				showChildren = true
+		showChildren := true
+		if jp.CollapseSuccessful {
+			showChildren = false
+			for _, child := range node.Children {
+				if child.Status != taskStatusOK {
+					showChildren = true
+				}
 			}
 		}
 
