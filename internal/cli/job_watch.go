@@ -37,16 +37,18 @@ type jobEventFragment struct {
 	Timestamp  scalars.Instant
 	SourceType string
 	SourceID   string
-	Job        struct {
-		URL      string
-		Tasks    []taskFragment
-		RootTask taskFragment
-	}
-	JobID *string
-	Task  *struct {
+	Job        *jobEventJobFragment
+	JobID      *string
+	Task       *struct {
 		ID    string
 		Error *string
 	}
+}
+
+type jobEventJobFragment struct {
+	URL      string
+	Tasks    []taskFragment
+	RootTask taskFragment
 }
 
 func watchJob(ctx context.Context, jobID string) error {
@@ -85,7 +87,7 @@ func watchJob(ctx context.Context, jobID string) error {
 		jp.Spinner = []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"}
 	}
 
-	var prev jobEventFragment
+	var job *jobEventJobFragment
 
 	// Periodically tick to keep spinner animation lively, even when
 	// there are no events. Start ticking only after the first event.
@@ -106,10 +108,11 @@ watching:
 		case <-tickC:
 			event = jobEventFragment{
 				Type: "Tick",
-				Job:  prev.Job,
 			}
 		}
-		job := event.Job
+		if event.Job != nil {
+			job = event.Job
+		}
 		task := event.Task
 
 		if interactive {
@@ -191,14 +194,15 @@ watching:
 			}
 			jp.printTree(lcw, job.Tasks)
 		}
-
-		prev = event
 	}
 	if sub.Err() != nil {
 		return fmt.Errorf("subscription error: %w", sub.Err())
 	}
 
-	root := prev.Job.RootTask
+	if job == nil {
+		return errors.New("never received job details")
+	}
+	root := job.RootTask
 	if root.Error != nil {
 		return fmt.Errorf("job failure: %s", *root.Error)
 	}
