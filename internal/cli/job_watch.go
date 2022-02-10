@@ -71,6 +71,7 @@ func watchJob(ctx context.Context, jobID string) error {
 	}
 
 	interactive := isInteractive()
+	verbose := !interactive || isDebugMode()
 
 	var jp *jobPrinter
 	if interactive {
@@ -128,19 +129,19 @@ watching:
 			initialized = true
 
 		case "JobUpdated":
-			if !interactive {
+			if verbose {
 				// XXX only print occassionally.
 				// XXX include progress info.
 				w.PrintEvent(sourceID, event.Timestamp.GoTime(), sourceLabel, "JobUpdated")
 			}
 
 		case "TaskStarted":
-			if !interactive {
+			if verbose {
 				w.PrintEvent(sourceID, event.Timestamp.GoTime(), sourceLabel, "Task Started")
 			}
 
 		case "TaskFinished":
-			if !interactive && isDebugMode() {
+			if verbose {
 				var message string
 				if task.Error == nil {
 					message = "task finished; awaiting children for completion"
@@ -151,7 +152,7 @@ watching:
 			}
 
 		case "TaskCompleted":
-			if !interactive {
+			if verbose {
 				var message string
 				if task.Error == nil {
 					message = "task completed successfully"
