@@ -89,6 +89,11 @@ func watchJob(ctx context.Context, jobID string) error {
 
 	var job *jobEventJobFragment
 
+	taskProgress := make(map[string]struct {
+		Reported float64
+		Current  float64
+	})
+
 	// Periodically tick to keep spinner animation lively, even when
 	// there are no events. Start ticking only after the first event.
 	initialized := false
@@ -141,8 +146,21 @@ watching:
 
 		case "JobUpdated":
 			if verbose {
-				// XXX only print occassionally.
-				// XXX include progress info.
+				// Ocassionally print task progress updates.
+				const maxReportsPerTask = 20
+				const reportThreshold = 100.0 / float64(maxReportsPerTask)
+				for _, task := range job.Tasks {
+					if task.Progress == nil {
+						continue
+					}
+					progress := taskProgress[task.ID]
+					progress.Current = task.Progress.Percent
+					if progress.Reported+reportThreshold < progress.Current {
+						progress.Reported = progress.Current
+						message := fmt.Sprintf("task %q progress: %2d%%", task.ID, int(progress.Current))
+						w.PrintEvent(sourceID, event.Timestamp.GoTime(), sourceLabel, message)
+					}
+				}
 				w.PrintEvent(sourceID, event.Timestamp.GoTime(), sourceLabel, "JobUpdated")
 			}
 
