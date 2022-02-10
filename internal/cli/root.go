@@ -69,11 +69,11 @@ func concurrencyLimit() int {
 	// can safely be pretty high. However, in workOwnJobs mode, each independent
 	// CLI will create its own worker pool, so there is no sense overdoing it.
 	if workOwnJobs() {
-		return 5
+		return 10
 	}
 	// When acting as a shared server, this should be reasonably high to support
 	// simultaneous operations on multiple workspaces/stacks.
-	return runtime.NumCPU() * 8
+	return runtime.NumCPU() * 16
 }
 
 var rootCmd = &cobra.Command{
