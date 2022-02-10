@@ -2,6 +2,7 @@ package cli
 
 import (
 	"context"
+	"runtime"
 	"sync"
 
 	"github.com/deref/exo/internal/api"
@@ -19,11 +20,13 @@ var (
 )
 
 func init() {
-	rootCmd.PersistentFlags().StringVar(&rootPersistentFlags.Cluster, "cluster", "", "")
-	rootCmd.PersistentFlags().BoolVar(&rootPersistentFlags.Async, "async", false, "Do not await long-running tasks")
-	rootCmd.PersistentFlags().BoolVar(&rootPersistentFlags.NoColor, "no-color", false, "disable color tty output")
-	rootCmd.PersistentFlags().BoolVar(&rootPersistentFlags.NonInteractive, "non-interactive", false, "disable interactive tty behaviors")
-	rootCmd.PersistentFlags().BoolVar(&rootPersistentFlags.Debug, "debug", false, "enable debug logging")
+	// TODO: Many of these should also be supported in config files.
+	rootCmd.PersistentFlags().StringVar(&rootPersistentFlags.Cluster, "cluster", "", "Ref of cluster to target. Defaults to local cluster.")
+	rootCmd.PersistentFlags().BoolVar(&rootPersistentFlags.Async, "async", false, "Do not await long-running tasks.")
+	rootCmd.PersistentFlags().BoolVar(&rootPersistentFlags.NoColor, "no-color", false, "Disable color tty output.")
+	rootCmd.PersistentFlags().BoolVar(&rootPersistentFlags.NonInteractive, "non-interactive", false, "Disable interactive tty behaviors.")
+	rootCmd.PersistentFlags().BoolVar(&rootPersistentFlags.Debug, "debug", false, "Enable debug logging.")
+	rootCmd.PersistentFlags().IntVar(&rootPersistentFlags.Concurrency, "concurrency", 0, "Set peer task worker concurrency limit.")
 }
 
 var rootPersistentFlags struct {
@@ -32,6 +35,7 @@ var rootPersistentFlags struct {
 	NoColor        bool
 	NonInteractive bool
 	Debug          bool
+	Concurrency    int
 }
 
 func useColor() bool {
@@ -44,6 +48,32 @@ func isInteractive() bool {
 
 func isDebugMode() bool {
 	return rootPersistentFlags.Debug
+}
+
+func peerMode() bool {
+	return true // XXX configurable.
+}
+
+// Should this CLI invocation double as a task worker for jobs it starts?
+func workOwnJobs() bool {
+	// When the CLI is in peer mode, there is generally no worker pool.
+	// For development convenience, always work our own jobs from a peer CLI.
+	return peerMode()
+}
+
+func concurrencyLimit() int {
+	if rootPersistentFlags.Concurrency > 0 {
+		return rootPersistentFlags.Concurrency
+	}
+	// Most work done by tasks in Exo are blocked on IO, so the concurrency limit
+	// can safely be pretty high. However, in workOwnJobs mode, each independent
+	// CLI will create its own worker pool, so there is no sense overdoing it.
+	if workOwnJobs() {
+		return 5
+	}
+	// When acting as a shared server, this should be reasonably high to support
+	// simultaneous operations on multiple workspaces/stacks.
+	return runtime.NumCPU() * 8
 }
 
 var rootCmd = &cobra.Command{
@@ -63,9 +93,6 @@ For more information, see https://exo.deref.io`,
 // Will be initialized automatically, unless offline is true.
 var svc api.Service
 
-// Should this CLI invocation double as a task worker for jobs it starts?
-var workOwnJobs bool
-
 func Main() {
 	ctx := context.Background()
 
@@ -74,12 +101,7 @@ func Main() {
 	}
 
 	svc = newLazyService(func() api.Service {
-		peerMode := true // XXX configurable.
-		if peerMode {
-			// When the CLI is in peer mode, there is generally no worker pool.
-			// For development convenience, always work our own jobs from a peer CLI.
-			workOwnJobs = true
-
+		if peerMode() {
 			svc, err := peer.NewPeer(ctx, peer.PeerConfig{
 				VarDir:      cfg.VarDir,
 				GUIEndpoint: effectiveServerURL(),
