@@ -90,47 +90,75 @@ func (r *MutationResolver) createTask(ctx context.Context, id string, parentID *
 func (r *MutationResolver) AcquireTask(ctx context.Context, args struct {
 	WorkerID string
 	JobID    *string
-	Timeout  *int32
 }) (*TaskResolver, error) {
-	if args.Timeout != nil {
-		var cancel func()
-		ctx, cancel = context.WithTimeout(ctx, time.Duration(*args.Timeout)*time.Microsecond)
-		defer cancel()
-	}
-	var row TaskRow
 	delay := 1
 	for {
-		err := r.DB.GetContext(ctx, &row, `
-		UPDATE task
-		SET worker_id = ?
-		WHERE id IN (
-			SELECT id
-			FROM task
-			WHERE worker_id IS NULL
-			AND COALESCE(?, job_id) = job_id
-		)
-		RETURNING *
-	`, args.WorkerID, args.JobID)
-		if errors.Is(err, sql.ErrNoRows) {
-			err = chrono.Sleep(ctx, time.Duration(delay)*time.Millisecond)
+		// Attempt to assign a worker.
+		res, err := r.DB.ExecContext(ctx, `
+			UPDATE task
+			SET worker_id = ?
+			WHERE id IN (
+				SELECT id
+				FROM task
+				WHERE worker_id IS NULL
+				AND started IS NULL
+				AND COALESCE(?, job_id) = job_id
+				ORDER BY random()
+				LIMIT 1
+			)
+		`, args.WorkerID, args.JobID)
+		if err != nil {
+			return nil, fmt.Errorf("assigning task worker: %w", err)
+		}
+
+		if rowsAffected(res) == 0 {
+			// There are no available tasks.
+
+			// When scoped to just one job, and it is complete, there are no more
+			// tasks we can possibly acquire, so return normally.
+			if args.JobID != nil {
+				completed, err := r.isJobCompleted(ctx, *args.JobID)
+				if err != nil {
+					return nil, fmt.Errorf("checking job completion: %w", err)
+				}
+				if completed {
+					return nil, nil
+				}
+			}
+
+			if err := chrono.Sleep(ctx, time.Duration(delay)*time.Millisecond); err != nil {
+				return nil, err
+			}
 			delay *= 2
 			if delay > 1000 {
 				delay = 1000
 			}
 			continue
 		}
-		if errors.Is(err, context.DeadlineExceeded) {
-			return nil, nil
+
+		// Return the task, if we won the race to acquire it.
+		{
+			var row TaskRow
+			err := r.DB.GetContext(ctx, &row, `
+				SELECT *
+				FROM task
+				WHERE worker_id = ?
+				LIMIT 1
+			`, args.WorkerID)
+			if errors.Is(err, sql.ErrNoRows) {
+				// We lost, another worker won. Try again.
+				continue
+			}
+			if err != nil {
+				return nil, fmt.Errorf("checking task acquisition: %w", err)
+			}
+
+			return &TaskResolver{
+				Q:       r,
+				TaskRow: row,
+			}, nil
 		}
-		if err != nil {
-			return nil, err
-		}
-		break
 	}
-	return &TaskResolver{
-		Q:       r,
-		TaskRow: row,
-	}, nil
 }
 
 func (r *MutationResolver) StartTask(ctx context.Context, args struct {
@@ -448,6 +476,15 @@ func (r *MutationResolver) cancelSubtasks(ctx context.Context, parentTaskID stri
 		) AND finished IS NULL
 	`, now, parentTaskID)
 	return err
+}
+
+func (r *QueryResolver) isTaskCompleted(ctx context.Context, taskID string) (completed bool, err error) {
+	err = r.DB.GetContext(ctx, &completed, `
+		SELECT completed IS NOT NULL
+		FROM task
+		WHERE id = ?
+	`, taskID)
+	return
 }
 
 func (r *TaskResolver) Successful() (*bool, error) {

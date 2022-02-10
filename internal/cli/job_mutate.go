@@ -57,17 +57,18 @@ func watchOwnJob(ctx context.Context, jobID string) error {
 	defer cancel()
 
 	if workOwnJobs() {
-		for i := 0; i < concurrencyLimit(); i++ {
-			i := i
-			eg.Go(func() error {
-				workerID := fmt.Sprintf("cli:%d:%d", os.Getpid(), i)
-				err := api.RunWorker(ctx, svc, workerID, &jobID)
-				if err != nil {
-					cancel()
-				}
-				return err
-			})
-		}
+		eg.Go(func() error {
+			pool := api.WorkerPool{
+				Service:      svc,
+				Concurrency:  concurrencyLimit(),
+				WorkerPrefix: fmt.Sprintf("cli:%d", os.Getpid()),
+			}
+			err := pool.Run(ctx)
+			if err != nil {
+				cancel()
+			}
+			return err
+		})
 	}
 
 	eg.Go(func() error {

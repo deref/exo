@@ -15,48 +15,87 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-// If jobID is set, only work tasks for that job. Otherwise, work any task.
-func RunWorker(ctx context.Context, svc Service, workerID string, jobID *string) error {
-	logger := logging.CurrentLogger(ctx).Sublogger(fmt.Sprintf("worker %s", workerID))
-	var timeout *int
-	// Stop working tasks when a new task for this job hasn't appeared in a
-	// while.  Note that this only works correctly when no other workers are
-	// taking tasks for this job.
-	// TODO: Would be better to acquire tasks until the job's status is finished.
-	if jobID != nil {
-		n := 1000
-		timeout = &n
+type WorkerPool struct {
+	Service      Service
+	Concurrency  int
+	WorkerPrefix string
+	JobID        string
+}
+
+type Worker struct {
+	Service Service
+	ID      string
+	// If non-empty, only work tasks from the specified job.  Otherwise, work any
+	// available task.
+	JobID string
+	// Called when there is no more work expected.
+	OnDone func()
+}
+
+func (pool *WorkerPool) Run(ctx context.Context) error {
+	workCtx := ctx
+	acquireCtx, stopAcquiring := context.WithCancel(workCtx)
+	defer stopAcquiring()
+
+	var eg errgroup.Group
+	for i := 0; i < pool.Concurrency; i++ {
+		workerID := fmt.Sprintf("%s:%d", pool.WorkerPrefix, i)
+		eg.Go(func() error {
+			worker := &Worker{
+				Service: pool.Service,
+				ID:      workerID,
+				JobID:   pool.JobID,
+				OnDone:  stopAcquiring,
+			}
+			return worker.Run(acquireCtx, workCtx)
+		})
+	}
+	return eg.Wait()
+}
+
+// We need a separate acquire context, so that we can cancel task acquisition
+// immediately without cancelling tasks that are currently being worked.
+// TODO: Figure out some less awkward interface for this.
+func (worker *Worker) Run(acquireCtx context.Context, workCtx context.Context) error {
+	logger := logging.CurrentLogger(workCtx).Sublogger(fmt.Sprintf("worker %s", worker.ID))
+	var jobID *string
+	if worker.JobID != "" {
+		jobID = &worker.JobID
 	}
 	acquireVars := map[string]interface{}{
-		"workerId": workerID,
+		"workerId": worker.ID,
 		"jobId":    jobID,
-		"timeout":  timeout,
 	}
 	for {
 		var acquired struct {
-			Task struct {
+			Task *struct {
 				ID       string
 				Mutation string
-			} `graphql:"acquireTask(workerId: $workerId, timeout: $timeout, jobId: $jobId)"`
+			} `graphql:"acquireTask(workerId: $workerId, jobId: $jobId)"`
 		}
-		if err := Mutate(ctx, svc, &acquired, acquireVars); err != nil {
+		if err := Mutate(acquireCtx, worker.Service, &acquired, acquireVars); err != nil {
 			return fmt.Errorf("acquiring task: %w", err)
 		}
-		taskID := acquired.Task.ID
-		if taskID == "" {
+		task := acquired.Task
+		if task == nil {
+			if worker.OnDone != nil {
+				worker.OnDone()
+			}
 			return nil
 		}
-		logger.Infof("acquired %s task: %s", acquired.Task.Mutation, taskID)
-		err := WorkTask(ctx, svc, workerID, taskID)
+		logger.Infof("acquired %s task: %s", task.Mutation, task.ID)
+		// XXX The way this is currently set up, it doesn't make much sense for
+		// acquireTask and startTask to be separate.
+		err := worker.workTask(workCtx, task.ID)
 		if err == nil {
-			logger.Infof("completed task: %s", taskID)
+			logger.Infof("completed task: %s", task.ID)
 		} else {
-			logger.Infof("task %s failure: %v", taskID, err)
+			logger.Infof("task %s failure: %v", task.ID, err)
 		}
 	}
 }
 
-func WorkTask(ctx context.Context, svc Service, workerID string, id string) error {
+func (worker *Worker) workTask(ctx context.Context, id string) error {
 	var start struct {
 		Task struct {
 			ID        string
@@ -65,9 +104,9 @@ func WorkTask(ctx context.Context, svc Service, workerID string, id string) erro
 			Arguments JSONObject
 		} `graphql:"startTask(id: $id, workerId: $workerId)"`
 	}
-	if err := Mutate(ctx, svc, &start, map[string]interface{}{
+	if err := Mutate(ctx, worker.Service, &start, map[string]interface{}{
 		"id":       id,
-		"workerId": workerID,
+		"workerId": worker.ID,
 	}); err != nil {
 		return fmt.Errorf("starting: %w", err)
 	}
@@ -82,7 +121,7 @@ func WorkTask(ctx context.Context, svc Service, workerID string, id string) erro
 		defer stopPolling()
 		vars := map[string]interface{}{
 			"id":       id,
-			"workerId": workerID,
+			"workerId": worker.ID,
 		}
 		for {
 			var m struct {
@@ -92,7 +131,7 @@ func WorkTask(ctx context.Context, svc Service, workerID string, id string) erro
 					Canceled string
 				} `graphql:"updateTask(id: $id, workerId: $workerId)"`
 			}
-			if err := Mutate(ctx, svc, &m, vars); err != nil {
+			if err := Mutate(ctx, worker.Service, &m, vars); err != nil {
 				return fmt.Errorf("heartbeat failed: %w", err)
 			}
 			if m.Task.Canceled != "" || m.Task.Finished != "" {
@@ -120,9 +159,9 @@ func WorkTask(ctx context.Context, svc Service, workerID string, id string) erro
 			taskCtx := ContextWithVariables(ctx, ContextVariables{
 				TaskID:   task.ID,
 				JobID:    task.JobID,
-				WorkerID: workerID,
+				WorkerID: worker.ID,
 			})
-			return svc.Do(taskCtx, &res, mut, args)
+			return worker.Service.Do(taskCtx, &res, mut, args)
 		}()
 
 		var finish struct {
@@ -138,7 +177,7 @@ func WorkTask(ctx context.Context, svc Service, workerID string, id string) erro
 		} else {
 			vars["error"] = taskErr.Error()
 		}
-		if err := Mutate(ctx, svc, &finish, vars); err != nil {
+		if err := Mutate(ctx, worker.Service, &finish, vars); err != nil {
 			return fmt.Errorf("finishing: %w", err)
 		}
 		return nil
