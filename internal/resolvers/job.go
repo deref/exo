@@ -174,6 +174,10 @@ func (r *SubscriptionResolver) WatchJob(ctx context.Context, args struct {
 	return c, nil
 }
 
+func (r *JobResolver) Stream() *StreamResolver {
+	return r.Q.streamForSource("Job", r.ID)
+}
+
 func (r *JobResolver) eventPrototype(ctx context.Context) (row EventRow, err error) {
 	task, err := r.RootTask(ctx)
 	if err != nil {

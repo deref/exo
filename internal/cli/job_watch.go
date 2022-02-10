@@ -190,9 +190,9 @@ watching:
 				}
 				w.PrintEvent(sourceID, event.Timestamp.GoTime(), sourceLabel, message)
 			}
-			if task.ID == *event.JobID {
-				sub.Stop()
-			}
+
+		case "JobCompleted":
+			sub.Stop()
 
 		case "Message":
 			w.PrintEvent(sourceID, event.Timestamp.GoTime(), sourceLabel, event.Message)
