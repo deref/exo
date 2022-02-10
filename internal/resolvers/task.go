@@ -244,11 +244,11 @@ func (r *MutationResolver) maybeCompleteTask(ctx context.Context, task *TaskReso
 	if err != nil {
 		return fmt.Errorf("marking task as complete: %w", err)
 	}
-	if _, err := r.createEvent(ctx, task, "TaskCompleted", ""); err != nil {
-		return fmt.Errorf("creating complete event: %w", err)
-	}
 	if rowsAffected(res) == 0 || task.ParentID == nil {
 		return nil
+	}
+	if _, err := r.createEvent(ctx, task, "TaskCompleted", ""); err != nil {
+		return fmt.Errorf("creating complete event: %w", err)
 	}
 	parent, err := task.Parent(ctx)
 	if err != nil {
