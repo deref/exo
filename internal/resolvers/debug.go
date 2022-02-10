@@ -6,7 +6,6 @@ import (
 	"math/rand"
 	"time"
 
-	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/chrono"
 	. "github.com/deref/exo/internal/scalars"
 	"github.com/deref/exo/internal/util/logging"
@@ -78,12 +77,6 @@ func (r *MutationResolver) BusyWork(ctx context.Context, args struct {
 	Depth  *int32
 	Length *int32
 }) (*VoidResolver, error) {
-	ctxVars := api.CurrentContextVariables(ctx)
-	var taskID *string
-	if ctxVars.TaskID != "" {
-		taskID = &ctxVars.TaskID
-	}
-
 	n := int(args.Size)
 
 	width := n
@@ -109,7 +102,7 @@ func (r *MutationResolver) BusyWork(ctx context.Context, args struct {
 		var err error
 		if d > 0 {
 			w := rand.Intn(width + 1)
-			_, err = r.createTask(ctx, "", taskID, "busyWork", map[string]interface{}{
+			_, err = r.createTask(ctx, "busyWork", map[string]interface{}{
 				"size":   args.Size,
 				"width":  w,
 				"depth":  d,

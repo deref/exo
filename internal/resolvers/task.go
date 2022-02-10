@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/chrono"
 	"github.com/deref/exo/internal/gensym"
 	. "github.com/deref/exo/internal/scalars"
@@ -36,48 +37,15 @@ type TaskRow struct {
 }
 
 func (r *MutationResolver) CreateTask(ctx context.Context, args struct {
-	ParentID  *string
 	Mutation  string
 	Arguments JSONObject
 }) (*TaskResolver, error) {
-	id := newTaskID()
-	return r.createTask(ctx, id, args.ParentID, args.Mutation, args.Arguments)
+	return r.createTask(ctx, args.Mutation, args.Arguments)
 }
 
-var newTaskID = gensym.RandomBase32
-
-func (r *MutationResolver) createJob(ctx context.Context, id string, mutation string, arguments map[string]interface{}) (*TaskResolver, error) {
-	parentID := (*string)(nil)
-	return r.createTask(ctx, id, parentID, mutation, arguments)
-}
-
-// The id is passed as a parameter to allow callers to use a pre-allocated id
-// in a database field to establish a mutual exclusion lock.
-func (r *MutationResolver) createTask(ctx context.Context, id string, parentID *string, mutation string, arguments map[string]interface{}) (*TaskResolver, error) {
-	if id == "" {
-		id = gensym.RandomBase32()
-	}
-	now := Now(ctx)
-	row := TaskRow{
-		ID:        id,
-		ParentID:  parentID,
-		Mutation:  mutation,
-		Arguments: arguments,
-		Created:   now,
-		Updated:   now,
-	}
-	if parentID == nil {
-		row.JobID = id
-	} else {
-		parent, err := r.taskByID(ctx, parentID)
-		if err != nil {
-			return nil, fmt.Errorf("resolving parent: %w", err)
-		}
-		if parent == nil {
-			return nil, fmt.Errorf("no such parent: %q", *parentID)
-		}
-		row.JobID = parent.JobID
-	}
+func (r *MutationResolver) createRootTask(ctx context.Context, mutation string, arguments map[string]interface{}) (*TaskResolver, error) {
+	row := newTaskPrototype(ctx, mutation, arguments)
+	row.JobID = row.ID
 	if err := r.insertRow(ctx, "task", row); err != nil {
 		return nil, err
 	}
@@ -85,6 +53,34 @@ func (r *MutationResolver) createTask(ctx context.Context, id string, parentID *
 		Q:       r,
 		TaskRow: row,
 	}, nil
+}
+
+func (r *MutationResolver) createTask(ctx context.Context, mutation string, arguments map[string]interface{}) (*TaskResolver, error) {
+	ctxVars := api.CurrentContextVariables(ctx)
+	if ctxVars == nil || ctxVars.TaskID == "" {
+		return nil, errors.New("create task outside of job execution context")
+	}
+	row := newTaskPrototype(ctx, mutation, arguments)
+	row.JobID = ctxVars.JobID
+	row.ParentID = &ctxVars.TaskID
+	if err := r.insertRow(ctx, "task", row); err != nil {
+		return nil, err
+	}
+	return &TaskResolver{
+		Q:       r,
+		TaskRow: row,
+	}, nil
+}
+
+func newTaskPrototype(ctx context.Context, mutation string, arguments map[string]interface{}) TaskRow {
+	now := Now(ctx)
+	return TaskRow{
+		ID:        gensym.RandomBase32(),
+		Mutation:  mutation,
+		Arguments: arguments,
+		Created:   now,
+		Updated:   now,
+	}
 }
 
 func (r *MutationResolver) AcquireTask(ctx context.Context, args struct {
