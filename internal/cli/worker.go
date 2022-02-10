@@ -6,7 +6,6 @@ import (
 	"os"
 
 	"github.com/deref/exo/internal/api"
-	"github.com/deref/exo/internal/peer"
 	"github.com/spf13/cobra"
 )
 
@@ -34,10 +33,9 @@ when the job terminates.
 		if !peerMode() {
 			return errors.New("worker command only available in peer mode")
 		}
-		p := svc.(*peer.Peer)
 
 		worker := &api.Worker{
-			Service: p,
+			Service: svc,
 			ID:      fmt.Sprintf("peer:%d:worker", os.Getpid()),
 			JobID:   workerFlags.Job,
 		}
