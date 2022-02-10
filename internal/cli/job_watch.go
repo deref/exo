@@ -192,6 +192,9 @@ watching:
 			}
 
 		case "JobCompleted":
+			if verbose {
+				w.PrintEvent(sourceID, event.Timestamp.GoTime(), sourceLabel, "job completed")
+			}
 			sub.Stop()
 
 		case "Message":
