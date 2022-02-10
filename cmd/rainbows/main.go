@@ -4,7 +4,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/aybabtme/rgbterm"
+	"github.com/deref/rgbterm"
 )
 
 func main() {

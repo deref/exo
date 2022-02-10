@@ -5,9 +5,9 @@ import (
 	"io"
 	"time"
 
-	"github.com/aybabtme/rgbterm"
 	"github.com/deref/exo/internal/util/mathutil"
 	"github.com/deref/exo/internal/util/term"
+	"github.com/deref/rgbterm"
 )
 
 type EventWriter struct {

@@ -6,10 +6,10 @@ import (
 	"os"
 	"strings"
 
-	"github.com/aybabtme/rgbterm"
 	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/scalars"
 	"github.com/deref/exo/internal/util/term"
+	"github.com/deref/rgbterm"
 	"github.com/spf13/cobra"
 )
 
