@@ -14,7 +14,10 @@ import (
 var schema string
 
 func NewSchema(r *RootResolver) *graphql.Schema {
-	return graphql.MustParseSchema(schema, r, graphql.UseFieldResolvers())
+	return graphql.MustParseSchema(schema, r,
+		graphql.UseFieldResolvers(),
+		graphql.Logger(NewGraphqlLogger(r.SystemLog)),
+	)
 }
 
 // XXX move this to server package.
