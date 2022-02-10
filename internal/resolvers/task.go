@@ -90,7 +90,8 @@ func (r *MutationResolver) AcquireTask(ctx context.Context, args struct {
 	delay := 1
 	for {
 		// Attempt to assign a worker.
-		res, err := r.DB.ExecContext(ctx, `
+		var attemptedID string
+		err := r.DB.GetContext(ctx, &attemptedID, `
 			UPDATE task
 			SET worker_id = ?
 			WHERE id IN (
@@ -102,12 +103,16 @@ func (r *MutationResolver) AcquireTask(ctx context.Context, args struct {
 				ORDER BY random()
 				LIMIT 1
 			)
+			RETURNING id
 		`, args.WorkerID, args.JobID)
+		if errors.Is(err, sql.ErrNoRows) {
+			err = nil
+		}
 		if err != nil {
 			return nil, fmt.Errorf("assigning task worker: %w", err)
 		}
 
-		if rowsAffected(res) == 0 {
+		if attemptedID == "" {
 			// There are no available tasks.
 
 			// When scoped to just one job, and it is complete, there are no more
@@ -138,9 +143,10 @@ func (r *MutationResolver) AcquireTask(ctx context.Context, args struct {
 			err := r.DB.GetContext(ctx, &row, `
 				SELECT *
 				FROM task
-				WHERE worker_id = ?
+				WHERE id = ?
+				AND worker_id = ?
 				LIMIT 1
-			`, args.WorkerID)
+			`, attemptedID, args.WorkerID)
 			if errors.Is(err, sql.ErrNoRows) {
 				// We lost, another worker won. Try again.
 				continue
