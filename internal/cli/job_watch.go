@@ -155,7 +155,7 @@ watching:
 					}
 					progress := taskProgress[task.ID]
 					progress.Current = task.Progress.Percent
-					if progress.Reported+reportThreshold < progress.Current {
+					if progress.Current < 100 && progress.Reported+reportThreshold < progress.Current {
 						progress.Reported = progress.Current
 						message := fmt.Sprintf("task %q progress: %2d%%", task.ID, int(progress.Current))
 						w.PrintEvent(sourceID, event.Timestamp.GoTime(), sourceLabel, message)
