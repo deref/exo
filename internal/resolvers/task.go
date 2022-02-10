@@ -240,6 +240,7 @@ func (r *MutationResolver) FinishTask(ctx context.Context, args struct {
 			finished = ?,
 			error = COALESCE(error, ?)
 		WHERE id = ?
+		AND finished IS NULL
 		RETURNING *
 	`, now, now, args.Error, taskID,
 	); err != nil {
@@ -264,6 +265,8 @@ func (r *MutationResolver) maybeCompleteTask(ctx context.Context, task *TaskReso
 		UPDATE task
 		SET completed = ?
 		WHERE id = ?
+		AND completed IS NULL
+		AND finished IS NOT NULL
 		AND 0 == (
 			SELECT count(child.id)
 			FROM task AS child
