@@ -37,7 +37,7 @@ Arguments are specified as JSON with the same syntax as 'exo json'.`,
 // TODO: Most usages of watchJob should prefer this or watchOwnJob.
 // TODO: Many usages of this, should probably have codegen'd, type-safe interfaces.
 func sendMutation(ctx context.Context, mutation string, vars map[string]interface{}) error {
-	jobID, err := api.Enqueue(ctx, svc, mutation, vars)
+	jobID, err := api.CreateJob(ctx, svc, mutation, vars)
 	if err != nil {
 		return err
 	}

@@ -8,7 +8,7 @@ import (
 
 type ReconciliationResolver struct {
 	Component *ComponentResolver
-	Job       *TaskResolver
+	Job       *JobResolver
 }
 
 func (r *MutationResolver) ReconcileComponent(ctx context.Context, args struct {

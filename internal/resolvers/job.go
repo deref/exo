@@ -30,6 +30,24 @@ func (r *QueryResolver) jobByRootTaskID(rootTaskID *string) *JobResolver {
 	return r.jobByID(rootTaskID)
 }
 
+func (r *MutationResolver) CreateJob(ctx context.Context, args struct {
+	Mutation  string
+	Arguments JSONObject
+}) (*JobResolver, error) {
+	return r.createJob(ctx, args.Mutation, args.Arguments)
+}
+
+func (r *MutationResolver) createJob(ctx context.Context, mutation string, arguments map[string]interface{}) (*JobResolver, error) {
+	task, err := r.createRootTask(ctx, mutation, arguments)
+	if err != nil {
+		return nil, err
+	}
+	return &JobResolver{
+		Q:  r,
+		ID: task.ID,
+	}, nil
+}
+
 func (r *JobResolver) URL() string {
 	return r.Q.Routes.jobURL(r.ID)
 }

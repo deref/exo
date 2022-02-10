@@ -21,7 +21,7 @@ func controlComponents(cmd *cobra.Command, args []string, workspaceMutation stri
 		vars["components"] = args
 	}
 
-	jobID, err := api.Enqueue(ctx, svc, mutation, vars)
+	jobID, err := api.CreateJob(ctx, svc, mutation, vars)
 	if err != nil {
 		return err
 	}

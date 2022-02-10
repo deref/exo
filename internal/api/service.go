@@ -68,11 +68,11 @@ func marshalReflectiveOperation(typ gql.OperationType, sel interface{}, vars map
 }
 
 // Schedule asynchronous execution of a GraphQL mutation.
-func Enqueue(ctx context.Context, svc Service, mutation string, arguments map[string]interface{}) (jobID string, err error) {
+func CreateJob(ctx context.Context, svc Service, mutation string, arguments map[string]interface{}) (jobID string, err error) {
 	var m struct {
 		Job struct {
 			ID string
-		} `graphql:"createTask(mutation: $mutation, arguments: $arguments)"`
+		} `graphql:"createJob(mutation: $mutation, arguments: $arguments)"`
 	}
 	err = Mutate(ctx, svc, &m, map[string]interface{}{
 		"mutation":  mutation,

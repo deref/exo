@@ -68,7 +68,10 @@ type Mutation {
   
   createEvent(sourceType: String!, sourceId: String!, type: String!, message: String!): Event!
 
-  createTask(parentId: String, mutation: String!, arguments: JSONObject!): Task!
+  # Create a job and its root task.
+  createJob(mutation: String!, arguments: JSONObject!): Job!
+  # Called during the execution of another task to create a subtask.
+  createTask(mutation: String!, arguments: JSONObject!): Task!
   # Assigns an available task to the given worker.
   # Blocks until a task can be acquired. If jobId is specified, returns null
   # after the job has been completed.
@@ -205,7 +208,7 @@ type Component {
 
 type Reconciliation {
   component: Component!
-  job: Task!
+  job: Job!
 }
 
 type Environment {
@@ -235,11 +238,10 @@ type Resource {
   # Owner, if it is a component.
   component: Component
   
-  # If non-null, job has a lock on resource and state will not be "idle".
+  # If non-null, task has a lock on resource and state will not be "idle".
   # TODO: Consider explicit Lock type.
-  # TODO: Consider locking by task, not job.
-  jobId: String
-  job: Job
+  taskId: String
+  task: Task
   operation: String # creating, adopting, refreshing, updating, or disposing.
 
   model: String!

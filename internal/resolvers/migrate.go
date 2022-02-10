@@ -126,7 +126,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 
 	// Resource.
 
-	// TODO: Consider dropping job_id field in favor of table for reified locks.
+	// TODO: Consider dropping task_id field in favor of table for reified locks.
 	// XXX remove message field; use events.
 	if _, err := r.DB.ExecContext(ctx, `
 		CREATE TABLE IF NOT EXISTS resource (
@@ -135,7 +135,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 			iri TEXT,
 			owner_type TEXT,
 			owner_id TEXT,
-			job_id TEXT,
+			task_id TEXT,
 			model TEXT NOT NULL,
 			status INT,
 			message TEXT
