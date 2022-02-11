@@ -120,6 +120,12 @@ type jobPrinter struct {
 	CollapseSuccessful bool
 }
 
+func jobTreeString(jp *jobPrinter, tasks []taskFragment) string {
+	var sb strings.Builder
+	jp.printTree(&sb, tasks)
+	return sb.String()
+}
+
 func (jp *jobPrinter) printTree(w io.Writer, tasks []taskFragment) {
 	// TODO: watchJob calls printTree in a loop, so each go around calls
 	// term.GetSize(), it would be more efficient to listen to terminal size

@@ -1,17 +1,20 @@
 package cli
 
 import (
-	"bytes"
 	"context"
 	"errors"
 	"fmt"
-	"io"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 	"time"
 
 	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/scalars"
+	"github.com/deref/exo/internal/util/cmdutil"
+	"github.com/deref/exo/internal/util/mathutil"
+	"github.com/deref/exo/internal/util/term"
 	"github.com/spf13/cobra"
 )
 
@@ -52,13 +55,6 @@ type jobEventJobFragment struct {
 }
 
 func watchJob(ctx context.Context, jobID string) error {
-	// Buffer output to minimize terminal flicker when redrawing tree.
-	var buf bytes.Buffer
-	flush := func() {
-		os.Stdout.Write(buf.Bytes())
-		buf.Reset()
-	}
-
 	type watchJobSubscription struct {
 		Event jobEventFragment `graphql:"watchJob(id: $id, debug: $debug)"`
 	}
@@ -69,20 +65,33 @@ func watchJob(ctx context.Context, jobID string) error {
 	})
 	defer sub.Stop()
 
+	{
+		stopSignals := make(chan os.Signal)
+		signal.Notify(stopSignals, os.Interrupt, syscall.SIGTERM)
+		go func() {
+			<-stopSignals
+			sub.Stop()
+		}()
+	}
+
 	w := &EventWriter{
-		W: &buf,
+		W: os.Stdout,
 	}
 	w.Init()
-
-	lcw := &lineCountingWriter{
-		Underlying: &buf,
-	}
 
 	interactive := isInteractive()
 	verbose := !interactive || isDebugMode()
 
+	var panel *term.BottomPanel
 	var jp *jobPrinter
 	if interactive {
+		panel = &term.BottomPanel{}
+		defer func() {
+			content := panel.Content()
+			panel.Close()
+			cmdutil.Show(content)
+		}()
+
 		jp = &jobPrinter{
 			Spinner:            []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"},
 			CollapseSuccessful: true,
@@ -103,8 +112,6 @@ func watchJob(ctx context.Context, jobID string) error {
 
 watching:
 	for {
-		flush()
-
 		var event jobEventFragment
 		select {
 		case eventInterface, ok := <-sub.Events():
@@ -121,11 +128,6 @@ watching:
 			job = event.Job
 		}
 		task := event.Task
-
-		if interactive {
-			clearLines(lcw.LineCount)
-			lcw.LineCount = 0
-		}
 
 		sourceID := event.SourceID
 		sourceLabel := fmt.Sprintf("%s:%s", event.SourceType, sourceID)
@@ -145,7 +147,7 @@ watching:
 			jp.Iteration++
 
 		case "JobWatched":
-			fmt.Fprintln(&buf, "Job URL:", job.URL)
+			fmt.Println("Job URL:", job.URL)
 			if initialized {
 				return errors.New("already received JobWatched event")
 			}
@@ -222,11 +224,10 @@ watching:
 		}
 
 		if interactive {
-			if initialized {
-				// Skip line between log output and task tree.
-				fmt.Fprintln(lcw)
-			}
-			jp.printTree(lcw, job.Tasks)
+			content := jobTreeString(jp, job.Tasks)
+			height := strings.Count(content, "\n")
+			panel.SetHeight(mathutil.IntMax(height, panel.Height()))
+			panel.SetContent(content)
 		}
 	}
 	if sub.Err() != nil {
@@ -241,26 +242,4 @@ watching:
 		return fmt.Errorf("job failure: %s", *root.Error)
 	}
 	return nil
-}
-
-const esc = 27
-
-var clearLine = fmt.Sprintf("%c[%dA%c[2K", esc, 1, esc)
-
-func clearLines(n int) {
-	_, _ = fmt.Fprint(os.Stdout, strings.Repeat(clearLine, n))
-}
-
-type lineCountingWriter struct {
-	Underlying io.Writer
-	LineCount  int
-}
-
-func (w *lineCountingWriter) Write(bs []byte) (n int, err error) {
-	for _, c := range bs {
-		if c == '\n' {
-			w.LineCount++
-		}
-	}
-	return w.Underlying.Write(bs)
 }
