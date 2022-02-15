@@ -47,6 +47,7 @@ func Main(ctx context.Context) {
 	RunServer(ctx, cmd.Flags)
 }
 
+// TODO: Some of the stuff in here should also be available to a worker daemon.
 func RunServer(ctx context.Context, flags map[string]string) {
 	logger := logging.CurrentLogger(ctx)
 
@@ -96,7 +97,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 
 	// When running as a daemon, we want to use the root filesystem to
 	// avoid accidental relative path handling and to prevent tieing up
-	// and mounted filesystem.
+	// any mounted filesystem.
 	if err := os.Chdir("/"); err != nil {
 		cmdutil.Fatalf("chdir failed: %w", err)
 	}
@@ -189,6 +190,8 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	mux := server.BuildRootMux("/_exo/", kernelCfg)
 	mux.Handle("/", gui.NewHandler(ctx, cfg.GUI))
 
+	// TODO: Can these become cron components of a "system stack"?
+	// Each execution would enqueue a job; somehow preserving backpressure.
 	{
 		ctx, shutdown := context.WithCancel(ctx)
 		defer shutdown()
