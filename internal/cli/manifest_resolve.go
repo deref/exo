@@ -8,7 +8,7 @@ import (
 
 func init() {
 	manifestCmd.AddCommand(manifestResolveCmd)
-	manifestResolveCmd.Flags().StringVar(&manifestResolveFlags.Format, "format", "", "exo, compose, procfile")
+	addManifestFormatFlag(manifestResolveCmd, &manifestResolveFlags.Format)
 }
 
 var manifestResolveFlags struct {
@@ -17,21 +17,24 @@ var manifestResolveFlags struct {
 
 var manifestResolveCmd = &cobra.Command{
 	Use:   "resolve",
-	Short: "Resolves the workspace's manifest file.",
-	Long:  `Resolves the workspace's manifest file and prints its path.`,
-	Args:  cobra.NoArgs,
+	Short: "Finds a manifest file.",
+	Long: `Finds a manifest file in the current workspace and prints its path.
+
+Ignores the workspaces's configured manifest path.`,
+	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 		var q struct {
 			Workspace *struct {
 				Manifest *struct {
 					HostPath string
-				}
+				} `graphql:"findManifest(format: $format)"`
 			} `graphql:"workspaceByRef(ref: $currentWorkspace)"`
 		}
-
 		vars := map[string]interface{}{}
-		if manifestResolveFlags.Format != "" {
+		if manifestResolveFlags.Format == "" {
+			vars["format"] = (*string)(nil)
+		} else {
 			vars["format"] = manifestResolveFlags.Format
 		}
 		mustQueryWorkspace(ctx, &q, vars)
