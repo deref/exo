@@ -1,3 +1,5 @@
+# UNUSED! Prefer exo.cue instead.
+
 exo = "0.1"
 
 components {

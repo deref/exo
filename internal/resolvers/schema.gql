@@ -15,6 +15,9 @@ type Query {
   allWorkspaces: [Workspace!]!
   workspaceById(id: String!): Workspace
   workspaceByRef(ref: String!): Workspace
+  
+  # Returns a manifest that's not on disk.
+  makeManifest(content: String!, format: String): Manifest!
 
   allStacks: [Stack!]!
   stackById(id: String!): Stack
@@ -42,6 +45,8 @@ type Mutation {
   
   createWorkspace(root: String!, projectId: String): Workspace!
   setWorkspaceStack(workspace: String!, stack: String): Stack
+  
+  formatManifest(workspace: String!, format: String, path: String): Void
 
   buildWorkspace(workspace: String!): Void
   refreshWorkspace(workspace: String!): Void
@@ -157,13 +162,18 @@ type Workspace {
   components: [Component!]!
   resources: [Resource!]!
 
-  manifest(format: String): Manifest
+  # Configured active manifest.
+  manifest: Manifest
+  # Manifest file, which may or may not be active.
+  findManifest(format: String): Manifest
 }
 
 type Manifest {
   format: String!
-  file: File!
-  hostPath: String!
+  file: File
+  hostPath: String
+  content: String!
+  formatted: String!
 }
 
 type Stack {

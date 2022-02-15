@@ -246,12 +246,22 @@ func (r *WorkspaceResolver) Resources(ctx context.Context) ([]*ResourceResolver,
 	return stack.Resources(ctx)
 }
 
-func (r *WorkspaceResolver) Manifest(ctx context.Context, args struct {
+func (r *WorkspaceResolver) Manifest(ctx context.Context) (*ManifestResolver, error) {
+	// XXX Use active manifest from workspace configuration.
+	var format *string
+	return r.findManifest(ctx, format)
+}
+
+func (r *WorkspaceResolver) FindManifest(ctx context.Context, args struct {
 	Format *string
 }) (*ManifestResolver, error) {
-	format := ""
-	if args.Format != nil {
-		format = *args.Format
-	}
+	return r.findManifest(ctx, args.Format)
+}
+
+func (r *WorkspaceResolver) findManifest(ctx context.Context, format *string) (*ManifestResolver, error) {
 	return r.Q.findManifest(ctx, r.FileSystem(), format)
+}
+
+func (r *WorkspaceResolver) manifestByPath(ctx context.Context, path string, format *string) (*ManifestResolver, error) {
+	return r.Q.manifestByPath(ctx, r.FileSystem(), path, format)
 }
