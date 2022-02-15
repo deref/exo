@@ -12,6 +12,7 @@ func init() {
 	rootCmd.AddCommand(showCmd)
 }
 
+// TODO: Generalize to be able to conveniently show any type of object.
 var showCmd = &cobra.Command{
 	Use:   "show <ref>",
 	Short: "Show a component",
