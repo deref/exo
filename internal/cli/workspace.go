@@ -2,10 +2,7 @@ package cli
 
 import (
 	"context"
-	"fmt"
-	"os"
 	"reflect"
-	"text/tabwriter"
 
 	"github.com/deref/exo/internal/api"
 	joshapi "github.com/deref/exo/internal/core/api"
@@ -36,15 +33,12 @@ If no subcommand is given, describes the current workspace.`,
 
 		var q struct {
 			Workspace *struct {
-				ID   string
-				Root string
+				ID   string `json:"id"`
+				Root string `json:"root"`
 			} `graphql:"workspaceByRef(ref: $currentWorkspace)"`
 		}
 		mustQueryWorkspace(ctx, &q, nil)
-		w := tabwriter.NewWriter(os.Stdout, 4, 8, 3, ' ', 0)
-		_, _ = fmt.Fprintf(w, "id:\t%s\n", q.Workspace.ID)
-		_, _ = fmt.Fprintf(w, "path:\t%s\n", q.Workspace.Root)
-		_ = w.Flush()
+		cmdutil.PrintCueStruct(q.Workspace)
 		return nil
 	},
 }

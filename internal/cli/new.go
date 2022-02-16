@@ -2,9 +2,9 @@ package cli
 
 import (
 	"context"
-	"fmt"
 
 	"github.com/deref/exo/internal/api"
+	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/spf13/cobra"
 )
@@ -34,7 +34,7 @@ func createComponent(ctx context.Context, name, typ string, spec interface{}) er
 	var m struct {
 		Reconciliation struct {
 			Component struct {
-				ID string
+				ID string `json:"id"`
 			}
 			Job struct {
 				ID string
@@ -49,6 +49,6 @@ func createComponent(ctx context.Context, name, typ string, spec interface{}) er
 	}); err != nil {
 		return err
 	}
-	fmt.Println("Component-ID:", m.Reconciliation.Component.ID)
+	cmdutil.PrintCueStruct(m.Reconciliation.Component)
 	return watchOwnJob(ctx, m.Reconciliation.Job.ID)
 }

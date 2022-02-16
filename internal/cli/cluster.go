@@ -2,10 +2,9 @@ package cli
 
 import (
 	"fmt"
-	"os"
-	"text/tabwriter"
 
 	"github.com/deref/exo/internal/api"
+	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/spf13/cobra"
 )
 
@@ -30,9 +29,9 @@ used.`,
 		ctx := cmd.Context()
 
 		type clusterFragment struct {
-			ID      string
-			Name    string
-			Default bool
+			ID      string `json:"id"`
+			Name    string `json:"name"`
+			Default bool   `json:"default"`
 		}
 
 		var cluster *clusterFragment
@@ -70,11 +69,7 @@ used.`,
 			}
 		}
 
-		w := tabwriter.NewWriter(os.Stdout, 4, 8, 3, ' ', 0)
-		_, _ = fmt.Fprintf(w, "id:\t%s\n", cluster.ID)
-		_, _ = fmt.Fprintf(w, "name:\t%s\n", cluster.Name)
-		_, _ = fmt.Fprintf(w, "default:\t%v\n", cluster.Default)
-		_ = w.Flush()
+		cmdutil.PrintCueStruct(cluster)
 		return nil
 	},
 }
