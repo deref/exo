@@ -108,9 +108,11 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 
 	// TODO: Validate that these indexes are getting hit.
 
+	// Nulls are distinct from themselves, so the stack serves as the parent id
+	// for the purposes of indexing root components.
 	if _, err := r.DB.ExecContext(ctx, `
 		CREATE UNIQUE INDEX IF NOT EXISTS
-		component_path ON component ( stack_id, parent_id, name )
+		component_path ON component ( stack_id, COALESCE(parent_id, stack_id), name )
 		WHERE disposed IS NULL
 	`); err != nil {
 		return fmt.Errorf("creating component_path index: %w", err)
