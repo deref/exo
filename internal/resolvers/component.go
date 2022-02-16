@@ -93,15 +93,26 @@ func (r *QueryResolver) componentByRef(ctx context.Context, ref string, stack *s
 	return component, err
 }
 
-func (r *QueryResolver) componentsByStack(ctx context.Context, stackID string) ([]*ComponentResolver, error) {
+func (r *QueryResolver) componentsByStack(ctx context.Context, stackID string, all bool) ([]*ComponentResolver, error) {
 	var rows []ComponentRow
-	err := r.DB.SelectContext(ctx, &rows, `
-		SELECT *
-		FROM component
-		WHERE stack_id = ?
-		AND disposed IS NULL
-		ORDER BY name ASC
-	`, stackID)
+	var q string
+	if all {
+		q = `
+			SELECT *
+			FROM component
+			WHERE stack_id = ?
+			ORDER BY name ASC
+		`
+	} else {
+		q = `
+			SELECT *
+			FROM component
+			WHERE stack_id = ?
+			AND disposed IS NULL
+			ORDER BY name ASC
+		`
+	}
+	err := r.DB.SelectContext(ctx, &rows, q, stackID)
 	if err != nil {
 		return nil, err
 	}
@@ -227,7 +238,24 @@ func (r *MutationResolver) DisposeComponent(ctx context.Context, args struct {
 	Stack *string
 	Ref   string
 }) (*ReconciliationResolver, error) {
-	return nil, fmt.Errorf("TODO: DisposeComponent")
+	component, err := r.componentByRef(ctx, args.Ref, args.Stack)
+	if err != nil {
+		return nil, fmt.Errorf("resolving component: %w", err)
+	}
+	if component == nil {
+		return nil, errors.New("no such component")
+	}
+	now := Now(ctx)
+	var row ComponentRow
+	if err := r.DB.GetContext(ctx, &row, `
+		UPDATE component
+		SET disposed = COALESCE(disposed, ?)
+		WHERE id = ?
+		RETURNING *
+	`, now, component.ID); err != nil {
+		return nil, err
+	}
+	return r.beginComponentReconciliation(ctx, row)
 }
 
 func (r *MutationResolver) beginComponentReconciliation(ctx context.Context, row ComponentRow) (*ReconciliationResolver, error) {

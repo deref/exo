@@ -139,8 +139,19 @@ func (r *StackResolver) Workspace(ctx context.Context) (*WorkspaceResolver, erro
 	return r.Q.workspaceByID(ctx, r.WorkspaceID)
 }
 
-func (r *StackResolver) Components(ctx context.Context) ([]*ComponentResolver, error) {
-	return r.Q.componentsByStack(ctx, r.ID)
+func (r *StackResolver) Components(ctx context.Context, args struct {
+	All *bool
+}) ([]*ComponentResolver, error) {
+	all := false
+	if args.All != nil {
+		all = *args.All
+	}
+	return r.Q.componentsByStack(ctx, r.ID, all)
+}
+
+func (r *StackResolver) components(ctx context.Context) ([]*ComponentResolver, error) {
+	all := false
+	return r.Q.componentsByStack(ctx, r.ID, all)
 }
 
 func (r *StackResolver) Resources(ctx context.Context) ([]*ResourceResolver, error) {
@@ -281,7 +292,7 @@ func (r *StackResolver) Configuration(ctx context.Context) (string, error) {
 // TODO: It might be valuable to cache this for multiple
 // ComponentResolver.evalSpec calls.
 func (r *StackResolver) configuration(ctx context.Context) (*exocue.Stack, error) {
-	components, err := r.Components(ctx)
+	components, err := r.components(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("resolving components: %w", err)
 	}

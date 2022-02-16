@@ -159,7 +159,7 @@ type Workspace {
 
   environment: Environment!
 
-  components: [Component!]!
+  components(all: Boolean): [Component!]!
   resources: [Resource!]!
 
   # Configured active manifest.
@@ -189,7 +189,7 @@ type Stack {
   workspaceId: String
   workspace: Workspace
 
-  components: [Component!]!
+  components(all: Boolean): [Component!]!
   resources: [Resource!]!
   
   configuration: String!
@@ -214,6 +214,8 @@ type Component {
   configuration: String!
 
   state: JSONObject!
+
+  disposed: Instant
 }
 
 type Reconciliation {

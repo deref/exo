@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"github.com/deref/exo/internal/core/api"
+	"github.com/deref/exo/internal/api"
 	"github.com/spf13/cobra"
 )
 
@@ -10,22 +10,27 @@ func init() {
 }
 
 var rmCmd = &cobra.Command{
-	Use:   "rm [ref ...]",
-	Short: "Remove components",
-	Long:  "Remove components.",
+	Use:   "rm <ref>",
+	Short: "Remove component",
+	// TODO: Update manifest?
+	Long: "Remove component from the current stack.",
+	Args: cobra.ExactArgs(1), // TODO: Variadic.
 	RunE: func(cmd *cobra.Command, args []string) error {
-		if len(args) == 0 {
-			return nil
-		}
 		ctx := cmd.Context()
-		cl := newClient()
-		workspace := requireCurrentWorkspace(ctx, cl)
-		output, err := workspace.DeleteComponents(ctx, &api.DeleteComponentsInput{
-			Refs: args,
-		})
-		if err != nil {
+		ref := args[0]
+		var m struct {
+			Reconciliation struct {
+				Job struct {
+					ID string
+				}
+			} `graphql:"disposeComponent(stack: $stack, ref: $component)"`
+		}
+		if err := api.Mutate(ctx, svc, &m, map[string]interface{}{
+			"stack":     currentStackRef(),
+			"component": ref,
+		}); err != nil {
 			return err
 		}
-		return watchJob(ctx, output.JobID)
+		return watchJob(ctx, m.Reconciliation.Job.ID)
 	},
 }
