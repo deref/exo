@@ -288,15 +288,15 @@ func (r *StackResolver) Configuration(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return exocue.FormatString(cfg.Eval())
+	return exocue.FormatString(cfg.Final())
 }
 
 // TODO: It might be valuable to cache this for multiple
 // ComponentResolver.evalSpec calls.
-func (r *StackResolver) configuration(ctx context.Context) (*exocue.Stack, error) {
+func (r *StackResolver) configuration(ctx context.Context) (exocue.Stack, error) {
 	components, err := r.components(ctx)
 	if err != nil {
-		return nil, fmt.Errorf("resolving components: %w", err)
+		return exocue.Stack{}, fmt.Errorf("resolving components: %w", err)
 	}
 	b := exocue.NewBuilder()
 	for _, component := range components {

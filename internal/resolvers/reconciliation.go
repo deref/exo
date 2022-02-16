@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+
+	"cuelang.org/go/cue"
 )
 
 type ReconciliationResolver struct {
@@ -32,7 +34,7 @@ func (r *MutationResolver) ReconcileComponent(ctx context.Context, args struct {
 
 	// XXX check disposal state!
 
-	rendered, err := ctrl.Render(ctx, cfg)
+	rendered, err := ctrl.Render(ctx, cue.Value(cfg))
 	if err != nil {
 		return nil, fmt.Errorf("rendering: %w", err)
 	}

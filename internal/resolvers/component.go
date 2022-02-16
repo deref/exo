@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 
-	"cuelang.org/go/cue"
 	"github.com/deref/exo/internal/gensym"
 	"github.com/deref/exo/internal/manifest/exocue"
 	. "github.com/deref/exo/internal/scalars"
@@ -284,17 +283,17 @@ func (r *ComponentResolver) Configuration(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return exocue.FormatString(exocue.StructToFile(cfg))
+	return exocue.FormatString(cfg.Final())
 }
 
-func (r *ComponentResolver) configuration(ctx context.Context) (cue.Value, error) {
+func (r *ComponentResolver) configuration(ctx context.Context) (exocue.Component, error) {
 	stack, err := r.Stack(ctx)
 	if err != nil {
-		return cue.Value{}, fmt.Errorf("resolving stack: %w", err)
+		return exocue.Component{}, fmt.Errorf("resolving stack: %w", err)
 	}
 	cfg, err := stack.configuration(ctx)
 	if err != nil {
-		return cue.Value{}, err
+		return exocue.Component{}, err
 	}
 	return cfg.Component(r.Name), nil
 }

@@ -3,6 +3,7 @@ package exocue
 import (
 	"testing"
 
+	"cuelang.org/go/cue"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -33,7 +34,7 @@ func TestManifestToComponent(t *testing.T) {
 	`)
 	cfg := b.Build()
 	spec := cfg.Component("backend")
-	assert.NoError(t, spec.Err())
+	assert.NoError(t, cue.Value(spec).Err())
 	type Spec struct {
 		Program     string
 		Arguments   []string
@@ -45,7 +46,7 @@ func TestManifestToComponent(t *testing.T) {
 		Spec Spec
 	}
 	var actual Component
-	assert.NoError(t, spec.Decode(&actual))
+	assert.NoError(t, cue.Value(spec).Decode(&actual))
 	assert.Equal(t, Component{
 		Name: "backend",
 		Type: "daemon",

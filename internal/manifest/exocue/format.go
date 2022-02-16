@@ -35,25 +35,31 @@ func FormatString(v interface{}) (string, error) {
 	return string(bs), err
 }
 
-func StructToFile(v cue.Value) *ast.File {
+func MustFormatString(v interface{}) string {
+	s, err := FormatString(v)
+	if err != nil {
+		panic(err)
+	}
+	return s
+}
+
+func Dump(v interface{}) {
+	fmt.Println(MustFormatString(v))
+}
+
+func StructToFile(v interface{}) *ast.File {
 	var decls []ast.Decl
-	switch x := v.Syntax().(type) {
+	switch v := v.(type) {
+	case cue.Value:
+		return StructToFile(v.Syntax())
 	case *ast.StructLit:
-		decls = x.Elts
+		decls = v.Elts
 	case *ast.BottomLit:
-		decls = []ast.Decl{x}
+		decls = []ast.Decl{v}
 	default:
-		panic(fmt.Errorf("cannot convert %T to file", x))
+		panic(fmt.Errorf("cannot convert %T to file", v))
 	}
 	return &ast.File{
 		Decls: decls,
 	}
-}
-
-func dumpValue(v cue.Value) {
-	bs, err := FormatBytes(v)
-	if err != nil {
-		panic(err)
-	}
-	fmt.Printf("%s\n", bs)
 }

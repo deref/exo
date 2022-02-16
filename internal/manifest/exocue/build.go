@@ -77,8 +77,8 @@ func newAnd(xs ...ast.Expr) ast.Expr {
 	return ast.NewBinExpr(token.AND, xs...)
 }
 
-func (b *Builder) Build() *Stack {
+func (b *Builder) Build() Stack {
 	cc := cuecontext.New()
-	cfg := cc.BuildExpr(declsToStruct(b.decls)).Eval()
-	return NewStack(cfg.LookupPath(cue.MakePath(cue.Str("$stack"))))
+	cfg := cc.BuildExpr(declsToStruct(b.decls))
+	return Stack(cfg.LookupPath(cue.MakePath(cue.Str("$stack"))))
 }
