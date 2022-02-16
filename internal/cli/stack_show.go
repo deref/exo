@@ -1,8 +1,7 @@
 package cli
 
 import (
-	"fmt"
-
+	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/spf13/cobra"
 )
 
@@ -23,7 +22,7 @@ var stackShowCmd = &cobra.Command{
 			} `graphql:"stackByRef(ref: $currentStack)"`
 		}
 		mustQueryStack(ctx, &q, nil)
-		fmt.Println(q.Stack.Configuration)
+		cmdutil.Show(q.Stack.Configuration)
 		return nil
 	},
 }

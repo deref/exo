@@ -1,24 +1,29 @@
 package exocue
 
-import "cuelang.org/go/cue"
+import (
+	"cuelang.org/go/cue"
+	"cuelang.org/go/cue/ast"
+)
 
-type Stack struct {
-	v cue.Value
+func Final(v cue.Value) ast.Node {
+	return StructToFile(v.Syntax(cue.Final()))
 }
 
-func NewStack(v cue.Value) *Stack {
-	dumpValue(v)
-	return &Stack{
-		v: v,
-	}
+type Stack cue.Value
+
+func (s Stack) Final() ast.Node {
+	return Final(cue.Value(s))
 }
 
-func (s *Stack) Eval() cue.Value {
-	return s.v.Eval()
-}
-
-func (s *Stack) Component(name string) cue.Value {
+func (s Stack) Component(name string) Component {
+	v := cue.Value(s)
 	componentPath := cue.MakePath(cue.Str("components"), cue.Str(name))
-	res := s.v.LookupPath(componentPath)
-	return res
+	res := v.LookupPath(componentPath)
+	return Component(res)
+}
+
+type Component cue.Value
+
+func (c Component) Final() ast.Node {
+	return Final(cue.Value(c))
 }
