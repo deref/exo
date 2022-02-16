@@ -5,11 +5,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"net/http"
 
 	"cuelang.org/go/cue"
 	"github.com/deref/exo/internal/gensym"
 	"github.com/deref/exo/internal/manifest/exocue"
 	. "github.com/deref/exo/internal/scalars"
+	"github.com/deref/exo/internal/util/errutil"
 )
 
 type ComponentResolver struct {
@@ -175,7 +177,7 @@ func (r *MutationResolver) CreateComponent(ctx context.Context, args struct {
 		return nil, fmt.Errorf("resolving stack: %w", err)
 	}
 	if stack == nil {
-		return nil, fmt.Errorf("no such stack: %q", args.Stack)
+		return nil, errutil.HTTPErrorf(http.StatusNotFound, "no such stack: %q", args.Stack)
 	}
 
 	// TODO: Validate name & spec.
