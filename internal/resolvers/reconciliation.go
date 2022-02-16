@@ -30,6 +30,8 @@ func (r *MutationResolver) ReconcileComponent(ctx context.Context, args struct {
 
 	cfg, err := component.configuration(ctx)
 
+	// XXX check disposal state!
+
 	rendered, err := ctrl.Render(ctx, cfg)
 	if err != nil {
 		return nil, fmt.Errorf("rendering: %w", err)
