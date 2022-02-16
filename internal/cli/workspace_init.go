@@ -1,8 +1,6 @@
 package cli
 
 import (
-	"fmt"
-
 	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/spf13/cobra"
@@ -33,7 +31,7 @@ working directory.`,
 		}
 		var m struct {
 			Workspace struct {
-				ID string
+				ID string `json:"id"`
 			} `graphql:"createWorkspace(root: $root)"`
 		}
 		if err := api.Mutate(ctx, svc, &m, map[string]interface{}{
@@ -41,7 +39,7 @@ working directory.`,
 		}); err != nil {
 			return err
 		}
-		fmt.Println(m.Workspace.ID)
+		cmdutil.PrintCueStruct(m.Workspace)
 		return nil
 	},
 }

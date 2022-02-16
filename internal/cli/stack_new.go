@@ -1,9 +1,8 @@
 package cli
 
 import (
-	"fmt"
-
 	"github.com/deref/exo/internal/api"
+	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/spf13/cobra"
 )
 
@@ -48,13 +47,13 @@ cluster.`,
 		}
 		var m struct {
 			Stack struct {
-				ID string
+				ID string `json:"id"`
 			} `graphql:"createStack(name: $name, workspace: $workspace, cluster: $cluster)"`
 		}
 		if err := api.Mutate(ctx, svc, &m, vars); err != nil {
 			return err
 		}
-		fmt.Println(m.Stack.ID)
+		cmdutil.PrintCueStruct(m.Stack)
 		return nil
 	},
 }

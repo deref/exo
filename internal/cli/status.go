@@ -5,11 +5,10 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"os"
 	"strconv"
-	"text/tabwriter"
 
 	"github.com/deref/exo/internal/resolvers"
+	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/deref/exo/internal/util/osutil"
 	"github.com/spf13/cobra"
 )
@@ -35,11 +34,11 @@ var statusCmd = &cobra.Command{
 		}
 		healthy, _ := checkHealthAndVersion()
 
-		w := tabwriter.NewWriter(os.Stdout, 4, 8, 3, ' ', 0)
-		_, _ = fmt.Fprintf(w, "healthy:\t%t\n", healthy)
-		_, _ = fmt.Fprintf(w, "pid:\t%s\n", pid)
-		_, _ = fmt.Fprintf(w, "gui:\t%s\n", effectiveServerURL())
-		_ = w.Flush()
+		cmdutil.PrintCueStruct(map[string]interface{}{
+			"healthy": healthy,
+			"pid":     pid,
+			"gui":     effectiveServerURL(),
+		})
 		return nil
 	},
 }

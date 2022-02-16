@@ -1,10 +1,6 @@
 package cli
 
 import (
-	"fmt"
-	"os"
-	"text/tabwriter"
-
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/spf13/cobra"
 )
@@ -29,17 +25,13 @@ If no subcommand is given, describes the current project.`,
 			Workspace *struct {
 				ID      string
 				Project struct {
-					ID          string
-					DisplayName string
+					ID          string `json:"id"`
+					DisplayName string `json:"displayName"`
 				}
 			} `graphql:"workspaceByRef(ref: $currentWorkspace)"`
 		}
 		mustQueryWorkspace(ctx, &q, nil)
-		project := q.Workspace.Project
-		w := tabwriter.NewWriter(os.Stdout, 4, 8, 3, ' ', 0)
-		_, _ = fmt.Fprintf(w, "id:\t%s\n", project.ID)
-		_, _ = fmt.Fprintf(w, "display-name:\t%s\n", project.DisplayName)
-		_ = w.Flush()
+		cmdutil.PrintCueStruct(q.Workspace.Project)
 		return nil
 	},
 }

@@ -129,7 +129,9 @@ To set the owner to a component, supply '--component=ref', which implies
 		if err := api.Mutate(ctx, svc, &m, vars); err != nil {
 			return err
 		}
-		fmt.Println("resource:", m.Resource.ID)
+		cmdutil.PrintCueStruct(map[string]interface{}{
+			"id": m.Resource.ID,
+		})
 		if rootPersistentFlags.Async {
 			return nil
 		}

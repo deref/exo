@@ -2,10 +2,7 @@ package cli
 
 import (
 	"context"
-	"fmt"
-	"os"
 	"reflect"
-	"text/tabwriter"
 
 	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/util/cmdutil"
@@ -32,17 +29,13 @@ workspace.`,
 
 		var q struct {
 			Stack *struct {
-				ID   string
-				Name string
+				ID   string `json:"id"`
+				Name string `json:"name"`
 			} `graphql:"stackByRef(ref: $currentStack)"`
 		}
 		mustQueryStack(ctx, &q, nil)
 
-		stack := q.Stack
-		w := tabwriter.NewWriter(os.Stdout, 4, 8, 3, ' ', 0)
-		_, _ = fmt.Fprintf(w, "id:\t%s\n", stack.ID)
-		_, _ = fmt.Fprintf(w, "name:\t%s\n", stack.Name)
-		_ = w.Flush()
+		cmdutil.PrintCueStruct(q.Stack)
 		return nil
 	},
 }
