@@ -5,9 +5,11 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"net/http"
 
 	"github.com/deref/exo/internal/gensym"
 	"github.com/deref/exo/internal/manifest/exocue"
+	"github.com/deref/exo/internal/util/errutil"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -249,7 +251,7 @@ func (r *MutationResolver) SetWorkspaceStack(ctx context.Context, args struct {
 			return nil, fmt.Errorf("resolving stack: %w", err)
 		}
 		if stack == nil {
-			return nil, fmt.Errorf("no such stack: %q", *args.Stack)
+			return nil, errutil.HTTPErrorf(http.StatusNotFound, "no such stack: %q", *args.Stack)
 		}
 		stackID = &stack.ID
 	}
