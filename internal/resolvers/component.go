@@ -98,11 +98,13 @@ func (r *QueryResolver) componentByRef(ctx context.Context, ref string, stack *s
 func (r *QueryResolver) componentsByStack(ctx context.Context, stackID string, all bool) ([]*ComponentResolver, error) {
 	var rows []ComponentRow
 	var q string
+	// Utilizes the `component_path` index.
 	if all {
 		q = `
 			SELECT *
 			FROM component
 			WHERE stack_id = ?
+			AND COALESCE(parent_id, stack_id) = stack_id
 			ORDER BY name ASC
 		`
 	} else {
@@ -110,6 +112,7 @@ func (r *QueryResolver) componentsByStack(ctx context.Context, stackID string, a
 			SELECT *
 			FROM component
 			WHERE stack_id = ?
+			AND COALESCE(parent_id, stack_id) = stack_id
 			AND disposed IS NULL
 			ORDER BY name ASC
 		`
@@ -128,7 +131,7 @@ func (r *QueryResolver) componentsByStack(ctx context.Context, stackID string, a
 	return resolvers, nil
 }
 
-func (r *QueryResolver) componentsByParent(ctx context.Context, stackID string) ([]*ComponentResolver, error) {
+func (r *QueryResolver) componentsByParent(ctx context.Context, parentID string) ([]*ComponentResolver, error) {
 	var rows []ComponentRow
 	err := r.DB.SelectContext(ctx, &rows, `
 		SELECT *
@@ -136,7 +139,7 @@ func (r *QueryResolver) componentsByParent(ctx context.Context, stackID string) 
 		WHERE parent_id = ?
 		AND disposed IS NULL
 		ORDER BY name ASC
-	`, stackID)
+	`, parentID)
 	if err != nil {
 		return nil, err
 	}
