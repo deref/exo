@@ -32,7 +32,7 @@ func TestManifestToComponent(t *testing.T) {
 			}
 		}
 	`)
-	cfg := b.Build()
+	cfg := b.BuildStack()
 	spec := cfg.Component("backend")
 	assert.NoError(t, cue.Value(spec).Err())
 	type Spec struct {

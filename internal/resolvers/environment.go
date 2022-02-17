@@ -46,3 +46,11 @@ func EnvMapToEnvironment(m map[string]string, source string) *EnvironmentResolve
 	}
 	return environment
 }
+
+func (r *EnvironmentResolver) AsMap() scalars.JSONObject {
+	obj := make(scalars.JSONObject)
+	for _, variable := range r.Variables {
+		obj[variable.Name] = variable.Value
+	}
+	return obj
+}

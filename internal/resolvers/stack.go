@@ -294,15 +294,28 @@ func (r *StackResolver) Configuration(ctx context.Context) (string, error) {
 // TODO: It might be valuable to cache this for multiple
 // ComponentResolver.evalSpec calls.
 func (r *StackResolver) configuration(ctx context.Context) (exocue.Stack, error) {
+	b := exocue.NewBuilder()
+	if err := r.addConfiguration(ctx, b); err != nil {
+		return exocue.Stack{}, err
+	}
+	return b.BuildStack(), nil
+}
+
+func (r *StackResolver) addConfiguration(ctx context.Context, b *exocue.Builder) error {
+	cluster, err := r.Cluster(ctx)
+	if err != nil {
+		return fmt.Errorf("resolving cluster: %w", err)
+	}
+	cluster.addConfiguration(ctx, b)
+
 	components, err := r.components(ctx)
 	if err != nil {
-		return exocue.Stack{}, fmt.Errorf("resolving components: %w", err)
+		return fmt.Errorf("resolving components: %w", err)
 	}
-	b := exocue.NewBuilder()
 	for _, component := range components {
 		b.AddComponent(component.ID, component.Name, component.Type, component.Spec)
 	}
-	return b.Build(), nil
+	return nil
 }
 
 func (r *StackResolver) Environment(ctx context.Context) (*EnvironmentResolver, error) {
