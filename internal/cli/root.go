@@ -50,7 +50,7 @@ func isDebugMode() bool {
 	return rootPersistentFlags.Debug
 }
 
-func peerMode() bool {
+func isPeerMode() bool {
 	return true // XXX configurable.
 }
 
@@ -58,7 +58,7 @@ func peerMode() bool {
 func workOwnJobs() bool {
 	// When the CLI is in peer mode, there is generally no worker pool.
 	// For development convenience, always work our own jobs from a peer CLI.
-	return peerMode()
+	return isPeerMode()
 }
 
 func concurrencyLimit() int {
@@ -101,7 +101,7 @@ func Main() {
 	}
 
 	svc = newLazyService(func() api.Service {
-		if peerMode() {
+		if isPeerMode() {
 			svc, err := peer.NewPeer(ctx, peer.PeerConfig{
 				VarDir:      cfg.VarDir,
 				GUIEndpoint: effectiveServerURL(),
@@ -121,7 +121,10 @@ func Main() {
 		}
 	}()
 
-	ctx = logging.ContextWithLogger(ctx, api.NewSystemLogger(svc))
+	// Capture logging in database, but also log to stderr when debugging.
+	ctx = logging.ContextWithLogger(ctx, &Logger{
+		underlying: api.NewSystemLogger(svc),
+	})
 
 	// This telemetry object will be replaced by one that includes the
 	// device ID when the daemon starts. For one-off commands, it is

@@ -48,6 +48,10 @@ If refs are provided, filters for the logs of those processes.`,
 func tailLogs(ctx context.Context, workspace *joshclient.Workspace, streamRefs []string, stopOnError bool) error {
 	ctx, cancel := context.WithCancel(ctx)
 	defer cancel()
+
+	beginExclusive()
+	defer endExclusive()
+
 	var eg errgroup.Group
 	interactive := !logFlags.NoFollow
 	if interactive {
