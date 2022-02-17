@@ -138,6 +138,8 @@ type Cluster {
   name: String!
   default: Boolean!
   environment: Environment!
+
+  configuration: String!
 }
 
 type Project {
@@ -230,6 +232,7 @@ type Reconciliation {
 }
 
 type Environment {
+  asMap: JSONObject!
   variables: [Variable!]!
 }
 

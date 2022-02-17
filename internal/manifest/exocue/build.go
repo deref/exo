@@ -73,12 +73,32 @@ func (b *Builder) AddComponent(id string, name string, typ string, spec string) 
 	b.addDecl([]string{"$stack", "components", name}, decl)
 }
 
+func (b *Builder) AddCluster(id string, name string, environment map[string]interface{}) {
+	envElems := make([]interface{}, 0, len(environment)*2)
+	for k, v := range environment {
+		envElems = append(envElems, k, ast.NewString(v.(string)))
+	}
+	b.addDecl([]string{"$cluster"}, ast.NewStruct(
+		"id", ast.NewString(id),
+		"name", ast.NewString(name),
+		"environment", ast.NewStruct(envElems...),
+	))
+}
+
 func newAnd(xs ...ast.Expr) ast.Expr {
 	return ast.NewBinExpr(token.AND, xs...)
 }
 
-func (b *Builder) Build() Stack {
+func (b *Builder) build(key string) cue.Value {
 	cc := cuecontext.New()
 	cfg := cc.BuildExpr(declsToStruct(b.decls))
-	return Stack(cfg.LookupPath(cue.MakePath(cue.Str("$stack"))))
+	return cfg.LookupPath(cue.MakePath(cue.Str(key)))
+}
+
+func (b *Builder) BuildStack() Stack {
+	return Stack(b.build("$stack"))
+}
+
+func (b *Builder) BuildCluster() Cluster {
+	return Cluster(b.build("$cluster"))
 }

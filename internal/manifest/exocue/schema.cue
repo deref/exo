@@ -8,6 +8,12 @@ $Manifest: {
 
 $Environment: { [string]: string }
 
+$Cluster: {
+  id: string
+  name: string
+  environment: $Environment
+}
+
 $Components: {
   [Name=string]: $Component & {
     name: Name
@@ -25,7 +31,7 @@ $Component: {
 }
 
 $Stack: {
-  environment: $Environment
+  environment: $Environment & $cluster.environment
   components: $Components
 }
 
@@ -40,4 +46,5 @@ $Daemon: $component=($Component & {
   environment: $stack.environment
 })
 
+$cluster: $Cluster
 $stack: $Stack

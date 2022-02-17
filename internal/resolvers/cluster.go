@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"time"
 
+	"github.com/deref/exo/internal/manifest/exocue"
 	"github.com/deref/exo/internal/scalars"
 	"github.com/deref/exo/internal/util/shellutil"
 )
@@ -158,4 +159,29 @@ func (r *MutationResolver) refreshCluster(ctx context.Context, ref string) (*Clu
 		envObj[k] = v
 	}
 	return r.updateCluster(ctx, ref, &envObj)
+}
+
+func (r *ClusterResolver) Configuration(ctx context.Context) (string, error) {
+	cfg, err := r.configuration(ctx)
+	if err != nil {
+		return "", err
+	}
+	return exocue.FormatString(cfg.Final())
+}
+
+func (r *ClusterResolver) configuration(ctx context.Context) (exocue.Cluster, error) {
+	b := exocue.NewBuilder()
+	if err := r.addConfiguration(ctx, b); err != nil {
+		return exocue.Cluster{}, err
+	}
+	return b.BuildCluster(), nil
+}
+
+func (r *ClusterResolver) addConfiguration(ctx context.Context, b *exocue.Builder) error {
+	env, err := r.Environment(ctx)
+	if err != nil {
+		return fmt.Errorf("resolving environment: %w", err)
+	}
+	b.AddCluster(r.ID, r.Name, env.AsMap())
+	return nil
 }
