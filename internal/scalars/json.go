@@ -27,11 +27,15 @@ func (obj *JSONObject) UnmarshalGraphQL(input interface{}) (err error) {
 }
 
 func (obj *JSONObject) Scan(src interface{}) error {
-	s, ok := src.(string)
-	if !ok {
+	switch s := src.(type) {
+	case nil:
+		*obj = nil
+		return nil
+	case string:
+		return json.Unmarshal([]byte(s), (*map[string]interface{})(obj))
+	default:
 		return fmt.Errorf("expected string, got %T", src)
 	}
-	return json.Unmarshal([]byte(s), (*map[string]interface{})(obj))
 }
 
 func (obj JSONObject) Value() (driver.Value, error) {

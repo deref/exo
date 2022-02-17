@@ -19,30 +19,39 @@ var envCmd = &cobra.Command{
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		env := osutil.EnvMapToDotEnv(getEnvMap(ctx))
-		for _, kvp := range env {
-			fmt.Println(kvp)
-		}
+		showEnvironment(getWorkspaceEnvironment(ctx))
 		return nil
 	},
 }
 
-func getEnvMap(ctx context.Context) map[string]string {
+func getWorkspaceEnvironment(ctx context.Context) environmentFragment {
 	var q struct {
 		Workspace *struct {
-			Environment struct {
-				Variables []struct {
-					Name  string
-					Value string
-				}
-			}
+			Environment environmentFragment
 		} `graphql:"workspaceByRef(ref: $currentWorkspace)"`
 	}
 	mustQueryWorkspace(ctx, &q, nil)
-	vars := q.Workspace.Environment.Variables
-	m := make(map[string]string, len(vars))
-	for _, v := range vars {
-		m[v.Name] = v.Value
+	return q.Workspace.Environment
+}
+
+func showEnvironment(env environmentFragment) {
+	for _, v := range env.Variables {
+		fmt.Println(osutil.FormatDotEnvEntry(v.Name, v.Value))
+	}
+}
+
+type environmentFragment struct {
+	Variables []struct {
+		Name  string
+		Value string
+	}
+}
+
+func environmentFragmentToMap(fragment environmentFragment) map[string]string {
+	variables := fragment.Variables
+	m := make(map[string]string, len(variables))
+	for _, variable := range variables {
+		m[variable.Name] = variable.Value
 	}
 	return m
 }

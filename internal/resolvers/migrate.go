@@ -8,16 +8,21 @@ import (
 	"fmt"
 
 	"github.com/deref/exo/internal/gensym"
+	"github.com/deref/exo/internal/scalars"
 	"github.com/mattn/go-sqlite3"
 )
 
 func (r *MutationResolver) Migrate(ctx context.Context) error {
+	now := scalars.Now(ctx)
+
 	// Cluster.
 
 	if _, err := r.DB.ExecContext(ctx, `
 		CREATE TABLE IF NOT EXISTS cluster (
 			id TEXT NOT NULL PRIMARY KEY,
-			name TEXT NOT NULL
+			name TEXT NOT NULL,
+			environment_variables TEXT,
+			updated TEXT NOT NULL
 	);`); err != nil {
 		return fmt.Errorf("creating cluster table: %w", err)
 	}
@@ -31,9 +36,9 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 
 	// TODO: Don't do this as part of migrate. SEE NOTE [DEFAULT_CLUSTER].
 	if _, err := r.DB.ExecContext(ctx, `
-		INSERT INTO cluster ( id, name )
-		VALUES ( ?, ? )
-	`, gensym.RandomBase32(), "local",
+		INSERT INTO cluster ( id, name, updated )
+		VALUES ( ?, ?, ? )
+	`, gensym.RandomBase32(), "local", now,
 	); err != nil {
 		var sqlErr sqlite3.Error
 		if !(errors.As(err, &sqlErr) && sqlErr.ExtendedCode == sqlite3.ErrConstraintUnique) {

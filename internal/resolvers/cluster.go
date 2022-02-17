@@ -3,20 +3,28 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	"time"
+
+	"github.com/deref/exo/internal/scalars"
+	"github.com/deref/exo/internal/util/shellutil"
 )
 
 type ClusterResolver struct {
-	Q *QueryResolver
+	Q *RootResolver
 	ClusterRow
 }
 
 type ClusterRow struct {
-	ID   string `db:"id"`
-	Name string `db:"name"`
+	ID                   string             `db:"id"`
+	Name                 string             `db:"name"`
+	EnvironmentVariables scalars.JSONObject `db:"environment_variables"`
+	Updated              scalars.Instant    `db:"updated"`
 }
 
 func (r *QueryResolver) clusterByID(ctx context.Context, id *string) (*ClusterResolver, error) {
-	clus := &ClusterResolver{}
+	clus := &ClusterResolver{
+		Q: r,
+	}
 	err := r.getRowByKey(ctx, &clus.ClusterRow, `
 		SELECT *
 		FROM cluster
@@ -85,4 +93,69 @@ func (r *QueryResolver) DefaultCluster(ctx context.Context) (*ClusterResolver, e
 // SEE NOTE [DEFAULT_CLUSTER].
 func (r *ClusterResolver) Default() bool {
 	return r.Name == "local"
+}
+
+func (r *MutationResolver) UpdateCluster(ctx context.Context, args struct {
+	Ref         string
+	Environment *scalars.JSONObject
+}) (*ClusterResolver, error) {
+	return r.updateCluster(ctx, args.Ref, args.Environment)
+}
+
+func (r *MutationResolver) updateCluster(ctx context.Context, ref string, environment *scalars.JSONObject) (*ClusterResolver, error) {
+	now := scalars.Now(ctx)
+	var row ClusterRow
+	if err := r.DB.GetContext(ctx, &row, `
+		UPDATE cluster
+		SET
+			environment_variables = COALESCE(?, environment_variables),
+			updated = ?
+		WHERE id = ? OR name = ?
+		RETURNING *
+	`,
+		environment,
+		now,
+		ref, ref,
+	); err != nil {
+		return nil, err
+	}
+	return &ClusterResolver{
+		Q:          r,
+		ClusterRow: row,
+	}, nil
+}
+
+const clusterTTL = 3 * time.Second
+
+func (r *ClusterResolver) Environment(ctx context.Context) (*EnvironmentResolver, error) {
+	variables := r.EnvironmentVariables
+
+	now := scalars.Now(ctx)
+	if r.EnvironmentVariables == nil || now.Sub(r.Updated) < clusterTTL {
+		r, err := r.Q.refreshCluster(ctx, r.ID)
+		if err != nil {
+			return nil, err
+		}
+		variables = r.EnvironmentVariables
+	}
+
+	return JSONObjectToEnvironment(variables, "Cluster")
+}
+
+func (r *MutationResolver) RefreshCluster(ctx context.Context, args struct {
+	Ref string
+}) (*ClusterResolver, error) {
+	return r.refreshCluster(ctx, args.Ref)
+}
+
+func (r *MutationResolver) refreshCluster(ctx context.Context, ref string) (*ClusterResolver, error) {
+	envMap, err := shellutil.GetUserEnvironment(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("querying environment: %w", err)
+	}
+	envObj := make(scalars.JSONObject, len(envMap))
+	for k, v := range envMap {
+		envObj[k] = v
+	}
+	return r.updateCluster(ctx, ref, &envObj)
 }
