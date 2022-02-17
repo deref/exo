@@ -30,7 +30,7 @@ when the job terminates.
 	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		if !peerMode() {
+		if !isPeerMode() {
 			return errors.New("worker command only available in peer mode")
 		}
 

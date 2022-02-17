@@ -55,6 +55,9 @@ type jobEventJobFragment struct {
 }
 
 func watchJob(ctx context.Context, jobID string) error {
+	beginExclusive()
+	defer endExclusive()
+
 	type watchJobSubscription struct {
 		Event jobEventFragment `graphql:"watchJob(id: $id, debug: $debug)"`
 	}
