@@ -72,3 +72,19 @@ func (inst Instant) String() string {
 func (inst Instant) UnixMilli() int64 {
 	return inst.t.UnixMilli()
 }
+
+func (inst Instant) Before(other Instant) bool {
+	return inst.GoTime().Before(other.GoTime())
+}
+
+func (inst Instant) After(other Instant) bool {
+	return inst.GoTime().After(other.GoTime())
+}
+
+func (inst Instant) Equal(other Instant) bool {
+	return inst.GoTime().Equal(other.GoTime())
+}
+
+func (inst Instant) Sub(other Instant) time.Duration {
+	return inst.GoTime().Sub(other.GoTime())
+}

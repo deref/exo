@@ -10,6 +10,7 @@ import (
 	"strings"
 
 	"github.com/deref/exo/internal/util/osutil"
+	"github.com/deref/exo/internal/util/shellutil"
 	"github.com/deref/exo/internal/util/which"
 	"github.com/spf13/cobra"
 )
@@ -36,7 +37,7 @@ zsh, may require additional steps to clear completion caches.`,
 		}
 
 		if shell == "" {
-			shell = inferShell()
+			shell = shellutil.IdentifyUserShell()
 		}
 		if shell == "" {
 			return errors.New("cannot determine shell")
@@ -99,38 +100,11 @@ func completionPathCandidates(shell string) []string {
 	return paths[:dest]
 }
 
-// Returns the path of the current user's default shell.
-func getUserShell() string {
-	sudoUser, _ := os.LookupEnv("SUDO_USER")
-	if sudoUser != "" {
-		// TODO: Query the user's shell from getent or similar on Linux.
-		return ""
-	}
-	shell, _ := os.LookupEnv("SHELL")
-	return shell
-}
-
-// Returns the name of the current user's default shell.
-func inferShell() string {
-	shellPath := getUserShell()
-	for _, shellName := range []string{
-		"bash",
-		"zsh",
-		"fish",
-	} {
-		if strings.HasSuffix(shellPath, "/"+shellName) {
-			return shellName
-		}
-	}
-	// TODO: Detect powershell.
-	return ""
-}
-
 const completionPathBashLinux = "/etc/bash_completion.d/exo"
 const completionPathBashMac = "/usr/local/etc/bash_completion.d/exo"
 
 func completionPathZsh() string {
-	shell := getUserShell()
+	shell := shellutil.GetUserShellPath()
 	if !strings.HasSuffix(shell, "/zsh") {
 		shell, _ = which.Which("zsh")
 	}

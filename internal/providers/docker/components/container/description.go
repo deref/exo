@@ -4,12 +4,12 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
-	"strings"
 	"time"
 
 	"github.com/deref/exo/internal/core/api"
 	"github.com/deref/exo/internal/providers/docker"
 	"github.com/deref/exo/internal/util/jsonutil"
+	"github.com/deref/exo/internal/util/osutil"
 	dockerclient "github.com/docker/docker/client"
 	"github.com/moby/moby/errdefs"
 	"golang.org/x/sync/errgroup"
@@ -48,9 +48,9 @@ func GetProcessDescription(ctx context.Context, dockerClient *dockerclient.Clien
 	process.CreateTime = &createTime
 
 	process.EnvVars = map[string]string{}
-	for _, env := range containerInfo.Config.Env {
-		decomposedEnv := strings.SplitN(env, "=", 2)
-		process.EnvVars[decomposedEnv[0]] = decomposedEnv[1]
+	for _, entry := range containerInfo.Config.Env {
+		name, value := osutil.ParseEnvvEntry(entry)
+		process.EnvVars[name] = value
 	}
 
 	process.Ports = []uint32{}

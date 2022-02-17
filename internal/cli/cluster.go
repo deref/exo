@@ -26,50 +26,66 @@ from the current stack.  If there is no current stack, the default cluster is
 used.`,
 	Args: cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		ctx := cmd.Context()
-
-		type clusterFragment struct {
-			ID      string `json:"id"`
-			Name    string `json:"name"`
-			Default bool   `json:"default"`
+		cluster, err := lookupCluster(cmd)
+		if err != nil {
+			return err
 		}
-
-		var cluster *clusterFragment
-		if cmd.Flags().Lookup("cluster").Changed {
-			var q struct {
-				Cluster *clusterFragment `graphql:"clusterByRef(ref: $cluster)"`
-			}
-			if err := api.Query(ctx, svc, &q, map[string]interface{}{
-				"cluster": rootPersistentFlags.Cluster,
-			}); err != nil {
-				return err
-			}
-			cluster = q.Cluster
-			if cluster == nil {
-				return fmt.Errorf("no such cluster: %q", rootPersistentFlags.Cluster)
-			}
-		} else {
-			var q struct {
-				Stack *struct {
-					Cluster clusterFragment
-				} `graphql:"stackByRef(ref: $stack)"`
-				DefaultCluster *clusterFragment `graphql:"defaultCluster"`
-			}
-			if err := api.Query(ctx, svc, &q, map[string]interface{}{
-				"stack": currentStackRef(),
-			}); err != nil {
-				return err
-			}
-			if q.Stack != nil {
-				cluster = &q.Stack.Cluster
-			} else if q.DefaultCluster != nil {
-				cluster = q.DefaultCluster
-			} else {
-				return fmt.Errorf("no current cluster")
-			}
-		}
-
 		cmdutil.PrintCueStruct(cluster)
 		return nil
 	},
+}
+
+type clusterFragment struct {
+	ID          string
+	Name        string
+	Default     bool
+	Environment environmentFragment
+}
+
+func lookupCluster(cmd *cobra.Command) (*clusterFragment, error) {
+	ctx := cmd.Context()
+	if cmd.Flags().Lookup("cluster").Changed {
+		var q struct {
+			Cluster *clusterFragment `graphql:"clusterByRef(ref: $cluster)"`
+		}
+		if err := api.Query(ctx, svc, &q, map[string]interface{}{
+			"cluster": rootPersistentFlags.Cluster,
+		}); err != nil {
+			return nil, err
+		}
+		if q.Cluster == nil {
+			return nil, fmt.Errorf("no such cluster: %q", rootPersistentFlags.Cluster)
+		}
+		return q.Cluster, nil
+	} else {
+		var q struct {
+			Stack *struct {
+				Cluster clusterFragment
+			} `graphql:"stackByRef(ref: $stack)"`
+			DefaultCluster clusterFragment `graphql:"defaultCluster"`
+		}
+		if err := api.Query(ctx, svc, &q, map[string]interface{}{
+			"stack": currentStackRef(),
+		}); err != nil {
+			return nil, err
+		}
+		if q.Stack != nil {
+			return &q.Stack.Cluster, nil
+		} else {
+			return &q.DefaultCluster, nil
+		}
+	}
+}
+
+func showCluster(cluster *clusterFragment) {
+	env := make(map[string]interface{}, len(cluster.Environment.Variables))
+	for _, v := range cluster.Environment.Variables {
+		env[v.Name] = v.Value
+	}
+	cmdutil.PrintCueStruct(map[string]interface{}{
+		"id":          cluster.ID,
+		"name":        cluster.Name,
+		"default":     cluster.Default,
+		"environment": env,
+	})
 }

@@ -153,10 +153,17 @@ func (r *WorkspaceResolver) componentByRef(ctx context.Context, ref string) (*Co
 	return stack.componentByRef(ctx, ref)
 }
 
-func (r *WorkspaceResolver) Environment(ctx context.Context) *EnvironmentResolver {
-	return &EnvironmentResolver{
-		Workspace: r,
+func (r *WorkspaceResolver) Environment(ctx context.Context) (*EnvironmentResolver, error) {
+	stack, err := r.Stack(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("resolving stack: %w", err)
 	}
+	if stack == nil {
+		// TODO: When there is no current stack, it may be useful to return the
+		// environment of the workspace's cluster/host.
+		return nil, errors.New("no current stack")
+	}
+	return stack.Environment(ctx)
 }
 
 func (r *WorkspaceResolver) FileSystem() *FileSystemResolver {

@@ -22,12 +22,16 @@ var execCmd = &cobra.Command{
 	DisableFlagsInUseLine: true,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		env := osutil.EnvMapToEnvv(getEnvMap(ctx))
+		environment := getWorkspaceEnvironment(ctx)
+		envv := make([]string, 0, len(environment.Variables))
+		for _, variable := range environment.Variables {
+			envv = append(envv, osutil.FormatEnvvEntry(variable.Name, variable.Value))
+		}
 		program, err := which.Which(args[0])
 		if err != nil {
 			return fmt.Errorf("resolving program: %w", err)
 		}
-		err = syscall.Exec(program, args, env)
+		err = syscall.Exec(program, args, envv)
 		cmdutil.Fatalf("%v", err)
 		panic("unreachable")
 	},
