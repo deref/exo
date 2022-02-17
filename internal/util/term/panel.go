@@ -26,6 +26,10 @@ func (p *BottomPanel) Height() int {
 // Set the panel height. The rendered height may be smaller than the requested
 // height, if the requested height exceeds the terminal height minus ScrollOff.
 func (p *BottomPanel) SetHeight(value int) {
+	for p.height < value {
+		fmt.Println()
+		p.height++
+	}
 	p.height = value
 	p.render()
 }
