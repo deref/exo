@@ -160,6 +160,10 @@ func (r *StackResolver) Resources(ctx context.Context) ([]*ResourceResolver, err
 	return r.Q.resourcesByStack(ctx, r.ID)
 }
 
+func (r *StackResolver) Processes(ctx context.Context) ([]*ProcessResolver, error) {
+	return r.Q.processesByStack(ctx, r.ID)
+}
+
 func (r *MutationResolver) CreateStack(ctx context.Context, args struct {
 	Workspace *string
 	Name      *string
@@ -227,6 +231,12 @@ func (r *MutationResolver) CreateStack(ctx context.Context, args struct {
 		Q:        r,
 		StackRow: row,
 	}, nil
+}
+
+func (r *MutationResolver) RefreshStack(ctx context.Context, args struct {
+	Ref string
+}) (*ReconciliationResolver, error) {
+	return nil, errors.New("TODO: refreshStack")
 }
 
 func (r *StackResolver) componentByRef(ctx context.Context, ref string) (*ComponentResolver, error) {

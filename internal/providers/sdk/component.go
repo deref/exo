@@ -34,6 +34,25 @@ func decodeComponentConfig(ctx context.Context, typ reflect.Type, v cue.Value) (
 	return out, err
 }
 
+func (c *Controller) Initialize(ctx context.Context, cfg cue.Value) (err error) {
+	defer errutil.RecoverTo(&err)
+	method := c.impl.MethodByName("Initialize")
+	if !method.IsValid() {
+		// Default behavior is a no-op.
+		return nil
+	}
+	unmarshaledCfg, err := decodeComponentConfig(ctx, method.Type().In(1), cfg)
+	if err != nil {
+		return err
+	}
+	res := method.Call([]reflect.Value{
+		reflect.ValueOf(ctx),
+		reflect.ValueOf(unmarshaledCfg),
+	})
+	err, _ = res[0].Interface().(error)
+	return err
+}
+
 func (c *Controller) Render(ctx context.Context, cfg cue.Value) (children []RenderedComponent, err error) {
 	defer errutil.RecoverTo(&err)
 	method := c.impl.MethodByName("Render")

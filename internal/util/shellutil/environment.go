@@ -59,6 +59,9 @@ func GetUserEnvironment(ctx context.Context) (map[string]string, error) {
 				// NOTE: printenv uses envv, which will produce incorrect results in the
 				// presence of newlines or other special characters.
 				// TODO: Use an alternative utility that uses DotEnv format.
+				// ^^^^^ Another approach would be to run `exo cluster env set` or
+				// something like that, which would bypass the need to parse any
+				// output.
 				name, value := osutil.ParseEnvvEntry(line)
 				env[name] = value
 			}

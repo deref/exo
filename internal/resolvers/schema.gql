@@ -91,12 +91,16 @@ type Mutation {
   cancelTask(id: String!): Void
 
   createStack(cluster: String, workspace: String, name: String): Stack!
+  refreshStack(ref: String!): Reconciliation!
 
   createComponent(stack: String!, name: String! type: String! spec: String!): Reconciliation!
   updateComponent(stack: String, ref: String!, newName: String, newSpec: String): Reconciliation!
   disposeComponent(stack: String, ref: String!): Reconciliation!
 
   reconcileComponent(stack: String, ref: String!): Void
+  initializeComponent(id: String!): Void
+  transitionComponent(id: String!, spec: String!): Void
+  shutdownComponent(id: String!): Void
 
   # Debug/testing.
   sleep(seconds: Float!): Void
@@ -196,6 +200,7 @@ type Stack {
   workspace: Workspace
 
   components(all: Boolean): [Component!]!
+  processes: [Process!]!
   resources: [Resource!]!
   
   configuration: String!
@@ -227,8 +232,15 @@ type Component {
 }
 
 type Reconciliation {
-  component: Component!
+  stack: Stack!
+  # Non-null, if initiated on an individual component.
+  component: Component
   job: Job!
+}
+
+type Process {
+  id: String!
+  name: String!
 }
 
 type Environment {
@@ -310,6 +322,8 @@ type Task {
   children: [Task!]!
   mutation: String!
   arguments: JSONObject!
+  # If non-null, unique within a mutation to allow for upserts.
+  key: String
   label: String!
   workerId: String
   created: Instant!
