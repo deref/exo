@@ -7,8 +7,10 @@ import (
 	"fmt"
 	"net/http"
 
+	"cuelang.org/go/cue"
 	"github.com/deref/exo/internal/gensym"
 	"github.com/deref/exo/internal/manifest/exocue"
+	"github.com/deref/exo/internal/providers/sdk"
 	. "github.com/deref/exo/internal/scalars"
 	"github.com/deref/exo/internal/util/errutil"
 )
@@ -182,15 +184,28 @@ func (r *MutationResolver) CreateComponent(ctx context.Context, args struct {
 		return nil, errutil.HTTPErrorf(http.StatusNotFound, "no such stack: %q", args.Stack)
 	}
 
-	// TODO: Validate name & spec.
+	return r.createComponent(ctx, stack.ID /* parentID: */, nil, args.Type, args.Name, args.Spec, "")
+}
+
+type NewComponentInput struct {
+	Type string // XXX doesn't belong here?
+	Name string
+	Key  string
+	Spec string
+}
+
+func (r *MutationResolver) createComponent(ctx context.Context, stackID string, parentID *string, typ, name, spec, key string) (*ReconciliationResolver, error) {
+	// TODO: Validate type, name, key & spec.
 
 	row := ComponentRow{
-		ID:      gensym.RandomBase32(),
-		StackID: stack.ID,
-		Name:    args.Name,
-		Type:    args.Type,
-		Spec:    args.Spec,
-		State:   make(JSONObject),
+		ID:       gensym.RandomBase32(),
+		StackID:  stackID,
+		ParentID: parentID,
+		Name:     name,
+		Type:     typ,
+		Key:      key,
+		Spec:     spec,
+		State:    make(JSONObject),
 	}
 	if err := r.insertRow(ctx, "component", row); err != nil {
 		if isSqlConflict(err) {
@@ -198,7 +213,7 @@ func (r *MutationResolver) CreateComponent(ctx context.Context, args struct {
 		}
 		return nil, fmt.Errorf("inserting: %w", err)
 	}
-	return r.beginComponentReconciliation(ctx, row)
+	return r.startComponentReconciliation(ctx, row)
 }
 
 func (r *MutationResolver) UpdateComponent(ctx context.Context, args struct {
@@ -235,7 +250,7 @@ func (r *MutationResolver) UpdateComponent(ctx context.Context, args struct {
 	`, spec, name, component.ID); err != nil {
 		return nil, err
 	}
-	return r.beginComponentReconciliation(ctx, row)
+	return r.startComponentReconciliation(ctx, row)
 }
 
 func (r *MutationResolver) DisposeComponent(ctx context.Context, args struct {
@@ -249,32 +264,45 @@ func (r *MutationResolver) DisposeComponent(ctx context.Context, args struct {
 	if component == nil {
 		return nil, errors.New("no such component")
 	}
+	return r.disposeComponent(ctx, component.ID)
+}
+
+func (r *MutationResolver) disposeComponent(ctx context.Context, id string) (*ReconciliationResolver, error) {
 	now := Now(ctx)
 	var row ComponentRow
 	if err := r.DB.GetContext(ctx, &row, `
 		UPDATE component
 		SET disposed = COALESCE(disposed, ?)
-		WHERE id = ?
+		WHERE id IN (
+			WITH RECURSIVE rec (id) AS (
+				SELECT ?
+				UNION
+				SELECT id FROM component, rec WHERE component.parent_id = rec.id
+			)
+			SELECT id FROM rec
+		)
 		RETURNING *
-	`, now, component.ID); err != nil {
+	`, now, id); err != nil {
 		return nil, err
 	}
-	return r.beginComponentReconciliation(ctx, row)
+	return r.startComponentReconciliation(ctx, row)
 }
 
-func (r *MutationResolver) beginComponentReconciliation(ctx context.Context, row ComponentRow) (*ReconciliationResolver, error) {
+func (r *MutationResolver) startComponentReconciliation(ctx context.Context, row ComponentRow) (*ReconciliationResolver, error) {
 	job, err := r.createJob(ctx, "reconcileComponent", map[string]interface{}{
 		"ref": row.ID,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("creating reconciliation job: %w", err)
 	}
+	component := &ComponentResolver{
+		Q:            r,
+		ComponentRow: row,
+	}
 	return &ReconciliationResolver{
-		Component: &ComponentResolver{
-			Q:            r,
-			ComponentRow: row,
-		},
-		Job: job,
+		StackID:   component.StackID,
+		Component: component,
+		Job:       job,
 	}, nil
 }
 
@@ -296,4 +324,89 @@ func (r *ComponentResolver) configuration(ctx context.Context) (exocue.Component
 		return exocue.Component{}, err
 	}
 	return cfg.Component(r.Name), nil
+}
+
+func (r *ComponentResolver) isProcess() bool {
+	return isProcessController(r.Type)
+}
+
+func (r *ComponentResolver) controller(ctx context.Context) (*sdk.Controller, error) {
+	controller := getController(ctx, r.Type)
+	if controller == nil {
+		return nil, fmt.Errorf("no controller for type: %q", r.Type)
+	}
+	return controller, nil
+}
+
+func (r *MutationResolver) ensureComponentInitialize(ctx context.Context, componentID string) error {
+	return r.ensureTask(ctx, "initializeComponent", map[string]interface{}{
+		"id": componentID,
+	}, componentID)
+}
+
+func (r *MutationResolver) controlComponent(ctx context.Context, id string, f func(*sdk.Controller, exocue.Component) error) error {
+	component, err := r.componentByID(ctx, &id)
+	if err != nil {
+		return fmt.Errorf("resolving component: %w", err)
+	}
+	if component == nil {
+		return fmt.Errorf("no such component: %q", id)
+	}
+
+	controller, err := component.controller(ctx)
+	if err != nil {
+		return fmt.Errorf("resolving controller: %w", err)
+	}
+
+	configuration, err := component.configuration(ctx)
+	if err != nil {
+		return fmt.Errorf("resolving configuration: %w", err)
+	}
+
+	return f(controller, configuration)
+}
+
+func (r *MutationResolver) InitializeComponent(ctx context.Context, args struct {
+	ID string
+}) (*VoidResolver, error) {
+	err := r.controlComponent(ctx, args.ID, func(controller *sdk.Controller, configuration exocue.Component) error {
+		return controller.Initialize(ctx, cue.Value(configuration))
+	})
+	return nil, err
+}
+
+func (r *MutationResolver) ensureComponentTransition(ctx context.Context, id, spec string) error {
+	return r.ensureTask(ctx, "transitionComponent", map[string]interface{}{
+		"id":   id,
+		"spec": spec,
+	}, id)
+}
+
+func (r *MutationResolver) TransitionComponent(ctx context.Context, args struct {
+	ID   string
+	Spec string
+}) (*VoidResolver, error) {
+	return nil, errors.New("TODO: transition component")
+}
+
+func (r *MutationResolver) ensureComponentShutdown(ctx context.Context, componentID string) error {
+	return r.ensureTask(ctx, "shutdownComponent", map[string]interface{}{
+		"id": componentID,
+	}, componentID)
+}
+
+func (r *MutationResolver) ShutdownComponent(ctx context.Context, args struct {
+	ID string
+}) (*VoidResolver, error) {
+	// XXX if there are still children, abort and try again later.
+	// after done, trigger reconciliation of parent.
+	return nil, errors.New("TODO: shutdown component")
+}
+
+func (r *ComponentResolver) running() bool {
+	return false // XXX
+}
+
+func (r *ComponentResolver) isRunningProcess() bool {
+	return r.isProcess() && r.running()
 }

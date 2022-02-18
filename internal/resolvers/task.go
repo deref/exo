@@ -24,6 +24,7 @@ type TaskRow struct {
 	ParentID        *string    `db:"parent_id"`
 	Mutation        string     `db:"mutation"`
 	Arguments       JSONObject `db:"arguments"`
+	Key             *string    `db:"key"`
 	WorkerID        *string    `db:"worker_id"`
 	Created         Instant    `db:"created"`
 	Updated         Instant    `db:"updated"`
@@ -39,8 +40,9 @@ type TaskRow struct {
 func (r *MutationResolver) CreateTask(ctx context.Context, args struct {
 	Mutation  string
 	Arguments JSONObject
+	Key       *string
 }) (*TaskResolver, error) {
-	return r.createTask(ctx, args.Mutation, args.Arguments)
+	return r.createOrEnsureTask(ctx, args.Mutation, args.Arguments, args.Key)
 }
 
 func (r *MutationResolver) createRootTask(ctx context.Context, mutation string, arguments map[string]interface{}) (*TaskResolver, error) {
@@ -56,6 +58,18 @@ func (r *MutationResolver) createRootTask(ctx context.Context, mutation string, 
 }
 
 func (r *MutationResolver) createTask(ctx context.Context, mutation string, arguments map[string]interface{}) (*TaskResolver, error) {
+	return r.createOrEnsureTask(ctx, mutation, arguments, nil)
+}
+
+func (r *MutationResolver) ensureTask(ctx context.Context, mutation string, arguments map[string]interface{}, key string) error {
+	_, err := r.createOrEnsureTask(ctx, mutation, arguments, &key)
+	if isSqlConflict(err) {
+		err = nil
+	}
+	return err
+}
+
+func (r *MutationResolver) createOrEnsureTask(ctx context.Context, mutation string, arguments map[string]interface{}, key *string) (*TaskResolver, error) {
 	ctxVars := api.CurrentContextVariables(ctx)
 	if ctxVars == nil || ctxVars.TaskID == "" {
 		return nil, errors.New("create task outside of job execution context")
@@ -70,6 +84,23 @@ func (r *MutationResolver) createTask(ctx context.Context, mutation string, argu
 		Q:       r,
 		TaskRow: row,
 	}, nil
+}
+
+type TaskInput struct {
+	Mutation  string
+	Arguments map[string]interface{}
+}
+
+func (r *MutationResolver) createTasks(ctx context.Context, inputs []TaskInput) ([]*TaskResolver, error) {
+	tasks := make([]*TaskResolver, len(inputs))
+	for i, input := range inputs {
+		var err error
+		tasks[i], err = r.createTask(ctx, input.Mutation, input.Arguments)
+		if err != nil {
+			return tasks, err
+		}
+	}
+	return tasks, nil
 }
 
 func newTaskPrototype(ctx context.Context, mutation string, arguments map[string]interface{}) TaskRow {

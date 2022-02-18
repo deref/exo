@@ -167,6 +167,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 			parent_id TEXT,
 			mutation TEXT NOT NULL,
 			arguments TEXT NOT NULL,
+			key TEXT,
 			worker_id TEXT,
 			created TEXT NOT NULL,
 			updated TEXT NOT NULL,
@@ -179,6 +180,15 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 			error TEXT
 	);`); err != nil {
 		return fmt.Errorf("creating job table: %w", err)
+	}
+
+	if _, err := r.DB.ExecContext(ctx, `
+		CREATE UNIQUE INDEX IF NOT EXISTS
+		task_key ON task ( mutation, key )
+		WHERE key IS NOT NULL
+		AND completed IS NULL
+	`); err != nil {
+		return fmt.Errorf("creating task_parent_id index: %w", err)
 	}
 
 	if _, err := r.DB.ExecContext(ctx, `

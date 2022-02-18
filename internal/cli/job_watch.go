@@ -203,7 +203,7 @@ watching:
 				if task.Error == nil {
 					message = "task completed successfully"
 				} else {
-					message = fmt.Sprintf("task failed: %s", *task.Error)
+					message = fmt.Sprintf("task completed with failure: %s", *task.Error)
 				}
 				w.PrintEvent(sourceID, event.Timestamp.GoTime(), sourceLabel, message)
 			}
