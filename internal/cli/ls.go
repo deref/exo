@@ -18,7 +18,7 @@ var lsFlags struct {
 var lsCmd = &cobra.Command{
 	Use:   "ls",
 	Short: "Lists components",
-	Long:  `Lists components.`,
+	Long:  `Lists components in current stack.`,
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()

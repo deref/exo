@@ -238,16 +238,19 @@ func (r *MutationResolver) StopWorkspaceComponents(ctx context.Context, args str
 }
 
 func (r *WorkspaceResolver) Components(ctx context.Context, args struct {
-	All *bool
+	All       *bool
+	Recursive *bool
 }) ([]*ComponentResolver, error) {
 	stack, err := r.Stack(ctx)
 	if stack == nil || err != nil {
 		return nil, err
 	}
 	return stack.Components(ctx, struct {
-		All *bool
+		All       *bool
+		Recursive *bool
 	}{
-		All: args.All,
+		All:       args.All,
+		Recursive: args.Recursive,
 	})
 }
 
