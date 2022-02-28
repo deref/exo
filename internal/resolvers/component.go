@@ -96,40 +96,45 @@ func (r *QueryResolver) componentByRef(ctx context.Context, ref string, stack *s
 	return component, err
 }
 
-func (r *QueryResolver) componentsByStack(ctx context.Context, stackID string, all bool) ([]*ComponentResolver, error) {
+type componentSetResolver struct {
+	Q         *RootResolver
+	StackID   string
+	All       bool
+	Recursive bool
+}
+
+func (r *componentSetResolver) items(ctx context.Context) ([]*ComponentResolver, error) {
 	var rows []ComponentRow
 	var q string
 	// Utilizes the `component_path` index.
-	if all {
-		q = `
-			SELECT *
-			FROM component
-			WHERE stack_id = ?
-			AND COALESCE(parent_id, stack_id) = stack_id
-			ORDER BY name ASC
-		`
-	} else {
-		q = `
-			SELECT *
-			FROM component
-			WHERE stack_id = ?
-			AND COALESCE(parent_id, stack_id) = stack_id
-			AND disposed IS NULL
-			ORDER BY name ASC
-		`
-	}
-	err := r.DB.SelectContext(ctx, &rows, q, stackID)
+	q = `
+		SELECT *
+		FROM component
+		WHERE stack_id = ?
+		AND IIF(?, true, COALESCE(parent_id, stack_id) = stack_id)
+		AND IIF(?, true, disposed IS NULL)
+		ORDER BY parent_id, name ASC
+	`
+	err := r.Q.DB.SelectContext(ctx, &rows, q, r.StackID, r.Recursive, r.All)
 	if err != nil {
 		return nil, err
 	}
 	resolvers := make([]*ComponentResolver, len(rows))
 	for i, row := range rows {
 		resolvers[i] = &ComponentResolver{
-			Q:            r,
+			Q:            r.Q,
 			ComponentRow: row,
 		}
 	}
 	return resolvers, nil
+}
+
+func (r *QueryResolver) componentsByStack(ctx context.Context, stackID string) ([]*ComponentResolver, error) {
+	componentSet := &componentSetResolver{
+		Q:       r,
+		StackID: stackID,
+	}
+	return componentSet.items(ctx)
 }
 
 func (r *QueryResolver) componentsByParent(ctx context.Context, parentID string) ([]*ComponentResolver, error) {

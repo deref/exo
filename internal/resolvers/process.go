@@ -9,8 +9,7 @@ type ProcessResolver struct {
 
 // TODO: Include running jobs?
 func (r *QueryResolver) processesByStack(ctx context.Context, stackID string) ([]*ProcessResolver, error) {
-	all := true
-	components, err := r.componentsByStack(ctx, stackID, all)
+	components, err := r.componentsByStack(ctx, stackID)
 	if err != nil {
 		return nil, err
 	}

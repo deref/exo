@@ -169,7 +169,7 @@ type Workspace {
 
   environment: Environment!
 
-  components(all: Boolean): [Component!]!
+  components(all: Boolean, recursive: Boolean): [Component!]!
   resources: [Resource!]!
 
   # Configured active manifest.
@@ -199,7 +199,7 @@ type Stack {
   workspaceId: String
   workspace: Workspace
 
-  components(all: Boolean): [Component!]!
+  components(all: Boolean, recursive: Boolean): [Component!]!
   processes: [Process!]!
   resources: [Resource!]!
   
