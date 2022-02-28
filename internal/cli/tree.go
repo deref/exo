@@ -54,8 +54,10 @@ var treeCmd = &cobra.Command{
 			}
 			tb.AddNode(node)
 		}
-		tree := tb.Finish()
-		term.PrintTree(os.Stdout, tree)
+		trees := tb.Build()
+		for _, tree := range trees {
+			term.PrintTree(os.Stdout, tree)
+		}
 		return nil
 	},
 }

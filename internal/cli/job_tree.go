@@ -127,165 +127,58 @@ func jobTreeString(jp *jobPrinter, tasks []taskFragment) string {
 }
 
 func (jp *jobPrinter) printTree(w io.Writer, tasks []taskFragment) {
-	// TODO: watchJob calls printTree in a loop, so each go around calls
-	// term.GetSize(), it would be more efficient to listen to terminal size
-	// change events.
-	termW, _ := term.GetSize()
-
-	nodes := make(map[string]*taskNode)
-	getNode := func(id string) *taskNode {
-		node := nodes[id]
-		if node == nil {
-			node = &taskNode{}
-			nodes[id] = node
-		}
-		return node
-	}
-
-	var jobNodes []*taskNode
+	builder := term.NewTreeBuilder()
 	for _, task := range tasks {
-		child := getNode(task.ID)
-		child.ID = task.ID
-		child.Created = task.Created
-		child.Label = task.Label
-		child.Status = classifyTaskStatus(task)
-		child.Message = task.Message
-		child.Progress = task.Progress
-
-		var parent *taskNode
-		if task.ParentID == nil {
-			jobNodes = append(jobNodes, child)
-		} else {
-			parent = getNode(*task.ParentID)
-			child.Parent = parent
-			child.ChildIndex = len(parent.Children)
-			parent.Children = append(parent.Children, child)
+		node := &term.TreeNode{
+			ID: task.ID,
 		}
-	}
-
-	depthOf := func(node *taskNode) int {
-		d := 0
-		for node != nil {
-			node = node.Parent
-			d++
-		}
-		return d
-	}
-
-	// Measure labels.
-	maxPrefixW := 8
-	for _, task := range tasks {
-		node := getNode(task.ID)
-		depth := depthOf(node)
-		statusW := 2
-		indentW := 3
-		padRight := 2
-		width := statusW + (depth-1)*indentW + term.VisualLength(node.Label) + padRight
-		if jp.ShowJobID {
-			width += 1 + term.VisualLength(node.ID)
-		}
-		if maxPrefixW < width {
-			maxPrefixW = width
-		}
-	}
-
-	var printTask func(node *taskNode)
-	printTask = func(node *taskNode) {
-
-		showChildren := true
-		if jp.CollapseSuccessful {
-			showChildren = false
-			for _, child := range node.Children {
-				if child.Status != taskStatusOK {
-					showChildren = true
-				}
-			}
+		if task.ParentID != nil {
+			node.ParentID = *task.ParentID
 		}
 
-		prefix := ""
-		if node.Parent != nil || !showChildren {
-			switch node.Status {
-			case taskStatusQueue:
-				prefix += rgbterm.FgString("·", 0, 123, 211)
-			case taskStatusRun:
-				if len(jp.Spinner) > 0 {
-					offset := jp.Iteration + node.ChildIndex
-					frame := jp.Spinner[offset%len(jp.Spinner)]
-					prefix += rgbterm.FgString(frame, 172, 66, 199)
-				} else {
-					prefix += " "
-				}
-			case taskStatusWait:
-				prefix += rgbterm.FgString("○", 0, 123, 211)
-			case taskStatusOK:
-				prefix += rgbterm.FgString("✓", 28, 196, 22)
-			case taskStatusErr:
-				prefix += rgbterm.FgString("⨯", 215, 55, 30)
-			default:
-				panic(fmt.Sprintf("unexpected task status: %q", node.Status))
-			}
-			prefix += " "
-		}
-
-		var printTracks func(node *taskNode, end, more string)
-		printTracks = func(node *taskNode, end, more string) {
-			if node.Parent == nil {
-				return
-			}
-			last := node.ChildIndex == len(node.Parent.Children)-1
-			printTracks(node.Parent, "   ", "│  ")
-			if last {
-				prefix += end
+		status := classifyTaskStatus(task)
+		switch status {
+		case taskStatusQueue:
+			node.Label = rgbterm.FgString("·", 0, 123, 211)
+		case taskStatusRun:
+			if len(jp.Spinner) > 0 {
+				offset := jp.Iteration + node.ChildIndex
+				frame := jp.Spinner[offset%len(jp.Spinner)]
+				node.Label = rgbterm.FgString(frame, 172, 66, 199)
 			} else {
-				prefix += more
+				node.Label = " "
 			}
+		case taskStatusWait:
+			node.Label = rgbterm.FgString("○", 0, 123, 211)
+		case taskStatusOK:
+			node.Label = rgbterm.FgString("✓", 28, 196, 22)
+		case taskStatusErr:
+			node.Label = rgbterm.FgString("⨯", 215, 55, 30)
+		default:
+			panic(fmt.Sprintf("unexpected task status: %q", status))
 		}
-		printTracks(node, "└─ ", "├─ ")
 
-		label := node.Label
+		node.Label += " " + task.Label
 		if jp.ShowJobID {
-			label += " " + node.ID
-		}
-		prefix += label
-
-		// Padding between prefix and message to align message column.
-		prefixW := term.VisualLength(prefix)
-		alignMessage := ""
-		padPrefix := maxPrefixW - prefixW
-		if padPrefix > 0 {
-			alignMessage = strings.Repeat(" ", padPrefix)
+			node.Label += " " + node.ID
 		}
 
-		suffix := ""
-		if node.Progress != nil {
-			percent := node.Progress.Percent
+		if task.Progress != nil {
+			percent := task.Progress.Percent
 			if percent < 100 {
-				suffix = fmt.Sprintf("  %2d %% ", int(percent))
+				node.Suffix = fmt.Sprintf("  %2d %% ", int(percent))
 			}
 		}
 
-		message := node.Message
-
-		// Truncate message.
-		maxMessageW := 50
-		if termW > 0 {
-			suffixW := term.VisualLength(suffix)
-			maxMessageW = termW - maxPrefixW - suffixW
+		if jp.CollapseSuccessful && task.Successful != nil && *task.Successful == true {
+			node.HideChildren = true
 		}
-		message = term.TrimToVisualLength(message, maxMessageW)
 
-		// Right align suffix.
-		messageW := term.VisualLength(message)
-		alignSuffix := strings.Repeat(" ", maxMessageW-messageW)
-
-		fmt.Fprintf(w, "%s%s%s%s%s\n", prefix, alignMessage, message, alignSuffix, suffix)
-		if showChildren {
-			for _, child := range node.Children {
-				printTask(child)
-			}
-		}
+		builder.AddNode(node)
 	}
-	for _, job := range jobNodes {
-		printTask(job)
+
+	trees := builder.Build()
+	for _, tree := range trees {
+		term.PrintTree(w, tree)
 	}
 }
