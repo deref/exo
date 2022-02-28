@@ -22,11 +22,10 @@ func (b *TreeBuilder) AddNode(node *TreeNode) {
 	b.all = append(b.all, node)
 }
 
-func (b *TreeBuilder) Finish() *TreeNode {
-	var root *TreeNode
+func (b *TreeBuilder) Build() (roots []*TreeNode) {
 	for _, node := range b.all {
 		if node.ParentID == "" {
-			root = node
+			roots = append(roots, node)
 		} else {
 			parent := b.byID[node.ParentID]
 			node.Parent = parent
@@ -35,23 +34,25 @@ func (b *TreeBuilder) Finish() *TreeNode {
 		}
 	}
 
-	var measure func(depth int, node *TreeNode) int
-	measure = func(depth int, node *TreeNode) int {
+	var visit func(depth int, node *TreeNode)
+	visit = func(depth int, node *TreeNode) {
 		indentWidth := 3
 		padRight := 2
 		width := depth*indentWidth + VisualLength(node.Label) + padRight
 		for _, child := range node.Children {
-			childWidth := measure(depth+1, child)
+			visit(depth+1, child)
+			childWidth := child.LabelWidth
 			if childWidth > width {
 				width = childWidth
 			}
 		}
 		node.LabelWidth = width
-		return width
 	}
-	measure(0, root)
+	for _, root := range roots {
+		visit(0, root)
+	}
 
-	return root
+	return
 }
 
 type TreeNode struct {
