@@ -49,6 +49,9 @@ var treeCmd = &cobra.Command{
 				Label:  fmt.Sprintf("%s (%s)", component.Name, component.Type),
 				Suffix: component.ID,
 			}
+			if component.Disposed != nil {
+				node.Label += " DISPOSED"
+			}
 			if component.ParentID != nil {
 				node.ParentID = *component.ParentID
 			}
