@@ -21,6 +21,20 @@ func (r *ReconciliationResolver) Stack(ctx context.Context) (*StackResolver, err
 	return r.Q.stackByID(ctx, &r.StackID)
 }
 
+func (r *MutationResolver) ReconcileComponent_label(ctx context.Context, args struct {
+	Stack *string
+	Ref   string
+}) (string, error) {
+	component, err := r.componentByRef(ctx, args.Ref, args.Stack)
+	if err != nil {
+		return "", fmt.Errorf("resolving component: %w", err)
+	}
+	if component == nil {
+		return "", errors.New("no such component")
+	}
+	return fmt.Sprintf("reconcile %s", component.Name), nil
+}
+
 func (r *MutationResolver) ReconcileComponent(ctx context.Context, args struct {
 	Stack *string
 	Ref   string
