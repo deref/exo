@@ -77,7 +77,7 @@ func Main() {
 	defer conn.Close()
 
 	// Register for signals.  Do this before starting the child to
-	// guarantee we see any exist of a child process.
+	// guarantee we see any exits of a child process.
 	c := make(chan os.Signal)
 	signal.Notify(c, syscall.SIGINT, syscall.SIGTERM, syscall.SIGCHLD)
 
