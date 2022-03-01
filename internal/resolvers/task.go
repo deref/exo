@@ -5,12 +5,15 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"reflect"
+	"strings"
 	"time"
 
 	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/chrono"
 	"github.com/deref/exo/internal/gensym"
 	. "github.com/deref/exo/internal/scalars"
+	"github.com/mitchellh/mapstructure"
 )
 
 type TaskResolver struct {
@@ -453,12 +456,26 @@ func (r *TaskResolver) Children(ctx context.Context) ([]*TaskResolver, error) {
 	return r.Q.tasksByParentID(ctx, r.ID)
 }
 
-func (r *TaskResolver) Label() string {
-	switch r.Mutation {
-	default:
-		// No localization, fallback to mutation name.
-		return r.Mutation
+func (r *TaskResolver) Label(ctx context.Context) (string, error) {
+	methodName := fmt.Sprintf("%s%s_label", strings.ToUpper(r.Mutation[0:1]), r.Mutation[1:])
+	method := reflect.ValueOf(r.Q).MethodByName(methodName)
+	if !method.IsValid() {
+		// No localization method, fallback to mutation name.
+		return r.Mutation, nil
 	}
+	methodType, _ := reflect.TypeOf(r.Q).MethodByName(methodName)
+	args := reflect.New(methodType.Type.In(2))
+	if err := mapstructure.Decode((map[string]interface{})(r.Arguments), args.Interface()); err != nil {
+		return "", fmt.Errorf("decoding arguments: %w", err)
+	}
+	// TODO: Use more flexible calling conventions, like other resolver methods.
+	// 1) Optional context.
+	// 2) Optional, strongly typed arguments.
+	// 3) Optional error return value.
+	res := method.Call([]reflect.Value{reflect.ValueOf(ctx), args.Elem()})
+	label := res[0].Interface().(string)
+	err, _ := res[1].Interface().(error)
+	return label, err
 }
 
 func (r *TaskResolver) Progress() (*ProgressResolver, error) {
