@@ -282,7 +282,7 @@ func (r *MutationResolver) disposeComponent(ctx context.Context, id string) (*Re
 			WITH RECURSIVE rec (id) AS (
 				SELECT ?
 				UNION
-				SELECT id FROM component, rec WHERE component.parent_id = rec.id
+				SELECT component.id FROM component, rec WHERE component.parent_id = rec.id
 			)
 			SELECT id FROM rec
 		)
