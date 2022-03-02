@@ -53,40 +53,35 @@ func (r *QueryResolver) StackByID(ctx context.Context, args struct {
 }
 
 func (r *QueryResolver) stackByID(ctx context.Context, id *string) (*StackResolver, error) {
-	s := &StackResolver{
+	stack := &StackResolver{
 		Q: r,
 	}
-	err := r.getRowByKey(ctx, &s.StackRow, `
+	err := r.getRowByKey(ctx, &stack.StackRow, `
 		SELECT *
 		FROM stack
 		WHERE id = ?
 	`, id)
-	if s.ID == "" {
-		s = nil
+	if stack.ID == "" {
+		stack = nil
 	}
-	return s, err
+	return stack, err
 }
 
-func (r *QueryResolver) stacksByWorkspaceID(ctx context.Context, workspaceID string) ([]*StackResolver, error) {
-	var rows []StackRow
-	err := r.DB.SelectContext(ctx, &rows, `
+func (r *QueryResolver) stackByWorkspaceID(ctx context.Context, workspaceID string) (*StackResolver, error) {
+	stack := &StackResolver{
+		Q: r,
+	}
+	err := r.getRowByKey(ctx, &stack.StackRow, `
 		SELECT stack.*
 		FROM stack
 		INNER JOIN workspace ON stack.workspace_id = workspace.id
 		WHERE workspace.id = ?
 		ORDER BY stack.name ASC
-	`, workspaceID)
-	if err != nil {
-		return nil, err
+	`, &workspaceID)
+	if stack.ID == "" {
+		stack = nil
 	}
-	resolvers := make([]*StackResolver, len(rows))
-	for i, row := range rows {
-		resolvers[i] = &StackResolver{
-			Q:        r,
-			StackRow: row,
-		}
-	}
-	return resolvers, nil
+	return stack, err
 }
 
 func (r *QueryResolver) stacksByProject(ctx context.Context, stackID string) ([]*StackResolver, error) {
@@ -127,6 +122,15 @@ func (r *QueryResolver) stackByRef(ctx context.Context, ref *string) (*StackReso
 		return nil, err
 	}
 	return ws.Stack(ctx)
+}
+
+func (r *QueryResolver) stackByProjectIDAndRef(ctx context.Context, projectID string, ref string) (*StackResolver, error) {
+	// Could move the filtering to the db-side, but not a big deal.
+	stack, err := r.stackByRef(ctx, &ref)
+	if stack != nil && (stack.ProjectID == nil || *stack.ProjectID != projectID) {
+		stack = nil
+	}
+	return stack, err
 }
 
 func (r *StackResolver) Cluster(ctx context.Context) (*ClusterResolver, error) {

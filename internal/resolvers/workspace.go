@@ -135,14 +135,7 @@ func (r *WorkspaceResolver) StackID(ctx context.Context) (*string, error) {
 }
 
 func (r *WorkspaceResolver) Stack(ctx context.Context) (*StackResolver, error) {
-	stacks, err := r.Q.stacksByWorkspaceID(ctx, r.ID)
-	if len(stacks) == 0 || err != nil {
-		return nil, err
-	}
-	if len(stacks) > 1 {
-		return nil, errors.New("ambiguous")
-	}
-	return stacks[0], nil
+	return r.Q.stackByWorkspaceID(ctx, r.ID)
 }
 
 func (r *WorkspaceResolver) componentByRef(ctx context.Context, ref string) (*ComponentResolver, error) {

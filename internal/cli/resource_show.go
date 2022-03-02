@@ -1,10 +1,9 @@
 package cli
 
 import (
-	"fmt"
-	"strings"
-
 	"github.com/deref/exo/internal/api"
+	"github.com/deref/exo/internal/scalars"
+	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/spf13/cobra"
 )
 
@@ -24,7 +23,7 @@ var resourceShowCmd = &cobra.Command{
 				ID    string
 				Type  string
 				IRI   *string
-				Model string
+				Model scalars.JSONObject
 			} `graphql:"resourceByRef(ref: $ref)"`
 		}
 		if err := api.Query(ctx, svc, &q, map[string]interface{}{
@@ -32,20 +31,14 @@ var resourceShowCmd = &cobra.Command{
 		}); err != nil {
 			return err
 		}
-		if q.Resource == nil {
-			return nil
-		}
-		resource := *q.Resource
-		fmt.Printf("ID: %s\n", resource.ID)
-		fmt.Printf("Type: %s\n", resource.Type)
-		if resource.IRI != nil {
-			fmt.Printf("IRI: %s\n", *resource.IRI)
-		}
-		fmt.Printf("Content-Length: %d\n", len(resource.Model))
-		fmt.Println()
-		fmt.Print(resource.Model)
-		if !strings.HasSuffix(resource.Model, "\n") {
-			fmt.Println()
+		if q.Resource != nil {
+			resource := *q.Resource
+			cmdutil.PrintCueStruct(map[string]interface{}{
+				"id":    resource.ID,
+				"type":  resource.Type,
+				"iri":   resource.IRI,
+				"model": (map[string]interface{})(resource.Model),
+			})
 		}
 		return nil
 	},

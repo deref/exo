@@ -17,7 +17,7 @@ var resourceForgetCmd = &cobra.Command{
 		ctx := cmd.Context()
 		ref := args[0]
 		var resp struct{}
-		return svc.Do(ctx, resp, `
+		return svc.Do(ctx, &resp, `
 			mutation ($ref: String!) {
 				forgetResource(ref: $ref) {
 					__typename

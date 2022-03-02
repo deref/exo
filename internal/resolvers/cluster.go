@@ -3,10 +3,12 @@ package resolvers
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/deref/exo/internal/manifest/exocue"
 	"github.com/deref/exo/internal/scalars"
+	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/shellutil"
 )
 
@@ -54,7 +56,7 @@ func (r *QueryResolver) clusterByRef(ctx context.Context, ref string) (*ClusterR
 		return nil, err
 	}
 	if len(rows) > 1 {
-		return nil, fmt.Errorf("ambiguous cluster ref: %q", ref)
+		return nil, errutil.HTTPErrorf(http.StatusConflict, "ambiguous cluster ref: %q", ref)
 	}
 	return &ClusterResolver{
 		Q:          r,

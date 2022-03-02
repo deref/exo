@@ -12,8 +12,8 @@ import (
 	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/chrono"
 	"github.com/deref/exo/internal/gensym"
+	"github.com/deref/exo/internal/scalars"
 	. "github.com/deref/exo/internal/scalars"
-	"github.com/mitchellh/mapstructure"
 )
 
 type TaskResolver struct {
