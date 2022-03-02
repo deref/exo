@@ -24,6 +24,12 @@ func MustUnmarshal(bs []byte, v interface{}) {
 	}
 }
 
+func MustUnmarshalString(s string, v interface{}) {
+	if err := UnmarshalString(s, v); err != nil {
+		panic(err)
+	}
+}
+
 var MustMarshal = jsonutil.MustMarshal
 var MarshalString = jsonutil.MarshalString
 var MustMarshalString = jsonutil.MustMarshalString

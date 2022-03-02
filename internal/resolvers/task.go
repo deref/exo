@@ -465,7 +465,7 @@ func (r *TaskResolver) Label(ctx context.Context) (string, error) {
 	}
 	methodType, _ := reflect.TypeOf(r.Q).MethodByName(methodName)
 	args := reflect.New(methodType.Type.In(2))
-	if err := mapstructure.Decode((map[string]interface{})(r.Arguments), args.Interface()); err != nil {
+	if err := scalars.DecodeStruct((map[string]interface{})(r.Arguments), args.Interface()); err != nil {
 		return "", fmt.Errorf("decoding arguments: %w", err)
 	}
 	// TODO: Use more flexible calling conventions, like other resolver methods.
