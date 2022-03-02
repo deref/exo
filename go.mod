@@ -3,7 +3,7 @@ module github.com/deref/exo
 go 1.16
 
 require (
-	cuelang.org/go v0.4.1
+	cuelang.org/go v0.4.2
 	github.com/BurntSushi/toml v0.3.1
 	github.com/Nerdmaster/terminal v0.12.1
 	github.com/ProtonMail/go-crypto v0.0.0-20210512092938-c05353c2d58c // indirect
@@ -54,7 +54,7 @@ require (
 	github.com/zclconf/go-cty-yaml v1.0.2
 	golang.org/x/net v0.0.0-20220107192237-5cfca573fb4d // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
-	golang.org/x/sys v0.0.0-20210927094055-39ccf1dd6fa6
+	golang.org/x/sys v0.0.0-20220227234510-4e6760a101f9
 	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
 	google.golang.org/genproto v0.0.0-20210831024726-fe130286e0e2 // indirect
