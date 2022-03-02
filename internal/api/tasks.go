@@ -262,6 +262,38 @@ func newValueNode(value interface{}) (ast.Value, error) {
 			Value: strconv.FormatFloat(value, 'f', -1, 64),
 		}, nil
 
+	case []interface{}:
+		elements := make([]ast.Value, len(value))
+		for i, v := range value {
+			element, err := newValueNode(v)
+			if err != nil {
+				return nil, fmt.Errorf("at %d: %w", i, err)
+			}
+			elements[i] = element
+		}
+		return &ast.ListValue{
+			Kind:   kinds.ListValue,
+			Values: elements,
+		}, nil
+
+	case map[string]interface{}:
+		fields := make([]*ast.ObjectField, 0, len(value))
+		for k, v := range value {
+			vn, err := newValueNode(v)
+			if err != nil {
+				return nil, fmt.Errorf("at %q: %w", k, err)
+			}
+			fields = append(fields, &ast.ObjectField{
+				Kind:  kinds.ObjectField,
+				Name:  newNameNode(k),
+				Value: vn,
+			})
+		}
+		return &ast.ObjectValue{
+			Kind:   kinds.ObjectValue,
+			Fields: fields,
+		}, nil
+
 	default:
 		return nil, fmt.Errorf("cannot convert %T to GraphQL ast node", value)
 	}

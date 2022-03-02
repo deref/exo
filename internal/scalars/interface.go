@@ -5,11 +5,11 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 
-	"github.com/graph-gophers/graphql-go/decode"
+	graphql "github.com/graph-gophers/graphql-go/decode"
 )
 
 type Scalar interface {
-	decode.Unmarshaler
+	graphql.Unmarshaler
 
 	json.Marshaler
 	json.Unmarshaler
