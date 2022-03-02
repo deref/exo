@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"strings"
 	"text/tabwriter"
 )
 
@@ -38,7 +39,7 @@ func (w *TableWriter) writeRow(prefix string, values []string) {
 	w.buf.Reset()
 	io.WriteString(&w.buf, prefix)
 	for i, v := range values {
-		io.WriteString(&w.buf, v)
+		io.WriteString(&w.buf, strings.SplitN(v, "\n", 2)[0])
 		if i == n-1 {
 			io.WriteString(&w.buf, "\n")
 		} else {
