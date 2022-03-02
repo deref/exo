@@ -3,8 +3,12 @@ package file
 import (
 	"context"
 	"errors"
+	"io/ioutil"
 	"os"
 	"path"
+	"strconv"
+
+	"github.com/deref/exo/internal/scalars"
 )
 
 func (c *Controller) Identify(ctx context.Context, m *Model) (string, error) {
@@ -17,16 +21,45 @@ func (c *Controller) Create(ctx context.Context, m *Model) error {
 		return err
 	}
 	defer f.Close()
+
 	_, err = f.WriteString(m.Content)
-	return err
+	if err != nil {
+		return err
+	}
+
+	return c.stat(f, m)
 }
 
 func (c *Controller) Read(ctx context.Context, m *Model) error {
-	bs, err := os.ReadFile(m.Path)
+	f, err := os.Open(m.Path)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	if err := c.stat(f, m); err != nil {
+		return err
+	}
+
+	bs, err := ioutil.ReadAll(f)
 	if err != nil {
 		return err
 	}
 	m.Content = string(bs)
+	return nil
+}
+
+func (c *Controller) stat(f *os.File, m *Model) error {
+	stat, err := f.Stat()
+	if err != nil {
+		return err
+	}
+
+	size := strconv.FormatInt(stat.Size(), 10)
+	m.Size = &size
+
+	modified := scalars.GoTimeToInstant(stat.ModTime())
+	m.Modified = &modified
+
 	return nil
 }
 

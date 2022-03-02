@@ -92,6 +92,10 @@ func (r *ProjectResolver) Stacks(ctx context.Context) ([]*StackResolver, error) 
 	return r.Q.stacksByProject(ctx, r.ID)
 }
 
+func (r *ProjectResolver) stackByRef(ctx context.Context, ref string) (*StackResolver, error) {
+	return r.Q.stackByProjectIDAndRef(ctx, r.ID, ref)
+}
+
 func (r *ProjectResolver) Resources(ctx context.Context) ([]*ResourceResolver, error) {
 	return r.Q.resourcesByProject(ctx, r.ID)
 }

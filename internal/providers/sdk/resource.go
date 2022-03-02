@@ -5,13 +5,14 @@ import (
 	"fmt"
 	"reflect"
 
+	"github.com/deref/exo/internal/scalars"
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/jsonutil"
 )
 
-func unmarshalModel(ctx context.Context, label string, typ reflect.Type, s string) (interface{}, error) {
+func unmarshalModel(ctx context.Context, label string, typ reflect.Type, obj scalars.JSONObject) (interface{}, error) {
 	m := reflect.New(typ.Elem()).Interface()
-	err := jsonutil.UnmarshalString(s, m)
+	err := scalars.DecodeStruct(obj, m)
 	if err != nil {
 		err = fmt.Errorf("unmarshaling %s: %w", label, err)
 	}
@@ -26,7 +27,7 @@ func marshalModel(ctx context.Context, typ reflect.Type, m interface{}) (string,
 	return s, err
 }
 
-func (c *Controller) Identify(ctx context.Context, model string) (iri string, err error) {
+func (c *Controller) Identify(ctx context.Context, model scalars.JSONObject) (iri string, err error) {
 	defer errutil.RecoverTo(&err)
 	method := c.impl.MethodByName("Identify")
 	unmarshaledModel, err := unmarshalModel(ctx, "model", method.Type().In(1), model)
@@ -42,7 +43,7 @@ func (c *Controller) Identify(ctx context.Context, model string) (iri string, er
 	return iri, err
 }
 
-func (c *Controller) Create(ctx context.Context, model string) (updatedModel string, err error) {
+func (c *Controller) Create(ctx context.Context, model scalars.JSONObject) (updatedModel string, err error) {
 	defer errutil.RecoverTo(&err)
 	method := c.impl.MethodByName("Create")
 	unmarshaledModel, err := unmarshalModel(ctx, "model", method.Type().In(1), model)
@@ -55,12 +56,12 @@ func (c *Controller) Create(ctx context.Context, model string) (updatedModel str
 	})
 	err, _ = res[0].Interface().(error)
 	if err != nil {
-		return
+		return "", err
 	}
 	return jsonutil.MarshalString(unmarshaledModel)
 }
 
-func (c *Controller) Read(ctx context.Context, model string) (updatedModel string, err error) {
+func (c *Controller) Read(ctx context.Context, model scalars.JSONObject) (updatedModel string, err error) {
 	defer errutil.RecoverTo(&err)
 	method := c.impl.MethodByName("Read")
 	unmarshaledModel, err := unmarshalModel(ctx, "model", method.Type().In(1), model)
@@ -73,12 +74,12 @@ func (c *Controller) Read(ctx context.Context, model string) (updatedModel strin
 	})
 	err, _ = res[0].Interface().(error)
 	if err != nil {
-		return
+		return "", err
 	}
-	return jsonutil.MarshalString(ctx)
+	return jsonutil.MarshalString(unmarshaledModel)
 }
 
-func (c *Controller) Update(ctx context.Context, prev string, cur string) (updatedModel string, err error) {
+func (c *Controller) Update(ctx context.Context, prev scalars.JSONObject, cur scalars.JSONObject) (updatedModel string, err error) {
 	defer errutil.RecoverTo(&err)
 	method := c.impl.MethodByName("Update")
 	if !method.IsValid() {
@@ -99,12 +100,12 @@ func (c *Controller) Update(ctx context.Context, prev string, cur string) (updat
 	})
 	err, _ = res[0].Interface().(error)
 	if err != nil {
-		return
+		return "", err
 	}
 	return jsonutil.MarshalString(unmarshaledCur)
 }
 
-func (c *Controller) Shutdown(ctx context.Context, model string) (err error) {
+func (c *Controller) Shutdown(ctx context.Context, model scalars.JSONObject) (err error) {
 	defer errutil.RecoverTo(&err)
 	method := c.impl.MethodByName("Shutdown")
 	unmarshaledModel, err := unmarshalModel(ctx, "model", method.Type().In(1), model)
@@ -119,17 +120,20 @@ func (c *Controller) Shutdown(ctx context.Context, model string) (err error) {
 	return err
 }
 
-func (c *Controller) Delete(ctx context.Context, model string) (err error) {
+func (c *Controller) Delete(ctx context.Context, model scalars.JSONObject) (updatedModel string, err error) {
 	defer errutil.RecoverTo(&err)
 	method := c.impl.MethodByName("Delete")
 	unmarshaledModel, err := unmarshalModel(ctx, "model", method.Type().In(1), model)
 	if err != nil {
-		return err
+		return "", err
 	}
 	res := method.Call([]reflect.Value{
 		reflect.ValueOf(ctx),
 		reflect.ValueOf(unmarshaledModel),
 	})
 	err, _ = res[0].Interface().(error)
-	return err
+	if err != nil {
+		return "", err
+	}
+	return jsonutil.MarshalString(unmarshaledModel)
 }

@@ -63,15 +63,15 @@ type Mutation {
   stopWorkspaceComponents(workspace: String!, components: [String!]!): Void
   restartWorkspaceComponents(workspace: String!, components: [String!]!): Void
 
-  createResource(type: String!, model: String!, ownerType: String, workspace: String, component: String, adopt: Boolean): Resource!
+  createResource(type: String!, model: JSONObject!, project: String, stack: String, component: String, adopt: Boolean): Resource!
   forgetResource(ref: String!): Void
   cancelResourceOperation(ref: String!): Resource!
 
   # These operations must be called asynchronously.
   # They take an exclusive lock on the resource.
-  initializeResource(ref: String!, model: String!): Void
+  initializeResource(ref: String!, model: JSONObject!): Void
   refreshResource(ref: String!): Resource!
-  updateResource(ref: String!, model: String!): Resource!
+  updateResource(ref: String!, model: JSONObject!): Resource!
   disposeResource(ref: String!): Void
   
   createEvent(sourceType: String!, sourceId: String!, type: String!, message: String!): Event!
@@ -221,7 +221,7 @@ type Component {
   type: String!
   name: String!
 
-  resources: [Resource!]!
+  resource: Resource
   
   spec: String!
   configuration: String!
@@ -261,16 +261,16 @@ type Resource {
 
   iri: String
 
-  owner: ResourceOwner
-  ownerType: String
-  ownerId: String
-
-  # Owner, if it is a project. Or the stack's project.
+  # Ownership hierarchy.
+  projectId: String
   project: Project
-  # Owner, if it is a stack. Or the component's stack.
+  stackId: String
   stack: Stack
-  # Owner, if it is a component.
+  componentId: String
   component: Component
+
+  # Deepest available of component, stack, or project.
+  owner: ResourceOwner
   
   # If non-null, task has a lock on resource and state will not be "idle".
   # TODO: Consider explicit Lock type.
@@ -278,7 +278,7 @@ type Resource {
   task: Task
   operation: String # creating, adopting, refreshing, updating, or disposing.
 
-  model: String!
+  model: JSONObject!
 
   # HTTP error code from previous finished task.
   status: Int!

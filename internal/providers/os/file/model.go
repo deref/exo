@@ -1,5 +1,7 @@
 package file
 
+import "github.com/deref/exo/internal/scalars"
+
 type Model struct {
 	Spec
 	State
@@ -11,7 +13,8 @@ type Spec struct {
 }
 
 type State struct {
-	// TODO: mtime, etc.
+	Size     *string          `json:"size,omitempty"` // String for int64 support.
+	Modified *scalars.Instant `json:"modified,omitempty"`
 }
 
 type Controller struct{}

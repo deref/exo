@@ -10,6 +10,9 @@ import (
 	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/gensym"
 	"github.com/deref/exo/internal/providers/sdk"
+	"github.com/deref/exo/internal/scalars"
+	"github.com/deref/exo/internal/util/errutil"
+	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/deref/exo/internal/util/logging"
 	"github.com/deref/util-go/httputil"
 )
@@ -20,30 +23,32 @@ type ResourceResolver struct {
 }
 
 type ResourceRow struct {
-	ID        string  `db:"id"`
-	Type      string  `db:"type"`
-	IRI       *string `db:"iri"`
-	OwnerType *string `db:"owner_type"`
-	OwnerID   *string `db:"owner_id"`
-	TaskID    *string `db:"task_id"`
-	Model     string  `db:"model"`
-	Status    int32   `db:"status"`
-	Message   *string `db:"message"`
+	ID          string             `db:"id"`
+	Type        string             `db:"type"`
+	IRI         *string            `db:"iri"`
+	ProjectID   *string            `db:"project_id"`
+	StackID     *string            `db:"stack_id"`
+	ComponentID *string            `db:"component_id"`
+	TaskID      *string            `db:"task_id"`
+	Model       scalars.JSONObject `db:"model"`
+	Status      int32              `db:"status"`
+	Message     *string            `db:"message"`
 }
 
 func (r *MutationResolver) ForgetResource(ctx context.Context, args struct {
 	Ref string
 }) (*VoidResolver, error) {
-	return r.forgetResource(ctx, args.Ref)
+	err := r.forgetResource(ctx, args.Ref)
+	return nil, err
 }
 
-func (r *MutationResolver) forgetResource(ctx context.Context, ref string) (*VoidResolver, error) {
+func (r *MutationResolver) forgetResource(ctx context.Context, ref string) error {
 	_, err := r.DB.ExecContext(ctx, `
 		DELETE FROM resource
 		WHERE id = ?
 		OR iri = ?
 	`, ref, ref)
-	return nil, err
+	return err
 }
 
 func (r *QueryResolver) AllResources(ctx context.Context) ([]*ResourceResolver, error) {
@@ -126,7 +131,7 @@ func (r *QueryResolver) resourceByIRI(ctx context.Context, iri *string) (*Resour
 	case 1:
 		return resources[0], nil
 	default:
-		return nil, errors.New("ambiguous")
+		return nil, errutil.NewHTTPError(http.StatusConflict, "ambiguous resource iri")
 	}
 }
 
@@ -150,13 +155,6 @@ func (r *QueryResolver) resourceByRef(ctx context.Context, ref *string) (*Resour
 	return r.resourceByID(ctx, ref)
 }
 
-func (r *ResourceResolver) Component(ctx context.Context) (*ComponentResolver, error) {
-	if r.OwnerType == nil || *r.OwnerType != "Component" {
-		return nil, nil
-	}
-	return r.Q.componentByID(ctx, r.OwnerID)
-}
-
 func (r *QueryResolver) resourcesByStack(ctx context.Context, stackID string) ([]*ResourceResolver, error) {
 	var rows []ResourceRow
 	err := r.DB.SelectContext(ctx, &rows, `
@@ -165,27 +163,6 @@ func (r *QueryResolver) resourcesByStack(ctx context.Context, stackID string) ([
 		WHERE stack_id = ?
 		ORDER BY id ASC
 	`, stackID)
-	if err != nil {
-		return nil, err
-	}
-	resolvers := make([]*ResourceResolver, len(rows))
-	for i, row := range rows {
-		resolvers[i] = &ResourceResolver{
-			Q:           r,
-			ResourceRow: row,
-		}
-	}
-	return resolvers, nil
-}
-
-func (r *QueryResolver) resourcesByComponent(ctx context.Context, componentID string) ([]*ResourceResolver, error) {
-	var rows []ResourceRow
-	err := r.DB.SelectContext(ctx, &rows, `
-		SELECT *
-		FROM resource
-		WHERE component_id = ?
-		ORDER BY id ASC
-	`, componentID)
 	if err != nil {
 		return nil, err
 	}
@@ -222,40 +199,59 @@ func (r *QueryResolver) resourcesByProject(ctx context.Context, projectID string
 	return resolvers, nil
 }
 
-func (r *ResourceResolver) Owner(ctx context.Context) (interface{}, error) {
-	if r.OwnerType == nil {
+func (r *ResourceResolver) OwnerType() *string {
+	var ownerType string
+	switch {
+	case r.ComponentID != nil:
+		ownerType = "Component"
+	case r.StackID != nil:
+		ownerType = "Stack"
+	case r.ProjectID != nil:
+		ownerType = "Project"
+	default:
+		return nil
+	}
+	return &ownerType
+}
+
+func (r *ResourceResolver) Owner(ctx context.Context) (owner interface{}, err error) {
+	ownerType := r.OwnerType()
+	if ownerType == nil {
 		return nil, nil
 	}
-	switch *r.OwnerType {
+	var ownerID string
+	switch *ownerType {
 	case "Component":
-		return r.Q.componentByID(ctx, r.OwnerID)
+		ownerID = *r.ComponentID
+		owner, err = r.Component(ctx)
 	case "Stack":
-		return r.Q.stackByID(ctx, r.OwnerID)
+		ownerID = *r.StackID
+		owner, err = r.Stack(ctx)
 	case "Project":
-		return r.Q.projectByID(ctx, r.OwnerID)
+		ownerID = *r.ProjectID
+		owner, err = r.Project(ctx)
 	default:
-		return nil, fmt.Errorf("unexpected owner type: %q", *r.OwnerType)
+		panic(fmt.Errorf("unexpected owner type: %q", *ownerType))
 	}
+	if err != nil {
+		return nil, fmt.Errorf("resolving %s: %w", *ownerType, err)
+	}
+	if owner == nil {
+		return nil, fmt.Errorf("no such %s: %q", *ownerType, ownerID)
+	}
+	return
 }
 
 func (r *ResourceResolver) Project(ctx context.Context) (*ProjectResolver, error) {
-	owner, err := r.Owner(ctx)
-	if owner == nil || err != nil {
-		return nil, err
-	}
-	return owner.(interface {
-		Project(ctx context.Context) (*ProjectResolver, error)
-	}).Project(ctx)
+	return r.Q.projectByID(ctx, r.ProjectID)
 }
 
 func (r *ResourceResolver) Stack(ctx context.Context) (*StackResolver, error) {
-	owner, err := r.Owner(ctx)
-	if owner == nil || err != nil {
-		return nil, err
-	}
-	return owner.(interface {
-		Stack(ctx context.Context) (*StackResolver, error)
-	}).Stack(ctx)
+	return r.Q.stackByID(ctx, r.StackID)
+}
+
+func (r *ResourceResolver) Component(ctx context.Context) (*ComponentResolver, error) {
+	return r.Q.componentByResourceID(ctx, &r.ID)
 }
 
 func (r *ResourceResolver) Task(ctx context.Context) (*TaskResolver, error) {
@@ -281,16 +277,16 @@ func (r *ResourceResolver) Operation(ctx context.Context) (*string, error) {
 	case "deleteResource":
 		operation = "deleting"
 	default:
-		operation = "unknown"
+		operation = "unexpected mutation: " + task.Mutation
 	}
 	return &operation, err
 }
 
 func (r *MutationResolver) CreateResource(ctx context.Context, args struct {
 	Type      string
-	Model     string
-	OwnerType *string
-	Workspace *string
+	Model     scalars.JSONObject
+	Project   *string
+	Stack     *string
 	Component *string
 	Adopt     *bool
 }) (*ResourceResolver, error) {
@@ -303,84 +299,49 @@ func (r *MutationResolver) CreateResource(ctx context.Context, args struct {
 		row.Model = args.Model
 	}
 
-	var workspace *WorkspaceResolver
-	if args.Workspace != nil {
+	var project *ProjectResolver
+	if args.Project != nil {
 		var err error
-		workspace, err := r.workspaceByRef(ctx, args.Workspace)
+		project, err = r.projectByRef(ctx, *args.Project)
 		if err != nil {
-			return nil, fmt.Errorf("resolving workspace: %w", err)
+			return nil, fmt.Errorf("resolving project: %w", err)
 		}
-		if workspace == nil {
-			return nil, errors.New("no such workspace")
+		if project == nil {
+			return nil, fmt.Errorf("no such project: %q", *args.Project)
 		}
+		row.ProjectID = &project.ID
+	}
+
+	var stack *StackResolver
+	if args.Stack != nil {
+		if project == nil {
+			return nil, errors.New("project is required if stack is provided")
+		}
+		var err error
+		stack, err = project.stackByRef(ctx, *args.Stack)
+		if err != nil {
+			return nil, fmt.Errorf("resolving stack: %w", err)
+		}
+		if stack == nil {
+			return nil, fmt.Errorf("no such stack: %q", *args.Stack)
+		}
+		row.StackID = &stack.ID
 	}
 
 	var component *ComponentResolver
 	if args.Component != nil {
-		if workspace == nil {
-			return nil, errors.New("workspace is required if component is provided")
+		if stack == nil {
+			return nil, errors.New("stack is required if component is provided")
 		}
 		var err error
-		component, err = workspace.componentByRef(ctx, *args.Component)
+		component, err = stack.componentByRef(ctx, *args.Component)
 		if err != nil {
 			return nil, fmt.Errorf("resolving component: %w", err)
 		}
 		if component == nil {
-			return nil, errors.New("no such component")
+			return nil, fmt.Errorf("no such component: %q", *args.Component)
 		}
-	}
-
-	var stack *StackResolver
-	if workspace != nil {
-		var err error
-		stack, err = workspace.Stack(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("resolving stack: %w", err)
-		}
-	}
-
-	var project *ProjectResolver
-	if workspace != nil {
-		var err error
-		project, err = workspace.Project(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("resolving project: %w", err)
-		}
-	}
-
-	effectiveOwnerType := ""
-	if args.OwnerType == nil {
-		if component != nil {
-			effectiveOwnerType = "Component"
-		} else if stack != nil {
-			effectiveOwnerType = "Stack"
-		} else if project != nil {
-			effectiveOwnerType = "Project"
-		}
-	} else {
-		effectiveOwnerType = *args.OwnerType
-	}
-	row.OwnerType = stringPtr(effectiveOwnerType)
-	switch effectiveOwnerType {
-	case "":
-		row.OwnerType = nil
-	case "Component":
-		if component == nil {
-			return nil, errors.New("no component to set owner to")
-		}
-		row.OwnerID = stringPtr(component.ID)
-	case "Stack":
-		if stack == nil {
-			return nil, errors.New("no stack to set owner to")
-		}
-		row.OwnerID = stringPtr(stack.ID)
-	case "Project":
-		if project == nil {
-			return nil, errors.New("no project to set owner to")
-		}
-		row.OwnerID = stringPtr(project.ID)
-	default:
-		return nil, fmt.Errorf("unexpected owner type: %q", *args.OwnerType)
+		row.ComponentID = &component.ID
 	}
 
 	if err := r.insertRow(ctx, "resource", row); err != nil {
@@ -423,11 +384,11 @@ type resourceOperation func(ctx context.Context, resource *ResourceResolver, con
 
 func (r *MutationResolver) InitializeResource(ctx context.Context, args struct {
 	Ref   string
-	Model string
+	Model scalars.JSONObject
 }) (*ResourceResolver, error) {
 	return r.doResourceOperation(ctx, args.Ref,
 		func(ctx context.Context, resource *ResourceResolver, ctrl *sdk.Controller) (string, error) {
-			return ctrl.Create(ctx, resource.Model)
+			return ctrl.Create(ctx, args.Model)
 		},
 	)
 }
@@ -444,7 +405,7 @@ func (r *MutationResolver) RefreshResource(ctx context.Context, args struct {
 
 func (r *MutationResolver) UpdateResource(ctx context.Context, args struct {
 	Ref   string
-	Model string
+	Model scalars.JSONObject
 }) (*ResourceResolver, error) {
 	return r.doResourceOperation(ctx, args.Ref,
 		func(ctx context.Context, resource *ResourceResolver, ctrl *sdk.Controller) (string, error) {
@@ -458,13 +419,13 @@ func (r *MutationResolver) DisposeResource(ctx context.Context, args struct {
 }) (*VoidResolver, error) {
 	if _, err := r.doResourceOperation(ctx, args.Ref,
 		func(ctx context.Context, resource *ResourceResolver, ctrl *sdk.Controller) (string, error) {
-			err := ctrl.Delete(ctx, resource.Model)
-			return resource.Model, err
+			return ctrl.Delete(ctx, resource.Model)
 		},
 	); err != nil {
 		return nil, err
 	}
-	return r.forgetResource(ctx, args.Ref)
+	err := r.forgetResource(ctx, args.Ref)
+	return nil, err
 }
 
 func (r *MutationResolver) doResourceOperation(ctx context.Context, ref string, op resourceOperation) (_ *ResourceResolver, doErr error) {
@@ -507,7 +468,10 @@ func (r *MutationResolver) doResourceOperation(ctx context.Context, ref string, 
 		return nil, fmt.Errorf("controller failed: %w", err)
 	}
 
-	iri, identifyErr := ctrl.Identify(ctx, model)
+	var modelObj scalars.JSONObject
+	jsonutil.MustUnmarshalString(model, &modelObj)
+
+	iri, identifyErr := ctrl.Identify(ctx, modelObj)
 	iri = strings.TrimSpace(iri)
 	if identifyErr == nil && iri != "" {
 		if resource.IRI != nil {
