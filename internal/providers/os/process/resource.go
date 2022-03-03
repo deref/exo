@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"net/http"
 	"os/exec"
+	"syscall"
 
 	"github.com/deref/exo/internal/providers/sdk"
 	"github.com/deref/exo/internal/util/errutil"
@@ -40,6 +41,9 @@ func (c *Controller) Create(ctx context.Context, m *Model) error {
 		Args: append([]string{m.Program}, m.Arguments...),
 		Dir:  m.Directory,
 		Env:  osutil.EnvMapToEnvv(m.Environment),
+		SysProcAttr: &syscall.SysProcAttr{
+			Setsid: true,
+		},
 	}
 	if err := cmd.Start(); err != nil {
 		return err
