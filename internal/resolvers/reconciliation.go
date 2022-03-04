@@ -59,7 +59,7 @@ func (r *MutationResolver) ReconcileComponent(ctx context.Context, args struct {
 			return nil, fmt.Errorf("resolving controller: %w", err)
 		}
 
-		configuration, err := component.configuration(ctx)
+		configuration, err := component.configuration(ctx, true)
 		if err != nil {
 			return nil, fmt.Errorf("resolving configuration: %w", err)
 		}

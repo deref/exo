@@ -153,12 +153,8 @@ func (r *StackResolver) Components(ctx context.Context, args struct {
 		Q:       r.Q,
 		StackID: r.ID,
 	}
-	if args.All != nil {
-		componentSet.All = *args.All
-	}
-	if args.Recursive != nil {
-		componentSet.Recursive = *args.Recursive
-	}
+	componentSet.All = isTrue(args.All)
+	componentSet.Recursive = isTrue(args.Recursive)
 	return componentSet.items(ctx)
 }
 
@@ -303,32 +299,39 @@ func (r *MutationResolver) SetWorkspaceStack(ctx context.Context, args struct {
 	}, nil
 }
 
-func (r *StackResolver) Configuration(ctx context.Context) (string, error) {
-	cfg, err := r.configuration(ctx)
+func (r *StackResolver) Configuration(ctx context.Context, args struct {
+	Recursive *bool
+}) (string, error) {
+	cfg, err := r.configuration(ctx, isTrue(args.Recursive))
 	if err != nil {
 		return "", err
 	}
-	return exocue.FormatString(cfg.Final())
+	return exocue.FormatString(cfg)
 }
 
 // TODO: It might be valuable to cache this for multiple
 // ComponentResolver.evalSpec calls.
-func (r *StackResolver) configuration(ctx context.Context) (exocue.Stack, error) {
+func (r *StackResolver) configuration(ctx context.Context, recursive bool) (exocue.Stack, error) {
 	b := exocue.NewBuilder()
-	if err := r.addConfiguration(ctx, b); err != nil {
+	if err := r.addConfiguration(ctx, b, recursive); err != nil {
 		return exocue.Stack{}, err
 	}
 	return b.BuildStack(), nil
 }
 
-func (r *StackResolver) addConfiguration(ctx context.Context, b *exocue.Builder) error {
+func (r *StackResolver) addConfiguration(ctx context.Context, b *exocue.Builder, recursive bool) error {
 	cluster, err := r.Cluster(ctx)
 	if err != nil {
 		return fmt.Errorf("resolving cluster: %w", err)
 	}
 	cluster.addConfiguration(ctx, b)
 
-	components, err := r.components(ctx)
+	componentSet := &componentSetResolver{
+		Q:         r.Q,
+		StackID:   r.ID,
+		Recursive: recursive,
+	}
+	components, err := componentSet.items(ctx)
 	if err != nil {
 		return fmt.Errorf("resolving components: %w", err)
 	}

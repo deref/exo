@@ -8,6 +8,8 @@ import (
 	"reflect"
 	"strings"
 
+	"cuelang.org/go/cue"
+	"github.com/deref/exo/internal/manifest/exocue"
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/jmoiron/sqlx"
 )
@@ -134,4 +136,15 @@ func rowsAffected(res sql.Result) int64 {
 		panic(err)
 	}
 	return n
+}
+
+func isTrue(b *bool) bool {
+	if b == nil {
+		return false
+	}
+	return *b
+}
+
+func formatConfiguration(v cue.Value) (string, error) {
+	return exocue.FormatString(exocue.Final(v))
 }

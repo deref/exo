@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"time"
 
+	"cuelang.org/go/cue"
 	"github.com/deref/exo/internal/manifest/exocue"
 	"github.com/deref/exo/internal/scalars"
 	"github.com/deref/exo/internal/util/errutil"
@@ -168,7 +169,7 @@ func (r *ClusterResolver) Configuration(ctx context.Context) (string, error) {
 	if err != nil {
 		return "", err
 	}
-	return exocue.FormatString(cfg.Final())
+	return formatConfiguration(cue.Value(cfg))
 }
 
 func (r *ClusterResolver) configuration(ctx context.Context) (exocue.Cluster, error) {
