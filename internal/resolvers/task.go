@@ -95,6 +95,7 @@ type TaskInput struct {
 }
 
 func (r *MutationResolver) createTasks(ctx context.Context, inputs []TaskInput) ([]*TaskResolver, error) {
+	// TODO: Create tasks in bulk.
 	tasks := make([]*TaskResolver, len(inputs))
 	for i, input := range inputs {
 		var err error
@@ -363,6 +364,17 @@ func (r *QueryResolver) taskByID(ctx context.Context, id *string) (*TaskResolver
 	return t, err
 }
 
+func taskRowsToResolvers(r *RootResolver, rows []TaskRow) []*TaskResolver {
+	resolvers := make([]*TaskResolver, len(rows))
+	for i, row := range rows {
+		resolvers[i] = &TaskResolver{
+			Q:       r,
+			TaskRow: row,
+		}
+	}
+	return resolvers
+}
+
 func (r *QueryResolver) AllTasks(ctx context.Context) ([]*TaskResolver, error) {
 	var rows []TaskRow
 	err := r.DB.SelectContext(ctx, &rows, `
@@ -373,14 +385,7 @@ func (r *QueryResolver) AllTasks(ctx context.Context) ([]*TaskResolver, error) {
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]*TaskResolver, len(rows))
-	for i, row := range rows {
-		resolvers[i] = &TaskResolver{
-			Q:       r,
-			TaskRow: row,
-		}
-	}
-	return resolvers, nil
+	return taskRowsToResolvers(r, rows), nil
 }
 
 func (r *QueryResolver) tasksByParentID(ctx context.Context, parentID string) ([]*TaskResolver, error) {
@@ -394,14 +399,7 @@ func (r *QueryResolver) tasksByParentID(ctx context.Context, parentID string) ([
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]*TaskResolver, len(rows))
-	for i, row := range rows {
-		resolvers[i] = &TaskResolver{
-			Q:       r,
-			TaskRow: row,
-		}
-	}
-	return resolvers, nil
+	return taskRowsToResolvers(r, rows), nil
 }
 
 func (r *QueryResolver) TasksByJobID(ctx context.Context, args struct {
@@ -434,14 +432,7 @@ func (r *QueryResolver) tasksByJobIDs(ctx context.Context, jobIDs []string) ([]*
 			return nil, err
 		}
 	}
-	resolvers := make([]*TaskResolver, len(rows))
-	for i, row := range rows {
-		resolvers[i] = &TaskResolver{
-			Q:       r,
-			TaskRow: row,
-		}
-	}
-	return resolvers, nil
+	return taskRowsToResolvers(r, rows), nil
 }
 
 func (r *TaskResolver) Job() *JobResolver {

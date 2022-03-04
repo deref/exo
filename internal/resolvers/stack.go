@@ -27,6 +27,17 @@ type StackRow struct {
 	WorkspaceID *string `db:"workspace_id"`
 }
 
+func stackRowsToResolvers(r *RootResolver, rows []StackRow) []*StackResolver {
+	resolvers := make([]*StackResolver, len(rows))
+	for i, row := range rows {
+		resolvers[i] = &StackResolver{
+			Q:        r,
+			StackRow: row,
+		}
+	}
+	return resolvers
+}
+
 func (r *QueryResolver) AllStacks(ctx context.Context) ([]*StackResolver, error) {
 	var rows []StackRow
 	err := r.DB.SelectContext(ctx, &rows, `
@@ -37,14 +48,7 @@ func (r *QueryResolver) AllStacks(ctx context.Context) ([]*StackResolver, error)
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]*StackResolver, len(rows))
-	for i, row := range rows {
-		resolvers[i] = &StackResolver{
-			Q:        r,
-			StackRow: row,
-		}
-	}
-	return resolvers, nil
+	return stackRowsToResolvers(r, rows), nil
 }
 
 func (r *QueryResolver) StackByID(ctx context.Context, args struct {
@@ -97,14 +101,7 @@ func (r *QueryResolver) stacksByProject(ctx context.Context, stackID string) ([]
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]*StackResolver, len(rows))
-	for i, row := range rows {
-		resolvers[i] = &StackResolver{
-			Q:        r,
-			StackRow: row,
-		}
-	}
-	return resolvers, nil
+	return stackRowsToResolvers(r, rows), nil
 }
 
 func (r *QueryResolver) StackByRef(ctx context.Context, args struct {

@@ -75,6 +75,10 @@ func (r *QueryResolver) AllClusters(ctx context.Context) ([]*ClusterResolver, er
 	if err != nil {
 		return nil, err
 	}
+	return clusterRowsToResolvers(r, rows), nil
+}
+
+func clusterRowsToResolvers(r *RootResolver, rows []ClusterRow) []*ClusterResolver {
 	resolvers := make([]*ClusterResolver, len(rows))
 	for i, row := range rows {
 		resolvers[i] = &ClusterResolver{
@@ -82,7 +86,7 @@ func (r *QueryResolver) AllClusters(ctx context.Context) ([]*ClusterResolver, er
 			ClusterRow: row,
 		}
 	}
-	return resolvers, nil
+	return resolvers
 }
 
 // NOTE [DEFAULT_CLUSTER]: The default cluster should be configurable, or at

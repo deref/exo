@@ -220,23 +220,28 @@ func (r *QueryResolver) findEvents(ctx context.Context, q eventQuery) (*EventPag
 	}
 
 	output := &EventPageResolver{
-		Items: make([]*EventResolver, len(rows)),
-	}
-	for i, row := range rows {
-		output.Items[i] = &EventResolver{
-			Q:        r,
-			EventRow: row,
-		}
+		Items:      eventRowsToResolvers(r, rows),
+		PrevCursor: cursor,
+		NextCursor: cursor,
 	}
 
-	output.PrevCursor = cursor
-	output.NextCursor = cursor
 	if len(rows) > 0 {
 		output.PrevCursor = rows[0].ULID
 		output.NextCursor = IncrementULID(rows[len(rows)-1].ULID)
 	}
 
 	return output, nil
+}
+
+func eventRowsToResolvers(r *RootResolver, rows []EventRow) []*EventResolver {
+	resolvers := make([]*EventResolver, len(rows))
+	for i, row := range rows {
+		resolvers[i] = &EventResolver{
+			Q:        r,
+			EventRow: row,
+		}
+	}
+	return resolvers
 }
 
 // XXX When if ever is it appropriate to use this?
