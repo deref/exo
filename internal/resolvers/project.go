@@ -17,6 +17,17 @@ type ProjectRow struct {
 	DisplayName *string `db:"display_name"`
 }
 
+func projectRowsToResolvers(r *RootResolver, rows []ProjectRow) []*ProjectResolver {
+	resolvers := make([]*ProjectResolver, len(rows))
+	for i, row := range rows {
+		resolvers[i] = &ProjectResolver{
+			Q:          r,
+			ProjectRow: row,
+		}
+	}
+	return resolvers
+}
+
 func (r *QueryResolver) AllProjects(ctx context.Context) ([]*ProjectResolver, error) {
 	var rows []ProjectRow
 	err := r.DB.SelectContext(ctx, &rows, `
@@ -27,14 +38,7 @@ func (r *QueryResolver) AllProjects(ctx context.Context) ([]*ProjectResolver, er
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]*ProjectResolver, len(rows))
-	for i, row := range rows {
-		resolvers[i] = &ProjectResolver{
-			Q:          r,
-			ProjectRow: row,
-		}
-	}
-	return resolvers, nil
+	return projectRowsToResolvers(r, rows), nil
 }
 
 func (r *QueryResolver) ProjectByID(ctx context.Context, args struct {

@@ -20,6 +20,17 @@ type WorkspaceRow struct {
 	ProjectID string `db:"project_id"`
 }
 
+func workspaceRowsToResolvers(r *RootResolver, rows []WorkspaceRow) []*WorkspaceResolver {
+	resolvers := make([]*WorkspaceResolver, len(rows))
+	for i, row := range rows {
+		resolvers[i] = &WorkspaceResolver{
+			Q:            r,
+			WorkspaceRow: row,
+		}
+	}
+	return resolvers
+}
+
 func (r *QueryResolver) AllWorkspaces(ctx context.Context) ([]*WorkspaceResolver, error) {
 	var rows []WorkspaceRow
 	err := r.DB.SelectContext(ctx, &rows, `
@@ -30,14 +41,7 @@ func (r *QueryResolver) AllWorkspaces(ctx context.Context) ([]*WorkspaceResolver
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]*WorkspaceResolver, len(rows))
-	for i, row := range rows {
-		resolvers[i] = &WorkspaceResolver{
-			Q:            r,
-			WorkspaceRow: row,
-		}
-	}
-	return resolvers, nil
+	return workspaceRowsToResolvers(r, rows), nil
 }
 
 func (r *QueryResolver) WorkspaceByID(ctx context.Context, args struct {

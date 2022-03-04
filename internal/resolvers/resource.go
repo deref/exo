@@ -51,6 +51,17 @@ func (r *MutationResolver) forgetResource(ctx context.Context, ref string) error
 	return err
 }
 
+func resourceRowsToResolvers(r *RootResolver, rows []ResourceRow) []*ResourceResolver {
+	resolvers := make([]*ResourceResolver, len(rows))
+	for i, row := range rows {
+		resolvers[i] = &ResourceResolver{
+			Q:           r,
+			ResourceRow: row,
+		}
+	}
+	return resolvers
+}
+
 func (r *QueryResolver) AllResources(ctx context.Context) ([]*ResourceResolver, error) {
 	var rows []ResourceRow
 	err := r.DB.SelectContext(ctx, &rows, `
@@ -61,14 +72,7 @@ func (r *QueryResolver) AllResources(ctx context.Context) ([]*ResourceResolver, 
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]*ResourceResolver, len(rows))
-	for i, row := range rows {
-		resolvers[i] = &ResourceResolver{
-			Q:           r,
-			ResourceRow: row,
-		}
-	}
-	return resolvers, nil
+	return resourceRowsToResolvers(r, rows), nil
 }
 
 func (r *QueryResolver) resourcesByIRI(ctx context.Context, iri string) ([]*ResourceResolver, error) {
@@ -82,14 +86,7 @@ func (r *QueryResolver) resourcesByIRI(ctx context.Context, iri string) ([]*Reso
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]*ResourceResolver, len(rows))
-	for i, row := range rows {
-		resolvers[i] = &ResourceResolver{
-			Q:           r,
-			ResourceRow: row,
-		}
-	}
-	return resolvers, nil
+	return resourceRowsToResolvers(r, rows), nil
 }
 
 func (r *QueryResolver) ResourceByID(ctx context.Context, args struct {
@@ -166,14 +163,7 @@ func (r *QueryResolver) resourcesByProject(ctx context.Context, projectID string
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]*ResourceResolver, len(rows))
-	for i, row := range rows {
-		resolvers[i] = &ResourceResolver{
-			Q:           r,
-			ResourceRow: row,
-		}
-	}
-	return resolvers, nil
+	return resourceRowsToResolvers(r, rows), nil
 }
 
 func (r *QueryResolver) resourcesByStack(ctx context.Context, stackID string) ([]*ResourceResolver, error) {
@@ -187,14 +177,7 @@ func (r *QueryResolver) resourcesByStack(ctx context.Context, stackID string) ([
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]*ResourceResolver, len(rows))
-	for i, row := range rows {
-		resolvers[i] = &ResourceResolver{
-			Q:           r,
-			ResourceRow: row,
-		}
-	}
-	return resolvers, nil
+	return resourceRowsToResolvers(r, rows), nil
 }
 
 func (r *QueryResolver) resourcesByComponent(ctx context.Context, componentID string) ([]*ResourceResolver, error) {
@@ -208,14 +191,7 @@ func (r *QueryResolver) resourcesByComponent(ctx context.Context, componentID st
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]*ResourceResolver, len(rows))
-	for i, row := range rows {
-		resolvers[i] = &ResourceResolver{
-			Q:           r,
-			ResourceRow: row,
-		}
-	}
-	return resolvers, nil
+	return resourceRowsToResolvers(r, rows), nil
 }
 
 func (r *ResourceResolver) OwnerType() *string {

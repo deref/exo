@@ -134,14 +134,7 @@ func (r *componentSetResolver) items(ctx context.Context) ([]*ComponentResolver,
 	if err != nil {
 		return nil, err
 	}
-	resolvers := make([]*ComponentResolver, len(rows))
-	for i, row := range rows {
-		resolvers[i] = &ComponentResolver{
-			Q:            r.Q,
-			ComponentRow: row,
-		}
-	}
-	return resolvers, nil
+	return componentRowsToResolvers(r.Q, rows), nil
 }
 
 func (r *QueryResolver) componentsByStack(ctx context.Context, stackID string) ([]*ComponentResolver, error) {
@@ -164,6 +157,10 @@ func (r *QueryResolver) componentsByParent(ctx context.Context, parentID string)
 	if err != nil {
 		return nil, err
 	}
+	return componentRowsToResolvers(r, rows), nil
+}
+
+func componentRowsToResolvers(r *RootResolver, rows []ComponentRow) []*ComponentResolver {
 	resolvers := make([]*ComponentResolver, len(rows))
 	for i, row := range rows {
 		resolvers[i] = &ComponentResolver{
@@ -171,7 +168,7 @@ func (r *QueryResolver) componentsByParent(ctx context.Context, parentID string)
 			ComponentRow: row,
 		}
 	}
-	return resolvers, nil
+	return resolvers
 }
 
 func (r *ComponentResolver) Stack(ctx context.Context) (*StackResolver, error) {
