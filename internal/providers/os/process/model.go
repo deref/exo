@@ -13,15 +13,15 @@ type Model struct {
 }
 
 type Spec struct {
-	Program     string            `json:"program"`
-	Arguments   []string          `json:"arguments"`
-	Directory   string            `json:"directory"`
-	Environment map[string]string `json:"environment"`
+	Program     string            `json:"program,omitempty"`
+	Arguments   []string          `json:"arguments,omitempty"`
+	Directory   string            `json:"directory,omitempty"`
+	Environment map[string]string `json:"environment,omitempty"`
 }
 
 type State struct {
-	ProgramPath string `json:"programPath"`
-	Pid         *int   `json:"pid"`
+	ProgramPath string `json:"programPath,omitempty"`
+	Pid         *int   `json:"pid,omitempty"`
 }
 
 type Controller struct {

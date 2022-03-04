@@ -4,7 +4,6 @@ import (
 	_ "embed"
 	"fmt"
 
-	"cuelang.org/go/cue"
 	"cuelang.org/go/cue/ast"
 	"cuelang.org/go/cue/cuecontext"
 	"cuelang.org/go/cue/parser"
@@ -55,11 +54,12 @@ func (b *Builder) AddManifest(s string) {
 	b.addDecl([]string{"$stack"}, manifest)
 }
 
-func (b *Builder) AddComponent(id string, name string, typ string, spec string) {
+func (b *Builder) AddComponent(id string, name string, typ string, spec string, parentID *string) {
 	fname := fmt.Sprintf("components/%s.cue", id)
 	specNode := parseFileAsStruct(fname, spec)
 	component := ast.NewStruct(
 		"id", ast.NewString(id),
+		"name", ast.NewString(name),
 		"type", ast.NewString(typ),
 		"spec", specNode,
 	)
@@ -67,20 +67,30 @@ func (b *Builder) AddComponent(id string, name string, typ string, spec string) 
 	switch typ {
 	case "daemon":
 		decl = newAnd(ast.NewIdent("$Daemon"), component)
+	case "process":
+		decl = newAnd(ast.NewIdent("$Process"), component)
 	default:
 		panic(fmt.Errorf("TODO: type lookup schema voodoo. typ=%q", typ))
 	}
 	b.addDecl([]string{"$components", id}, decl)
 	sel := ast.NewSel(ast.NewIdent("$components"), id)
-	b.addDecl([]string{"$stack", "components", name}, sel)
+	b.addDecl([]string{"$components", id}, sel)
+	if parentID == nil {
+		b.addDecl([]string{"$stack", "components", name}, sel)
+	} else {
+		b.addDecl([]string{"$components", *parentID, "components", name}, sel)
+	}
 }
 
 func (b *Builder) AddResource(id string, typ string, iri *string, componentID *string) {
-	resource := ast.NewStruct(
+	fields := []interface{}{
 		"id", ast.NewString(id),
 		"type", ast.NewString(typ),
-		"iri", newOptionalString(iri),
-	)
+	}
+	if iri != nil {
+		fields = append(fields, "iri", ast.NewString(*iri))
+	}
+	resource := ast.NewStruct(fields...)
 	b.addDecl([]string{"$resources", id}, resource)
 	sel := ast.NewSel(ast.NewIdent("$resources"), id)
 	if componentID == nil {
@@ -106,23 +116,8 @@ func newAnd(xs ...ast.Expr) ast.Expr {
 	return ast.NewBinExpr(token.AND, xs...)
 }
 
-func (b *Builder) build(key string) cue.Value {
+func (b *Builder) Build() Configuration {
 	cc := cuecontext.New()
-	cfg := cc.BuildExpr(declsToStruct(b.decls))
-	return cfg.LookupPath(cue.MakePath(cue.Str(key)))
-}
-
-func (b *Builder) BuildStack() Stack {
-	return Stack(b.build("$stack"))
-}
-
-func (b *Builder) BuildCluster() Cluster {
-	return Cluster(b.build("$cluster"))
-}
-
-func newOptionalString(s *string) ast.Expr {
-	if s == nil {
-		return ast.NewNull()
-	}
-	return ast.NewString(*s)
+	x := cc.BuildExpr(declsToStruct(b.decls))
+	return Configuration(x)
 }

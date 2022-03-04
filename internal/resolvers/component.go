@@ -21,16 +21,15 @@ type ComponentResolver struct {
 }
 
 type ComponentRow struct {
-	ID         string     `db:"id"`
-	StackID    string     `db:"stack_id"`
-	ParentID   *string    `db:"parent_id"`
-	Type       string     `db:"type"`
-	Name       string     `db:"name"`
-	Key        string     `db:"key"`
-	Spec       string     `db:"spec"`
-	State      JSONObject `db:"state"`
-	ResourceID *string    `db:"resource_id"`
-	Disposed   *Instant   `db:"disposed"`
+	ID       string     `db:"id"`
+	StackID  string     `db:"stack_id"`
+	ParentID *string    `db:"parent_id"`
+	Type     string     `db:"type"`
+	Name     string     `db:"name"`
+	Key      string     `db:"key"`
+	Spec     string     `db:"spec"`
+	State    JSONObject `db:"state"`
+	Disposed *Instant   `db:"disposed"`
 }
 
 func (r *QueryResolver) ComponentByID(ctx context.Context, args struct {
@@ -187,8 +186,8 @@ func (r *ComponentResolver) Children(ctx context.Context) ([]*ComponentResolver,
 	return r.Q.componentsByParent(ctx, r.ID)
 }
 
-func (r *ComponentResolver) Resource(ctx context.Context) (*ResourceResolver, error) {
-	return r.Q.resourceByID(ctx, r.ResourceID)
+func (r *ComponentResolver) Resources(ctx context.Context) ([]*ResourceResolver, error) {
+	return r.Q.resourcesByComponent(ctx, r.ID)
 }
 
 func (r *MutationResolver) CreateComponent(ctx context.Context, args struct {
@@ -205,7 +204,15 @@ func (r *MutationResolver) CreateComponent(ctx context.Context, args struct {
 		return nil, errutil.HTTPErrorf(http.StatusNotFound, "no such stack: %q", args.Stack)
 	}
 
-	return r.createComponent(ctx, stack.ID /* parentID: */, nil, args.Type, args.Name, args.Spec, "")
+	row, err := r.createComponent(ctx, stack.ID /* parentID: */, nil, args.Type, args.Name, args.Spec, "")
+	if err != nil {
+		return nil, err
+	}
+	reconciliation, err := r.startComponentReconciliationJob(ctx, row)
+	if err != nil {
+		return nil, fmt.Errorf("starting component reconciliation: %w", err)
+	}
+	return reconciliation, nil
 }
 
 type NewComponentInput struct {
@@ -215,7 +222,7 @@ type NewComponentInput struct {
 	Spec string
 }
 
-func (r *MutationResolver) createComponent(ctx context.Context, stackID string, parentID *string, typ, name, spec, key string) (*ReconciliationResolver, error) {
+func (r *MutationResolver) createComponent(ctx context.Context, stackID string, parentID *string, typ, name, spec, key string) (*ComponentResolver, error) {
 	// TODO: Validate type, name, key & spec.
 
 	row := ComponentRow{
@@ -234,7 +241,10 @@ func (r *MutationResolver) createComponent(ctx context.Context, stackID string, 
 		}
 		return nil, fmt.Errorf("inserting: %w", err)
 	}
-	return r.startComponentReconciliation(ctx, row)
+	return &ComponentResolver{
+		Q:            r,
+		ComponentRow: row,
+	}, nil
 }
 
 func (r *MutationResolver) UpdateComponent(ctx context.Context, args struct {
@@ -264,20 +274,42 @@ func (r *MutationResolver) UpdateComponent(ctx context.Context, args struct {
 	// TODO: Validate name and spec.
 
 	var row ComponentRow
-	if _, err := r.DB.ExecContext(ctx, `
+	if err := r.DB.GetContext(ctx, &row, `
 		UPDATE component
 		SET spec = ?, name = ?
 		WHERE id = ?
+		RETURNING *
 	`, spec, name, component.ID); err != nil {
 		return nil, err
 	}
-	return r.startComponentReconciliation(ctx, row)
+	component = &ComponentResolver{
+		Q:            r,
+		ComponentRow: row,
+	}
+	return r.startComponentReconciliationJob(ctx, component)
+}
+
+func (r *MutationResolver) DisposeComponents(ctx context.Context, args struct {
+	Stack *string
+	Refs  []string
+}) (*ReconciliationResolver, error) {
+	if len(args.Refs) != 1 {
+		panic("TODO: Bulk DisposeComponents")
+	}
+	return r.DisposeComponent(ctx, struct {
+		Stack *string
+		Ref   string
+	}{
+		Ref:   args.Refs[0],
+		Stack: args.Stack,
+	})
 }
 
 func (r *MutationResolver) DisposeComponent(ctx context.Context, args struct {
 	Stack *string
 	Ref   string
 }) (*ReconciliationResolver, error) {
+	// TODO: Implement in terms of DisposeComponents.
 	component, err := r.componentByRef(ctx, args.Ref, args.Stack)
 	if err != nil {
 		return nil, fmt.Errorf("resolving component: %w", err)
@@ -285,10 +317,14 @@ func (r *MutationResolver) DisposeComponent(ctx context.Context, args struct {
 	if component == nil {
 		return nil, errors.New("no such component")
 	}
-	return r.disposeComponent(ctx, component.ID)
+	component, err = r.disposeComponent(ctx, component.ID)
+	if err != nil {
+		return nil, err
+	}
+	return r.startComponentReconciliationJob(ctx, component)
 }
 
-func (r *MutationResolver) disposeComponent(ctx context.Context, id string) (*ReconciliationResolver, error) {
+func (r *MutationResolver) disposeComponent(ctx context.Context, id string) (*ComponentResolver, error) {
 	now := Now(ctx)
 	var row ComponentRow
 	if err := r.DB.GetContext(ctx, &row, `
@@ -306,19 +342,18 @@ func (r *MutationResolver) disposeComponent(ctx context.Context, id string) (*Re
 	`, now, id); err != nil {
 		return nil, err
 	}
-	return r.startComponentReconciliation(ctx, row)
+	return &ComponentResolver{
+		Q:            r,
+		ComponentRow: row,
+	}, nil
 }
 
-func (r *MutationResolver) startComponentReconciliation(ctx context.Context, row ComponentRow) (*ReconciliationResolver, error) {
+func (r *MutationResolver) startComponentReconciliationJob(ctx context.Context, component *ComponentResolver) (*ReconciliationResolver, error) {
 	job, err := r.createJob(ctx, "reconcileComponent", map[string]interface{}{
-		"ref": row.ID,
+		"ref": component.ID,
 	})
 	if err != nil {
 		return nil, fmt.Errorf("creating reconciliation job: %w", err)
-	}
-	component := &ComponentResolver{
-		Q:            r,
-		ComponentRow: row,
 	}
 	return &ReconciliationResolver{
 		StackID:   component.StackID,
@@ -329,12 +364,13 @@ func (r *MutationResolver) startComponentReconciliation(ctx context.Context, row
 
 func (r *ComponentResolver) Configuration(ctx context.Context, args struct {
 	Recursive *bool
+	Final     *bool
 }) (string, error) {
 	cfg, err := r.configuration(ctx, isTrue(args.Recursive))
 	if err != nil {
 		return "", err
 	}
-	return formatConfiguration(cue.Value(cfg))
+	return formatConfiguration(cue.Value(cfg), isTrue(args.Final))
 }
 
 func (r *ComponentResolver) configuration(ctx context.Context, recursive bool) (exocue.Component, error) {
@@ -342,11 +378,11 @@ func (r *ComponentResolver) configuration(ctx context.Context, recursive bool) (
 	if err != nil {
 		return exocue.Component{}, fmt.Errorf("resolving stack: %w", err)
 	}
-	cfg, err := stack.configuration(ctx, recursive)
-	if err != nil {
-		return exocue.Component{}, err
+	b := exocue.NewBuilder()
+	if err := stack.addConfiguration(ctx, b, recursive); err != nil {
+		return exocue.Component{}, fmt.Errorf("adding stack configuration: %w", err)
 	}
-	return cfg.Component(r.Name), nil
+	return b.Build().Component(r.ID), nil
 }
 
 func (r *ComponentResolver) isProcess() bool {

@@ -155,6 +155,27 @@ func (r *QueryResolver) resourceByRef(ctx context.Context, ref *string) (*Resour
 	return r.resourceByID(ctx, ref)
 }
 
+func (r *QueryResolver) resourcesByProject(ctx context.Context, projectID string) ([]*ResourceResolver, error) {
+	var rows []ResourceRow
+	err := r.DB.SelectContext(ctx, &rows, `
+		SELECT *
+		FROM resource
+		WHERE project_id = ?
+		ORDER BY id ASC
+	`, projectID)
+	if err != nil {
+		return nil, err
+	}
+	resolvers := make([]*ResourceResolver, len(rows))
+	for i, row := range rows {
+		resolvers[i] = &ResourceResolver{
+			Q:           r,
+			ResourceRow: row,
+		}
+	}
+	return resolvers, nil
+}
+
 func (r *QueryResolver) resourcesByStack(ctx context.Context, stackID string) ([]*ResourceResolver, error) {
 	var rows []ResourceRow
 	err := r.DB.SelectContext(ctx, &rows, `
@@ -176,16 +197,14 @@ func (r *QueryResolver) resourcesByStack(ctx context.Context, stackID string) ([
 	return resolvers, nil
 }
 
-func (r *QueryResolver) resourcesByProject(ctx context.Context, projectID string) ([]*ResourceResolver, error) {
+func (r *QueryResolver) resourcesByComponent(ctx context.Context, componentID string) ([]*ResourceResolver, error) {
 	var rows []ResourceRow
 	err := r.DB.SelectContext(ctx, &rows, `
-		SELECT resource.*
+		SELECT *
 		FROM resource
-		INNER JOIN component ON component_id = component.id
-		INNER JOIN stack ON component.stack_id = stack.id
-		WHERE resource.project_id = ?
-		ORDER BY resource.id ASC
-	`, projectID)
+		WHERE component_id = ?
+		ORDER BY id ASC
+	`, componentID)
 	if err != nil {
 		return nil, err
 	}

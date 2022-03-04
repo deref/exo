@@ -115,20 +115,34 @@ func (r *MutationResolver) ReconcileComponent(ctx context.Context, args struct {
 		}
 
 		for _, child := range children {
+			reconcileID := child.ID
 			switch {
 			case !child.Existing:
 				spec := *child.NewSpec
-				if _, err := r.createComponent(ctx, parent.StackID, &parent.ID, child.Type, child.Name, spec, child.Key); err != nil {
+				created, err := r.createComponent(ctx, parent.StackID, &parent.ID, child.Type, child.Name, spec, child.Key)
+				if err != nil {
 					return nil, fmt.Errorf("creating %q: %w", child.Name, err)
 				}
+				reconcileID = created.ID
 			case child.NewSpec == nil:
 				if _, err := r.disposeComponent(ctx, child.ID); err != nil {
 					return nil, fmt.Errorf("disposing %q: %w", child.Name, err)
 				}
 			default:
+				// XXX instead of task keys, might be better to have prev/next specs on
+				// components, then iif changing the next step, trigger a transition. but
+				// need to be concerned with concurrent changes.
 				spec := *child.NewSpec
 				if err := r.ensureComponentTransition(ctx, child.ID, spec); err != nil {
 					return nil, fmt.Errorf("ensuring %q transition: %w", child.Name, err)
+				}
+			}
+			if reconcileID != "" {
+				_, err := r.createTask(ctx, "reconcileComponent", map[string]interface{}{
+					"ref": reconcileID,
+				})
+				if err != nil {
+					return nil, fmt.Errorf("creating child %q reconciliation task: %w", child.Name, err)
 				}
 			}
 		}

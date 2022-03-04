@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"net/http"
 
+	"cuelang.org/go/cue"
 	"github.com/deref/exo/internal/gensym"
 	"github.com/deref/exo/internal/manifest/exocue"
 	"github.com/deref/exo/internal/util/errutil"
@@ -301,12 +302,13 @@ func (r *MutationResolver) SetWorkspaceStack(ctx context.Context, args struct {
 
 func (r *StackResolver) Configuration(ctx context.Context, args struct {
 	Recursive *bool
+	Final     *bool
 }) (string, error) {
 	cfg, err := r.configuration(ctx, isTrue(args.Recursive))
 	if err != nil {
 		return "", err
 	}
-	return exocue.FormatString(cfg)
+	return formatConfiguration(cue.Value(cfg), isTrue(args.Final))
 }
 
 // TODO: It might be valuable to cache this for multiple
@@ -316,7 +318,7 @@ func (r *StackResolver) configuration(ctx context.Context, recursive bool) (exoc
 	if err := r.addConfiguration(ctx, b, recursive); err != nil {
 		return exocue.Stack{}, err
 	}
-	return b.BuildStack(), nil
+	return b.Build().Stack(), nil
 }
 
 func (r *StackResolver) addConfiguration(ctx context.Context, b *exocue.Builder, recursive bool) error {
@@ -324,7 +326,9 @@ func (r *StackResolver) addConfiguration(ctx context.Context, b *exocue.Builder,
 	if err != nil {
 		return fmt.Errorf("resolving cluster: %w", err)
 	}
-	cluster.addConfiguration(ctx, b)
+	if err := cluster.addConfiguration(ctx, b); err != nil {
+		return fmt.Errorf("adding cluster configuration: %w", err)
+	}
 
 	componentSet := &componentSetResolver{
 		Q:         r.Q,
@@ -336,7 +340,7 @@ func (r *StackResolver) addConfiguration(ctx context.Context, b *exocue.Builder,
 		return fmt.Errorf("resolving components: %w", err)
 	}
 	for _, component := range components {
-		b.AddComponent(component.ID, component.Name, component.Type, component.Spec)
+		b.AddComponent(component.ID, component.Name, component.Type, component.Spec, component.ParentID)
 	}
 
 	resources, err := r.Resources(ctx)
