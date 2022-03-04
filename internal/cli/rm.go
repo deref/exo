@@ -10,24 +10,24 @@ func init() {
 }
 
 var rmCmd = &cobra.Command{
-	Use:   "rm <ref>",
-	Short: "Remove component",
+	Use:   "rm <refs...>",
+	Short: "Remove components",
 	// TODO: Update manifest?
-	Long: "Remove component from the current stack.",
+	Long: "Remove components from the current stack.",
 	Args: cobra.ExactArgs(1), // TODO: Variadic.
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		ref := args[0]
+		refs := args
 		var m struct {
 			Reconciliation struct {
 				Job struct {
 					ID string
 				}
-			} `graphql:"disposeComponent(stack: $stack, ref: $component)"`
+			} `graphql:"disposeComponents(stack: $stack, refs: $components)"`
 		}
 		if err := api.Mutate(ctx, svc, &m, map[string]interface{}{
-			"stack":     currentStackRef(),
-			"component": ref,
+			"stack":      currentStackRef(),
+			"components": refs,
 		}); err != nil {
 			return err
 		}

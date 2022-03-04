@@ -96,6 +96,7 @@ type Mutation {
   createComponent(stack: String!, name: String! type: String! spec: String!): Reconciliation!
   updateComponent(stack: String, ref: String!, newName: String, newSpec: String): Reconciliation!
   disposeComponent(stack: String, ref: String!): Reconciliation!
+  disposeComponents(stack: String, refs: [String!]!): Reconciliation!
 
   reconcileComponent(stack: String, ref: String!): Void
   initializeComponent(id: String!): Void
@@ -143,7 +144,7 @@ type Cluster {
   default: Boolean!
   environment: Environment!
 
-  configuration: String!
+  configuration(final: Boolean): String!
 }
 
 type Project {
@@ -203,7 +204,7 @@ type Stack {
   processes: [Process!]!
   resources: [Resource!]!
   
-  configuration(recursive: Boolean): String!
+  configuration(recursive: Boolean, final: Boolean): String!
 
   environment: Environment!
 }
@@ -221,10 +222,10 @@ type Component {
   type: String!
   name: String!
 
-  resource: Resource
+  resources: [Resource!]!
   
   spec: String!
-  configuration(recursive: Boolean): String!
+  configuration(recursive: Boolean, final: Boolean): String!
 
   state: JSONObject!
 

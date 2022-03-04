@@ -164,12 +164,14 @@ func (r *MutationResolver) refreshCluster(ctx context.Context, ref string) (*Clu
 	return r.updateCluster(ctx, ref, &envObj)
 }
 
-func (r *ClusterResolver) Configuration(ctx context.Context) (string, error) {
+func (r *ClusterResolver) Configuration(ctx context.Context, args struct {
+	Final *bool
+}) (string, error) {
 	cfg, err := r.configuration(ctx)
 	if err != nil {
 		return "", err
 	}
-	return formatConfiguration(cue.Value(cfg))
+	return formatConfiguration(cue.Value(cfg), isTrue(args.Final))
 }
 
 func (r *ClusterResolver) configuration(ctx context.Context) (exocue.Cluster, error) {
@@ -177,7 +179,7 @@ func (r *ClusterResolver) configuration(ctx context.Context) (exocue.Cluster, er
 	if err := r.addConfiguration(ctx, b); err != nil {
 		return exocue.Cluster{}, err
 	}
-	return b.BuildCluster(), nil
+	return b.Build().Cluster(), nil
 }
 
 func (r *ClusterResolver) addConfiguration(ctx context.Context, b *exocue.Builder) error {

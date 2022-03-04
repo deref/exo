@@ -145,6 +145,18 @@ func isTrue(b *bool) bool {
 	return *b
 }
 
-func formatConfiguration(v cue.Value) (string, error) {
-	return exocue.FormatString(exocue.Final(v))
+func formatConfiguration(v cue.Value, final bool) (string, error) {
+	var res interface{}
+	if final {
+		res = exocue.Final(v)
+	} else if isValid(v) {
+		// XXX what to do when invalid? is there a good way to show the errors?
+		res = v.Eval()
+	}
+	return exocue.FormatString(res)
+}
+
+func isValid(v cue.Value) bool {
+	// TODO: Any options to use here?
+	return v.Validate() == nil
 }

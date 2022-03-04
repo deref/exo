@@ -30,7 +30,7 @@ type ComponentConfig struct {
 type ResourceConfig struct {
 	ID   string `json:"id"`
 	Type string `json:"type"`
-	IRI  string `json:"iri"`
+	IRI  string `json:"iri,omitempty"`
 }
 
 func decodeComponentConfig(ctx context.Context, typ reflect.Type, v cue.Value) (interface{}, error) {

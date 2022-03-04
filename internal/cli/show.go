@@ -11,10 +11,12 @@ import (
 func init() {
 	rootCmd.AddCommand(showCmd)
 	showCmd.Flags().BoolVar(&showFlags.Recursive, "recursive", false, "include subcomponents")
+	showCmd.Flags().BoolVar(&showFlags.Final, "final", false, "fully evaluate to a concrete value")
 }
 
 var showFlags struct {
 	Recursive bool
+	Final     bool
 }
 
 // TODO: Generalize to be able to conveniently show any type of object.
@@ -28,13 +30,14 @@ var showCmd = &cobra.Command{
 		ref := args[0]
 		var q struct {
 			Component *struct {
-				Configuration string `graphql:"configuration(recursive: $recursive)"`
+				Configuration string `graphql:"configuration(recursive: $recursive, final: $final)"`
 			} `graphql:"componentByRef(ref: $ref, stack: $stack)"`
 		}
 		if err := api.Query(ctx, svc, &q, map[string]interface{}{
 			"ref":       ref,
 			"stack":     currentStackRef(),
 			"recursive": showFlags.Recursive,
+			"final":     showFlags.Final,
 		}); err != nil {
 			return err
 		}

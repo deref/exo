@@ -19,7 +19,7 @@ $Cluster: {
 $Resource: {
   type: string
   id: string
-  iri: string | null
+  iri: string
 }
 
 $Component: {
@@ -33,6 +33,7 @@ $Component: {
     EXO_COMPONENT: name
   }
   resources: $ResourcesById
+  components: $ComponentsByName // TODO: Disallow in manifests.
 }
 
 $ComponentsByName: {
@@ -62,6 +63,17 @@ $Stack: {
 // TODO: Move to os package, prefix type string, etc.
 $Daemon: $component=($Component & {
   type: "daemon"
+  spec: {
+    program: string
+    arguments: [...string] | *[]
+    environment: $component.environment
+  }
+  environment: $stack.environment
+})
+
+// TODO: Move to os package, prefix type string, etc.
+$Process: $component=($Component & {
+  type: "process"
   spec: {
     program: string
     arguments: [...string] | *[]
