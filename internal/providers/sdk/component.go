@@ -23,6 +23,14 @@ type ComponentConfig struct {
 
 	Run         bool
 	Environment map[string]string `json:"environment"`
+
+	Resources map[string]ResourceConfig
+}
+
+type ResourceConfig struct {
+	ID   string `json:"id"`
+	Type string `json:"type"`
+	IRI  string `json:"iri"`
 }
 
 func decodeComponentConfig(ctx context.Context, typ reflect.Type, v cue.Value) (interface{}, error) {

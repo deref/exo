@@ -24,4 +24,6 @@ type State struct {
 	Pid         *int   `json:"pid"`
 }
 
-type Controller struct{}
+type Controller struct {
+	sdk.ResourceComponentController
+}

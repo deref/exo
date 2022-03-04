@@ -335,6 +335,14 @@ func (r *StackResolver) addConfiguration(ctx context.Context, b *exocue.Builder)
 	for _, component := range components {
 		b.AddComponent(component.ID, component.Name, component.Type, component.Spec)
 	}
+
+	resources, err := r.Resources(ctx)
+	if err != nil {
+		return fmt.Errorf("resolving resources: %w", err)
+	}
+	for _, resource := range resources {
+		b.AddResource(resource.ID, resource.Type, resource.IRI, resource.ComponentID)
+	}
 	return nil
 }
 
