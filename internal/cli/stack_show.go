@@ -7,6 +7,11 @@ import (
 
 func init() {
 	stackCmd.AddCommand(stackShowCmd)
+	stackShowCmd.Flags().BoolVar(&stackShowFlags.Recursive, "recursive", false, "include subcomponents")
+}
+
+var stackShowFlags struct {
+	Recursive bool
 }
 
 var stackShowCmd = &cobra.Command{
@@ -18,10 +23,12 @@ var stackShowCmd = &cobra.Command{
 		ctx := cmd.Context()
 		var q struct {
 			Stack *struct {
-				Configuration string
+				Configuration string `graphql:"configuration(recursive: $recursive)"`
 			} `graphql:"stackByRef(ref: $currentStack)"`
 		}
-		mustQueryStack(ctx, &q, nil)
+		mustQueryStack(ctx, &q, map[string]interface{}{
+			"recursive": stackShowFlags.Recursive,
+		})
 		cmdutil.Show(q.Stack.Configuration)
 		return nil
 	},

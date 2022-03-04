@@ -327,20 +327,22 @@ func (r *MutationResolver) startComponentReconciliation(ctx context.Context, row
 	}, nil
 }
 
-func (r *ComponentResolver) Configuration(ctx context.Context) (string, error) {
-	cfg, err := r.configuration(ctx)
+func (r *ComponentResolver) Configuration(ctx context.Context, args struct {
+	Recursive *bool
+}) (string, error) {
+	cfg, err := r.configuration(ctx, isTrue(args.Recursive))
 	if err != nil {
 		return "", err
 	}
-	return exocue.FormatString(cfg.Final())
+	return formatConfiguration(cue.Value(cfg))
 }
 
-func (r *ComponentResolver) configuration(ctx context.Context) (exocue.Component, error) {
+func (r *ComponentResolver) configuration(ctx context.Context, recursive bool) (exocue.Component, error) {
 	stack, err := r.Stack(ctx)
 	if err != nil {
 		return exocue.Component{}, fmt.Errorf("resolving stack: %w", err)
 	}
-	cfg, err := stack.configuration(ctx)
+	cfg, err := stack.configuration(ctx, recursive)
 	if err != nil {
 		return exocue.Component{}, err
 	}
@@ -379,7 +381,7 @@ func (r *MutationResolver) controlComponent(ctx context.Context, id string, f fu
 		return fmt.Errorf("resolving controller: %w", err)
 	}
 
-	configuration, err := component.configuration(ctx)
+	configuration, err := component.configuration(ctx, true)
 	if err != nil {
 		return fmt.Errorf("resolving configuration: %w", err)
 	}

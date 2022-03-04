@@ -203,7 +203,7 @@ type Stack {
   processes: [Process!]!
   resources: [Resource!]!
   
-  configuration: String!
+  configuration(recursive: Boolean): String!
 
   environment: Environment!
 }
@@ -224,7 +224,7 @@ type Component {
   resource: Resource
   
   spec: String!
-  configuration: String!
+  configuration(recursive: Boolean): String!
 
   state: JSONObject!
 
