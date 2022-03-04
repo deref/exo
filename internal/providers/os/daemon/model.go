@@ -2,7 +2,7 @@ package daemon
 
 import "github.com/deref/exo/internal/providers/sdk"
 
-type Component struct {
+type ComponentConfig struct {
 	sdk.ComponentConfig
 	Model
 }

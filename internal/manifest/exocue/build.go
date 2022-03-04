@@ -56,9 +56,9 @@ func (b *Builder) AddManifest(s string) {
 }
 
 func (b *Builder) AddComponent(id string, name string, typ string, spec string) {
-	fname := fmt.Sprintf("components/%s.cue", name)
+	fname := fmt.Sprintf("components/%s.cue", id)
 	specNode := parseFileAsStruct(fname, spec)
-	res := ast.NewStruct(
+	component := ast.NewStruct(
 		"id", ast.NewString(id),
 		"type", ast.NewString(typ),
 		"spec", specNode,
@@ -66,11 +66,28 @@ func (b *Builder) AddComponent(id string, name string, typ string, spec string) 
 	var decl ast.Expr
 	switch typ {
 	case "daemon":
-		decl = newAnd(ast.NewIdent("$Daemon"), res)
+		decl = newAnd(ast.NewIdent("$Daemon"), component)
 	default:
 		panic(fmt.Errorf("TODO: type lookup schema voodoo. typ=%q", typ))
 	}
-	b.addDecl([]string{"$stack", "components", name}, decl)
+	b.addDecl([]string{"$components", id}, decl)
+	sel := ast.NewSel(ast.NewIdent("$components"), id)
+	b.addDecl([]string{"$stack", "components", name}, sel)
+}
+
+func (b *Builder) AddResource(id string, typ string, iri *string, componentID *string) {
+	resource := ast.NewStruct(
+		"id", ast.NewString(id),
+		"type", ast.NewString(typ),
+		"iri", newOptionalString(iri),
+	)
+	b.addDecl([]string{"$resources", id}, resource)
+	sel := ast.NewSel(ast.NewIdent("$resources"), id)
+	if componentID == nil {
+		b.addDecl([]string{"$stack", "detachedResources", id}, sel)
+	} else {
+		b.addDecl([]string{"$components", *componentID, "resources", id}, sel)
+	}
 }
 
 func (b *Builder) AddCluster(id string, name string, environment map[string]interface{}) {
@@ -101,4 +118,11 @@ func (b *Builder) BuildStack() Stack {
 
 func (b *Builder) BuildCluster() Cluster {
 	return Cluster(b.build("$cluster"))
+}
+
+func newOptionalString(s *string) ast.Expr {
+	if s == nil {
+		return ast.NewNull()
+	}
+	return ast.NewString(*s)
 }

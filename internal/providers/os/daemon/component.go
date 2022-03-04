@@ -7,10 +7,10 @@ import (
 	"github.com/deref/exo/internal/providers/sdk"
 )
 
-func (ctrl *Controller) Render(ctx context.Context, component *Component) ([]sdk.RenderedComponent, error) {
-	spec := component.Spec
+func (ctrl *Controller) Render(ctx context.Context, cfg *ComponentConfig) ([]sdk.RenderedComponent, error) {
+	spec := cfg.Spec
 	var children []sdk.RenderedComponent
-	if component.Run {
+	if cfg.Run {
 		// XXX Run supervisor to get logs.
 		children = append(children, sdk.RenderedComponent{
 			Type: "process",

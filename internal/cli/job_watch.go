@@ -97,7 +97,7 @@ func watchJob(ctx context.Context, jobID string) error {
 
 		jp = &jobPrinter{
 			Spinner:            []string{"⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"},
-			CollapseSuccessful: true,
+			CollapseSuccessful: !verbose,
 		}
 	}
 
