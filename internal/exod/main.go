@@ -161,15 +161,6 @@ func RunServer(ctx context.Context, flags map[string]string) {
 		ExoVersion:  about.Version,
 	}
 
-	// As a one-time migration, simply delete all logs in the old Badger format.
-	// TODO: Remove after a reasonable amount of time passes since October 2021.
-	logsDir := filepath.Join(cfg.VarDir, "logs")
-	if err := os.RemoveAll(logsDir); err != nil {
-		if !os.IsNotExist(err) {
-			logger.Infof("error removing badger-based logs: %v", logsDir)
-		}
-	}
-
 	eventStore := &eventdsqlite.Store{
 		DB:    db,
 		IDGen: gensym.NewULIDGenerator(ctx),
