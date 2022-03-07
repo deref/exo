@@ -1,7 +1,7 @@
-@import 'scroll.css';
-@import 'theme-generated.css';
-@import 'font/inter/inter.css';
-@import 'font/fira/fira_code.css';
+@import './scroll.css';
+@import './theme.generated.css';
+@import './font/inter.css';
+@import './font/fira_code.css';
 
 /* Default global styles for component properties that can be overridden with `style-props` */
 :root,
