@@ -326,7 +326,7 @@ ${themeBlock('black', 2)}
 `;
 
 // Save generated output.
-fs.writeFile('./public/theme-generated.css', out, function (err) {
+fs.writeFile('./src/theme.generated.css', out, function (err) {
   if (err) throw err;
   console.log('Generated theme file.');
 });
