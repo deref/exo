@@ -1,4 +1,7 @@
 module.exports = {
+  core: {
+    builder: 'storybook-builder-vite',
+  },
   stories: [
     '../src/**/*.stories.mdx',
     '../src/**/*.stories.@(js|jsx|ts|tsx|svelte)',
@@ -11,21 +14,5 @@ module.exports = {
   ],
   svelteOptions: {
     preprocess: require('svelte-preprocess')(),
-  },
-  babel: (options) => {
-    return {
-      ...options,
-      plugins: [
-        ...(options.plugins || []),
-        'babel-plugin-transform-vite-meta-env',
-      ],
-    };
-  },
-  webpackFinal: async (config) => {
-    config.infrastructureLogging = {
-      ...config.infrastructureLogging,
-      level: 'error',
-    };
-    return config;
   },
 };

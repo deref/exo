@@ -10,7 +10,7 @@
 </Template>
 
 <Story
-  name="Logs"
+  name="Default"
   args={{
     events: [
       {
