@@ -456,6 +456,7 @@ func (r *MutationResolver) ShutdownComponent(ctx context.Context, args struct {
 }) (*VoidResolver, error) {
 	// XXX if there are still children, abort and try again later.
 	// after done, trigger reconciliation of parent.
+	// ^^^ actually, this doesn't make sense, the parent reconcilliation should wait?
 	return nil, errors.New("TODO: shutdown component")
 }
 
