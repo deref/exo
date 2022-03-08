@@ -1,6 +1,7 @@
+//go:build !managed
 // +build !managed
 
-package install
+package about
 
 import (
 	"fmt"
@@ -10,8 +11,6 @@ import (
 	"net/url"
 	"os"
 	"os/exec"
-
-	"github.com/deref/exo/internal/about"
 )
 
 const IsManaged = false
@@ -28,7 +27,7 @@ func (i *Install) UpgradeSelf() error {
 		return err
 	}
 
-	resp, err := http.Get(fmt.Sprintf("%s?id=%s&prev=%s", about.UpdateScriptEndpoint, url.QueryEscape(deviceID), about.Version))
+	resp, err := http.Get(fmt.Sprintf("%s?id=%s&prev=%s", UpdateScriptEndpoint, url.QueryEscape(deviceID), Version))
 	if err != nil {
 		return fmt.Errorf("fetching update script: %w", err)
 	}

@@ -17,7 +17,6 @@ import (
 	kernel "github.com/deref/exo/internal/core/server"
 	"github.com/deref/exo/internal/core/state/statefile"
 	"github.com/deref/exo/internal/esv"
-	"github.com/deref/exo/internal/install"
 	"github.com/deref/exo/internal/resolvers"
 	"github.com/deref/exo/internal/task"
 	"github.com/deref/exo/internal/task/api"
@@ -100,7 +99,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	statePath := filepath.Join(cfg.VarDir, "state.json")
 	store := statefile.New(statePath)
 
-	inst := install.Get(filepath.Join(cfg.VarDir, "deviceid"))
+	inst := about.GetInstall(filepath.Join(cfg.VarDir, "deviceid"))
 	deviceID, err := inst.GetDeviceID()
 	if err != nil {
 		deviceID = "failed-to-set"

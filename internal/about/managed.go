@@ -1,6 +1,7 @@
+//go:build managed
 // +build managed
 
-package install
+package about
 
 import "fmt"
 
