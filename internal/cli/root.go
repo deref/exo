@@ -50,6 +50,13 @@ func isDebugMode() bool {
 	return rootPersistentFlags.Debug
 }
 
+var forceStdLog = false
+
+// TODO: Reconcile with flags["force-std-log"].
+func logToStderr() bool {
+	return forceStdLog || isDebugMode()
+}
+
 func isPeerMode() bool {
 	return true // XXX configurable.
 }

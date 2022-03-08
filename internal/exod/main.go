@@ -53,6 +53,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 		cmdutil.Fatalf("ensuring token file: %w", err)
 	}
 
+	// TODO: Reconcile with logToStderr.
 	_, forceStdLog := flags["force-std-log"]
 	// TODO: Use `isInteractive` from main package.
 	if !(forceStdLog || term.IsInteractive()) {
