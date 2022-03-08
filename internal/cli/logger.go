@@ -26,7 +26,7 @@ func endExclusive() {
 }
 
 func (l *Logger) Infof(format string, v ...interface{}) {
-	if isDebugMode() && atomic.LoadInt32(&exclusionDepth) == 0 {
+	if logToStderr() && atomic.LoadInt32(&exclusionDepth) == 0 {
 		fmt.Fprintf(os.Stderr, format+"\n", v...)
 	}
 	l.underlying.Infof(format, v...)
