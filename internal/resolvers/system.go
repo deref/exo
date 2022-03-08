@@ -1,6 +1,10 @@
 package resolvers
 
-import "context"
+import (
+	"context"
+
+	"github.com/deref/exo/internal/about"
+)
 
 type SystemResolver struct {
 	Q *RootResolver
@@ -18,4 +22,12 @@ func (r *SystemResolver) eventPrototype(ctx context.Context) (EventRow, error) {
 	return EventRow{
 		SourceType: "System",
 	}, nil
+}
+
+func (r *SystemResolver) Version() string {
+	return about.Version
+}
+
+func (r *SystemResolver) Build() string {
+	return about.GetBuild()
 }

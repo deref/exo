@@ -54,6 +54,10 @@ func isPeerMode() bool {
 	return true // XXX configurable.
 }
 
+func isClientMode() bool {
+	return !isPeerMode()
+}
+
 // Should this CLI invocation double as a task worker for jobs it starts?
 func workOwnJobs() bool {
 	// When the CLI is in peer mode, there is generally no worker pool.
