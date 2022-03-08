@@ -115,6 +115,8 @@ type Subscription {
 
   # TODO: events for cli logs.
 
+  systemChange: System!
+
   # Debug/testing.
   tick(limit: Int): Instant!
 }
