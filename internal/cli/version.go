@@ -19,21 +19,32 @@ var versionCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		ctx := cmd.Context()
 
-		res := map[string]interface{}{
-			"client": about.GetVersionInfo(),
+		type versionInfo struct {
+			Version string `json:"version" graphql:"installed"`
+			Build   string `json:"build"`
+			Managed bool   `json:"managed"`
+		}
+		client := versionInfo{
+			Version: about.Version,
+			Build:   about.GetBuild(),
+			Managed: about.IsManaged,
 		}
 
-		if isClientMode() {
+		res := map[string]interface{}{}
+
+		if isPeerMode() {
+			res["peer"] = client
+		} else {
+			res["client"] = client
 			var q struct {
 				System struct {
-					Version string `json:"version"`
-					Build   string `json:"build"`
+					Version versionInfo
 				}
 			}
 			if err := api.Query(ctx, svc, &q, nil); err != nil {
 				cmdutil.Warnf("getting server version: %v", err)
 			} else {
-				res["server"] = q.System
+				res["server"] = q.System.Version
 			}
 		}
 

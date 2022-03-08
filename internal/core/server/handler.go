@@ -3,9 +3,9 @@ package server
 import (
 	"net/http"
 
+	"github.com/deref/exo/internal/about"
 	state "github.com/deref/exo/internal/core/state/api"
 	"github.com/deref/exo/internal/esv"
-	"github.com/deref/exo/internal/install"
 	"github.com/deref/exo/internal/resolvers"
 	"github.com/deref/exo/internal/task"
 	"github.com/deref/exo/internal/token"
@@ -17,7 +17,7 @@ import (
 type Config struct {
 	VarDir       string
 	Store        state.Store
-	Install      *install.Install
+	Install      *about.Install
 	SyslogPort   uint
 	Docker       *docker.Client
 	Logger       logging.Logger

@@ -1,4 +1,4 @@
-package install
+package about
 
 import (
 	"github.com/deref/exo/internal/gensym"
@@ -9,7 +9,7 @@ type Install struct {
 	deviceIDAtom atom.Atom
 }
 
-func Get(deviceIDPath string) *Install {
+func GetInstall(deviceIDPath string) *Install {
 	return &Install{
 		deviceIDAtom: atom.NewFileAtom(deviceIDPath, atom.CodecString),
 	}

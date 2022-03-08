@@ -125,10 +125,18 @@ scalar Instant
 type Void {}
 
 type System {
-  version: String!
-  build: String!
-
+  version: VersionInfo!
   stream: Stream!
+}
+
+type VersionInfo {
+  installed: String!
+  build: String!
+  managed: Boolean!
+
+  latest: String!
+  # Like latest, but null if <=installed or if resolving fails.
+  upgrade: String
 }
 
 interface Entity {

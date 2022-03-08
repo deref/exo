@@ -15,7 +15,6 @@ import (
 	state "github.com/deref/exo/internal/core/state/api"
 	"github.com/deref/exo/internal/esv"
 	"github.com/deref/exo/internal/gensym"
-	"github.com/deref/exo/internal/install"
 	"github.com/deref/exo/internal/task"
 	taskapi "github.com/deref/exo/internal/task/api"
 	"github.com/deref/exo/internal/telemetry"
@@ -28,7 +27,7 @@ var dirExistsErr = errutil.HTTPErrorf(409, "Directory already exists.")
 
 type Kernel struct {
 	Store       state.Store
-	Install     *install.Install
+	Install     *about.Install
 	TaskTracker *task.TaskTracker
 	EsvClient   esv.EsvClient
 }
@@ -178,12 +177,12 @@ func (kern *Kernel) GetVersion(ctx context.Context, input *api.GetVersionInput) 
 		Installed: installed,
 		Latest:    latest,
 		Current:   current,
-		Managed:   install.IsManaged,
+		Managed:   about.IsManaged,
 	}, nil
 }
 
 func (kern *Kernel) Upgrade(ctx context.Context, input *api.UpgradeInput) (*api.UpgradeOutput, error) {
-	if install.IsManaged {
+	if about.IsManaged {
 		return nil, errutil.WithHTTPStatus(http.StatusBadRequest, errors.New("exo installed with system package manager"))
 	}
 
