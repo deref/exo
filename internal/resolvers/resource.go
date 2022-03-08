@@ -43,7 +43,7 @@ func (r *MutationResolver) ForgetResource(ctx context.Context, args struct {
 }
 
 func (r *MutationResolver) forgetResource(ctx context.Context, ref string) error {
-	_, err := r.DB.ExecContext(ctx, `
+	_, err := r.db.ExecContext(ctx, `
 		DELETE FROM resource
 		WHERE id = ?
 		OR iri = ?
@@ -64,7 +64,7 @@ func resourceRowsToResolvers(r *RootResolver, rows []ResourceRow) []*ResourceRes
 
 func (r *QueryResolver) AllResources(ctx context.Context) ([]*ResourceResolver, error) {
 	var rows []ResourceRow
-	err := r.DB.SelectContext(ctx, &rows, `
+	err := r.db.SelectContext(ctx, &rows, `
 		SELECT *
 		FROM resource
 		ORDER BY id ASC
@@ -77,7 +77,7 @@ func (r *QueryResolver) AllResources(ctx context.Context) ([]*ResourceResolver, 
 
 func (r *QueryResolver) resourcesByIRI(ctx context.Context, iri string) ([]*ResourceResolver, error) {
 	var rows []ResourceRow
-	err := r.DB.SelectContext(ctx, &rows, `
+	err := r.db.SelectContext(ctx, &rows, `
 		SELECT *
 		FROM resource
 		WHERE iri = ?
@@ -154,7 +154,7 @@ func (r *QueryResolver) resourceByRef(ctx context.Context, ref *string) (*Resour
 
 func (r *QueryResolver) resourcesByProject(ctx context.Context, projectID string) ([]*ResourceResolver, error) {
 	var rows []ResourceRow
-	err := r.DB.SelectContext(ctx, &rows, `
+	err := r.db.SelectContext(ctx, &rows, `
 		SELECT *
 		FROM resource
 		WHERE project_id = ?
@@ -168,7 +168,7 @@ func (r *QueryResolver) resourcesByProject(ctx context.Context, projectID string
 
 func (r *QueryResolver) resourcesByStack(ctx context.Context, stackID string) ([]*ResourceResolver, error) {
 	var rows []ResourceRow
-	err := r.DB.SelectContext(ctx, &rows, `
+	err := r.db.SelectContext(ctx, &rows, `
 		SELECT *
 		FROM resource
 		WHERE stack_id = ?
@@ -182,7 +182,7 @@ func (r *QueryResolver) resourcesByStack(ctx context.Context, stackID string) ([
 
 func (r *QueryResolver) resourcesByComponent(ctx context.Context, componentID string) ([]*ResourceResolver, error) {
 	var rows []ResourceRow
-	err := r.DB.SelectContext(ctx, &rows, `
+	err := r.db.SelectContext(ctx, &rows, `
 		SELECT *
 		FROM resource
 		WHERE component_id = ?
@@ -443,7 +443,7 @@ func (r *MutationResolver) doResourceOperation(ctx context.Context, ref string, 
 			status = httputil.StatusOf(doErr)
 			message = stringPtr(doErr.Error())
 		}
-		if _, err := r.DB.ExecContext(ctx, `
+		if _, err := r.db.ExecContext(ctx, `
 			UPDATE resource
 			SET task_id = NULL, status = ?, message = ?
 			WHERE task_id = ?
@@ -478,7 +478,7 @@ func (r *MutationResolver) doResourceOperation(ctx context.Context, ref string, 
 	}
 
 	var row ResourceRow
-	if err := r.DB.GetContext(ctx, &row, `
+	if err := r.db.GetContext(ctx, &row, `
 		UPDATE resource
 		SET model = ?, iri = ?
 		WHERE id = ?
@@ -499,7 +499,7 @@ func (r *MutationResolver) doResourceOperation(ctx context.Context, ref string, 
 func (r *MutationResolver) lockResource(ctx context.Context, ref string, taskID string) (*ResourceResolver, error) {
 	// Acquire resource lock or confirm prior acquisition.
 	var row ResourceRow
-	if err := r.DB.GetContext(ctx, &row, `
+	if err := r.db.GetContext(ctx, &row, `
 		UPDATE resource
 		SET task_id = ?, status = 0, message = NULL
 		WHERE (id = ? OR iri = ?)
@@ -533,7 +533,7 @@ func (r *MutationResolver) CancelResourceOperation(ctx context.Context, args str
 			return nil, fmt.Errorf("canceling job: %w", err)
 		}
 
-		if _, err := r.DB.ExecContext(ctx, `
+		if _, err := r.db.ExecContext(ctx, `
 			UPDATE resource
 			SET job_id = NULL, status = 500, message = 'interrupted'
 			WHERE id = ? OR iri = ?

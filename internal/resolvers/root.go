@@ -1,12 +1,14 @@
 package resolvers
 
 import (
+	"context"
 	_ "embed"
+	"fmt"
+	"path/filepath"
 
 	"github.com/deref/exo/internal/gensym"
 	"github.com/deref/exo/internal/util/logging"
 	graphql "github.com/graph-gophers/graphql-go"
-	"github.com/graph-gophers/graphql-go/relay"
 	"github.com/jmoiron/sqlx"
 )
 
@@ -20,18 +22,38 @@ func NewSchema(r *RootResolver) *graphql.Schema {
 	)
 }
 
-// XXX move this to server package.
-func NewHandler(r *RootResolver) *relay.Handler {
-	return &relay.Handler{
-		Schema: NewSchema(r),
-	}
+type RootResolver struct {
+	SystemLog   logging.Logger
+	VarDir      string
+	GUIEndpoint string
+
+	ulidgen *gensym.ULIDGenerator
+	db      *sqlx.DB
 }
 
-type RootResolver struct {
-	DB            *sqlx.DB
-	SystemLog     logging.Logger
-	ULIDGenerator *gensym.ULIDGenerator
-	Routes        *RoutesResolver
+func (r *RootResolver) Init(ctx context.Context) error {
+	r.ulidgen = gensym.NewULIDGenerator(ctx)
+
+	dbPath := filepath.Join(r.VarDir, "exo.sqlite3")
+	var err error
+	r.db, err = OpenDB(ctx, dbPath)
+	if err != nil {
+		return fmt.Errorf("opening sqlite db: %w", err)
+	}
+
+	if err := r.Migrate(ctx); err != nil {
+		return fmt.Errorf("migrating db: %w", err)
+	}
+
+	return nil
+}
+
+func (r *RootResolver) Shutdown(ctx context.Context) error {
+	if err := r.db.Close(); err != nil {
+		return fmt.Errorf("closing sqlite db: %w", err)
+	}
+
+	return nil
 }
 
 // While queries, mutations, and subscriptions are accessed in disjoint query

@@ -17,7 +17,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 
 	// Cluster.
 
-	if _, err := r.DB.ExecContext(ctx, `
+	if _, err := r.db.ExecContext(ctx, `
 		CREATE TABLE IF NOT EXISTS cluster (
 			id TEXT NOT NULL PRIMARY KEY,
 			name TEXT NOT NULL,
@@ -27,7 +27,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 		return fmt.Errorf("creating cluster table: %w", err)
 	}
 
-	if _, err := r.DB.ExecContext(ctx, `
+	if _, err := r.db.ExecContext(ctx, `
 		CREATE UNIQUE INDEX IF NOT EXISTS
 		cluster_name ON cluster ( name )
 	`); err != nil {
@@ -35,7 +35,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 	}
 
 	// TODO: Don't do this as part of migrate. SEE NOTE [DEFAULT_CLUSTER].
-	if _, err := r.DB.ExecContext(ctx, `
+	if _, err := r.db.ExecContext(ctx, `
 		INSERT INTO cluster ( id, name, updated )
 		VALUES ( ?, ?, ? )
 	`, gensym.RandomBase32(), "local", now,
@@ -48,7 +48,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 
 	// Project.
 
-	if _, err := r.DB.ExecContext(ctx, `
+	if _, err := r.db.ExecContext(ctx, `
 		CREATE TABLE IF NOT EXISTS project (
 			id TEXT NOT NULL PRIMARY KEY,
 			display_name TEXT NOT NULL
@@ -58,7 +58,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 
 	// Workspace.
 
-	if _, err := r.DB.ExecContext(ctx, `
+	if _, err := r.db.ExecContext(ctx, `
 		CREATE TABLE IF NOT EXISTS workspace (
 			id TEXT NOT NULL PRIMARY KEY,
 			root TEXT NOT NULL,
@@ -67,7 +67,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 		return fmt.Errorf("creating workspace table: %w", err)
 	}
 
-	if _, err := r.DB.ExecContext(ctx, `
+	if _, err := r.db.ExecContext(ctx, `
 		CREATE UNIQUE INDEX IF NOT EXISTS
 		workspace_root ON workspace ( root )
 	`); err != nil {
@@ -76,7 +76,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 
 	// Stack.
 
-	if _, err := r.DB.ExecContext(ctx, `
+	if _, err := r.db.ExecContext(ctx, `
 		CREATE TABLE IF NOT EXISTS stack (
 			id TEXT NOT NULL PRIMARY KEY,
 			cluster_id TEXT NOT NULL,
@@ -87,7 +87,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 		return fmt.Errorf("creating stack table: %w", err)
 	}
 
-	if _, err := r.DB.ExecContext(ctx, `
+	if _, err := r.db.ExecContext(ctx, `
 		CREATE UNIQUE INDEX IF NOT EXISTS
 		stack_workspace_id ON stack ( workspace_id )
 	`); err != nil {
@@ -96,7 +96,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 
 	// Component.
 
-	if _, err := r.DB.ExecContext(ctx, `
+	if _, err := r.db.ExecContext(ctx, `
 		CREATE TABLE IF NOT EXISTS component (
 			id TEXT NOT NULL PRIMARY KEY,
 			stack_id TEXT NOT NULL,
@@ -115,7 +115,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 
 	// Nulls are distinct from themselves, so the stack serves as the parent id
 	// for the purposes of indexing root components.
-	if _, err := r.DB.ExecContext(ctx, `
+	if _, err := r.db.ExecContext(ctx, `
 		CREATE UNIQUE INDEX IF NOT EXISTS
 		component_path ON component ( stack_id, COALESCE(parent_id, stack_id), name )
 		WHERE disposed IS NULL
@@ -123,7 +123,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 		return fmt.Errorf("creating component_path index: %w", err)
 	}
 
-	if _, err := r.DB.ExecContext(ctx, `
+	if _, err := r.db.ExecContext(ctx, `
 		CREATE UNIQUE INDEX IF NOT EXISTS
 		component_parent_id ON component ( parent_id )
 		WHERE disposed IS NULL
@@ -135,7 +135,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 
 	// TODO: Consider dropping task_id field in favor of table for reified locks.
 	// XXX remove message field; use events.
-	if _, err := r.DB.ExecContext(ctx, `
+	if _, err := r.db.ExecContext(ctx, `
 		CREATE TABLE IF NOT EXISTS resource (
 			id TEXT NOT NULL PRIMARY KEY,
 			type TEXT NOT NULL,
@@ -151,7 +151,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 		return fmt.Errorf("creating resource table: %w", err)
 	}
 
-	if _, err := r.DB.ExecContext(ctx, `
+	if _, err := r.db.ExecContext(ctx, `
 		CREATE INDEX IF NOT EXISTS
 		resource_iri ON resource ( iri )
 	`); err != nil {
@@ -161,7 +161,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 	// Task.
 	// TODO: Tasks should be associated with a workspace, etc.
 
-	if _, err := r.DB.ExecContext(ctx, `
+	if _, err := r.db.ExecContext(ctx, `
 		CREATE TABLE IF NOT EXISTS task (
 			id TEXT NOT NULL PRIMARY KEY,
 			job_id TEXT NOT NULL,
@@ -183,7 +183,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 		return fmt.Errorf("creating job table: %w", err)
 	}
 
-	if _, err := r.DB.ExecContext(ctx, `
+	if _, err := r.db.ExecContext(ctx, `
 		CREATE UNIQUE INDEX IF NOT EXISTS
 		task_key ON task ( mutation, key )
 		WHERE key IS NOT NULL
@@ -192,7 +192,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 		return fmt.Errorf("creating task_parent_id index: %w", err)
 	}
 
-	if _, err := r.DB.ExecContext(ctx, `
+	if _, err := r.db.ExecContext(ctx, `
 		CREATE INDEX IF NOT EXISTS
 		task_parent_id ON task ( parent_id )
 	`); err != nil {
@@ -201,7 +201,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 
 	// Event.
 
-	if _, err := r.DB.ExecContext(ctx, `
+	if _, err := r.db.ExecContext(ctx, `
 		CREATE TABLE IF NOT EXISTS event (
 			ulid TEXT PRIMARY KEY,
 			type TEXT NOT NULL,
@@ -225,7 +225,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 		"task",
 	} {
 		// TODO: Validate that these indexes are getting hit.
-		if _, err := r.DB.ExecContext(ctx, fmt.Sprintf(`
+		if _, err := r.db.ExecContext(ctx, fmt.Sprintf(`
 			CREATE UNIQUE INDEX IF NOT EXISTS %s_event
 			ON event ( %s_id, ulid )
 			WHERE %s_id IS NOT NULL
@@ -234,7 +234,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 		}
 	}
 
-	if _, err := r.DB.ExecContext(ctx, fmt.Sprintf(`
+	if _, err := r.db.ExecContext(ctx, fmt.Sprintf(`
 		CREATE UNIQUE INDEX IF NOT EXISTS system_event
 		ON event ( ulid )
 		WHERE source_type = 'System'

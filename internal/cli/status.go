@@ -68,5 +68,7 @@ func effectiveServerURL() string {
 
 // XXX Do not utilize resolvers directly.
 func newGUIRoutes() *resolvers.RoutesResolver {
-	return resolvers.NewRoutesResolver(effectiveServerURL())
+	return &resolvers.RoutesResolver{
+		Root: effectiveServerURL(),
+	}
 }

@@ -4,9 +4,6 @@ package api
 
 import (
 	"context"
-	"net/http"
-
-	josh "github.com/deref/exo/internal/josh/server"
 )
 
 type TaskStore interface {
@@ -52,21 +49,6 @@ type EvictTasksInput struct {
 }
 
 type EvictTasksOutput struct {
-}
-
-func BuildTaskStoreMux(b *josh.MuxBuilder, factory func(req *http.Request) TaskStore) {
-	b.AddMethod("describe-tasks", func(req *http.Request) interface{} {
-		return factory(req).DescribeTasks
-	})
-	b.AddMethod("create-task", func(req *http.Request) interface{} {
-		return factory(req).CreateTask
-	})
-	b.AddMethod("update-task", func(req *http.Request) interface{} {
-		return factory(req).UpdateTask
-	})
-	b.AddMethod("evict-tasks", func(req *http.Request) interface{} {
-		return factory(req).EvictTasks
-	})
 }
 
 type TaskDescription struct {

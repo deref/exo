@@ -4,9 +4,6 @@ package api
 
 import (
 	"context"
-	"net/http"
-
-	josh "github.com/deref/exo/internal/josh/server"
 )
 
 type Store interface {
@@ -107,36 +104,6 @@ type RemoveComponentInput struct {
 }
 
 type RemoveComponentOutput struct {
-}
-
-func BuildStoreMux(b *josh.MuxBuilder, factory func(req *http.Request) Store) {
-	b.AddMethod("describe-workspaces", func(req *http.Request) interface{} {
-		return factory(req).DescribeWorkspaces
-	})
-	b.AddMethod("add-workspace", func(req *http.Request) interface{} {
-		return factory(req).AddWorkspace
-	})
-	b.AddMethod("remove-workspace", func(req *http.Request) interface{} {
-		return factory(req).RemoveWorkspace
-	})
-	b.AddMethod("resolve-workspace", func(req *http.Request) interface{} {
-		return factory(req).ResolveWorkspace
-	})
-	b.AddMethod("resolve", func(req *http.Request) interface{} {
-		return factory(req).Resolve
-	})
-	b.AddMethod("describe-components", func(req *http.Request) interface{} {
-		return factory(req).DescribeComponents
-	})
-	b.AddMethod("add-component", func(req *http.Request) interface{} {
-		return factory(req).AddComponent
-	})
-	b.AddMethod("patch-component", func(req *http.Request) interface{} {
-		return factory(req).PatchComponent
-	})
-	b.AddMethod("remove-component", func(req *http.Request) interface{} {
-		return factory(req).RemoveComponent
-	})
 }
 
 type WorkspaceDescription struct {

@@ -4,9 +4,6 @@ package api
 
 import (
 	"context"
-	"net/http"
-
-	josh "github.com/deref/exo/internal/josh/server"
 )
 
 type Kernel interface {
@@ -164,59 +161,6 @@ type ReadDirOutput struct {
 	Entries   []DirectoryEntry `json:"entries"`
 }
 
-func BuildKernelMux(b *josh.MuxBuilder, factory func(req *http.Request) Kernel) {
-	b.AddMethod("auth-esv", func(req *http.Request) interface{} {
-		return factory(req).AuthEsv
-	})
-	b.AddMethod("save-esv-refresh-token", func(req *http.Request) interface{} {
-		return factory(req).SaveEsvRefreshToken
-	})
-	b.AddMethod("unauth-esv", func(req *http.Request) interface{} {
-		return factory(req).UnauthEsv
-	})
-	b.AddMethod("get-esv-user", func(req *http.Request) interface{} {
-		return factory(req).GetEsvUser
-	})
-	b.AddMethod("create-project", func(req *http.Request) interface{} {
-		return factory(req).CreateProject
-	})
-	b.AddMethod("describe-templates", func(req *http.Request) interface{} {
-		return factory(req).DescribeTemplates
-	})
-	b.AddMethod("create-workspace", func(req *http.Request) interface{} {
-		return factory(req).CreateWorkspace
-	})
-	b.AddMethod("describe-workspaces", func(req *http.Request) interface{} {
-		return factory(req).DescribeWorkspaces
-	})
-	b.AddMethod("resolve-workspace", func(req *http.Request) interface{} {
-		return factory(req).ResolveWorkspace
-	})
-	b.AddMethod("panic", func(req *http.Request) interface{} {
-		return factory(req).Panic
-	})
-	b.AddMethod("get-version", func(req *http.Request) interface{} {
-		return factory(req).GetVersion
-	})
-	b.AddMethod("upgrade", func(req *http.Request) interface{} {
-		return factory(req).Upgrade
-	})
-	b.AddMethod("ping", func(req *http.Request) interface{} {
-		return factory(req).Ping
-	})
-	b.AddMethod("exit", func(req *http.Request) interface{} {
-		return factory(req).Exit
-	})
-	b.AddMethod("describe-tasks", func(req *http.Request) interface{} {
-		return factory(req).DescribeTasks
-	})
-	b.AddMethod("get-user-home-dir", func(req *http.Request) interface{} {
-		return factory(req).GetUserHomeDir
-	})
-	b.AddMethod("read-dir", func(req *http.Request) interface{} {
-		return factory(req).ReadDir
-	})
-}
 
 type DirectoryEntry struct {
 	Name        string `json:"name"`

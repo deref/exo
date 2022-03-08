@@ -102,15 +102,16 @@ func Main() {
 
 	svc = newLazyService(func() api.Service {
 		if isPeerMode() {
-			svc, err := peer.NewPeer(ctx, peer.PeerConfig{
+			p := &peer.Peer{
+				SystemLog:   logging.CurrentLogger(ctx),
 				VarDir:      cfg.VarDir,
 				GUIEndpoint: effectiveServerURL(),
 				Debug:       isDebugMode(),
-			})
-			if err != nil {
+			}
+			if err := p.Init(ctx); err != nil {
 				cmdutil.Fatalf("initializing peer: %w", err)
 			}
-			return svc
+			return p
 		} else {
 			panic("TODO: checkOrEnsureServer")
 		}

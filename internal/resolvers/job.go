@@ -49,7 +49,7 @@ func (r *MutationResolver) createJob(ctx context.Context, mutation string, argum
 }
 
 func (r *JobResolver) URL() string {
-	return r.Q.Routes.jobURL(r.ID)
+	return r.Q.Routes().jobURL(r.ID)
 }
 
 func (r *JobResolver) RootTask(ctx context.Context) (*TaskResolver, error) {
@@ -76,7 +76,7 @@ func (r *MutationResolver) CancelJob(ctx context.Context, args struct {
 // See also cancelTask and cancelSubtasks.
 func (r *MutationResolver) cancelJob(ctx context.Context, id string) error {
 	now := Now(ctx)
-	_, err := r.DB.ExecContext(ctx, `
+	_, err := r.db.ExecContext(ctx, `
 		UPDATE task
 		SET canceled = COALESCE(canceled, ?)
 		WHERE job_id = ?
@@ -190,7 +190,7 @@ func (r *JobResolver) eventPrototype(ctx context.Context) (row EventRow, err err
 
 func (r *JobResolver) Updated(ctx context.Context) (Instant, error) {
 	var res Instant
-	if err := r.Q.DB.GetContext(ctx, &res, `
+	if err := r.Q.db.GetContext(ctx, &res, `
 		SELECT MAX(updated)
 		FROM task
 		WHERE job_id = ?

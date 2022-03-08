@@ -10,9 +10,9 @@ type RoutesResolver struct {
 	Root string
 }
 
-func NewRoutesResolver(root string) *RoutesResolver {
+func (r *QueryResolver) Routes() *RoutesResolver {
 	return &RoutesResolver{
-		Root: root,
+		Root: r.GUIEndpoint,
 	}
 }
 

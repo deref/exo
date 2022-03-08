@@ -4,61 +4,39 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
-	"path/filepath"
 
 	"github.com/deref/exo/internal/api"
-	"github.com/deref/exo/internal/gensym"
 	"github.com/deref/exo/internal/resolvers"
-	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/deref/exo/internal/util/logging"
 	"github.com/graph-gophers/graphql-go"
 	gqlerrors "github.com/graph-gophers/graphql-go/errors"
-	"github.com/jmoiron/sqlx"
 )
 
 type Peer struct {
-	db     *sqlx.DB
+	SystemLog   logging.Logger
+	VarDir      string
+	GUIEndpoint string
+	Debug       bool
+
 	root   *resolvers.RootResolver
 	schema *graphql.Schema
-	debug  bool
 }
 
 var _ api.Service = (*Peer)(nil)
 
-type PeerConfig struct {
-	VarDir      string
-	GUIEndpoint string
-	Debug       bool
-}
-
-func NewPeer(ctx context.Context, cfg PeerConfig) (*Peer, error) {
-	// XXX reconsile SQL DB opening with exod/main.go
-	dbPath := filepath.Join(cfg.VarDir, "exo.sqlite3")
-	txMode := "exclusive"
-	connStr := dbPath + "?_txlock=" + txMode
-	db, err := sqlx.Open("sqlite3", connStr)
-	if err != nil {
-		return nil, fmt.Errorf("opening sqlite db: %w", err)
+func (p *Peer) Init(ctx context.Context) error {
+	p.root = &resolvers.RootResolver{
+		VarDir:      p.VarDir,
+		SystemLog:   p.SystemLog,
+		GUIEndpoint: p.GUIEndpoint,
 	}
-	r := &resolvers.RootResolver{
-		DB:            db,
-		SystemLog:     logging.CurrentLogger(ctx),
-		ULIDGenerator: gensym.NewULIDGenerator(ctx),
-		Routes:        resolvers.NewRoutesResolver(cfg.GUIEndpoint),
+	if err := p.root.Init(ctx); err != nil {
+		return err
 	}
-	// XXX migration probably shouldn't happen here.
-	if err := r.Migrate(ctx); err != nil {
-		cmdutil.Fatalf("migrating db: %w", err)
-	}
-	return &Peer{
-		db:     db,
-		root:   r,
-		schema: resolvers.NewSchema(r),
-		debug:  cfg.Debug,
-	}, nil
+	p.schema = resolvers.NewSchema(p.root)
+	return nil
 }
 
 func (p *Peer) Do(ctx context.Context, out interface{}, doc string, vars map[string]interface{}) error {
@@ -112,7 +90,7 @@ func (p *Peer) prepareOperation(ctx context.Context, vars map[string]interface{}
 	if ctxVars != nil && ctxVars.TaskID != "" {
 		ctx = logging.ContextWithLogger(ctx, &api.EventLogger{
 			Service:    p,
-			SystemLog:  p.root.SystemLog,
+			SystemLog:  p.SystemLog,
 			SourceType: "Task",
 			SourceID:   ctxVars.TaskID,
 		})
@@ -178,10 +156,7 @@ func (sub *Subscription) Stop() {
 }
 
 func (p *Peer) Shutdown(ctx context.Context) error {
-	if err := p.db.Close(); err != nil {
-		return fmt.Errorf("closing sqlite db: %w", err)
-	}
-	return nil
+	return p.root.Shutdown(ctx)
 }
 
 func (p *Peer) sanitizeQueryError(original *gqlerrors.QueryError) *gqlerrors.QueryError {
@@ -211,7 +186,7 @@ func (p *Peer) sanitizeQueryError(original *gqlerrors.QueryError) *gqlerrors.Que
 }
 
 func (p *Peer) sanitizeError(err error) error {
-	if p.debug || isExternalError(err) {
+	if p.Debug || isExternalError(err) {
 		return err
 	}
 	return errutil.InternalServerError

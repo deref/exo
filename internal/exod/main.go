@@ -17,12 +17,8 @@ import (
 	kernel "github.com/deref/exo/internal/core/server"
 	"github.com/deref/exo/internal/core/state/statefile"
 	"github.com/deref/exo/internal/esv"
-	eventdapi "github.com/deref/exo/internal/eventd/api"
-	eventdsqlite "github.com/deref/exo/internal/eventd/sqlite"
-	"github.com/deref/exo/internal/gensym"
 	"github.com/deref/exo/internal/install"
-	"github.com/deref/exo/internal/providers/core/components/log"
-	"github.com/deref/exo/internal/syslogd"
+	"github.com/deref/exo/internal/resolvers"
 	"github.com/deref/exo/internal/task"
 	"github.com/deref/exo/internal/task/api"
 	taskserver "github.com/deref/exo/internal/task/server"
@@ -34,7 +30,6 @@ import (
 	"github.com/deref/exo/internal/util/sysutil"
 	"github.com/deref/exo/internal/util/term"
 	docker "github.com/docker/docker/client"
-	"github.com/jmoiron/sqlx"
 	"gopkg.in/natefinch/lumberjack.v2"
 )
 
@@ -121,20 +116,17 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	tel.StartSession(ctx)
 	tel.SendEvent(ctx, telemetry.SystemInfoIdentifiedEvent())
 
-	dbPath := filepath.Join(cfg.VarDir, "exo.sqlite3")
-	// Fully serialize transactions. Hurts performance, but reasonable for
-	// an embedded database, as long as transactions are kept small.
-	// Helps dramatically with simplicity and correctness.
-	txMode := "exclusive"
-	connStr := dbPath + "?_txlock=" + txMode
-	db, err := sqlx.Open("sqlite3", connStr)
-	if err != nil {
-		cmdutil.Fatalf("opening sqlite db: %v", err)
+	root := &resolvers.RootResolver{
+		VarDir:      cfg.VarDir,
+		SystemLog:   logger,
+		GUIEndpoint: fmt.Sprintf("http://localhost:%d", cfg.GUI.Port), // XXX should be constructed earlier than here.
+	}
+	if err := root.Init(ctx); err != nil {
+		cmdutil.Fatalf("error initializing resolvers: %v", err)
 	}
 	defer func() {
-		// XXX Can't close this until all async tasks have completed.
-		if err := db.Close(); err != nil {
-			logger.Infof("error closing sqlite db: %v", err)
+		if err := root.Shutdown(ctx); err != nil {
+			logger.Infof("error shutting down resolvers: %v", err)
 		}
 	}()
 
@@ -149,34 +141,35 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	}
 
 	kernelCfg := &kernel.Config{
-		Install:     inst,
-		VarDir:      cfg.VarDir,
-		Store:       store,
-		SyslogPort:  cfg.Log.SyslogPort,
-		Docker:      dockerClient,
-		Logger:      logger,
-		TaskTracker: taskTracker,
-		TokenClient: cfg.GetTokenClient(),
-		EsvClient:   esv.NewEsvClient(cfg.EsvTokenPath),
-		ExoVersion:  about.Version,
-	}
-
-	eventStore := &eventdsqlite.Store{
-		DB:    db,
-		IDGen: gensym.NewULIDGenerator(ctx),
+		Install:      inst,
+		VarDir:       cfg.VarDir,
+		Store:        store,
+		SyslogPort:   cfg.Log.SyslogPort,
+		Docker:       dockerClient,
+		Logger:       logger,
+		TaskTracker:  taskTracker,
+		TokenClient:  cfg.GetTokenClient(),
+		EsvClient:    esv.NewEsvClient(cfg.EsvTokenPath),
+		ExoVersion:   about.Version,
+		RootResolver: root,
 	}
 
 	// Commented out while transitioning to graphql implementation.
+	//eventStore := &eventdsqlite.Store{
+	//	DB:    db,
+	//	IDGen: gensym.NewULIDGenerator(ctx),
+	//}
+	//
 	//if err := eventStore.Migrate(ctx); err != nil {
 	//	cmdutil.Fatalf("migrating event store: %v", err)
 	//}
-
-	syslogServer := &syslogd.Server{
-		SyslogPort: kernelCfg.SyslogPort,
-		Logger:     logger,
-		Store:      eventStore,
-	}
-	ctx = log.ContextWithEventStore(ctx, eventStore)
+	//
+	//syslogServer := &syslogd.Server{
+	//	SyslogPort: kernelCfg.SyslogPort,
+	//	Logger:     logger,
+	//	Store:      eventStore,
+	//}
+	//ctx = log.ContextWithEventStore(ctx, eventStore)
 
 	mux := server.BuildRootMux("/_exo/", kernelCfg)
 	mux.Handle("/", gui.NewHandler(ctx, cfg.GUI))
@@ -187,24 +180,26 @@ func RunServer(ctx context.Context, flags map[string]string) {
 		ctx, shutdown := context.WithCancel(ctx)
 		defer shutdown()
 
-		go func() {
-			for {
-				select {
-				case <-ctx.Done():
-					return
-				case <-time.After(5 * time.Second):
-					if _, err := eventStore.RemoveOldEvents(ctx, &eventdapi.RemoveOldEventsInput{}); err != nil {
-						logger.Infof("error removing old events: %v", err)
-					}
-				}
-			}
-		}()
+		// Commented out while transitioning to graphql implementation.
+		//go func() {
+		//	for {
+		//		select {
+		//		case <-ctx.Done():
+		//			return
+		//		case <-time.After(5 * time.Second):
+		//			if _, err := eventStore.RemoveOldEvents(ctx, &eventdapi.RemoveOldEventsInput{}); err != nil {
+		//				logger.Infof("error removing old events: %v", err)
+		//			}
+		//		}
+		//	}
+		//}()
 
-		go func() {
-			if err := syslogServer.Run(ctx); err != nil {
-				cmdutil.Fatalf("syslog server error: %w", err)
-			}
-		}()
+		// Commented out while transitioning to graphql implementation.
+		//go func() {
+		//	if err := syslogServer.Run(ctx); err != nil {
+		//		cmdutil.Fatalf("syslog server error: %w", err)
+		//	}
+		//}()
 
 		go func() {
 			for {
