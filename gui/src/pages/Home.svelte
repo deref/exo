@@ -4,26 +4,33 @@
   import ErrorLabel from '../components/ErrorLabel.svelte';
   import WorkspaceList from '../components/WorkspaceList.svelte';
   import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
-  import { api } from '../lib/api';
+  import { query } from 'svelte-apollo';
+  import gql from 'graphql-tag';
 
-  const workspaces = api.kernel
-    .describeWorkspaces()
-    .then((workspaces) =>
-      workspaces.sort((w1, w2) => w1.root.localeCompare(w2.root)),
-    );
+  type TODO_QUERY_DATA = any; // XXX
+
+  const q = query<TODO_QUERY_DATA>(gql`
+    {
+      workspaces: allWorkspaces {
+        id
+        root
+        displayName
+      }
+    }
+  `);
 </script>
 
 <Layout>
   <CenterFormPanel title="Workspaces">
     <h1>Workspaces</h1>
     <div>
-      {#await workspaces}
+      {#if $q.loading}
         loading workspaces...
-      {:then workspaces}
-        <WorkspaceList {workspaces} />
-      {:catch error}
-        <ErrorLabel value={error} />
-      {/await}
+      {:else if $q.error}
+        <ErrorLabel value={$q.error} />
+      {:else}
+        <WorkspaceList workspaces={$q.data.workspaces} />
+      {/if}
     </div>
     <hr />
     <div>

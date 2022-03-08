@@ -160,6 +160,7 @@ type Workspace {
   id: String!
   url: String!
   root: String!
+  displayName: String!
   fileSystem: FileSystem!
 
   projectId: String!

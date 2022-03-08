@@ -130,6 +130,10 @@ func (r *WorkspaceResolver) Project(ctx context.Context) (*ProjectResolver, erro
 	return r.Q.projectByID(ctx, &r.ProjectID)
 }
 
+func (r *WorkspaceResolver) DisplayName() string {
+	return "TODO: do the displayNameBuilder thing"
+}
+
 func (r *WorkspaceResolver) StackID(ctx context.Context) (*string, error) {
 	stack, err := r.Stack(ctx)
 	if stack == nil || err != nil {
