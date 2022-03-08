@@ -126,7 +126,7 @@ func (r *MutationResolver) AcquireTask(ctx context.Context, args struct {
 	for {
 		// Attempt to assign a worker.
 		var attemptedID string
-		err := r.DB.GetContext(ctx, &attemptedID, `
+		err := r.db.GetContext(ctx, &attemptedID, `
 			UPDATE task
 			SET worker_id = ?
 			WHERE id IN (
@@ -175,7 +175,7 @@ func (r *MutationResolver) AcquireTask(ctx context.Context, args struct {
 		// Return the task, if we won the race to acquire it.
 		{
 			var row TaskRow
-			err := r.DB.GetContext(ctx, &row, `
+			err := r.db.GetContext(ctx, &row, `
 				SELECT *
 				FROM task
 				WHERE id = ?
@@ -203,7 +203,7 @@ func (r *MutationResolver) StartTask(ctx context.Context, args struct {
 	WorkerID string
 }) (*TaskResolver, error) {
 	now := Now(ctx)
-	res, err := r.DB.ExecContext(ctx, `
+	res, err := r.db.ExecContext(ctx, `
 		UPDATE task
 		SET worker_id = ?, started = ?
 		WHERE id = ?
@@ -241,7 +241,7 @@ func (r *MutationResolver) updateTask(ctx context.Context, id string, workerID s
 		progressTotal = progress.Total
 	}
 	var row TaskRow
-	err := r.DB.GetContext(ctx, &row, `
+	err := r.db.GetContext(ctx, &row, `
 		UPDATE task
 		SET
 			updated = ?,
@@ -268,7 +268,7 @@ func (r *MutationResolver) FinishTask(ctx context.Context, args struct {
 
 	now := Now(ctx)
 	var row TaskRow
-	if err := r.DB.GetContext(ctx, &row, `
+	if err := r.db.GetContext(ctx, &row, `
 		UPDATE task
 		SET
 			updated = ?,
@@ -300,7 +300,7 @@ func (r *MutationResolver) FinishTask(ctx context.Context, args struct {
 // preserved.
 func (r *MutationResolver) maybeCompleteTask(ctx context.Context, task *TaskResolver) error {
 	now := Now(ctx)
-	res, err := r.DB.ExecContext(ctx, `
+	res, err := r.db.ExecContext(ctx, `
 		UPDATE task
 		SET
 			completed = ?,
@@ -377,7 +377,7 @@ func taskRowsToResolvers(r *RootResolver, rows []TaskRow) []*TaskResolver {
 
 func (r *QueryResolver) AllTasks(ctx context.Context) ([]*TaskResolver, error) {
 	var rows []TaskRow
-	err := r.DB.SelectContext(ctx, &rows, `
+	err := r.db.SelectContext(ctx, &rows, `
 		SELECT *
 		FROM task
 		ORDER BY task.id ASC
@@ -390,7 +390,7 @@ func (r *QueryResolver) AllTasks(ctx context.Context) ([]*TaskResolver, error) {
 
 func (r *QueryResolver) tasksByParentID(ctx context.Context, parentID string) ([]*TaskResolver, error) {
 	var rows []TaskRow
-	err := r.DB.SelectContext(ctx, &rows, `
+	err := r.db.SelectContext(ctx, &rows, `
 		SELECT *
 		FROM task
 		WHERE parent_id = ?
@@ -427,7 +427,7 @@ func (r *QueryResolver) tasksByJobIDs(ctx context.Context, jobIDs []string) ([]*
 			WHERE job_id IN (?)
 			ORDER BY task.id ASC
 		`, jobIDs)
-		err := r.DB.SelectContext(ctx, &rows, query, args...)
+		err := r.db.SelectContext(ctx, &rows, query, args...)
 		if err != nil {
 			return nil, err
 		}
@@ -507,7 +507,7 @@ func (r *MutationResolver) CancelTask(ctx context.Context, args struct {
 // See also cancelJob and cancelSubtasks.
 func (r *MutationResolver) cancelTask(ctx context.Context, id string) error {
 	now := Now(ctx)
-	_, err := r.DB.ExecContext(ctx, `
+	_, err := r.db.ExecContext(ctx, `
 		UPDATE task
 		SET canceled = COALESCE(canceled, ?)
 		WHERE id IN (
@@ -525,7 +525,7 @@ func (r *MutationResolver) cancelTask(ctx context.Context, id string) error {
 // See also cancelJob and cancelTask.
 func (r *MutationResolver) cancelSubtasks(ctx context.Context, parentTaskID string) error {
 	now := Now(ctx)
-	_, err := r.DB.ExecContext(ctx, `
+	_, err := r.db.ExecContext(ctx, `
 		UPDATE task
 		SET canceled = COALESCE(canceled, ?)
 		WHERE id IN (
@@ -541,7 +541,7 @@ func (r *MutationResolver) cancelSubtasks(ctx context.Context, parentTaskID stri
 }
 
 func (r *QueryResolver) isTaskCompleted(ctx context.Context, taskID string) (completed bool, err error) {
-	err = r.DB.GetContext(ctx, &completed, `
+	err = r.db.GetContext(ctx, &completed, `
 		SELECT completed IS NOT NULL
 		FROM task
 		WHERE id = ?

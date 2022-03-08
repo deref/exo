@@ -33,7 +33,7 @@ func workspaceRowsToResolvers(r *RootResolver, rows []WorkspaceRow) []*Workspace
 
 func (r *QueryResolver) AllWorkspaces(ctx context.Context) ([]*WorkspaceResolver, error) {
 	var rows []WorkspaceRow
-	err := r.DB.SelectContext(ctx, &rows, `
+	err := r.db.SelectContext(ctx, &rows, `
 		SELECT *
 		FROM workspace
 		ORDER BY id ASC
@@ -123,7 +123,7 @@ func (r *MutationResolver) CreateWorkspace(ctx context.Context, args struct {
 }
 
 func (r *WorkspaceResolver) URL() string {
-	return r.Q.Routes.workspaceURL(r.ID)
+	return r.Q.Routes().workspaceURL(r.ID)
 }
 
 func (r *WorkspaceResolver) Project(ctx context.Context) (*ProjectResolver, error) {

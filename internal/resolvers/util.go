@@ -18,7 +18,7 @@ func (r *RootResolver) getRowByKey(ctx context.Context, dest interface{}, q stri
 	if id == nil {
 		return nil
 	}
-	err := r.DB.GetContext(ctx, dest, q, id)
+	err := r.db.GetContext(ctx, dest, q, id)
 	if errors.Is(err, sql.ErrNoRows) {
 		err = nil
 	}
@@ -96,9 +96,9 @@ func (r *RootResolver) insertRowEx(ctx context.Context, table string, row interf
 	q := b.String()
 
 	if returning {
-		return r.DB.GetContext(ctx, row, q, values...)
+		return r.db.GetContext(ctx, row, q, values...)
 	} else {
-		_, err := r.DB.ExecContext(ctx, q, values...)
+		_, err := r.db.ExecContext(ctx, q, values...)
 		return err
 	}
 }

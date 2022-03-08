@@ -40,7 +40,7 @@ func stackRowsToResolvers(r *RootResolver, rows []StackRow) []*StackResolver {
 
 func (r *QueryResolver) AllStacks(ctx context.Context) ([]*StackResolver, error) {
 	var rows []StackRow
-	err := r.DB.SelectContext(ctx, &rows, `
+	err := r.db.SelectContext(ctx, &rows, `
 		SELECT *
 		FROM stack
 		ORDER BY id ASC
@@ -91,7 +91,7 @@ func (r *QueryResolver) stackByWorkspaceID(ctx context.Context, workspaceID stri
 
 func (r *QueryResolver) stacksByProject(ctx context.Context, stackID string) ([]*StackResolver, error) {
 	var rows []StackRow
-	err := r.DB.SelectContext(ctx, &rows, `
+	err := r.db.SelectContext(ctx, &rows, `
 		SELECT stack.id, stack.name, stack.cluster_id, stack.project_id, workspace_id
 		FROM stack
 		INNER JOIN project ON stack.project_id = project.id
@@ -217,7 +217,7 @@ func (r *MutationResolver) CreateStack(ctx context.Context, args struct {
 
 	// TODO: Validate name.
 
-	if _, err := r.DB.ExecContext(ctx, `
+	if _, err := r.db.ExecContext(ctx, `
 		BEGIN;
 
 		UPDATE stack
@@ -270,7 +270,7 @@ func (r *MutationResolver) SetWorkspaceStack(ctx context.Context, args struct {
 		stackID = &stack.ID
 	}
 	var stackRow StackRow
-	err = transact(ctx, r.DB, func(tx *sqlx.Tx) error {
+	err = transact(ctx, r.db, func(tx *sqlx.Tx) error {
 		if _, err := tx.ExecContext(ctx, `
 			UPDATE stack
 			SET workspace_id = null

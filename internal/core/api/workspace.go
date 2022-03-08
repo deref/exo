@@ -4,9 +4,6 @@ package api
 
 import (
 	"context"
-	"net/http"
-
-	josh "github.com/deref/exo/internal/josh/server"
 )
 
 type Process interface {
@@ -47,21 +44,6 @@ type RestartOutput struct {
 	JobID string `json:"jobId"`
 }
 
-func BuildProcessMux(b *josh.MuxBuilder, factory func(req *http.Request) Process) {
-	b.AddMethod("start", func(req *http.Request) interface{} {
-		return factory(req).Start
-	})
-	b.AddMethod("stop", func(req *http.Request) interface{} {
-		return factory(req).Stop
-	})
-	b.AddMethod("signal", func(req *http.Request) interface{} {
-		return factory(req).Signal
-	})
-	b.AddMethod("restart", func(req *http.Request) interface{} {
-		return factory(req).Restart
-	})
-}
-
 type Builder interface {
 	Build(context.Context, *BuildInput) (*BuildOutput, error)
 }
@@ -71,12 +53,6 @@ type BuildInput struct {
 
 type BuildOutput struct {
 	JobID string `json:"jobId"`
-}
-
-func BuildBuilderMux(b *josh.MuxBuilder, factory func(req *http.Request) Builder) {
-	b.AddMethod("build", func(req *http.Request) interface{} {
-		return factory(req).Build
-	})
 }
 
 type Workspace interface {
@@ -407,117 +383,6 @@ type RenderDependenciesInput struct {
 
 type RenderDependenciesOutput struct {
 	Dot string `json:"dot"`
-}
-
-func BuildWorkspaceMux(b *josh.MuxBuilder, factory func(req *http.Request) Workspace) {
-	b.AddMethod("start", func(req *http.Request) interface{} {
-		return factory(req).Start
-	})
-	b.AddMethod("stop", func(req *http.Request) interface{} {
-		return factory(req).Stop
-	})
-	b.AddMethod("signal", func(req *http.Request) interface{} {
-		return factory(req).Signal
-	})
-	b.AddMethod("restart", func(req *http.Request) interface{} {
-		return factory(req).Restart
-	})
-	b.AddMethod("build", func(req *http.Request) interface{} {
-		return factory(req).Build
-	})
-	b.AddMethod("describe-vaults", func(req *http.Request) interface{} {
-		return factory(req).DescribeVaults
-	})
-	b.AddMethod("add-vault", func(req *http.Request) interface{} {
-		return factory(req).AddVault
-	})
-	b.AddMethod("remove-vault", func(req *http.Request) interface{} {
-		return factory(req).RemoveVault
-	})
-	b.AddMethod("describe", func(req *http.Request) interface{} {
-		return factory(req).Describe
-	})
-	b.AddMethod("destroy", func(req *http.Request) interface{} {
-		return factory(req).Destroy
-	})
-	b.AddMethod("apply", func(req *http.Request) interface{} {
-		return factory(req).Apply
-	})
-	b.AddMethod("resolve", func(req *http.Request) interface{} {
-		return factory(req).Resolve
-	})
-	b.AddMethod("resolve-manifest", func(req *http.Request) interface{} {
-		return factory(req).ResolveManifest
-	})
-	b.AddMethod("describe-components", func(req *http.Request) interface{} {
-		return factory(req).DescribeComponents
-	})
-	b.AddMethod("create-component", func(req *http.Request) interface{} {
-		return factory(req).CreateComponent
-	})
-	b.AddMethod("update-component", func(req *http.Request) interface{} {
-		return factory(req).UpdateComponent
-	})
-	b.AddMethod("rename-component", func(req *http.Request) interface{} {
-		return factory(req).RenameComponent
-	})
-	b.AddMethod("refresh-components", func(req *http.Request) interface{} {
-		return factory(req).RefreshComponents
-	})
-	b.AddMethod("dispose-components", func(req *http.Request) interface{} {
-		return factory(req).DisposeComponents
-	})
-	b.AddMethod("delete-components", func(req *http.Request) interface{} {
-		return factory(req).DeleteComponents
-	})
-	b.AddMethod("get-component-state", func(req *http.Request) interface{} {
-		return factory(req).GetComponentState
-	})
-	b.AddMethod("set-component-state", func(req *http.Request) interface{} {
-		return factory(req).SetComponentState
-	})
-	b.AddMethod("get-events", func(req *http.Request) interface{} {
-		return factory(req).GetEvents
-	})
-	b.AddMethod("start-components", func(req *http.Request) interface{} {
-		return factory(req).StartComponents
-	})
-	b.AddMethod("stop-components", func(req *http.Request) interface{} {
-		return factory(req).StopComponents
-	})
-	b.AddMethod("signal-components", func(req *http.Request) interface{} {
-		return factory(req).SignalComponents
-	})
-	b.AddMethod("restart-components", func(req *http.Request) interface{} {
-		return factory(req).RestartComponents
-	})
-	b.AddMethod("describe-processes", func(req *http.Request) interface{} {
-		return factory(req).DescribeProcesses
-	})
-	b.AddMethod("describe-volumes", func(req *http.Request) interface{} {
-		return factory(req).DescribeVolumes
-	})
-	b.AddMethod("describe-networks", func(req *http.Request) interface{} {
-		return factory(req).DescribeNetworks
-	})
-	b.AddMethod("export-procfile", func(req *http.Request) interface{} {
-		return factory(req).ExportProcfile
-	})
-	b.AddMethod("read-file", func(req *http.Request) interface{} {
-		return factory(req).ReadFile
-	})
-	b.AddMethod("write-file", func(req *http.Request) interface{} {
-		return factory(req).WriteFile
-	})
-	b.AddMethod("build-components", func(req *http.Request) interface{} {
-		return factory(req).BuildComponents
-	})
-	b.AddMethod("describe-environment", func(req *http.Request) interface{} {
-		return factory(req).DescribeEnvironment
-	})
-	b.AddMethod("render-dependencies", func(req *http.Request) interface{} {
-		return factory(req).RenderDependencies
-	})
 }
 
 type WorkspaceDescription struct {

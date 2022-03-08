@@ -48,7 +48,7 @@ func (r *QueryResolver) ClusterByRef(ctx context.Context, args struct {
 
 func (r *QueryResolver) clusterByRef(ctx context.Context, ref string) (*ClusterResolver, error) {
 	var rows []ClusterRow
-	err := r.DB.SelectContext(ctx, &rows, `
+	err := r.db.SelectContext(ctx, &rows, `
 		SELECT *
 		FROM cluster
 		WHERE id = ? OR name = ?
@@ -67,7 +67,7 @@ func (r *QueryResolver) clusterByRef(ctx context.Context, ref string) (*ClusterR
 
 func (r *QueryResolver) AllClusters(ctx context.Context) ([]*ClusterResolver, error) {
 	var rows []ClusterRow
-	err := r.DB.SelectContext(ctx, &rows, `
+	err := r.db.SelectContext(ctx, &rows, `
 		SELECT *
 		FROM cluster
 		ORDER BY name ASC
@@ -113,7 +113,7 @@ func (r *MutationResolver) UpdateCluster(ctx context.Context, args struct {
 func (r *MutationResolver) updateCluster(ctx context.Context, ref string, environment *scalars.JSONObject) (*ClusterResolver, error) {
 	now := scalars.Now(ctx)
 	var row ClusterRow
-	if err := r.DB.GetContext(ctx, &row, `
+	if err := r.db.GetContext(ctx, &row, `
 		UPDATE cluster
 		SET
 			environment_variables = COALESCE(?, environment_variables),

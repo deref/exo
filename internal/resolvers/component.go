@@ -63,7 +63,7 @@ func (r *QueryResolver) componentByName(ctx context.Context, stack string, name 
 	component := &ComponentResolver{
 		Q: r,
 	}
-	err = r.DB.GetContext(ctx, &component.ComponentRow, `
+	err = r.db.GetContext(ctx, &component.ComponentRow, `
 		SELECT *
 		FROM component
 		WHERE stack_id = ?
@@ -130,7 +130,7 @@ func (r *componentSetResolver) items(ctx context.Context) ([]*ComponentResolver,
 		AND IIF(?, true, disposed IS NULL)
 		ORDER BY parent_id, name ASC
 	`
-	err := r.Q.DB.SelectContext(ctx, &rows, q, r.StackID, r.Recursive, r.All)
+	err := r.Q.db.SelectContext(ctx, &rows, q, r.StackID, r.Recursive, r.All)
 	if err != nil {
 		return nil, err
 	}
@@ -147,7 +147,7 @@ func (r *QueryResolver) componentsByStack(ctx context.Context, stackID string) (
 
 func (r *QueryResolver) componentsByParent(ctx context.Context, parentID string) ([]*ComponentResolver, error) {
 	var rows []ComponentRow
-	err := r.DB.SelectContext(ctx, &rows, `
+	err := r.db.SelectContext(ctx, &rows, `
 		SELECT *
 		FROM component
 		WHERE parent_id = ?
@@ -271,7 +271,7 @@ func (r *MutationResolver) UpdateComponent(ctx context.Context, args struct {
 	// TODO: Validate name and spec.
 
 	var row ComponentRow
-	if err := r.DB.GetContext(ctx, &row, `
+	if err := r.db.GetContext(ctx, &row, `
 		UPDATE component
 		SET spec = ?, name = ?
 		WHERE id = ?
@@ -324,7 +324,7 @@ func (r *MutationResolver) DisposeComponent(ctx context.Context, args struct {
 func (r *MutationResolver) disposeComponent(ctx context.Context, id string) (*ComponentResolver, error) {
 	now := Now(ctx)
 	var row ComponentRow
-	if err := r.DB.GetContext(ctx, &row, `
+	if err := r.db.GetContext(ctx, &row, `
 		UPDATE component
 		SET disposed = COALESCE(disposed, ?)
 		WHERE id IN (

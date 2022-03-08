@@ -90,7 +90,7 @@ func (r *MutationResolver) newSyntheticEvent(ctx context.Context, row EventRow) 
 }
 
 func (r *MutationResolver) mustNextULID(ctx context.Context) api.ULID {
-	res, err := r.ULIDGenerator.NextID(ctx)
+	res, err := r.ulidgen.NextID(ctx)
 	if err != nil {
 		panic(err)
 	}
@@ -194,7 +194,7 @@ func (r *QueryResolver) findEvents(ctx context.Context, q eventQuery) (*EventPag
 		after = ULIDMax(after, cursor)
 	}
 	var rows []EventRow
-	if err := r.DB.SelectContext(ctx, &rows, query,
+	if err := r.db.SelectContext(ctx, &rows, query,
 		filter.System,
 		filter.WorkspaceID, filter.WorkspaceID,
 		filter.StackID, filter.StackID,
@@ -255,7 +255,7 @@ func (r *QueryResolver) latestEventCursor(ctx context.Context, filter eventFilte
 
 func (r *QueryResolver) latestEvent(ctx context.Context, filter eventFilter) (*EventResolver, error) {
 	var row EventRow
-	err := r.DB.GetContext(ctx, &row, `
+	err := r.db.GetContext(ctx, &row, `
 		SELECT *
 		FROM event
 		WHERE (

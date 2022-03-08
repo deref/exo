@@ -2,106 +2,56 @@ package server
 
 import (
 	"net/http"
-	"strings"
 
-	"github.com/deref/exo/internal/core/api"
 	state "github.com/deref/exo/internal/core/state/api"
 	"github.com/deref/exo/internal/esv"
 	"github.com/deref/exo/internal/install"
-	josh "github.com/deref/exo/internal/josh/server"
+	"github.com/deref/exo/internal/resolvers"
 	"github.com/deref/exo/internal/task"
-	taskapi "github.com/deref/exo/internal/task/api"
 	"github.com/deref/exo/internal/token"
-	"github.com/deref/exo/internal/util/errutil"
-	"github.com/deref/exo/internal/util/httputil"
 	"github.com/deref/exo/internal/util/logging"
 	docker "github.com/docker/docker/client"
+	"github.com/graph-gophers/graphql-go/relay"
 )
 
 type Config struct {
-	VarDir      string
-	Store       state.Store
-	Install     *install.Install
-	SyslogPort  uint
-	Docker      *docker.Client
-	Logger      logging.Logger
-	TaskTracker *task.TaskTracker
-	TokenClient token.TokenClient
-	EsvClient   esv.EsvClient
-	ExoVersion  string
+	VarDir       string
+	Store        state.Store
+	Install      *install.Install
+	SyslogPort   uint
+	Docker       *docker.Client
+	Logger       logging.Logger
+	TaskTracker  *task.TaskTracker
+	TokenClient  token.TokenClient
+	EsvClient    esv.EsvClient
+	ExoVersion   string
+	RootResolver *resolvers.RootResolver
+}
+
+type versionMiddleware struct {
+	ExoVersion string
+}
+
+func (m *versionMiddleware) ServeHTTPMiddleware(w http.ResponseWriter, req *http.Request, next http.Handler) {
+	w.Header().Add("Exo-Version", m.ExoVersion)
+	next.ServeHTTP(w, req)
 }
 
 func BuildRootMux(prefix string, cfg *Config) *http.ServeMux {
-	authMiddleware := func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			token := ""
-			bearerSuffix := "Bearer "
-			authHeader := req.Header.Get("Authorization")
-			if strings.HasPrefix(authHeader, bearerSuffix) {
-				token = strings.TrimPrefix(authHeader, bearerSuffix)
-			} else if cookie, err := req.Cookie("token"); err == nil {
-				token = cookie.Value
-			}
-
-			authed, err := cfg.TokenClient.CheckToken(token)
-			if err != nil {
-				httputil.WriteError(w, req, errutil.NewHTTPError(http.StatusInternalServerError, "Could not validate token"))
-				return
-			}
-			if !authed {
-				httputil.WriteError(w, req, errutil.NewHTTPError(http.StatusUnauthorized, "Bad or no token"))
-				return
-			}
-			next.ServeHTTP(w, req)
-		})
+	auth := &authMiddleware{
+		TokenClient: cfg.TokenClient,
+	}
+	version := &versionMiddleware{
+		ExoVersion: cfg.ExoVersion,
 	}
 
-	versionMiddleware := func(next http.Handler) http.Handler {
-		return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
-			w.Header().Add("Exo-Version", cfg.ExoVersion)
-			next.ServeHTTP(w, req)
-		})
-	}
+	mux := http.NewServeMux()
 
-	b := josh.NewMuxBuilder(prefix)
-	b.AddMiddleware(authMiddleware)
-	b.AddMiddleware(versionMiddleware)
+	mux.Handle(prefix+"health", applyMiddleware(HandleHealth, version))
 
-	endKernel := b.Begin("kernel")
-	api.BuildKernelMux(b, func(req *http.Request) api.Kernel {
-		return &Kernel{
-			Install:     cfg.Install,
-			Store:       cfg.Store,
-			TaskTracker: cfg.TaskTracker,
-			EsvClient:   cfg.EsvClient,
-		}
-	})
-	endKernel()
-
-	endWorkspace := b.Begin("workspace")
-	api.BuildWorkspaceMux(b, func(req *http.Request) api.Workspace {
-		return &Workspace{
-			ID:          req.URL.Query().Get("id"),
-			VarDir:      cfg.VarDir,
-			Logger:      cfg.Logger,
-			Store:       cfg.Store,
-			SyslogPort:  cfg.SyslogPort,
-			Docker:      cfg.Docker,
-			TaskTracker: cfg.TaskTracker,
-			EsvClient:   cfg.EsvClient,
-		}
-	})
-	endWorkspace()
-
-	endTaskStore := b.Begin("task-store")
-	taskapi.BuildTaskStoreMux(b, func(req *http.Request) taskapi.TaskStore {
-		return cfg.TaskTracker.Store
-	})
-	endTaskStore()
-
-	mux := b.Build()
-
-	mux.Handle(prefix+"health", versionMiddleware(HandleHealth))
+	mux.Handle(prefix+"graphql", applyMiddleware(&relay.Handler{
+		Schema: resolvers.NewSchema(cfg.RootResolver),
+	}, version, auth))
 
 	return mux
 }

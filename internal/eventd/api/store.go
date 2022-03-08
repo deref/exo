@@ -4,9 +4,6 @@ package api
 
 import (
 	"context"
-	"net/http"
-
-	josh "github.com/deref/exo/internal/josh/server"
 )
 
 // Database of events organized into streams.
@@ -62,24 +59,6 @@ type RemoveOldEventsInput struct {
 }
 
 type RemoveOldEventsOutput struct {
-}
-
-func BuildStoreMux(b *josh.MuxBuilder, factory func(req *http.Request) Store) {
-	b.AddMethod("clear-events", func(req *http.Request) interface{} {
-		return factory(req).ClearEvents
-	})
-	b.AddMethod("describe-streams", func(req *http.Request) interface{} {
-		return factory(req).DescribeStreams
-	})
-	b.AddMethod("add-event", func(req *http.Request) interface{} {
-		return factory(req).AddEvent
-	})
-	b.AddMethod("get-events", func(req *http.Request) interface{} {
-		return factory(req).GetEvents
-	})
-	b.AddMethod("remove-old-events", func(req *http.Request) interface{} {
-		return factory(req).RemoveOldEvents
-	})
 }
 
 type StreamDescription struct {

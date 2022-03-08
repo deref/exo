@@ -30,7 +30,7 @@ func projectRowsToResolvers(r *RootResolver, rows []ProjectRow) []*ProjectResolv
 
 func (r *QueryResolver) AllProjects(ctx context.Context) ([]*ProjectResolver, error) {
 	var rows []ProjectRow
-	err := r.DB.SelectContext(ctx, &rows, `
+	err := r.db.SelectContext(ctx, &rows, `
 		SELECT *
 		FROM project
 		ORDER BY id ASC
