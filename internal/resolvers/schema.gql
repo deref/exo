@@ -125,7 +125,9 @@ scalar Instant
 type Void {}
 
 type System {
-  # TODO: Version info, etc.
+  version: String!
+  build: String!
+
   stream: Stream!
 }
 

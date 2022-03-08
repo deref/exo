@@ -1,6 +1,9 @@
 package about
 
-import "embed"
+import (
+	"embed"
+	"runtime/debug"
+)
 
 const (
 	CheckVersionEndpoint = "https://exo.deref.io/latest-version"
@@ -14,3 +17,23 @@ const (
 var Version string
 var Notices embed.FS
 var AmplitudeAPIKey string
+
+type VersionInfo struct {
+	Version string `json:"version"`
+	Build   string `json:"build"`
+}
+
+func GetBuild() string {
+	buildInfo, ok := debug.ReadBuildInfo()
+	if !ok {
+		panic("debug.ReadBuildInfo() failed")
+	}
+	return buildInfo.Main.Version
+}
+
+func GetVersionInfo() VersionInfo {
+	return VersionInfo{
+		Version: Version,
+		Build:   GetBuild(),
+	}
+}

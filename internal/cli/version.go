@@ -1,20 +1,14 @@
 package cli
 
 import (
-	"fmt"
-	"runtime/debug"
-
 	"github.com/deref/exo/internal/about"
+	"github.com/deref/exo/internal/api"
+	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/spf13/cobra"
 )
 
 func init() {
 	rootCmd.AddCommand(versionCmd)
-	versionCmd.Flags().BoolVarP(&versionFlags.Verbose, "verbose", "v", false, "Prints version information for all dependencies too.")
-}
-
-var versionFlags struct {
-	Verbose bool
 }
 
 var versionCmd = &cobra.Command{
@@ -23,19 +17,26 @@ var versionCmd = &cobra.Command{
 	Long:  "Print the version of exo.",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
-		buildInfo, ok := debug.ReadBuildInfo()
-		if !ok {
-			panic("debug.ReadBuildInfo() failed")
+		ctx := cmd.Context()
+
+		res := map[string]interface{}{
+			"client": about.GetVersionInfo(),
 		}
-		if versionFlags.Verbose {
-			fmt.Println(buildInfo.Main.Path, about.Version)
-		} else {
-			fmt.Println(about.Version)
-		}
-		if versionFlags.Verbose {
-			for _, dep := range buildInfo.Deps {
-				fmt.Println(dep.Path, dep.Version)
+
+		if isClientMode() {
+			var q struct {
+				System struct {
+					Version string `json:"version"`
+					Build   string `json:"build"`
+				}
+			}
+			if err := api.Query(ctx, svc, &q, nil); err != nil {
+				cmdutil.Warnf("getting server version: %v", err)
+			} else {
+				res["server"] = q.System
 			}
 		}
+
+		cmdutil.PrintCueStruct(res)
 	},
 }
