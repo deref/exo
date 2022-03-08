@@ -1,3 +1,5 @@
+// TODO: DELETE ME. Moving to GraphQL.
+
 import { isAuthenticated, isRunning } from './global/server-status';
 import type { GetVersionResponse } from './kernel/types';
 import type {

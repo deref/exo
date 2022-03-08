@@ -51,11 +51,15 @@
     "vite": "^2.8.6"
   },
   "dependencies": {
+    "@apollo/client": "^3.5.10",
     "@fnando/sparkline": "^0.3.10",
     "express": "^4.17.3",
+    "graphql": "^16.3.0",
+    "graphql-tag": "^2.12.6",
     "monaco-editor": "^0.32.1",
     "qs": "^6.10.3",
     "shell-quote": "^1.7.3",
+    "svelte-apollo": "^0.5.0",
     "svelte-spa-router": "^3.2.0"
   }
 }

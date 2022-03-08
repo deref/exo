@@ -59,9 +59,9 @@ If the current directory is part of a workspace, navigates to it.`,
 
 		var endpoint string
 		if q.Workspace == nil {
-			endpoint = q.Workspace.URL
-		} else {
 			endpoint = q.Routes.NewProjectURL
+		} else {
+			endpoint = q.Workspace.URL
 		}
 
 		// TODO: Add auth-token server-side?
