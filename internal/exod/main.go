@@ -17,7 +17,7 @@ import (
 	kernel "github.com/deref/exo/internal/core/server"
 	"github.com/deref/exo/internal/core/state/statefile"
 	"github.com/deref/exo/internal/esv"
-	"github.com/deref/exo/internal/resolvers"
+	"github.com/deref/exo/internal/peer"
 	"github.com/deref/exo/internal/task"
 	"github.com/deref/exo/internal/task/api"
 	taskserver "github.com/deref/exo/internal/task/server"
@@ -116,17 +116,18 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	tel.StartSession(ctx)
 	tel.SendEvent(ctx, telemetry.SystemInfoIdentifiedEvent())
 
-	root := &resolvers.RootResolver{
-		VarDir:      cfg.VarDir,
+	service := &peer.Peer{
 		SystemLog:   logger,
+		VarDir:      cfg.VarDir,
 		GUIEndpoint: fmt.Sprintf("http://localhost:%d", cfg.GUI.Port), // XXX should be constructed earlier than here.
+		Debug:       false,                                            // XXX parameterize me.
 	}
-	if err := root.Init(ctx); err != nil {
-		cmdutil.Fatalf("error initializing resolvers: %v", err)
+	if err := service.Init(ctx); err != nil {
+		cmdutil.Fatalf("error initializing service: %v", err)
 	}
 	defer func() {
-		if err := root.Shutdown(ctx); err != nil {
-			logger.Infof("error shutting down resolvers: %v", err)
+		if err := service.Shutdown(ctx); err != nil {
+			logger.Infof("error shutting down service: %v", err)
 		}
 	}()
 
@@ -141,17 +142,17 @@ func RunServer(ctx context.Context, flags map[string]string) {
 	}
 
 	kernelCfg := &kernel.Config{
-		Install:      inst,
-		VarDir:       cfg.VarDir,
-		Store:        store,
-		SyslogPort:   cfg.Log.SyslogPort,
-		Docker:       dockerClient,
-		Logger:       logger,
-		TaskTracker:  taskTracker,
-		TokenClient:  cfg.GetTokenClient(),
-		EsvClient:    esv.NewEsvClient(cfg.EsvTokenPath),
-		ExoVersion:   about.Version,
-		RootResolver: root,
+		Install:     inst,
+		VarDir:      cfg.VarDir,
+		Store:       store,
+		SyslogPort:  cfg.Log.SyslogPort,
+		Docker:      dockerClient,
+		Logger:      logger,
+		TaskTracker: taskTracker,
+		TokenClient: cfg.GetTokenClient(),
+		EsvClient:   esv.NewEsvClient(cfg.EsvTokenPath),
+		ExoVersion:  about.Version,
+		Service:     service,
 	}
 
 	// Commented out while transitioning to graphql implementation.

@@ -7,19 +7,23 @@ import (
 
 	"github.com/deref/exo/internal/chrono"
 	"github.com/deref/exo/internal/gensym"
+	"github.com/deref/exo/internal/telemetry"
 	"github.com/deref/exo/internal/util/logging"
 )
 
+// TODO: Refactor this in to multiple middlewares.
 func HandlerWithContext(ctx context.Context, handler http.Handler) http.Handler {
 	debugHTTP := false // TODO: Configurable.
 	logger := logging.CurrentLogger(ctx)
+	tel := telemetry.FromContext(ctx)
 	return http.HandlerFunc(func(w http.ResponseWriter, req *http.Request) {
 		requestID := gensym.RandomBase32()
 		sl := logger.Sublogger("http " + requestID)
 		if debugHTTP {
 			sl.Infof("%s %s", req.Method, req.URL)
 		}
-		ctx := logging.ContextWithLogger(ctx, sl)
+		ctx := logging.ContextWithLogger(req.Context(), sl)
+		ctx = telemetry.ContextWithTelemetry(ctx, tel)
 		start := chrono.Now(ctx)
 		logw := &responseLogger{rw: w}
 		handler.ServeHTTP(logw, req.WithContext(ctx))

@@ -124,6 +124,10 @@ func (p *Peer) handleResponse(ctx context.Context, out interface{}, resp *graphq
 		logging.Infof(ctx, "internal graphql error: %v", err)
 		resp.Errors[i] = externalErr
 	}
+	// NOTE [GRAPHQL_PARTIAL_FAILURE]: Returning on error before unmarshalling
+	// promotes partial failure (GraphQL errors at specific paths) into total
+	// failure. Not ideal for robustness, but greatly simplifies error handling
+	// logic and acceptable for our not-so-distributed-systems use case.
 	if len(resp.Errors) > 0 {
 		return api.QueryErrorSet(resp.Errors)
 	}

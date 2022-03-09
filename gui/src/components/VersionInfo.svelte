@@ -5,64 +5,59 @@
   import NavbarButton from './nav/NavbarButton.svelte';
   import { onDestroy } from 'svelte';
   import { api } from '../lib/api';
+  import { nonNull } from '../lib/util';
+  import { subscribe } from 'svelte-apollo';
+  import gql from 'graphql-tag';
 
   import { modal } from '../lib/modal';
   import { bind } from './modal/Modal.svelte';
   import ModalDefaultPopup from './modal/ModalDefaultPopup.svelte';
 
-  let installedVersion: string | null = null;
-  let latestVersion: string | null = null;
-  let isManaged: boolean = false;
+  type TODO_QUERY_DATA = {
+    system: {
+      version: {
+        installed: string;
+        managed: boolean;
+        upgrade: string | null;
+      };
+    };
+  }; // XXX
+  const q = subscribe<TODO_QUERY_DATA>(gql`
+    subscription {
+      system: systemChange {
+        version {
+          installed
+          managed
+          upgrade
+        }
+      }
+    }
+  `);
+  $: version = $q.data?.system?.version;
+
   let upgrading = false;
-
-  const showUpdateInstallMethodModal = () => {
-    modal.set(
-      bind(ModalDefaultPopup, {
-        title: 'Cannot auto-update.',
-        message: `This upgrade procedure only supports installation of exo that were performed with the exo install script.\n\nPlease upgrade exo with your package manager or by uninstalling and reinstalling with the official exo upgrade script.`,
-      }),
-    );
-  };
-
   const doUpgrade = async () => {
-    if (isManaged) {
-      showUpdateInstallMethodModal();
+    if (nonNull(version).managed) {
+      modal.set(
+        bind(ModalDefaultPopup, {
+          title: 'Cannot auto-update.',
+          message: `This upgrade procedure only supports installation of exo that were performed with the exo install script.\n\nPlease upgrade exo with your package manager or by uninstalling and reinstalling with the official exo upgrade script.`,
+        }),
+      );
       return;
     }
     upgrading = true;
+    q.subscribe(() => {
+      // If an event comes in now, assume it means a new version was installed.
+      window.location.reload();
+    });
     await api.kernel.upgrade();
   };
-
-  let fetchTimeout: NodeJS.Timeout | null = null;
-  const refreshVersion = async () => {
-    const { installed, latest, current, managed } =
-      await api.kernel.getVersion();
-    // The server just changed installed version - reload.
-    if (installedVersion !== null && installedVersion != installed) {
-      console.log({ installedVersion, installed });
-      // window.location.reload();
-    }
-
-    isManaged = managed;
-
-    installedVersion = installed;
-    if (!current && latest !== undefined) {
-      latestVersion = latest;
-    }
-    fetchTimeout = setTimeout(refreshVersion, 60000);
-  };
-  refreshVersion();
-
-  onDestroy(() => {
-    if (fetchTimeout !== null) {
-      clearTimeout(fetchTimeout);
-    }
-  });
 </script>
 
 <div class="dropdown-wrapper">
   <NavbarButton>
-    {#if latestVersion !== null}
+    {#if version?.upgrade}
       <div class="upgrade-available" />
     {:else}
       <Icon glyph="Ellipsis" />
@@ -71,13 +66,13 @@
   <div class="dropdown version">
     <section>
       <div>
-        exo {installedVersion || ''}
+        exo {version?.installed ?? ''}
         {#if import.meta.env.MODE === 'development'}
           <strong>dev</strong>
         {/if}
       </div>
-      {#if latestVersion !== null}
-        <div>Update available: <strong>{latestVersion}</strong></div>
+      {#if version?.upgrade}
+        <div>Update available: <strong>{version.upgrade}</strong></div>
         <Button small on:click={doUpgrade}>
           {#if upgrading}
             Updating &nbsp;<Spinner inline />

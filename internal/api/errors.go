@@ -39,3 +39,24 @@ func (errs QueryErrorSet) Unwrap() error {
 	}
 	return errs[0]
 }
+
+func ToQueryErrorSet(err error) QueryErrorSet {
+	switch err := err.(type) {
+	case QueryErrorSet:
+		return err
+	default:
+		return QueryErrorSet{ToQueryError(err)}
+	}
+}
+
+func ToQueryError(err error) *errors.QueryError {
+	switch err := err.(type) {
+	case *errors.QueryError:
+		return err
+	default:
+		return &errors.QueryError{
+			Err:     err,
+			Message: err.Error(),
+		}
+	}
+}

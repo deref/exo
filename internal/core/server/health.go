@@ -1,6 +1,8 @@
 package server
 
-import "net/http"
+import (
+	"net/http"
+)
 
 var HandleHealth http.HandlerFunc = handleHealth
 
