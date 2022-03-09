@@ -15,7 +15,7 @@ type Query {
   allWorkspaces: [Workspace!]!
   workspaceById(id: String!): Workspace
   workspaceByRef(ref: String!): Workspace
-  
+
   # Returns a manifest that's not on disk.
   makeManifest(content: String!, format: String): Manifest!
 
@@ -29,7 +29,7 @@ type Query {
   allResources: [Resource!]! # TODO: Paginate!
   resourceById(id: String!): Resource
   resourceByRef(ref: String!): Resource
-  
+
   allTasks: [Task!]!
   taskById(id: String!): Task
   tasksByJobId(jobId: String!): [Task!]!
@@ -39,16 +39,16 @@ type Query {
 }
 
 type Mutation {
-  stopDaemon(): Void
+  stopDaemon: Void
 
   updateCluster(ref: String!, environment: JSONObject): Cluster!
   refreshCluster(ref: String!): Cluster!
 
   createProject(displayName: String): Project!
-  
+
   createWorkspace(root: String!, projectId: String): Workspace!
   setWorkspaceStack(workspace: String!, stack: String): Stack
-  
+
   formatManifest(workspace: String!, format: String, path: String): Void
 
   buildWorkspace(workspace: String!): Void
@@ -63,18 +63,30 @@ type Mutation {
   stopWorkspaceComponents(workspace: String!, components: [String!]!): Void
   restartWorkspaceComponents(workspace: String!, components: [String!]!): Void
 
-  createResource(type: String!, model: JSONObject!, project: String, stack: String, component: String, adopt: Boolean): Resource!
+  createResource(
+    type: String!
+    model: JSONObject!
+    project: String
+    stack: String
+    component: String
+    adopt: Boolean
+  ): Resource!
   forgetResource(ref: String!): Void
   cancelResourceOperation(ref: String!): Resource!
 
   # These operations must be called asynchronously.
   # They take an exclusive lock on the resource.
-  initializeResource(ref: String!, model: JSONObject!): Void
+  initializeResource(ref: String!, model: JSONObject!): Resource!
   refreshResource(ref: String!): Resource!
   updateResource(ref: String!, model: JSONObject!): Resource!
   disposeResource(ref: String!): Void
-  
-  createEvent(sourceType: String!, sourceId: String!, type: String!, message: String!): Event!
+
+  createEvent(
+    sourceType: String!
+    sourceId: String!
+    type: String!
+    message: String!
+  ): Event!
 
   # Create a job and its root task.
   createJob(mutation: String!, arguments: JSONObject!): Job!
@@ -93,8 +105,18 @@ type Mutation {
   createStack(cluster: String, workspace: String, name: String): Stack!
   refreshStack(ref: String!): Reconciliation!
 
-  createComponent(stack: String!, name: String! type: String! spec: String!): Reconciliation!
-  updateComponent(stack: String, ref: String!, newName: String, newSpec: String): Reconciliation!
+  createComponent(
+    stack: String!
+    name: String!
+    type: String!
+    spec: String!
+  ): Reconciliation!
+  updateComponent(
+    stack: String
+    ref: String!
+    newName: String
+    newSpec: String
+  ): Reconciliation!
   disposeComponent(stack: String, ref: String!): Reconciliation!
   disposeComponents(stack: String, refs: [String!]!): Reconciliation!
 
@@ -105,7 +127,13 @@ type Mutation {
 
   # Debug/testing.
   sleep(seconds: Float!): Void
-  busyWork(size: Int!, depth: Int, width: Int, length: Int, failRate: Float): Void
+  busyWork(
+    size: Int!
+    depth: Int
+    width: Int
+    length: Int
+    failRate: Float
+  ): Void
 }
 
 type Subscription {
@@ -124,7 +152,13 @@ type Subscription {
 # ISO-8601 timestamp in UTC.
 scalar Instant
 
-type Void {}
+# TODO: Would this be better as a scalar?
+type Void {
+  # NOTE [EMPTY_GRAPHQL_TYPE]: Some old clients fail to parse empty types, So
+  # include an arbitrary, meaningless, unused extra field here.  As a bonus,
+  # this field prevents any other type from satisfying Void's interface.
+  void: Void
+}
 
 type System {
   version: VersionInfo!
@@ -216,7 +250,7 @@ type Stack {
   components(all: Boolean, recursive: Boolean): [Component!]!
   processes: [Process!]!
   resources: [Resource!]!
-  
+
   configuration(recursive: Boolean, final: Boolean): String!
 
   environment: Environment!
@@ -236,7 +270,7 @@ type Component {
   name: String!
 
   resources: [Resource!]!
-  
+
   spec: String!
   configuration(recursive: Boolean, final: Boolean): String!
 
@@ -285,13 +319,12 @@ type Resource {
 
   # Deepest available of component, stack, or project.
   owner: ResourceOwner
-  
+
   # If non-null, task has a lock on resource and state will not be "idle".
   # TODO: Consider explicit Lock type.
   taskId: String
   task: Task
   operation: String # creating, adopting, refreshing, updating, or disposing.
-
   model: JSONObject!
 
   # HTTP error code from previous finished task.

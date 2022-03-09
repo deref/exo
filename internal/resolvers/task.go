@@ -500,8 +500,9 @@ func (r *TaskResolver) Message(ctx context.Context) (string, error) {
 
 func (r *MutationResolver) CancelTask(ctx context.Context, args struct {
 	ID string
-}) error {
-	return r.cancelTask(ctx, args.ID)
+}) (*VoidResolver, error) {
+	err := r.cancelTask(ctx, args.ID)
+	return nil, err
 }
 
 // See also cancelJob and cancelSubtasks.
