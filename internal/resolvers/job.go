@@ -69,8 +69,9 @@ func (r *JobResolver) Tasks(ctx context.Context) ([]*TaskResolver, error) {
 
 func (r *MutationResolver) CancelJob(ctx context.Context, args struct {
 	ID string
-}) error {
-	return r.cancelJob(ctx, args.ID)
+}) (*VoidResolver, error) {
+	err := r.cancelJob(ctx, args.ID)
+	return nil, err
 }
 
 // See also cancelTask and cancelSubtasks.
