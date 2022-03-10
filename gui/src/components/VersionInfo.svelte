@@ -3,26 +3,15 @@
   import Button from './Button.svelte';
   import Spinner from './Spinner.svelte';
   import NavbarButton from './nav/NavbarButton.svelte';
-  import { onDestroy } from 'svelte';
   import { api } from '../lib/api';
   import { nonNull } from '../lib/util';
-  import { subscribe } from 'svelte-apollo';
-  import gql from 'graphql-tag';
+  import { subscribe } from '../lib/graphql';
 
   import { modal } from '../lib/modal';
   import { bind } from './modal/Modal.svelte';
   import ModalDefaultPopup from './modal/ModalDefaultPopup.svelte';
 
-  type TODO_QUERY_DATA = {
-    system: {
-      version: {
-        installed: string;
-        managed: boolean;
-        upgrade: string | null;
-      };
-    };
-  }; // XXX
-  const q = subscribe<TODO_QUERY_DATA>(gql`
+  const q = subscribe(`#graphql
     subscription {
       system: systemChange {
         version {
