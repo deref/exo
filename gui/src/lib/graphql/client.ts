@@ -4,7 +4,7 @@ import { getMainDefinition } from '@apollo/client/utilities';
 import { ServerSentEventsLink } from '@graphql-sse/apollo-client';
 import { setClient } from 'svelte-apollo';
 
-export const initGraphqlClient = () => {
+export const initClient = () => {
   const apiPort = parseInt(import.meta.env.VITE_API_PORT as string, 10);
   const endpoint = `http://localhost:${apiPort}/_exo/graphql`;
 

@@ -4,12 +4,10 @@
   import ErrorLabel from '../components/ErrorLabel.svelte';
   import WorkspaceList from '../components/WorkspaceList.svelte';
   import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
-  import { query } from 'svelte-apollo';
-  import gql from 'graphql-tag';
+  import { query } from '../lib/graphql';
+  import { nonNull } from '../lib/util';
 
-  type TODO_QUERY_DATA = any; // XXX
-
-  const q = query<TODO_QUERY_DATA>(gql`
+  const q = query(`#graphql
     {
       workspaces: allWorkspaces {
         id
@@ -29,7 +27,7 @@
       {:else if $q.error}
         <ErrorLabel value={$q.error} />
       {:else}
-        <WorkspaceList workspaces={$q.data.workspaces} />
+        <WorkspaceList workspaces={nonNull($q.data).workspaces} />
       {/if}
     </div>
     <hr />
