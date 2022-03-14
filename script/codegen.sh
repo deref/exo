@@ -8,3 +8,5 @@ set -e
 )
 
 go run ./cmd/codegen
+
+./script/gqlts.sh

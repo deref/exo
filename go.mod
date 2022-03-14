@@ -10,6 +10,7 @@ require (
 	github.com/alessio/shellescape v1.4.1
 	github.com/cockroachdb/apd/v2 v2.0.2 // indirect
 	github.com/containerd/containerd v1.5.7 // indirect
+	github.com/deref/extractgqlts v0.0.0-20220314182012-b91c51e0b3b9
 	github.com/deref/graphql-go v0.0.0-20220204035606-e2b473959845
 	github.com/deref/inflect-go v0.0.0-20211018210843-15b876b83b3e
 	github.com/deref/pier v0.0.0-20210928181930-9ee844d69730
@@ -57,7 +58,6 @@ require (
 	golang.org/x/net v0.0.0-20220107192237-5cfca573fb4d // indirect
 	golang.org/x/sync v0.0.0-20210220032951-036812b2e83c
 	golang.org/x/sys v0.0.0-20220307203707-22a9840ba4d7
-	golang.org/x/text v0.3.7 // indirect
 	golang.org/x/time v0.0.0-20210723032227-1f47c861a9ac // indirect
 	google.golang.org/genproto v0.0.0-20210831024726-fe130286e0e2 // indirect
 	gopkg.in/alessio/shellescape.v1 v1.0.0-20170105083845-52074bc9df61

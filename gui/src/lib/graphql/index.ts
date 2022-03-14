@@ -3,10 +3,17 @@ import type { DocumentNode } from 'graphql';
 import type { ReadableQuery, ReadableResult } from 'svelte-apollo';
 import * as sa from 'svelte-apollo';
 import gql from 'graphql-tag';
-import type {
-  QueryToData,
-  QueryToVariables,
-} from '~/src/lib/graphql/types.generated';
+import type { QueryTypes } from '~/src/lib/graphql/types.generated';
+
+type QueryType<Data = unknown, Variables = unknown> = {
+  data: Data;
+  variables: Variables;
+};
+
+type QueryToTypes<Q> = Q extends keyof QueryTypes ? QueryTypes[Q] : QueryType;
+
+type QueryToData<Q> = QueryToTypes<Q>['data'];
+type QueryToVariables<Q> = QueryToTypes<Q>['variables'];
 
 export type FragmentOptions = {
   fragments?: string[];
