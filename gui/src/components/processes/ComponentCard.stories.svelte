@@ -12,7 +12,7 @@
 <Story
   name="Default"
   args={{
-    detailsPath: '/#',
+    showPath: '/#',
     editPath: '/#',
     setRun: () => {},
     setLogsVisible: () => {},

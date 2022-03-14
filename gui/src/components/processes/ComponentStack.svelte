@@ -11,7 +11,7 @@
   export let setRun: (id: string, value: boolean) => void;
   export let showPath: (id: string) => string;
   export let editPath: (id: string) => string;
-  export let destroy: (id: string) => void;
+  export let dispose: (id: string) => void;
 </script>
 
 {#each components as { id, name, running, reconciling, logsVisible } (id)}
@@ -28,8 +28,8 @@
     setRun={(value) => {
       setRun(id, value);
     }}
-    destroy={() => destroy(id)}
+    dispose={() => dispose(id)}
   />
 {:else}
-  <i>No components yet.</i>
+  <i>No components.</i>
 {/each}
