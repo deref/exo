@@ -3,11 +3,10 @@
   import Panel from './Panel.svelte';
   import IfEnabled from './IfEnabled.svelte';
   import IconButton from './IconButton.svelte';
-  import RemoteData from './RemoteData.svelte';
   import ContextMenu from './ContextMenu.svelte';
   import MenuItem from './MenuItem.svelte';
   import ProcfileChecker from './processes/ProcfileChecker.svelte';
-  import ProcessListTable from './processes/ProcessListTable.svelte';
+  import ComponentStack from './processes/ComponentStack.svelte';
   import * as router from 'svelte-spa-router';
   import { query, mutation } from '../lib/graphql';
 
@@ -15,8 +14,13 @@
   import { bind } from '../components/modal/Modal.svelte';
   import ModalDialogue from '../components/modal/ModalDialogue.svelte';
 
-  export let workspaceId: string;
+  // XXX Use fragment.
+  export let workspace: {
+    id: string;
+    displayName: string;
+  };
 
+  /*
   const q = query(
     `#graphql
     query ($workspaceId: String!) {
@@ -32,17 +36,18 @@
     },
   );
   $: workspace = $q.data?.workspace;
+  */
 
   const destroyWorkspace = mutation(
     `#graphql
     mutation ($workspaceId: String!) {
-      destroyWorkspace(ref: $workspaceId) {
+      destroyWorkspace(ref: $id) {
         __typename
       }
     }`,
     {
       variables: {
-        workspaceId,
+        id: workspace.id,
       },
     },
   );
@@ -72,80 +77,80 @@
   };
 </script>
 
-{#await workspace.describeSelf()}
-  <Panel title="" backRoute="/" />
-{:then description}
-  <Panel title={description.displayName} backRoute="/" --panel-padding="0 1rem">
-    <div class="actions" slot="actions">
-      <span>Logs</span>
-      <div class="menu" tabindex="0">
-        <IconButton
-          glyph="Ellipsis"
-          tooltip="Workspace actions..."
-          on:click={() => {}}
-        />
+<Panel title={workspace.displayName} backRoute="/" --panel-padding="0 1rem">
+  <div class="actions" slot="actions">
+    <span>Logs</span>
+    <div class="menu" tabindex="0">
+      <IconButton
+        glyph="Ellipsis"
+        tooltip="Workspace actions..."
+        on:click={() => {}}
+      />
 
-        <ContextMenu title={description.displayName}>
-          <MenuItem
-            glyph="Details"
-            href={`/workspaces/${encodeURIComponent(workspaceId)}/details`}
-          >
-            View details
-          </MenuItem>
-          <MenuItem
-            glyph="Add"
-            href={`#/workspaces/${encodeURIComponent(
-              workspaceId,
-            )}/new-component`}
-          >
-            Add component
-          </MenuItem>
-          <MenuItem
-            glyph="Delete"
-            danger
-            on:click={() => showWorkspaceDeleteModal(description.displayName)}
-          >
-            Destroy workspace
-          </MenuItem>
-        </ContextMenu>
-      </div>
+      <ContextMenu title={workspace.displayName}>
+        <MenuItem
+          glyph="Details"
+          href={`/workspaces/${encodeURIComponent(workspace.id)}/details`}
+        >
+          View details
+        </MenuItem>
+        <MenuItem
+          glyph="Add"
+          href={`#/workspaces/${encodeURIComponent(
+            workspace.id,
+          )}/new-component`}
+        >
+          Add component
+        </MenuItem>
+        <MenuItem
+          glyph="Delete"
+          danger
+          on:click={() => showWorkspaceDeleteModal(workspace.displayName)}
+        >
+          Destroy workspace
+        </MenuItem>
+      </ContextMenu>
     </div>
+  </div>
 
-    <section>
-      <button
-        id="add-component"
-        on:click={() => {
-          router.push(
-            `#/workspaces/${encodeURIComponent(workspaceId)}/new-component`,
-          );
+  <section>
+    <button
+      id="add-component"
+      on:click={() => {
+        router.push(
+          `#/workspaces/${encodeURIComponent(workspace.id)}/new-component`,
+        );
+      }}
+    >
+      <Icon glyph="Add" /> Add component
+    </button>
+    <ComponentStack
+      {workspace}
+      showPath={(componentId) =>
+        `/workspaces/${encodeURIComponent(
+          workspace.id,
+        )}/components/${encodeURIComponent(componentId)}`}
+      editPath={(componentId) =>
+        `/workspaces/${encodeURIComponent(
+          workspaceId,
+        )}/components/${encodeURIComponent(componentId)}/edit`}
+    />
+    <IfEnabled feature="export procfile">
+      <!--
+      <ProcfileChecker
+        {procfileExport}
+        clickHandler={async () => {
+          if (procfileExport == null) {
+            return;
+          }
+          await workspace.writeFile('Procfile', procfileExport);
+          checkProcfile();
         }}
-      >
-        <Icon glyph="Add" /> Add component
-      </button>
-      <RemoteData data={processList} let:data let:error>
-        <div slot="success">
-          <ProcessListTable {data} {workspace} {workspaceId} />
-        </div>
-
-        <div slot="error">
-          Error fetching process list: {error}
-        </div>
-      </RemoteData>
-      <IfEnabled feature="export procfile">
-        <ProcfileChecker
-          {procfileExport}
-          clickHandler={async () => {
-            if (procfileExport == null) {
-              return;
-            }
-            await workspace.writeFile('Procfile', procfileExport);
-            checkProcfile();
-          }}
-        />
-      </IfEnabled>
-    </section>
-  </Panel>
-{/await}
+      />
+      -->
+    </IfEnabled>
+  </section>
+</Panel>
 
 <style>
   #add-component {
