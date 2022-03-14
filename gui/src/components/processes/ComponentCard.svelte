@@ -16,7 +16,7 @@
   export let reconciling: boolean;
   export let setRun: (value: boolean) => void;
   export let setLogsVisible: (value: boolean) => void;
-  export let destroy: () => void;
+  export let dispose: () => void;
   export let running: boolean;
 </script>
 

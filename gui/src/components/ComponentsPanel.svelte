@@ -8,49 +8,36 @@
   import ProcfileChecker from './processes/ProcfileChecker.svelte';
   import ComponentStack from './processes/ComponentStack.svelte';
   import * as router from 'svelte-spa-router';
-  import { query, mutation } from '../lib/graphql';
 
   import { modal } from '../lib/modal';
   import { bind } from '../components/modal/Modal.svelte';
   import ModalDialogue from '../components/modal/ModalDialogue.svelte';
 
+  export let destroyWorkspace: () => Promise<void>;
+  export let setComponentRun: (id: string) => Promise<void>;
+  export let disposeComponent: (id: string) => Promise<void>;
+
   // XXX Use fragment.
   export let workspace: {
     id: string;
     displayName: string;
+    components: {
+      id: string;
+      name: string;
+      reconciling: boolean;
+      running: boolean;
+      logsVisible: boolean;
+    }[];
   };
 
-  /*
-  const q = query(
-    `#graphql
-    query ($workspaceId: String!) {
-      workspace: workspaceById(id: $workspaceId) {
-        __typename #XXX
-      }
-    }`,
-    {
-      variables: {
-        workspaceId,
-      },
-      pollInterval: 5000, // XXX Use a subscription.
-    },
-  );
-  $: workspace = $q.data?.workspace;
-  */
-
-  const destroyWorkspace = mutation(
-    `#graphql
-    mutation ($workspaceId: String!) {
-      destroyWorkspace(ref: $id) {
-        __typename
-      }
-    }`,
-    {
-      variables: {
-        id: workspace.id,
-      },
-    },
-  );
+  $: showComponentPath = (id: string) =>
+    `/workspaces/${encodeURIComponent(
+      workspace.id,
+    )}/components/${encodeURIComponent(id)}`;
+  $: editComponentPath = (id: string) =>
+    `/workspaces/${encodeURIComponent(
+      workspace.id,
+    )}/components/${encodeURIComponent(id)}/edit`;
 
   // TODO: Display out-of-sync manifests somehow.
   //let procfileExport: string | null = null;
@@ -69,7 +56,7 @@
         danger: true,
         actionLabel: 'Yes, delete',
         onOkay: async () => {
-          await destroyWorkspace({}); // TODO: try/catch.
+          await destroyWorkspace(); // TODO: try/catch.
           router.push('/');
         },
       }),
@@ -125,15 +112,11 @@
       <Icon glyph="Add" /> Add component
     </button>
     <ComponentStack
-      {workspace}
-      showPath={(componentId) =>
-        `/workspaces/${encodeURIComponent(
-          workspace.id,
-        )}/components/${encodeURIComponent(componentId)}`}
-      editPath={(componentId) =>
-        `/workspaces/${encodeURIComponent(
-          workspaceId,
-        )}/components/${encodeURIComponent(componentId)}/edit`}
+      components={workspace.components}
+      showPath={showComponentPath}
+      editPath={editComponentPath}
+      dispose={disposeComponent}
+      setRun={setComponentRun}
     />
     <IfEnabled feature="export procfile">
       <!--

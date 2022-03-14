@@ -77,7 +77,7 @@ export type MutateOptions<Q extends string> = Omit<
 export const mutation = <Q extends string>(
   query: Q,
   options: MutationOptions<Q> = {},
-): ((options: MutateOptions<Q> | undefined) => Promise<QueryToData<Q>>) => {
+): ((options?: MutateOptions<Q>) => Promise<QueryToData<Q>>) => {
   const mutate = sa.mutation(...makeArgs(query, options));
   return (options: MutationOptions<Q> = {}) => mutate(options);
 };
