@@ -1,11 +1,14 @@
 #!/bin/bash
 
-set -e
+set +e
 
 extractgqlts \
   --schema ./internal/resolvers/schema.gql \
   ./gui/src/**/*.svelte \
   > ./gui/src/lib/graphql/types.generated.ts
+
+exit_code=$?
+set -e
 
 (
   cd gui
@@ -13,3 +16,5 @@ extractgqlts \
     --write \
     ./src/lib/graphql/types.generated.ts
 )
+
+exit $exit_code

@@ -48,6 +48,7 @@ type Mutation {
 
   createWorkspace(root: String!, projectId: String): Workspace!
   setWorkspaceStack(workspace: String!, stack: String): Stack
+  destroyWorkspace(ref: String!): Void
 
   formatManifest(workspace: String!, format: String, path: String): Void
 

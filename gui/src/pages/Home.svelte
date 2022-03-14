@@ -22,6 +22,7 @@
   <CenterFormPanel title="Workspaces">
     <h1>Workspaces</h1>
     <div>
+      <!-- XXX Wrong! loading/error/data are not mutually exclusive -->
       {#if $q.loading}
         loading workspaces...
       {:else if $q.error}

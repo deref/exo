@@ -122,6 +122,12 @@ func (r *MutationResolver) CreateWorkspace(ctx context.Context, args struct {
 	}, nil
 }
 
+func (r *MutationResolver) DestroyWorkspace(ctx context.Context, args struct {
+	Ref string
+}) (*VoidResolver, error) {
+	return nil, errors.New("TODO: DestroyWorkspace")
+}
+
 func (r *WorkspaceResolver) URL() string {
 	return r.Q.Routes().workspaceURL(r.ID)
 }

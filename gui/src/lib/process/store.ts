@@ -1,3 +1,5 @@
+// TODO: Delete this. Utilize graphql store.
+
 import { writable } from 'svelte/store';
 import {
   errorResponse,
