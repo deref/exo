@@ -1,4 +1,8 @@
-import type { SubscriptionOptions, WatchQueryOptions } from '@apollo/client';
+import type {
+  WatchQueryOptions as QueryOptionsBase,
+  SubscriptionOptions as SubscriptionOptionsBase,
+  MutationOptions as MutationOptionsBase,
+} from '@apollo/client';
 import type { DocumentNode } from 'graphql';
 import type { ReadableQuery, ReadableResult } from 'svelte-apollo';
 import * as sa from 'svelte-apollo';
@@ -15,31 +19,32 @@ type QueryToTypes<Q> = Q extends keyof QueryTypes ? QueryTypes[Q] : QueryType;
 type QueryToData<Q> = QueryToTypes<Q>['data'];
 type QueryToVariables<Q> = QueryToTypes<Q>['variables'];
 
-export type FragmentOptions = {
-  fragments?: string[];
+export type ExtraOptions = {
+  // GraphQL fragment strings to be included.
+  include?: string[];
+};
+
+// Converts the query and associated includes to a DocumentNode.
+// Omit 'include' from options.
+const makeArgs = <Options>(
+  query: string,
+  options: Options & ExtraOptions,
+): [DocumentNode, NonNullable<Options>] => {
+  // Abuse the gql template literal tag for its caching behavior.
+  const { include: optionalFragments, ...otherOptions } = options;
+  const include = optionalFragments ?? [];
+  const template = [
+    query,
+    Array(include.length).fill(''),
+  ] as any as TemplateStringsArray;
+  return [gql(template, include), otherOptions as NonNullable<Options>];
 };
 
 export type QueryOptions<Q extends string> = Omit<
-  WatchQueryOptions<QueryToVariables<Q>, QueryToData<Q>>,
+  QueryOptionsBase<QueryToVariables<Q>, QueryToData<Q>>,
   'query'
 > &
-  FragmentOptions;
-
-// Converts the query and associated fragments to a DocumentNode.
-// Omit 'fragments' from options.
-const makeArgs = <Options>(
-  query: string,
-  options: Options & FragmentOptions,
-): [DocumentNode, Options] => {
-  // Abuse the gql template literal tag for its caching behavior.
-  const { fragments: optionalFragments, ...otherOptions } = options;
-  const fragments = optionalFragments ?? [];
-  const template = [
-    query,
-    Array(fragments.length).fill(''),
-  ] as any as TemplateStringsArray;
-  return [gql(template, fragments), otherOptions as Options];
-};
+  ExtraOptions;
 
 export const query = <Q extends string>(
   query: Q,
@@ -47,10 +52,10 @@ export const query = <Q extends string>(
 ) => sa.query(...makeArgs(query, options)) as ReadableQuery<QueryToData<Q>>;
 
 export type SubscribeOptions<Q extends string> = Omit<
-  SubscriptionOptions<QueryToVariables<Q>>,
+  SubscriptionOptionsBase<QueryToVariables<Q>, QueryToData<Q>>,
   'query'
 > &
-  FragmentOptions;
+  ExtraOptions;
 
 export const subscribe = <Q extends string>(
   query: Q,
@@ -58,7 +63,25 @@ export const subscribe = <Q extends string>(
 ) =>
   sa.subscribe(...makeArgs(query, options)) as ReadableResult<QueryToData<Q>>;
 
-// TODO: mutation.
-// TODO: restore?
+export type MutationOptions<Q extends string> = Omit<
+  MutationOptionsBase<QueryToData<Q>, QueryToVariables<Q>>,
+  'mutation'
+> &
+  ExtraOptions;
+
+export type MutateOptions<Q extends string> = Omit<
+  MutationOptionsBase<QueryToData<Q>, QueryToVariables<Q>>,
+  'mutation'
+>;
+
+export const mutation = <Q extends string>(
+  query: Q,
+  options: MutationOptions<Q> = {},
+): ((options: MutateOptions<Q> | undefined) => Promise<QueryToData<Q>>) => {
+  const mutate = sa.mutation(...makeArgs(query, options));
+  return (options: MutationOptions<Q> = {}) => mutate(options);
+};
+
+// TODO: Expose sa.restore?
 
 export { initClient } from './client';

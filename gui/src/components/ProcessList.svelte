@@ -8,55 +8,53 @@
   import MenuItem from './MenuItem.svelte';
   import ProcfileChecker from './processes/ProcfileChecker.svelte';
   import ProcessListTable from './processes/ProcessListTable.svelte';
-  import { onDestroy, onMount } from 'svelte';
-  import type { RequestLifecycle, WorkspaceApi } from '../lib/api';
-  import type { ProcessDescription } from '../lib/process/types';
-  import {
-    fetchProcesses,
-    processes,
-    refreshAllProcesses,
-  } from '../lib/process/store';
   import * as router from 'svelte-spa-router';
+  import { query, mutation } from '../lib/graphql';
 
   import { modal } from '../lib/modal';
   import { bind } from '../components/modal/Modal.svelte';
   import ModalDialogue from '../components/modal/ModalDialogue.svelte';
 
-  export let workspace: WorkspaceApi;
   export let workspaceId: string;
 
-  let processList: RequestLifecycle<ProcessDescription[]> = {
-    stage: 'pending',
-  };
-  const unsubscribeProcesses = processes.subscribe((processes) => {
-    processList = processes;
-  });
+  const q = query(
+    `#graphql
+    query ($workspaceId: String!) {
+      workspace: workspaceById(id: $workspaceId) {
+        __typename #XXX
+      }
+    }`,
+    {
+      variables: {
+        workspaceId,
+      },
+      pollInterval: 5000, // XXX Use a subscription.
+    },
+  );
+  $: workspace = $q.data?.workspace;
 
-  let refreshInterval: any;
+  const destroyWorkspace = mutation(
+    `#graphql
+    mutation ($workspaceId: String!) {
+      destroyWorkspace(ref: $workspaceId) {
+        __typename
+      }
+    }`,
+    {
+      variables: {
+        workspaceId,
+      },
+    },
+  );
 
-  let procfileExport: string | null = null;
-  async function checkProcfile() {
-    const current = await workspace.readFile('Procfile');
-    const computed = await workspace.exportProcfile();
+  // TODO: Display out-of-sync manifests somehow.
+  //let procfileExport: string | null = null;
+  //async function checkProcfile() {
+  //  const current = await workspace.readFile('Procfile');
+  //  const computed = await workspace.exportProcfile();
 
-    procfileExport = current && current === computed ? null : computed;
-  }
-
-  onMount(() => {
-    fetchProcesses(workspace);
-    checkProcfile();
-
-    // TODO: Server-sent events or websockets!
-    refreshInterval = setInterval(() => {
-      refreshAllProcesses(workspace);
-      checkProcfile();
-    }, 5000);
-  });
-
-  onDestroy(() => {
-    clearInterval(refreshInterval);
-    unsubscribeProcesses();
-  });
+  //  procfileExport = current && current === computed ? null : computed;
+  //}
 
   const showWorkspaceDeleteModal = (displayName: string) => {
     modal.set(
@@ -65,8 +63,8 @@
         bodyText: `Are you sure you want to delete ${displayName}?\nThis is irreversible, but will only delete the workspace in exo, not the files.`,
         danger: true,
         actionLabel: 'Yes, delete',
-        onOkay: () => {
-          workspace.destroy();
+        onOkay: async () => {
+          await destroyWorkspace({}); // TODO: try/catch.
           router.push('/');
         },
       }),
