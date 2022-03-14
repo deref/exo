@@ -1,4 +1,5 @@
 import '../src/style/main.css';
+import { initMockClient as initMockGraphqlClient } from '../src/lib/graphql/testing';
 
 export const parameters = {
   actions: { argTypesRegex: '^on[A-Z].*' },
@@ -14,3 +15,9 @@ export const parameters = {
     stylePreview: true,
   },
 };
+
+export const decorators = [
+  () => {
+    initMockGraphqlClient();
+  },
+];

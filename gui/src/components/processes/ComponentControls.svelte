@@ -2,9 +2,8 @@
   import Spinner from '../Spinner.svelte';
   import IconButton from '../IconButton.svelte';
 
-  export let setProcRun: (id: string, run: boolean) => Promise<void>;
+  export let setRun: (value: boolean) => void;
   export let statusPending: boolean;
-  export let id: string;
   export let running: boolean;
 </script>
 
@@ -17,7 +16,9 @@
       <IconButton
         glyph="Pause"
         tooltip="Stop process"
-        on:click={() => setProcRun(id, false)}
+        on:click={() => {
+          setRun(false);
+        }}
       />
     </div>
   {:else}
@@ -26,7 +27,9 @@
       <IconButton
         glyph="Play"
         tooltip="Run process"
-        on:click={async () => await setProcRun(id, true)}
+        on:click={() => {
+          setRun(true);
+        }}
       />
     </div>
   {/if}
