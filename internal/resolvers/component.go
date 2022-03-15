@@ -460,10 +460,14 @@ func (r *MutationResolver) ShutdownComponent(ctx context.Context, args struct {
 	return nil, errors.New("TODO: shutdown component")
 }
 
-func (r *ComponentResolver) running() bool {
+func (r *ComponentResolver) Reconciling() bool {
+	return false // XXX
+}
+
+func (r *ComponentResolver) Running() bool {
 	return false // XXX
 }
 
 func (r *ComponentResolver) isRunningProcess() bool {
-	return r.isProcess() && r.running()
+	return r.isProcess() && r.Running()
 }

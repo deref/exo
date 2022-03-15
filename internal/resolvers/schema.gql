@@ -277,8 +277,9 @@ type Component {
   spec: String!
   configuration(recursive: Boolean, final: Boolean): String!
 
+  reconciling: Boolean!
+  running: Boolean!
   state: JSONObject!
-
   disposed: Instant
 }
 
