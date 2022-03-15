@@ -1,3 +1,4 @@
+<!-- XXX Replace this is a store object of some kind or otherwise eliminate it. -->
 <script lang="ts">
   import type { LogEvent } from '../../lib/logs/types';
   import ErrorLabel from '../ErrorLabel.svelte';
