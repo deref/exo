@@ -1,10 +1,13 @@
 <script lang="ts">
   import Icon from './Icon.svelte';
+  import LoadingLine from './LoadingLine.svelte';
   import VersionInfo from './VersionInfo.svelte';
   import NavbarButton from './nav/NavbarButton.svelte';
   import { theme, themeOptions } from '../lib/theme';
   import Modal from './modal/Modal.svelte';
   import { modal } from '../lib/modal';
+
+  export let loading: boolean;
 
   $: {
     for (const option of themeOptions) {
@@ -53,6 +56,7 @@
     </footer>
   </nav>
   <div class="content-wrapper">
+    <LoadingLine {loading} />
     <slot />
   </div>
 </main>
