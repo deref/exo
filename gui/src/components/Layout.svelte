@@ -6,8 +6,10 @@
   import { theme, themeOptions } from '../lib/theme';
   import Modal from './modal/Modal.svelte';
   import { modal } from '../lib/modal';
+  import ErrorLabel from '../components/ErrorLabel.svelte';
 
   export let loading: boolean;
+  export let error: unknown;
 
   $: {
     for (const option of themeOptions) {
@@ -57,6 +59,9 @@
   </nav>
   <div class="content-wrapper">
     <LoadingLine {loading} />
+    {#if error}
+      <ErrorLabel value={error} />
+    {/if}
     <slot />
   </div>
 </main>

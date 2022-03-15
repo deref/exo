@@ -103,14 +103,8 @@
   };
 </script>
 
-<Layout loading={$q.loading}>
+<Layout loading={$q.loading} error={$q.error}>
   <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
-  <!-- TODO: Better error display; ideally baked into layout. -->
-  {#if $q.error}
-    <p>
-      error: {$q.error}
-    </p>
-  {/if}
   {#if stack}
     <TwoColumn>
       <!-- XXX loading & error -->

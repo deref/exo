@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"path/filepath"
 
 	"github.com/deref/exo/internal/gensym"
 	"github.com/deref/exo/internal/util/pathutil"
@@ -138,8 +139,21 @@ func (r *WorkspaceResolver) Project(ctx context.Context) (*ProjectResolver, erro
 	return r.Q.projectByID(ctx, &r.ProjectID)
 }
 
-func (r *WorkspaceResolver) DisplayName() string {
-	return "TODO: do the displayNameBuilder thing"
+func (r *WorkspaceResolver) DisplayName(ctx context.Context) (string, error) {
+	// TODO: Cache this.
+	var roots []string
+	if err := r.Q.db.SelectContext(ctx, &roots, `
+		SELECT root
+		FROM workspace
+	`); err != nil {
+		return "", err
+	}
+
+	dnb := newDisplayNameBuilder(string(filepath.Separator))
+	for _, root := range roots {
+		dnb.AddPath(root)
+	}
+	return dnb.GetDisplayName(r.Root), nil
 }
 
 func (r *WorkspaceResolver) StackID(ctx context.Context) (*string, error) {
