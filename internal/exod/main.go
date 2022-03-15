@@ -8,8 +8,6 @@ import (
 	"path/filepath"
 	"time"
 
-	golog "log"
-
 	"github.com/deref/exo/gui"
 	"github.com/deref/exo/internal/about"
 	"github.com/deref/exo/internal/config"
@@ -27,22 +25,15 @@ import (
 	"github.com/deref/exo/internal/util/httputil"
 	"github.com/deref/exo/internal/util/logging"
 	"github.com/deref/exo/internal/util/sysutil"
-	"github.com/deref/exo/internal/util/term"
 	docker "github.com/docker/docker/client"
-	"gopkg.in/natefinch/lumberjack.v2"
 )
 
-func Main(ctx context.Context) {
-	cmd, err := cmdutil.ParseArgs(os.Args)
-	if err != nil {
-		cmdutil.Fatalf("parsing arguments: %w", err)
-	}
-
-	RunServer(ctx, cmd.Flags)
+type Server struct {
+	RedirectCrashDumps bool
 }
 
 // TODO: Some of the stuff in here should also be available to a worker daemon.
-func RunServer(ctx context.Context, flags map[string]string) {
+func (svr *Server) Run(ctx context.Context) {
 	logger := logging.CurrentLogger(ctx)
 
 	cfg := &config.Config{}
@@ -53,20 +44,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 		cmdutil.Fatalf("ensuring token file: %w", err)
 	}
 
-	// TODO: Reconcile with logToStderr.
-	_, forceStdLog := flags["force-std-log"]
-	// TODO: Use `isInteractive` from main package.
-	if !(forceStdLog || term.IsInteractive()) {
-		// Replace the standard logger with a logger writes to the var directory
-		// and handles log rotation.
-		// XXX remove this, log to the sqlite db, panic when logging fails.
-		golog.SetOutput(&lumberjack.Logger{
-			Filename:   filepath.Join(cfg.VarDir, "exod.log"),
-			MaxSize:    20, // megabytes
-			MaxBackups: 3,
-			MaxAge:     28, //days
-		})
-
+	if svr.RedirectCrashDumps {
 		// Panics will still write to stderr and some malbehaved code may write to
 		// stdout or stderr. Redirect these file descriptors to truncated,
 		// non-rotating, log files in the var directory. These logs won't be
@@ -221,26 +199,12 @@ func RunServer(ctx context.Context, flags map[string]string) {
 		Next:  mux,
 	})
 
-	go func() {
-		// Add a redirect to the new port number if a request is received on the old
-		// one. Ignore any error as that's most likely some other service attempting
-		// to listen on the same port. This is to allow people to upgrade seamlessly
-		// but we should be able to remove it soon after the next release. (Written
-		// on the 19th of Oct 2021)
-		http.ListenAndServe(":4000", http.HandlerFunc(func(resp http.ResponseWriter, req *http.Request) {
-			uri := *req.URL
-			uri.Host = fmt.Sprintf("localhost:%d", cfg.HTTPPort)
-			redirectTo := uri.String()
-			http.Redirect(resp, req, redirectTo, http.StatusMovedPermanently)
-			return
-		}))
-	}()
-
 	addr := cmdutil.GetAddr(cfg)
 	logger.Infof("listening for API calls at %s", addr)
 	cmdutil.ListenAndServe(ctx, &http.Server{
 		Addr:    addr,
 		Handler: handler,
+		// ErrorLog: XXX set this,
 	})
 }
 
