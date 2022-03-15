@@ -23,8 +23,8 @@
           components {
             id
             name
-            #reconciling
-            #running
+            reconciling
+            running
           }
         }
       }

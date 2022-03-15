@@ -28,7 +28,7 @@ export type QueryTypes = {
     };
     variables: {};
   };
-  '#graphql\n    query ($workspaceId: String!) {\n      workspace: workspaceById(id: $workspaceId) {\n        id\n        stack {\n          id\n          displayName\n          components {\n            id\n            name\n            #reconciling\n            #running\n          }\n        }\n      }\n    }': {
+  '#graphql\n    query ($workspaceId: String!) {\n      workspace: workspaceById(id: $workspaceId) {\n        id\n        stack {\n          id\n          displayName\n          components {\n            id\n            name\n            reconciling\n            running\n          }\n        }\n      }\n    }': {
     data: {
       __typename: 'Query';
       workspace: {
@@ -36,7 +36,13 @@ export type QueryTypes = {
         id: string;
         stack: {
           __typename: 'Stack';
-          components: { __typename: 'Component'; id: string; name: string }[];
+          components: {
+            __typename: 'Component';
+            id: string;
+            name: string;
+            reconciling: boolean;
+            running: boolean;
+          }[];
           displayName: string;
           id: string;
         } | null;
