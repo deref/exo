@@ -51,7 +51,9 @@ func (r *QueryResolver) WorkspaceByID(ctx context.Context, args struct {
 }
 
 func (r *QueryResolver) workspaceByID(ctx context.Context, id *string) (*WorkspaceResolver, error) {
-	ws := &WorkspaceResolver{}
+	ws := &WorkspaceResolver{
+		Q: r,
+	}
 	err := r.getRowByKey(ctx, &ws.WorkspaceRow, `
 		SELECT *
 		FROM workspace
