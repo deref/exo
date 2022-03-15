@@ -4,9 +4,9 @@ import type {
   MutationOptions as MutationOptionsBase,
 } from '@apollo/client';
 import type { DocumentNode } from 'graphql';
+import { parse } from 'graphql';
 import type { ReadableQuery, ReadableResult } from 'svelte-apollo';
 import * as sa from 'svelte-apollo';
-import gql from 'graphql-tag';
 import type { QueryTypes } from '~/src/lib/graphql/types.generated';
 
 type QueryType<Data = unknown, Variables = unknown> = {
@@ -24,20 +24,26 @@ export type ExtraOptions = {
   include?: string[];
 };
 
+const parseCache = new Map<string, DocumentNode>();
+const cachingParse = (query: string) => {
+  let document = parseCache.get(query);
+  if (document === undefined) {
+    document = parse(query);
+    parseCache.set(query, document);
+  }
+  return document;
+};
+
 // Converts the query and associated includes to a DocumentNode.
 // Omit 'include' from options.
 const makeArgs = <Options>(
   query: string,
   options: Options & ExtraOptions,
 ): [DocumentNode, NonNullable<Options>] => {
-  // Abuse the gql template literal tag for its caching behavior.
-  const { include: optionalFragments, ...otherOptions } = options;
-  const include = optionalFragments ?? [];
-  const template = [
-    query,
-    Array(include.length).fill(''),
-  ] as any as TemplateStringsArray;
-  return [gql(template, include), otherOptions as NonNullable<Options>];
+  const { include = [], ...otherOptions } = options;
+  const fullQuery = [query].concat(include).join('\n');
+  const document = cachingParse(fullQuery);
+  return [document, otherOptions as NonNullable<Options>];
 };
 
 export type QueryOptions<Q extends string> = Omit<
