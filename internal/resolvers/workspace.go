@@ -126,7 +126,7 @@ func (r *MutationResolver) CreateWorkspace(ctx context.Context, args struct {
 
 func (r *MutationResolver) DestroyWorkspace(ctx context.Context, args struct {
 	Ref string
-}) (*VoidResolver, error) {
+}) (*ReconciliationResolver, error) {
 	return nil, errors.New("TODO: DestroyWorkspace")
 }
 

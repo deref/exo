@@ -28,16 +28,26 @@ export type QueryTypes = {
     };
     variables: {};
   };
-  '#graphql\n    query ($workspaceId: String!) {\n      workspace: workspaceById(id: $workspaceId) {\n        id\n        displayName\n        components {\n          id\n          name\n          reconciling\n          running\n        }\n      }\n    }': unknown /* ERROR: gui/src/pages/Workspace.svelte:9: Cannot query field "reconciling" on type "Component".
-gui/src/pages/Workspace.svelte:10: Cannot query field "running" on type "Component".
- */;
-  '#graphql\n    mutation ($id: String!) {\n      destroyWorkspace(ref: $id) {\n        __typename\n      }\n    }': {
+  '#graphql\n    query ($workspaceId: String!) {\n      workspace: workspaceById(id: $workspaceId) {\n        id\n        stack {\n          id\n          displayName\n          components {\n            id\n            name\n            #reconciling\n            #running\n          }\n        }\n      }\n    }': {
+    data: {
+      __typename: 'Query';
+      workspace: {
+        __typename: 'Workspace';
+        id: string;
+        stack: {
+          __typename: 'Stack';
+          components: { __typename: 'Component'; id: string; name: string }[];
+          displayName: string;
+          id: string;
+        } | null;
+      } | null;
+    };
+    variables: { workspaceId: string };
+  };
+  '#graphql\n    mutation ($id: String!) {\n      destroyStack(ref: $id) {\n        __typename\n      }\n    }': {
     data: {
       __typename: 'Mutation';
-      destroyWorkspace: {
-        __typename: 'Void';
-        __typename: string | null;
-      } | null;
+      destroyStack: { __typename: 'Reconciliation'; __typename: string | null };
     };
     variables: { id: string };
   };

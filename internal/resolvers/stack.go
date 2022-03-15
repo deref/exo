@@ -131,6 +131,10 @@ func (r *QueryResolver) stackByProjectIDAndRef(ctx context.Context, projectID st
 	return stack, err
 }
 
+func (r *StackResolver) DisplayName() string {
+	return r.Name // TODO: This is likely to be ambiguous, so use workspace display name somehow.
+}
+
 func (r *StackResolver) Cluster(ctx context.Context) (*ClusterResolver, error) {
 	return r.Q.clusterByID(ctx, &r.ClusterID)
 }
@@ -241,6 +245,12 @@ func (r *MutationResolver) RefreshStack(ctx context.Context, args struct {
 	Ref string
 }) (*ReconciliationResolver, error) {
 	return nil, errors.New("TODO: refreshStack")
+}
+
+func (r *MutationResolver) DestroyStack(ctx context.Context, args struct {
+	Ref string
+}) (*ReconciliationResolver, error) {
+	return nil, errors.New("TODO: DestroyStack")
 }
 
 func (r *StackResolver) componentByRef(ctx context.Context, ref string) (*ComponentResolver, error) {
