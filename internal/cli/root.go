@@ -25,6 +25,7 @@ func init() {
 	rootCmd.PersistentFlags().BoolVar(&rootPersistentFlags.Async, "async", false, "Do not await long-running tasks.")
 	rootCmd.PersistentFlags().BoolVar(&rootPersistentFlags.NoColor, "no-color", false, "Disable color tty output.")
 	rootCmd.PersistentFlags().BoolVar(&rootPersistentFlags.NonInteractive, "non-interactive", false, "Disable interactive tty behaviors.")
+	rootCmd.PersistentFlags().BoolVar(&rootPersistentFlags.Stdlog, "stdlog", false, "Force logging to stderr.")
 	rootCmd.PersistentFlags().BoolVar(&rootPersistentFlags.Debug, "debug", false, "Enable debug logging.")
 	rootCmd.PersistentFlags().IntVar(&rootPersistentFlags.Concurrency, "concurrency", 0, "Set peer task worker concurrency limit.")
 }
@@ -34,6 +35,7 @@ var rootPersistentFlags struct {
 	Async          bool
 	NoColor        bool
 	NonInteractive bool
+	Stdlog         bool
 	Debug          bool
 	Concurrency    int
 }
@@ -50,11 +52,8 @@ func isDebugMode() bool {
 	return rootPersistentFlags.Debug
 }
 
-var forceStdLog = false
-
-// TODO: Reconcile with flags["force-std-log"].
 func logToStderr() bool {
-	return forceStdLog || isDebugMode()
+	return rootPersistentFlags.Stdlog || isDebugMode()
 }
 
 func isPeerMode() bool {
