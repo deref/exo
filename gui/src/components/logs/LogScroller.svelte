@@ -1,12 +1,15 @@
+<script lang="ts" context="module">
+  import type { Event } from './LogRow.svelte';
+
+  export type { Event };
+</script>
+
 <script lang="ts">
   import { afterUpdate, beforeUpdate } from 'svelte';
 
   import LogRow from './LogRow.svelte';
-  import type { GetComponentNameFunc } from './LogRow.svelte';
-  import type { LogEvent } from '../../lib/logs/types';
 
-  export let getComponentName: GetComponentNameFunc | undefined;
-  export let events: LogEvent[] = [];
+  export let events: Event[] = [];
 
   // Automatically scroll on new logs if the user is already scrolled close to the bottom of the content.
   let logViewport: HTMLElement;
@@ -35,10 +38,10 @@
   });
 </script>
 
-<div class="logs-container" bind:this={logViewport}>
+<div class="container" bind:this={logViewport}>
   <table>
     {#each events as event (event.id)}
-      <LogRow {getComponentName} {event} />
+      <LogRow {event} />
     {/each}
   </table>
   <div class="latest" class:showLatest={!wasScrolledCloseToBottom}>
@@ -53,7 +56,7 @@
 </div>
 
 <style>
-  .logs-container {
+  .container {
     width: 100%;
     height: 100%;
     overflow-y: scroll;

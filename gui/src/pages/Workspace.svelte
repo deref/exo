@@ -1,7 +1,7 @@
 <script lang="ts">
   import Layout from '../components/Layout.svelte';
   import TwoColumn from '../components/TwoColumn.svelte';
-  import LogsViewer from '../components/LogsViewer.svelte';
+  import LogPanel from '../components/LogPanel.svelte';
   import ComponentsPanel from '../components/ComponentsPanel.svelte';
   import WorkspaceNav from '../components/WorkspaceNav.svelte';
   import { query, mutation } from '../lib/graphql';
@@ -61,7 +61,7 @@
         {destroyWorkspace}
         {disposeComponent}
       />
-      <LogsViewer slot="right" {workspace} />
+      <LogPanel slot="right" {workspace} />
     {/if}
   </TwoColumn>
 </Layout>

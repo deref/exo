@@ -1,21 +1,23 @@
 <script lang="ts" context="module">
-  export type GetComponentNameFunc = (id: string) => string | null;
+  export type Event = {
+    id: string;
+    sourceId: string;
+    sourceName: string;
+    timestamp: string;
+    message: string;
+  };
 </script>
 
 <script lang="ts">
   import FormattedLogMessage from './FormattedLogMessage.svelte';
   import { shortTime } from '../../lib/time';
-  import type { LogEvent } from '../../lib/logs/types';
   import { logStyleFromHash } from '../../lib/color';
 
   import { modal } from '../../lib/modal';
   import { bind } from '../modal/Modal.svelte';
   import ModalDefaultPopup from '../modal/ModalDefaultPopup.svelte';
 
-  export let getComponentName: GetComponentNameFunc = (id) => null;
-  export let event: LogEvent;
-
-  const componentName = getComponentName(event.stream) ?? event.stream;
+  export let event: Event;
 
   const showFullTimeModal = () => {
     modal.set(
@@ -27,12 +29,12 @@
   };
 </script>
 
-<tr style={logStyleFromHash(componentName)}>
+<tr style={logStyleFromHash(event.sourceId)}>
   <td class="time" on:click={showFullTimeModal}>
     {shortTime(event.timestamp)}
   </td>
-  <td class="name" title={event.stream}>
-    {componentName}
+  <td class="name" title={event.sourceName}>
+    {event.sourceName}
   </td>
   <td>
     <FormattedLogMessage message={event.message} />
