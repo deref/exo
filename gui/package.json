@@ -56,7 +56,6 @@
     "@graphql-sse/apollo-client": "^0.0.18",
     "express": "^4.17.3",
     "graphql": "^15.8.0",
-    "graphql-tag": "^2.12.6",
     "monaco-editor": "^0.32.1",
     "qs": "^6.10.3",
     "shell-quote": "^1.7.3",
