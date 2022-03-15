@@ -1,17 +1,13 @@
 <script lang="ts" context="module">
+  import type { Component } from './processes/ComponentStack.svelte';
+
   export type Workspace = {
     id: string;
     displayName: string;
     components: Component[];
   };
 
-  export type Component = {
-    id: string;
-    name: string;
-    reconciling: boolean;
-    running: boolean;
-    logsVisible: boolean;
-  };
+  export type { Component };
 </script>
 
 <script lang="ts">
@@ -30,19 +26,11 @@
   import ModalDialogue from '../components/modal/ModalDialogue.svelte';
 
   export let destroyWorkspace: () => Promise<void>;
-  export let setComponentRun: (id: string) => Promise<void>;
+  export let setLogsVisible: (id: string, value: boolean) => Promise<void>;
+  export let setRun: (id: string, value: boolean) => Promise<void>;
   export let disposeComponent: (id: string) => Promise<void>;
 
   export let workspace: Workspace;
-
-  $: showComponentPath = (id: string) =>
-    `/workspaces/${encodeURIComponent(
-      workspace.id,
-    )}/components/${encodeURIComponent(id)}`;
-  $: editComponentPath = (id: string) =>
-    `/workspaces/${encodeURIComponent(
-      workspace.id,
-    )}/components/${encodeURIComponent(id)}/edit`;
 
   // TODO: Display out-of-sync manifests somehow.
   //let procfileExport: string | null = null;
@@ -117,11 +105,18 @@
       <Icon glyph="Add" /> Add component
     </button>
     <ComponentStack
-      components={workspace.components}
-      showPath={showComponentPath}
-      editPath={editComponentPath}
+      components={workspace.components.map((component) => ({
+        ...component,
+        url: `/workspaces/${encodeURIComponent(
+          workspace.id,
+        )}/components/${encodeURIComponent(component.id)}`,
+        editUrl: `/workspaces/${encodeURIComponent(
+          workspace.id,
+        )}/components/${encodeURIComponent(component.id)}/edit`,
+      }))}
       dispose={disposeComponent}
-      setRun={setComponentRun}
+      {setLogsVisible}
+      {setRun}
     />
     <IfEnabled feature="export procfile">
       <!--

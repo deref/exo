@@ -28,16 +28,9 @@ export type QueryTypes = {
     };
     variables: {};
   };
-  '#graphql\n    query ($workspaceId: String!) {\n      workspace: workspaceById(id: $workspaceId) {\n        components {\n          id\n          name\n        }\n      }\n    }': {
-    data: {
-      __typename: 'Query';
-      workspace: {
-        __typename: 'Workspace';
-        components: { __typename: 'Component'; id: string; name: string }[];
-      } | null;
-    };
-    variables: { workspaceId: string };
-  };
+  '#graphql\n    query ($workspaceId: String!) {\n      workspace: workspaceById(id: $workspaceId) {\n        id\n        displayName\n        components {\n          id\n          name\n          reconciling\n          running\n        }\n      }\n    }': unknown /* ERROR: gui/src/pages/Workspace.svelte:9: Cannot query field "reconciling" on type "Component".
+gui/src/pages/Workspace.svelte:10: Cannot query field "running" on type "Component".
+ */;
   '#graphql\n    mutation ($id: String!) {\n      destroyWorkspace(ref: $id) {\n        __typename\n      }\n    }': {
     data: {
       __typename: 'Mutation';

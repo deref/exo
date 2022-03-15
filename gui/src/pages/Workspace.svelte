@@ -3,7 +3,7 @@
   import Layout from '../components/Layout.svelte';
   import TwoColumn from '../components/TwoColumn.svelte';
   import LogPanel from '../components/LogPanel.svelte';
-  import type { StreamStore, Event } from './LogPanel.svelte';
+  import type { StreamStore, Event } from '../components/LogPanel.svelte';
   import ComponentsPanel from '../components/ComponentsPanel.svelte';
   import WorkspaceNav from '../components/WorkspaceNav.svelte';
   import { query, mutation } from '../lib/graphql';
@@ -16,9 +16,13 @@
     `#graphql
     query ($workspaceId: String!) {
       workspace: workspaceById(id: $workspaceId) {
+        id
+        displayName
         components {
           id
           name
+          #reconciling
+          #running
         }
       }
     }`,
@@ -81,12 +85,12 @@
 
 <Layout loading={$q.loading}>
   <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
-  <p>
-    error: {$q.error}
-  </p>
-  <p>
-    data: {$q.data}
-  </p>
+  <!-- TODO: Better error display; ideally baked into layout. -->
+  {#if $q.error}
+    <p>
+      error: {$q.error}
+    </p>
+  {/if}
   {#if workspace}
     <TwoColumn>
       <!-- XXX loading & error -->
