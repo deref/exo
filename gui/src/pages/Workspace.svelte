@@ -17,12 +17,15 @@
     query ($workspaceId: String!) {
       workspace: workspaceById(id: $workspaceId) {
         id
-        displayName
-        components {
+        stack {
           id
-          name
-          #reconciling
-          #running
+          displayName
+          components {
+            id
+            name
+            #reconciling
+            #running
+          }
         }
       }
     }`,
@@ -34,11 +37,27 @@
     },
   );
   $: workspace = $q.data?.workspace;
+  $: stack = workspace?.stack && {
+    ...workspace.stack,
+    detailsUrl: `/workspaces/${encodeURIComponent(workspace.id)}/details`,
+    newComponentUrl: `#/workspaces/${encodeURIComponent(
+      workspace.id,
+    )}/new-component`,
+    components: workspace.stack.components.map((component) => ({
+      ...component,
+      url: `/workspaces/${encodeURIComponent(
+        workspace!.id,
+      )}/components/${encodeURIComponent(component.id)}`,
+      editUrl: `/workspaces/${encodeURIComponent(
+        workspace!.id,
+      )}/components/${encodeURIComponent(component.id)}/edit`,
+    })),
+  };
 
-  const destroyWorkspaceMutation = mutation(
+  const destroyStackMutation = mutation(
     `#graphql
     mutation ($id: String!) {
-      destroyWorkspace(ref: $id) {
+      destroyStack(ref: $id) {
         __typename
       }
     }`,
@@ -48,11 +67,12 @@
       },
     },
   );
-  const destroyWorkspace = async () => {
-    await destroyWorkspaceMutation();
+  const destroyStack = async () => {
+    await destroyStackMutation();
   };
 
   const setComponentRun = null as any; // XXX
+  const setLogsVisible = null as any; // XXX
 
   const disposeComponentMutation = mutation(
     `#graphql
@@ -91,17 +111,21 @@
       error: {$q.error}
     </p>
   {/if}
-  {#if workspace}
+  {#if stack}
     <TwoColumn>
       <!-- XXX loading & error -->
       <ComponentsPanel
         slot="left"
-        {workspace}
-        {destroyWorkspace}
-        {setComponentRun}
+        {stack}
+        {destroyStack}
+        {setLogsVisible}
+        setRun={setComponentRun}
         {disposeComponent}
       />
       <LogPanel slot="right" {stream} />
     </TwoColumn>
+  {:else}
+    <!-- TODO: style me & add some UI to initialize a stack in this workspace. -->
+    No current stack.
   {/if}
 </Layout>

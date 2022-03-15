@@ -48,7 +48,7 @@ type Mutation {
 
   createWorkspace(root: String!, projectId: String): Workspace!
   setWorkspaceStack(workspace: String!, stack: String): Stack
-  destroyWorkspace(ref: String!): Void
+  destroyWorkspace(ref: String!): Reconciliation!
 
   formatManifest(workspace: String!, format: String, path: String): Void
 
@@ -105,6 +105,7 @@ type Mutation {
 
   createStack(cluster: String, workspace: String, name: String): Stack!
   refreshStack(ref: String!): Reconciliation!
+  destroyStack(ref: String!): Reconciliation!
 
   createComponent(
     stack: String!
@@ -238,6 +239,7 @@ type Manifest {
 type Stack {
   id: String!
   name: String!
+  displayName: String!
 
   clusterId: String!
   cluster: Cluster!
