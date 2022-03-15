@@ -120,7 +120,7 @@ func RunServer(ctx context.Context, flags map[string]string) {
 		SystemLog:   logger,
 		VarDir:      cfg.VarDir,
 		GUIEndpoint: fmt.Sprintf("http://localhost:%d", cfg.GUI.Port), // XXX should be constructed earlier than here.
-		Debug:       false,                                            // XXX parameterize me.
+		Debug:       true,                                             // XXX parameterize me.
 	}
 	if err := service.Init(ctx); err != nil {
 		cmdutil.Fatalf("error initializing service: %v", err)

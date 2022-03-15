@@ -1,23 +1,6 @@
 // GENERATED FILE. DO NOT EDIT.
 
 export type QueryTypes = {
-  '#graphql\n    query ($workspaceId: String!) {\n      workspace: workspaceById(id: $workspaceId) {\n        __typename #XXX\n      }\n    }': {
-    data: {
-      __typename: 'Query';
-      workspace: { __typename: 'Workspace'; __typename: string | null } | null;
-    };
-    variables: { workspaceId: string };
-  };
-  '#graphql\n    mutation ($workspaceId: String!) {\n      destroyWorkspace(ref: $workspaceId) {\n        __typename\n      }\n    }': {
-    data: {
-      __typename: 'Mutation';
-      destroyWorkspace: {
-        __typename: 'Void';
-        __typename: string | null;
-      } | null;
-    };
-    variables: { workspaceId: string };
-  };
   '#graphql\n    subscription {\n      system: systemChange {\n        version {\n          installed\n          managed\n          upgrade\n        }\n      }\n    }\n  ': {
     data: {
       __typename: 'Subscription';
@@ -44,5 +27,35 @@ export type QueryTypes = {
       }[];
     };
     variables: {};
+  };
+  '#graphql\n    query ($workspaceId: String!) {\n      workspace: workspaceById(id: $workspaceId) {\n        components {\n          id\n          name\n        }\n      }\n    }': {
+    data: {
+      __typename: 'Query';
+      workspace: {
+        __typename: 'Workspace';
+        components: { __typename: 'Component'; id: string; name: string }[];
+      } | null;
+    };
+    variables: { workspaceId: string };
+  };
+  '#graphql\n    mutation ($id: String!) {\n      destroyWorkspace(ref: $id) {\n        __typename\n      }\n    }': {
+    data: {
+      __typename: 'Mutation';
+      destroyWorkspace: {
+        __typename: 'Void';
+        __typename: string | null;
+      } | null;
+    };
+    variables: { id: string };
+  };
+  '#graphql\n    mutation ($id: String!) {\n      disposeComponent(ref: $id) {\n        __typename\n      }\n    }': {
+    data: {
+      __typename: 'Mutation';
+      disposeComponent: {
+        __typename: 'Reconciliation';
+        __typename: string | null;
+      };
+    };
+    variables: { id: string };
   };
 };

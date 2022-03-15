@@ -1,3 +1,19 @@
+<script lang="ts" context="module">
+  export type Workspace = {
+    id: string;
+    displayName: string;
+    components: Component[];
+  };
+
+  export type Component = {
+    id: string;
+    name: string;
+    reconciling: boolean;
+    running: boolean;
+    logsVisible: boolean;
+  };
+</script>
+
 <script lang="ts">
   import Icon from './Icon.svelte';
   import Panel from './Panel.svelte';
@@ -17,18 +33,7 @@
   export let setComponentRun: (id: string) => Promise<void>;
   export let disposeComponent: (id: string) => Promise<void>;
 
-  // XXX Use fragment.
-  export let workspace: {
-    id: string;
-    displayName: string;
-    components: {
-      id: string;
-      name: string;
-      reconciling: boolean;
-      running: boolean;
-      logsVisible: boolean;
-    }[];
-  };
+  export let workspace: Workspace;
 
   $: showComponentPath = (id: string) =>
     `/workspaces/${encodeURIComponent(
