@@ -1,15 +1,15 @@
 <script lang="ts">
   import { Meta, Template, Story } from '@storybook/addon-svelte-csf';
   import ComponentStack from './ComponentStack.svelte';
+  import type { Component } from './ComponentStack.svelte';
 
-  const componentDefaults = {
+  const componentDefaults: Partial<Component> = {
     logsVisible: true,
     reconciling: false,
     running: true,
+    url: '/#',
+    editUrl: '/#edit',
   };
-
-  const showPath = (id: string) => `/#show-${id}`;
-  const editPath = (id: string) => `/#edit-${id}`;
 </script>
 
 <Meta title="ComponentStack" component={ComponentStack} />
@@ -41,7 +41,5 @@
         logsVisible: false,
       },
     ],
-    showPath,
-    editPath,
   }}
 />

@@ -12,14 +12,17 @@
 <Story
   name="Default"
   args={{
-    showPath: '/#',
-    editPath: '/#',
+    component: {
+      id: 'component',
+      name: 'Component',
+      logsVisible: true,
+      reconciling: false,
+      running: true,
+      url: '/#',
+      editUrl: '/#edit',
+    },
     setRun: () => {},
     setLogsVisible: () => {},
     deleteComponent: () => {},
-    name: 'Component',
-    logsVisible: true,
-    reconciling: false,
-    running: true,
   }}
 />

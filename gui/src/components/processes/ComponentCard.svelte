@@ -1,3 +1,15 @@
+<script lang="ts" context="module">
+  export type Component = {
+    id: string;
+    name: string;
+    reconciling: boolean;
+    running: boolean;
+    logsVisible: boolean;
+    url: string;
+    editUrl: string;
+  };
+</script>
+
 <script lang="ts">
   import * as router from 'svelte-spa-router';
   import IconButton from '../IconButton.svelte';
@@ -9,15 +21,12 @@
 
   const { link } = router;
 
-  export let showPath: string;
-  export let editPath: string;
-  export let name: string;
-  export let logsVisible: boolean;
-  export let reconciling: boolean;
+  export let component: Component;
+  const { name, reconciling, running, logsVisible } = component;
+
   export let setRun: (value: boolean) => void;
   export let setLogsVisible: (value: boolean) => void;
   export let dispose: () => void;
-  export let running: boolean;
 </script>
 
 <div class="card" style={logStyleFromHash(name)}>
@@ -26,7 +35,7 @@
   </div>
 
   <div>
-    <a class="component-name" use:link href={showPath}>
+    <a class="component-name" use:link href={component.url}>
       {name}
     </a>
   </div>
@@ -45,8 +54,8 @@
     <IconButton glyph="Ellipsis" />
 
     <ContextMenu title={name}>
-      <MenuItem glyph="Details" href={showPath}>View details</MenuItem>
-      <MenuItem glyph="Edit" href={editPath}>Edit component</MenuItem>
+      <MenuItem glyph="Details" href={component.url}>View details</MenuItem>
+      <MenuItem glyph="Edit" href={component.editUrl}>Edit component</MenuItem>
       <MenuItem
         glyph="Logs"
         on:click={() => {
@@ -59,7 +68,7 @@
         glyph="Delete"
         danger
         on:click={() => {
-          destroy();
+          dispose();
           setLogsVisible(false);
         }}
       >
