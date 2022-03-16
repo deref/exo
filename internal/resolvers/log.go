@@ -22,5 +22,5 @@ func (gl *GraphqlLogger) LogPanic(ctx context.Context, value any) {
 	const size = 64 << 10
 	buf := make([]byte, size)
 	buf = buf[:runtime.Stack(buf, false)]
-	gl.log.Infof("graphql: panic occurred: %v\n%s\ncontext: %v", value, buf, ctx)
+	gl.log.Infof("graphql: panic occurred: %v\n%s", value, buf)
 }
