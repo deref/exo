@@ -2,15 +2,20 @@ package template
 
 import (
 	"fmt"
-
-	"github.com/deref/exo/internal/core/api"
 )
+
+type TemplateDescription struct {
+	Name        string
+	DisplayName string
+	IconGlyph   string
+	URL         string
+}
 
 var bucketURL = "https://exo-starter-templates.s3.us-west-2.amazonaws.com"
 
-func GetTemplateDescriptions() []api.TemplateDescription {
+func GetTemplateDescriptions() []TemplateDescription {
 	// TODO: make this dynamic
-	templates := []api.TemplateDescription{
+	templates := []TemplateDescription{
 		{Name: "typescript-nextjs-prisma-postgres", DisplayName: "Next.js + Prisma + Postgres", IconGlyph: "LogoNext"},
 		{Name: "go-gin-webserver", DisplayName: "Go + Gin web server", IconGlyph: "LogoGolang"},
 		{Name: "nginx", DisplayName: "Nginx static web server", IconGlyph: "LogoNginx"},

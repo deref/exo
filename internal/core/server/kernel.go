@@ -54,7 +54,7 @@ func (kern *Kernel) GetEsvUser(ctx context.Context, input *api.GetEsvUserInput) 
 }
 
 func (kern *Kernel) DescribeTemplates(ctx context.Context, input *api.DescribeTemplatesInput) (*api.DescribeTemplatesOutput, error) {
-	return &api.DescribeTemplatesOutput{Templates: template.GetTemplateDescriptions()}, nil
+	return &api.DescribeTemplatesOutput{ /* XXX moved to resolvers: Templates: template.GetTemplateDescriptions()*/ }, nil
 }
 
 func (kern *Kernel) AuthEsv(ctx context.Context, input *api.AuthEsvInput) (*api.AuthEsvOutput, error) {

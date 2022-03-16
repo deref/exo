@@ -4,7 +4,7 @@
   export let value: unknown = null;
 </script>
 
-{#if value !== null}
+{#if value != null}
   <div>
     <Icon glyph="Warning" />
     <span>
