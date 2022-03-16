@@ -12,16 +12,12 @@
   export let variables: Variable[] = [];
 
   const hasSources = variables.some((v) => !!v.source);
-
-  const sorted = variables
-    .sort((e1, e2) => (e1.source || '').localeCompare(e2.source || ''))
-    .sort((e1, e2) => e1.name.localeCompare(e2.name));
 </script>
 
 <CheckeredTableWrapper>
   <tbody>
     <table>
-      {#each sorted as { name, value, source }}
+      {#each variables as { name, value, source }}
         <tr>
           <td class="label">{name}</td>
           <td><code><pre>{value}</pre></code></td>
