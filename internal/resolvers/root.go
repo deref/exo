@@ -4,9 +4,11 @@ import (
 	"context"
 	_ "embed"
 	"fmt"
+	"os"
 	"path/filepath"
 
 	"github.com/deref/exo/internal/gensym"
+	"github.com/deref/exo/internal/token"
 	"github.com/deref/exo/internal/util/logging"
 	graphql "github.com/graph-gophers/graphql-go"
 	"github.com/jmoiron/sqlx"
@@ -33,6 +35,17 @@ type RootResolver struct {
 
 func (r *RootResolver) Init(ctx context.Context) error {
 	r.ulidgen = gensym.NewULIDGenerator(ctx)
+
+	// TODO: Move to peer initialization?
+	if err := os.MkdirAll(r.VarDir, 0700); err != nil {
+		return fmt.Errorf("creating var directory: %w", err)
+	}
+
+	// TODO: Move to peer initialization?
+	// XXX Reconcile with cfg.TokensFile.
+	if err := token.EnsureTokenFile(filepath.Join(r.VarDir, "token")); err != nil {
+		return fmt.Errorf("ensuring token file: %w", err)
+	}
 
 	dbPath := filepath.Join(r.VarDir, "exo.sqlite3")
 	var err error

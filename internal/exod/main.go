@@ -94,6 +94,7 @@ func (svr *Server) Run(ctx context.Context) {
 	tel.StartSession(ctx)
 	tel.SendEvent(ctx, telemetry.SystemInfoIdentifiedEvent())
 
+	// XXX pass the peer to the server.
 	service := &peer.Peer{
 		SystemLog:   logger,
 		VarDir:      cfg.VarDir,
