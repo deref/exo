@@ -9,6 +9,8 @@ type Query {
   defaultCluster: Cluster!
   clusterByRef(ref: String!): Cluster
 
+  allTemplates: [Template!]!
+
   allProjects: [Project!]!
   projectById(id: String!): Project
 
@@ -193,6 +195,13 @@ type Cluster {
   environment: Environment!
 
   configuration(final: Boolean): String!
+}
+
+type Template {
+  name: String!
+  displayName: String!
+  iconGlyph: String!
+  url: String!
 }
 
 type Project {

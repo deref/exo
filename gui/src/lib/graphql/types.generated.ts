@@ -41,6 +41,19 @@ export type QueryTypes = {
     };
     variables: {};
   };
+  '#graphql\n    {\n      templates: allTemplates {\n        name\n        displayName\n        iconGlyph\n        url\n      }\n    }': {
+    data: {
+      __typename: 'Query';
+      templates: {
+        __typename: 'Template';
+        displayName: string;
+        iconGlyph: string;
+        name: string;
+        url: string;
+      }[];
+    };
+    variables: {};
+  };
   '#graphql\n    query ($workspaceId: String!) {\n      workspace: workspaceById(id: $workspaceId) {\n        id\n        stack {\n          id\n          displayName\n          components {\n            id\n            name\n            reconciling\n            running\n          }\n        }\n      }\n    }': {
     data: {
       __typename: 'Query';

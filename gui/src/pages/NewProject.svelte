@@ -5,19 +5,33 @@
   import Textbox from '../components/Textbox.svelte';
   import ErrorLabel from '../components/ErrorLabel.svelte';
   import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
-  import { api } from '../lib/api';
   import * as router from 'svelte-spa-router';
   import type { IconGlyph } from '../components/Icon.svelte';
+  import { query } from '../lib/graphql';
 
   const queryString = router.querystring;
   const workspace = new URLSearchParams($queryString ?? '').get('workspace');
 
   let search: string = '';
 
+  const q = query(`#graphql
+    {
+      templates: allTemplates {
+        name
+        displayName
+        iconGlyph
+        url
+      }
+    }`);
+
+  $: templates = ($q.data?.templates ?? []).filter((x) =>
+    x.displayName.toLocaleLowerCase().startsWith(search.toLocaleLowerCase()),
+  );
+
   const logoGlyph = (ig: string) => (ig || 'Doc') as IconGlyph;
 </script>
 
-<Layout>
+<Layout loading={$q.loading} error={null}>
   <CenterFormPanel title="New project" backRoute="/">
     <h1>New project</h1>
 
@@ -38,32 +52,22 @@
         autofocus
       />
 
-      {#await api.kernel.describeTemplates()}
-        <Spinner />
-      {:then templates}
-        {#each templates
-          .sort((_, y) => (y.iconGlyph ? 1 : -1))
-          .filter((x) => x.displayName
-                .toLocaleLowerCase()
-                .slice(0, search.length) === search.toLocaleLowerCase()) as template}
-          <button
-            on:click={() => {
-              router.push(
-                `#/new-project/${encodeURIComponent(template.name)}${
-                  !!workspace
-                    ? `?workspace=${encodeURIComponent(workspace)}`
-                    : ''
-                }`,
-              );
-            }}
-          >
-            <Icon glyph={logoGlyph(template.iconGlyph)} />
-            {template.displayName}
-          </button>
-        {/each}
-      {:catch error}
-        <ErrorLabel value={error} />
-      {/await}
+      <ErrorLabel value={$q.error} />
+
+      {#each templates as template}
+        <button
+          on:click={() => {
+            router.push(
+              `#/new-project/${encodeURIComponent(template.name)}${
+                workspace ? `?workspace=${encodeURIComponent(workspace)}` : ''
+              }`,
+            );
+          }}
+        >
+          <Icon glyph={logoGlyph(template.iconGlyph)} />
+          {template.displayName}
+        </button>
+      {/each}
     </div>
   </CenterFormPanel>
 </Layout>
