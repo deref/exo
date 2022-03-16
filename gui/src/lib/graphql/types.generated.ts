@@ -16,6 +16,19 @@ export type QueryTypes = {
     };
     variables: {};
   };
+  '#graphql\n    query ($componentId: String!) {\n      component: componentById(id: $componentId) {\n        id\n        name\n        asProcess {\n          running\n          cpuPercentage\n        }\n        environment {\n          variables {\n            name\n            value\n            source\n          }\n        }\n      }\n    }': {
+    data: {
+      __typename: 'Query';
+      component: {
+        __typename: 'Component';
+        asProcess: unknown;
+        environment: unknown;
+        id: string;
+        name: string;
+      } | null;
+    };
+    variables: { componentId: string };
+  };
   '#graphql\n    {\n      workspaces: allWorkspaces {\n        id\n        root\n        displayName\n      }\n    }\n  ': {
     data: {
       __typename: 'Query';

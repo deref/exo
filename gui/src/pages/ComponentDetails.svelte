@@ -5,77 +5,69 @@
   import WorkspaceNav from '../components/WorkspaceNav.svelte';
   import EnvironmentTable from '../components/EnvironmentTable.svelte';
   import CheckeredTableWrapper from '../components/CheckeredTableWrapper.svelte';
-  import { api } from '../lib/api';
   import Sparkline from '../components/Sparkline.svelte';
-  import { onDestroy, onMount } from 'svelte';
-  import {
-    fetchProcesses,
-    refreshAllProcesses,
-    processes,
-  } from '../lib/process/store';
-  import type { RequestLifecycle } from '../lib/api';
-  import type { ProcessDescription } from '../lib/process/types';
+  import { query } from '../lib/graphql';
 
   export let params = { workspace: '', component: '' };
-
   const workspaceId = params.workspace;
-  const workspace = api.workspace(workspaceId);
-  const workspaceRoute = `/workspaces/${encodeURIComponent(workspaceId)}`;
-
   const componentId = params.component;
 
-  let processList: RequestLifecycle<ProcessDescription[]> = {
-    stage: 'pending',
-  };
-  const unsubscribeProcesses = processes.subscribe((processes) => {
-    processList = processes;
-  });
-
-  let refreshInterval: any;
-  let process: ProcessDescription | null = null;
-
-  const cpuPercentages: number[] = [];
-
-  onMount(() => {
-    fetchProcesses(workspace);
-
-    // TODO: Server-sent events or websockets!
-    refreshInterval = setInterval(() => {
-      refreshAllProcesses(workspace);
-      if (processList.stage === 'success') {
-        process = processList.data.filter((p) => p.id === componentId)[0];
-      }
-      if (process && process.running) {
-        if (process.cpuPercent !== null) {
-          cpuPercentages.push(process.cpuPercent);
+  const q = query(
+    `#graphql
+    query ($componentId: String!) {
+      component: componentById(id: $componentId) {
+        id
+        name
+        asProcess {
+          running
+          cpuPercentage
         }
-
-        if (cpuPercentages.length > 100) {
-          cpuPercentages.shift();
+        environment {
+          variables {
+            name
+            value
+            source
+          }
         }
       }
-    }, 1000);
-  });
+    }`,
+    {
+      variables: {
+        componentId,
+      },
+      pollInterval: 1000,
+    },
+  );
+  const component = $q.data?.component;
+  const process = component?.asProcess;
 
-  onDestroy(() => {
-    clearInterval(refreshInterval);
-    unsubscribeProcesses();
-  });
+  let cpuPercentages: number[] = [];
+  $: {
+    if (component?.cpuPercentage != null) {
+      cpuPercentages = [
+        ...cpuPercentages.slice(0, 99),
+        component.cpuPercentage,
+      ];
+    }
+  }
 </script>
 
-<Layout>
+<Layout loading={$q.loading} error={$q.error}>
   <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
-  {#if process}
-    <Panel title={process.name} backRoute={workspaceRoute}>
-      {#if process.running}
-        <CheckeredTableWrapper>
-          <table>
-            <tbody>
-              <tr>
-                <td class="label">Status</td>
-                <td>{process.running ? 'Running' : 'Stopped'}</td>
-                <td />
-              </tr>
+  <Panel
+    title={component ? component.name : 'Loading...'}
+    backRoute={`/workspaces/${encodeURIComponent(workspaceId)}`}
+  >
+    {#if component}
+      <CheckeredTableWrapper>
+        <table>
+          <tbody>
+            <tr>
+              <td class="label">Status</td>
+              <td>{process.running ? 'Running' : 'Stopped'}</td>
+              <td />
+            </tr>
+            {#if component.running}
               <tr>
                 <td class="label">CPU</td>
                 <td>
@@ -83,8 +75,7 @@
                     {process.cpuPercent.toFixed(2)}%
                   {/if}
                 </td>
-                <td> XXX </td></tr
-              >
+              </tr>
               <tr>
                 <td class="label">Resident Memory</td>
                 <td>
@@ -121,26 +112,15 @@
                 </td>
                 <td />
               </tr>
-            </tbody>
-          </table>
-        </CheckeredTableWrapper>
-        <br />
-        <h3>Environment</h3>
-        <EnvironmentTable
-          variables={Object.entries(process.envVars ?? {}).map(
-            ([name, value]) => ({
-              name,
-              value,
-            }),
-          )}
-        />
-      {:else}
-        <span>Process is not running</span>
-      {/if}
-    </Panel>
-  {:else}
-    <Panel title="Loading..." backRoute={workspaceRoute} />
-  {/if}
+            {/if}
+          </tbody>
+        </table>
+      </CheckeredTableWrapper>
+      <br />
+      <h3>Environment</h3>
+      <EnvironmentTable variables={component.environment.variables} />
+    {/if}
+  </Panel>
 </Layout>
 
 <style>

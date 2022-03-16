@@ -33,7 +33,7 @@
       variables: {
         workspaceId,
       },
-      pollInterval: 5000, // XXX Use a subscription.
+      pollInterval: 5000, // XXX Use a subscription?
     },
   );
   $: workspace = $q.data?.workspace;
