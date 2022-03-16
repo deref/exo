@@ -361,6 +361,7 @@ type File {
   isDirectory: Boolean!
   size: Float!
   content: String!
+  parent: File
   children: [File!]!
 }
 
