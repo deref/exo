@@ -1,27 +1,44 @@
+<script lang="ts" context="module">
+  // TODO: Fragments
+
+  export type File = {
+    path: string;
+    name: string;
+    isDirectory: boolean;
+  };
+
+  export type Directory = File & {
+    isDirectory: true;
+    parentPath: null | string;
+    children: File[];
+  };
+</script>
+
 <script lang="ts">
-  import type { ReadDirResult } from '../lib/api';
+  import { nonNull } from '../lib/util';
   import Icon from './Icon.svelte';
   import Textbox from './Textbox.svelte';
 
-  export let dir: ReadDirResult;
+  export let directory: Directory;
   export let homePath: string;
-  export let handleClick: (path: string) => void;
+  export let setDirectory: (path: string) => void;
+
   let search: string = '';
 </script>
 
 <div class="toolbar">
   <button
     title="Parent directory"
-    on:click={() => handleClick(String(dir.parent?.path))}
-    disabled={dir.parent === null}
+    on:click={() => setDirectory(nonNull(directory.parentPath))}
+    disabled={directory.parentPath === null}
   >
     <Icon glyph="LeftUp" />
   </button>
 
   <button
     title="Home directory"
-    on:click={() => handleClick(homePath)}
-    disabled={dir.directory.path === homePath}
+    on:click={() => setDirectory(homePath)}
+    disabled={directory.path === homePath}
   >
     <Icon glyph="Home" />
   </button>
@@ -35,13 +52,22 @@
 </div>
 
 <div class="directories">
-  {#each dir.entries
+  {#each directory.children
     .filter((x) => x.isDirectory)
-    .filter((x) => x.name.slice(0, search.length) === search)
-    .sort((x, y) => x.name.localeCompare(y.name)) as entry}
-    <button title={entry.path} on:click={() => handleClick(entry.path)}>
-      {entry.name}
+    .filter((x) => x.name
+        .toLowerCase()
+        .startsWith(search.toLowerCase())) as file}
+    <button title={file.path} on:click={() => setDirectory(file.path)}>
+      {file.name}
     </button>
+  {:else}
+    <div class="no-match">
+      {#if search}
+        No subdirectories matching: <code>{search}</code>
+      {:else}
+        No subdirectories
+      {/if}
+    </div>
   {/each}
 </div>
 
@@ -125,5 +151,13 @@
   .directories button:focus-within {
     margin: 1px 2px;
     padding: 5px 8px;
+  }
+
+  .no-match {
+    padding: 4px;
+    font-style: italic;
+  }
+  .no-match code {
+    font-style: normal;
   }
 </style>
