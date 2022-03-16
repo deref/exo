@@ -1,8 +1,11 @@
 <script lang="ts">
+  export let enabled = true;
   export let inline = false;
 </script>
 
-<div class:inline />
+{#if enabled}
+  <div class:inline />
+{/if}
 
 <style>
   div {

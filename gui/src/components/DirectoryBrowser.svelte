@@ -1,16 +1,32 @@
 <script lang="ts" context="module">
+  import type { Readable } from 'svelte/store';
+
+  export type DirectoryStore = Readable<
+    | {
+        ready: true;
+        directory: Directory;
+        homePath: string;
+      }
+    | {
+        ready: false;
+        error: Error | null;
+      }
+  > & {
+    setDirectory: (path: string) => void;
+  };
+
   // TODO: Fragments
+
+  export type Directory = {
+    path: string;
+    parentPath: null | string;
+    children: File[];
+  };
 
   export type File = {
     path: string;
     name: string;
     isDirectory: boolean;
-  };
-
-  export type Directory = File & {
-    isDirectory: true;
-    parentPath: null | string;
-    children: File[];
   };
 </script>
 
@@ -18,58 +34,83 @@
   import { nonNull } from '../lib/util';
   import Icon from './Icon.svelte';
   import Textbox from './Textbox.svelte';
+  import Spinner from '../components/Spinner.svelte';
+  import ErrorLabel from '../components/ErrorLabel.svelte';
 
-  export let directory: Directory;
-  export let homePath: string;
-  export let setDirectory: (path: string) => void;
+  export let autofocus = false;
+  export let store: DirectoryStore;
 
   let search: string = '';
+
+  const goUp = () => {
+    if (!$store.ready) {
+      return;
+    }
+    const { parentPath } = $store.directory;
+    if (parentPath) {
+      store.setDirectory(parentPath);
+    }
+  };
+  const goHome = () => {
+    if (!$store.ready) {
+      return;
+    }
+    store.setDirectory($store.homePath);
+  };
 </script>
 
-<div class="toolbar">
-  <button
-    title="Parent directory"
-    on:click={() => setDirectory(nonNull(directory.parentPath))}
-    disabled={directory.parentPath === null}
-  >
-    <Icon glyph="LeftUp" />
-  </button>
-
-  <button
-    title="Home directory"
-    on:click={() => setDirectory(homePath)}
-    disabled={directory.path === homePath}
-  >
-    <Icon glyph="Home" />
-  </button>
-
-  <Textbox
-    placeholder="Search..."
-    bind:value={search}
-    --input-width="100%"
-    autofocus
-  />
-</div>
-
-<div class="directories">
-  {#each directory.children
-    .filter((x) => x.isDirectory)
-    .filter((x) => x.name
-        .toLowerCase()
-        .startsWith(search.toLowerCase())) as file}
-    <button title={file.path} on:click={() => setDirectory(file.path)}>
-      {file.name}
+{#if $store.ready}
+  <div class="toolbar">
+    <button
+      title="Parent directory"
+      on:click|preventDefault={goUp}
+      disabled={$store.directory.parentPath === null}
+    >
+      <Icon glyph="LeftUp" />
     </button>
-  {:else}
-    <div class="no-match">
-      {#if search}
-        No subdirectories matching: <code>{search}</code>
-      {:else}
-        No subdirectories
-      {/if}
-    </div>
-  {/each}
-</div>
+
+    <button
+      title="Home directory"
+      on:click|preventDefault={goHome}
+      disabled={$store.directory.path === $store.homePath}
+    >
+      <Icon glyph="Home" />
+    </button>
+
+    <Textbox
+      placeholder="Search..."
+      bind:value={search}
+      --input-width="100%"
+      {autofocus}
+    />
+  </div>
+
+  <div class="directories">
+    {#each $store.directory.children
+      .filter((x) => x.isDirectory)
+      .filter((x) => x.name
+          .toLowerCase()
+          .startsWith(search.toLowerCase())) as file}
+      <button
+        title={file.path}
+        on:click|preventDefault={() => store.setDirectory(file.path)}
+      >
+        {file.name}
+      </button>
+    {:else}
+      <div class="no-match">
+        {#if search}
+          No subdirectories matching: <code>{search}</code>
+        {:else}
+          No subdirectories
+        {/if}
+      </div>
+    {/each}
+  </div>
+{:else}
+  <ErrorLabel value={$store.error} />
+  <Spinner enabled={!$store.error} />
+{/if}
 
 <style>
   .toolbar {

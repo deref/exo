@@ -1,83 +1,100 @@
 <script lang="ts">
   import Layout from '../components/Layout.svelte';
   import Textbox from '../components/Textbox.svelte';
-  import Spinner from '../components/Spinner.svelte';
   import ErrorLabel from '../components/ErrorLabel.svelte';
   import SubmitButton from '../components/form/SubmitButton.svelte';
   import DirectoryBrowser from '../components/DirectoryBrowser.svelte';
+  import type { DirectoryStore } from '../components/DirectoryBrowser.svelte';
   import CenterFormPanel from '../components/form/CenterFormPanel.svelte';
-  import type { ReadDirResult } from '../lib/api';
   import { api, isClientError } from '../lib/api';
   import * as router from 'svelte-spa-router';
+  import { query } from '../lib/graphql';
+  import { derived, writable } from 'svelte/store';
+  import { nonNull } from '../lib/util';
 
   export let params = { starter: '' };
 
   const { starter } = params;
+  const templateName = starter ?? null;
 
   const queryString = router.querystring;
   const workspace = new URLSearchParams($queryString ?? '').get('workspace');
 
-  let name = starter;
-  let error: Error | null = null;
+  let name = templateName;
+  let formError: Error | null = null;
 
-  let workingDirectory: string | null = null;
-  let homeDirectory: string = '/';
+  // Null implies home.
+  let directoryPath = writable<string | null>(workspace);
 
-  const setWorkingDirectory = (dir: string) => {
-    workingDirectory = dir;
-    dirPromise = api.kernel.readDir(workingDirectory);
+  const q = query(
+    `#graphql
+    query ($directoryPath: String) {
+      fileSystem {
+        homePath
+        file: fileOrHome(path: $directoryPath) {
+          path
+          parentPath
+          children {
+            name
+            path
+            isDirectory
+          }
+        }
+      }
+    }`,
+    {
+      variables: {
+        directoryPath: $directoryPath,
+      },
+    },
+  );
+
+  const store: DirectoryStore = {
+    ...derived(q, ($q) =>
+      $q.loading || $q.error || !$q.data
+        ? {
+            ready: false as const,
+            error: $q.error ?? null,
+          }
+        : {
+            ready: true as const,
+            homePath: nonNull($q.data).fileSystem.homePath,
+            directory: nonNull(nonNull($q.data).fileSystem.file),
+          },
+    ),
+    setDirectory: (value: string) => {
+      directoryPath.set(value);
+    },
   };
 
-  let dirPromise: Promise<ReadDirResult> = api.kernel
-    .getUserHomeDir()
-    .then((dir) => {
-      if (workspace) {
-        dir = workspace;
-      }
-      setWorkingDirectory(dir);
-      homeDirectory = dir;
-      return dirPromise;
-    });
-
-  const withSlash = (wd: string) => (wd.endsWith('/') ? wd : wd + '/');
+  $: homePath = $q.data?.fileSystem.homePath;
 
   const submitForm = async () => {
-    error = null;
-
-    let templateUrl: string | null = null;
-    if (starter !== 'empty') {
-      const templates = await api.kernel.describeTemplates();
-      const template = templates.find((x) => x.name === starter);
-      if (!template) {
-        error = new Error(`Could not find template with name ${starter}`);
-        return;
-      }
-      templateUrl = template.url;
-    }
+    formError = null;
 
     // Shouldn't really be possible since the form shouldn't be visible if the
     // working directory isn't set.
-    if (!workingDirectory) {
-      error = new Error('Working directory not set');
+    if (!$store.ready) {
+      formError = new Error('Directory not set');
       return;
     }
 
     try {
       const workspaceId = await api.kernel.createProject(
-        `${withSlash(workingDirectory)}${name}`,
-        templateUrl,
+        `${$store.directory.path}${name}`,
+        templateName, // XXX used to be templateUrl, handle server side.
       );
       await router.push(`/workspaces/${encodeURIComponent(workspaceId)}`);
     } catch (ex) {
       if (!isClientError(ex)) {
         throw ex;
       }
-      error = ex;
+      formError = ex;
     }
   };
 </script>
 
-<Layout>
+<Layout loading={$q.loading} error={null}>
   <CenterFormPanel title={`New ${starter} project`} backRoute="#/new-project">
     <form on:submit|preventDefault={submitForm}>
       <h1>New {starter} project</h1>
@@ -91,26 +108,14 @@
         --input-width="100%"
       />
       <div style="height:32px" />
-      {#if workingDirectory}
+      {#if homePath}
         <label for="root">Root:</label>
-        <h2><span>{withSlash(workingDirectory)}<span>{name}</span></span></h2>
-        {#await dirPromise}
-          <Spinner />
-        {:then dir}
-          <DirectoryBrowser
-            {dir}
-            homePath={homeDirectory}
-            handleClick={setWorkingDirectory}
-          />
-        {:catch awaitError}
-          <ErrorLabel value={awaitError} />
-        {/await}
-      {:else}
-        <Spinner />
+        <h2><span>{$directoryPath || homePath}<span>{name}</span></span></h2>
       {/if}
+      <DirectoryBrowser {store} autofocus />
       <SubmitButton>Create project</SubmitButton>
     </form>
-    <ErrorLabel value={error} />
+    <ErrorLabel value={formError} />
   </CenterFormPanel>
 </Layout>
 

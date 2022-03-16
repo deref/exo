@@ -38,6 +38,9 @@ type Query {
   tasksByJobIds(jobIds: [String!]!): [Task!]!
 
   now: Instant!
+
+  # Root file system of the local cluster.
+  fileSystem: FileSystem!
 }
 
 type Mutation {
@@ -218,6 +221,7 @@ type Workspace {
   url: String!
   root: String!
   displayName: String!
+  # Scoped to workspace root.
   fileSystem: FileSystem!
 
   projectId: String!
@@ -349,7 +353,13 @@ type Resource {
 union ResourceOwner = Component | Stack | Project
 
 type FileSystem {
+  root: File!
+  # If root file system for a particular user, gets home from OS.
+  # Otherwise, uses the filesystem's root.
+  homePath: String!
   file(path: String!): File
+  # If path is not provided, defaults to homePath.
+  fileOrHome(path: String): File
 }
 
 type File {
@@ -361,7 +371,7 @@ type File {
   isDirectory: Boolean!
   size: Float!
   content: String!
-  parent: File
+  parentPath: String
   children: [File!]!
 }
 

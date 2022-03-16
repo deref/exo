@@ -52,6 +52,7 @@
         autofocus
       />
 
+      <Spinner enabled={$q.loading} />
       <ErrorLabel value={$q.error} />
 
       {#each templates as template}

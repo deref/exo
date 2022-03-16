@@ -54,6 +54,27 @@ export type QueryTypes = {
     };
     variables: {};
   };
+  '#graphql\n    query ($directoryPath: String) {\n      fileSystem {\n        homePath\n        file: fileOrHome(path: $directoryPath) {\n          path\n          parentPath\n          children {\n            name\n            path\n            isDirectory\n          }\n        }\n      }\n    }': {
+    data: {
+      __typename: 'Query';
+      fileSystem: {
+        __typename: 'FileSystem';
+        file: {
+          __typename: 'File';
+          children: {
+            __typename: 'File';
+            isDirectory: boolean;
+            name: string;
+            path: string;
+          }[];
+          parentPath: string | null;
+          path: string;
+        } | null;
+        homePath: string;
+      };
+    };
+    variables: { directoryPath: string | null };
+  };
   '#graphql\n    query ($workspaceId: String!) {\n      workspace: workspaceById(id: $workspaceId) {\n        id\n        stack {\n          id\n          displayName\n          components {\n            id\n            name\n            reconciling\n            running\n          }\n        }\n      }\n    }': {
     data: {
       __typename: 'Query';

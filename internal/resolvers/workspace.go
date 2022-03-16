@@ -190,9 +190,7 @@ func (r *WorkspaceResolver) Environment(ctx context.Context) (*EnvironmentResolv
 }
 
 func (r *WorkspaceResolver) FileSystem() *FileSystemResolver {
-	return &FileSystemResolver{
-		hostPath: r.Root,
-	}
+	return r.Q.fileSystemByHostPath(r.Root)
 }
 
 func (r *MutationResolver) BuildWorkspace(ctx context.Context, args struct {

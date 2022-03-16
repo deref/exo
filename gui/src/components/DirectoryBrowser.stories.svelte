@@ -1,7 +1,7 @@
 <script lang="ts">
   import { Meta, Template, Story } from '@storybook/addon-svelte-csf';
+  import { derived, writable } from 'svelte/store';
   import DirectoryBrowser from './DirectoryBrowser.svelte';
-  import { nonNull } from '../lib/util';
 
   type NodeIn = {
     name: string;
@@ -14,8 +14,7 @@
     children: Node[];
   };
 
-  let nodes = new Map<string, Node>();
-
+  const nodes = new Map<string, Node>();
   const build = (parentPath: string | null, n: NodeIn): Node => {
     const path = parentPath ? `${parentPath}${n.name}/` : '/';
     const res: Node = {
@@ -33,7 +32,7 @@
     name: '',
     children: [
       {
-        name: 'users',
+        name: 'home',
         children: [
           {
             name: 'alice',
@@ -46,12 +45,19 @@
       },
     ],
   });
-  const homeDir = '/users/alice/';
+  const homePath = '/home/alice/';
 
-  let directory = nodes.get(homeDir);
+  const directoryPath = writable(homePath);
 
-  const setDirectory = (path: string) => {
-    directory = nodes.get(path);
+  const store = {
+    ...derived(directoryPath, ($directoryPath) => ({
+      ready: true,
+      homePath,
+      directory: nodes.get($directoryPath),
+    })),
+    setDirectory: (value: string) => {
+      directoryPath.set(value);
+    },
   };
 </script>
 
@@ -64,8 +70,6 @@
 <Story
   name="Default"
   args={{
-    homePath: '/home/user',
-    directory,
-    setDirectory,
+    store,
   }}
 />
