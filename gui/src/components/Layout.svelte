@@ -9,7 +9,7 @@
   import ErrorLabel from '../components/ErrorLabel.svelte';
 
   export let loading: boolean;
-  export let error: unknown;
+  export let error: any;
 
   $: {
     for (const option of themeOptions) {

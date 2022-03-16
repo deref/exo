@@ -5,8 +5,8 @@
   import WorkspaceNav from '../components/WorkspaceNav.svelte';
   import EnvironmentTable from '../components/EnvironmentTable.svelte';
   import CheckeredTableWrapper from '../components/CheckeredTableWrapper.svelte';
-  import sparkline from '@fnando/sparkline';
   import { api } from '../lib/api';
+  import Sparkline from '../components/Sparkline.svelte';
   import { onDestroy, onMount } from 'svelte';
   import {
     fetchProcesses,
@@ -34,8 +34,6 @@
   let refreshInterval: any;
   let process: ProcessDescription | null = null;
 
-  let sparklineSvg: SVGSVGElement;
-
   const cpuPercentages: number[] = [];
 
   onMount(() => {
@@ -54,14 +52,6 @@
 
         if (cpuPercentages.length > 100) {
           cpuPercentages.shift();
-        }
-
-        if (
-          cpuPercentages.some((p) => p !== 0) &&
-          sparklineSvg &&
-          sparklineSvg instanceof SVGSVGElement
-        ) {
-          sparkline(sparklineSvg, cpuPercentages, { interactive: true });
         }
       }
     }, 1000);
@@ -93,16 +83,8 @@
                     {process.cpuPercent.toFixed(2)}%
                   {/if}
                 </td>
-                <td>
-                  <svg
-                    bind:this={sparklineSvg}
-                    class="sparkline"
-                    width="100"
-                    height="30"
-                    stroke-width="3"
-                  />
-                </td>
-              </tr>
+                <td> XXX </td></tr
+              >
               <tr>
                 <td class="label">Resident Memory</td>
                 <td>
@@ -122,12 +104,9 @@
                   {/if}
                 </td>
                 <td>
-                  <svg
-                    class="sparkline"
-                    width="100"
-                    height="30"
-                    stroke-width="3"
-                  />
+                  {#if cpuPercentages.some((p) => p !== 0)}
+                    <Sparkline entries={cpuPercentages} interactive />
+                  {/if}
                 </td>
               </tr>
               <tr>
@@ -169,10 +148,5 @@
     font-size: 0.8em;
     font-weight: 450;
     color: var(--grey-5-color);
-  }
-  .sparkline {
-    margin: -6px -15px;
-    stroke: var(--sparkline-stroke);
-    fill: var(--sparkline-fill);
   }
 </style>
