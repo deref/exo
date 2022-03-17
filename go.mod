@@ -10,7 +10,6 @@ require (
 	github.com/deref/extractgqlts v0.0.0-20220314182012-b91c51e0b3b9
 	github.com/deref/graphql-go v0.0.0-20220204035606-e2b473959845
 	github.com/deref/inflect-go v0.0.0-20211018210843-15b876b83b3e
-	github.com/deref/pier v0.0.0-20210928181930-9ee844d69730
 	github.com/deref/rgbterm v0.0.0-20220210012105-fe81195c39e7
 	github.com/deref/util-go v0.0.0-20220115012929-ff59eadb1f54
 	github.com/docker/docker v20.10.8+incompatible
@@ -50,13 +49,10 @@ require (
 )
 
 require (
-	code.cloudfoundry.org/bytefmt v0.0.0-20210608160410-67692ebc98de // indirect
 	github.com/Microsoft/go-winio v0.4.17 // indirect
 	github.com/Microsoft/hcsshim v0.8.21 // indirect
 	github.com/ProtonMail/go-crypto v0.0.0-20210512092938-c05353c2d58c // indirect
 	github.com/StackExchange/wmi v0.0.0-20190523213315-cbe66965904d // indirect
-	github.com/VividCortex/ewma v1.2.0 // indirect
-	github.com/acarl005/stripansi v0.0.0-20180116102854-5a71ef0e047d // indirect
 	github.com/acomagu/bufpipe v1.0.3 // indirect
 	github.com/agext/levenshtein v1.2.3 // indirect
 	github.com/agnivade/levenshtein v1.0.1 // indirect
@@ -83,29 +79,22 @@ require (
 	github.com/jbenet/go-context v0.0.0-20150711004518-d14ea06fba99 // indirect
 	github.com/kevinburke/ssh_config v1.1.0 // indirect
 	github.com/lib/pq v1.10.2 // indirect
-	github.com/logrusorgru/aurora v2.0.3+incompatible // indirect
 	github.com/matryer/is v1.4.0 // indirect
-	github.com/mattn/go-runewidth v0.0.13 // indirect
 	github.com/mitchellh/go-homedir v1.1.0 // indirect
 	github.com/mitchellh/go-wordwrap v0.0.0-20150314170334-ad45545899c7 // indirect
 	github.com/moby/buildkit v0.9.0 // indirect
 	github.com/moby/sys/mount v0.2.0 // indirect
 	github.com/moby/sys/mountinfo v0.4.1 // indirect
 	github.com/mpvl/unique v0.0.0-20150818121801-cbe035fff7de // indirect
-	github.com/mtibben/androiddnsfix v0.0.0-20200907095054-ff0280446354 // indirect
-	github.com/nojima/httpie-go v0.7.1-0.20210928050845-35d74a5f8766 // indirect
 	github.com/opencontainers/go-digest v1.0.0 // indirect
 	github.com/opencontainers/runc v1.0.2 // indirect
 	github.com/opentracing/opentracing-go v1.2.0 // indirect
-	github.com/pborman/getopt v1.1.0 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
-	github.com/rivo/uniseg v0.2.0 // indirect
 	github.com/sergi/go-diff v1.2.0 // indirect
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/tklauser/go-sysconf v0.3.6 // indirect
 	github.com/tklauser/numcpus v0.2.2 // indirect
-	github.com/vbauerster/mpb/v5 v5.4.0 // indirect
 	github.com/vektah/gqlparser/v2 v2.4.1 // indirect
 	github.com/xanzy/ssh-agent v0.3.0 // indirect
 	go.opencensus.io v0.23.0 // indirect
