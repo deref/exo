@@ -1,0 +1,9 @@
+# Build outputs.
+exo
+hang
+tick
+
+# For symlinks to test alternative Go versions.
+go
+
+# End.
