@@ -28,7 +28,7 @@ func getController(ctx context.Context, typ string) *sdk.Controller {
 	return sdk.NewController(impl)
 }
 
-func getControllerImpl(ctx context.Context, typ string) interface{} {
+func getControllerImpl(ctx context.Context, typ string) any {
 	switch typ {
 	case "daemon":
 		return &daemon.Controller{}

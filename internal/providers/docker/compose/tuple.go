@@ -18,7 +18,7 @@ func MakeTuple(items ...String) Tuple {
 	return res
 }
 
-func (ss Tuple) MarshalYAML() (interface{}, error) {
+func (ss Tuple) MarshalYAML() (any, error) {
 	if ss.IsSequence || len(ss.Items) != 1 {
 		return ss.Items, nil
 	}

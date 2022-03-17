@@ -6,7 +6,7 @@ import (
 	"github.com/deref/exo/internal/manifest/exocue"
 )
 
-func PrintCueStruct(v interface{}) {
+func PrintCueStruct(v any) {
 	cc := cuecontext.New()
 	value := cc.Encode(v)
 	bs, err := format.Node(exocue.StructToFile(value))

@@ -58,7 +58,7 @@ var stateSetCmd = &cobra.Command{
 		ctx := cmd.Context()
 		cl := newClient()
 
-		var newState map[string]interface{}
+		var newState map[string]any
 		if err := json.NewDecoder(os.Stdin).Decode(&newState); err != nil {
 			return fmt.Errorf("reading state from stdin: %w", err)
 		}

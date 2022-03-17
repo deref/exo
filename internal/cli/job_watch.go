@@ -62,7 +62,7 @@ func watchJob(ctx context.Context, jobID string) error {
 		Event jobEventFragment `graphql:"watchJob(id: $id, debug: $debug)"`
 	}
 	var res watchJobSubscription
-	sub := api.Subscribe(ctx, svc, &res, map[string]interface{}{
+	sub := api.Subscribe(ctx, svc, &res, map[string]any{
 		"id":    jobID,
 		"debug": isDebugMode(),
 	})

@@ -18,7 +18,7 @@ type EventLogger struct {
 
 var _ logging.Logger = (*EventLogger)(nil)
 
-func (el *EventLogger) Infof(format string, v ...interface{}) {
+func (el *EventLogger) Infof(format string, v ...any) {
 	format = logging.Prefix(el.Prefix, format)
 	message := fmt.Sprintf(format, v...)
 	if err := el.createEvent(message); err != nil {
@@ -35,7 +35,7 @@ func (el *EventLogger) createEvent(message string) error {
 			ID string
 		} `graphql:"createEvent(sourceType: $sourceType, sourceId: $sourceId, type: $type, message: $message)"`
 	}
-	return Mutate(ctx, el.Service, &createEvent, map[string]interface{}{
+	return Mutate(ctx, el.Service, &createEvent, map[string]any{
 		"sourceType": el.SourceType,
 		"sourceId":   el.SourceID,
 		"type":       "Message",

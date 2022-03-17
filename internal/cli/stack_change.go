@@ -29,7 +29,7 @@ Use the ref '-' to clear the current stack.`,
 				ID string
 			} `graphql:"setWorkspaceStack(workspace: $workspace, stack: $stack)"`
 		}
-		return api.Mutate(ctx, svc, &m, map[string]interface{}{
+		return api.Mutate(ctx, svc, &m, map[string]any{
 			"workspace": currentWorkspaceRef(),
 			"stack":     stack,
 		})

@@ -18,7 +18,7 @@ func NewGraphqlLogger(logger logging.Logger) *GraphqlLogger {
 }
 
 // Adapted from graphql-gopher's DefaultLogger implementation.
-func (gl *GraphqlLogger) LogPanic(ctx context.Context, value interface{}) {
+func (gl *GraphqlLogger) LogPanic(ctx context.Context, value any) {
 	const size = 64 << 10
 	buf := make([]byte, size)
 	buf = buf[:runtime.Stack(buf, false)]

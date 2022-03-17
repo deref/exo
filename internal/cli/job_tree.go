@@ -41,7 +41,7 @@ If no job ids are provided, lists all jobs in the scope.`,
 			var q struct {
 				Tasks []taskFragment `graphql:"tasksByJobIds(jobIds: $jobIds)"`
 			}
-			err = api.Query(ctx, svc, &q, map[string]interface{}{
+			err = api.Query(ctx, svc, &q, map[string]any{
 				"jobIds": args,
 			})
 			tasks = q.Tasks

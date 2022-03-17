@@ -209,7 +209,7 @@ func (r *ResourceResolver) OwnerType() *string {
 	return &ownerType
 }
 
-func (r *ResourceResolver) Owner(ctx context.Context) (owner interface{}, err error) {
+func (r *ResourceResolver) Owner(ctx context.Context) (owner any, err error) {
 	ownerType := r.OwnerType()
 	if ownerType == nil {
 		return nil, nil
@@ -346,7 +346,7 @@ func (r *MutationResolver) CreateResource(ctx context.Context, args struct {
 	var job *JobResolver
 	if adopt {
 		var err error
-		job, err = r.createJob(ctx, "refreshResource", map[string]interface{}{
+		job, err = r.createJob(ctx, "refreshResource", map[string]any{
 			"ref": row.ID,
 		})
 		if err != nil {
@@ -354,7 +354,7 @@ func (r *MutationResolver) CreateResource(ctx context.Context, args struct {
 		}
 	} else {
 		var err error
-		job, err = r.createJob(ctx, "initializeResource", map[string]interface{}{
+		job, err = r.createJob(ctx, "initializeResource", map[string]any{
 			"ref":   row.ID,
 			"model": args.Model,
 		})

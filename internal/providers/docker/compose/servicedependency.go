@@ -52,7 +52,7 @@ func (deps *ServiceDependencies) Interpolate(env Environment) error {
 	return interpolateSlice(deps.Items, env)
 }
 
-func (deps ServiceDependencies) MarshalYAML() (interface{}, error) {
+func (deps ServiceDependencies) MarshalYAML() (any, error) {
 	if deps.Style == SeqStyle {
 		return deps.Items, nil
 	}
@@ -93,7 +93,7 @@ func (dep *ServiceDependency) Interpolate(env Environment) error {
 	return dep.ServiceDependencyLongForm.Interpolate(env)
 }
 
-func (dep ServiceDependency) MarshalYAML() (interface{}, error) {
+func (dep ServiceDependency) MarshalYAML() (any, error) {
 	if dep.IsShortSyntax && dep.Condition.Value == "" {
 		return dep.Service, nil
 	}

@@ -22,9 +22,9 @@ func (h *GraphqlHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	ctx := r.Context()
 
 	var params struct {
-		Query         string                 `json:"query"`
-		OperationName string                 `json:"operationName"`
-		Variables     map[string]interface{} `json:"variables"`
+		Query         string         `json:"query"`
+		OperationName string         `json:"operationName"`
+		Variables     map[string]any `json:"variables"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&params); err != nil {
 		http.Error(w, err.Error(), http.StatusBadRequest)
@@ -38,8 +38,8 @@ func (h *GraphqlHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
 	}
 
-	newRes := func() interface{} {
-		var res interface{}
+	newRes := func() any {
+		var res any
 		return &res
 	}
 	// TODO: Make use of params.OperationName.
@@ -54,7 +54,7 @@ func (h *GraphqlHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		case event, ok := <-sub.Events():
 			var result struct {
 				Errors api.QueryErrorSet `json:"errors,omitempty"`
-				Data   interface{}       `json:"data,omitempty"`
+				Data   any               `json:"data,omitempty"`
 			}
 			if ok {
 				result.Data = event

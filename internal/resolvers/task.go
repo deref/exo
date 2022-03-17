@@ -48,7 +48,7 @@ func (r *MutationResolver) CreateTask(ctx context.Context, args struct {
 	return r.createOrEnsureTask(ctx, args.Mutation, args.Arguments, args.Key)
 }
 
-func (r *MutationResolver) createRootTask(ctx context.Context, mutation string, arguments map[string]interface{}) (*TaskResolver, error) {
+func (r *MutationResolver) createRootTask(ctx context.Context, mutation string, arguments map[string]any) (*TaskResolver, error) {
 	row := newTaskPrototype(ctx, mutation, arguments)
 	row.JobID = row.ID
 	if err := r.insertRow(ctx, "task", row); err != nil {
@@ -60,11 +60,11 @@ func (r *MutationResolver) createRootTask(ctx context.Context, mutation string, 
 	}, nil
 }
 
-func (r *MutationResolver) createTask(ctx context.Context, mutation string, arguments map[string]interface{}) (*TaskResolver, error) {
+func (r *MutationResolver) createTask(ctx context.Context, mutation string, arguments map[string]any) (*TaskResolver, error) {
 	return r.createOrEnsureTask(ctx, mutation, arguments, nil)
 }
 
-func (r *MutationResolver) ensureTask(ctx context.Context, mutation string, arguments map[string]interface{}, key string) error {
+func (r *MutationResolver) ensureTask(ctx context.Context, mutation string, arguments map[string]any, key string) error {
 	_, err := r.createOrEnsureTask(ctx, mutation, arguments, &key)
 	if isSqlConflict(err) {
 		err = nil
@@ -72,7 +72,7 @@ func (r *MutationResolver) ensureTask(ctx context.Context, mutation string, argu
 	return err
 }
 
-func (r *MutationResolver) createOrEnsureTask(ctx context.Context, mutation string, arguments map[string]interface{}, key *string) (*TaskResolver, error) {
+func (r *MutationResolver) createOrEnsureTask(ctx context.Context, mutation string, arguments map[string]any, key *string) (*TaskResolver, error) {
 	ctxVars := api.CurrentContextVariables(ctx)
 	if ctxVars == nil || ctxVars.TaskID == "" {
 		return nil, errors.New("create task outside of job execution context")
@@ -91,7 +91,7 @@ func (r *MutationResolver) createOrEnsureTask(ctx context.Context, mutation stri
 
 type TaskInput struct {
 	Mutation  string
-	Arguments map[string]interface{}
+	Arguments map[string]any
 }
 
 func (r *MutationResolver) createTasks(ctx context.Context, inputs []TaskInput) ([]*TaskResolver, error) {
@@ -107,7 +107,7 @@ func (r *MutationResolver) createTasks(ctx context.Context, inputs []TaskInput) 
 	return tasks, nil
 }
 
-func newTaskPrototype(ctx context.Context, mutation string, arguments map[string]interface{}) TaskRow {
+func newTaskPrototype(ctx context.Context, mutation string, arguments map[string]any) TaskRow {
 	now := Now(ctx)
 	return TaskRow{
 		ID:        gensym.RandomBase32(),
@@ -456,7 +456,7 @@ func (r *TaskResolver) Label(ctx context.Context) (string, error) {
 	}
 	methodType, _ := reflect.TypeOf(r.Q).MethodByName(methodName)
 	args := reflect.New(methodType.Type.In(2))
-	if err := scalars.DecodeStruct((map[string]interface{})(r.Arguments), args.Interface()); err != nil {
+	if err := scalars.DecodeStruct((map[string]any)(r.Arguments), args.Interface()); err != nil {
 		return "", fmt.Errorf("decoding arguments: %w", err)
 	}
 	// TODO: Use more flexible calling conventions, like other resolver methods.

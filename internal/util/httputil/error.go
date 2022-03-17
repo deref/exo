@@ -28,7 +28,7 @@ func WriteError(w http.ResponseWriter, req *http.Request, err error) {
 	contentType, _ := accept.Negotiate(req.Header.Get("accept"), "application/json", "text/html", "text/plain")
 	switch contentType {
 	case "application/json":
-		WriteJSON(w, req, status, map[string]interface{}{
+		WriteJSON(w, req, status, map[string]any{
 			"status":  status,
 			"message": message,
 		})

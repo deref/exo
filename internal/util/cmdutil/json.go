@@ -10,8 +10,8 @@ import (
 	"strings"
 )
 
-func ArgsToJsonObject(args []string) (map[string]interface{}, error) {
-	m := make(map[string]interface{}, len(args))
+func ArgsToJsonObject(args []string) (map[string]any, error) {
+	m := make(map[string]any, len(args))
 	for _, arg := range args {
 		k, v, err := ArgToJsonEntry(arg)
 		if err != nil {
@@ -22,7 +22,7 @@ func ArgsToJsonObject(args []string) (map[string]interface{}, error) {
 	return m, nil
 }
 
-func ArgToJsonEntry(arg string) (k string, v interface{}, err error) {
+func ArgToJsonEntry(arg string) (k string, v any, err error) {
 	parts := strings.SplitN(arg, "=", 2)
 	if len(parts) != 2 {
 		err = errors.New(`expected "=" or ":="`)

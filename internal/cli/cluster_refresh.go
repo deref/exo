@@ -29,7 +29,7 @@ automatically refreshed at some periodic frequency.`,
 		var m struct {
 			Cluster *clusterFragment `graphql:"refreshCluster(ref: $cluster)"`
 		}
-		if err := api.Mutate(ctx, svc, &m, map[string]interface{}{
+		if err := api.Mutate(ctx, svc, &m, map[string]any{
 			"cluster": cluster.ID,
 		}); err != nil {
 			return err

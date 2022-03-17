@@ -28,7 +28,7 @@ func (bs Bytes) Uint64() uint64 {
 	return uint64(bs.Int64())
 }
 
-func (bs Bytes) MarshalYAML() (interface{}, error) {
+func (bs Bytes) MarshalYAML() (any, error) {
 	if bs.Unit.Suffix == "" {
 		return bs.Quantity, nil
 	}

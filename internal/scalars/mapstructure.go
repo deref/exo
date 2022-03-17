@@ -7,7 +7,7 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
-func DecodeStruct(input, output interface{}) error {
+func DecodeStruct(input, output any) error {
 	dec, err := mapstructure.NewDecoder(&mapstructure.DecoderConfig{
 		Result:     output,
 		Squash:     true,
@@ -21,7 +21,7 @@ func DecodeStruct(input, output interface{}) error {
 	return err
 }
 
-func decodeStructHook(from reflect.Type, to reflect.Type, data interface{}) (interface{}, error) {
+func decodeStructHook(from reflect.Type, to reflect.Type, data any) (any, error) {
 	switch to.Kind() {
 	case reflect.Int, reflect.String, reflect.Bool:
 		return data, nil

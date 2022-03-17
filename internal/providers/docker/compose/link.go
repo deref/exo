@@ -24,7 +24,7 @@ type Link struct {
 	Alias   string
 }
 
-func (l Link) MarshalYAML() (interface{}, error) {
+func (l Link) MarshalYAML() (any, error) {
 	return l.String, nil
 }
 

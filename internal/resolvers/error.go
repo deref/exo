@@ -18,6 +18,6 @@ func isSqlConflict(err error) bool {
 	return false
 }
 
-func conflictErrorf(format string, v ...interface{}) error {
+func conflictErrorf(format string, v ...any) error {
 	return errutil.HTTPErrorf(http.StatusConflict, format, v...)
 }

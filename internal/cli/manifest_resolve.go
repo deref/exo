@@ -31,7 +31,7 @@ Ignores the workspaces's configured manifest path.`,
 				} `graphql:"findManifest(format: $format)"`
 			} `graphql:"workspaceByRef(ref: $currentWorkspace)"`
 		}
-		vars := map[string]interface{}{}
+		vars := map[string]any{}
 		if manifestResolveFlags.Format == "" {
 			vars["format"] = (*string)(nil)
 		} else {

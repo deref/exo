@@ -27,7 +27,7 @@ by a resource controller.`,
 					__typename
 				}
 			}
-		`, map[string]interface{}{
+		`, map[string]any{
 			"ref": ref,
 		})
 	},

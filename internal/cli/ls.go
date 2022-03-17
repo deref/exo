@@ -32,7 +32,7 @@ var lsCmd = &cobra.Command{
 				} `graphql:"components(all: $all)"`
 			} `graphql:"stackByRef(ref: $currentStack)"`
 		}
-		mustQueryStack(ctx, &q, map[string]interface{}{
+		mustQueryStack(ctx, &q, map[string]any{
 			"all": lsFlags.All,
 		})
 		var w *cmdutil.TableWriter

@@ -85,8 +85,8 @@ func resolveWorkspace(ctx context.Context, cl *joshclient.Root, ref string) (*jo
 // Supplies the reserved variable "currentWorkspace" and exits if there is no
 // current workspace. The supplied query must have a pointer field named
 // `Workspace` tagged with `graphql:"workspaceByRef(ref: $currentWorkspace)"`.
-func mustQueryWorkspace(ctx context.Context, q interface{}, vars map[string]interface{}) {
-	vars = jsonutil.Merge(map[string]interface{}{
+func mustQueryWorkspace(ctx context.Context, q any, vars map[string]any) {
+	vars = jsonutil.Merge(map[string]any{
 		"currentWorkspace": currentWorkspaceRef(),
 	}, vars)
 	if err := api.Query(ctx, svc, q, vars); err != nil {

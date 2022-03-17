@@ -29,7 +29,7 @@ var projectNewCmd = &cobra.Command{
 				ID string
 			} `graphql:"createProject(displayName: $displayName)"`
 		}
-		if err := api.Mutate(ctx, svc, &m, map[string]interface{}{
+		if err := api.Mutate(ctx, svc, &m, map[string]any{
 			"displayName": projectNewFlags.DisplayName,
 		}); err != nil {
 			return err

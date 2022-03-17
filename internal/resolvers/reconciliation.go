@@ -138,7 +138,7 @@ func (r *MutationResolver) ReconcileComponent(ctx context.Context, args struct {
 				}
 			}
 			if reconcileID != "" {
-				_, err := r.createTask(ctx, "reconcileComponent", map[string]interface{}{
+				_, err := r.createTask(ctx, "reconcileComponent", map[string]any{
 					"ref": reconcileID,
 				})
 				if err != nil {

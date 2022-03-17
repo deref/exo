@@ -10,7 +10,7 @@ type Command struct {
 	Parts       Strings
 }
 
-func (cmd Command) MarshalYAML() (interface{}, error) {
+func (cmd Command) MarshalYAML() (any, error) {
 	if cmd.IsShellForm {
 		return cmd.Parts[0], nil
 	}

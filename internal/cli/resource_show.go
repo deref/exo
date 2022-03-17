@@ -26,18 +26,18 @@ var resourceShowCmd = &cobra.Command{
 				Model scalars.JSONObject
 			} `graphql:"resourceByRef(ref: $ref)"`
 		}
-		if err := api.Query(ctx, svc, &q, map[string]interface{}{
+		if err := api.Query(ctx, svc, &q, map[string]any{
 			"ref": ref,
 		}); err != nil {
 			return err
 		}
 		if q.Resource != nil {
 			resource := *q.Resource
-			cmdutil.PrintCueStruct(map[string]interface{}{
+			cmdutil.PrintCueStruct(map[string]any{
 				"id":    resource.ID,
 				"type":  resource.Type,
 				"iri":   resource.IRI,
-				"model": (map[string]interface{})(resource.Model),
+				"model": (map[string]any)(resource.Model),
 			})
 		}
 		return nil

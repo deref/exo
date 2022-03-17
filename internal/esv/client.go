@@ -161,7 +161,7 @@ func (c *esvClient) ensureAccessToken(host string) error {
 	return nil
 }
 
-func (c *esvClient) runCommand(output interface{}, host, commandName string, body interface{}) error {
+func (c *esvClient) runCommand(output any, host, commandName string, body any) error {
 	marshalledBody, err := json.Marshal(body)
 	if err != nil {
 		return fmt.Errorf("marshalling command body: %w", err)

@@ -32,7 +32,7 @@ cluster.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 
-		vars := map[string]interface{}{
+		vars := map[string]any{
 			"workspace": currentWorkspaceRef(),
 		}
 		if cmd.Flags().Lookup("name").Changed {

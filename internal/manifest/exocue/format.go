@@ -9,7 +9,7 @@ import (
 	"cuelang.org/go/cue/parser"
 )
 
-func FormatBytes(v interface{}) ([]byte, error) {
+func FormatBytes(v any) ([]byte, error) {
 	var node ast.Node
 	switch v := v.(type) {
 	case cue.Value:
@@ -30,12 +30,12 @@ func FormatBytes(v interface{}) ([]byte, error) {
 	return format.Node(node)
 }
 
-func FormatString(v interface{}) (string, error) {
+func FormatString(v any) (string, error) {
 	bs, err := FormatBytes(v)
 	return string(bs), err
 }
 
-func MustFormatString(v interface{}) string {
+func MustFormatString(v any) string {
 	s, err := FormatString(v)
 	if err != nil {
 		panic(err)
@@ -43,11 +43,11 @@ func MustFormatString(v interface{}) string {
 	return s
 }
 
-func Dump(v interface{}) {
+func Dump(v any) {
 	fmt.Println(MustFormatString(v))
 }
 
-func StructToFile(v interface{}) *ast.File {
+func StructToFile(v any) *ast.File {
 	var decls []ast.Decl
 	switch v := v.(type) {
 	case cue.Value:

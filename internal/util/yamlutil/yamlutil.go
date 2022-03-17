@@ -7,7 +7,7 @@ import (
 )
 
 // Prefers 2 space indentation.
-func Marshal(v interface{}) ([]byte, error) {
+func Marshal(v any) ([]byte, error) {
 	var buf bytes.Buffer
 	enc := yaml.NewEncoder(&buf)
 	enc.SetIndent(2)
@@ -15,12 +15,12 @@ func Marshal(v interface{}) ([]byte, error) {
 	return buf.Bytes(), err
 }
 
-func MarshalString(v interface{}) (string, error) {
+func MarshalString(v any) (string, error) {
 	bs, err := Marshal(v)
 	return string(bs), err
 }
 
-func MustMarshalString(v interface{}) string {
+func MustMarshalString(v any) string {
 	s, err := MarshalString(v)
 	if err != nil {
 		panic(err)
@@ -28,11 +28,11 @@ func MustMarshalString(v interface{}) string {
 	return s
 }
 
-func UnmarshalString(s string, v interface{}) error {
+func UnmarshalString(s string, v any) error {
 	return yaml.Unmarshal([]byte(s), v)
 }
 
-func MustUnmarshalString(s string, v interface{}) {
+func MustUnmarshalString(s string, v any) {
 	if err := UnmarshalString(s, v); err != nil {
 		panic(err)
 	}

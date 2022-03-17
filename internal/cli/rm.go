@@ -25,7 +25,7 @@ var rmCmd = &cobra.Command{
 				}
 			} `graphql:"disposeComponents(stack: $stack, refs: $components)"`
 		}
-		if err := api.Mutate(ctx, svc, &m, map[string]interface{}{
+		if err := api.Mutate(ctx, svc, &m, map[string]any{
 			"stack":      currentStackRef(),
 			"components": refs,
 		}); err != nil {

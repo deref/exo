@@ -4,7 +4,7 @@ import "fmt"
 
 type Package struct {
 	path    string
-	members []interface{}
+	members []any
 	names   map[string]Named
 	errors  []error
 }

@@ -112,7 +112,7 @@ func (r *MutationResolver) BusyWork(ctx context.Context, args struct {
 		var err error
 		if d > 0 {
 			w := rand.Intn(width + 1)
-			_, err = r.createTask(ctx, "busyWork", map[string]interface{}{
+			_, err = r.createTask(ctx, "busyWork", map[string]any{
 				"size":     args.Size,
 				"width":    w,
 				"depth":    d,

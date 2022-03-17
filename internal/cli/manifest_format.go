@@ -31,7 +31,7 @@ specified file is updated in-place.`,
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		vars := map[string]interface{}{}
+		vars := map[string]any{}
 		if manifestFormatFlags.Format == "" {
 			vars["format"] = (*string)(nil)
 		} else {

@@ -32,23 +32,23 @@ func (_ Instant) ImplementsGraphQLType(name string) bool {
 	return name == "Instant"
 }
 
-func (inst *Instant) UnmarshalGraphQL(input interface{}) (err error) {
+func (inst *Instant) UnmarshalGraphQL(input any) (err error) {
 	return inst.unmarshal(input)
 }
 
 func (inst *Instant) UnmarshalJSON(bs []byte) (err error) {
-	var v interface{}
+	var v any
 	if err := json.Unmarshal(bs, &v); err != nil {
 		return err
 	}
 	return inst.unmarshal(v)
 }
 
-func (inst *Instant) Scan(src interface{}) error {
+func (inst *Instant) Scan(src any) error {
 	return inst.unmarshal(src)
 }
 
-func (inst *Instant) unmarshal(v interface{}) (err error) {
+func (inst *Instant) unmarshal(v any) (err error) {
 	s, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("expected string, got %T", v)

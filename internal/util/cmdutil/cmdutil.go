@@ -18,12 +18,12 @@ func Show(s string) {
 	}
 }
 
-func Warnf(format string, v ...interface{}) {
+func Warnf(format string, v ...any) {
 	fmt.Fprintf(os.Stderr, "%v\n", fmt.Errorf(format, v...))
 }
 
 // TODO: Many usages of this should panic, not hard-exit.
-func Fatalf(format string, v ...interface{}) {
+func Fatalf(format string, v ...any) {
 	Warnf(format, v...)
 	os.Exit(1)
 }

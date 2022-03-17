@@ -9,7 +9,7 @@ import (
 
 // Implementation of the error interface for any panic value.
 type Panic struct {
-	Value interface{}
+	Value any
 }
 
 func (err Panic) Error() string {
@@ -17,7 +17,7 @@ func (err Panic) Error() string {
 }
 
 // Coerces non-nil values to errors, wrapping non-errors in a Panic structure.
-func ToError(x interface{}) error {
+func ToError(x any) error {
 	switch x := x.(type) {
 	case nil:
 		return nil
@@ -50,7 +50,7 @@ func (err TracedError) Stack() string {
 }
 
 // Like ToError, but wraps non-nil errors as a TracedError.
-func ToTracedError(r interface{}) error {
+func ToTracedError(r any) error {
 	switch err := ToError(r).(type) {
 	case nil:
 		return nil

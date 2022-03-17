@@ -19,7 +19,7 @@ type BuildLongForm struct {
 	Target     String     `yaml:"target,omitempty"`
 }
 
-func (b Build) MarshalYAML() (interface{}, error) {
+func (b Build) MarshalYAML() (any, error) {
 	if b.ShortForm.Expression != "" {
 		return b.ShortForm.Expression, nil
 	}

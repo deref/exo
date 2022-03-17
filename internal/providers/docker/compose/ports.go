@@ -82,8 +82,8 @@ func ParsePortMapping(short string) (PortMappingLongForm, error) {
 // https://regex101.com/r/qvbqTT/2
 var portRegexp = regexp.MustCompile(`^((?P<ip>[a-fA-F\d.:]+?):)??((?P<published>([-\d]+)?):)?(?P<target>[-\d]+)(/(?P<protocol>.+))?$`)
 
-func (mappings PortMappings) MarshalYAML() (interface{}, error) {
-	res := make([]interface{}, len(mappings))
+func (mappings PortMappings) MarshalYAML() (any, error) {
+	res := make([]any, len(mappings))
 	for i, x := range mappings {
 		res[i] = x // TODO: Marshal to short syntax if possible.
 	}
@@ -117,7 +117,7 @@ func (pm *PortMapping) Interpolate(env Environment) error {
 	return err
 }
 
-func (pm PortMapping) MarshalYAML() (interface{}, error) {
+func (pm PortMapping) MarshalYAML() (any, error) {
 	if pm.IsShortForm {
 		return pm.String, nil
 	}
@@ -181,7 +181,7 @@ func (rng *PortRange) Interpolate(env Environment) error {
 	return err
 }
 
-func (rng PortRange) MarshalYAML() (interface{}, error) {
+func (rng PortRange) MarshalYAML() (any, error) {
 	if rng.Min == rng.Max {
 		return rng.Min, nil
 	}
@@ -209,7 +209,7 @@ func (rng *PortRangeWithProtocol) Interpolate(env Environment) error {
 	return err
 }
 
-func (rng PortRangeWithProtocol) MarshalYAML() (interface{}, error) {
+func (rng PortRangeWithProtocol) MarshalYAML() (any, error) {
 	if rng.Min == rng.Max {
 		return rng.Min, nil
 	}

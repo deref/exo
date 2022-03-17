@@ -8,13 +8,13 @@ import (
 
 type Event struct {
 	// Set by event constructor.
-	Type            string                 `json:"event_type"`
-	EventProperties map[string]interface{} `json:"event_properties,omitempty"`
-	UserProperties  map[string]interface{} `json:"user_properties,omitempty"`
-	Platform        string                 `json:"platform,omitempty"`
-	OSName          string                 `json:"os_name,omitempty"`
-	OSVersion       string                 `json:"os_version,omitempty"`
-	AppVersion      string                 `json:"app_version,omitempty"`
+	Type            string         `json:"event_type"`
+	EventProperties map[string]any `json:"event_properties,omitempty"`
+	UserProperties  map[string]any `json:"user_properties,omitempty"`
+	Platform        string         `json:"platform,omitempty"`
+	OSName          string         `json:"os_name,omitempty"`
+	OSVersion       string         `json:"os_version,omitempty"`
+	AppVersion      string         `json:"app_version,omitempty"`
 
 	// Set by telemetry.
 	DeviceID  string `json:"device_id"`
@@ -29,7 +29,7 @@ func SystemInfoIdentifiedEvent() Event {
 		Platform:   runtime.GOARCH,
 		OSName:     runtime.GOOS,
 		AppVersion: about.Version,
-		EventProperties: map[string]interface{}{
+		EventProperties: map[string]any{
 			"cpu_count": runtime.NumCPU(),
 		},
 	}
@@ -38,7 +38,7 @@ func SystemInfoIdentifiedEvent() Event {
 func OperationsPerformedEvent(operation string, success bool, duration SummaryStatistics) Event {
 	return Event{
 		Type: "operations-performed",
-		EventProperties: map[string]interface{}{
+		EventProperties: map[string]any{
 			"operation":       operation,
 			"success":         success,
 			"occurrences":     duration.Count,

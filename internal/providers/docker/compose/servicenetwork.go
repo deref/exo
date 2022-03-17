@@ -57,7 +57,7 @@ func (sn *ServiceNetworks) Interpolate(env Environment) error {
 	return interpolateSlice(sn.Items, env)
 }
 
-func (sn ServiceNetworks) MarshalYAML() (interface{}, error) {
+func (sn ServiceNetworks) MarshalYAML() (any, error) {
 	if sn.Style == UnknownStyle {
 		sn.Style = SeqStyle
 		for _, item := range sn.Items {
@@ -108,7 +108,7 @@ func (sn *ServiceNetwork) Interpolate(env Environment) error {
 	return sn.ServiceNetworkLongForm.Interpolate(env)
 }
 
-func (sn ServiceNetwork) MarshalYAML() (interface{}, error) {
+func (sn ServiceNetwork) MarshalYAML() (any, error) {
 	if sn.ShortForm.Expression != "" {
 		return sn.ShortForm.Expression, nil
 	}

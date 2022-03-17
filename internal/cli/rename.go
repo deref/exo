@@ -17,7 +17,7 @@ var renameCmd = &cobra.Command{
 		ctx := cmd.Context()
 		ref := args[0]
 		newName := args[1]
-		return sendMutation(ctx, "updateComponent", map[string]interface{}{
+		return sendMutation(ctx, "updateComponent", map[string]any{
 			"stack":   currentStackRef(),
 			"ref":     ref,
 			"newName": newName,

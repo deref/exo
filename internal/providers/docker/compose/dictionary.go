@@ -26,7 +26,7 @@ type DictionaryItem struct {
 	NoValue bool
 }
 
-func (dict Dictionary) MarshalYAML() (interface{}, error) {
+func (dict Dictionary) MarshalYAML() (any, error) {
 	if dict.Style == SeqStyle {
 		return dict.Items, nil
 	}
@@ -77,7 +77,7 @@ func (dict *Dictionary) Interpolate(env Environment) error {
 	return nil
 }
 
-func (item DictionaryItem) MarshalYAML() (interface{}, error) {
+func (item DictionaryItem) MarshalYAML() (any, error) {
 	if item.Style == SeqStyle {
 		if item.String.Expression != "" {
 			return item.String.Expression, nil
