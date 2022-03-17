@@ -30,7 +30,7 @@ exo help new process
 	},
 }
 
-func createComponent(ctx context.Context, name, typ string, spec interface{}) error {
+func createComponent(ctx context.Context, name, typ string, spec any) error {
 	var m struct {
 		Reconciliation struct {
 			Component struct {
@@ -41,7 +41,7 @@ func createComponent(ctx context.Context, name, typ string, spec interface{}) er
 			}
 		} `graphql:"createComponent(stack: $stack, name: $name, type: $type, spec: $spec)"`
 	}
-	if err := api.Mutate(ctx, svc, &m, map[string]interface{}{
+	if err := api.Mutate(ctx, svc, &m, map[string]any{
 		"stack": currentStackRef(),
 		"name":  name,
 		"type":  typ,

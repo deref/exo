@@ -59,7 +59,7 @@ func (t *defaultTelemetry) SendEvent(ctx context.Context, evt Event) {
 	evt.Time = chrono.NowMillisecond(ctx)
 
 	if evt.UserProperties == nil {
-		evt.UserProperties = make(map[string]interface{})
+		evt.UserProperties = make(map[string]any)
 	}
 	evt.UserProperties["isDerefInternalUser"] = t.derefInternalUser
 	evt.UserProperties["osArch"] = fmt.Sprintf("%s/%s", runtime.GOOS, runtime.GOARCH)
@@ -95,7 +95,7 @@ func (t *defaultTelemetry) ensureSession(ctx context.Context) {
 	})
 }
 
-func (t *defaultTelemetry) getLatestVersion() (interface{}, error) {
+func (t *defaultTelemetry) getLatestVersion() (any, error) {
 	resp, err := t.client.Get(about.CheckVersionEndpoint)
 	if err != nil {
 		return "", fmt.Errorf("fetching latest version: %w", err)

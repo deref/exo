@@ -48,8 +48,8 @@ func currentStackRef() string {
 // Supplies the reserved variable "currentStack" and exits if there is no
 // current stack. The supplied query must have a pointer field named
 // `Stack` tagged with `graphql:"stackByRef(ref: $currentStack)"`.
-func mustQueryStack(ctx context.Context, q interface{}, vars map[string]interface{}) {
-	vars = jsonutil.Merge(map[string]interface{}{
+func mustQueryStack(ctx context.Context, q any, vars map[string]any) {
+	vars = jsonutil.Merge(map[string]any{
 		"currentStack": currentStackRef(),
 	}, vars)
 	if err := api.Query(ctx, svc, q, vars); err != nil {

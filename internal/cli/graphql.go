@@ -32,8 +32,8 @@ Arguments are specified as JSON with the same syntax as 'exo json'.`,
 		enc := json.NewEncoder(os.Stdout)
 		enc.SetIndent("", "  ")
 
-		newRes := func() interface{} {
-			var res interface{}
+		newRes := func() any {
+			var res any
 			return &res
 		}
 		sub := svc.Subscribe(ctx, newRes, doc, vars)

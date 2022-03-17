@@ -24,15 +24,15 @@ func (_ ULID) ImplementsGraphQLType(name string) bool {
 	return name == "ULID"
 }
 
-func (u *ULID) UnmarshalGraphQL(input interface{}) error {
+func (u *ULID) UnmarshalGraphQL(input any) error {
 	return u.unmarshal(input)
 }
 
-func (u *ULID) Scan(src interface{}) error {
+func (u *ULID) Scan(src any) error {
 	return u.unmarshal(src)
 }
 
-func (u *ULID) unmarshal(v interface{}) error {
+func (u *ULID) unmarshal(v any) error {
 	s, ok := v.(string)
 	if !ok {
 		return fmt.Errorf("expected string, got %T", v)

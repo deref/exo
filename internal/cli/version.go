@@ -30,7 +30,7 @@ var versionCmd = &cobra.Command{
 			Managed: about.IsManaged,
 		}
 
-		res := map[string]interface{}{}
+		res := map[string]any{}
 
 		if isPeerMode() {
 			res["peer"] = client

@@ -14,7 +14,7 @@ type DeviceMapping struct {
 	CgroupPermissions string
 }
 
-func (dm DeviceMapping) MarshalYAML() (interface{}, error) {
+func (dm DeviceMapping) MarshalYAML() (any, error) {
 	if dm.String.Expression != "" {
 		return dm.String.Expression, nil
 	}

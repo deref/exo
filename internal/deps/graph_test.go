@@ -91,7 +91,7 @@ func TestTopologicalSort(t *testing.T) {
 			after:  "cake",
 		},
 	}
-	comesBefore := func(before, after interface{}) bool {
+	comesBefore := func(before, after any) bool {
 		iBefore := -1
 		iAfter := -1
 		for i, elem := range sorted {

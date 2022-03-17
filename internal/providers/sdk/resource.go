@@ -10,7 +10,7 @@ import (
 	"github.com/deref/exo/internal/util/jsonutil"
 )
 
-func unmarshalModel(ctx context.Context, label string, typ reflect.Type, obj scalars.JSONObject) (interface{}, error) {
+func unmarshalModel(ctx context.Context, label string, typ reflect.Type, obj scalars.JSONObject) (any, error) {
 	m := reflect.New(typ.Elem()).Interface()
 	err := scalars.DecodeStruct(obj, m)
 	if err != nil {
@@ -19,7 +19,7 @@ func unmarshalModel(ctx context.Context, label string, typ reflect.Type, obj sca
 	return m, err
 }
 
-func marshalModel(ctx context.Context, typ reflect.Type, m interface{}) (string, error) {
+func marshalModel(ctx context.Context, typ reflect.Type, m any) (string, error) {
 	s, err := jsonutil.MarshalString(m)
 	if err != nil {
 		err = fmt.Errorf("mashaling updated model: %w", err)

@@ -14,7 +14,7 @@ import (
 	"github.com/jmoiron/sqlx"
 )
 
-func (r *RootResolver) getRowByKey(ctx context.Context, dest interface{}, q string, id *string) error {
+func (r *RootResolver) getRowByKey(ctx context.Context, dest any, q string, id *string) error {
 	if id == nil {
 		return nil
 	}
@@ -46,12 +46,12 @@ func stringPtr(s string) *string {
 }
 
 // See insertRowEx.
-func (r *RootResolver) insertRow(ctx context.Context, table string, row interface{}) error {
+func (r *RootResolver) insertRow(ctx context.Context, table string, row any) error {
 	return r.insertRowEx(ctx, table, row, "")
 }
 
 // If row is a pointer, it will be updated with the results of `RETURNING *`.
-func (r *RootResolver) insertRowEx(ctx context.Context, table string, row interface{}, extra string) error {
+func (r *RootResolver) insertRowEx(ctx context.Context, table string, row any, extra string) error {
 	v := reflect.ValueOf(row)
 	returning := false
 	if v.Kind() == reflect.Ptr {
@@ -62,7 +62,7 @@ func (r *RootResolver) insertRowEx(ctx context.Context, table string, row interf
 	typ := v.Type()
 	n := typ.NumField()
 	columns := make([]string, 0, n)
-	values := make([]interface{}, 0, n)
+	values := make([]any, 0, n)
 	for i := 0; i < n; i++ {
 		tag := typ.Field(i).Tag.Get("db")
 		columns = append(columns, tag)
@@ -120,7 +120,7 @@ func transact(ctx context.Context, db *sqlx.DB, f func(tx *sqlx.Tx) error) error
 	return nil
 }
 
-func mustSqlIn(query string, args ...interface{}) (string, []interface{}) {
+func mustSqlIn(query string, args ...any) (string, []any) {
 	var err error
 	query, args, err = sqlx.In(query, args...)
 	if err != nil {
@@ -146,7 +146,7 @@ func isTrue(b *bool) bool {
 }
 
 func formatConfiguration(v cue.Value, final bool) (string, error) {
-	var res interface{}
+	var res any
 	if final {
 		res = exocue.Final(v)
 	} else if isValid(v) {

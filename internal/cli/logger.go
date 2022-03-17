@@ -25,7 +25,7 @@ func endExclusive() {
 	atomic.AddInt32(&exclusionDepth, 1)
 }
 
-func (l *Logger) Infof(format string, v ...interface{}) {
+func (l *Logger) Infof(format string, v ...any) {
 	if logToStderr() && atomic.LoadInt32(&exclusionDepth) == 0 {
 		fmt.Fprintf(os.Stderr, format+"\n", v...)
 	}

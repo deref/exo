@@ -83,7 +83,7 @@ func (b *Builder) AddComponent(id string, name string, typ string, spec string, 
 }
 
 func (b *Builder) AddResource(id string, typ string, iri *string, componentID *string) {
-	fields := []interface{}{
+	fields := []any{
 		"id", ast.NewString(id),
 		"type", ast.NewString(typ),
 	}
@@ -100,8 +100,8 @@ func (b *Builder) AddResource(id string, typ string, iri *string, componentID *s
 	}
 }
 
-func (b *Builder) AddCluster(id string, name string, environment map[string]interface{}) {
-	envElems := make([]interface{}, 0, len(environment)*2)
+func (b *Builder) AddCluster(id string, name string, environment map[string]any) {
+	envElems := make([]any, 0, len(environment)*2)
 	for k, v := range environment {
 		envElems = append(envElems, k, ast.NewString(v.(string)))
 	}

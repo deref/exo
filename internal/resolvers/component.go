@@ -346,7 +346,7 @@ func (r *MutationResolver) disposeComponent(ctx context.Context, id string) (*Co
 }
 
 func (r *MutationResolver) startComponentReconciliationJob(ctx context.Context, component *ComponentResolver) (*ReconciliationResolver, error) {
-	job, err := r.createJob(ctx, "reconcileComponent", map[string]interface{}{
+	job, err := r.createJob(ctx, "reconcileComponent", map[string]any{
 		"ref": component.ID,
 	})
 	if err != nil {
@@ -395,7 +395,7 @@ func (r *ComponentResolver) controller(ctx context.Context) (*sdk.Controller, er
 }
 
 func (r *MutationResolver) ensureComponentInitialize(ctx context.Context, componentID string) error {
-	return r.ensureTask(ctx, "initializeComponent", map[string]interface{}{
+	return r.ensureTask(ctx, "initializeComponent", map[string]any{
 		"id": componentID,
 	}, componentID)
 }
@@ -432,7 +432,7 @@ func (r *MutationResolver) InitializeComponent(ctx context.Context, args struct 
 }
 
 func (r *MutationResolver) ensureComponentTransition(ctx context.Context, id, spec string) error {
-	return r.ensureTask(ctx, "transitionComponent", map[string]interface{}{
+	return r.ensureTask(ctx, "transitionComponent", map[string]any{
 		"id":   id,
 		"spec": spec,
 	}, id)
@@ -446,7 +446,7 @@ func (r *MutationResolver) TransitionComponent(ctx context.Context, args struct 
 }
 
 func (r *MutationResolver) ensureComponentShutdown(ctx context.Context, componentID string) error {
-	return r.ensureTask(ctx, "shutdownComponent", map[string]interface{}{
+	return r.ensureTask(ctx, "shutdownComponent", map[string]any{
 		"id": componentID,
 	}, componentID)
 }

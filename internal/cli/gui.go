@@ -51,7 +51,7 @@ If the current directory is part of a workspace, navigates to it.`,
 				URL string
 			} `graphql:"workspaceByRef(ref: $cwd)"`
 		}
-		if err := api.Query(ctx, svc, &q, map[string]interface{}{
+		if err := api.Query(ctx, svc, &q, map[string]any{
 			"cwd": cmdutil.MustGetwd(),
 		}); err != nil {
 			return fmt.Errorf("querying: %w", err)

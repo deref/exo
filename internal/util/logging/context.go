@@ -16,7 +16,7 @@ func CurrentLogger(ctx context.Context) Logger {
 	return ctx.Value(loggerKey).(Logger)
 }
 
-func Infof(ctx context.Context, format string, v ...interface{}) {
+func Infof(ctx context.Context, format string, v ...any) {
 	logger := CurrentLogger(ctx)
 	if goLogger, ok := logger.(*GoLogger); ok {
 		logger = &GoLogger{

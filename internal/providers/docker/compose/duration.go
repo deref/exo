@@ -41,7 +41,7 @@ func (d *Duration) Interpolate(env Environment) error {
 	return err
 }
 
-func (d Duration) MarshalYAML() (interface{}, error) {
+func (d Duration) MarshalYAML() (any, error) {
 	if d.String.Expression != "" {
 		return d.String, nil
 	}

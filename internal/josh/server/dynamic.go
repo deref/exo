@@ -7,7 +7,7 @@ import (
 	"strings"
 )
 
-func Send(ctx context.Context, self interface{}, input interface{}) (output interface{}, err error) {
+func Send(ctx context.Context, self any, input any) (output any, err error) {
 	selfV := reflect.ValueOf(self)
 	inV := reflect.ValueOf(input)
 	inT := inV.Type()

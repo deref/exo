@@ -33,7 +33,7 @@ var showCmd = &cobra.Command{
 				Configuration string `graphql:"configuration(recursive: $recursive, final: $final)"`
 			} `graphql:"componentByRef(ref: $ref, stack: $stack)"`
 		}
-		if err := api.Query(ctx, svc, &q, map[string]interface{}{
+		if err := api.Query(ctx, svc, &q, map[string]any{
 			"ref":       ref,
 			"stack":     currentStackRef(),
 			"recursive": showFlags.Recursive,

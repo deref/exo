@@ -246,7 +246,7 @@ func (imp *Importer) prefixedName(name string, suffix string) string {
 	return out.String()
 }
 
-func makeComponentBlock(typ string, name string, spec interface{}, dependsOn []string) *hclgen.Block {
+func makeComponentBlock(typ string, name string, spec any, dependsOn []string) *hclgen.Block {
 	obj := yamlToHCL(spec).(*hclsyntax.ObjectConsExpr)
 	attrs := make([]*hclsyntax.Attribute, len(obj.Items))
 	for i, item := range obj.Items {
@@ -288,7 +288,7 @@ func makeComponentBlock(typ string, name string, spec interface{}, dependsOn []s
 	}
 }
 
-func yamlToHCL(v interface{}) hclsyntax.Expression {
+func yamlToHCL(v any) hclsyntax.Expression {
 	if v == nil {
 		return hclgen.NewNullLiteral(hcl.Range{})
 	}
@@ -453,7 +453,7 @@ func yamlToHCL(v interface{}) hclsyntax.Expression {
 	}
 }
 
-func yamlToHCLKey(v interface{}) hclsyntax.Expression {
+func yamlToHCLKey(v any) hclsyntax.Expression {
 	x := yamlToHCL(v)
 	if template, isTemplate := x.(*hclsyntax.TemplateExpr); isTemplate && len(template.Parts) == 1 {
 		if lit, isLit := template.Parts[0].(*hclsyntax.LiteralValueExpr); isLit && lit.Val.Type() == cty.String {

@@ -62,19 +62,19 @@ func (section *ProjectSecrets) UnmarshalYAML(node *yaml.Node) error {
 	return unmarshalSection(section, node)
 }
 
-func (section ProjectServices) MarshalYAML() (interface{}, error) {
+func (section ProjectServices) MarshalYAML() (any, error) {
 	return marshalSection(section)
 }
-func (section ProjectNetworks) MarshalYAML() (interface{}, error) {
+func (section ProjectNetworks) MarshalYAML() (any, error) {
 	return marshalSection(section)
 }
-func (section ProjectVolumes) MarshalYAML() (interface{}, error) {
+func (section ProjectVolumes) MarshalYAML() (any, error) {
 	return marshalSection(section)
 }
-func (section ProjectConfigs) MarshalYAML() (interface{}, error) {
+func (section ProjectConfigs) MarshalYAML() (any, error) {
 	return marshalSection(section)
 }
-func (section ProjectSecrets) MarshalYAML() (interface{}, error) {
+func (section ProjectSecrets) MarshalYAML() (any, error) {
 	return marshalSection(section)
 }
 
@@ -94,7 +94,7 @@ func (section *ProjectSecrets) Interpolate(env Environment) error {
 	return interpolateSlice(*section, env)
 }
 
-func unmarshalSection(v interface{}, node *yaml.Node) error {
+func unmarshalSection(v any, node *yaml.Node) error {
 	if node.Tag != "!!map" {
 		return fmt.Errorf("expected !!map, got %s", node.Tag)
 	}
@@ -115,7 +115,7 @@ func unmarshalSection(v interface{}, node *yaml.Node) error {
 	return nil
 }
 
-func marshalSection(v interface{}) (interface{}, error) {
+func marshalSection(v any) (any, error) {
 	rv := reflect.ValueOf(v)
 	n := rv.Len()
 	node := &yaml.Node{

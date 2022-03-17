@@ -39,13 +39,13 @@ func (p *Peer) Init(ctx context.Context) error {
 	return nil
 }
 
-func (p *Peer) Do(ctx context.Context, out interface{}, doc string, vars map[string]interface{}) error {
+func (p *Peer) Do(ctx context.Context, out any, doc string, vars map[string]any) error {
 	ctx, operationName, vars := p.prepareOperation(ctx, vars)
 	resp := p.schema.Exec(ctx, doc, operationName, vars)
 	return p.handleResponse(ctx, out, resp)
 }
 
-func (p *Peer) Subscribe(ctx context.Context, newRes func() interface{}, doc string, vars map[string]interface{}) api.Subscription {
+func (p *Peer) Subscribe(ctx context.Context, newRes func() any, doc string, vars map[string]any) api.Subscription {
 	ctx, operationName, vars := p.prepareOperation(ctx, vars)
 	ctx, cancel := context.WithCancel(ctx)
 
@@ -55,7 +55,7 @@ func (p *Peer) Subscribe(ctx context.Context, newRes func() interface{}, doc str
 		panic(err)
 	}
 
-	sink := make(chan interface{})
+	sink := make(chan any)
 	errs := make(chan error, 1)
 	go func() {
 		defer close(sink)
@@ -85,7 +85,7 @@ func (p *Peer) Subscribe(ctx context.Context, newRes func() interface{}, doc str
 	}
 }
 
-func (p *Peer) prepareOperation(ctx context.Context, vars map[string]interface{}) (_ context.Context, operationName string, _ map[string]interface{}) {
+func (p *Peer) prepareOperation(ctx context.Context, vars map[string]any) (_ context.Context, operationName string, _ map[string]any) {
 	ctxVars := api.CurrentContextVariables(ctx)
 	if ctxVars != nil && ctxVars.TaskID != "" {
 		ctx = logging.ContextWithLogger(ctx, &api.EventLogger{
@@ -99,15 +99,15 @@ func (p *Peer) prepareOperation(ctx context.Context, vars map[string]interface{}
 	operationName = "" // TODO: Allow caller to specify somehow?
 
 	if vars == nil {
-		vars = make(map[string]interface{})
+		vars = make(map[string]any)
 	} else {
-		vars = jsonutil.MustSimplify(vars).(map[string]interface{})
+		vars = jsonutil.MustSimplify(vars).(map[string]any)
 	}
 
 	return ctx, operationName, vars
 }
 
-func (p *Peer) handleResponse(ctx context.Context, out interface{}, resp *graphql.Response) error {
+func (p *Peer) handleResponse(ctx context.Context, out any, resp *graphql.Response) error {
 	for i, err := range resp.Errors {
 		if errors.Is(err, context.Canceled) {
 			// Unfortunately, there is no way to differentiate overall execution
@@ -135,13 +135,13 @@ func (p *Peer) handleResponse(ctx context.Context, out interface{}, resp *graphq
 }
 
 type Subscription struct {
-	events <-chan interface{}
+	events <-chan any
 	errs   <-chan error
 	err    error
 	cancel func()
 }
 
-func (sub *Subscription) Events() <-chan interface{} {
+func (sub *Subscription) Events() <-chan any {
 	return sub.events
 }
 
@@ -201,8 +201,8 @@ func isExternalError(err error) bool {
 	return ok
 }
 
-func errorExtensions(err error) map[string]interface{} {
-	iface, ok := err.(interface{ Extensions() map[string]interface{} })
+func errorExtensions(err error) map[string]any {
+	iface, ok := err.(interface{ Extensions() map[string]any })
 	if !ok {
 		return nil
 	}

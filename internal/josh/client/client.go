@@ -20,7 +20,7 @@ type Client struct {
 	Token string
 }
 
-func (c *Client) Invoke(ctx context.Context, method string, input interface{}, output interface{}) error {
+func (c *Client) Invoke(ctx context.Context, method string, input any, output any) error {
 	inputB, err := json.Marshal(input)
 	if err != nil {
 		return fmt.Errorf("marshalling input: %w", err)

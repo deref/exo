@@ -5,13 +5,13 @@ import (
 	"time"
 )
 
-type valFunc = func() (interface{}, error)
+type valFunc = func() (any, error)
 
 // TTLVal is a type that holds some value and lazily refreshes it when the
 // value is requested if a configurable duration has passed since it was
 // last refreshed.
 type TTLVal struct {
-	val    interface{}
+	val    any
 	getVal valFunc
 	runAt  time.Time
 	ttl    time.Duration
@@ -24,7 +24,7 @@ func NewTTLVal(getVal valFunc, ttl time.Duration) *TTLVal {
 	}
 }
 
-func (v *TTLVal) Get(ctx context.Context) (interface{}, error) {
+func (v *TTLVal) Get(ctx context.Context) (any, error) {
 	if time.Now().Sub(v.runAt) > v.ttl {
 		val, err := v.getVal()
 		if err != nil {

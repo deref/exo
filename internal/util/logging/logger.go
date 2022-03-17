@@ -6,7 +6,7 @@ import (
 )
 
 type Logger interface {
-	Infof(format string, v ...interface{})
+	Infof(format string, v ...any)
 	Sublogger(prefix string) Logger
 }
 
@@ -23,7 +23,7 @@ func Prefix(prefix, format string) string {
 	return prefix + ": " + format
 }
 
-func (l *GoLogger) Infof(format string, v ...interface{}) {
+func (l *GoLogger) Infof(format string, v ...any) {
 	format = Prefix(l.Prefix, format)
 	l.Underlying.Output(2+l.CallDepth, fmt.Sprintf(format, v...))
 }
@@ -44,7 +44,7 @@ func Default() Logger {
 
 type NopLogger struct{}
 
-func (nop *NopLogger) Infof(format string, v ...interface{}) {}
+func (nop *NopLogger) Infof(format string, v ...any) {}
 
 func (nop *NopLogger) Sublogger(prefix string) Logger {
 	return nop

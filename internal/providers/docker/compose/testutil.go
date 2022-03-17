@@ -10,7 +10,7 @@ import (
 	"gopkg.in/yaml.v3"
 )
 
-func testYAML(t *testing.T, name string, s string, v interface{}) {
+func testYAML(t *testing.T, name string, s string, v any) {
 	s = strings.TrimSpace(s)
 	t.Run("unmarshal_"+name, func(t *testing.T) {
 		out := zeroAddr(reflect.TypeOf(v))
@@ -38,7 +38,7 @@ func zeroAddr(typ reflect.Type) reflect.Value {
 	return reflect.MakeSlice(sliceType, 1, 1).Index(0).Addr()
 }
 
-func assertInterpolated(t *testing.T, env map[string]string, s string, v interface{}) {
+func assertInterpolated(t *testing.T, env map[string]string, s string, v any) {
 	s = strings.TrimSpace(s)
 	out := zeroAddr(reflect.TypeOf(v))
 	err := yaml.Unmarshal([]byte(s), out.Interface())

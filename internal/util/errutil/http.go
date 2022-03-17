@@ -47,7 +47,7 @@ func NewHTTPError(status int, message string) HTTPError {
 	return WithHTTPStatus(status, errors.New(message))
 }
 
-func HTTPErrorf(status int, format string, v ...interface{}) HTTPError {
+func HTTPErrorf(status int, format string, v ...any) HTTPError {
 	return WithHTTPStatus(status, fmt.Errorf(format, v...))
 }
 

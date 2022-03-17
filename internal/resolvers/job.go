@@ -37,7 +37,7 @@ func (r *MutationResolver) CreateJob(ctx context.Context, args struct {
 	return r.createJob(ctx, args.Mutation, args.Arguments)
 }
 
-func (r *MutationResolver) createJob(ctx context.Context, mutation string, arguments map[string]interface{}) (*JobResolver, error) {
+func (r *MutationResolver) createJob(ctx context.Context, mutation string, arguments map[string]any) (*JobResolver, error) {
 	task, err := r.createRootTask(ctx, mutation, arguments)
 	if err != nil {
 		return nil, err

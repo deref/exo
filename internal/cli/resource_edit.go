@@ -26,7 +26,7 @@ var resourceEditCmd = &cobra.Command{
 				Model string
 			} `graphql:"resourceByRef(ref: $ref)"`
 		}
-		if err := api.Query(ctx, svc, &q, map[string]interface{}{
+		if err := api.Query(ctx, svc, &q, map[string]any{
 			"ref": ref,
 		}); err != nil {
 			return fmt.Errorf("querying: %w", err)
@@ -41,7 +41,7 @@ var resourceEditCmd = &cobra.Command{
 		if err != nil {
 			return fmt.Errorf("editing: %w", err)
 		}
-		return sendMutation(ctx, "updateResource", map[string]interface{}{
+		return sendMutation(ctx, "updateResource", map[string]any{
 			"ref":   ref,
 			"model": newModel,
 		})

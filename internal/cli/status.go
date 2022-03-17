@@ -34,7 +34,7 @@ var statusCmd = &cobra.Command{
 		}
 		healthy, _ := checkHealthAndVersion()
 
-		cmdutil.PrintCueStruct(map[string]interface{}{
+		cmdutil.PrintCueStruct(map[string]any{
 			"healthy": healthy,
 			"pid":     pid,
 			"gui":     effectiveServerURL(),

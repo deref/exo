@@ -62,7 +62,7 @@ func (worker *Worker) Run(acquireCtx context.Context, workCtx context.Context) e
 	if worker.JobID != "" {
 		jobID = &worker.JobID
 	}
-	acquireVars := map[string]interface{}{
+	acquireVars := map[string]any{
 		"workerId": worker.ID,
 		"jobId":    jobID,
 	}
@@ -106,7 +106,7 @@ func (worker *Worker) workTask(ctx context.Context, id string) error {
 			Arguments JSONObject
 		} `graphql:"startTask(id: $id, workerId: $workerId)"`
 	}
-	if err := Mutate(ctx, worker.Service, &start, map[string]interface{}{
+	if err := Mutate(ctx, worker.Service, &start, map[string]any{
 		"id":       id,
 		"workerId": worker.ID,
 	}); err != nil {
@@ -121,7 +121,7 @@ func (worker *Worker) workTask(ctx context.Context, id string) error {
 	defer stopPolling()
 	eg.Go(func() error {
 		defer stopPolling()
-		vars := map[string]interface{}{
+		vars := map[string]any{
 			"id":       id,
 			"workerId": worker.ID,
 		}
@@ -152,7 +152,7 @@ func (worker *Worker) workTask(ctx context.Context, id string) error {
 		defer stopPolling()
 
 		taskErr := func() error {
-			args := (map[string]interface{})(task.Arguments)
+			args := (map[string]any)(task.Arguments)
 			mut, err := formatVoidMutation(task.Mutation, args)
 			if err != nil {
 				return fmt.Errorf("encoding mutation: %w", err)
@@ -171,7 +171,7 @@ func (worker *Worker) workTask(ctx context.Context, id string) error {
 				Typename string `graphql:"__typename"`
 			} `graphql:"finishTask(id: $id, error: $error)"`
 		}
-		vars := map[string]interface{}{
+		vars := map[string]any{
 			"id": id,
 		}
 		if taskErr == nil {
@@ -188,7 +188,7 @@ func (worker *Worker) workTask(ctx context.Context, id string) error {
 	return eg.Wait()
 }
 
-func formatVoidMutation(mutation string, vars map[string]interface{}) (string, error) {
+func formatVoidMutation(mutation string, vars map[string]any) (string, error) {
 	arguments := make([]*ast.Argument, 0, len(vars))
 	for k, v := range vars {
 		value, err := newValueNode(v)
@@ -242,7 +242,7 @@ func newNameNode(value string) *ast.Name {
 	}
 }
 
-func newValueNode(value interface{}) (ast.Value, error) {
+func newValueNode(value any) (ast.Value, error) {
 	switch value := value.(type) {
 	case string:
 		return &ast.StringValue{
@@ -262,7 +262,7 @@ func newValueNode(value interface{}) (ast.Value, error) {
 			Value: strconv.FormatFloat(value, 'f', -1, 64),
 		}, nil
 
-	case []interface{}:
+	case []any:
 		elements := make([]ast.Value, len(value))
 		for i, v := range value {
 			element, err := newValueNode(v)
@@ -276,7 +276,7 @@ func newValueNode(value interface{}) (ast.Value, error) {
 			Values: elements,
 		}, nil
 
-	case map[string]interface{}:
+	case map[string]any:
 		fields := make([]*ast.ObjectField, 0, len(value))
 		for k, v := range value {
 			vn, err := newValueNode(v)

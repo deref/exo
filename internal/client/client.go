@@ -18,7 +18,7 @@ func NewClient(url string, httpClient *http.Client) *Client {
 	}
 }
 
-func (cl *Client) Do(ctx context.Context, res interface{}, doc string, vars map[string]interface{}) error {
+func (cl *Client) Do(ctx context.Context, res any, doc string, vars map[string]any) error {
 	req := machinebox.NewRequest(doc)
 	for k, v := range vars {
 		req.Var(k, v)
@@ -30,6 +30,6 @@ func (cl *Client) Do(ctx context.Context, res interface{}, doc string, vars map[
 	return cl.gql.Run(ctx, req, res)
 }
 
-func (cl *Client) Subscribe(ctx context.Context, newRes func() interface{}, doc string, vars map[string]interface{}) api.Subscription {
+func (cl *Client) Subscribe(ctx context.Context, newRes func() any, doc string, vars map[string]any) api.Subscription {
 	panic("TODO: Client.Subscribe")
 }

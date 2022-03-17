@@ -26,7 +26,7 @@ func NewFileAtom(filename string, codec Codec) *FileAtom {
 	}
 }
 
-func (a *FileAtom) Deref(v interface{}) error {
+func (a *FileAtom) Deref(v any) error {
 	rv := reflect.ValueOf(v)
 	rv.Elem().Set(reflect.Zero(rv.Elem().Type()))
 
@@ -46,7 +46,7 @@ func (a *FileAtom) Deref(v interface{}) error {
 	return nil
 }
 
-func (a *FileAtom) Reset(v interface{}) error {
+func (a *FileAtom) Reset(v any) error {
 	bs, err := a.codec.Marshal(v)
 	if err != nil {
 		return fmt.Errorf("marshalling: %w", err)
@@ -60,7 +60,7 @@ func (a *FileAtom) Reset(v interface{}) error {
 	return nil
 }
 
-func (a *FileAtom) Swap(v interface{}, f func() error) error {
+func (a *FileAtom) Swap(v any, f func() error) error {
 	// Establish timeout.
 	ctx := context.Background()
 	ctx, cancel := context.WithTimeout(ctx, 1*time.Second)

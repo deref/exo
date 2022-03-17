@@ -27,7 +27,7 @@ var editCmd = &cobra.Command{
 				Spec string
 			} `graphql:"componentByRef(ref: $ref, stack: $stack)"`
 		}
-		if err := api.Query(ctx, svc, &q, map[string]interface{}{
+		if err := api.Query(ctx, svc, &q, map[string]any{
 			"ref":   ref,
 			"stack": currentStackRef(),
 		}); err != nil {
@@ -43,7 +43,7 @@ var editCmd = &cobra.Command{
 			return fmt.Errorf("editing: %w", err)
 		}
 
-		return sendMutation(ctx, "updateComponent", map[string]interface{}{
+		return sendMutation(ctx, "updateComponent", map[string]any{
 			"ref":     q.Component.ID,
 			"newSpec": newSpec,
 		})

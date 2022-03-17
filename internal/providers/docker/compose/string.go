@@ -49,7 +49,7 @@ func (s *String) UnmarshalYAML(node *yaml.Node) error {
 	return err
 }
 
-func (s String) MarshalYAML() (interface{}, error) {
+func (s String) MarshalYAML() (any, error) {
 	return &yaml.Node{
 		Kind:  yaml.ScalarNode,
 		Tag:   s.Tag,

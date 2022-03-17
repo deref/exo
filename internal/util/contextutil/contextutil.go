@@ -21,7 +21,7 @@ func (c noCancel) Err() error {
 	return nil
 }
 
-func (c noCancel) Value(key interface{}) interface{} {
+func (c noCancel) Value(key any) any {
 	return c.ctx.Value(key)
 }
 

@@ -38,7 +38,7 @@ func TestManifestToComponent(t *testing.T) {
 	type Spec struct {
 		Program     string
 		Arguments   []string
-		Environment map[string]interface{}
+		Environment map[string]any
 	}
 	type Component struct {
 		Name string
@@ -53,7 +53,7 @@ func TestManifestToComponent(t *testing.T) {
 		Spec: Spec{
 			Program:   "./run-backend.sh",
 			Arguments: []string{},
-			Environment: map[string]interface{}{
+			Environment: map[string]any{
 				"PORT":          "1234",
 				"COMMON":        "VAR",
 				"EXO_COMPONENT": "backend",

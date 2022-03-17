@@ -17,7 +17,7 @@ type Interpolator interface {
 	Interpolate(Environment) error
 }
 
-func interpolateStruct(v interface{}, env Environment) error {
+func interpolateStruct(v any, env Environment) error {
 	strct := reflect.ValueOf(v).Elem()
 	structType := strct.Type()
 	numField := structType.NumField()
@@ -53,7 +53,7 @@ func interpolateStruct(v interface{}, env Environment) error {
 	return nil
 }
 
-func interpolateSlice(v interface{}, env Environment) error {
+func interpolateSlice(v any, env Environment) error {
 	slice := reflect.ValueOf(v)
 	n := slice.Len()
 	for i := 0; i < n; i++ {

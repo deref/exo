@@ -44,7 +44,7 @@ func (uls *Ulimits) Interpolate(env Environment) error {
 	return interpolateSlice(*uls, env)
 }
 
-func (uls Ulimits) MarshalYAML() (interface{}, error) {
+func (uls Ulimits) MarshalYAML() (any, error) {
 	node := &yaml.Node{
 		Kind:    yaml.MappingNode,
 		Content: make([]*yaml.Node, len(uls)*2),
@@ -85,7 +85,7 @@ func (ul *Ulimit) Interpolate(env Environment) error {
 	return ul.UlimitLongForm.Interpolate(env)
 }
 
-func (ul Ulimit) MarshalYAML() (interface{}, error) {
+func (ul Ulimit) MarshalYAML() (any, error) {
 	if ul.ShortForm.Tag != "" {
 		return ul.ShortForm, nil
 	}

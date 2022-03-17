@@ -8,7 +8,7 @@ import (
 type Entity struct {
 	Type       string
 	ID         string
-	Underlying interface{}
+	Underlying any
 }
 
 type EntityRef struct {

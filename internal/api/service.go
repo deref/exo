@@ -13,28 +13,28 @@ type Service interface {
 	Shutdown(context.Context) error
 	// Execute a GraphQL operation synchronously, decoding the response data in to res.
 	// Implementations should also respect CurrentContextVariables.
-	Do(ctx context.Context, res interface{}, doc string, vars map[string]interface{}) error
+	Do(ctx context.Context, res any, doc string, vars map[string]any) error
 	// Begin a GraphQL subscription operation. Decodes responses in to the result
 	// of invoking newRes for each event response. Decoded responses are
 	// delivered to to consumers via Subscription.Events().
-	Subscribe(ctx context.Context, newRes func() interface{}, doc string, vars map[string]interface{}) Subscription
+	Subscribe(ctx context.Context, newRes func() any, doc string, vars map[string]any) Subscription
 }
 
 type Subscription interface {
 	// Yields events until the subscription is stopped.  The element type is
 	// specified via the original Subscribe() method call.
-	Events() <-chan interface{}
+	Events() <-chan any
 	Err() error
 	Stop()
 }
 
-func Query(ctx context.Context, svc Service, q interface{}, vars map[string]interface{}) error {
+func Query(ctx context.Context, svc Service, q any, vars map[string]any) error {
 	res := newSelectionUnmarshaler(q)
 	doc := marshalReflectiveOperation(gql.Query, q, vars)
 	return svc.Do(ctx, res, doc, vars)
 }
 
-func Mutate(ctx context.Context, svc Service, m interface{}, vars map[string]interface{}) error {
+func Mutate(ctx context.Context, svc Service, m any, vars map[string]any) error {
 	res := newSelectionUnmarshaler(m)
 	doc := marshalReflectiveOperation(gql.Mutation, m, vars)
 	return svc.Do(ctx, res, doc, vars)
@@ -42,22 +42,22 @@ func Mutate(ctx context.Context, svc Service, m interface{}, vars map[string]int
 
 // Like Query and Mutate, but the reflective structure will not be modified directly.
 // Instead, a new instance will be allocated for each event.
-func Subscribe(ctx context.Context, svc Service, s interface{}, vars map[string]interface{}) Subscription {
+func Subscribe(ctx context.Context, svc Service, s any, vars map[string]any) Subscription {
 	resType := reflect.TypeOf(s).Elem()
-	newRes := func() interface{} {
+	newRes := func() any {
 		return newSelectionUnmarshaler(reflect.New(resType).Interface())
 	}
 	doc := marshalReflectiveOperation(gql.Subscription, s, vars)
 	return svc.Subscribe(ctx, newRes, doc, vars)
 }
 
-func newSelectionUnmarshaler(sel interface{}) *encoding.SelectionUnmarshaler {
+func newSelectionUnmarshaler(sel any) *encoding.SelectionUnmarshaler {
 	return &encoding.SelectionUnmarshaler{
 		Selection: sel,
 	}
 }
 
-func marshalReflectiveOperation(typ gql.OperationType, sel interface{}, vars map[string]interface{}) string {
+func marshalReflectiveOperation(typ gql.OperationType, sel any, vars map[string]any) string {
 	return encoding.MustMarshalOperation(&gql.Operation{
 		OperationDefinition: gql.OperationDefinition{
 			Type:      typ,
@@ -68,13 +68,13 @@ func marshalReflectiveOperation(typ gql.OperationType, sel interface{}, vars map
 }
 
 // Schedule asynchronous execution of a GraphQL mutation.
-func CreateJob(ctx context.Context, svc Service, mutation string, arguments map[string]interface{}) (jobID string, err error) {
+func CreateJob(ctx context.Context, svc Service, mutation string, arguments map[string]any) (jobID string, err error) {
 	var m struct {
 		Job struct {
 			ID string
 		} `graphql:"createJob(mutation: $mutation, arguments: $arguments)"`
 	}
-	err = Mutate(ctx, svc, &m, map[string]interface{}{
+	err = Mutate(ctx, svc, &m, map[string]any{
 		"mutation":  mutation,
 		"arguments": JSONObject(arguments),
 	})
@@ -83,12 +83,12 @@ func CreateJob(ctx context.Context, svc Service, mutation string, arguments map[
 
 // Extracts the operation data from a response structures. The response data
 // must contain exactly one top-level field.
-func OperationData(resp interface{}) interface{} {
+func OperationData(resp any) any {
 	switch resp := resp.(type) {
 	case *encoding.SelectionUnmarshaler:
 		return OperationData(resp.Selection)
 
-	case map[string]interface{}:
+	case map[string]any:
 		if len(resp) != 1 {
 			panic(fmt.Errorf("expected map have exactly one entry, found %d", len(resp)))
 		}

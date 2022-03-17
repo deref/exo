@@ -28,7 +28,7 @@ var stackShowCmd = &cobra.Command{
 				Configuration string `graphql:"configuration(recursive: $recursive, final: $final)"`
 			} `graphql:"stackByRef(ref: $currentStack)"`
 		}
-		mustQueryStack(ctx, &q, map[string]interface{}{
+		mustQueryStack(ctx, &q, map[string]any{
 			"recursive": stackShowFlags.Recursive,
 			"final":     stackShowFlags.Final,
 		})

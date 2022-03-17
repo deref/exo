@@ -48,7 +48,7 @@ func lookupCluster(cmd *cobra.Command) (*clusterFragment, error) {
 		var q struct {
 			Cluster *clusterFragment `graphql:"clusterByRef(ref: $cluster)"`
 		}
-		if err := api.Query(ctx, svc, &q, map[string]interface{}{
+		if err := api.Query(ctx, svc, &q, map[string]any{
 			"cluster": rootPersistentFlags.Cluster,
 		}); err != nil {
 			return nil, err
@@ -64,7 +64,7 @@ func lookupCluster(cmd *cobra.Command) (*clusterFragment, error) {
 			} `graphql:"stackByRef(ref: $stack)"`
 			DefaultCluster clusterFragment `graphql:"defaultCluster"`
 		}
-		if err := api.Query(ctx, svc, &q, map[string]interface{}{
+		if err := api.Query(ctx, svc, &q, map[string]any{
 			"stack": currentStackRef(),
 		}); err != nil {
 			return nil, err
@@ -79,11 +79,11 @@ func lookupCluster(cmd *cobra.Command) (*clusterFragment, error) {
 
 // TODO: Should this show the cue configuration?
 func showCluster(cluster *clusterFragment) {
-	env := make(map[string]interface{}, len(cluster.Environment.Variables))
+	env := make(map[string]any, len(cluster.Environment.Variables))
 	for _, v := range cluster.Environment.Variables {
 		env[v.Name] = v.Value
 	}
-	cmdutil.PrintCueStruct(map[string]interface{}{
+	cmdutil.PrintCueStruct(map[string]any{
 		"id":          cluster.ID,
 		"name":        cluster.Name,
 		"default":     cluster.Default,

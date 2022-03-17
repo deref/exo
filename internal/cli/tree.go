@@ -38,7 +38,7 @@ var treeCmd = &cobra.Command{
 				Components []componentFragment `graphql:"components(all: $all, recursive: true)"`
 			} `graphql:"stackByRef(ref: $currentStack)"`
 		}
-		mustQueryStack(ctx, &q, map[string]interface{}{
+		mustQueryStack(ctx, &q, map[string]any{
 			"all": treeFlags.All,
 		})
 

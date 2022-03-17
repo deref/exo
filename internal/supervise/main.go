@@ -211,7 +211,7 @@ const syslogFacility = 1 // "user-level messages".
 const syslogSeverity = 6 // "information messages".
 const syslogPriority = (syslogFacility * 8) + syslogSeverity
 
-func fatalf(format string, v ...interface{}) {
+func fatalf(format string, v ...any) {
 	fmt.Fprintf(os.Stderr, format+"\n", v...)
 	die()
 }

@@ -60,7 +60,7 @@ To set the owner to a component, supply '--component=ref', which implies
 		typ := args[0]
 		props := args[1:]
 
-		var model map[string]interface{}
+		var model map[string]any
 		var err error
 		if len(props) > 0 {
 			model, err = cmdutil.ArgsToJsonObject(props)
@@ -104,7 +104,7 @@ To set the owner to a component, supply '--component=ref', which implies
 				TaskID *string
 			} `graphql:"createResource(type: $type, model: $model, project: $project, stack: $stack, component: $component, adopt: $adopt)"`
 		}
-		vars := map[string]interface{}{
+		vars := map[string]any{
 			"type":  typ,
 			"model": scalars.JSONObject(model),
 			"adopt": resourceNewFlags.Adopt,
@@ -132,7 +132,7 @@ To set the owner to a component, supply '--component=ref', which implies
 		if err := api.Mutate(ctx, svc, &m, vars); err != nil {
 			return err
 		}
-		cmdutil.PrintCueStruct(map[string]interface{}{
+		cmdutil.PrintCueStruct(map[string]any{
 			"id": m.Resource.ID,
 		})
 		if rootPersistentFlags.Async {

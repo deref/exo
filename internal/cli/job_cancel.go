@@ -22,7 +22,7 @@ var jobCancelCmd = &cobra.Command{
 					__typename
 				}
 			}
-		`, map[string]interface{}{
+		`, map[string]any{
 			"id": args[0],
 		})
 	},

@@ -10,7 +10,7 @@ type Controller struct {
 	impl reflect.Value
 }
 
-func NewController(impl interface{}) *Controller {
+func NewController(impl any) *Controller {
 	return &Controller{
 		impl: reflect.ValueOf(impl),
 	}
@@ -20,7 +20,7 @@ func NewController(impl interface{}) *Controller {
 
 type ResourceComponentConfig struct {
 	ComponentConfig
-	Model map[string]interface{}
+	Model map[string]any
 }
 
 // Implements component methods in terms of an underlying resource.

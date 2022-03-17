@@ -19,7 +19,7 @@ var stopCmd = &cobra.Command{
 
 If no refs are provided, stops the entire workspace.`,
 	RunE: func(cmd *cobra.Command, args []string) error {
-		vars := map[string]interface{}{}
+		vars := map[string]any{}
 		if cmd.Flags().Lookup("timeout").Changed {
 			vars["timeoutSeconds"] = timeoutSeconds
 		} else {

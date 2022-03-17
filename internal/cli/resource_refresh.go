@@ -15,7 +15,7 @@ var resourceRefreshCmd = &cobra.Command{
 	Args:  cobra.ExactArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		return sendMutation(ctx, "refreshResource", map[string]interface{}{
+		return sendMutation(ctx, "refreshResource", map[string]any{
 			"ref": args[0],
 		})
 	},

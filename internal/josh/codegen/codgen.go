@@ -35,7 +35,7 @@ func generateGo(t string, pkg *model.Package) ([]byte, error) {
 	return formatted, nil
 }
 
-var templateFuncs = map[string]interface{}{
+var templateFuncs = map[string]any{
 	"tick":   func() string { return "`" },
 	"public": inflect.KebabToPublic,
 	"js":     inflect.KebabToJSVar,
@@ -87,7 +87,7 @@ type {{.Name|public}}Output struct {
 
 func Build{{.Name|public}}Mux(b *josh.MuxBuilder, factory func(req *http.Request) {{.Name|public}}) {
 {{- range .AllMethods}}
-	b.AddMethod("{{.Name}}", func (req *http.Request) interface{} {
+	b.AddMethod("{{.Name}}", func (req *http.Request) any {
 		return factory(req).{{.Name|public}}
 	})
 {{- end}}

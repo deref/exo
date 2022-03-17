@@ -6,12 +6,12 @@ import (
 	"github.com/spf13/cobra"
 )
 
-func controlComponents(cmd *cobra.Command, args []string, workspaceMutation string, componentsMutation string, vars map[string]interface{}) error {
+func controlComponents(cmd *cobra.Command, args []string, workspaceMutation string, componentsMutation string, vars map[string]any) error {
 	ctx := cmd.Context()
 
 	// TODO: It would be nice to have generated mutation methods.
 	var mutation string
-	vars = jsonutil.Merge(map[string]interface{}{
+	vars = jsonutil.Merge(map[string]any{
 		"workspace": currentWorkspaceRef(),
 	}, vars)
 	if len(args) == 0 {

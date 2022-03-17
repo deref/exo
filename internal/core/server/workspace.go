@@ -53,7 +53,7 @@ type Workspace struct {
 
 var _ api.Workspace = &Workspace{}
 
-func (ws *Workspace) logEventf(ctx context.Context, format string, v ...interface{}) {
+func (ws *Workspace) logEventf(ctx context.Context, format string, v ...any) {
 	eventStore := log.CurrentEventStore(ctx)
 	input := &eventd.AddEventInput{
 		Stream:    ws.ID,
@@ -102,7 +102,7 @@ func (ws *Workspace) Destroy(ctx context.Context, input *api.DestroyInput) (*api
 
 	go func() {
 		defer job.Finish()
-		ws.goControlComponents(job, query, func(*api.ComponentDescription) interface{} {
+		ws.goControlComponents(job, query, func(*api.ComponentDescription) any {
 			return &api.DestroyInput{}
 		})
 		if err := job.Wait(); err != nil {
@@ -599,7 +599,7 @@ func (ws *Workspace) RenameComponent(ctx context.Context, input *api.RenameCompo
 
 func (ws *Workspace) RefreshComponents(ctx context.Context, input *api.RefreshComponentsInput) (*api.RefreshComponentsOutput, error) {
 	query := makeComponentQuery(withRefs(input.Refs...))
-	jobID := ws.controlEachComponent(ctx, "refreshing", query, func(desc *api.ComponentDescription) interface{} {
+	jobID := ws.controlEachComponent(ctx, "refreshing", query, func(desc *api.ComponentDescription) any {
 		return &api.RefreshInput{
 			Spec: desc.Spec,
 		}
@@ -611,7 +611,7 @@ func (ws *Workspace) RefreshComponents(ctx context.Context, input *api.RefreshCo
 
 func (ws *Workspace) DisposeComponents(ctx context.Context, input *api.DisposeComponentsInput) (*api.DisposeComponentsOutput, error) {
 	query := makeComponentQuery(withRefs(input.Refs...), withReversedDependencies)
-	jobID := ws.controlEachComponent(ctx, "disposing", query, func(desc *api.ComponentDescription) interface{} {
+	jobID := ws.controlEachComponent(ctx, "disposing", query, func(desc *api.ComponentDescription) any {
 		return &api.DisposeInput{}
 	})
 	return &api.DisposeComponentsOutput{
@@ -645,7 +645,7 @@ func (ws *Workspace) resolveRefs(ctx context.Context, refs []string) ([]string, 
 func (ws *Workspace) DeleteComponents(ctx context.Context, input *api.DeleteComponentsInput) (*api.DeleteComponentsOutput, error) {
 	ws.logEventf(ctx, "deleting components: %s", input.Refs)
 	query := makeComponentQuery(withRefs(input.Refs...), withReversedDependencies)
-	jobID := ws.controlEachComponent(ctx, "deleting", query, func(*api.ComponentDescription) interface{} {
+	jobID := ws.controlEachComponent(ctx, "deleting", query, func(*api.ComponentDescription) any {
 		return &api.DestroyInput{}
 	})
 	return &api.DeleteComponentsOutput{
@@ -736,7 +736,7 @@ func (ws *Workspace) GetEvents(ctx context.Context, input *api.GetEventsInput) (
 
 func (ws *Workspace) Start(ctx context.Context, input *api.StartInput) (*api.StartOutput, error) {
 	ws.logEventf(ctx, "starting...")
-	jobID := ws.controlEachComponent(ctx, "starting", allProcessQuery(withDependencies), func(*api.ComponentDescription) interface{} {
+	jobID := ws.controlEachComponent(ctx, "starting", allProcessQuery(withDependencies), func(*api.ComponentDescription) any {
 		return input
 	}, func(desc *api.ComponentDescription, err error) {
 		ws.logEventf(ctx, "error starting %s: %v", desc.Name, err)
@@ -751,7 +751,7 @@ func (ws *Workspace) StartComponents(ctx context.Context, input *api.StartCompon
 	// Note that we are only querying Process component types specifically because they are the only
 	// things that are "startable".
 	query := allProcessQuery(withRefs(input.Refs...), withDependencies)
-	jobID := ws.controlEachComponent(ctx, "starting", query, func(desc *api.ComponentDescription) interface{} {
+	jobID := ws.controlEachComponent(ctx, "starting", query, func(desc *api.ComponentDescription) any {
 		if !isRunnableType(desc.Type) {
 			return nil
 		}
@@ -767,7 +767,7 @@ func (ws *Workspace) StartComponents(ctx context.Context, input *api.StartCompon
 func (ws *Workspace) Stop(ctx context.Context, input *api.StopInput) (*api.StopOutput, error) {
 	ws.logEventf(ctx, "stopping...")
 	query := allProcessQuery(withReversedDependencies, withDependents)
-	jobID := ws.controlEachComponent(ctx, "stopping", query, func(*api.ComponentDescription) interface{} {
+	jobID := ws.controlEachComponent(ctx, "stopping", query, func(*api.ComponentDescription) any {
 		return input
 	})
 	return &api.StopOutput{
@@ -782,7 +782,7 @@ func (ws *Workspace) StopComponents(ctx context.Context, input *api.StopComponen
 		withReversedDependencies,
 		withDependents,
 	)
-	jobID := ws.controlEachComponent(ctx, "stopping", query, func(desc *api.ComponentDescription) interface{} {
+	jobID := ws.controlEachComponent(ctx, "stopping", query, func(desc *api.ComponentDescription) any {
 		if !isRunnableType(desc.Type) {
 			return nil
 		}
@@ -796,7 +796,7 @@ func (ws *Workspace) StopComponents(ctx context.Context, input *api.StopComponen
 func (ws *Workspace) Signal(ctx context.Context, input *api.SignalInput) (*api.SignalOutput, error) {
 	ws.logEventf(ctx, "signalling %s...", input.Signal)
 	query := allProcessQuery(withReversedDependencies, withDependents)
-	jobID := ws.controlEachComponent(ctx, "signalling", query, func(*api.ComponentDescription) interface{} {
+	jobID := ws.controlEachComponent(ctx, "signalling", query, func(*api.ComponentDescription) any {
 		return input
 	})
 	return &api.SignalOutput{
@@ -811,7 +811,7 @@ func (ws *Workspace) SignalComponents(ctx context.Context, input *api.SignalComp
 		withReversedDependencies,
 		withDependents,
 	)
-	jobID := ws.controlEachComponent(ctx, "signalling", query, func(*api.ComponentDescription) interface{} {
+	jobID := ws.controlEachComponent(ctx, "signalling", query, func(*api.ComponentDescription) any {
 		return &api.SignalInput{
 			Signal: input.Signal,
 		}
@@ -824,7 +824,7 @@ func (ws *Workspace) SignalComponents(ctx context.Context, input *api.SignalComp
 func (ws *Workspace) Restart(ctx context.Context, input *api.RestartInput) (*api.RestartOutput, error) {
 	ws.logEventf(ctx, "restarting...")
 	query := makeComponentQuery(withDependencies)
-	jobID := ws.controlEachComponent(ctx, "restarting", query, func(*api.ComponentDescription) interface{} {
+	jobID := ws.controlEachComponent(ctx, "restarting", query, func(*api.ComponentDescription) any {
 		return input
 	}, func(desc *api.ComponentDescription, err error) {
 		ws.logEventf(ctx, "error restarting %s: %v", desc.Name, err)
@@ -843,7 +843,7 @@ func (ws *Workspace) RestartComponents(ctx context.Context, input *api.RestartCo
 	//    then restart the dependents in normal order again.
 	// 3. Ensure that all dependencies are started (in normal order), then restart these components (current behaviour).
 	query := allProcessQuery(withRefs(input.Refs...), withDependencies)
-	jobID := ws.controlEachComponent(ctx, "restart", query, func(desc *api.ComponentDescription) interface{} {
+	jobID := ws.controlEachComponent(ctx, "restart", query, func(desc *api.ComponentDescription) any {
 		if !isRunnableType(desc.Type) {
 			return nil
 		}
@@ -1021,7 +1021,7 @@ func (ws *Workspace) resolveWorkspacePath(ctx context.Context, relativePath stri
 	return resolvedPath, nil
 }
 
-func (ws *Workspace) controlEachComponent(ctx context.Context, label string, query componentQuery, makeMessage func(*api.ComponentDescription) interface{}, onErr ...func(*api.ComponentDescription, error)) (jobID string) {
+func (ws *Workspace) controlEachComponent(ctx context.Context, label string, query componentQuery, makeMessage func(*api.ComponentDescription) any, onErr ...func(*api.ComponentDescription, error)) (jobID string) {
 	job := ws.TaskTracker.StartTask(ctx, label)
 	go func() {
 		defer job.Finish()
@@ -1030,7 +1030,7 @@ func (ws *Workspace) controlEachComponent(ctx context.Context, label string, que
 	return job.ID()
 }
 
-func (ws *Workspace) goControlComponents(t *task.Task, query componentQuery, makeMessage func(*api.ComponentDescription) interface{}, onErr ...func(*api.ComponentDescription, error)) {
+func (ws *Workspace) goControlComponents(t *task.Task, query componentQuery, makeMessage func(*api.ComponentDescription) any, onErr ...func(*api.ComponentDescription, error)) {
 	describe := query.describeComponentsInput(ws)
 	components, err := ws.DescribeComponents(t, describe)
 	if err != nil {
@@ -1088,7 +1088,7 @@ func (ws *Workspace) goControlComponents(t *task.Task, query componentQuery, mak
 	}
 }
 
-func (ws *Workspace) query(ctx context.Context, desc api.ComponentDescription, output interface{}, input interface{}) error {
+func (ws *Workspace) query(ctx context.Context, desc api.ComponentDescription, output any, input any) error {
 	ctrl := ws.newController(ctx, desc)
 	if err := ctrl.InitResource(); err != nil {
 		return err
@@ -1098,7 +1098,7 @@ func (ws *Workspace) query(ctx context.Context, desc api.ComponentDescription, o
 	return err
 }
 
-func (ws *Workspace) control(ctx context.Context, desc api.ComponentDescription, input interface{}) error {
+func (ws *Workspace) control(ctx context.Context, desc api.ComponentDescription, input any) error {
 	ctrl := ws.newController(ctx, desc)
 	if err := ctrl.InitResource(); err != nil {
 		return err
@@ -1135,7 +1135,7 @@ func (ws *Workspace) control(ctx context.Context, desc api.ComponentDescription,
 
 func (ws *Workspace) Build(ctx context.Context, input *api.BuildInput) (*api.BuildOutput, error) {
 	ws.logEventf(ctx, "building...")
-	jobID := ws.controlEachComponent(ctx, "building", allBuildableQuery(), func(*api.ComponentDescription) interface{} {
+	jobID := ws.controlEachComponent(ctx, "building", allBuildableQuery(), func(*api.ComponentDescription) any {
 		return input
 	})
 	return &api.BuildOutput{
@@ -1146,7 +1146,7 @@ func (ws *Workspace) Build(ctx context.Context, input *api.BuildInput) (*api.Bui
 func (ws *Workspace) BuildComponents(ctx context.Context, input *api.BuildComponentsInput) (*api.BuildComponentsOutput, error) {
 	ws.logEventf(ctx, "building: %s", input.Refs)
 	query := allBuildableQuery(withRefs(input.Refs...))
-	jobID := ws.controlEachComponent(ctx, "building", query, func(*api.ComponentDescription) interface{} {
+	jobID := ws.controlEachComponent(ctx, "building", query, func(*api.ComponentDescription) any {
 		return &api.BuildInput{}
 	})
 	return &api.BuildComponentsOutput{

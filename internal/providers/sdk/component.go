@@ -18,8 +18,8 @@ type ComponentConfig struct {
 
 	// Intentionally not called "Spec" and "State". Those names are reserved for
 	// more strongly typed field in Model structs that embed a ComponentConfig.
-	SpecValue  cue.Value              `json:"spec"`
-	StateValue map[string]interface{} `json:"state"`
+	SpecValue  cue.Value      `json:"spec"`
+	StateValue map[string]any `json:"state"`
 
 	Run         bool
 	Environment map[string]string `json:"environment"`
@@ -33,7 +33,7 @@ type ResourceConfig struct {
 	IRI  string `json:"iri,omitempty"`
 }
 
-func decodeComponentConfig(ctx context.Context, typ reflect.Type, v cue.Value) (interface{}, error) {
+func decodeComponentConfig(ctx context.Context, typ reflect.Type, v cue.Value) (any, error) {
 	out := reflect.New(typ.Elem()).Interface()
 	err := v.Decode(out)
 	if err != nil {
@@ -83,5 +83,5 @@ type RenderedComponent struct {
 	Type string
 	Name string
 	Key  string
-	Spec interface{}
+	Spec any
 }

@@ -173,12 +173,12 @@ func (svc *lazyService) force() {
 	svc.value = thunk()
 }
 
-func (svc *lazyService) Do(ctx context.Context, res interface{}, doc string, vars map[string]interface{}) error {
+func (svc *lazyService) Do(ctx context.Context, res any, doc string, vars map[string]any) error {
 	svc.force()
 	return svc.value.Do(ctx, res, doc, vars)
 }
 
-func (svc *lazyService) Subscribe(ctx context.Context, newRes func() interface{}, doc string, vars map[string]interface{}) api.Subscription {
+func (svc *lazyService) Subscribe(ctx context.Context, newRes func() any, doc string, vars map[string]any) api.Subscription {
 	svc.force()
 	return svc.value.Subscribe(ctx, newRes, doc, vars)
 }

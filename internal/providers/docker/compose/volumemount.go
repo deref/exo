@@ -49,7 +49,7 @@ func (opt *TmpfsOptions) Interpolate(env Environment) error {
 	return interpolateStruct(opt, env)
 }
 
-func (vm VolumeMount) MarshalYAML() (interface{}, error) {
+func (vm VolumeMount) MarshalYAML() (any, error) {
 	if vm.ShortForm.Expression != "" {
 		return vm.ShortForm.Expression, nil
 	}

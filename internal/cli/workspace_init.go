@@ -34,7 +34,7 @@ working directory.`,
 				ID string `json:"id"`
 			} `graphql:"createWorkspace(root: $root)"`
 		}
-		if err := api.Mutate(ctx, svc, &m, map[string]interface{}{
+		if err := api.Mutate(ctx, svc, &m, map[string]any{
 			"root": root,
 		}); err != nil {
 			return err
