@@ -4,7 +4,7 @@
   import BytesLabel from '../components/BytesLabel.svelte';
   import WorkspaceNav from '../components/WorkspaceNav.svelte';
   import EnvironmentTable from '../components/EnvironmentTable.svelte';
-  import CheckeredTableWrapper from '../components/CheckeredTableWrapper.svelte';
+  import CheckeredTable from '../components/CheckeredTable.svelte';
   import Sparkline from '../components/Sparkline.svelte';
   import { query } from '../lib/graphql';
 
@@ -59,63 +59,59 @@
     backUrl={`/workspaces/${encodeURIComponent(workspaceId)}`}
   >
     {#if component}
-      <CheckeredTableWrapper>
-        <table>
-          <tbody>
-            <tr>
-              <td class="label">Status</td>
-              <td>{process.running ? 'Running' : 'Stopped'}</td>
-              <td />
-            </tr>
-            {#if component.running}
-              <tr>
-                <td class="label">CPU</td>
-                <td>
-                  {#if process.cpuPercent}
-                    {process.cpuPercent.toFixed(2)}%
-                  {/if}
-                </td>
-              </tr>
-              <tr>
-                <td class="label">Resident Memory</td>
-                <td>
-                  {#if process.residentMemory}
-                    <BytesLabel value={process.residentMemory} />
-                  {/if}
-                </td>
-                <td />
-              </tr>
-              <tr>
-                <td class="label">Started at</td>
-                <td>
-                  {#if process.createTime}
-                    <span title={new Date(process.createTime).toISOString()}>
-                      {new Date(process.createTime).toLocaleTimeString()}
-                    </span>
-                  {/if}
-                </td>
-                <td>
-                  {#if cpuPercentages.some((p) => p !== 0)}
-                    <Sparkline entries={cpuPercentages} interactive />
-                  {/if}
-                </td>
-              </tr>
-              <tr>
-                <td class="label">Local Ports</td>
-                <td>{process.ports?.join(', ') ?? 'None'}</td>
-                <td />
-              </tr>
-              <tr>
-                <td class="label">Children</td>
-                <td>
-                  {process.childrenExecutables?.join(', ') ?? 'None'}
-                </td>
-                <td />
-              </tr>
-            {/if}
-          </tbody>
-        </table>
-      </CheckeredTableWrapper>
+      <CheckeredTable>
+        <tr>
+          <td class="label">Status</td>
+          <td>{process.running ? 'Running' : 'Stopped'}</td>
+          <td />
+        </tr>
+        {#if component.running}
+          <tr>
+            <td class="label">CPU</td>
+            <td>
+              {#if process.cpuPercent}
+                {process.cpuPercent.toFixed(2)}%
+              {/if}
+            </td>
+          </tr>
+          <tr>
+            <td class="label">Resident Memory</td>
+            <td>
+              {#if process.residentMemory}
+                <BytesLabel value={process.residentMemory} />
+              {/if}
+            </td>
+            <td />
+          </tr>
+          <tr>
+            <td class="label">Started at</td>
+            <td>
+              {#if process.createTime}
+                <span title={new Date(process.createTime).toISOString()}>
+                  {new Date(process.createTime).toLocaleTimeString()}
+                </span>
+              {/if}
+            </td>
+            <td>
+              {#if cpuPercentages.some((p) => p !== 0)}
+                <Sparkline entries={cpuPercentages} interactive />
+              {/if}
+            </td>
+          </tr>
+          <tr>
+            <td class="label">Local Ports</td>
+            <td>{process.ports?.join(', ') ?? 'None'}</td>
+            <td />
+          </tr>
+          <tr>
+            <td class="label">Children</td>
+            <td>
+              {process.childrenExecutables?.join(', ') ?? 'None'}
+            </td>
+            <td />
+          </tr>
+        {/if}
+      </CheckeredTable>
       <br />
       <h3>Environment</h3>
       <EnvironmentTable variables={component.environment.variables} />

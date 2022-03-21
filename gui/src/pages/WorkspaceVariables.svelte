@@ -6,7 +6,7 @@
   import Spinner from '../components/Spinner.svelte';
   import WorkspaceNav from '../components/WorkspaceNav.svelte';
   import EnvironmentTable from '../components/EnvironmentTable.svelte';
-  import CheckeredTableWrapper from '../components/CheckeredTableWrapper.svelte';
+  import CheckeredTable from '../components/CheckeredTable.svelte';
   import { api } from '../lib/api';
 
   export let params = { workspace: '' };
@@ -38,55 +38,46 @@
         <Button href={`${workspaceRoute}/add-vault`} small>+ Add vault</Button>
       </div>
       {#if vaults.length > 0}
-        <CheckeredTableWrapper>
-          <table>
-            <thead>
-              <tr>
-                <th>Name</th>
-                <th>URL</th>
-                <th />
-              </tr>
-            </thead>
-            <tbody>
-              {#each vaults as vault}
-                <tr>
-                  <td>{vault.name}</td>
-                  <td>
-                    {#if vault.connected}
-                      <a href={vault.url} target="_blank">{vault.url}</a>
-                    {:else}
-                      {vault.url}
-                    {/if}
-                  </td>
-                  <td>
-                    {#if vault.connected}
-                      <Button href={`${vault.url}/create-secret`} small>
-                        + New secret
-                      </Button>
-                    {:else if vault.needsAuth}
-                      <Button on:click={() => authEsv()} small
-                        >Authenticate</Button
-                      >
-                    {:else}
-                      Bad vault URL
-                    {/if}
-                    <Button
-                      on:click={async (_event) => {
-                        await workspace.removeVault({
-                          url: vault.url,
-                        });
-                        window.location.reload();
-                      }}
-                      small
-                    >
-                      x
-                    </Button>
-                  </td>
-                </tr>
-              {/each}
-            </tbody>
-          </table>
-        </CheckeredTableWrapper>
+        <CheckeredTable>
+          <svelte:fragment slot="head">
+            <th>Name</th>
+            <th>URL</th>
+          </svelte:fragment>
+          {#each vaults as vault}
+            <tr>
+              <td>{vault.name}</td>
+              <td>
+                {#if vault.connected}
+                  <a href={vault.url} target="_blank">{vault.url}</a>
+                {:else}
+                  {vault.url}
+                {/if}
+              </td>
+              <td>
+                {#if vault.connected}
+                  <Button href={`${vault.url}/create-secret`} small>
+                    + New secret
+                  </Button>
+                {:else if vault.needsAuth}
+                  <Button on:click={() => authEsv()} small>Authenticate</Button>
+                {:else}
+                  Bad vault URL
+                {/if}
+                <Button
+                  on:click={async (_event) => {
+                    await workspace.removeVault({
+                      url: vault.url,
+                    });
+                    window.location.reload();
+                  }}
+                  small
+                >
+                  x
+                </Button>
+              </td>
+            </tr>
+          {/each}
+        </CheckeredTable>
       {:else}
         <div>No vaults linked to this workspace.</div>
       {/if}

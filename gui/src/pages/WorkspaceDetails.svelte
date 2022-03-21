@@ -2,7 +2,7 @@
   import Panel from '../components/Panel.svelte';
   import Layout from '../components/Layout.svelte';
   import WorkspaceNav from '../components/WorkspaceNav.svelte';
-  import CheckeredTableWrapper from '../components/CheckeredTableWrapper.svelte';
+  import CheckeredTable from '../components/CheckeredTable.svelte';
   import { api } from '../lib/api';
 
   export let params = { workspace: '' };
@@ -21,24 +21,20 @@
       title={description.displayName + '/Details'}
       backUrl={workspaceRoute}
     >
-      <CheckeredTableWrapper>
-        <table>
-          <tbody>
-            <tr>
-              <td class="label">ID</td>
-              <td>{description.id}</td>
-            </tr>
-            <tr>
-              <td class="label">Display name</td>
-              <td>{description.displayName}</td>
-            </tr>
-            <tr>
-              <td class="label">Root directory</td>
-              <td>{description.root}</td>
-            </tr>
-          </tbody>
-        </table>
-      </CheckeredTableWrapper>
+      <CheckeredTable>
+        <tr>
+          <td class="label">ID</td>
+          <td>{description.id}</td>
+        </tr>
+        <tr>
+          <td class="label">Display name</td>
+          <td>{description.displayName}</td>
+        </tr>
+        <tr>
+          <td class="label">Root directory</td>
+          <td>{description.root}</td>
+        </tr>
+      </CheckeredTable>
     </Panel>
   {/await}
 </Layout>

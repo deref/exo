@@ -2,7 +2,7 @@
   import Spinner from './Spinner.svelte';
   import ErrorLabel from './ErrorLabel.svelte';
   import IconButton from './IconButton.svelte';
-  import CheckeredTableWrapper from './CheckeredTableWrapper.svelte';
+  import CheckeredTable from './CheckeredTable.svelte';
   import type { IconGlyph } from './Icon.svelte';
   import type { SvelteConstructor } from '../lib/svelte';
 
@@ -34,51 +34,45 @@
   {#if components.length === 0}
     <div>No records</div>
   {:else}
-    <CheckeredTableWrapper>
-      <table>
-        <thead>
-          <tr>
-            {#each columns as column}
-              <th>
-                {column.title}
-              </th>
-            {/each}
-            {#if actions && actions.length > 0}
-              <th />
-            {/if}
-          </tr>
-        </thead>
-        <tbody>
-          {#each components as component}
-            <tr>
-              {#each columns as column}
-                <td>
-                  <svelte:component
-                    this={column.component}
-                    value={column.getValue(component)}
-                  />
-                </td>
-              {/each}
-              {#if actions && actions.length > 0}
-                <td class="actions">
-                  <div>
-                    {#each actions as action}
-                      <IconButton
-                        tooltip={action.tooltip}
-                        glyph={action.glyph}
-                        on:click={() => {
-                          action.execute(component);
-                        }}
-                      />
-                    {/each}
-                  </div>
-                </td>
-              {/if}
-            </tr>
+    <CheckeredTable>
+      <svelte:fragment slot="head">
+        {#each columns as column}
+          <th>
+            {column.title}
+          </th>
+        {/each}
+        {#if actions && actions.length > 0}
+          <th />
+        {/if}
+      </svelte:fragment>
+      {#each components as component}
+        <tr>
+          {#each columns as column}
+            <td>
+              <svelte:component
+                this={column.component}
+                value={column.getValue(component)}
+              />
+            </td>
           {/each}
-        </tbody>
-      </table>
-    </CheckeredTableWrapper>
+          {#if actions && actions.length > 0}
+            <td class="actions">
+              <div>
+                {#each actions as action}
+                  <IconButton
+                    tooltip={action.tooltip}
+                    glyph={action.glyph}
+                    on:click={() => {
+                      action.execute(component);
+                    }}
+                  />
+                {/each}
+              </div>
+            </td>
+          {/if}
+        </tr>
+      {/each}
+    </CheckeredTable>
   {/if}
 {:catch ex}
   <ErrorLabel value={ex} />
