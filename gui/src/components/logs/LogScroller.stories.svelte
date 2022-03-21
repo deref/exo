@@ -39,10 +39,14 @@
     events: (() => {
       const events = [];
       for (let i = 1000; i < 2000; i++) {
+        const source = `component-${
+          Math.abs(Math.floor(Math.sin(i) * 10000)) % 5
+        }`;
         events.push({
           id: `event-${i}`,
           timestamp: new Date(1632518109970 + i * 1000).toISOString(),
-          stream: `component-${Math.floor(Math.sin(i) * 10000) % 5}`,
+          sourceId: source,
+          sourceName: source,
           message: `message ${i}`,
         });
       }

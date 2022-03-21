@@ -33,11 +33,11 @@
 
   export let stack: Stack;
 
-  const confirmDestroy = (displayName: string) => {
+  const confirmDestroy = () => {
     modal.set(
       bind(ModalDialogue, {
         h3: 'Delete stack?',
-        bodyText: `Are you sure you want to delete the ${displayName} stack?`,
+        bodyText: `Are you sure you want to delete the ${stack.displayName} stack?`,
         danger: true,
         actionLabel: 'Yes, delete',
         onOkay: async () => {
@@ -66,11 +66,7 @@
         <MenuItem glyph="Add" href={stack.newComponentUrl}>
           Add component
         </MenuItem>
-        <MenuItem
-          glyph="Delete"
-          danger
-          on:click={() => confirmDestroy(stack.displayName)}
-        >
+        <MenuItem glyph="Delete" danger on:click={() => confirmDestroy()}>
           Destroy stack
         </MenuItem>
       </ContextMenu>
