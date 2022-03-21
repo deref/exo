@@ -7,7 +7,7 @@ import type { DocumentNode } from 'graphql';
 import { parse } from 'graphql';
 import type { ReadableQuery, ReadableResult } from 'svelte-apollo';
 import * as sa from 'svelte-apollo';
-import type { QueryTypes } from '~/src/lib/graphql/types.generated';
+import type { QueryTypes } from './types.generated';
 
 type QueryType<Data = unknown, Variables = unknown> = {
   data: Data;
