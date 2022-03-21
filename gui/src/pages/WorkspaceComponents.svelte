@@ -3,59 +3,84 @@
   import Panel from '../components/Panel.svelte';
   import StringLabel from '../components/StringLabel.svelte';
   import WorkspaceNav from '../components/WorkspaceNav.svelte';
-  import ComponentTable from '../components/ComponentTable.svelte';
-  import { api } from '../lib/api';
+  import DataGrid from '../components/DataGrid.svelte';
   import * as router from 'svelte-spa-router';
+  import { query } from '../lib/graphql';
 
   export let params = { workspace: '' };
   const workspaceId = params.workspace;
-  const workspace = api.workspace(workspaceId);
+
+  const q = query(
+    `#graphql
+    query ($workspaceId: String!) {
+      workspace: workspaceById(id: $workspaceId) {
+        id
+        stack {
+          components {
+            id
+            name
+            type
+          }
+        }
+      }
+    }`,
+    {
+      variables: {
+        workspaceId,
+      },
+    },
+  );
+
   const workspaceRoute = `/workspaces/${encodeURIComponent(workspaceId)}`;
+
+  $: components = $q.data?.workspace?.stack?.components;
 </script>
 
-<Layout>
+<Layout loading={$q.loading} error={$q.error}>
   <WorkspaceNav {workspaceId} active="Components" slot="navbar" />
   <Panel title="Components" backUrl={workspaceRoute}>
-    <ComponentTable
-      load={workspace.describeComponents}
-      columns={[
-        {
-          title: 'id',
-          component: StringLabel,
-          getValue: (component) => component.id,
-        },
-        {
-          title: 'name',
-          component: StringLabel,
-          getValue: (component) => component.name,
-        },
-        {
-          title: 'type',
-          component: StringLabel,
-          getValue: (component) => component.type,
-        },
-      ]}
-      actions={[
-        {
-          tooltip: 'Edit component',
-          glyph: 'Edit',
-          execute: (component) => {
-            router.push(
-              `#/workspaces/${encodeURIComponent(
-                workspaceId,
-              )}/components/${encodeURIComponent(component.id)}/edit`,
-            );
+    {#if components}
+      <DataGrid
+        items={components}
+        columns={[
+          {
+            title: 'id',
+            label: StringLabel,
+            getValue: (component) => component.id,
           },
-        },
-        {
-          tooltip: 'Delete component',
-          glyph: 'Delete',
-          execute: async (component) => {
-            await workspace.deleteComponent(component.id);
-            window.location.reload();
+          {
+            title: 'name',
+            label: StringLabel,
+            getValue: (component) => component.name,
           },
-        },
-      ]}
-    />
+          {
+            title: 'type',
+            label: StringLabel,
+            getValue: (component) => component.type,
+          },
+        ]}
+        actions={[
+          {
+            tooltip: 'Edit component',
+            glyph: 'Edit',
+            execute: (component) => {
+              router.push(
+                `#/workspaces/${encodeURIComponent(
+                  workspaceId,
+                )}/components/${encodeURIComponent(component.id)}/edit`,
+              );
+            },
+          },
+          {
+            tooltip: 'Delete component',
+            glyph: 'Delete',
+            execute: async (component) => {
+              await workspace.deleteComponent(component.id);
+              window.location.reload();
+            },
+          },
+        ]}
+      />
+    {/if}
   </Panel>
 </Layout>
