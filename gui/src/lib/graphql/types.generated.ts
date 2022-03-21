@@ -114,4 +114,23 @@ export type QueryTypes = {
     };
     variables: { id: string };
   };
+  '#graphql\n    query ($workspaceId: String!) {\n      workspace: workspaceById(id: $workspaceId) {\n        id\n        stack {\n          components {\n            id\n            name\n            type\n          }\n        }\n      }\n    }': {
+    data: {
+      __typename: 'Query';
+      workspace: {
+        __typename: 'Workspace';
+        id: string;
+        stack: {
+          __typename: 'Stack';
+          components: {
+            __typename: 'Component';
+            id: string;
+            name: string;
+            type: string;
+          }[];
+        } | null;
+      } | null;
+    };
+    variables: { workspaceId: string };
+  };
 };

@@ -3,7 +3,7 @@
   import Panel from '../components/Panel.svelte';
   import StringLabel from '../components/StringLabel.svelte';
   import WorkspaceNav from '../components/WorkspaceNav.svelte';
-  import ComponentTable from '../components/ComponentTable.svelte';
+  import DataGrid from '../components/DataGrid.svelte';
   import { api } from '../lib/api';
   import * as router from 'svelte-spa-router';
 
@@ -12,22 +12,23 @@
   const workspaceId = params.workspace;
   const workspace = api.workspace(workspaceId);
   const workspaceRoute = `/workspaces/${encodeURIComponent(workspaceId)}`;
+
+  // load={workspace.describeNetworks}
 </script>
 
 <Layout>
   <WorkspaceNav {workspaceId} active="Networking" slot="navbar" />
   <Panel title="Networks" backUrl={workspaceRoute}>
-    <ComponentTable
-      load={workspace.describeNetworks}
+    <DataGrid
       columns={[
         {
           title: 'id',
-          component: StringLabel,
+          label: StringLabel,
           getValue: (network) => network.id,
         },
         {
           title: 'name',
-          component: StringLabel,
+          label: StringLabel,
           getValue: (network) => network.name,
         },
       ]}
