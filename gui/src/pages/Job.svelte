@@ -12,7 +12,7 @@
 </script>
 
 <Layout>
-  <Panel title={`Job: ${jobId}`} backRoute="/jobs">
+  <Panel title={`Job: ${jobId}`} backUrl="/jobs">
     <!-- TODO: common loader component -->
     {#await tasks}
       Loading...

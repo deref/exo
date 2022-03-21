@@ -49,7 +49,7 @@
   };
 </script>
 
-<Panel title={stack.displayName} backRoute="/" --panel-padding="0 1rem">
+<Panel title={stack.displayName} backUrl="/" --panel-padding="0 1rem">
   <div class="actions" slot="actions">
     <span>Logs</span>
     <div class="menu" tabindex="0">

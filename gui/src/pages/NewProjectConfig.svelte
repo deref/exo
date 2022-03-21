@@ -95,7 +95,7 @@
 </script>
 
 <Layout loading={$q.loading} error={null}>
-  <CenterFormPanel title={`New ${starter} project`} backRoute="#/new-project">
+  <CenterFormPanel title={`New ${starter} project`} backUrl="#/new-project">
     <form on:submit|preventDefault={submitForm}>
       <h1>New {starter} project</h1>
 

@@ -7,10 +7,10 @@
   // intermediate step pages in create/edit flows.
 
   export let title: string = '';
-  export let backRoute: string = '';
+  export let backUrl: string = '';
 </script>
 
-<Panel {title} {backRoute} --panel-padding="2rem" --panel-overflow-y="scroll">
+<Panel {title} {backUrl} --panel-padding="2rem" --panel-overflow-y="scroll">
   <div slot="actions">
     <slot name="actions" />
   </div>

@@ -16,7 +16,7 @@
 
 <Layout>
   <WorkspaceNav {workspaceId} active="Storage" slot="navbar" />
-  <Panel title="Volumes" backRoute={workspaceRoute}>
+  <Panel title="Volumes" backUrl={workspaceRoute}>
     <ComponentTable
       load={workspace.describeVolumes}
       columns={[

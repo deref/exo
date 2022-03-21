@@ -8,7 +8,6 @@
   import * as router from 'svelte-spa-router';
 
   export let params = { workspace: '' };
-
   const workspaceId = params.workspace;
   const workspace = api.workspace(workspaceId);
   const workspaceRoute = `/workspaces/${encodeURIComponent(workspaceId)}`;
@@ -16,7 +15,7 @@
 
 <Layout>
   <WorkspaceNav {workspaceId} active="Components" slot="navbar" />
-  <Panel title="Components" backRoute={workspaceRoute}>
+  <Panel title="Components" backUrl={workspaceRoute}>
     <ComponentTable
       load={workspace.describeComponents}
       columns={[

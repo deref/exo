@@ -17,7 +17,7 @@
   const workspaceId = params.workspace;
   const workspace = api.workspace(workspaceId);
   const kernel = api.kernel;
-  const backRoute = `/workspaces/${encodeURIComponent(workspaceId)}/variables`;
+  const backUrl = `/workspaces/${encodeURIComponent(workspaceId)}/variables`;
 
   // TODO: inject this.
   const esvUrl = 'https://secrets.deref.io/organizations';
@@ -55,7 +55,7 @@
 
 <Layout>
   <WorkspaceNav {workspaceId} active="Variables" slot="navbar" />
-  <CenterFormPanel title="Add Vault" {backRoute}>
+  <CenterFormPanel title="Add Vault" {backUrl}>
     <h1><Icon glyph="Lock" />Add Secrets Vault</h1>
     <form
       on:submit={async () => {

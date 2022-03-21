@@ -11,7 +11,7 @@
 </script>
 
 <Layout>
-  <Panel title="Jobs" backRoute="/">
+  <Panel title="Jobs" backUrl="/">
     <!-- TODO: common loader component -->
     {#await jobs}
       Loading...

@@ -89,14 +89,14 @@ environment:
 <Layout>
   <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
   {#await getComponent()}
-    <CenterFormPanel title="Loading..." backRoute={workspaceComponentsRoute}>
+    <CenterFormPanel title="Loading..." backUrl={workspaceComponentsRoute}>
       <Spinner />
     </CenterFormPanel>
   {:then component}
     {#if component !== undefined}
       <CenterFormPanel
         title={pageTitle(component)}
-        backRoute={workspaceComponentsRoute}
+        backUrl={workspaceComponentsRoute}
       >
         <h1>
           <Icon glyph={componentTypes[component.type].glyph} />

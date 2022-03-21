@@ -52,7 +52,7 @@
   <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
   <CenterFormPanel
     title={`New ${displayType}`}
-    backRoute={workspaceNewComponentRoute}
+    backUrl={workspaceNewComponentRoute}
   >
     <h1><Icon glyph="LogoDocker" /> New {displayType}</h1>
     <form

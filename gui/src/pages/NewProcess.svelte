@@ -79,7 +79,7 @@ my-app --port 4000
 
 <Layout>
   <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
-  <CenterFormPanel title="New Process" backRoute={workspaceNewComponentRoute}>
+  <CenterFormPanel title="New Process" backUrl={workspaceNewComponentRoute}>
     <h1><Icon glyph="Layers" /> New Process</h1>
     <form
       on:submit|preventDefault={async () => {
