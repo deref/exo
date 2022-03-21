@@ -29,7 +29,7 @@
 
 <Layout>
   <WorkspaceNav {workspaceId} active="Variables" slot="navbar" />
-  <Panel title="Workspace Variables" backRoute={workspaceRoute}>
+  <Panel title="Workspace Variables" backUrl={workspaceRoute}>
     {#await requests}
       <Spinner />
     {:then [variables, vaults]}

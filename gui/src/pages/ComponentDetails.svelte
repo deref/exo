@@ -56,7 +56,7 @@
   <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
   <Panel
     title={component ? component.name : 'Loading...'}
-    backRoute={`/workspaces/${encodeURIComponent(workspaceId)}`}
+    backUrl={`/workspaces/${encodeURIComponent(workspaceId)}`}
   >
     {#if component}
       <CheckeredTableWrapper>

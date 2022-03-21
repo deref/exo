@@ -60,7 +60,7 @@
 
 <Layout>
   <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
-  <CenterFormPanel title="New component" backRoute={workspaceRoute}>
+  <CenterFormPanel title="New component" backUrl={workspaceRoute}>
     {#each categories as category}
       <section>
         {#if category.title}

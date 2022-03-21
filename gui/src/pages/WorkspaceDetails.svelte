@@ -15,11 +15,11 @@
 <Layout>
   <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
   {#await workspace.describeSelf()}
-    <Panel title="Loading..." backRoute={workspaceRoute} />
+    <Panel title="Loading..." backUrl={workspaceRoute} />
   {:then description}
     <Panel
       title={description.displayName + '/Details'}
-      backRoute={workspaceRoute}
+      backUrl={workspaceRoute}
     >
       <CheckeredTableWrapper>
         <table>

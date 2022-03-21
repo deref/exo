@@ -9,7 +9,6 @@
   import { query, mutation } from '../lib/graphql';
 
   export let params = { workspace: '' };
-
   const workspaceId = params.workspace;
 
   const q = query(

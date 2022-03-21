@@ -3,18 +3,18 @@
   import * as router from 'svelte-spa-router';
 
   export let title: string = '';
-  export let backRoute: string = '';
+  export let backUrl: string = '';
 </script>
 
 <div class="panel">
   <header>
     <div class="header-title">
-      {#if backRoute}
+      {#if backUrl}
         <IconButton
           glyph="Back"
           tooltip="Go back"
           on:click={() => {
-            router.push(backRoute ?? '');
+            router.push(backUrl ?? '');
           }}
         />
       {/if}

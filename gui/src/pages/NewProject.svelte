@@ -32,7 +32,7 @@
 </script>
 
 <Layout loading={$q.loading} error={null}>
-  <CenterFormPanel title="New project" backRoute="/">
+  <CenterFormPanel title="New project" backUrl="/">
     <h1>New project</h1>
 
     <button

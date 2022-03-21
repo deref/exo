@@ -16,7 +16,7 @@
 
 <Layout>
   <WorkspaceNav {workspaceId} active="Networking" slot="navbar" />
-  <Panel title="Networks" backRoute={workspaceRoute}>
+  <Panel title="Networks" backUrl={workspaceRoute}>
     <ComponentTable
       load={workspace.describeNetworks}
       columns={[
