@@ -7,28 +7,24 @@
 </script>
 
 <script lang="ts">
-  import CheckeredTableWrapper from '../components/CheckeredTableWrapper.svelte';
+  import CheckeredTable from './CheckeredTable.svelte';
 
   export let variables: Variable[] = [];
 
   const hasSources = variables.some((v) => !!v.source);
 </script>
 
-<CheckeredTableWrapper>
-  <tbody>
-    <table>
-      {#each variables as { name, value, source }}
-        <tr>
-          <td class="label">{name}</td>
-          <td><code><pre>{value}</pre></code></td>
-          {#if hasSources}
-            <td>{source}</td>
-          {/if}
-        </tr>
-      {/each}
-    </table>
-  </tbody>
-</CheckeredTableWrapper>
+<CheckeredTable>
+  {#each variables as { name, value, source }}
+    <tr>
+      <td class="label">{name}</td>
+      <td><code><pre>{value}</pre></code></td>
+      {#if hasSources}
+        <td>{source}</td>
+      {/if}
+    </tr>
+  {/each}
+</CheckeredTable>
 
 <style>
   .label {
