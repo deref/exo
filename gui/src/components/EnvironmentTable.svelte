@@ -17,8 +17,8 @@
 <CheckeredTable>
   {#each variables as { name, value, source }}
     <tr>
-      <td class="label">{name}</td>
-      <td><code><pre>{value}</pre></code></td>
+      <td class="name">{name}</td>
+      <td class="value"><code><pre>{value}</pre></code></td>
       {#if hasSources}
         <td>{source}</td>
       {/if}
@@ -27,11 +27,17 @@
 </CheckeredTable>
 
 <style>
-  .label {
+  .name {
     font-size: 0.8em;
     font-weight: 450;
     color: var(--grey-5-color);
+    min-width: 100px;
   }
+
+  .value {
+    min-width: 250px;
+  }
+
   code {
     width: 100%;
     max-width: 600px;

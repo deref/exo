@@ -7,17 +7,57 @@
   import WorkspaceNav from '../components/WorkspaceNav.svelte';
   import EnvironmentTable from '../components/EnvironmentTable.svelte';
   import CheckeredTable from '../components/CheckeredTable.svelte';
-  import { api } from '../lib/api';
+  import { mutation, query } from '../lib/graphql';
 
   export let params = { workspace: '' };
-
   const workspaceId = params.workspace;
-  const workspace = api.workspace(workspaceId);
-  const workspaceRoute = `/workspaces/${encodeURIComponent(workspaceId)}`;
 
-  const makeRequests = () =>
-    Promise.all([workspace.describeEnvironment(), workspace.describeVaults()]);
-  let requests = makeRequests();
+  const q = query(
+    `#graphql
+    query ($workspaceId: String!) {
+      workspace: workspaceById(id: $workspaceId) {
+        id
+        stack {
+          vaults {
+            id
+            name
+            url
+            connected
+            authenticated
+          }
+          environment {
+            # TODO: Use a fragment.
+            variables {
+              name
+              value
+              source
+            }
+          }
+        }
+      }
+    }`,
+    {
+      variables: {
+        workspaceId,
+      },
+    },
+  );
+
+  // TODO: Should _remove_ vault from the stack, not necessarily forget it, but
+  // need some global vaults GUI UX too before doing that.
+  const forgetVaultMutation = mutation(
+    `#graphql
+    mutation ($id: String!) {
+      forgetVault(ref: $id) {
+        __typename
+      }
+    }`,
+  );
+  const forgetVault = async (id: string) => {
+    await forgetVaultMutation({ variables: { id } });
+  };
+
+  const workspaceUrl = `/workspaces/${encodeURIComponent(workspaceId)}`;
 
   const authEsv = async () => {
     const uri = new URL(window.location.href);
@@ -25,75 +65,67 @@
     uri.searchParams.set('returnTo', $location);
     window.location.href = uri.toString();
   };
+
+  $: vaults = $q.data?.workspace?.stack?.vaults;
+  $: variables = $q.data?.workspace?.stack?.environment?.variables;
 </script>
 
-<Layout>
+<Layout loading={$q.loading} error={$q.error}>
   <WorkspaceNav {workspaceId} active="Variables" slot="navbar" />
-  <Panel title="Workspace Variables" backUrl={workspaceRoute}>
-    {#await requests}
-      <Spinner />
-    {:then [variables, vaults]}
-      <div class="vaults-title">
-        <h2>Secrets Vaults</h2>
-        <Button href={`${workspaceRoute}/add-vault`} small>+ Add vault</Button>
-      </div>
-      {#if vaults.length > 0}
-        <CheckeredTable>
-          <svelte:fragment slot="head">
-            <th>Name</th>
-            <th>URL</th>
-          </svelte:fragment>
-          {#each vaults as vault}
-            <tr>
-              <td>{vault.name}</td>
-              <td>
-                {#if vault.connected}
-                  <a href={vault.url} target="_blank">{vault.url}</a>
-                {:else}
-                  {vault.url}
-                {/if}
-              </td>
-              <td>
-                {#if vault.connected}
-                  <Button href={`${vault.url}/create-secret`} small>
-                    + New secret
-                  </Button>
-                {:else if vault.needsAuth}
-                  <Button on:click={() => authEsv()} small>Authenticate</Button>
-                {:else}
-                  Bad vault URL
-                {/if}
-                <Button
-                  on:click={async (_event) => {
-                    await workspace.removeVault({
-                      url: vault.url,
-                    });
-                    window.location.reload();
-                  }}
-                  small
-                >
-                  x
+  <Panel title="Workspace Variables" backUrl={workspaceUrl}>
+    <div class="vaults-title">
+      <h2>Secrets Vaults</h2>
+      <Button href={`${workspaceUrl}/add-vault`} small>+ Add vault</Button>
+    </div>
+    {#if vaults && vaults.length > 0}
+      <CheckeredTable>
+        <svelte:fragment slot="head">
+          <th>Name</th>
+          <th>URL</th>
+        </svelte:fragment>
+        {#each vaults as vault}
+          <tr>
+            <td>{vault.name}</td>
+            <td>
+              {#if vault.connected}
+                <a href={vault.url} target="_blank">{vault.url}</a>
+              {:else}
+                {vault.url}
+              {/if}
+            </td>
+            <td>
+              {#if vault.connected}
+                <Button href={`${vault.url}/create-secret`} small>
+                  + New secret
                 </Button>
-              </td>
-            </tr>
-          {/each}
-        </CheckeredTable>
-      {:else}
-        <div>No vaults linked to this workspace.</div>
-      {/if}
-      {#if Object.keys(variables).length > 0}
-        <hr />
-        <h2>Variables</h2>
-        <EnvironmentTable
-          variables={Object.entries(variables).map(([name, description]) => ({
-            name,
-            ...description,
-          }))}
-        />
-      {:else}
-        <div>Empty environment, no variables found.</div>
-      {/if}
-    {/await}
+              {:else if !vault.authenticated}
+                <Button on:click={() => authEsv()} small>Authenticate</Button>
+              {:else}
+                Bad vault URL
+              {/if}
+              <Button
+                on:click={async (_event) => {
+                  await forgetVault(vault.id);
+                  window.location.reload();
+                }}
+                small
+              >
+                x
+              </Button>
+            </td>
+          </tr>
+        {/each}
+      </CheckeredTable>
+    {:else if vaults}
+      <div>No vaults linked to this workspace.</div>
+    {/if}
+    {#if variables && variables.length > 0}
+      <hr />
+      <h2>Variables</h2>
+      <EnvironmentTable {variables} />
+    {:else if variables}
+      <div>Empty environment, no variables found.</div>
+    {/if}
   </Panel>
 </Layout>
 
