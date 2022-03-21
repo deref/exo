@@ -37,6 +37,8 @@ type Query {
   tasksByJobId(jobId: String!): [Task!]!
   tasksByJobIds(jobIds: [String!]!): [Task!]!
 
+  allVaults: [Vault!]!
+
   now: Instant!
 
   # Root file system of the local cluster.
@@ -131,6 +133,15 @@ type Mutation {
   initializeComponent(id: String!): Void
   transitionComponent(id: String!, spec: String!): Void
   shutdownComponent(id: String!): Void
+
+  attachVault(
+    stackId: String!
+    # Vault will be upserted by url.
+    url: String!
+  ): Vault!
+  # Detaches vault from all stacks & removes its global record, but does not
+  # delete the external vault resources.
+  forgetVault(id: String!): Void
 
   # Debug/testing.
   sleep(seconds: Float!): Void
@@ -270,6 +281,9 @@ type Stack {
   configuration(recursive: Boolean, final: Boolean): String!
 
   environment: Environment!
+
+  vaults: [Vault!]!
+  secrets: [Secret!]!
 }
 
 type Component {
@@ -318,6 +332,7 @@ type Variable {
   name: String!
   value: String!
   source: String! # TODO: EnvironmentVariableSource union/interface.
+  # TODO: sensitive: Boolean!
 }
 
 type Resource {
@@ -466,6 +481,27 @@ type Event {
   job: Job
   taskId: String
   task: Task
+}
+
+type Vault {
+  id: String!
+  name: String! # TODO: This should by only for stack-scoped vaults.
+  url: String!
+  error: String
+  # True if there are no errors accessing the vault.
+  connected: Boolean!
+  # False if disconnected or user-authentication is required.
+  authenticated: Boolean!
+
+  secrets: [Secret!]!
+}
+
+type Secret {
+  vault: Vault!
+  name: String!
+  value: String!
+  # Convenience field. Like value, but returns nil if reveal is false.
+  valueIf(reveal: Boolean!): String
 }
 
 # See <https://github.com/ulid/spec>.

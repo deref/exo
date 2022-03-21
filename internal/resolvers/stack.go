@@ -441,3 +441,11 @@ func (r *StackResolver) Environment(ctx context.Context) (*EnvironmentResolver, 
 		}, // XXX
 	}, nil
 }
+
+func (r *StackResolver) Vaults(ctx context.Context) ([]*VaultResolver, error) {
+	return r.Q.vaultsByStackID(ctx, r.ID)
+}
+
+func (r *StackResolver) Secrets(ctx context.Context) ([]*SecretResolver, error) {
+	return r.Q.secretsByStackID(ctx, r.ID)
+}
