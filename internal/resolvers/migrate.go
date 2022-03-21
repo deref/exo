@@ -242,5 +242,33 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 		return fmt.Errorf("creating system_event index: %w", err)
 	}
 
+	// Vault.
+
+	if _, err := r.db.ExecContext(ctx, `
+		CREATE TABLE IF NOT EXISTS vault (
+			id TEXT NOT NULL PRIMARY KEY,
+			url TEXT NOT NULL
+	);`); err != nil {
+		return fmt.Errorf("creating vault table: %w", err)
+	}
+
+	if _, err := r.db.ExecContext(ctx, `
+		CREATE UNIQUE INDEX IF NOT EXISTS
+		vault_url ON vault ( url )
+	`); err != nil {
+		return fmt.Errorf("creating vault_url index: %w", err)
+	}
+
+	// Stack -> Vaults.
+
+	if _, err := r.db.ExecContext(ctx, `
+		CREATE TABLE IF NOT EXISTS stack_vault (
+			stack_id TEXT NOT NULL,
+			vault_id TEXT NOT NULL,
+			PRIMARY KEY (stack_id, vault_id)
+	);`); err != nil {
+		return fmt.Errorf("creating vault table: %w", err)
+	}
+
 	return nil
 }
