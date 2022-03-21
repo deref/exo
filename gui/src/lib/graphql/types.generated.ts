@@ -133,4 +133,34 @@ export type QueryTypes = {
     };
     variables: { workspaceId: string };
   };
+  '#graphql\n    query ($workspaceId: String!) {\n      workspace: workspaceById(id: $workspaceId) {\n        id\n        stack {\n          vaults {\n            id\n            name\n            url\n            connected\n            authenticated\n          }\n          environment {\n            # TODO: Use a fragment.\n            variables {\n              name\n              value\n              source\n            }\n          }\n        }\n      }\n    }': {
+    data: {
+      __typename: 'Query';
+      workspace: {
+        __typename: 'Workspace';
+        id: string;
+        stack: {
+          __typename: 'Stack';
+          environment: {
+            __typename: 'Environment';
+            variables: {
+              __typename: 'Variable';
+              name: string;
+              source: string;
+              value: string;
+            }[];
+          };
+          vaults: {
+            __typename: 'Vault';
+            authenticated: boolean;
+            connected: boolean;
+            id: string;
+            name: string;
+            url: string;
+          }[];
+        } | null;
+      } | null;
+    };
+    variables: { workspaceId: string };
+  };
 };
