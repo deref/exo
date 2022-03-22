@@ -12,22 +12,22 @@ func init() {
 var psCmd = &cobra.Command{
 	Use:   "ps",
 	Short: "List processes",
-	Long:  `Describes running processes.`,
+	Long:  `Describes running processes.`, // TODO: In given scope.
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 		var q struct {
 			Stack *struct {
 				Processes []struct {
-					ID   string
-					Name string
+					ComponentID string
+					Name        string
 				} `graphql:"processes"`
 			} `graphql:"stackByRef(ref: $currentStack)"`
 		}
 		mustQueryStack(ctx, &q, nil)
 		w := cmdutil.NewTableWriter("NAME", "ID")
 		for _, process := range q.Stack.Processes {
-			w.WriteRow(process.Name, process.ID)
+			w.WriteRow(process.Name, process.ComponentID)
 		}
 		w.Flush()
 		return nil
