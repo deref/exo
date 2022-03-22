@@ -190,8 +190,12 @@ func main() {
 
 	if _, ok := cmd.Flags["r"]; ok {
 
-		if err := filepath.Walk(dir, func(path string, info fs.FileInfo, err error) error {
-			if info.Mode().IsDir() {
+		if err := filepath.WalkDir(dir, func(path string, d fs.DirEntry, err error) error {
+			if err != nil {
+				// TODO: Log warning somehow.
+				return nil
+			}
+			if d.IsDir() {
 				if shouldIgnorePath(path, ignores) {
 					return nil
 				}
