@@ -21,10 +21,11 @@
   export let columns: Column<unknown>[];
   export let actions: Action[] | undefined;
   export let items: Item[];
+  export let plural = 'records';
 </script>
 
 {#if items.length === 0}
-  <div>No records</div>
+  <div>No {plural}</div>
 {:else}
   <CheckeredTable>
     <svelte:fragment slot="head">

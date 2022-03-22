@@ -48,7 +48,7 @@
   const forgetVaultMutation = mutation(
     `#graphql
     mutation ($id: String!) {
-      forgetVault(ref: $id) {
+      forgetVault(id: $id) {
         __typename
       }
     }`,

@@ -4,3 +4,5 @@ export const nonNull = <T>(x: T | null | undefined): T => {
   }
   return x;
 };
+
+export type Optional<T> = T | null | undefined;

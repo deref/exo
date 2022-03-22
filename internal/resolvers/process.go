@@ -1,6 +1,10 @@
 package resolvers
 
-import "context"
+import (
+	"context"
+
+	. "github.com/deref/exo/internal/scalars"
+)
 
 type ProcessResolver struct {
 	Q    *RootResolver
@@ -47,12 +51,12 @@ func (r *QueryResolver) processesByStack(ctx context.Context, stackID string) ([
 
 	processes := make([]*ProcessComponentResolver, 0, len(components))
 	for _, component := range components {
-		process := r.processFromComponent(component)
-		if process == nil {
+		// TODO: Some callers may also want to see recently terminated processes.
+		if !component.Running() {
 			continue
 		}
-		// XXX Some callers may also want to see recently terminated processes.
-		if !process.Running() {
+		process := r.processFromComponent(component)
+		if process == nil {
 			continue
 		}
 		processes = append(processes, process)
@@ -64,10 +68,22 @@ func (r *ProcessComponentResolver) Component(ctx context.Context) (*ComponentRes
 	return r.Q.componentByID(ctx, &r.ComponentID)
 }
 
-func (r *ProcessResolver) CPUPercentage() *float64 {
+func (r *ProcessResolver) Started() *Instant {
 	return nil // TODO!
 }
 
-func (r *ProcessResolver) Running() bool {
-	return true // XXX
+func (r *ProcessResolver) CPUPercent() *float64 {
+	return nil // TODO!
+}
+
+func (r *ProcessResolver) ResidentBytes() *int32 {
+	return nil // TODO!
+}
+
+func (r *ProcessResolver) Ports() *[]int32 {
+	return nil // TODO!
+}
+
+func (r *ProcessResolver) Environment() *EnvironmentResolver {
+	return nil // TODO!
 }
