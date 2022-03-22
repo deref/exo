@@ -382,10 +382,6 @@ func (r *ComponentResolver) configuration(ctx context.Context, recursive bool) (
 	return b.Build().Component(r.ID), nil
 }
 
-func (r *ComponentResolver) isProcess() bool {
-	return isProcessController(r.Type)
-}
-
 func (r *ComponentResolver) controller(ctx context.Context) (*sdk.Controller, error) {
 	controller := getController(ctx, r.Type)
 	if controller == nil {
@@ -465,9 +461,13 @@ func (r *ComponentResolver) Reconciling() bool {
 }
 
 func (r *ComponentResolver) Running() bool {
-	return false // XXX
+	return true // XXX
 }
 
-func (r *ComponentResolver) isRunningProcess() bool {
-	return r.isProcess() && r.Running()
+func (r *ComponentResolver) AsProcess(ctx context.Context) *ProcessComponentResolver {
+	return r.Q.processFromComponent(r)
+}
+
+func (r *ComponentResolver) AsStore(ctx context.Context) *StoreComponentResolver {
+	return r.Q.storeFromComponent(r)
 }

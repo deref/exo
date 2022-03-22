@@ -11,7 +11,7 @@ import (
 func init() {
 	vaultCmd.AddCommand(vaultLSCmd)
 	vaultLSCmd.Flags().BoolVarP(&vaultLSFlags.All, "all", "a", false, "Alias for --scope=all")
-	vaultLSCmd.Flags().StringVar(&vaultLSFlags.Scope, "scope", "stack", "stack or all")
+	vaultLSCmd.Flags().StringVar(&vaultLSFlags.Scope, "scope", "stack", "stack or all") // TODO: Support projects.
 }
 
 var vaultLSFlags struct {

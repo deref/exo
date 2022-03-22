@@ -39,6 +39,9 @@ type Query {
 
   allVaults: [Vault!]!
 
+  # TODO: allProcesses
+  # TODO: allStores
+
   now: Instant!
 
   # Root file system of the local cluster.
@@ -275,7 +278,9 @@ type Stack {
   workspace: Workspace
 
   components(all: Boolean, recursive: Boolean): [Component!]!
-  processes: [Process!]!
+  processes: [ProcessComponent!]!
+  stores: [StoreComponent!]!
+
   resources: [Resource!]!
 
   configuration(recursive: Boolean, final: Boolean): String!
@@ -286,7 +291,12 @@ type Stack {
   secrets: [Secret!]!
 }
 
-type Component {
+interface ComponentLike {
+  type: String!
+  name: String!
+}
+
+type Component implements ComponentLike {
   id: String!
 
   stackId: String!
@@ -305,9 +315,12 @@ type Component {
   configuration(recursive: Boolean, final: Boolean): String!
 
   reconciling: Boolean!
-  running: Boolean!
+  running: Boolean! # TODO: Not relevant for non-processes. Rename/add something like "healthy"?
   state: JSONObject!
   disposed: Instant
+
+  asProcess: ProcessComponent
+  asStore: StoreComponent
 }
 
 type Reconciliation {
@@ -317,9 +330,32 @@ type Reconciliation {
   job: Job!
 }
 
-type Process {
-  id: String!
+interface ProcessLike {
+  cpuPercentage: Float
+}
+
+type ProcessComponent implements ProcessLike, ComponentLike {
+  type: String!
   name: String!
+
+  cpuPercentage: Float
+
+  componentId: String!
+  component: Component!
+}
+
+interface StoreLike {
+  sizeMiB: Float
+}
+
+type StoreComponent implements StoreLike, ComponentLike {
+  type: String!
+  name: String!
+
+  sizeMiB: Float
+
+  componentId: String!
+  component: Component!
 }
 
 type Environment {

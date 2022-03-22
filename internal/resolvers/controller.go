@@ -11,15 +11,6 @@ import (
 
 // TODO: Dynamic registry with qualified type identifiers.
 
-func isProcessController(typ string) bool {
-	switch typ {
-	case "daemon", "process", "container":
-		return true
-	default:
-		return false
-	}
-}
-
 func getController(ctx context.Context, typ string) *sdk.Controller {
 	impl := getControllerImpl(ctx, typ)
 	if impl == nil {

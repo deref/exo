@@ -168,8 +168,12 @@ func (r *StackResolver) Resources(ctx context.Context) ([]*ResourceResolver, err
 	return r.Q.resourcesByStack(ctx, r.ID)
 }
 
-func (r *StackResolver) Processes(ctx context.Context) ([]*ProcessResolver, error) {
+func (r *StackResolver) Processes(ctx context.Context) ([]*ProcessComponentResolver, error) {
 	return r.Q.processesByStack(ctx, r.ID)
+}
+
+func (r *StackResolver) Stores(ctx context.Context) ([]*StoreComponentResolver, error) {
+	return r.Q.storesByStack(ctx, r.ID)
 }
 
 func (r *MutationResolver) CreateStack(ctx context.Context, args struct {
