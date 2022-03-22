@@ -4,14 +4,14 @@ import (
 	"fmt"
 	"sort"
 
-	"github.com/deref/exo/internal/scalars"
+	. "github.com/deref/exo/internal/scalars"
 )
 
 type EnvironmentResolver struct {
 	Variables []*VariableResolver
 }
 
-func JSONObjectToEnvironment(obj scalars.JSONObject, source string) (*EnvironmentResolver, error) {
+func JSONObjectToEnvironment(obj JSONObject, source string) (*EnvironmentResolver, error) {
 	variables := make([]*VariableResolver, 0, len(obj))
 	for k, v := range obj {
 		vs, ok := v.(string)
@@ -47,8 +47,8 @@ func EnvMapToEnvironment(m map[string]string, source string) *EnvironmentResolve
 	return environment
 }
 
-func (r *EnvironmentResolver) AsMap() scalars.JSONObject {
-	obj := make(scalars.JSONObject)
+func (r *EnvironmentResolver) AsMap() JSONObject {
+	obj := make(JSONObject)
 	for _, variable := range r.Variables {
 		obj[variable.Name] = variable.Value
 	}

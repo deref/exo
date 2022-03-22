@@ -10,7 +10,7 @@ import (
 	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/gensym"
 	"github.com/deref/exo/internal/providers/sdk"
-	"github.com/deref/exo/internal/scalars"
+	. "github.com/deref/exo/internal/scalars"
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/deref/exo/internal/util/logging"
@@ -23,16 +23,16 @@ type ResourceResolver struct {
 }
 
 type ResourceRow struct {
-	ID          string             `db:"id"`
-	Type        string             `db:"type"`
-	IRI         *string            `db:"iri"`
-	ProjectID   *string            `db:"project_id"`
-	StackID     *string            `db:"stack_id"`
-	ComponentID *string            `db:"component_id"`
-	TaskID      *string            `db:"task_id"`
-	Model       scalars.JSONObject `db:"model"`
-	Status      int32              `db:"status"`
-	Message     *string            `db:"message"`
+	ID          string     `db:"id"`
+	Type        string     `db:"type"`
+	IRI         *string    `db:"iri"`
+	ProjectID   *string    `db:"project_id"`
+	StackID     *string    `db:"stack_id"`
+	ComponentID *string    `db:"component_id"`
+	TaskID      *string    `db:"task_id"`
+	Model       JSONObject `db:"model"`
+	Status      int32      `db:"status"`
+	Message     *string    `db:"message"`
 }
 
 func (r *MutationResolver) ForgetResource(ctx context.Context, args struct {
@@ -279,7 +279,7 @@ func (r *ResourceResolver) Operation(ctx context.Context) (*string, error) {
 
 func (r *MutationResolver) CreateResource(ctx context.Context, args struct {
 	Type      string
-	Model     scalars.JSONObject
+	Model     JSONObject
 	Project   *string
 	Stack     *string
 	Component *string
@@ -379,7 +379,7 @@ type resourceOperation func(ctx context.Context, resource *ResourceResolver, con
 
 func (r *MutationResolver) InitializeResource(ctx context.Context, args struct {
 	Ref   string
-	Model scalars.JSONObject
+	Model JSONObject
 }) (*ResourceResolver, error) {
 	return r.doResourceOperation(ctx, args.Ref,
 		func(ctx context.Context, resource *ResourceResolver, ctrl *sdk.Controller) (string, error) {
@@ -400,7 +400,7 @@ func (r *MutationResolver) RefreshResource(ctx context.Context, args struct {
 
 func (r *MutationResolver) UpdateResource(ctx context.Context, args struct {
 	Ref   string
-	Model scalars.JSONObject
+	Model JSONObject
 }) (*ResourceResolver, error) {
 	return r.doResourceOperation(ctx, args.Ref,
 		func(ctx context.Context, resource *ResourceResolver, ctrl *sdk.Controller) (string, error) {
@@ -463,7 +463,7 @@ func (r *MutationResolver) doResourceOperation(ctx context.Context, ref string, 
 		return nil, fmt.Errorf("controller failed: %w", err)
 	}
 
-	var modelObj scalars.JSONObject
+	var modelObj JSONObject
 	jsonutil.MustUnmarshalString(model, &modelObj)
 
 	iri, identifyErr := ctrl.Identify(ctx, modelObj)

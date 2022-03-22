@@ -8,7 +8,7 @@ import (
 
 	"cuelang.org/go/cue"
 	"github.com/deref/exo/internal/manifest/exocue"
-	"github.com/deref/exo/internal/scalars"
+	. "github.com/deref/exo/internal/scalars"
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/shellutil"
 )
@@ -19,10 +19,10 @@ type ClusterResolver struct {
 }
 
 type ClusterRow struct {
-	ID                   string             `db:"id"`
-	Name                 string             `db:"name"`
-	EnvironmentVariables scalars.JSONObject `db:"environment_variables"`
-	Updated              scalars.Instant    `db:"updated"`
+	ID                   string     `db:"id"`
+	Name                 string     `db:"name"`
+	EnvironmentVariables JSONObject `db:"environment_variables"`
+	Updated              Instant    `db:"updated"`
 }
 
 func (r *QueryResolver) clusterByID(ctx context.Context, id *string) (*ClusterResolver, error) {
@@ -105,13 +105,13 @@ func (r *ClusterResolver) Default() bool {
 
 func (r *MutationResolver) UpdateCluster(ctx context.Context, args struct {
 	Ref         string
-	Environment *scalars.JSONObject
+	Environment *JSONObject
 }) (*ClusterResolver, error) {
 	return r.updateCluster(ctx, args.Ref, args.Environment)
 }
 
-func (r *MutationResolver) updateCluster(ctx context.Context, ref string, environment *scalars.JSONObject) (*ClusterResolver, error) {
-	now := scalars.Now(ctx)
+func (r *MutationResolver) updateCluster(ctx context.Context, ref string, environment *JSONObject) (*ClusterResolver, error) {
+	now := Now(ctx)
 	var row ClusterRow
 	if err := r.db.GetContext(ctx, &row, `
 		UPDATE cluster
@@ -138,7 +138,7 @@ const clusterTTL = 3 * time.Second
 func (r *ClusterResolver) Environment(ctx context.Context) (*EnvironmentResolver, error) {
 	variables := r.EnvironmentVariables
 
-	now := scalars.Now(ctx)
+	now := Now(ctx)
 	if r.EnvironmentVariables == nil || now.Sub(r.Updated) < clusterTTL {
 		r, err := r.Q.refreshCluster(ctx, r.ID)
 		if err != nil {
@@ -161,7 +161,7 @@ func (r *MutationResolver) refreshCluster(ctx context.Context, ref string) (*Clu
 	if err != nil {
 		return nil, fmt.Errorf("querying environment: %w", err)
 	}
-	envObj := make(scalars.JSONObject, len(envMap))
+	envObj := make(JSONObject, len(envMap))
 	for k, v := range envMap {
 		envObj[k] = v
 	}
