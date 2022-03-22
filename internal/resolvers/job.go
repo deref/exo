@@ -6,7 +6,6 @@ import (
 	"time"
 
 	"github.com/deref/exo/internal/chrono"
-	"github.com/deref/exo/internal/scalars"
 	. "github.com/deref/exo/internal/scalars"
 )
 
@@ -103,7 +102,7 @@ func (r *SubscriptionResolver) WatchJob(ctx context.Context, args struct {
 		JobID: jobID,
 	}
 	if args.After == nil {
-		filter.After = scalars.InstantToULID(rootTask.Created)
+		filter.After = InstantToULID(rootTask.Created)
 	} else {
 		filter.After = *args.After
 	}

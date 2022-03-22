@@ -8,12 +8,12 @@ import (
 	"fmt"
 
 	"github.com/deref/exo/internal/gensym"
-	"github.com/deref/exo/internal/scalars"
+	. "github.com/deref/exo/internal/scalars"
 	"github.com/mattn/go-sqlite3"
 )
 
 func (r *MutationResolver) Migrate(ctx context.Context) error {
-	now := scalars.Now(ctx)
+	now := Now(ctx)
 
 	// Cluster.
 

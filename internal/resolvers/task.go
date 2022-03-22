@@ -12,7 +12,6 @@ import (
 	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/chrono"
 	"github.com/deref/exo/internal/gensym"
-	"github.com/deref/exo/internal/scalars"
 	. "github.com/deref/exo/internal/scalars"
 )
 
@@ -456,7 +455,7 @@ func (r *TaskResolver) Label(ctx context.Context) (string, error) {
 	}
 	methodType, _ := reflect.TypeOf(r.Q).MethodByName(methodName)
 	args := reflect.New(methodType.Type.In(2))
-	if err := scalars.DecodeStruct((map[string]any)(r.Arguments), args.Interface()); err != nil {
+	if err := DecodeStruct((map[string]any)(r.Arguments), args.Interface()); err != nil {
 		return "", fmt.Errorf("decoding arguments: %w", err)
 	}
 	// TODO: Use more flexible calling conventions, like other resolver methods.
