@@ -1,5 +1,18 @@
 // GENERATED FILE. DO NOT EDIT.
 
+import type { Instant } from './scalars';
+
+export type Fragment_EnvironmentVariables_Data = {
+  __typename: 'Environment';
+  variables: {
+    __typename: 'Variable';
+    name: string;
+    source: string;
+    value: string;
+  }[];
+};
+export type Fragment_EnvironmentVariables_Variables = {};
+
 export type QueryTypes = {
   '#graphql\n    subscription {\n      system: systemChange {\n        version {\n          installed\n          managed\n          upgrade\n        }\n      }\n    }\n  ': {
     data: {
@@ -16,15 +29,29 @@ export type QueryTypes = {
     };
     variables: {};
   };
-  '#graphql\n    query ($componentId: String!) {\n      component: componentById(id: $componentId) {\n        id\n        name\n        asProcess {\n          running\n          cpuPercentage\n        }\n        environment {\n          variables {\n            name\n            value\n            source\n          }\n        }\n      }\n    }': {
+  '#graphql\n    query ($componentId: String!) {\n      component: componentById(id: $componentId) {\n        id\n        name\n        running\n        asProcess {\n          cpuPercent\n          residentBytes\n          started\n          ports\n          environment {\n            ...EnvironmentVariables\n          }\n        }\n        environment {\n          ...EnvironmentVariables\n        }\n      }\n    }\n    \n    # TODO: Lift to EnvironmentTable.\n    fragment EnvironmentVariables on Environment {\n      variables {\n        name\n        value\n        source\n      }\n    }\n    ': {
     data: {
       __typename: 'Query';
       component: {
         __typename: 'Component';
-        asProcess: unknown;
-        environment: unknown;
+        asProcess: {
+          __typename: 'ProcessComponent';
+          cpuPercent: number | null;
+          environment:
+            | ({
+                __typename: 'Environment';
+              } & Fragment_EnvironmentVariables_Data)
+            | null;
+          ports: number[] | null;
+          residentBytes: number | null;
+          started: Instant | null;
+        } | null;
+        environment: {
+          __typename: 'Environment';
+        } & Fragment_EnvironmentVariables_Data;
         id: string;
         name: string;
+        running: boolean;
       } | null;
     };
     variables: { componentId: string };
@@ -100,17 +127,14 @@ export type QueryTypes = {
   '#graphql\n    mutation ($id: String!) {\n      destroyStack(ref: $id) {\n        __typename\n      }\n    }': {
     data: {
       __typename: 'Mutation';
-      destroyStack: { __typename: 'Reconciliation'; __typename: string | null };
+      destroyStack: { __typename: 'Reconciliation' };
     };
     variables: { id: string };
   };
   '#graphql\n    mutation ($id: String!) {\n      disposeComponent(ref: $id) {\n        __typename\n      }\n    }': {
     data: {
       __typename: 'Mutation';
-      disposeComponent: {
-        __typename: 'Reconciliation';
-        __typename: string | null;
-      };
+      disposeComponent: { __typename: 'Reconciliation' };
     };
     variables: { id: string };
   };
@@ -126,6 +150,26 @@ export type QueryTypes = {
             __typename: 'Component';
             id: string;
             name: string;
+            type: string;
+          }[];
+        } | null;
+      } | null;
+    };
+    variables: { workspaceId: string };
+  };
+  '#graphql\n    query ($workspaceId: String!) {\n      workspace: workspaceById(id: $workspaceId) {\n        id\n        stack {\n          stores {\n            type\n            name\n            componentId\n            sizeMiB\n          }\n        }\n      }\n    }': {
+    data: {
+      __typename: 'Query';
+      workspace: {
+        __typename: 'Workspace';
+        id: string;
+        stack: {
+          __typename: 'Stack';
+          stores: {
+            __typename: 'StoreComponent';
+            componentId: string;
+            name: string;
+            sizeMiB: number | null;
             type: string;
           }[];
         } | null;
@@ -162,5 +206,12 @@ export type QueryTypes = {
       } | null;
     };
     variables: { workspaceId: string };
+  };
+  '#graphql\n    mutation ($id: String!) {\n      forgetVault(id: $id) {\n        __typename\n      }\n    }': {
+    data: {
+      __typename: 'Mutation';
+      forgetVault: { __typename: 'Void' } | null;
+    };
+    variables: { id: string };
   };
 };

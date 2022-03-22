@@ -1,5 +1,7 @@
 <script lang="ts">
-  export let value: number;
+  import type { Optional } from '../lib/util';
+
+  export let value: Optional<number>;
 
   // From https://stackoverflow.com/a/14919494
   /**
@@ -38,4 +40,6 @@
   }
 </script>
 
-<span>{humanFileSize(value)}</span>
+{#if value != null}
+  <span>{humanFileSize(value)}</span>
+{/if}

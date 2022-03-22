@@ -10,6 +10,7 @@ import (
 
 func init() {
 	rootCmd.AddCommand(envCmd)
+	// TODO: --scope, --component=, etc.
 }
 
 var envCmd = &cobra.Command{

@@ -313,6 +313,7 @@ type Component implements ComponentLike {
 
   spec: String!
   configuration(recursive: Boolean, final: Boolean): String!
+  environment: Environment!
 
   reconciling: Boolean!
   running: Boolean! # TODO: Not relevant for non-processes. Rename/add something like "healthy"?
@@ -331,14 +332,23 @@ type Reconciliation {
 }
 
 interface ProcessLike {
-  cpuPercentage: Float
+  started: Instant
+  cpuPercent: Float
+  residentBytes: Int
+  environment: Environment
+  ports: [Int!]
 }
 
-type ProcessComponent implements ProcessLike, ComponentLike {
+type ProcessComponent implements ProcessLike & ComponentLike {
   type: String!
   name: String!
 
-  cpuPercentage: Float
+  started: Instant
+  cpuPercent: Float
+  residentBytes: Int
+  environment: Environment
+  ports: [Int!]
+  # TODO: children: [Process!]
 
   componentId: String!
   component: Component!
@@ -348,7 +358,7 @@ interface StoreLike {
   sizeMiB: Float
 }
 
-type StoreComponent implements StoreLike, ComponentLike {
+type StoreComponent implements StoreLike & ComponentLike {
   type: String!
   name: String!
 

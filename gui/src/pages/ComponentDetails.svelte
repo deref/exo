@@ -6,6 +6,8 @@
   import EnvironmentTable from '../components/EnvironmentTable.svelte';
   import CheckeredTable from '../components/CheckeredTable.svelte';
   import Sparkline from '../components/Sparkline.svelte';
+  import PercentLabel from '../components/PercentLabel.svelte';
+  import InstantLabel from '../components/InstantLabel.svelte';
   import { query } from '../lib/graphql';
 
   export let params = { workspace: '', component: '' };
@@ -18,19 +20,31 @@
       component: componentById(id: $componentId) {
         id
         name
+        running
         asProcess {
-          running
-          cpuPercentage
-        }
-        environment {
-          variables {
-            name
-            value
-            source
+          cpuPercent
+          residentBytes
+          started
+          ports
+          environment {
+            ...EnvironmentVariables
           }
         }
+        environment {
+          ...EnvironmentVariables
+        }
       }
-    }`,
+    }
+    
+    # TODO: Lift to EnvironmentTable.
+    fragment EnvironmentVariables on Environment {
+      variables {
+        name
+        value
+        source
+      }
+    }
+    `,
     {
       variables: {
         componentId,
@@ -40,14 +54,13 @@
   );
   const component = $q.data?.component;
   const process = component?.asProcess;
+  // TODO: Visually distinguish observed environment vs specified environment.
+  const environment = process?.environment ?? component?.environment;
 
-  let cpuPercentages: number[] = [];
+  let cpuPercents: number[] = [];
   $: {
-    if (component?.cpuPercentage != null) {
-      cpuPercentages = [
-        ...cpuPercentages.slice(0, 99),
-        component.cpuPercentage,
-      ];
+    if (process?.cpuPercent != null) {
+      cpuPercents = [...cpuPercents.slice(0, 99), process.cpuPercent];
     }
   }
 </script>
@@ -62,40 +75,30 @@
       <CheckeredTable>
         <tr>
           <td class="label">Status</td>
-          <td>{process.running ? 'Running' : 'Stopped'}</td>
+          <td>{component.running ? 'Running' : 'Stopped'}</td>
           <td />
         </tr>
-        {#if component.running}
+        {#if process}
           <tr>
             <td class="label">CPU</td>
             <td>
-              {#if process.cpuPercent}
-                {process.cpuPercent.toFixed(2)}%
-              {/if}
+              <PercentLabel value={process.cpuPercent} />
             </td>
           </tr>
           <tr>
             <td class="label">Resident Memory</td>
             <td>
-              {#if process.residentMemory}
-                <BytesLabel value={process.residentMemory} />
-              {/if}
+              <BytesLabel value={process.residentBytes} />
             </td>
             <td />
           </tr>
           <tr>
             <td class="label">Started at</td>
             <td>
-              {#if process.createTime}
-                <span title={new Date(process.createTime).toISOString()}>
-                  {new Date(process.createTime).toLocaleTimeString()}
-                </span>
-              {/if}
+              <InstantLabel value={process.started} />
             </td>
             <td>
-              {#if cpuPercentages.some((p) => p !== 0)}
-                <Sparkline entries={cpuPercentages} interactive />
-              {/if}
+              <Sparkline entries={cpuPercents} interactive />
             </td>
           </tr>
           <tr>
@@ -103,18 +106,13 @@
             <td>{process.ports?.join(', ') ?? 'None'}</td>
             <td />
           </tr>
-          <tr>
-            <td class="label">Children</td>
-            <td>
-              {process.childrenExecutables?.join(', ') ?? 'None'}
-            </td>
-            <td />
-          </tr>
         {/if}
       </CheckeredTable>
       <br />
       <h3>Environment</h3>
-      <EnvironmentTable variables={component.environment.variables} />
+      {#if environment}
+        <EnvironmentTable variables={environment.variables} />
+      {/if}
     {/if}
   </Panel>
 </Layout>

@@ -11,6 +11,8 @@
 </script>
 
 <script lang="ts">
+  import PercentLabel from './PercentLabel.svelte';
+
   export let value: TaskNode;
 </script>
 
@@ -18,9 +20,9 @@
   <div class="row">
     <div class="status">{value.status}</div>
     <div class="message">{value.name}</div>
-    {#if value.progress != null}
-      <div class="progress">{Math.floor(value.progress * 100)}%</div>
-    {/if}
+    <div class="progress">
+      <PercentLabel value={value.progress} />
+    </div>
   </div>
   {#if value.children.length > 0}
     <ul>

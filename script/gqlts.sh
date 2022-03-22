@@ -2,7 +2,8 @@
 
 set +e
 
-extractgqlts \
+echo -n "extractgqlts"
+time extractgqlts \
   --schema ./internal/resolvers/schema.gql \
   ./gui/src/**/*.svelte \
   > ./gui/src/lib/graphql/types.generated.ts
@@ -12,6 +13,7 @@ set -e
 
 (
   cd gui
+  echo "prettier"
   node ./node_modules/.bin/prettier \
     --write \
     ./src/lib/graphql/types.generated.ts

@@ -382,6 +382,19 @@ func (r *ComponentResolver) configuration(ctx context.Context, recursive bool) (
 	return b.Build().Component(r.ID), nil
 }
 
+func (r *ComponentResolver) Environment(ctx context.Context) (*EnvironmentResolver, error) {
+	cfg, err := r.configuration(ctx, false)
+	if err != nil {
+		return nil, fmt.Errorf("resolving configuration: %w", err)
+	}
+	env, err := cfg.Environment()
+	if err != nil {
+		return nil, err
+	}
+	source := "" // XXX
+	return EnvMapToEnvironment(env, source), nil
+}
+
 func (r *ComponentResolver) controller(ctx context.Context) (*sdk.Controller, error) {
 	controller := getController(ctx, r.Type)
 	if controller == nil {

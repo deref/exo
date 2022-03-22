@@ -2,7 +2,7 @@
   import sparkline from '@fnando/sparkline';
   import { afterUpdate } from 'svelte';
 
-  export let entries: number[];
+  export let entries: Optional<number[]>;
   export let interactive = false;
 
   let svg: SVGSVGElement;
@@ -14,13 +14,15 @@
   });
 </script>
 
-<svg
-  bind:this={svg}
-  class="sparkline"
-  width="100"
-  height="30"
-  stroke-width="3"
-/>
+{#if entries}
+  <svg
+    bind:this={svg}
+    class="sparkline"
+    width="100"
+    height="30"
+    stroke-width="3"
+  />
+{/if}
 
 <style>
   .sparkline {
