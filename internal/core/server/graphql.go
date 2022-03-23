@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/deref/exo/internal/api"
+	"github.com/deref/exo/internal/util/httputil"
 	"github.com/deref/exo/internal/util/jsonutil"
 )
 
@@ -31,9 +32,9 @@ func (h *GraphqlHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var sse *SSEWriter
+	var sse *httputil.SSEWriter
 	if strings.Contains(r.Header.Get("Accept"), "text/event-stream") {
-		sse = StartSSE(w)
+		sse = httputil.StartSSE(w)
 	} else {
 		w.Header().Set("Content-Type", "application/json")
 	}

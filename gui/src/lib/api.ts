@@ -1,6 +1,5 @@
 // TODO: DELETE ME. Moving to GraphQL.
 
-import { isAuthenticated, isRunning } from './global/server-status';
 import type { GetVersionResponse } from './kernel/types';
 import type {
   ExportProcfileResponse,
@@ -157,14 +156,10 @@ const rpc = async (
     });
   } catch (err: unknown) {
     if (err instanceof TypeError) {
-      isRunning.set(false);
       throw new APIError(0, 'Server not available');
     }
     throw err;
   }
-
-  isRunning.set(true);
-  isAuthenticated.set(res.status !== 401);
 
   const err = await responseToError(res);
   if (err !== null) {

@@ -102,6 +102,10 @@ export type QueryTypes = {
     };
     variables: { directoryPath: string | null };
   };
+  '#graphql\n    { __typename }\n  ': {
+    data: { __typename: 'Query' };
+    variables: {};
+  };
   '#graphql\n    query ($workspaceId: String!) {\n      workspace: workspaceById(id: $workspaceId) {\n        id\n        stack {\n          id\n          displayName\n          components {\n            id\n            name\n            reconciling\n            running\n          }\n        }\n      }\n    }': {
     data: {
       __typename: 'Query';

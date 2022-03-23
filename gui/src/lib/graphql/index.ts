@@ -9,6 +9,8 @@ import type { ReadableQuery, ReadableResult } from 'svelte-apollo';
 import * as sa from 'svelte-apollo';
 import type { QueryTypes } from './types.generated';
 
+export { initClient, connected, authenticated, online } from './client';
+
 type QueryType<Data = unknown, Variables = unknown> = {
   data: Data;
   variables: Variables;
@@ -89,5 +91,3 @@ export const mutation = <Q extends string>(
 };
 
 // TODO: Expose sa.restore?
-
-export { initClient } from './client';
