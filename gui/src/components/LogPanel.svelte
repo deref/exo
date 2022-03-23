@@ -32,10 +32,34 @@
 </script>
 
 <Panel title="Logs" --panel-padding="0" --panel-overflow-y="hidden">
-  <LogScroller events={$stream.events} />
+  {#if $stream.events.length}
+    <LogScroller events={$stream.events} />
+  {:else}
+    <div class="empty">
+      {#if $filterString}
+        No events match: "<code>{$filterString}</code>"
+      {:else}
+        No events
+      {/if}
+    </div>
+  {/if}
   <LogFilterBar
     slot="bottom"
     bind:filterString={$filterString}
     clearEvents={stream.clearEvents}
   />
 </Panel>
+
+<style>
+  .empty {
+    font-style: italic;
+    padding: 8px;
+    font-size: 15px;
+  }
+
+  .empty code {
+    font-style: normal;
+    font-weight: 500;
+    white-space: pre-wrap;
+  }
+</style>
