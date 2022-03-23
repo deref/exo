@@ -176,6 +176,10 @@ func (r *StackResolver) Stores(ctx context.Context) ([]*StoreComponentResolver, 
 	return r.Q.storesByStack(ctx, r.ID)
 }
 
+func (r *StackResolver) Networks(ctx context.Context) ([]*NetworkComponentResolver, error) {
+	return r.Q.networksByStack(ctx, r.ID)
+}
+
 func (r *MutationResolver) CreateStack(ctx context.Context, args struct {
 	Workspace *string
 	Name      *string

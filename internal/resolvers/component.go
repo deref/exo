@@ -484,3 +484,7 @@ func (r *ComponentResolver) AsProcess(ctx context.Context) *ProcessComponentReso
 func (r *ComponentResolver) AsStore(ctx context.Context) *StoreComponentResolver {
 	return r.Q.storeFromComponent(r)
 }
+
+func (r *ComponentResolver) AsNetwork(ctx context.Context) *NetworkComponentResolver {
+	return r.Q.networkFromComponent(r)
+}

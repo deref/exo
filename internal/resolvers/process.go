@@ -29,7 +29,7 @@ func (r *QueryResolver) isProcessType(typ string) bool {
 }
 
 func (r *QueryResolver) processFromComponent(component *ComponentResolver) *ProcessComponentResolver {
-	if r.isProcessType(component.Type) {
+	if !r.isProcessType(component.Type) {
 		return nil
 	}
 	return &ProcessComponentResolver{

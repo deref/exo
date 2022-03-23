@@ -41,6 +41,7 @@ type Query {
 
   # TODO: allProcesses
   # TODO: allStores
+  # TODO: allNetworks
 
   now: Instant!
 
@@ -280,6 +281,7 @@ type Stack {
   components(all: Boolean, recursive: Boolean): [Component!]!
   processes: [ProcessComponent!]!
   stores: [StoreComponent!]!
+  networks: [NetworkComponent!]!
 
   resources: [Resource!]!
 
@@ -322,6 +324,7 @@ type Component implements ComponentLike {
 
   asProcess: ProcessComponent
   asStore: StoreComponent
+  asNetwork: NetworkComponent
 }
 
 type Reconciliation {
@@ -332,6 +335,7 @@ type Reconciliation {
 }
 
 interface ProcessLike {
+  type: String!
   started: Instant
   cpuPercent: Float
   residentBytes: Int
@@ -355,6 +359,7 @@ type ProcessComponent implements ProcessLike & ComponentLike {
 }
 
 interface StoreLike {
+  type: String!
   sizeMiB: Float
 }
 
@@ -363,6 +368,18 @@ type StoreComponent implements StoreLike & ComponentLike {
   name: String!
 
   sizeMiB: Float
+
+  componentId: String!
+  component: Component!
+}
+
+interface NetworkLike {
+  type: String!
+}
+
+type NetworkComponent implements ComponentLike {
+  type: String!
+  name: String!
 
   componentId: String!
   component: Component!
