@@ -4,55 +4,79 @@
   import StringLabel from '../components/StringLabel.svelte';
   import WorkspaceNav from '../components/WorkspaceNav.svelte';
   import DataGrid from '../components/DataGrid.svelte';
-  import { api } from '../lib/api';
   import * as router from 'svelte-spa-router';
+  import { query } from '../lib/graphql';
 
   export let params = { workspace: '' };
-
   const workspaceId = params.workspace;
-  const workspace = api.workspace(workspaceId);
+
+  const q = query(
+    `#graphql
+    query ($workspaceId: String!) {
+      workspace: workspaceById(id: $workspaceId) {
+        id
+        stack {
+          networks {
+            type
+            name
+            componentId
+          }
+        }
+      }
+    }`,
+    {
+      variables: {
+        workspaceId,
+      },
+    },
+  );
+
   const workspaceRoute = `/workspaces/${encodeURIComponent(workspaceId)}`;
 
-  // load={workspace.describeNetworks}
+  $: networks = $q.data?.workspace?.stack?.networks;
 </script>
 
-<Layout>
+<Layout loading={$q.loading} error={$q.error}>
   <WorkspaceNav {workspaceId} active="Networking" slot="navbar" />
-  <Panel title="Networks" backUrl={workspaceRoute}>
-    <DataGrid
-      columns={[
-        {
-          title: 'id',
-          label: StringLabel,
-          getValue: (network) => network.id,
-        },
-        {
-          title: 'name',
-          label: StringLabel,
-          getValue: (network) => network.name,
-        },
-      ]}
-      actions={[
-        {
-          tooltip: 'Edit network',
-          glyph: 'Edit',
-          execute: (network) => {
-            router.push(
-              `#/workspaces/${encodeURIComponent(
-                workspaceId,
-              )}/components/${encodeURIComponent(network.id)}/edit`,
-            );
+  <Panel title="Networking" backUrl={workspaceRoute}>
+    {#if networks}
+      <DataGrid
+        items={networks}
+        plural="networks"
+        columns={[
+          {
+            title: 'Component ID',
+            label: StringLabel,
+            getValue: (network) => network.componentId,
           },
-        },
-        {
-          tooltip: 'Delete network',
-          glyph: 'Delete',
-          execute: async (network) => {
-            await workspace.deleteComponent(network.id);
-            window.location.reload();
+          {
+            title: 'Name',
+            label: StringLabel,
+            getValue: (network) => network.name,
           },
-        },
-      ]}
-    />
+        ]}
+        actions={[
+          {
+            tooltip: 'Edit network',
+            glyph: 'Edit',
+            execute: (network) => {
+              router.push(
+                `#/workspaces/${encodeURIComponent(
+                  workspaceId,
+                )}/components/${encodeURIComponent(network.componentId)}/edit`,
+              );
+            },
+          },
+          {
+            tooltip: 'Delete network',
+            glyph: 'Delete',
+            execute: async (network) => {
+              await workspace.deleteComponent(network.componentId);
+              window.location.reload();
+            },
+          },
+        ]}
+      />
+    {/if}
   </Panel>
 </Layout>
