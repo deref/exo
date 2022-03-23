@@ -36,7 +36,7 @@
   $: networks = $q.data?.workspace?.stack?.networks;
 </script>
 
-<Layout loading={$q.loading} error={$q.error}>
+<Layout loader={$q}>
   <WorkspaceNav {workspaceId} active="Networking" slot="navbar" />
   <Panel title="Networking" backUrl={workspaceRoute}>
     {#if networks}

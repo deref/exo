@@ -3,7 +3,7 @@
   import Panel from '../components/Panel.svelte';
 </script>
 
-<Layout>
+<Layout loader={null}>
   <Panel title="Error" backUrl="/">
     <div>
       <h1>404 page not found</h1>

@@ -37,7 +37,7 @@
   $: stores = $q.data?.workspace?.stack?.stores;
 </script>
 
-<Layout loading={$q.loading} error={$q.error}>
+<Layout loader={$q}>
   <WorkspaceNav {workspaceId} active="Storage" slot="navbar" />
   <Panel title="Storage" backUrl={workspaceRoute}>
     {#if stores}

@@ -18,7 +18,7 @@
   $: workspaces = $q.data?.workspaces;
 </script>
 
-<Layout loading={$q.loading} error={$q.error}>
+<Layout loader={$q}>
   <CenterFormPanel title="Workspaces">
     <h1>Workspaces</h1>
     <div>

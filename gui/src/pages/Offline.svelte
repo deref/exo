@@ -16,7 +16,7 @@
   );
 </script>
 
-<Layout loading={false} error={null}>
+<Layout loader={null}>
   <Panel>
     <div>
       {#if !$connected}

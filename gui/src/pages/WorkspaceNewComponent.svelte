@@ -58,7 +58,7 @@
   ];
 </script>
 
-<Layout>
+<Layout loader={null}>
   <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
   <CenterFormPanel title="New component" backUrl={workspaceRoute}>
     {#each categories as category}

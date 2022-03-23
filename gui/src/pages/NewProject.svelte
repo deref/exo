@@ -31,7 +31,7 @@
   const logoGlyph = (ig: string) => (ig || 'Doc') as IconGlyph;
 </script>
 
-<Layout loading={$q.loading} error={null}>
+<Layout loader={$q}>
   <CenterFormPanel title="New project" backUrl="/">
     <h1>New project</h1>
 

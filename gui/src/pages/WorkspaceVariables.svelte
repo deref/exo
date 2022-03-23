@@ -70,7 +70,7 @@
   $: variables = $q.data?.workspace?.stack?.environment?.variables;
 </script>
 
-<Layout loading={$q.loading} error={$q.error}>
+<Layout loader={$q}>
   <WorkspaceNav {workspaceId} active="Variables" slot="navbar" />
   <Panel title="Workspace Variables" backUrl={workspaceUrl}>
     <div class="vaults-title">

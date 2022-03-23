@@ -65,7 +65,7 @@
   }
 </script>
 
-<Layout loading={$q.loading} error={$q.error}>
+<Layout loader={$q}>
   <WorkspaceNav {workspaceId} active="Dashboard" slot="navbar" />
   <Panel
     title={component ? component.name : 'Loading...'}

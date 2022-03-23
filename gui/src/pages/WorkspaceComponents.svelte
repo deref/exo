@@ -36,7 +36,7 @@
   $: components = $q.data?.workspace?.stack?.components;
 </script>
 
-<Layout loading={$q.loading} error={$q.error}>
+<Layout loader={$q}>
   <WorkspaceNav {workspaceId} active="Components" slot="navbar" />
   <Panel title="Components" backUrl={workspaceRoute}>
     {#if components}

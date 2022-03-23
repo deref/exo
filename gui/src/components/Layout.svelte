@@ -8,8 +8,13 @@
   import { modal } from '../lib/modal';
   import ErrorLabel from '../components/ErrorLabel.svelte';
 
-  export let loading: boolean;
-  export let error: any;
+  type Loader = {
+    loading: boolean;
+    error?: any;
+  };
+
+  export let loader: Loader | null;
+  const { loading, error } = loader ?? {};
 
   $: {
     for (const option of themeOptions) {
