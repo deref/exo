@@ -130,7 +130,6 @@ my-app --port 4000
             bind:environment
           />
         </div>
-        <SubmitButton>Create Process</SubmitButton>
       {:else}
         <div>
           <div class="script-editor">
@@ -141,9 +140,9 @@ my-app --port 4000
             <summary>Show/hide example</summary>
             <CodeBlock code={codeExample} />
           </details>
-          <SubmitButton>Create Process</SubmitButton>
         </div>
       {/if}
+      <SubmitButton>Create Process</SubmitButton>
       <ErrorLabel value={error} />
     </form>
   </CenterFormPanel>
