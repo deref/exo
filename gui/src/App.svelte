@@ -1,7 +1,7 @@
 <script lang="ts">
   import routes from './routes';
   import Router from 'svelte-spa-router';
-  import Offline from './pages/Offline.svelte';
+  import OfflinePage from './components/OfflinePage.svelte';
   import { initClient as initGraphqlClient, online } from './lib/graphql';
 
   initGraphqlClient();
@@ -10,5 +10,5 @@
 {#if $online}
   <Router {routes} />
 {:else}
-  <Offline />
+  <OfflinePage />
 {/if}
