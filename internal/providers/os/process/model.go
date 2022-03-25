@@ -23,7 +23,3 @@ type State struct {
 	ProgramPath string `json:"programPath,omitempty"`
 	Pid         *int   `json:"pid,omitempty"`
 }
-
-type Controller struct {
-	sdk.ResourceComponentController
-}

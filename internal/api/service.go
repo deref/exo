@@ -10,6 +10,7 @@ import (
 )
 
 type Service interface {
+	// TODO: This should not be on the interface exposed to most callers.
 	Shutdown(context.Context) error
 	// Execute a GraphQL operation synchronously, decoding the response data in to res.
 	// Implementations should also respect CurrentContextVariables.

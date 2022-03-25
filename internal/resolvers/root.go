@@ -7,6 +7,7 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/gensym"
 	"github.com/deref/exo/internal/token"
 	"github.com/deref/exo/internal/util/logging"
@@ -28,6 +29,8 @@ type RootResolver struct {
 	SystemLog   logging.Logger
 	VarDir      string
 	GUIEndpoint string
+	// Public interface of this RootResolver.
+	Service api.Service
 
 	ulidgen *gensym.ULIDGenerator
 	db      *sqlx.DB

@@ -396,7 +396,10 @@ func (r *ComponentResolver) Environment(ctx context.Context) (*EnvironmentResolv
 }
 
 func (r *ComponentResolver) controller(ctx context.Context) (*sdk.Controller, error) {
-	controller := getController(ctx, r.Type)
+	controller, err := r.Q.controllerByType(ctx, r.Type)
+	if err != nil {
+		return nil, fmt.Errorf("resolving controller: %w", err)
+	}
 	if controller == nil {
 		return nil, fmt.Errorf("no controller for type: %q", r.Type)
 	}
@@ -435,7 +438,7 @@ func (r *MutationResolver) InitializeComponent(ctx context.Context, args struct 
 	ID string
 }) (*VoidResolver, error) {
 	err := r.controlComponent(ctx, args.ID, func(controller *sdk.Controller, configuration exocue.Component) error {
-		return controller.Initialize(ctx, cue.Value(configuration))
+		return controller.OnCreate(ctx, cue.Value(configuration))
 	})
 	return nil, err
 }

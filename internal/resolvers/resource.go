@@ -453,7 +453,10 @@ func (r *MutationResolver) doResourceOperation(ctx context.Context, ref string, 
 	}
 	defer finish()
 
-	ctrl := getController(ctx, resource.Type)
+	ctrl, err := r.controllerByType(ctx, resource.Type)
+	if err != nil {
+		return nil, fmt.Errorf("resolving controller: %w", err)
+	}
 	if ctrl == nil {
 		return nil, fmt.Errorf("no controller for type: %q", resource.Type)
 	}

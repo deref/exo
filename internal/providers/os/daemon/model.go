@@ -22,5 +22,3 @@ type Spec struct {
 type State struct {
 	// TODO: Transition
 }
-
-type Controller struct{}

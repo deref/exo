@@ -11,12 +11,12 @@ import (
 
 // TODO: Dynamic registry with qualified type identifiers.
 
-func getController(ctx context.Context, typ string) *sdk.Controller {
+func (r *QueryResolver) controllerByType(ctx context.Context, typ string) (*sdk.Controller, error) {
 	impl := getControllerImpl(ctx, typ)
 	if impl == nil {
-		return nil
+		return nil, nil
 	}
-	return sdk.NewController(impl)
+	return sdk.NewController(ctx, r.Service, impl)
 }
 
 func getControllerImpl(ctx context.Context, typ string) any {

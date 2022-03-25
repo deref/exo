@@ -31,6 +31,7 @@ func (p *Peer) Init(ctx context.Context) error {
 		VarDir:      p.VarDir,
 		SystemLog:   p.SystemLog,
 		GUIEndpoint: p.GUIEndpoint,
+		Service:     p,
 	}
 	if err := p.root.Init(ctx); err != nil {
 		return err

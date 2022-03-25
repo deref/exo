@@ -42,9 +42,9 @@ func decodeComponentConfig(ctx context.Context, typ reflect.Type, v cue.Value) (
 	return out, err
 }
 
-func (c *Controller) Initialize(ctx context.Context, cfg cue.Value) (err error) {
+func (c *Controller) OnCreate(ctx context.Context, cfg cue.Value) (err error) {
 	defer errutil.RecoverTo(&err)
-	method := c.impl.MethodByName("Initialize")
+	method := c.impl.MethodByName("OnCreate")
 	if !method.IsValid() {
 		// Default behavior is a no-op.
 		return nil
