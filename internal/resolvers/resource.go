@@ -309,11 +309,12 @@ func (r *MutationResolver) CreateResource(ctx context.Context, args struct {
 
 	var stack *StackResolver
 	if args.Stack != nil {
-		if project == nil {
-			return nil, errors.New("project is required if stack is provided")
-		}
 		var err error
-		stack, err = project.stackByRef(ctx, *args.Stack)
+		if project == nil {
+			stack, err = r.stackByRef(ctx, args.Stack)
+		} else {
+			stack, err = project.stackByRef(ctx, *args.Stack)
+		}
 		if err != nil {
 			return nil, fmt.Errorf("resolving stack: %w", err)
 		}
@@ -321,15 +322,19 @@ func (r *MutationResolver) CreateResource(ctx context.Context, args struct {
 			return nil, fmt.Errorf("no such stack: %q", *args.Stack)
 		}
 		row.StackID = &stack.ID
+		if project == nil {
+			row.ProjectID = stack.ProjectID
+		}
 	}
 
 	var component *ComponentResolver
 	if args.Component != nil {
-		if stack == nil {
-			return nil, errors.New("stack is required if component is provided")
-		}
 		var err error
-		component, err = stack.componentByRef(ctx, *args.Component)
+		if stack == nil {
+			component, err = r.componentByRef(ctx, *args.Component, nil)
+		} else {
+			component, err = stack.componentByRef(ctx, *args.Component)
+		}
 		if err != nil {
 			return nil, fmt.Errorf("resolving component: %w", err)
 		}
@@ -337,6 +342,9 @@ func (r *MutationResolver) CreateResource(ctx context.Context, args struct {
 			return nil, fmt.Errorf("no such component: %q", *args.Component)
 		}
 		row.ComponentID = &component.ID
+		if stack == nil {
+			row.StackID = &component.StackID
+		}
 	}
 
 	if err := r.insertRow(ctx, "resource", row); err != nil {
