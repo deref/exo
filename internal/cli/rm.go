@@ -20,10 +20,8 @@ var rmCmd = &cobra.Command{
 		refs := args
 		var m struct {
 			Reconciliation struct {
-				Job struct {
-					ID string
-				}
-			} `graphql:"disposeComponents(stack: $stack, refs: $components)"`
+				JobID string
+			} `graphql:"destroyComponents(stack: $stack, refs: $components)"`
 		}
 		if err := api.Mutate(ctx, svc, &m, map[string]any{
 			"stack":      currentStackRef(),
@@ -31,6 +29,6 @@ var rmCmd = &cobra.Command{
 		}); err != nil {
 			return err
 		}
-		return watchJob(ctx, m.Reconciliation.Job.ID)
+		return watchJob(ctx, m.Reconciliation.JobID)
 	},
 }

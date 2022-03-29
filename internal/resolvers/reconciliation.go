@@ -21,6 +21,48 @@ func (r *ReconciliationResolver) Stack(ctx context.Context) (*StackResolver, err
 	return r.Q.stackByID(ctx, &r.StackID)
 }
 
+func (r *ReconciliationResolver) JobID() string {
+	return r.Job.ID
+}
+
+func (r *MutationResolver) ReconcileStack_label(ctx context.Context, args struct {
+	Ref string
+}) (string, error) {
+	stack, err := r.stackByRef(ctx, &args.Ref)
+	if err != nil {
+		return "", fmt.Errorf("resolving stack: %w", err)
+	}
+	if stack == nil {
+		return "", errors.New("no such stack")
+	}
+	return fmt.Sprintf("reconcile %s", stack.Name), nil
+}
+
+func (r *MutationResolver) ReconcileStack(ctx context.Context, args struct {
+	Ref string
+}) (*VoidResolver, error) {
+	stack, err := r.stackByRef(ctx, &args.Ref)
+	if err != nil {
+		return nil, fmt.Errorf("resolving stack: %w", err)
+	}
+	if stack != nil {
+		return nil, fmt.Errorf("no such stack")
+	}
+	components, err := r.componentsByStack(ctx, stack.ID)
+	taskInputs := make([]TaskInput, len(components))
+	for i, component := range components {
+		taskInputs[i] = TaskInput{
+			Mutation: "reconcileComponent",
+			Arguments: map[string]any{
+				"stack":     stack.ID,
+				"component": component.ID,
+			},
+		}
+	}
+	_, err = r.createTasks(ctx, taskInputs)
+	return nil, err
+}
+
 func (r *MutationResolver) ReconcileComponent_label(ctx context.Context, args struct {
 	Stack *string
 	Ref   string

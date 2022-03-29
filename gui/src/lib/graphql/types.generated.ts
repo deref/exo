@@ -135,10 +135,10 @@ export type QueryTypes = {
     };
     variables: { id: string };
   };
-  '#graphql\n    mutation ($id: String!) {\n      disposeComponent(ref: $id) {\n        __typename\n      }\n    }': {
+  '#graphql\n    mutation ($id: String!) {\n      destroyComponent(ref: $id) {\n        __typename\n      }\n    }': {
     data: {
       __typename: 'Mutation';
-      disposeComponent: { __typename: 'Reconciliation' };
+      destroyComponent: { __typename: 'Reconciliation' };
     };
     variables: { id: string };
   };

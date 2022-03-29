@@ -73,16 +73,16 @@
   const setComponentRun = null as any; // XXX
   const setLogsVisible = null as any; // XXX
 
-  const disposeComponentMutation = mutation(
+  const destroyComponentMutation = mutation(
     `#graphql
     mutation ($id: String!) {
-      disposeComponent(ref: $id) {
+      destroyComponent(ref: $id) {
         __typename
       }
     }`,
   );
-  const disposeComponent = async (id: string) => {
-    await disposeComponentMutation({ variables: { id } });
+  const destroyComponent = async (id: string) => {
+    await destroyComponentMutation({ variables: { id } });
   };
 
   const events = writable<Event[]>([]); // XXX append from query. cache prior results.
@@ -113,7 +113,7 @@
         {destroyStack}
         {setLogsVisible}
         setRun={setComponentRun}
-        {disposeComponent}
+        {destroyComponent}
       />
       <LogPanel slot="right" {stream} />
     </TwoColumn>

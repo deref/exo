@@ -160,3 +160,5 @@ func isValid(v cue.Value) bool {
 	// TODO: Any options to use here?
 	return v.Validate() == nil
 }
+
+// TODO: resolve/no-such expectation check.

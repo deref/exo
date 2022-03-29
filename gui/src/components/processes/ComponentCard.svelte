@@ -26,7 +26,7 @@
 
   export let setRun: (value: boolean) => void;
   export let setLogsVisible: (value: boolean) => void;
-  export let dispose: () => void;
+  export let destroy: () => void;
 </script>
 
 <div class="card" style={logStyleFromHash(name)}>
@@ -68,7 +68,7 @@
         glyph="Delete"
         danger
         on:click={() => {
-          dispose();
+          destroy();
           setLogsVisible(false);
         }}
       >

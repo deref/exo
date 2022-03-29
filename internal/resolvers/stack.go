@@ -10,6 +10,7 @@ import (
 	"cuelang.org/go/cue"
 	"github.com/deref/exo/internal/gensym"
 	"github.com/deref/exo/internal/manifest/exocue"
+	. "github.com/deref/exo/internal/scalars"
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/jmoiron/sqlx"
 )
@@ -20,11 +21,12 @@ type StackResolver struct {
 }
 
 type StackRow struct {
-	ID          string  `db:"id"`
-	Name        string  `db:"name"`
-	ClusterID   string  `db:"cluster_id"`
-	ProjectID   *string `db:"project_id"`
-	WorkspaceID *string `db:"workspace_id"`
+	ID          string   `db:"id"`
+	Name        string   `db:"name"`
+	ClusterID   string   `db:"cluster_id"`
+	ProjectID   *string  `db:"project_id"`
+	WorkspaceID *string  `db:"workspace_id"`
+	Disposed    *Instant `db:"disposed"`
 }
 
 func stackRowsToResolvers(r *RootResolver, rows []StackRow) []*StackResolver {
@@ -258,7 +260,49 @@ func (r *MutationResolver) RefreshStack(ctx context.Context, args struct {
 func (r *MutationResolver) DestroyStack(ctx context.Context, args struct {
 	Ref string
 }) (*ReconciliationResolver, error) {
-	return nil, errors.New("TODO: DestroyStack")
+	stack, err := r.stackByRef(ctx, &args.Ref)
+	if err != nil {
+		return nil, fmt.Errorf("resolving stack: %w", err)
+	}
+	if stack == nil {
+		return nil, errors.New("no such stack")
+	}
+	stack, err = r.disposeStack(ctx, stack.ID)
+	if err != nil {
+		return nil, err
+	}
+	return r.startStackReconciliationJob(ctx, stack)
+}
+
+func (r *MutationResolver) disposeStack(ctx context.Context, id string) (*StackResolver, error) {
+	now := Now(ctx)
+	var row StackRow
+	if err := r.db.GetContext(ctx, &row, `
+		UPDATE stack
+		SET disposed = COALESCE(disposed, ?)
+		WHERE id = ?
+		RETURNING *
+	`, now, id,
+	); err != nil {
+		return nil, err
+	}
+	return &StackResolver{
+		Q:        r,
+		StackRow: row,
+	}, nil
+}
+
+func (r *MutationResolver) startStackReconciliationJob(ctx context.Context, stack *StackResolver) (*ReconciliationResolver, error) {
+	job, err := r.createJob(ctx, "reconcileStack", map[string]any{
+		"ref": stack.ID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("creating reconciliation job: %w", err)
+	}
+	return &ReconciliationResolver{
+		StackID: stack.ID,
+		Job:     job,
+	}, nil
 }
 
 func (r *StackResolver) componentByRef(ctx context.Context, ref string) (*ComponentResolver, error) {

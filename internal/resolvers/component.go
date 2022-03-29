@@ -286,14 +286,14 @@ func (r *MutationResolver) UpdateComponent(ctx context.Context, args struct {
 	return r.startComponentReconciliationJob(ctx, component)
 }
 
-func (r *MutationResolver) DisposeComponents(ctx context.Context, args struct {
+func (r *MutationResolver) DestroyComponents(ctx context.Context, args struct {
 	Stack *string
 	Refs  []string
 }) (*ReconciliationResolver, error) {
 	if len(args.Refs) != 1 {
-		panic("TODO: Bulk DisposeComponents")
+		panic("TODO: Bulk DestroyComponents")
 	}
-	return r.DisposeComponent(ctx, struct {
+	return r.DestroyComponent(ctx, struct {
 		Stack *string
 		Ref   string
 	}{
@@ -302,11 +302,11 @@ func (r *MutationResolver) DisposeComponents(ctx context.Context, args struct {
 	})
 }
 
-func (r *MutationResolver) DisposeComponent(ctx context.Context, args struct {
+func (r *MutationResolver) DestroyComponent(ctx context.Context, args struct {
 	Stack *string
 	Ref   string
 }) (*ReconciliationResolver, error) {
-	// TODO: Implement in terms of DisposeComponents.
+	// TODO: Implement in terms of DestroyComponents.
 	component, err := r.componentByRef(ctx, args.Ref, args.Stack)
 	if err != nil {
 		return nil, fmt.Errorf("resolving component: %w", err)
@@ -336,13 +336,24 @@ func (r *MutationResolver) disposeComponent(ctx context.Context, id string) (*Co
 			SELECT id FROM rec
 		)
 		RETURNING *
-	`, now, id); err != nil {
+	`, now, id,
+	); err != nil {
 		return nil, err
 	}
 	return &ComponentResolver{
 		Q:            r,
 		ComponentRow: row,
 	}, nil
+}
+
+func (r *MutationResolver) disposeComponentsByStack(ctx context.Context, stackID string) error {
+	now := Now(ctx)
+	_, err := r.db.ExecContext(ctx, `
+		UPDATE component
+		SET disposed = COALESCE(disposed, ?)
+		WHERE stack_id = ?
+	`, now, stackID)
+	return err
 }
 
 func (r *MutationResolver) startComponentReconciliationJob(ctx context.Context, component *ComponentResolver) (*ReconciliationResolver, error) {

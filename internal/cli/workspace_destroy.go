@@ -1,45 +1,42 @@
 package cli
 
 import (
-	"fmt"
-
-	"github.com/deref/exo/internal/core/api"
+	"github.com/deref/exo/internal/api"
 	"github.com/spf13/cobra"
 )
 
 func init() {
-	workspaceCmd.AddCommand(destroyCmd)
+	workspaceCmd.AddCommand(workspaceDestroyCmd)
 }
 
-var destroyCmd = &cobra.Command{
+var workspaceDestroyCmd = &cobra.Command{
 	Use:   "destroy [workspace]",
-	Short: "Deletes a workspace",
-	Long: `Deletes a workspace. If the workspace is not specified, deletes
+	Short: "Destroys a workspace",
+	Long: `Destroys a workspace. If the workspace is not specified, destroys
 the workspace for the current working directory.
 
-Deleting a workspace also deletes all resources in that workspace.`,
+If the workspace is associated with a current stack, that stack is also
+destroyed.`,
+	// TODO: Should the files on disk also be destroyed?
+	// If yes, recommend `stack destroy` as an alternative and also provide a
+	// `workspace forget` command.
 	Args: cobra.MaximumNArgs(1),
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
-		cl := newClient()
-		var workspace api.Workspace
+		vars := map[string]any{}
 		if len(args) < 1 {
-			workspace = requireCurrentWorkspace(ctx, cl)
+			vars["workspace"] = currentWorkspaceRef()
 		} else {
-			ref := args[0]
-			var err error
-			workspace, err = resolveWorkspace(ctx, cl, ref)
-			if err != nil {
-				return fmt.Errorf("resolving workspace: %w", err)
-			}
-			if workspace == nil {
-				return fmt.Errorf("unresolved workspace ref: %q", ref)
-			}
+			vars["workspace"] = args[0]
 		}
-		output, err := workspace.Destroy(ctx, &api.DestroyInput{})
-		if err != nil {
+		var m struct {
+			Reconciliation struct {
+				JobID string
+			} `graphql:"destroyWorkspace(workspace: $workspace)"`
+		}
+		if err := api.Mutate(ctx, svc, &m, vars); err != nil {
 			return err
 		}
-		return watchJob(ctx, output.JobID)
+		return watchOwnJob(ctx, m.Reconciliation.JobID)
 	},
 }

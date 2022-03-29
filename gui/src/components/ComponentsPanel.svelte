@@ -29,7 +29,7 @@
   export let destroyStack: () => Promise<void>;
   export let setLogsVisible: (id: string, value: boolean) => Promise<void>;
   export let setRun: (id: string, value: boolean) => Promise<void>;
-  export let disposeComponent: (id: string) => Promise<void>;
+  export let destroyComponent: (id: string) => Promise<void>;
 
   export let stack: Stack;
 
@@ -84,7 +84,7 @@
     </button>
     <ComponentStack
       components={stack.components}
-      dispose={disposeComponent}
+      destroy={destroyComponent}
       {setLogsVisible}
       {setRun}
     />

@@ -36,9 +36,7 @@ func createComponent(ctx context.Context, name, typ string, spec any) error {
 			Component struct {
 				ID string `json:"id"`
 			}
-			Job struct {
-				ID string
-			}
+			JobID string
 		} `graphql:"createComponent(stack: $stack, name: $name, type: $type, spec: $spec)"`
 	}
 	if err := api.Mutate(ctx, svc, &m, map[string]any{
@@ -50,5 +48,5 @@ func createComponent(ctx context.Context, name, typ string, spec any) error {
 		return err
 	}
 	cmdutil.PrintCueStruct(m.Reconciliation.Component)
-	return watchOwnJob(ctx, m.Reconciliation.Job.ID)
+	return watchOwnJob(ctx, m.Reconciliation.JobID)
 }

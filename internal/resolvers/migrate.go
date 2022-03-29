@@ -82,7 +82,8 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 			cluster_id TEXT NOT NULL,
 			name TEXT NOT NULL,
 			project_id TEXT,
-			workspace_id TEXT
+			workspace_id TEXT,
+			disposed TEXT
 	);`); err != nil {
 		return fmt.Errorf("creating stack table: %w", err)
 	}

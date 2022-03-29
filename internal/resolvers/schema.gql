@@ -130,11 +130,12 @@ type Mutation {
     newName: String
     newSpec: String
   ): Reconciliation!
-  disposeComponent(stack: String, ref: String!): Reconciliation!
-  disposeComponents(stack: String, refs: [String!]!): Reconciliation!
+  destroyComponent(stack: String, ref: String!): Reconciliation!
+  destroyComponents(stack: String, refs: [String!]!): Reconciliation!
 
   # TODO: These should have some prefix or something to signal
   # that these are are for async tasks run via controllers.
+  reconcileStack(ref: String!): Void
   reconcileComponent(stack: String, ref: String!): Void
   initializeComponent(id: String!): Void # XXX generalize to any update.
   transitionComponent(id: String!, spec: String!): Void
@@ -332,7 +333,9 @@ type Component implements ComponentLike {
 type Reconciliation {
   stack: Stack!
   # Non-null, if initiated on an individual component.
+  # TODO: Is this necessary?
   component: Component
+  jobId: String!
   job: Job!
 }
 
