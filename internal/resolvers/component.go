@@ -116,7 +116,7 @@ type componentSetResolver struct {
 	Recursive bool
 }
 
-func (r *componentSetResolver) items(ctx context.Context) ([]*ComponentResolver, error) {
+func (r *componentSetResolver) Items(ctx context.Context) ([]*ComponentResolver, error) {
 	var rows []ComponentRow
 	var q string
 	// Utilizes the `component_path` index.
@@ -140,7 +140,7 @@ func (r *QueryResolver) componentsByStack(ctx context.Context, stackID string) (
 		Q:       r,
 		StackID: stackID,
 	}
-	return componentSet.items(ctx)
+	return componentSet.Items(ctx)
 }
 
 func (r *QueryResolver) componentsByParent(ctx context.Context, parentID string) ([]*ComponentResolver, error) {

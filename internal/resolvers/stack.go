@@ -159,7 +159,7 @@ func (r *StackResolver) Components(ctx context.Context, args struct {
 	}
 	componentSet.All = isTrue(args.All)
 	componentSet.Recursive = isTrue(args.Recursive)
-	return componentSet.items(ctx)
+	return componentSet.Items(ctx)
 }
 
 func (r *StackResolver) components(ctx context.Context) ([]*ComponentResolver, error) {
@@ -277,6 +277,9 @@ func (r *MutationResolver) disposeStack(ctx context.Context, id string) (*StackR
 	); err != nil {
 		return nil, err
 	}
+	if err := r.disposeComponentsByStack(ctx, id); err != nil {
+		return nil, fmt.Errorf("disposing stack components: %w", err)
+	}
 	return &StackResolver{
 		Q:        r,
 		StackRow: row,
@@ -379,7 +382,7 @@ func (r *StackResolver) addConfiguration(ctx context.Context, b *exocue.Builder,
 		StackID:   r.ID,
 		Recursive: recursive,
 	}
-	components, err := componentSet.items(ctx)
+	components, err := componentSet.Items(ctx)
 	if err != nil {
 		return fmt.Errorf("resolving components: %w", err)
 	}

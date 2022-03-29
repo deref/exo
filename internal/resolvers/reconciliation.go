@@ -41,7 +41,12 @@ func (r *MutationResolver) ReconcileStack(ctx context.Context, args struct {
 	if err := validateResolve("stack", args.Ref, stack, err); err != nil {
 		return nil, err
 	}
-	components, err := r.componentsByStack(ctx, stack.ID)
+	componentSet := &componentSetResolver{
+		Q:       r,
+		StackID: stack.ID,
+		All:     true,
+	}
+	components, err := componentSet.Items(ctx)
 	taskInputs := make([]TaskInput, len(components))
 	for i, component := range components {
 		taskInputs[i] = TaskInput{
