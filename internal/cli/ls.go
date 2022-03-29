@@ -39,7 +39,11 @@ var lsCmd = &cobra.Command{
 		if lsFlags.All {
 			w = cmdutil.NewTableWriter("NAME", "ID", "TYPE", "DISPOSED")
 			for _, component := range q.Stack.Components {
-				w.WriteRow(component.Name, component.ID, component.Type, component.Disposed.String())
+				disposed := ""
+				if component.Disposed != nil {
+					disposed = component.Disposed.String()
+				}
+				w.WriteRow(component.Name, component.ID, component.Type, disposed)
 			}
 		} else {
 			w = cmdutil.NewTableWriter("NAME", "ID", "TYPE")

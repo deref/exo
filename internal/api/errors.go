@@ -20,16 +20,32 @@ func (errs QueryErrorSet) Error() string {
 	}
 }
 
-// Mimics errors.QueryError.Error(), but without the "graphql: " prefix.
+// Same information as errors.QueryError.Error(), but formatted for better
+// error message composition.
 func queryErrorString(err *errors.QueryError) string {
 	if err == nil {
 		return "<nil>"
 	}
+
 	var b strings.Builder
-	b.WriteString(err.Message)
+
 	for _, loc := range err.Locations {
-		fmt.Fprintf(&b, " (line %d, column %d)", loc.Line, loc.Column)
+		fmt.Fprintf(&b, "on line %d, column %d: ", loc.Line, loc.Column)
+		break
 	}
+
+	if len(err.Path) > 0 {
+		b.WriteString("resolving")
+		sep := " "
+		for _, elem := range err.Path {
+			fmt.Fprintf(&b, "%s%v", sep, elem)
+			sep = "."
+		}
+		b.WriteString(": ")
+	}
+
+	b.WriteString(err.Message)
+
 	return b.String()
 }
 
