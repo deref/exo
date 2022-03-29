@@ -5,14 +5,12 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
-	"net/http"
 
 	"cuelang.org/go/cue"
 	"github.com/deref/exo/internal/gensym"
 	"github.com/deref/exo/internal/manifest/exocue"
 	"github.com/deref/exo/internal/providers/sdk"
 	. "github.com/deref/exo/internal/scalars"
-	"github.com/deref/exo/internal/util/errutil"
 )
 
 type ComponentResolver struct {
@@ -194,11 +192,8 @@ func (r *MutationResolver) CreateComponent(ctx context.Context, args struct {
 	Spec  string
 }) (*ReconciliationResolver, error) {
 	stack, err := r.stackByRef(ctx, &args.Stack)
-	if err != nil {
-		return nil, fmt.Errorf("resolving stack: %w", err)
-	}
-	if stack == nil {
-		return nil, errutil.HTTPErrorf(http.StatusNotFound, "no such stack: %q", args.Stack)
+	if err := validateResolve("stack", args.Stack, stack, err); err != nil {
+		return nil, err
 	}
 
 	row, err := r.createComponent(ctx, stack.ID /* parentID: */, nil, args.Type, args.Name, args.Spec, "")
@@ -251,11 +246,8 @@ func (r *MutationResolver) UpdateComponent(ctx context.Context, args struct {
 	NewName *string
 }) (*ReconciliationResolver, error) {
 	component, err := r.componentByRef(ctx, args.Ref, args.Stack)
-	if err != nil {
-		return nil, fmt.Errorf("resolving component: %w", err)
-	}
-	if component == nil {
-		return nil, errors.New("no such component")
+	if err := validateResolve("component", args.Ref, component, err); err != nil {
+		return nil, err
 	}
 
 	spec := component.Spec
@@ -308,11 +300,8 @@ func (r *MutationResolver) DestroyComponent(ctx context.Context, args struct {
 }) (*ReconciliationResolver, error) {
 	// TODO: Implement in terms of DestroyComponents.
 	component, err := r.componentByRef(ctx, args.Ref, args.Stack)
-	if err != nil {
-		return nil, fmt.Errorf("resolving component: %w", err)
-	}
-	if component == nil {
-		return nil, errors.New("no such component")
+	if err := validateResolve("component", args.Ref, component, err); err != nil {
+		return nil, err
 	}
 	component, err = r.disposeComponent(ctx, component.ID)
 	if err != nil {
@@ -425,11 +414,8 @@ func (r *MutationResolver) ensureComponentInitialize(ctx context.Context, compon
 
 func (r *MutationResolver) controlComponent(ctx context.Context, id string, f func(*sdk.Controller, exocue.Component) error) error {
 	component, err := r.componentByID(ctx, &id)
-	if err != nil {
-		return fmt.Errorf("resolving component: %w", err)
-	}
-	if component == nil {
-		return fmt.Errorf("no such component: %q", id)
+	if err := validateResolve("component", id, component, err); err != nil {
+		return err
 	}
 
 	controller, err := component.controller(ctx)

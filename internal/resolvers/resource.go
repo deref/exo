@@ -209,32 +209,21 @@ func (r *ResourceResolver) OwnerType() *string {
 	return &ownerType
 }
 
-func (r *ResourceResolver) Owner(ctx context.Context) (owner any, err error) {
+func (r *ResourceResolver) Owner(ctx context.Context) (any, error) {
 	ownerType := r.OwnerType()
 	if ownerType == nil {
 		return nil, nil
 	}
-	var ownerID string
 	switch *ownerType {
 	case "Component":
-		ownerID = *r.ComponentID
-		owner, err = r.Component(ctx)
+		return r.Component(ctx)
 	case "Stack":
-		ownerID = *r.StackID
-		owner, err = r.Stack(ctx)
+		return r.Stack(ctx)
 	case "Project":
-		ownerID = *r.ProjectID
-		owner, err = r.Project(ctx)
+		return r.Project(ctx)
 	default:
 		panic(fmt.Errorf("unexpected owner type: %q", *ownerType))
 	}
-	if err != nil {
-		return nil, fmt.Errorf("resolving %s: %w", *ownerType, err)
-	}
-	if owner == nil {
-		return nil, fmt.Errorf("no such %s: %q", *ownerType, ownerID)
-	}
-	return
 }
 
 func (r *ResourceResolver) Project(ctx context.Context) (*ProjectResolver, error) {
@@ -298,11 +287,8 @@ func (r *MutationResolver) CreateResource(ctx context.Context, args struct {
 	if args.Project != nil {
 		var err error
 		project, err = r.projectByRef(ctx, *args.Project)
-		if err != nil {
-			return nil, fmt.Errorf("resolving project: %w", err)
-		}
-		if project == nil {
-			return nil, fmt.Errorf("no such project: %q", *args.Project)
+		if err := validateResolve("project", *args.Project, project, err); err != nil {
+			return nil, err
 		}
 		row.ProjectID = &project.ID
 	}
@@ -315,11 +301,8 @@ func (r *MutationResolver) CreateResource(ctx context.Context, args struct {
 		} else {
 			stack, err = project.stackByRef(ctx, *args.Stack)
 		}
-		if err != nil {
-			return nil, fmt.Errorf("resolving stack: %w", err)
-		}
-		if stack == nil {
-			return nil, fmt.Errorf("no such stack: %q", *args.Stack)
+		if err := validateResolve("stack", *args.Stack, stack, err); err != nil {
+			return nil, err
 		}
 		row.StackID = &stack.ID
 		if project == nil {
@@ -335,11 +318,8 @@ func (r *MutationResolver) CreateResource(ctx context.Context, args struct {
 		} else {
 			component, err = stack.componentByRef(ctx, *args.Component)
 		}
-		if err != nil {
-			return nil, fmt.Errorf("resolving component: %w", err)
-		}
-		if component == nil {
-			return nil, fmt.Errorf("no such component: %q", *args.Component)
+		if err := validateResolve("component", *args.Component, component, err); err != nil {
+			return nil, err
 		}
 		row.ComponentID = &component.ID
 		if stack == nil {

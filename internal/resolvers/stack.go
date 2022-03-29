@@ -187,46 +187,40 @@ func (r *MutationResolver) CreateStack(ctx context.Context, args struct {
 	Name      *string
 	Cluster   *string
 }) (*StackResolver, error) {
-	var ws *WorkspaceResolver
+	var workspace *WorkspaceResolver
 	if args.Workspace != nil {
 		var err error
-		ws, err = r.workspaceByRef(ctx, args.Workspace)
-		if err != nil {
-			return nil, fmt.Errorf("resolving workspace ref: %w", err)
-		}
-		if ws == nil {
-			return nil, fmt.Errorf("no such workspace: %q", *args.Workspace)
+		workspace, err = r.workspaceByRef(ctx, args.Workspace)
+		if err := validateResolve("workspace", *args.Workspace, workspace, err); err != nil {
+			return nil, err
 		}
 	}
 
-	var clus *ClusterResolver
+	var cluster *ClusterResolver
 	if args.Cluster == nil {
 		var err error
-		clus, err = r.DefaultCluster(ctx)
+		cluster, err = r.DefaultCluster(ctx)
 		if err != nil {
 			return nil, fmt.Errorf("resolving default cluster: %q", err)
 		}
-		if clus == nil {
-			return nil, fmt.Errorf("no default cluster")
+		if cluster == nil {
+			return nil, errutil.HTTPErrorf(http.StatusNotFound, "no default cluster")
 		}
 	} else {
 		var err error
-		clus, err = r.clusterByRef(ctx, *args.Cluster)
-		if err != nil {
-			return nil, fmt.Errorf("resolving cluster: %q", err)
-		}
-		if clus == nil {
-			return nil, fmt.Errorf("no such cluster: %q", *args.Cluster)
+		cluster, err = r.clusterByRef(ctx, *args.Cluster)
+		if err := validateResolve("cluster", *args.Cluster, cluster, err); err != nil {
+			return nil, err
 		}
 	}
 
 	var row StackRow
 	row.ID = gensym.RandomBase32()
 	row.Name = *trimmedPtr(args.Name, row.ID)
-	row.ClusterID = clus.ID
-	if ws != nil {
-		row.WorkspaceID = &ws.ID
-		row.ProjectID = &ws.ProjectID
+	row.ClusterID = cluster.ID
+	if workspace != nil {
+		row.WorkspaceID = &workspace.ID
+		row.ProjectID = &workspace.ProjectID
 	}
 
 	// TODO: Validate name.
@@ -261,11 +255,8 @@ func (r *MutationResolver) DestroyStack(ctx context.Context, args struct {
 	Ref string
 }) (*ReconciliationResolver, error) {
 	stack, err := r.stackByRef(ctx, &args.Ref)
-	if err != nil {
-		return nil, fmt.Errorf("resolving stack: %w", err)
-	}
-	if stack == nil {
-		return nil, errors.New("no such stack")
+	if err := validateResolve("stack", args.Ref, stack, err); err != nil {
+		return nil, err
 	}
 	stack, err = r.disposeStack(ctx, stack.ID)
 	if err != nil {
@@ -314,20 +305,14 @@ func (r *MutationResolver) SetWorkspaceStack(ctx context.Context, args struct {
 	Stack     *string
 }) (*StackResolver, error) {
 	workspace, err := r.workspaceByRef(ctx, &args.Workspace)
-	if err != nil {
-		return nil, fmt.Errorf("resolving workspace: %w", err)
-	}
-	if workspace == nil {
-		return nil, fmt.Errorf("no such workspace: %q", args.Workspace)
+	if err := validateResolve("workspace", args.Workspace, workspace, err); err != nil {
+		return nil, err
 	}
 	var stackID *string
 	if args.Stack != nil {
 		stack, err := r.stackByRef(ctx, args.Stack)
-		if err != nil {
-			return nil, fmt.Errorf("resolving stack: %w", err)
-		}
-		if stack == nil {
-			return nil, errutil.HTTPErrorf(http.StatusNotFound, "no such stack: %q", *args.Stack)
+		if err := validateResolve("stack", *args.Stack, stack, err); err != nil {
+			return nil, err
 		}
 		stackID = &stack.ID
 	}

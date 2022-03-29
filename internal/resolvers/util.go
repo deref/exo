@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"net/http"
 	"reflect"
 	"strings"
 
@@ -161,4 +162,12 @@ func isValid(v cue.Value) bool {
 	return v.Validate() == nil
 }
 
-// TODO: resolve/no-such expectation check.
+func validateResolve[T any](label string, ref string, resolver *T, err error) error {
+	if err != nil {
+		return fmt.Errorf("resolving %s: %w", label, err)
+	}
+	if resolver == nil {
+		return errutil.HTTPErrorf(http.StatusNotFound, "no such %s: %q", label, ref)
+	}
+	return nil
+}

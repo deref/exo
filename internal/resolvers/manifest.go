@@ -118,11 +118,8 @@ func (r *MutationResolver) FormatManifest(ctx context.Context, args struct {
 	Path      *string
 }) (*VoidResolver, error) {
 	workspace, err := r.workspaceByRef(ctx, &args.Workspace)
-	if err != nil {
-		return nil, fmt.Errorf("resolving workspace: %w", err)
-	}
-	if workspace == nil {
-		return nil, fmt.Errorf("no such workspace: %q", args.Workspace)
+	if err := validateResolve("workspace", args.Workspace, workspace, err); err != nil {
+		return nil, err
 	}
 	var manifest *ManifestResolver
 	if args.Path == nil {

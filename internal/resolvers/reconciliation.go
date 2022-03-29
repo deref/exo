@@ -2,7 +2,6 @@ package resolvers
 
 import (
 	"context"
-	"errors"
 	"fmt"
 
 	"cuelang.org/go/cue"
@@ -29,11 +28,8 @@ func (r *MutationResolver) ReconcileStack_label(ctx context.Context, args struct
 	Ref string
 }) (string, error) {
 	stack, err := r.stackByRef(ctx, &args.Ref)
-	if err != nil {
-		return "", fmt.Errorf("resolving stack: %w", err)
-	}
-	if stack == nil {
-		return "", errors.New("no such stack")
+	if err := validateResolve("stack", args.Ref, stack, err); err != nil {
+		return "", err
 	}
 	return fmt.Sprintf("reconcile %s", stack.Name), nil
 }
@@ -42,11 +38,8 @@ func (r *MutationResolver) ReconcileStack(ctx context.Context, args struct {
 	Ref string
 }) (*VoidResolver, error) {
 	stack, err := r.stackByRef(ctx, &args.Ref)
-	if err != nil {
-		return nil, fmt.Errorf("resolving stack: %w", err)
-	}
-	if stack != nil {
-		return nil, fmt.Errorf("no such stack")
+	if err := validateResolve("stack", args.Ref, stack, err); err != nil {
+		return nil, err
 	}
 	components, err := r.componentsByStack(ctx, stack.ID)
 	taskInputs := make([]TaskInput, len(components))
@@ -68,11 +61,8 @@ func (r *MutationResolver) ReconcileComponent_label(ctx context.Context, args st
 	Ref   string
 }) (string, error) {
 	component, err := r.componentByRef(ctx, args.Ref, args.Stack)
-	if err != nil {
-		return "", fmt.Errorf("resolving component: %w", err)
-	}
-	if component == nil {
-		return "", errors.New("no such component")
+	if err := validateResolve("component", args.Ref, component, err); err != nil {
+		return "", err
 	}
 	return fmt.Sprintf("reconcile %s", component.Name), nil
 }
@@ -82,11 +72,8 @@ func (r *MutationResolver) ReconcileComponent(ctx context.Context, args struct {
 	Ref   string
 }) (*VoidResolver, error) {
 	component, err := r.componentByRef(ctx, args.Ref, args.Stack)
-	if err != nil {
-		return nil, fmt.Errorf("resolving component: %w", err)
-	}
-	if component == nil {
-		return nil, errors.New("no such component")
+	if err := validateResolve("component", args.Ref, component, err); err != nil {
+		return nil, err
 	}
 
 	// TODO: do not give up on first error; process all children.
