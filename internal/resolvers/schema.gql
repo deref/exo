@@ -292,6 +292,8 @@ type Stack {
 
   environment: Environment!
 
+  disposed: Instant
+
   vaults: [Vault!]!
   secrets: [Secret!]!
 }

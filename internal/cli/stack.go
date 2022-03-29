@@ -5,6 +5,7 @@ import (
 	"reflect"
 
 	"github.com/deref/exo/internal/api"
+	"github.com/deref/exo/internal/scalars"
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/spf13/cobra"
@@ -29,13 +30,21 @@ workspace.`,
 
 		var q struct {
 			Stack *struct {
-				ID   string `json:"id"`
-				Name string `json:"name"`
+				ID       string
+				Name     string
+				Disposed *scalars.Instant
 			} `graphql:"stackByRef(ref: $currentStack)"`
 		}
 		mustQueryStack(ctx, &q, nil)
 
-		cmdutil.PrintCueStruct(q.Stack)
+		stack := map[string]any{
+			"id":   q.Stack.ID,
+			"name": q.Stack.Name,
+		}
+		if q.Stack.Disposed != nil {
+			stack["disposed"] = q.Stack.Disposed.String()
+		}
+		cmdutil.PrintCueStruct(stack)
 		return nil
 	},
 }

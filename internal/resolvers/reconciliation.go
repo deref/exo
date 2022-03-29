@@ -47,8 +47,8 @@ func (r *MutationResolver) ReconcileStack(ctx context.Context, args struct {
 		taskInputs[i] = TaskInput{
 			Mutation: "reconcileComponent",
 			Arguments: map[string]any{
-				"stack":     stack.ID,
-				"component": component.ID,
+				"stack": stack.ID,
+				"ref":   component.ID,
 			},
 		}
 	}
@@ -60,9 +60,9 @@ func (r *MutationResolver) ReconcileComponent_label(ctx context.Context, args st
 	Stack *string
 	Ref   string
 }) (string, error) {
-	component, err := r.componentByRef(ctx, args.Ref, args.Stack)
-	if err := validateResolve("component", args.Ref, component, err); err != nil {
-		return "", err
+	component, _ := r.componentByRef(ctx, args.Ref, args.Stack)
+	if component == nil {
+		return "reconciling unknown component", nil
 	}
 	return fmt.Sprintf("reconcile %s", component.Name), nil
 }
