@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
-	"strconv"
 
 	"github.com/deref/exo/internal/resolvers"
 	"github.com/deref/exo/internal/util/cmdutil"
@@ -28,9 +27,9 @@ var statusCmd = &cobra.Command{
 			return fmt.Errorf("checking run state: %w", err)
 		}
 
-		pid := ""
+		var pid *int
 		if osutil.IsValidPid(runState.Pid) {
-			pid = strconv.Itoa(runState.Pid)
+			pid = &runState.Pid
 		}
 		healthy, _ := checkHealthAndVersion()
 
