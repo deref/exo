@@ -11,6 +11,7 @@ import (
 	"github.com/deref/exo/internal/manifest/exocue"
 	"github.com/deref/exo/internal/providers/sdk"
 	. "github.com/deref/exo/internal/scalars"
+	"github.com/deref/exo/internal/util/hashutil"
 )
 
 type ComponentResolver struct {
@@ -25,7 +26,7 @@ type ComponentRow struct {
 	Type     string     `db:"type"`
 	Name     string     `db:"name"`
 	Key      string     `db:"key"`
-	Spec     string     `db:"spec"`
+	Spec     CueValue   `db:"spec"`
 	State    JSONObject `db:"state"`
 	Disposed *Instant   `db:"disposed"`
 }
@@ -189,42 +190,58 @@ func (r *MutationResolver) CreateComponent(ctx context.Context, args struct {
 	Stack string
 	Name  string
 	Type  string
-	Spec  string
+	Spec  CueValue
 }) (*ReconciliationResolver, error) {
 	stack, err := r.stackByRef(ctx, &args.Stack)
 	if err := validateResolve("stack", args.Stack, stack, err); err != nil {
 		return nil, err
 	}
 
-	row, err := r.createComponent(ctx, stack.ID /* parentID: */, nil, args.Type, args.Name, args.Spec, "")
+	row, err := r.createComponent(ctx, stack.ID /* parentID: */, nil, ComponentDefinition{
+		Type: args.Type,
+		Name: args.Name,
+		Spec: args.Spec,
+	})
 	if err != nil {
 		return nil, err
 	}
-	reconciliation, err := r.startComponentReconciliationJob(ctx, row)
+	reconciliation, err := r.startComponentReconciliation(ctx, row)
 	if err != nil {
 		return nil, fmt.Errorf("starting component reconciliation: %w", err)
 	}
 	return reconciliation, nil
 }
 
-type NewComponentInput struct {
-	Type string // XXX doesn't belong here?
+type ComponentDefinition struct {
+	Type string
 	Name string
 	Key  string
-	Spec string
+	Spec CueValue
 }
 
-func (r *MutationResolver) createComponent(ctx context.Context, stackID string, parentID *string, typ, name, spec, key string) (*ComponentResolver, error) {
-	// TODO: Validate type, name, key & spec.
+// Composite-key for uniquely identifying components within a parent.  If a
+// discriminator key is not provided during rendering, a hash of the component
+// spec is used.
+// TODO: Should renaming a component necessarily force a new identity?
+func (def ComponentDefinition) Ident() string {
+	key := def.Key
+	if key == "" {
+		key = hashutil.Sha256Hex(def.Spec.Bytes())
+	}
+	return fmt.Sprintf("%s:%s:%s", def.Type, def.Name, key)
+}
+
+func (r *MutationResolver) createComponent(ctx context.Context, stackID string, parentID *string, def ComponentDefinition) (*ComponentResolver, error) {
+	// TODO: Validate type, name, & key.
 
 	row := ComponentRow{
 		ID:       gensym.RandomBase32(),
 		StackID:  stackID,
 		ParentID: parentID,
-		Name:     name,
-		Type:     typ,
-		Key:      key,
-		Spec:     spec,
+		Name:     def.Name,
+		Type:     def.Type,
+		Key:      def.Key,
+		Spec:     def.Spec,
 		State:    make(JSONObject),
 	}
 	if err := r.insertRow(ctx, "component", row); err != nil {
@@ -242,7 +259,7 @@ func (r *MutationResolver) createComponent(ctx context.Context, stackID string, 
 func (r *MutationResolver) UpdateComponent(ctx context.Context, args struct {
 	Stack   *string
 	Ref     string
-	NewSpec *string
+	NewSpec *CueValue
 	NewName *string
 }) (*ReconciliationResolver, error) {
 	component, err := r.componentByRef(ctx, args.Ref, args.Stack)
@@ -260,7 +277,20 @@ func (r *MutationResolver) UpdateComponent(ctx context.Context, args struct {
 		name = *args.NewName
 	}
 
-	// TODO: Validate name and spec.
+	component, err = r.updateComponent(ctx, component.ID, name, spec)
+	if err != nil {
+		return nil, err
+	}
+
+	reconciliation, err := r.startComponentReconciliation(ctx, component)
+	if err != nil {
+		return nil, fmt.Errorf("starting reconciliation job: %w", err)
+	}
+	return reconciliation, err
+}
+
+func (r *MutationResolver) updateComponent(ctx context.Context, id string, name string, spec CueValue) (*ComponentResolver, error) {
+	// TODO: Validate name.
 
 	var row ComponentRow
 	if err := r.db.GetContext(ctx, &row, `
@@ -268,14 +298,13 @@ func (r *MutationResolver) UpdateComponent(ctx context.Context, args struct {
 		SET spec = ?, name = ?
 		WHERE id = ?
 		RETURNING *
-	`, spec, name, component.ID); err != nil {
+	`, spec, name, id); err != nil {
 		return nil, err
 	}
-	component = &ComponentResolver{
+	return &ComponentResolver{
 		Q:            r,
 		ComponentRow: row,
-	}
-	return r.startComponentReconciliationJob(ctx, component)
+	}, nil
 }
 
 func (r *MutationResolver) DestroyComponents(ctx context.Context, args struct {
@@ -307,7 +336,7 @@ func (r *MutationResolver) DestroyComponent(ctx context.Context, args struct {
 	if err != nil {
 		return nil, err
 	}
-	return r.startComponentReconciliationJob(ctx, component)
+	return r.startComponentReconciliation(ctx, component)
 }
 
 func (r *MutationResolver) disposeComponent(ctx context.Context, id string) (*ComponentResolver, error) {
@@ -345,7 +374,7 @@ func (r *MutationResolver) disposeComponentsByStack(ctx context.Context, stackID
 	return err
 }
 
-func (r *MutationResolver) startComponentReconciliationJob(ctx context.Context, component *ComponentResolver) (*ReconciliationResolver, error) {
+func (r *MutationResolver) start(ctx context.Context, component *ComponentResolver) (*ReconciliationResolver, error) {
 	job, err := r.createJob(ctx, "reconcileComponent", map[string]any{
 		"ref": component.ID,
 	})
@@ -406,12 +435,6 @@ func (r *ComponentResolver) controller(ctx context.Context) (*sdk.Controller, er
 	return controller, nil
 }
 
-func (r *MutationResolver) ensureComponentInitialize(ctx context.Context, componentID string) error {
-	return r.ensureTask(ctx, "initializeComponent", map[string]any{
-		"id": componentID,
-	}, componentID)
-}
-
 func (r *MutationResolver) controlComponent(ctx context.Context, id string, f func(*sdk.Controller, exocue.Component) error) error {
 	component, err := r.componentByID(ctx, &id)
 	if err := validateResolve("component", id, component, err); err != nil {
@@ -431,42 +454,18 @@ func (r *MutationResolver) controlComponent(ctx context.Context, id string, f fu
 	return f(controller, configuration)
 }
 
-func (r *MutationResolver) InitializeComponent(ctx context.Context, args struct {
-	ID string
-}) (*VoidResolver, error) {
-	err := r.controlComponent(ctx, args.ID, func(controller *sdk.Controller, configuration exocue.Component) error {
-		return controller.OnCreate(ctx, cue.Value(configuration))
-	})
-	return nil, err
-}
-
-func (r *MutationResolver) ensureComponentTransition(ctx context.Context, id, spec string) error {
-	return r.ensureTask(ctx, "transitionComponent", map[string]any{
-		"id":   id,
-		"spec": spec,
-	}, id)
-}
-
-func (r *MutationResolver) TransitionComponent(ctx context.Context, args struct {
+func (r *MutationResolver) transitionComponent(ctx context.Context, args struct {
 	ID   string
-	Spec string
+	Spec CueValue
 }) (*VoidResolver, error) {
 	return nil, errors.New("TODO: transition component")
 }
 
-func (r *MutationResolver) ensureComponentShutdown(ctx context.Context, componentID string) error {
-	return r.ensureTask(ctx, "shutdownComponent", map[string]any{
-		"id": componentID,
-	}, componentID)
-}
-
-func (r *MutationResolver) ShutdownComponent(ctx context.Context, args struct {
-	ID string
-}) (*VoidResolver, error) {
+func (r *MutationResolver) shutdownComponent(ctx context.Context, id string) error {
 	// XXX if there are still children, abort and try again later.
 	// after done, trigger reconciliation of parent.
 	// ^^^ actually, this doesn't make sense, the parent reconcilliation should wait?
-	return nil, errors.New("TODO: shutdown component")
+	return errors.New("TODO: shutdown component")
 }
 
 func (r *ComponentResolver) Reconciling() bool {
@@ -487,4 +486,32 @@ func (r *ComponentResolver) AsStore(ctx context.Context) *StoreComponentResolver
 
 func (r *ComponentResolver) AsNetwork(ctx context.Context) *NetworkComponentResolver {
 	return r.Q.networkFromComponent(r)
+}
+
+func (r *ComponentResolver) render(ctx context.Context) ([]ComponentDefinition, error) {
+	controller, err := r.controller(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("resolving controller: %w", err)
+	}
+
+	configuration, err := r.configuration(ctx, true)
+	if err != nil {
+		return nil, fmt.Errorf("resolving configuration: %w", err)
+	}
+
+	rendered, err := controller.Render(ctx, cue.Value(configuration))
+	if err != nil {
+		return nil, err
+	}
+
+	definitions := make([]ComponentDefinition, len(rendered))
+	for i, child := range rendered {
+		definitions[i] = ComponentDefinition{
+			Type: child.Type,
+			Name: child.Name,
+			Key:  child.Key,
+			Spec: EncodeCueValue(child.Spec),
+		}
+	}
+	return definitions, nil
 }

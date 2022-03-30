@@ -1,12 +1,10 @@
+// See also doc/reconciliation.md
+
 package resolvers
 
 import (
 	"context"
 	"fmt"
-
-	"cuelang.org/go/cue"
-	"github.com/deref/exo/internal/util/hashutil"
-	"github.com/deref/exo/internal/util/jsonutil"
 )
 
 type ReconciliationResolver struct {
@@ -14,6 +12,43 @@ type ReconciliationResolver struct {
 	StackID   string
 	Component *ComponentResolver
 	Job       *JobResolver
+}
+
+// Starts a reconciliation job (top-level async task) to reconcile all components in a stack.
+func (r *MutationResolver) startStackReconciliation(ctx context.Context, stack *StackResolver) (*ReconciliationResolver, error) {
+	job, err := r.createJob(ctx, "reconcileStack", map[string]any{
+		"ref": stack.ID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("creating reconciliation job: %w", err)
+	}
+	return &ReconciliationResolver{
+		StackID: stack.ID,
+		Job:     job,
+	}, nil
+}
+
+// Starts a reconciliation job (top-level async task) to reconcile a particular component subtree.
+func (r *MutationResolver) startComponentReconciliation(ctx context.Context, component *ComponentResolver) (*ReconciliationResolver, error) {
+	job, err := r.createJob(ctx, "reconcileComponent", map[string]any{
+		"ref": component.ID,
+	})
+	if err != nil {
+		return nil, fmt.Errorf("creating reconciliation job: %w", err)
+	}
+	return &ReconciliationResolver{
+		StackID:   component.StackID,
+		Component: component,
+		Job:       job,
+	}, nil
+}
+
+// Start a task within an existing reconciliation job as a step of the recursive process.
+func (r *MutationResolver) startChildReconciliation(ctx context.Context, component *ComponentResolver) (*TaskResolver, error) {
+	return r.createTask(ctx, "reconcileComponent", map[string]any{
+		"stack": component.StackID,
+		"ref":   component.ID,
+	})
 }
 
 func (r *ReconciliationResolver) Stack(ctx context.Context) (*StackResolver, error) {
@@ -80,118 +115,108 @@ func (r *MutationResolver) ReconcileComponent(ctx context.Context, args struct {
 	if err := validateResolve("component", args.Ref, component, err); err != nil {
 		return nil, err
 	}
-
-	// TODO: do not give up on first error; process all children.
-
-	if component.Disposed != nil {
-		if err := r.ensureComponentShutdown(ctx, component.ID); err != nil {
-			return nil, fmt.Errorf("ensuring %q shutdown: %w", component.Name, err)
-		}
-	} else {
-		controller, err := component.controller(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("resolving controller: %w", err)
-		}
-
-		configuration, err := component.configuration(ctx, true)
-		if err != nil {
-			return nil, fmt.Errorf("resolving configuration: %w", err)
-		}
-
-		oldChildren, err := component.Children(ctx)
-		if err != nil {
-			return nil, fmt.Errorf("resolving children: %w", err)
-		}
-
-		newChildren, err := controller.Render(ctx, cue.Value(configuration))
-		if err != nil {
-			return nil, fmt.Errorf("rendering: %w", err)
-		}
-
-		type Child struct {
-			Type     string
-			ID       string
-			Name     string
-			Key      string
-			Existing bool
-			NewSpec  *string
-		}
-		parent := component
-		names := make(map[string]bool)
-		children := make(map[string]Child)
-		for _, oldChild := range oldChildren {
-			ident := makeChildComponentIdent(oldChild.Type, oldChild.Name, oldChild.Spec, oldChild.Key)
-			child := children[ident]
-			child.Type = oldChild.Type
-			child.Name = oldChild.Name
-			child.Key = oldChild.Key
-			child.Existing = true
-			children[ident] = child
-		}
-		for _, newChild := range newChildren {
-			if names[newChild.Name] {
-				return nil, fmt.Errorf("child name conflict: %q", newChild.Name)
-			}
-			names[newChild.Name] = true
-
-			spec, err := jsonutil.MarshalString(newChild.Spec)
-			if err != nil {
-				return nil, fmt.Errorf("marshaling child %q spec: %w", newChild.Name, err)
-			}
-
-			ident := makeChildComponentIdent(newChild.Type, newChild.Name, spec, newChild.Key)
-			child := children[ident]
-			child.Type = newChild.Type
-			child.Name = newChild.Name
-			child.Key = newChild.Key
-			child.NewSpec = &spec
-			children[ident] = child
-		}
-
-		for _, child := range children {
-			reconcileID := child.ID
-			switch {
-			case !child.Existing:
-				spec := *child.NewSpec
-				created, err := r.createComponent(ctx, parent.StackID, &parent.ID, child.Type, child.Name, spec, child.Key)
-				if err != nil {
-					return nil, fmt.Errorf("creating %q: %w", child.Name, err)
-				}
-				reconcileID = created.ID
-			case child.NewSpec == nil:
-				if _, err := r.disposeComponent(ctx, child.ID); err != nil {
-					return nil, fmt.Errorf("disposing %q: %w", child.Name, err)
-				}
-			default:
-				// XXX instead of task keys, might be better to have prev/next specs on
-				// components, then iif changing the next step, trigger a transition. but
-				// need to be concerned with concurrent changes.
-				spec := *child.NewSpec
-				if err := r.ensureComponentTransition(ctx, child.ID, spec); err != nil {
-					return nil, fmt.Errorf("ensuring %q transition: %w", child.Name, err)
-				}
-			}
-			if reconcileID != "" {
-				_, err := r.createTask(ctx, "reconcileComponent", map[string]any{
-					"ref": reconcileID,
-				})
-				if err != nil {
-					return nil, fmt.Errorf("creating child %q reconciliation task: %w", child.Name, err)
-				}
-			}
-		}
-
-		if err := r.ensureComponentInitialize(ctx, component.ID); err != nil {
-			return nil, fmt.Errorf("ensuring %q initialization: %w", component.Name, err)
-		}
-	}
-
-	return nil, nil
+	return nil, r.reconcileComponent(ctx, component)
 }
 
-func makeChildComponentIdent(typ, name, spec, key string) string {
-	if key == "" {
-		key = hashutil.Sha256Hex([]byte(spec))
+func (r *MutationResolver) reconcileComponent(ctx context.Context, component *ComponentResolver) error {
+	if component.Disposed == nil {
+		// XXX before children reconciled hook.
+		// XXX after children reconciled hook.
+	} else {
+		if err := r.shutdownComponent(ctx, component.ID); err != nil {
+			return fmt.Errorf("shutting down: %w", err)
+		}
+		// TODO: On success, delete the component.
+		return nil
 	}
-	return fmt.Sprintf("%s:%s:%s", typ, name, key)
+
+	return nil
+}
+
+func (r *MutationResolver) reconcileChildren(ctx context.Context, parent *ComponentResolver) error {
+	newChildren, err := parent.render(ctx)
+	if err != nil {
+		return fmt.Errorf("rendering: %w", err)
+	}
+
+	oldChildren, err := parent.Children(ctx)
+	if err != nil {
+		return fmt.Errorf("resolving children: %w", err)
+	}
+
+	type child struct {
+		ID  string
+		Old *ComponentDefinition
+		New *ComponentDefinition
+	}
+	children := make(map[string]child) // Keyed by ident.
+
+	for _, oldChild := range oldChildren {
+		def := ComponentDefinition{
+			Type: oldChild.Type,
+			Name: oldChild.Name,
+			Key:  oldChild.Key,
+			Spec: oldChild.Spec,
+		}
+		ident := def.Ident()
+		if _, exists := children[ident]; exists {
+			panic(fmt.Errorf("unexpected old component ident conflict: %q", ident))
+		}
+		children[ident] = child{
+			ID:  oldChild.ID,
+			Old: &def,
+		}
+	}
+
+	newNames := make(map[string]bool)
+	for _, newChild := range newChildren {
+		if newNames[newChild.Name] {
+			return fmt.Errorf("child name conflict: %q", newChild.Name)
+		}
+		newNames[newChild.Name] = true
+
+		def := newChild
+		ident := def.Ident()
+		child := children[ident]
+		child.New = &def
+		children[ident] = child
+	}
+
+	for _, child := range children {
+		var err error
+		var component *ComponentResolver
+		switch {
+		case child.Old == nil:
+			def := *child.New
+			component, err = r.createComponent(ctx, parent.StackID, &parent.ID, def)
+			if err != nil {
+				return fmt.Errorf("creating %q: %w", def.Name, err)
+			}
+		case child.New == nil:
+			def := *child.Old
+			component, err = r.disposeComponent(ctx, child.ID)
+			if err != nil {
+				return fmt.Errorf("disposing %q: %w", def.Name, err)
+			}
+		case child.New.Spec.String() != child.Old.Spec.String():
+			def := *child.New
+			component, err = r.updateComponent(ctx, child.ID, def.Name, def.Spec)
+			if err != nil {
+				return fmt.Errorf("updating %q: %w", def.Name, err)
+			}
+		default:
+			// Unchanged, skip reconciliation.
+			continue
+		}
+
+		task, err := r.startChildReconciliation(ctx, component)
+		if err != nil {
+			return fmt.Errorf("starting child reconciliation task for %q: %w", component.Name, err)
+		}
+		// TODO: If we're doing to reconcile in a loop, cannot rely on the natural
+		// structured-concurrency behavior to await child tasks; instead, need an
+		// explicit await.
+		_ = task
+	}
+	return nil
 }

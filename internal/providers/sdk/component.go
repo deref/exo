@@ -42,6 +42,7 @@ func decodeComponentConfig(ctx context.Context, typ reflect.Type, v cue.Value) (
 	return out, err
 }
 
+// XXX Remove this and replace with OnUpdate or similar?
 func (c *Controller) OnCreate(ctx context.Context, cfg cue.Value) (err error) {
 	defer errutil.RecoverTo(&err)
 	method := c.impl.MethodByName("OnCreate")

@@ -262,7 +262,7 @@ func (r *MutationResolver) DestroyStack(ctx context.Context, args struct {
 	if err != nil {
 		return nil, err
 	}
-	return r.startStackReconciliationJob(ctx, stack)
+	return r.startStackReconciliation(ctx, stack)
 }
 
 func (r *MutationResolver) disposeStack(ctx context.Context, id string) (*StackResolver, error) {
@@ -283,19 +283,6 @@ func (r *MutationResolver) disposeStack(ctx context.Context, id string) (*StackR
 	return &StackResolver{
 		Q:        r,
 		StackRow: row,
-	}, nil
-}
-
-func (r *MutationResolver) startStackReconciliationJob(ctx context.Context, stack *StackResolver) (*ReconciliationResolver, error) {
-	job, err := r.createJob(ctx, "reconcileStack", map[string]any{
-		"ref": stack.ID,
-	})
-	if err != nil {
-		return nil, fmt.Errorf("creating reconciliation job: %w", err)
-	}
-	return &ReconciliationResolver{
-		StackID: stack.ID,
-		Job:     job,
 	}, nil
 }
 
@@ -387,7 +374,7 @@ func (r *StackResolver) addConfiguration(ctx context.Context, b *exocue.Builder,
 		return fmt.Errorf("resolving components: %w", err)
 	}
 	for _, component := range components {
-		b.AddComponent(component.ID, component.Name, component.Type, component.Spec, component.ParentID)
+		b.AddComponent(component.ID, component.Name, component.Type, component.Spec.String(), component.ParentID)
 	}
 
 	resources, err := r.Resources(ctx)

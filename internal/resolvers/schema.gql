@@ -122,24 +122,19 @@ type Mutation {
     stack: String!
     name: String!
     type: String!
-    spec: String!
+    spec: CueValue!
   ): Reconciliation!
   updateComponent(
     stack: String
     ref: String!
     newName: String
-    newSpec: String
+    newSpec: CueValue
   ): Reconciliation!
   destroyComponent(stack: String, ref: String!): Reconciliation!
   destroyComponents(stack: String, refs: [String!]!): Reconciliation!
 
-  # TODO: These should have some prefix or something to signal
-  # that these are are for async tasks run via controllers.
   reconcileStack(ref: String!): Void
   reconcileComponent(stack: String, ref: String!): Void
-  initializeComponent(id: String!): Void # XXX generalize to any update.
-  transitionComponent(id: String!, spec: String!): Void
-  shutdownComponent(id: String!): Void
 
   attachVault(
     stackId: String!
@@ -318,7 +313,7 @@ type Component implements ComponentLike {
 
   resources: [Resource!]!
 
-  spec: String!
+  spec: CueValue!
   configuration(recursive: Boolean, final: Boolean): String!
   environment: Environment!
 
@@ -577,7 +572,8 @@ type Secret {
 # See <https://github.com/ulid/spec>.
 scalar ULID
 
-# JSON Record<string, string>.
-scalar Tags
-
+# Unencoded JSON object satisfing TypeScript type: Record<string, any>.
 scalar JSONObject
+
+# Cue-lang <https://cuelang.org> encoded as a string.
+scalar CueValue
