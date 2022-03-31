@@ -1,48 +1,16 @@
-package sdk
+package control
 
 import (
 	"context"
 	"errors"
-	"reflect"
 
 	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/scalars"
-	"github.com/deref/exo/internal/util/errutil"
+	. "github.com/deref/exo/sdk"
 )
 
-type Controller struct {
-	impl reflect.Value
-}
-
-func NewController(ctx context.Context, svc api.Service, impl any) (*Controller, error) {
-	c := &Controller{
-		impl: reflect.ValueOf(impl),
-	}
-	if err := c.Init(ctx, svc); err != nil {
-		return nil, err
-	}
-	return c, nil
-}
-
-func (c *Controller) Init(ctx context.Context, svc api.Service) (err error) {
-	defer errutil.RecoverTo(&err)
-	method := c.impl.MethodByName("Init")
-	if !method.IsValid() {
-		// Default is a no-op.
-		return nil
-	}
-	res := method.Call([]reflect.Value{
-		reflect.ValueOf(ctx),
-		reflect.ValueOf(svc),
-	})
-	err, _ = res[0].Interface().(error)
-	return err
-}
-
-// TODO: Improve validation and error reporting for reflective calls.
-
 type ResourceComponentConfig struct {
-	ComponentConfig
+	RawComponentConfig
 	Spec map[string]any `json:"spec"`
 }
 
@@ -51,7 +19,7 @@ type ResourceComponentController struct {
 	api.Service
 }
 
-func (c *ResourceComponentController) Init(ctx context.Context, svc api.Service) error {
+func (c *ResourceComponentController) InitializeController(ctx context.Context, svc api.Service) error {
 	c.Service = svc
 	return nil
 }

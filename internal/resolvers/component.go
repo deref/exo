@@ -27,7 +27,7 @@ type ComponentRow struct {
 	Name     string     `db:"name"`
 	Key      string     `db:"key"`
 	Spec     CueValue   `db:"spec"`
-	State    JSONObject `db:"state"`
+	State    JSONObject `db:"state"` // TODO: Is this used/needed?
 	Disposed *Instant   `db:"disposed"`
 }
 
@@ -435,12 +435,16 @@ func (r *ComponentResolver) controller(ctx context.Context) (*sdk.Controller, er
 	return controller, nil
 }
 
-func (r *MutationResolver) controlComponent(ctx context.Context, id string, f func(*sdk.Controller, exocue.Component) error) error {
+func (r *MutationResolver) controlComponentByID(ctx context.Context, id string, f func(*sdk.Controller, exocue.Component) error) error {
 	component, err := r.componentByID(ctx, &id)
 	if err := validateResolve("component", id, component, err); err != nil {
 		return err
 	}
 
+	return r.controlComponent(ctx, component, f)
+}
+
+func (r *MutationResolver) controlComponent(ctx context.Context, component *ComponentResolver, f func(*sdk.Controller, exocue.Component) error) error {
 	controller, err := component.controller(ctx)
 	if err != nil {
 		return fmt.Errorf("resolving controller: %w", err)
@@ -462,10 +466,13 @@ func (r *MutationResolver) transitionComponent(ctx context.Context, args struct 
 }
 
 func (r *MutationResolver) shutdownComponent(ctx context.Context, id string) error {
-	// XXX if there are still children, abort and try again later.
-	// after done, trigger reconciliation of parent.
-	// ^^^ actually, this doesn't make sense, the parent reconcilliation should wait?
-	return errors.New("TODO: shutdown component")
+	return r.controlComponentByID(ctx, id, func(controller *sdk.Controller, component exocue.Component) error {
+		controller.Shutdown(ctx)
+		// XXX if there are still children, abort and try again later.
+		// after done, trigger reconciliation of parent.
+		// ^^^ actually, this doesn't make sense, the parent reconcilliation should wait?
+		return errors.New("TODO: shutdown component")
+	})
 }
 
 func (r *ComponentResolver) Reconciling() bool {
@@ -488,30 +495,23 @@ func (r *ComponentResolver) AsNetwork(ctx context.Context) *NetworkComponentReso
 	return r.Q.networkFromComponent(r)
 }
 
-func (r *ComponentResolver) render(ctx context.Context) ([]ComponentDefinition, error) {
-	controller, err := r.controller(ctx)
-	if err != nil {
-		return nil, fmt.Errorf("resolving controller: %w", err)
-	}
-
-	configuration, err := r.configuration(ctx, true)
-	if err != nil {
-		return nil, fmt.Errorf("resolving configuration: %w", err)
-	}
-
-	rendered, err := controller.Render(ctx, cue.Value(configuration))
-	if err != nil {
-		return nil, err
-	}
-
-	definitions := make([]ComponentDefinition, len(rendered))
-	for i, child := range rendered {
-		definitions[i] = ComponentDefinition{
-			Type: child.Type,
-			Name: child.Name,
-			Key:  child.Key,
-			Spec: EncodeCueValue(child.Spec),
+func (r *ComponentResolver) render(ctx context.Context) (definitions []ComponentDefinition, err error) {
+	err = r.Q.controlComponent(ctx, r, func(controller *sdk.Controller, component exocue.Component) error {
+		rendered, err := controller.Render(ctx, cue.Value(component))
+		if err != nil {
+			return err
 		}
-	}
-	return definitions, nil
+
+		definitions = make([]ComponentDefinition, len(rendered))
+		for i, child := range rendered {
+			definitions[i] = ComponentDefinition{
+				Type: child.Type,
+				Name: child.Name,
+				Key:  child.Key,
+				Spec: EncodeCueValue(child.Spec),
+			}
+		}
+		return nil
+	})
+	return
 }
