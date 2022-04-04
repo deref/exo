@@ -3,30 +3,28 @@ package resolvers
 import (
 	"context"
 
-	"github.com/deref/exo/internal/providers/os/daemon"
-	"github.com/deref/exo/internal/providers/os/file"
-	"github.com/deref/exo/internal/providers/os/process"
-	"github.com/deref/exo/internal/providers/sdk"
+	"cuelang.org/go/cue"
+	"github.com/deref/exo/internal/providers/os"
+	"github.com/deref/exo/sdk"
 )
 
 // TODO: Dynamic registry with qualified type identifiers.
 
-func (r *QueryResolver) controllerByType(ctx context.Context, typ string) (*sdk.Controller, error) {
-	impl := getControllerImpl(ctx, typ)
-	if impl == nil {
-		return nil, nil
-	}
-	return sdk.NewController(ctx, r.Service, impl)
-}
-
-func getControllerImpl(ctx context.Context, typ string) any {
+func (r *QueryResolver) componentControllerByType(ctx context.Context, typ string) sdk.ComponentController[cue.Value] {
 	switch typ {
 	case "daemon":
-		return &daemon.Controller{}
+		return os.NewDaemonController(r.Service)
+	default:
+		return r.resourceControllerByType(ctx, typ)
+	}
+}
+
+func (r *QueryResolver) resourceControllerByType(ctx context.Context, typ string) *sdk.ResourceComponentController {
+	switch typ {
 	case "file":
-		return &file.Controller{}
+		return os.NewFileController(r.Service)
 	case "process":
-		return &process.Controller{}
+		return os.NewProcessController(r.Service)
 	default:
 		return nil
 	}

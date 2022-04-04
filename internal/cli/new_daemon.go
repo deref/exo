@@ -3,7 +3,7 @@ package cli
 import (
 	"strings"
 
-	"github.com/deref/exo/internal/providers/os/daemon"
+	"github.com/deref/exo/internal/providers/os"
 	"github.com/spf13/cobra"
 )
 
@@ -17,7 +17,7 @@ func init() {
 	)
 }
 
-var daemonSpec = daemon.Spec{}
+var daemonSpec = os.DaemonSpec{}
 
 var newDaemonCmd = &cobra.Command{
 	Use:   "daemon <name> [options] [--] [name=value ...] <program> [args ...]",

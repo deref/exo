@@ -28,6 +28,7 @@ $Component: {
   name: string
   spec: {}
   state: {} // TODO: Disallow in manifests.
+  model: spec & state // TODO: Disallow in manifests.
   run: bool | *true
   environment: $Environment & {
     EXO_COMPONENT: name

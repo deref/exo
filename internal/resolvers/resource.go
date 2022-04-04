@@ -7,13 +7,14 @@ import (
 	"net/http"
 	"strings"
 
+	"cuelang.org/go/cue"
 	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/gensym"
-	"github.com/deref/exo/internal/providers/sdk"
 	. "github.com/deref/exo/internal/scalars"
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/deref/exo/internal/util/logging"
+	"github.com/deref/exo/sdk"
 	"github.com/deref/util-go/httputil"
 )
 
@@ -363,15 +364,15 @@ func (r *MutationResolver) CreateResource(ctx context.Context, args struct {
 	return resource, nil
 }
 
-type resourceOperation func(ctx context.Context, resource *ResourceResolver, controller *sdk.Controller) (model string, err error)
+type resourceOperation func(ctx context.Context, resource *ResourceResolver, controller sdk.ResourceController[cue.Value]) (model string, err error)
 
 func (r *MutationResolver) InitializeResource(ctx context.Context, args struct {
 	Ref   string
 	Model JSONObject
 }) (*ResourceResolver, error) {
 	return r.doResourceOperation(ctx, args.Ref,
-		func(ctx context.Context, resource *ResourceResolver, ctrl *sdk.Controller) (string, error) {
-			return ctrl.Create(ctx, args.Model)
+		func(ctx context.Context, resource *ResourceResolver, ctrl sdk.ResourceController[cue.Value]) (string, error) {
+			return ctrl.CreateResource(ctx, args.Model)
 		},
 	)
 }
@@ -380,8 +381,8 @@ func (r *MutationResolver) RefreshResource(ctx context.Context, args struct {
 	Ref string
 }) (*ResourceResolver, error) {
 	return r.doResourceOperation(ctx, args.Ref,
-		func(ctx context.Context, resource *ResourceResolver, ctrl *sdk.Controller) (string, error) {
-			return ctrl.Read(ctx, resource.Model)
+		func(ctx context.Context, resource *ResourceResolver, ctrl sdk.ResourceController[cue.Value]) (string, error) {
+			return ctrl.ReadResource(ctx, resource.Model)
 		},
 	)
 }
@@ -391,8 +392,8 @@ func (r *MutationResolver) UpdateResource(ctx context.Context, args struct {
 	Model JSONObject
 }) (*ResourceResolver, error) {
 	return r.doResourceOperation(ctx, args.Ref,
-		func(ctx context.Context, resource *ResourceResolver, ctrl *sdk.Controller) (string, error) {
-			return ctrl.Update(ctx, resource.Model, args.Model)
+		func(ctx context.Context, resource *ResourceResolver, ctrl sdk.ResourceController[cue.Value]) (string, error) {
+			return ctrl.UpdateResource(ctx, resource.Model, args.Model)
 		},
 	)
 }
@@ -401,8 +402,8 @@ func (r *MutationResolver) DisposeResource(ctx context.Context, args struct {
 	Ref string
 }) (*VoidResolver, error) {
 	if _, err := r.doResourceOperation(ctx, args.Ref,
-		func(ctx context.Context, resource *ResourceResolver, ctrl *sdk.Controller) (string, error) {
-			return ctrl.Delete(ctx, resource.Model)
+		func(ctx context.Context, resource *ResourceResolver, ctrl sdk.ResourceController[cue.Value]) (string, error) {
+			return ctrl.DeleteResource(ctx, resource.Model)
 		},
 	); err != nil {
 		return nil, err
@@ -441,10 +442,7 @@ func (r *MutationResolver) doResourceOperation(ctx context.Context, ref string, 
 	}
 	defer finish()
 
-	ctrl, err := r.controllerByType(ctx, resource.Type)
-	if err != nil {
-		return nil, fmt.Errorf("resolving controller: %w", err)
-	}
+	ctrl := r.resourceControllerByType(ctx, resource.Type)
 	if ctrl == nil {
 		return nil, fmt.Errorf("no controller for type: %q", resource.Type)
 	}
@@ -457,7 +455,7 @@ func (r *MutationResolver) doResourceOperation(ctx context.Context, ref string, 
 	var modelObj JSONObject
 	jsonutil.MustUnmarshalString(model, &modelObj)
 
-	iri, identifyErr := ctrl.Identify(ctx, modelObj)
+	iri, identifyErr := ctrl.IdentifyResource(ctx, modelObj)
 	iri = strings.TrimSpace(iri)
 	if identifyErr == nil && iri != "" {
 		if resource.IRI != nil {
