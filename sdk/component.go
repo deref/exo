@@ -33,9 +33,6 @@ type ComponentConfig struct {
 	Type string `json:"type"`
 	Name string `json:"name"`
 
-	Spec  json.RawMessage `json:"spec"`
-	State json.RawMessage `json:"state"`
-
 	Run         bool
 	Environment map[string]string `json:"environment"`
 }

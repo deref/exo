@@ -529,8 +529,7 @@ type Event {
   timestamp: Instant! # Extracted from ulid.
   type: String!
   message: String!
-  tags: JSONObject!
-
+  tags: JSONObject! # TODO: Unused/unneeded?
   # Event source hierarchy.
   sourceType: String!
   sourceId: String!

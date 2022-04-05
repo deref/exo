@@ -123,7 +123,8 @@ func (r *MutationResolver) reconcileComponent(ctx context.Context, component *Co
 		// XXX before children reconciled hook.
 		// XXX after children reconciled hook.
 	} else {
-		if err := r.shutdownComponent(ctx, component.ID); err != nil {
+		var err error
+		if component, err = r.shutdownComponent(ctx, component.ID); err != nil {
 			return fmt.Errorf("shutting down: %w", err)
 		}
 		// TODO: On success, delete the component.

@@ -9,11 +9,18 @@ import (
 )
 
 type Scalar interface {
+	GraphQLScalar
+	DatabaseScalar
+}
+
+type GraphQLScalar interface {
 	graphql.Unmarshaler
 
 	json.Marshaler
 	json.Unmarshaler
+}
 
+type DatabaseScalar interface {
 	sql.Scanner
 	driver.Valuer
 }

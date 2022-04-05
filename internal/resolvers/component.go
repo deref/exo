@@ -3,6 +3,7 @@ package resolvers
 import (
 	"context"
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 
@@ -11,6 +12,7 @@ import (
 	"github.com/deref/exo/internal/manifest/exocue"
 	. "github.com/deref/exo/internal/scalars"
 	"github.com/deref/exo/internal/util/hashutil"
+	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/deref/exo/sdk"
 )
 
@@ -20,15 +22,15 @@ type ComponentResolver struct {
 }
 
 type ComponentRow struct {
-	ID       string     `db:"id"`
-	StackID  string     `db:"stack_id"`
-	ParentID *string    `db:"parent_id"`
-	Type     string     `db:"type"`
-	Name     string     `db:"name"`
-	Key      string     `db:"key"`
-	Spec     CueValue   `db:"spec"`
-	State    JSONObject `db:"state"` // TODO: Is this used/needed?
-	Disposed *Instant   `db:"disposed"`
+	ID       string   `db:"id"`
+	StackID  string   `db:"stack_id"`
+	ParentID *string  `db:"parent_id"`
+	Type     string   `db:"type"`
+	Name     string   `db:"name"`
+	Key      string   `db:"key"`
+	Spec     CueValue `db:"spec"`
+	RawModel RawJSON  `db:"model"`
+	Disposed *Instant `db:"disposed"`
 }
 
 func (r *QueryResolver) ComponentByID(ctx context.Context, args struct {
@@ -242,7 +244,7 @@ func (r *MutationResolver) createComponent(ctx context.Context, stackID string, 
 		Type:     def.Type,
 		Key:      def.Key,
 		Spec:     def.Spec,
-		State:    make(JSONObject),
+		RawModel: jsonutil.MustMarshal(def.Spec),
 	}
 	if err := r.insertRow(ctx, "component", row); err != nil {
 		if isSqlConflict(err) {
@@ -388,6 +390,11 @@ func (r *MutationResolver) start(ctx context.Context, component *ComponentResolv
 	}, nil
 }
 
+func (r *ComponentResolver) Model() (obj JSONObject, err error) {
+	err = json.Unmarshal(r.RawModel, &obj)
+	return
+}
+
 func (r *ComponentResolver) Configuration(ctx context.Context, args struct {
 	Recursive *bool
 	Final     *bool
@@ -427,32 +434,61 @@ func (r *ComponentResolver) Environment(ctx context.Context) (*EnvironmentResolv
 func (r *ComponentResolver) controller(ctx context.Context) (sdk.AComponentController, error) {
 	controller := r.Q.componentControllerByType(ctx, r.Type)
 	if controller == nil {
-		return nil, fmt.Errorf("no controller for type: %q", r.Type)
+		return nil, fmt.Errorf("no component controller for type: %q", r.Type)
 	}
 	return controller, nil
 }
 
-func (r *MutationResolver) controlComponentByID(ctx context.Context, id string, f func(sdk.AComponentController, exocue.Component) error) error {
+type componentControlFunc = func(ctx sdk.AComponentController, cfg *sdk.ComponentConfig, model *json.RawMessage) error
+
+func (r *MutationResolver) controlComponentByID(ctx context.Context, id string, f componentControlFunc) (*ComponentResolver, error) {
 	component, err := r.componentByID(ctx, &id)
 	if err := validateResolve("component", id, component, err); err != nil {
-		return err
+		return nil, err
 	}
 
 	return r.controlComponent(ctx, component, f)
 }
 
-func (r *MutationResolver) controlComponent(ctx context.Context, component *ComponentResolver, f func(sdk.AComponentController, exocue.Component) error) error {
+func (r *MutationResolver) controlComponent(ctx context.Context, component *ComponentResolver, f componentControlFunc) (*ComponentResolver, error) {
 	controller, err := component.controller(ctx)
 	if err != nil {
-		return fmt.Errorf("resolving controller: %w", err)
+		return nil, fmt.Errorf("resolving controller: %w", err)
 	}
 
 	configuration, err := component.configuration(ctx, true)
 	if err != nil {
-		return fmt.Errorf("resolving configuration: %w", err)
+		return nil, fmt.Errorf("resolving configuration: %w", err)
 	}
 
-	return f(controller, configuration)
+	var cfg *sdk.ComponentConfig
+	if err := cue.Value(configuration).Decode(&cfg); err != nil {
+		return nil, fmt.Errorf("decoding configuration: %w", err)
+	}
+
+	// Invoke controller, which mutates model.
+	model := configuration.Model()
+	fErr := f(controller, cfg, &model)
+
+	// Update model, regardless of controller errors.
+	var row ComponentRow
+	if err := r.db.GetContext(ctx, &row, `
+		UPDATE component
+		SET model = ?
+		WHERE id = ?
+		RETURNING *
+	`, model, component.ID); err != nil {
+		return nil, fmt.Errorf("recording model: %w", err)
+	}
+
+	if fErr != nil {
+		return nil, fmt.Errorf("controller failed: %w", fErr)
+	}
+
+	return &ComponentResolver{
+		Q:            r,
+		ComponentRow: row,
+	}, nil
 }
 
 func (r *MutationResolver) transitionComponent(ctx context.Context, args struct {
@@ -462,8 +498,8 @@ func (r *MutationResolver) transitionComponent(ctx context.Context, args struct 
 	return nil, errors.New("TODO: transition component")
 }
 
-func (r *MutationResolver) shutdownComponent(ctx context.Context, id string) error {
-	return r.controlComponentByID(ctx, id, func(controller sdk.AComponentController, component exocue.Component) error {
+func (r *MutationResolver) shutdownComponent(ctx context.Context, id string) (*ComponentResolver, error) {
+	return r.controlComponentByID(ctx, id, func(controller sdk.AComponentController, cfg *sdk.ComponentConfig, model *json.RawMessage) error {
 		// XXX if there are still children, abort and try again later.
 		// after done, trigger reconciliation of parent.
 		// ^^^ actually, this doesn't make sense, the parent reconcilliation should wait?
@@ -492,8 +528,8 @@ func (r *ComponentResolver) AsNetwork(ctx context.Context) *NetworkComponentReso
 }
 
 func (r *ComponentResolver) render(ctx context.Context) (definitions []ComponentDefinition, err error) {
-	err = r.Q.controlComponent(ctx, r, func(controller sdk.AComponentController, component exocue.Component) error {
-		rendered, err := controller.RenderComponent(ctx, cue.Value(component))
+	_, err = r.Q.controlComponent(ctx, r, func(controller sdk.AComponentController, cfg *sdk.ComponentConfig, model *json.RawMessage) error {
+		rendered, err := controller.RenderComponent(ctx, cfg, model)
 		if err != nil {
 			return err
 		}

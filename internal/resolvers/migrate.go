@@ -106,7 +106,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 			name TEXT NOT NULL,
 			key TEXT NOT NULL,
 			spec TEXT NOT NULL,
-			state TEXT NOT NULL,
+			model TEXT NOT NULL,
 			disposed TEXT
 	);`); err != nil {
 		return fmt.Errorf("creating component table: %w", err)

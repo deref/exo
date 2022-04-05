@@ -4,10 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
-	"fmt"
 
 	"github.com/deref/exo/internal/api"
-	"github.com/deref/exo/internal/scalars"
 )
 
 type AResourceController = ResourceController[json.RawMessage]
@@ -22,10 +20,9 @@ type ResourceController[Model any] interface {
 }
 
 type ResourceConfig struct {
-	ID    string          `json:"id"`
-	Type  string          `json:"type"`
-	IRI   string          `json:"iri,omitempty"`
-	Model json.RawMessage `json:"model"`
+	ID   string  `json:"id"`
+	Type string  `json:"type"`
+	IRI  *string `json:"iri,omitempty"`
 }
 
 // Adapts a ResourceController[Model] to AResourceController and wraps
@@ -83,13 +80,9 @@ func (c *ResourceComponentController) ComponentCreated(ctx context.Context, cfg 
 			ID string
 		} `graphql:"createResource(type: $type, model: $model, component: $component)"`
 	}
-	var obj map[string]any
-	if err := model.Decode(&obj); err != nil {
-		return fmt.Errorf("decoding model: %w", err)
-	}
 	return api.Mutate(ctx, c.service, &m, map[string]any{
 		"type":      cfg.Type,
-		"model":     scalars.JSONObject(obj),
+		"model":     model,
 		"component": cfg.ID,
 	})
 }

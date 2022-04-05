@@ -2,6 +2,7 @@ package resolvers
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"net/http"
@@ -23,16 +24,16 @@ type ResourceResolver struct {
 }
 
 type ResourceRow struct {
-	ID          string     `db:"id"`
-	Type        string     `db:"type"`
-	IRI         *string    `db:"iri"`
-	ProjectID   *string    `db:"project_id"`
-	StackID     *string    `db:"stack_id"`
-	ComponentID *string    `db:"component_id"`
-	TaskID      *string    `db:"task_id"`
-	Model       JSONObject `db:"model"`
-	Status      int32      `db:"status"`
-	Message     *string    `db:"message"`
+	ID          string  `db:"id"`
+	Type        string  `db:"type"`
+	IRI         *string `db:"iri"`
+	ProjectID   *string `db:"project_id"`
+	StackID     *string `db:"stack_id"`
+	ComponentID *string `db:"component_id"`
+	TaskID      *string `db:"task_id"`
+	RawModel    RawJSON `db:"model"`
+	Status      int32   `db:"status"`
+	Message     *string `db:"message"`
 }
 
 func (r *MutationResolver) ForgetResource(ctx context.Context, args struct {
@@ -194,6 +195,11 @@ func (r *QueryResolver) resourcesByComponent(ctx context.Context, componentID st
 	return resourceRowsToResolvers(r, rows), nil
 }
 
+func (r *ResourceResolver) Model() (obj JSONObject, err error) {
+	err = json.Unmarshal(r.RawModel, &obj)
+	return
+}
+
 func (r *ResourceResolver) OwnerType() *string {
 	var ownerType string
 	switch {
@@ -280,7 +286,7 @@ func (r *MutationResolver) CreateResource(ctx context.Context, args struct {
 
 	adopt := args.Adopt != nil && *args.Adopt
 	if adopt {
-		row.Model = args.Model
+		row.RawModel = jsonutil.MustMarshal(args.Model)
 	}
 
 	var project *ProjectResolver
@@ -363,15 +369,16 @@ func (r *MutationResolver) CreateResource(ctx context.Context, args struct {
 	return resource, nil
 }
 
-type resourceOperation func(ctx context.Context, resource *ResourceResolver, controller sdk.AResourceController) (model string, err error)
+type controlResourceFunc func(ctx context.Context, controller sdk.AResourceController, cfg *sdk.ResourceConfig, model *json.RawMessage) error
 
 func (r *MutationResolver) InitializeResource(ctx context.Context, args struct {
 	Ref   string
 	Model JSONObject
 }) (*ResourceResolver, error) {
-	return r.doResourceOperation(ctx, args.Ref,
-		func(ctx context.Context, resource *ResourceResolver, ctrl sdk.AResourceController) (string, error) {
-			return ctrl.CreateResource(ctx, args.Model)
+	return r.controlResource(ctx, args.Ref,
+		func(ctx context.Context, ctrl sdk.AResourceController, cfg *sdk.ResourceConfig, model *json.RawMessage) error {
+			*model = jsonutil.MustMarshal(args.Model)
+			return ctrl.CreateResource(ctx, cfg, model)
 		},
 	)
 }
@@ -379,9 +386,9 @@ func (r *MutationResolver) InitializeResource(ctx context.Context, args struct {
 func (r *MutationResolver) RefreshResource(ctx context.Context, args struct {
 	Ref string
 }) (*ResourceResolver, error) {
-	return r.doResourceOperation(ctx, args.Ref,
-		func(ctx context.Context, resource *ResourceResolver, ctrl sdk.AResourceController) (string, error) {
-			return ctrl.ReadResource(ctx, resource.Model)
+	return r.controlResource(ctx, args.Ref,
+		func(ctx context.Context, ctrl sdk.AResourceController, cfg *sdk.ResourceConfig, model *json.RawMessage) error {
+			return ctrl.ReadResource(ctx, cfg, model)
 		},
 	)
 }
@@ -390,9 +397,10 @@ func (r *MutationResolver) UpdateResource(ctx context.Context, args struct {
 	Ref   string
 	Model JSONObject
 }) (*ResourceResolver, error) {
-	return r.doResourceOperation(ctx, args.Ref,
-		func(ctx context.Context, resource *ResourceResolver, ctrl sdk.AResourceController) (string, error) {
-			return ctrl.UpdateResource(ctx, resource.Model, args.Model)
+	return r.controlResource(ctx, args.Ref,
+		func(ctx context.Context, ctrl sdk.AResourceController, cfg *sdk.ResourceConfig, model *json.RawMessage) error {
+			prev := *model
+			return ctrl.UpdateResource(ctx, cfg, &prev, model)
 		},
 	)
 }
@@ -400,9 +408,9 @@ func (r *MutationResolver) UpdateResource(ctx context.Context, args struct {
 func (r *MutationResolver) DisposeResource(ctx context.Context, args struct {
 	Ref string
 }) (*VoidResolver, error) {
-	if _, err := r.doResourceOperation(ctx, args.Ref,
-		func(ctx context.Context, resource *ResourceResolver, ctrl sdk.AResourceController) (string, error) {
-			return ctrl.DeleteResource(ctx, resource.Model)
+	if _, err := r.controlResource(ctx, args.Ref,
+		func(ctx context.Context, ctrl sdk.AResourceController, cfg *sdk.ResourceConfig, model *json.RawMessage) error {
+			return ctrl.DeleteResource(ctx, cfg, model)
 		},
 	); err != nil {
 		return nil, err
@@ -411,7 +419,15 @@ func (r *MutationResolver) DisposeResource(ctx context.Context, args struct {
 	return nil, err
 }
 
-func (r *MutationResolver) doResourceOperation(ctx context.Context, ref string, op resourceOperation) (_ *ResourceResolver, doErr error) {
+func (r *ResourceResolver) controller(ctx context.Context) (sdk.AResourceController, error) {
+	controller := r.Q.resourceControllerByType(ctx, r.Type)
+	if controller == nil {
+		return nil, fmt.Errorf("no resource controller for type: %q", r.Type)
+	}
+	return controller, nil
+}
+
+func (r *MutationResolver) controlResource(ctx context.Context, ref string, f controlResourceFunc) (_ *ResourceResolver, doErr error) {
 	ctxVars := api.CurrentContextVariables(ctx)
 	if ctxVars == nil || ctxVars.TaskID == "" {
 		return nil, errors.New("resource operations must be asynchronous")
@@ -441,20 +457,26 @@ func (r *MutationResolver) doResourceOperation(ctx context.Context, ref string, 
 	}
 	defer finish()
 
-	ctrl := r.resourceControllerByType(ctx, resource.Type)
-	if ctrl == nil {
-		return nil, fmt.Errorf("no controller for type: %q", resource.Type)
+	ctrl, err := resource.controller(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("resolving controller: %w", err)
 	}
 
-	model, err := op(ctx, resource, ctrl)
-	if err != nil {
+	cfg := &sdk.ResourceConfig{
+		ID:   resource.ID,
+		Type: resource.Type,
+		IRI:  resource.IRI,
+	}
+
+	model := json.RawMessage(resource.RawModel)
+
+	fErr := f(ctx, ctrl, cfg, &model)
+	if fErr != nil {
 		return nil, fmt.Errorf("controller failed: %w", err)
 	}
 
-	var modelObj JSONObject
-	jsonutil.MustUnmarshalString(model, &modelObj)
-
-	iri, identifyErr := ctrl.IdentifyResource(ctx, modelObj)
+	// Attempt to identify resource, even if f failed.
+	iri, identifyErr := ctrl.IdentifyResource(ctx, cfg, &model)
 	iri = strings.TrimSpace(iri)
 	if identifyErr == nil && iri != "" {
 		if resource.IRI != nil {
@@ -465,6 +487,7 @@ func (r *MutationResolver) doResourceOperation(ctx context.Context, ref string, 
 		}
 	}
 
+	// Update model and iri, regardless of controller errors.
 	var row ResourceRow
 	if err := r.db.GetContext(ctx, &row, `
 		UPDATE resource
