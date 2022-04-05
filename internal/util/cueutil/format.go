@@ -1,4 +1,4 @@
-package exocue
+package cueutil
 
 import (
 	"fmt"
@@ -45,21 +45,4 @@ func MustFormatString(v any) string {
 
 func Dump(v any) {
 	fmt.Println(MustFormatString(v))
-}
-
-func StructToFile(v any) *ast.File {
-	var decls []ast.Decl
-	switch v := v.(type) {
-	case cue.Value:
-		return StructToFile(v.Syntax())
-	case *ast.StructLit:
-		decls = v.Elts
-	case *ast.BottomLit:
-		decls = []ast.Decl{v}
-	default:
-		panic(fmt.Errorf("cannot convert %T to file", v))
-	}
-	return &ast.File{
-		Decls: decls,
-	}
 }

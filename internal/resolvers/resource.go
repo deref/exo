@@ -369,14 +369,14 @@ func (r *MutationResolver) CreateResource(ctx context.Context, args struct {
 	return resource, nil
 }
 
-type controlResourceFunc func(ctx context.Context, controller sdk.AResourceController, cfg *sdk.ResourceConfig, model *json.RawMessage) error
+type controlResourceFunc func(ctx context.Context, controller sdk.AResourceController, cfg *sdk.ResourceConfig, model *RawJSON) error
 
 func (r *MutationResolver) InitializeResource(ctx context.Context, args struct {
 	Ref   string
 	Model JSONObject
 }) (*ResourceResolver, error) {
 	return r.controlResource(ctx, args.Ref,
-		func(ctx context.Context, ctrl sdk.AResourceController, cfg *sdk.ResourceConfig, model *json.RawMessage) error {
+		func(ctx context.Context, ctrl sdk.AResourceController, cfg *sdk.ResourceConfig, model *RawJSON) error {
 			*model = jsonutil.MustMarshal(args.Model)
 			return ctrl.CreateResource(ctx, cfg, model)
 		},
@@ -387,7 +387,7 @@ func (r *MutationResolver) RefreshResource(ctx context.Context, args struct {
 	Ref string
 }) (*ResourceResolver, error) {
 	return r.controlResource(ctx, args.Ref,
-		func(ctx context.Context, ctrl sdk.AResourceController, cfg *sdk.ResourceConfig, model *json.RawMessage) error {
+		func(ctx context.Context, ctrl sdk.AResourceController, cfg *sdk.ResourceConfig, model *RawJSON) error {
 			return ctrl.ReadResource(ctx, cfg, model)
 		},
 	)
@@ -398,7 +398,7 @@ func (r *MutationResolver) UpdateResource(ctx context.Context, args struct {
 	Model JSONObject
 }) (*ResourceResolver, error) {
 	return r.controlResource(ctx, args.Ref,
-		func(ctx context.Context, ctrl sdk.AResourceController, cfg *sdk.ResourceConfig, model *json.RawMessage) error {
+		func(ctx context.Context, ctrl sdk.AResourceController, cfg *sdk.ResourceConfig, model *RawJSON) error {
 			prev := *model
 			return ctrl.UpdateResource(ctx, cfg, &prev, model)
 		},
@@ -409,7 +409,7 @@ func (r *MutationResolver) DisposeResource(ctx context.Context, args struct {
 	Ref string
 }) (*VoidResolver, error) {
 	if _, err := r.controlResource(ctx, args.Ref,
-		func(ctx context.Context, ctrl sdk.AResourceController, cfg *sdk.ResourceConfig, model *json.RawMessage) error {
+		func(ctx context.Context, ctrl sdk.AResourceController, cfg *sdk.ResourceConfig, model *RawJSON) error {
 			return ctrl.DeleteResource(ctx, cfg, model)
 		},
 	); err != nil {
@@ -468,7 +468,7 @@ func (r *MutationResolver) controlResource(ctx context.Context, ref string, f co
 		IRI:  resource.IRI,
 	}
 
-	model := json.RawMessage(resource.RawModel)
+	model := resource.RawModel
 
 	fErr := f(ctx, ctrl, cfg, &model)
 	if fErr != nil {

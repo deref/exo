@@ -10,7 +10,7 @@ import (
 	"strings"
 
 	"cuelang.org/go/cue"
-	"github.com/deref/exo/internal/manifest/exocue"
+	"github.com/deref/exo/internal/util/cueutil"
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/jmoiron/sqlx"
 )
@@ -149,12 +149,12 @@ func isTrue(b *bool) bool {
 func formatConfiguration(v cue.Value, final bool) (string, error) {
 	var res any
 	if final {
-		res = exocue.Final(v)
+		res = cueutil.Final(v)
 	} else if isValid(v) {
 		// XXX what to do when invalid? is there a good way to show the errors?
 		res = v.Eval()
 	}
-	return exocue.FormatString(res)
+	return cueutil.FormatString(res)
 }
 
 func isValid(v cue.Value) bool {

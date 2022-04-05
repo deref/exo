@@ -4,8 +4,9 @@ import (
 	"context"
 
 	"github.com/deref/exo/internal/api"
+	"github.com/deref/exo/internal/scalars"
 	"github.com/deref/exo/internal/util/cmdutil"
-	"github.com/deref/exo/internal/util/jsonutil"
+	"github.com/deref/exo/internal/util/cueutil"
 	"github.com/spf13/cobra"
 )
 
@@ -43,7 +44,7 @@ func createComponent(ctx context.Context, name, typ string, spec any) error {
 		"stack": currentStackRef(),
 		"name":  name,
 		"type":  typ,
-		"spec":  jsonutil.MustMarshalString(spec),
+		"spec":  scalars.CueValue(cueutil.EncodeValue(spec)),
 	}); err != nil {
 		return err
 	}

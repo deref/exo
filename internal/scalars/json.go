@@ -19,8 +19,14 @@ type RawJSON []byte
 
 var _ Scalar = &JSONObject{}
 
-// Could reasonably be extended to full-Scalar support if needed.
-var _ DatabaseScalar = &RawJSON{}
+var _ interface {
+	// Is it worth implementing GraphQLScalar?
+
+	json.Marshaler
+	json.Unmarshaler
+
+	DatabaseScalar
+} = &RawJSON{}
 
 func (_ JSONObject) ImplementsGraphQLType(name string) bool {
 	return name == "JSONObject"
@@ -68,13 +74,30 @@ func (raw RawJSON) Value() (driver.Value, error) {
 	if len(raw) == 0 {
 		return nil, nil
 	}
-	return raw, nil
+	return string(raw), nil
 }
 
 func (obj *JSONObject) UnmarshalJSON(bs []byte) (err error) {
 	return json.Unmarshal(bs, (*map[string]any)(obj))
 }
 
+// Same as json.RawMessage.MarshalJSON.
+func (raw RawJSON) MarshalJSON() ([]byte, error) {
+	if raw == nil {
+		return []byte("null"), nil
+	}
+	return raw, nil
+}
+
 func (obj JSONObject) MarshalJSON() ([]byte, error) {
 	return json.Marshal((map[string]any)(obj))
+}
+
+// Same as json.RawMessage.UnmarshalJSON.
+func (raw *RawJSON) UnmarshalJSON(data []byte) error {
+	if raw == nil {
+		return errors.New("RawJSON: UnmarshalJSON on nil pointer")
+	}
+	*raw = append((*raw)[0:0], data...)
+	return nil
 }

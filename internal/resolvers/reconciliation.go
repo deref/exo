@@ -120,8 +120,20 @@ func (r *MutationResolver) ReconcileComponent(ctx context.Context, args struct {
 
 func (r *MutationResolver) reconcileComponent(ctx context.Context, component *ComponentResolver) error {
 	if component.Disposed == nil {
-		// XXX before children reconciled hook.
-		// XXX after children reconciled hook.
+		var err error
+		component, err = r.handleComponentUpdated(ctx, component)
+		if err != nil {
+			return fmt.Errorf("handling component updated: %w", err)
+		}
+
+		if err := r.reconcileChildren(ctx, component); err != nil {
+			return fmt.Errorf("reconciling children: %w", err)
+		}
+
+		component, err = r.handleChildrenUpdated(ctx, component)
+		if err != nil {
+			return fmt.Errorf("handling children updated: %w", err)
+		}
 	} else {
 		var err error
 		if component, err = r.shutdownComponent(ctx, component.ID); err != nil {

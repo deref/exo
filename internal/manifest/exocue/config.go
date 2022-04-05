@@ -1,20 +1,14 @@
 package exocue
 
 import (
-	"encoding/json"
-
 	"cuelang.org/go/cue"
-	"cuelang.org/go/cue/ast"
+	. "github.com/deref/exo/internal/scalars"
 )
 
 type Configuration cue.Value
 type Cluster cue.Value
 type Stack cue.Value
 type Component cue.Value
-
-func Final(v cue.Value) ast.Node {
-	return StructToFile(v.Syntax(cue.Final()))
-}
 
 func lookup(v cue.Value, path ...cue.Selector) cue.Value {
 	return v.LookupPath(cue.MakePath(path...))
@@ -32,8 +26,8 @@ func (cfg Configuration) Component(id string) Component {
 	return Component(lookup(cue.Value(cfg), cue.Str("$components"), cue.Str(id)))
 }
 
-func (c Component) Model() json.RawMessage {
-	var model json.RawMessage
+func (c Component) Model() RawJSON {
+	var model RawJSON
 	if err := lookup(cue.Value(c), cue.Str("model")).Decode(&model); err != nil {
 		panic(err)
 	}

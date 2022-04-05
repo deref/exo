@@ -319,7 +319,7 @@ type Component implements ComponentLike {
 
   reconciling: Boolean!
   running: Boolean! # TODO: Not relevant for non-processes. Rename/add something like "healthy"?
-  state: JSONObject!
+  model: JSONObject!
   disposed: Instant
 
   asProcess: ProcessComponent
@@ -407,6 +407,9 @@ type Resource {
   iri: String
 
   # Ownership hierarchy.
+  # TODO: Should these be renamed to owningProject, owningStack, and
+  # owningComponent?
+  # TODO: Consider ResourceAttachment type joining components to resources.
   projectId: String
   project: Project
   stackId: String

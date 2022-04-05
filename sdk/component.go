@@ -2,14 +2,13 @@ package sdk
 
 import (
 	"context"
-	"encoding/json"
+
+	. "github.com/deref/exo/internal/scalars"
 )
 
-type AComponentController = ComponentController[json.RawMessage]
+type AComponentController = ComponentController[RawJSON]
 
 type ComponentController[Model any] interface {
-	// Called after a component is first-created.
-	ComponentCreated(context.Context, *ComponentConfig, *Model) error
 	// Returns a list of desired child components.
 	// Called on each iteration of the reconciliation loop.
 	RenderComponent(context.Context, *ComponentConfig, *Model) ([]RenderedComponent, error)
@@ -35,6 +34,14 @@ type ComponentConfig struct {
 
 	Run         bool
 	Environment map[string]string `json:"environment"`
+
+	Resources map[string]ComponentConfigResource `json:"resources"`
+}
+
+type ComponentConfigResource struct {
+	ID   string  `json:"id"`
+	Type string  `json:"type"`
+	IRI  *string `json:"iri,omitempty"`
 }
 
 type RenderedComponent struct {
@@ -48,9 +55,6 @@ type RenderedComponent struct {
 // only implement RenderComponent.
 type PureComponentController[Model any] struct{}
 
-func (ctrl *PureComponentController[Model]) ComponentCreated(context.Context, *ComponentConfig, *Model) error {
-	return nil
-}
 func (ctrl *PureComponentController[Model]) RefreshComponent(context.Context, *ComponentConfig, *Model) error {
 	return nil
 }
@@ -65,54 +69,4 @@ func (ctrl *PureComponentController[Model]) ShutdownComponent(context.Context, *
 }
 func (ctrl *PureComponentController[Model]) DeleteComponent(context.Context, *ComponentConfig, *Model) error {
 	return nil
-}
-
-// Adapts a ComponentController[Model] to AComponentController and wraps
-// methods with panic recovery.
-type ComponentControllerAdapter[Model any] struct {
-	impl any
-}
-
-func NewComponentControllerAdapater[Model any](impl ComponentController[Model]) AComponentController {
-	return &ComponentControllerAdapter[Model]{
-		impl: impl,
-	}
-}
-
-//func (c *ComponentControllerAdapter[Model]) decodeConfig(cfg ComponentConfig[Model]) (ComponentConfig[Model], error) {
-//	res := sdk.ComponentConfig[Model]{
-//		RawComponentConfig: cfg,
-//	}
-//	if err := res.Spec.DecodeCue(cfg.SpecValue); err != nil {
-//		return res, fmt.Errorf("decoding spec: %w", err)
-//	}
-//	return res, nil
-//}
-
-func (ctrl *ComponentControllerAdapter[Model]) ComponentCreated(ctx context.Context, cfg *ComponentConfig, model *json.RawMessage) error {
-	panic("TODO")
-}
-
-func (ctrl *ComponentControllerAdapter[Model]) RenderComponent(ctx context.Context, cfg *ComponentConfig, model *json.RawMessage) ([]RenderedComponent, error) {
-	panic("TODO")
-}
-
-func (ctrl *ComponentControllerAdapter[Model]) RefreshComponent(ctx context.Context, cfg *ComponentConfig, model *json.RawMessage) error {
-	panic("TODO")
-}
-
-func (ctrl *ComponentControllerAdapter[Model]) ComponentUpdated(ctx context.Context, cfg *ComponentConfig, model *json.RawMessage) error {
-	panic("TODO")
-}
-
-func (ctrl *ComponentControllerAdapter[Model]) ChildrenUpdated(ctx context.Context, cfg *ComponentConfig, model *json.RawMessage) error {
-	panic("TODO")
-}
-
-func (ctrl *ComponentControllerAdapter[Model]) ShutdownComponent(ctx context.Context, cfg *ComponentConfig, model *json.RawMessage) error {
-	panic("TODO")
-}
-
-func (ctrl *ComponentControllerAdapter[Model]) DeleteComponent(ctx context.Context, cfg *ComponentConfig, model *json.RawMessage) error {
-	panic("TODO")
 }

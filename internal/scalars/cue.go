@@ -8,7 +8,7 @@ import (
 	"cuelang.org/go/cue"
 	"cuelang.org/go/cue/cuecontext"
 	"cuelang.org/go/cue/parser"
-	"github.com/deref/exo/internal/manifest/exocue"
+	"github.com/deref/exo/internal/util/cueutil"
 )
 
 type CueValue cue.Value
@@ -59,7 +59,7 @@ func (cv CueValue) MarshalJSON() ([]byte, error) {
 }
 
 func (cv CueValue) String() string {
-	s, err := exocue.FormatString(cue.Value(cv))
+	s, err := cueutil.FormatString(cue.Value(cv))
 	if err != nil {
 		panic(err)
 	}
@@ -67,7 +67,7 @@ func (cv CueValue) String() string {
 }
 
 func (cv CueValue) Bytes() []byte {
-	s, err := exocue.FormatBytes(cue.Value(cv))
+	s, err := cueutil.FormatBytes(cue.Value(cv))
 	if err != nil {
 		panic(err)
 	}

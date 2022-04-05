@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"strings"
 
-	"github.com/deref/exo/internal/manifest/exocue"
+	"github.com/deref/exo/internal/util/cueutil"
 	"github.com/natefinch/atomic"
 )
 
@@ -98,7 +98,7 @@ func (r *ManifestResolver) Formatted() (string, error) {
 	}
 	switch r.Format {
 	case "exo":
-		return exocue.FormatString(content)
+		return cueutil.FormatString(content)
 	default:
 		// No-op for unsupported formats.
 		return content, nil

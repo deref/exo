@@ -439,7 +439,7 @@ func (r *ComponentResolver) controller(ctx context.Context) (sdk.AComponentContr
 	return controller, nil
 }
 
-type componentControlFunc = func(ctx sdk.AComponentController, cfg *sdk.ComponentConfig, model *json.RawMessage) error
+type componentControlFunc = func(ctx sdk.AComponentController, cfg *sdk.ComponentConfig, model *RawJSON) error
 
 func (r *MutationResolver) controlComponentByID(ctx context.Context, id string, f componentControlFunc) (*ComponentResolver, error) {
 	component, err := r.componentByID(ctx, &id)
@@ -491,15 +491,20 @@ func (r *MutationResolver) controlComponent(ctx context.Context, component *Comp
 	}, nil
 }
 
-func (r *MutationResolver) transitionComponent(ctx context.Context, args struct {
-	ID   string
-	Spec CueValue
-}) (*VoidResolver, error) {
-	return nil, errors.New("TODO: transition component")
+func (r *MutationResolver) handleComponentUpdated(ctx context.Context, component *ComponentResolver) (*ComponentResolver, error) {
+	return r.controlComponent(ctx, component, func(controller sdk.AComponentController, cfg *sdk.ComponentConfig, model *RawJSON) error {
+		return controller.ComponentUpdated(ctx, cfg, model)
+	})
+}
+
+func (r *MutationResolver) handleChildrenUpdated(ctx context.Context, component *ComponentResolver) (*ComponentResolver, error) {
+	return r.controlComponent(ctx, component, func(controller sdk.AComponentController, cfg *sdk.ComponentConfig, model *RawJSON) error {
+		return controller.ChildrenUpdated(ctx, cfg, model)
+	})
 }
 
 func (r *MutationResolver) shutdownComponent(ctx context.Context, id string) (*ComponentResolver, error) {
-	return r.controlComponentByID(ctx, id, func(controller sdk.AComponentController, cfg *sdk.ComponentConfig, model *json.RawMessage) error {
+	return r.controlComponentByID(ctx, id, func(controller sdk.AComponentController, cfg *sdk.ComponentConfig, model *RawJSON) error {
 		// XXX if there are still children, abort and try again later.
 		// after done, trigger reconciliation of parent.
 		// ^^^ actually, this doesn't make sense, the parent reconcilliation should wait?
@@ -528,7 +533,7 @@ func (r *ComponentResolver) AsNetwork(ctx context.Context) *NetworkComponentReso
 }
 
 func (r *ComponentResolver) render(ctx context.Context) (definitions []ComponentDefinition, err error) {
-	_, err = r.Q.controlComponent(ctx, r, func(controller sdk.AComponentController, cfg *sdk.ComponentConfig, model *json.RawMessage) error {
+	_, err = r.Q.controlComponent(ctx, r, func(controller sdk.AComponentController, cfg *sdk.ComponentConfig, model *RawJSON) error {
 		rendered, err := controller.RenderComponent(ctx, cfg, model)
 		if err != nil {
 			return err
