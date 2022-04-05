@@ -2,11 +2,10 @@ package sdk
 
 import (
 	"context"
-
-	"cuelang.org/go/cue"
+	"encoding/json"
 )
 
-type AComponentController = ComponentController[cue.Value]
+type AComponentController = ComponentController[json.RawMessage]
 
 type ComponentController[Model any] interface {
 	// Called after a component is first-created.
@@ -34,8 +33,8 @@ type ComponentConfig struct {
 	Type string `json:"type"`
 	Name string `json:"name"`
 
-	Spec  cue.Value      `json:"spec"`
-	State map[string]any `json:"state"`
+	Spec  json.RawMessage `json:"spec"`
+	State json.RawMessage `json:"state"`
 
 	Run         bool
 	Environment map[string]string `json:"environment"`
@@ -93,30 +92,30 @@ func NewComponentControllerAdapater[Model any](impl ComponentController[Model]) 
 //	return res, nil
 //}
 
-func (ctrl *ComponentControllerAdapter[Model]) ComponentCreated(ctx context.Context, cfg *ComponentConfig, model *cue.Value) error {
+func (ctrl *ComponentControllerAdapter[Model]) ComponentCreated(ctx context.Context, cfg *ComponentConfig, model *json.RawMessage) error {
 	panic("TODO")
 }
 
-func (ctrl *ComponentControllerAdapter[Model]) RenderComponent(ctx context.Context, cfg *ComponentConfig, model *cue.Value) ([]RenderedComponent, error) {
+func (ctrl *ComponentControllerAdapter[Model]) RenderComponent(ctx context.Context, cfg *ComponentConfig, model *json.RawMessage) ([]RenderedComponent, error) {
 	panic("TODO")
 }
 
-func (ctrl *ComponentControllerAdapter[Model]) RefreshComponent(ctx context.Context, cfg *ComponentConfig, model *cue.Value) error {
+func (ctrl *ComponentControllerAdapter[Model]) RefreshComponent(ctx context.Context, cfg *ComponentConfig, model *json.RawMessage) error {
 	panic("TODO")
 }
 
-func (ctrl *ComponentControllerAdapter[Model]) ComponentUpdated(ctx context.Context, cfg *ComponentConfig, model *cue.Value) error {
+func (ctrl *ComponentControllerAdapter[Model]) ComponentUpdated(ctx context.Context, cfg *ComponentConfig, model *json.RawMessage) error {
 	panic("TODO")
 }
 
-func (ctrl *ComponentControllerAdapter[Model]) ChildrenUpdated(ctx context.Context, cfg *ComponentConfig, model *cue.Value) error {
+func (ctrl *ComponentControllerAdapter[Model]) ChildrenUpdated(ctx context.Context, cfg *ComponentConfig, model *json.RawMessage) error {
 	panic("TODO")
 }
 
-func (ctrl *ComponentControllerAdapter[Model]) ShutdownComponent(ctx context.Context, cfg *ComponentConfig, model *cue.Value) error {
+func (ctrl *ComponentControllerAdapter[Model]) ShutdownComponent(ctx context.Context, cfg *ComponentConfig, model *json.RawMessage) error {
 	panic("TODO")
 }
 
-func (ctrl *ComponentControllerAdapter[Model]) DeleteComponent(ctx context.Context, cfg *ComponentConfig, model *cue.Value) error {
+func (ctrl *ComponentControllerAdapter[Model]) DeleteComponent(ctx context.Context, cfg *ComponentConfig, model *json.RawMessage) error {
 	panic("TODO")
 }

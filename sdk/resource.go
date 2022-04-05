@@ -2,15 +2,15 @@ package sdk
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"fmt"
 
-	"cuelang.org/go/cue"
 	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/scalars"
 )
 
-type AResourceController = ResourceController[cue.Value]
+type AResourceController = ResourceController[json.RawMessage]
 
 type ResourceController[Model any] interface {
 	IdentifyResource(context.Context, *ResourceConfig, *Model) (string, error)
@@ -22,10 +22,10 @@ type ResourceController[Model any] interface {
 }
 
 type ResourceConfig struct {
-	ID    string    `json:"id"`
-	Type  string    `json:"type"`
-	IRI   string    `json:"iri,omitempty"`
-	Model cue.Value `json:"model"`
+	ID    string          `json:"id"`
+	Type  string          `json:"type"`
+	IRI   string          `json:"iri,omitempty"`
+	Model json.RawMessage `json:"model"`
 }
 
 // Adapts a ResourceController[Model] to AResourceController and wraps
@@ -40,27 +40,27 @@ func NewResourceControllerAdapater[Model any](impl ResourceController[Model]) AR
 	}
 }
 
-func (ctrl *ResourceControllerAdapater[Model]) IdentifyResource(ctx context.Context, cfg *ResourceConfig, model *cue.Value) (string, error) {
+func (ctrl *ResourceControllerAdapater[Model]) IdentifyResource(ctx context.Context, cfg *ResourceConfig, model *json.RawMessage) (string, error) {
 	panic("TODO")
 }
 
-func (ctrl *ResourceControllerAdapater[Model]) CreateResource(ctx context.Context, cfg *ResourceConfig, model *cue.Value) error {
+func (ctrl *ResourceControllerAdapater[Model]) CreateResource(ctx context.Context, cfg *ResourceConfig, model *json.RawMessage) error {
 	panic("TODO")
 }
 
-func (ctrl *ResourceControllerAdapater[Model]) ReadResource(ctx context.Context, cfg *ResourceConfig, model *cue.Value) error {
+func (ctrl *ResourceControllerAdapater[Model]) ReadResource(ctx context.Context, cfg *ResourceConfig, model *json.RawMessage) error {
 	panic("TODO")
 }
 
-func (ctrl *ResourceControllerAdapater[Model]) UpdateResource(ctx context.Context, cfg *ResourceConfig, prev *cue.Value, next *cue.Value) error {
+func (ctrl *ResourceControllerAdapater[Model]) UpdateResource(ctx context.Context, cfg *ResourceConfig, prev *json.RawMessage, next *json.RawMessage) error {
 	panic("TODO")
 }
 
-func (ctrl *ResourceControllerAdapater[Model]) ShutdownResource(ctx context.Context, cfg *ResourceConfig, model *cue.Value) error {
+func (ctrl *ResourceControllerAdapater[Model]) ShutdownResource(ctx context.Context, cfg *ResourceConfig, model *json.RawMessage) error {
 	panic("TODO")
 }
 
-func (ctrl *ResourceControllerAdapater[Model]) DeleteResource(ctx context.Context, cfg *ResourceConfig, model *cue.Value) error {
+func (ctrl *ResourceControllerAdapater[Model]) DeleteResource(ctx context.Context, cfg *ResourceConfig, model *json.RawMessage) error {
 	panic("TODO")
 }
 
@@ -77,7 +77,7 @@ func NewResourceComponentController[Model any](svc api.Service, impl ResourceCon
 	}
 }
 
-func (c *ResourceComponentController) ComponentCreated(ctx context.Context, cfg *ComponentConfig, model *cue.Value) (err error) {
+func (c *ResourceComponentController) ComponentCreated(ctx context.Context, cfg *ComponentConfig, model *json.RawMessage) (err error) {
 	var m struct {
 		Resource struct {
 			ID string
@@ -94,28 +94,28 @@ func (c *ResourceComponentController) ComponentCreated(ctx context.Context, cfg 
 	})
 }
 
-func (c *ResourceComponentController) RenderComponent(ctx context.Context, cfg *ComponentConfig, model *cue.Value) (children []RenderedComponent, err error) {
+func (c *ResourceComponentController) RenderComponent(ctx context.Context, cfg *ComponentConfig, model *json.RawMessage) (children []RenderedComponent, err error) {
 	// No children.
 	return nil, nil
 }
 
-func (ctrl *ResourceComponentController) RefreshComponent(ctx context.Context, cfg *ComponentConfig, model *cue.Value) error {
+func (ctrl *ResourceComponentController) RefreshComponent(ctx context.Context, cfg *ComponentConfig, model *json.RawMessage) error {
 	return errors.New("TODO: Trigger refresh of resources")
 }
 
-func (ctrl *ResourceComponentController) ComponentUpdated(ctx context.Context, cfg *ComponentConfig, model *cue.Value) error {
+func (ctrl *ResourceComponentController) ComponentUpdated(ctx context.Context, cfg *ComponentConfig, model *json.RawMessage) error {
 	return errors.New("TODO: Trigger update/recreate/transition of component, as needed")
 }
 
-func (ctrl *ResourceComponentController) ChildrenUpdated(ctx context.Context, cfg *ComponentConfig, model *cue.Value) error {
+func (ctrl *ResourceComponentController) ChildrenUpdated(ctx context.Context, cfg *ComponentConfig, model *json.RawMessage) error {
 	// No-op, since there are no children.
 	return nil
 }
 
-func (c *ResourceComponentController) ShutdownComponent(ctx context.Context, cfg *ComponentConfig, model *cue.Value) (err error) {
+func (c *ResourceComponentController) ShutdownComponent(ctx context.Context, cfg *ComponentConfig, model *json.RawMessage) (err error) {
 	return errors.New("TODO: delegate to shutdown of resources")
 }
 
-func (ctrl *ResourceComponentController) DeleteComponent(ctx context.Context, cfg *ComponentConfig, model *cue.Value) error {
+func (ctrl *ResourceComponentController) DeleteComponent(ctx context.Context, cfg *ComponentConfig, model *json.RawMessage) error {
 	return errors.New("TODO: delegate to deletion of resources")
 }
