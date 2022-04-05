@@ -424,7 +424,7 @@ func (r *ComponentResolver) Environment(ctx context.Context) (*EnvironmentResolv
 	return EnvMapToEnvironment(env, source), nil
 }
 
-func (r *ComponentResolver) controller(ctx context.Context) (sdk.ComponentController[cue.Value], error) {
+func (r *ComponentResolver) controller(ctx context.Context) (sdk.AComponentController, error) {
 	controller := r.Q.componentControllerByType(ctx, r.Type)
 	if controller == nil {
 		return nil, fmt.Errorf("no controller for type: %q", r.Type)
@@ -432,7 +432,7 @@ func (r *ComponentResolver) controller(ctx context.Context) (sdk.ComponentContro
 	return controller, nil
 }
 
-func (r *MutationResolver) controlComponentByID(ctx context.Context, id string, f func(sdk.ComponentController[cue.Value], exocue.Component) error) error {
+func (r *MutationResolver) controlComponentByID(ctx context.Context, id string, f func(sdk.AComponentController, exocue.Component) error) error {
 	component, err := r.componentByID(ctx, &id)
 	if err := validateResolve("component", id, component, err); err != nil {
 		return err
@@ -441,7 +441,7 @@ func (r *MutationResolver) controlComponentByID(ctx context.Context, id string, 
 	return r.controlComponent(ctx, component, f)
 }
 
-func (r *MutationResolver) controlComponent(ctx context.Context, component *ComponentResolver, f func(sdk.ComponentController[cue.Value], exocue.Component) error) error {
+func (r *MutationResolver) controlComponent(ctx context.Context, component *ComponentResolver, f func(sdk.AComponentController, exocue.Component) error) error {
 	controller, err := component.controller(ctx)
 	if err != nil {
 		return fmt.Errorf("resolving controller: %w", err)
@@ -463,7 +463,7 @@ func (r *MutationResolver) transitionComponent(ctx context.Context, args struct 
 }
 
 func (r *MutationResolver) shutdownComponent(ctx context.Context, id string) error {
-	return r.controlComponentByID(ctx, id, func(controller sdk.ComponentController[cue.Value], component exocue.Component) error {
+	return r.controlComponentByID(ctx, id, func(controller sdk.AComponentController, component exocue.Component) error {
 		// XXX if there are still children, abort and try again later.
 		// after done, trigger reconciliation of parent.
 		// ^^^ actually, this doesn't make sense, the parent reconcilliation should wait?
@@ -492,7 +492,7 @@ func (r *ComponentResolver) AsNetwork(ctx context.Context) *NetworkComponentReso
 }
 
 func (r *ComponentResolver) render(ctx context.Context) (definitions []ComponentDefinition, err error) {
-	err = r.Q.controlComponent(ctx, r, func(controller sdk.ComponentController[cue.Value], component exocue.Component) error {
+	err = r.Q.controlComponent(ctx, r, func(controller sdk.AComponentController, component exocue.Component) error {
 		rendered, err := controller.RenderComponent(ctx, cue.Value(component))
 		if err != nil {
 			return err

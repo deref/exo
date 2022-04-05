@@ -3,14 +3,13 @@ package resolvers
 import (
 	"context"
 
-	"cuelang.org/go/cue"
 	"github.com/deref/exo/internal/providers/os"
 	"github.com/deref/exo/sdk"
 )
 
 // TODO: Dynamic registry with qualified type identifiers.
 
-func (r *QueryResolver) componentControllerByType(ctx context.Context, typ string) sdk.ComponentController[cue.Value] {
+func (r *QueryResolver) componentControllerByType(ctx context.Context, typ string) sdk.AComponentController {
 	switch typ {
 	case "daemon":
 		return os.NewDaemonController(r.Service)

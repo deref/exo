@@ -7,7 +7,6 @@ import (
 	"net/http"
 	"strings"
 
-	"cuelang.org/go/cue"
 	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/gensym"
 	. "github.com/deref/exo/internal/scalars"
@@ -364,14 +363,14 @@ func (r *MutationResolver) CreateResource(ctx context.Context, args struct {
 	return resource, nil
 }
 
-type resourceOperation func(ctx context.Context, resource *ResourceResolver, controller sdk.ResourceController[cue.Value]) (model string, err error)
+type resourceOperation func(ctx context.Context, resource *ResourceResolver, controller sdk.AResourceController) (model string, err error)
 
 func (r *MutationResolver) InitializeResource(ctx context.Context, args struct {
 	Ref   string
 	Model JSONObject
 }) (*ResourceResolver, error) {
 	return r.doResourceOperation(ctx, args.Ref,
-		func(ctx context.Context, resource *ResourceResolver, ctrl sdk.ResourceController[cue.Value]) (string, error) {
+		func(ctx context.Context, resource *ResourceResolver, ctrl sdk.AResourceController) (string, error) {
 			return ctrl.CreateResource(ctx, args.Model)
 		},
 	)
@@ -381,7 +380,7 @@ func (r *MutationResolver) RefreshResource(ctx context.Context, args struct {
 	Ref string
 }) (*ResourceResolver, error) {
 	return r.doResourceOperation(ctx, args.Ref,
-		func(ctx context.Context, resource *ResourceResolver, ctrl sdk.ResourceController[cue.Value]) (string, error) {
+		func(ctx context.Context, resource *ResourceResolver, ctrl sdk.AResourceController) (string, error) {
 			return ctrl.ReadResource(ctx, resource.Model)
 		},
 	)
@@ -392,7 +391,7 @@ func (r *MutationResolver) UpdateResource(ctx context.Context, args struct {
 	Model JSONObject
 }) (*ResourceResolver, error) {
 	return r.doResourceOperation(ctx, args.Ref,
-		func(ctx context.Context, resource *ResourceResolver, ctrl sdk.ResourceController[cue.Value]) (string, error) {
+		func(ctx context.Context, resource *ResourceResolver, ctrl sdk.AResourceController) (string, error) {
 			return ctrl.UpdateResource(ctx, resource.Model, args.Model)
 		},
 	)
@@ -402,7 +401,7 @@ func (r *MutationResolver) DisposeResource(ctx context.Context, args struct {
 	Ref string
 }) (*VoidResolver, error) {
 	if _, err := r.doResourceOperation(ctx, args.Ref,
-		func(ctx context.Context, resource *ResourceResolver, ctrl sdk.ResourceController[cue.Value]) (string, error) {
+		func(ctx context.Context, resource *ResourceResolver, ctrl sdk.AResourceController) (string, error) {
 			return ctrl.DeleteResource(ctx, resource.Model)
 		},
 	); err != nil {

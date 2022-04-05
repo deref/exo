@@ -3,7 +3,6 @@ package os
 import (
 	"context"
 
-	"cuelang.org/go/cue"
 	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/sdk"
 )
@@ -12,7 +11,7 @@ type DaemonController struct {
 	sdk.PureComponentController[DaemonModel]
 }
 
-func NewDaemonController(svc api.Service) sdk.ComponentController[cue.Value] {
+func NewDaemonController(svc api.Service) sdk.AComponentController {
 	return sdk.NewComponentControllerAdapater[DaemonModel](&DaemonController{})
 }
 

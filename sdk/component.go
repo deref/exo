@@ -6,6 +6,8 @@ import (
 	"cuelang.org/go/cue"
 )
 
+type AComponentController = ComponentController[cue.Value]
+
 type ComponentController[Model any] interface {
 	// Called after a component is first-created.
 	ComponentCreated(context.Context, *ComponentConfig, *Model) error
@@ -69,13 +71,13 @@ func (ctrl *PureComponentController[Model]) DeleteComponent(context.Context, *Co
 	return nil
 }
 
-// Adapts a ComponentController[Model] to ComponentController[cue.Value] and
-// wraps methods with panic recovery.
+// Adapts a ComponentController[Model] to AComponentController and wraps
+// methods with panic recovery.
 type ComponentControllerAdapter[Model any] struct {
 	impl any
 }
 
-func NewComponentControllerAdapater[Model any](impl ComponentController[Model]) ComponentController[cue.Value] {
+func NewComponentControllerAdapater[Model any](impl ComponentController[Model]) AComponentController {
 	return &ComponentControllerAdapter[Model]{
 		impl: impl,
 	}

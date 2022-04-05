@@ -10,6 +10,8 @@ import (
 	"github.com/deref/exo/internal/scalars"
 )
 
+type AResourceController = ResourceController[cue.Value]
+
 type ResourceController[Model any] interface {
 	IdentifyResource(context.Context, *ResourceConfig, *Model) (string, error)
 	CreateResource(context.Context, *ResourceConfig, *Model) error
@@ -26,13 +28,13 @@ type ResourceConfig struct {
 	Model cue.Value `json:"model"`
 }
 
-// Adapts a ResourceController[Model] to ResourceController[cue.Value] and wraps
+// Adapts a ResourceController[Model] to AResourceController and wraps
 // methods with panic recovery.
 type ResourceControllerAdapater[Model any] struct {
 	impl ResourceController[Model]
 }
 
-func NewResourceControllerAdapater[Model any](impl ResourceController[Model]) ResourceController[cue.Value] {
+func NewResourceControllerAdapater[Model any](impl ResourceController[Model]) AResourceController {
 	return &ResourceControllerAdapater[Model]{
 		impl: impl,
 	}
@@ -65,13 +67,13 @@ func (ctrl *ResourceControllerAdapater[Model]) DeleteResource(ctx context.Contex
 // Extends a ResourceController with ComponentController methods.
 type ResourceComponentController struct {
 	service api.Service
-	ResourceController[cue.Value]
+	AResourceController
 }
 
 func NewResourceComponentController[Model any](svc api.Service, impl ResourceController[Model]) *ResourceComponentController {
 	return &ResourceComponentController{
-		service:            svc,
-		ResourceController: NewResourceControllerAdapater(impl),
+		service:             svc,
+		AResourceController: NewResourceControllerAdapater(impl),
 	}
 }
 
