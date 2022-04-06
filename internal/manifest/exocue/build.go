@@ -100,10 +100,10 @@ func (b *Builder) AddResource(id string, typ string, iri *string, componentID *s
 	}
 }
 
-func (b *Builder) AddCluster(id string, name string, environment map[string]any) {
+func (b *Builder) AddCluster(id string, name string, environment map[string]string) {
 	envElems := make([]any, 0, len(environment)*2)
 	for k, v := range environment {
-		envElems = append(envElems, k, ast.NewString(v.(string)))
+		envElems = append(envElems, k, ast.NewString(v))
 	}
 	b.addDecl([]string{"$cluster"}, ast.NewStruct(
 		"id", ast.NewString(id),

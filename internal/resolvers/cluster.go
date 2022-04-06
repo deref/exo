@@ -191,6 +191,6 @@ func (r *ClusterResolver) addConfiguration(ctx context.Context, b *exocue.Builde
 	if err != nil {
 		return fmt.Errorf("resolving environment: %w", err)
 	}
-	b.AddCluster(r.ID, r.Name, env.AsMap())
+	b.AddCluster(r.ID, r.Name, env.asMap())
 	return nil
 }

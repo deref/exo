@@ -54,3 +54,11 @@ func (r *EnvironmentResolver) AsMap() JSONObject {
 	}
 	return obj
 }
+
+func (r *EnvironmentResolver) asMap() map[string]string {
+	obj := make(map[string]string)
+	for _, variable := range r.Variables {
+		obj[variable.Name] = variable.Value
+	}
+	return obj
+}
