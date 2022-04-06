@@ -1,92 +1,97 @@
 // TODO: Use different schema for manifests vs resolved configurations.
 
-// TODO: can/should manifests close various structures?
-$Manifest: {
+#Manifest: {
   //exo: string
-  environment: $Environment
-  $environment: environment
-  components: $ComponentsByName
+  environment: #Environment
+  components: #ComponentsByName
 }
 
-$Environment: { [string]: string }
+#Environment: { [string]: string }
 
-$Cluster: {
+#Cluster: {
   id: string
   name: string
-  environment: $Environment
+  environment: #Environment
 }
 
-$Resource: {
+#Resource: {
   type: string
   id: string
   iri: string
 }
 
-$Component: {
+#Component: {
   id: string // TODO: Disallow in manifests.
   type: string
   name: string
-  spec: {}
-  state: {} // TODO: Disallow in manifests.
-  model: spec & state // TODO: Disallow in manifests.
+  spec: #Model
+  model: spec // TODO: Disallow in manifests.
   run: bool | *true
-  environment: $Environment & {
+  environment: #Environment & {
     EXO_COMPONENT: name
   }
-  resources: $ResourcesById
-  components: $ComponentsByName // TODO: Disallow in manifests.
+  resources: #ResourcesById
+  components: #ComponentsByName // TODO: Disallow in manifests.
 }
 
-$ComponentsByName: {
-  [Name=string]: $Component & {
+#Model: { [string]: _ }
+
+#ComponentsByName: {
+  [Name=string]: #Component & {
     name: Name
   }
 }
 
-$ComponentsById: {
-  [Id=string]: $Component & {
+#ComponentsById: {
+  [Id=string]: #Component & {
     id: Id
   }
 }
 
-$ResourcesById: {
-  [Id=string]: $Resource & {
+#ResourcesById: {
+  [Id=string]: #Resource & {
     id: Id
   }
 }
 
-$Stack: {
-  environment: $Environment & $cluster.environment
-  components: $ComponentsByName
-  detachedResources: $ResourcesById // TODO: Disallow in manifests.
+#Stack: {
+  environment: #Environment
+  components: #ComponentsByName
+  detachedResources: #ResourcesById // TODO: Disallow in manifests.
 }
 
 // TODO: Move to os package, prefix type string, etc.
-$Daemon: $component=($Component & {
+#Daemon: #Component & {
   type: "daemon"
   spec: {
     program: string
     arguments: [...string] | *[]
-    environment: $component.environment
+    "environment": environment
   }
-  environment: $stack.environment
-})
+  environment: _
+}
 
 // TODO: Move to os package, prefix type string, etc.
-$Process: $component=($Component & {
+#Process: #Component & {
   type: "process"
   spec: {
     program: string
     arguments: [...string] | *[]
-    environment: $component.environment
+    "environment": environment
   }
-  environment: $stack.environment
-})
+  environment: _
+}
 
-$cluster: $Cluster
+$cluster: #Cluster
 
-$resources: $ResourcesById
+$resources: #ResourcesById
 
-$components: $ComponentsById
+$stack: #Stack & {
+  environment: $cluster.environment
+}
 
-$stack: $Stack
+$components: #ComponentsById & {
+  [string]: {
+    environment: $stack.environment
+  }
+}

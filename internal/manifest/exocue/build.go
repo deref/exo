@@ -66,9 +66,9 @@ func (b *Builder) AddComponent(id string, name string, typ string, spec string, 
 	var decl ast.Expr
 	switch typ {
 	case "daemon":
-		decl = newAnd(ast.NewIdent("$Daemon"), component)
+		decl = newAnd(ast.NewIdent("#Daemon"), component)
 	case "process":
-		decl = newAnd(ast.NewIdent("$Process"), component)
+		decl = newAnd(ast.NewIdent("#Process"), component)
 	default:
 		panic(fmt.Errorf("TODO: type lookup schema voodoo. typ=%q", typ))
 	}
