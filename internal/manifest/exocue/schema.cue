@@ -27,9 +27,7 @@
   spec: #Model
   model: spec // TODO: Disallow in manifests.
   run: bool | *true
-  environment: #Environment & {
-    EXO_COMPONENT: name
-  }
+  environment: #Environment
   resources: #ResourcesById
   components: #ComponentsByName // TODO: Disallow in manifests.
 }

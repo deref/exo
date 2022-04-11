@@ -54,9 +54,8 @@ func TestManifestToComponent(t *testing.T) {
 			Program:   "./run-backend.sh",
 			Arguments: []string{},
 			Environment: map[string]any{
-				"PORT":          "1234",
-				"COMMON":        "VAR",
-				"EXO_COMPONENT": "backend",
+				"PORT":   "1234",
+				"COMMON": "VAR",
 			},
 		},
 	}, actual)
