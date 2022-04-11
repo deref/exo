@@ -147,14 +147,13 @@ func isTrue(b *bool) bool {
 }
 
 func formatConfiguration(v cue.Value, final bool) (string, error) {
-	var res any
-	if final {
-		res = cueutil.Final(v)
-	} else if isValid(v) {
-		// XXX what to do when invalid? is there a good way to show the errors?
-		res = v.Eval()
+	opts := []cue.Option{
+		cue.ResolveReferences(true),
 	}
-	return cueutil.FormatString(res)
+	if final {
+		opts = append(opts, cue.Final())
+	}
+	return cueutil.ValueToString(v, opts...)
 }
 
 func isValid(v cue.Value) bool {

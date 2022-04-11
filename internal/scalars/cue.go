@@ -41,11 +41,11 @@ func (cv *CueValue) unmarshal(v any) error {
 		return fmt.Errorf("expected string, got %T", v)
 	}
 	cc := cuecontext.New()
-	expr, err := parser.ParseExpr("", s)
+	f, err := parser.ParseFile("", s, parser.ParseComments)
 	if err != nil {
 		return err
 	}
-	underlying := cc.BuildExpr(expr)
+	underlying := cc.BuildFile(f)
 	*cv = CueValue(underlying)
 	return underlying.Err()
 }
@@ -59,19 +59,11 @@ func (cv CueValue) MarshalJSON() ([]byte, error) {
 }
 
 func (cv CueValue) String() string {
-	s, err := cueutil.FormatString(cue.Value(cv))
-	if err != nil {
-		panic(err)
-	}
-	return s
+	return cueutil.MustValueToString(cue.Value(cv))
 }
 
 func (cv CueValue) Bytes() []byte {
-	s, err := cueutil.FormatBytes(cue.Value(cv))
-	if err != nil {
-		panic(err)
-	}
-	return s
+	return cueutil.MustValueToBytes(cue.Value(cv))
 }
 
 func EncodeCueValue(v any) CueValue {
