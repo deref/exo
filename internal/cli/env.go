@@ -10,7 +10,8 @@ import (
 
 func init() {
 	rootCmd.AddCommand(envCmd)
-	// TODO: --scope, --component=, etc.
+	// TODO: --scope, --component=, etc. -- DO THIS
+	// TODO: Handle showing/hiding of sensitive values.
 }
 
 var envCmd = &cobra.Command{

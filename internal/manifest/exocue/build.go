@@ -4,27 +4,43 @@ import (
 	_ "embed"
 	"fmt"
 
+	"cuelang.org/go/cue"
 	"cuelang.org/go/cue/ast"
 	"cuelang.org/go/cue/cuecontext"
 	"cuelang.org/go/cue/parser"
 	"cuelang.org/go/cue/token"
+	"github.com/deref/exo/internal/util/cacheutil"
 )
 
-//go:embed schema.cue
-var schema string
+//go:embed manifest.cue
+var manifestSchemaSource string
+var manifestSchemaFile = cacheutil.NewLazy(func() *ast.File {
+	return mustParseFile("manifest.cue", manifestSchemaSource)
+})
+
+//go:embed resolution.cue
+var resolutionSchemaSource string
+var resolutionSchemaFile = cacheutil.NewLazy(func() *ast.File {
+	return mustParseFile("resolution.cue", resolutionSchemaSource)
+})
+
+func mustParseFile(name string, content string) *ast.File {
+	f, err := parser.ParseFile(name, content)
+	if err != nil {
+		panic(err)
+	}
+	return f
+}
 
 type Builder struct {
 	decls []ast.Decl
 }
 
 func NewBuilder() *Builder {
-	schema, err := parser.ParseFile("schema.cue", schema)
-	if err != nil {
-		panic(err)
-	}
-	return &Builder{
-		decls: append([]ast.Decl{}, schema.Decls...),
-	}
+	b := &Builder{}
+	b.decls = append(b.decls, manifestSchemaFile.Force().Decls...)
+	b.decls = append(b.decls, resolutionSchemaFile.Force().Decls...)
+	return b
 }
 
 func declsToStruct(decls []ast.Decl) *ast.StructLit {
@@ -34,14 +50,6 @@ func declsToStruct(decls []ast.Decl) *ast.StructLit {
 	}
 }
 
-func parseFileAsStruct(fname, s string) *ast.StructLit {
-	f, err := parser.ParseFile("exo.cue", s, parser.ParseComments)
-	if err != nil {
-		panic(err) // XXX
-	}
-	return declsToStruct(f.Decls)
-}
-
 func (b *Builder) addDecl(path []string, decl ast.Decl) {
 	for i := len(path) - 1; i >= 0; i-- {
 		decl = ast.NewStruct(path[i], decl)
@@ -49,19 +57,31 @@ func (b *Builder) addDecl(path []string, decl ast.Decl) {
 	b.decls = append(b.decls, decl)
 }
 
-func (b *Builder) AddManifest(s string) {
-	manifest := parseFileAsStruct("exo.cue", s)
-	b.addDecl([]string{"$stack"}, manifest)
+func (b *Builder) SetStack(id string, name string) {
+	b.addDecl([]string{"$stack"}, ast.NewStruct(
+		"id", id,
+		"name", name,
+	))
 }
 
-func (b *Builder) AddComponent(id string, name string, typ string, spec string, parentID *string) {
-	fname := fmt.Sprintf("components/%s.cue", id)
-	specNode := parseFileAsStruct(fname, spec)
+func (b *Builder) SetCluster(id string, name string, environment map[string]string) {
+	envElems := make([]any, 0, len(environment)*2)
+	for k, v := range environment {
+		envElems = append(envElems, k, ast.NewString(v))
+	}
+	b.addDecl([]string{"$cluster"}, ast.NewStruct(
+		"id", ast.NewString(id),
+		"name", ast.NewString(name),
+		"environment", ast.NewStruct(envElems...),
+	))
+}
+
+func (b *Builder) AddComponent(id string, name string, typ string, spec cue.Value, parentID *string) {
 	component := ast.NewStruct(
 		"id", ast.NewString(id),
 		"name", ast.NewString(name),
 		"type", ast.NewString(typ),
-		"spec", specNode,
+		"spec", spec.Syntax(),
 	)
 	var decl ast.Expr
 	switch typ {
@@ -78,7 +98,7 @@ func (b *Builder) AddComponent(id string, name string, typ string, spec string, 
 	if parentID == nil {
 		b.addDecl([]string{"$stack", "components", name}, sel)
 	} else {
-		b.addDecl([]string{"$components", *parentID, "components", name}, sel)
+		b.addDecl([]string{"$components", *parentID, "children", name}, sel)
 	}
 }
 
@@ -100,24 +120,12 @@ func (b *Builder) AddResource(id string, typ string, iri *string, componentID *s
 	}
 }
 
-func (b *Builder) AddCluster(id string, name string, environment map[string]string) {
-	envElems := make([]any, 0, len(environment)*2)
-	for k, v := range environment {
-		envElems = append(envElems, k, ast.NewString(v))
-	}
-	b.addDecl([]string{"$cluster"}, ast.NewStruct(
-		"id", ast.NewString(id),
-		"name", ast.NewString(name),
-		"environment", ast.NewStruct(envElems...),
-	))
-}
-
 func newAnd(xs ...ast.Expr) ast.Expr {
 	return ast.NewBinExpr(token.AND, xs...)
 }
 
-func (b *Builder) Build() Configuration {
+func (b *Builder) Build() (Configuration, error) {
 	cc := cuecontext.New()
 	x := cc.BuildExpr(declsToStruct(b.decls))
-	return Configuration(x)
+	return Configuration(x), x.Validate()
 }

@@ -36,7 +36,11 @@ func (c Component) Model() RawJSON {
 
 // TODO: Should be possible to ensure component is valid before calling
 // Environment, so returning an error wouldn't be necessary.
-func (c Component) Environment() (m map[string]string, err error) {
-	err = lookup(cue.Value(c), cue.Str("environment")).Decode(&m)
+func (s Stack) FullEnvironment() (m map[string]string, err error) {
+	err = lookup(cue.Value(s), cue.Str("fullEnvironment")).Decode(&m)
+	return
+}
+func (c Component) FullEnvironment() (m map[string]string, err error) {
+	err = lookup(cue.Value(c), cue.Str("fullEnvironment")).Decode(&m)
 	return
 }

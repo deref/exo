@@ -7,9 +7,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"cuelang.org/go/cue"
 	"github.com/deref/exo/internal/gensym"
-	"github.com/deref/exo/internal/manifest/exocue"
 	. "github.com/deref/exo/internal/scalars"
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/jmoiron/sqlx"
@@ -338,56 +336,17 @@ func (r *StackResolver) Configuration(ctx context.Context, args struct {
 	Recursive *bool
 	Final     *bool
 }) (string, error) {
-	cfg, err := r.configuration(ctx, isTrue(args.Recursive))
-	if err != nil {
-		return "", err
-	}
-	return formatConfiguration(cue.Value(cfg), isTrue(args.Final))
-}
-
-// TODO: It might be valuable to cache this for multiple
-// ComponentResolver.evalSpec calls.
-func (r *StackResolver) configuration(ctx context.Context, recursive bool) (exocue.Stack, error) {
-	b := exocue.NewBuilder()
-	if err := r.addConfiguration(ctx, b, recursive); err != nil {
-		return exocue.Stack{}, err
-	}
-	return b.Build().Stack(), nil
-}
-
-func (r *StackResolver) addConfiguration(ctx context.Context, b *exocue.Builder, recursive bool) error {
-	cluster, err := r.Cluster(ctx)
-	if err != nil {
-		return fmt.Errorf("resolving cluster: %w", err)
-	}
-	if err := cluster.addConfiguration(ctx, b); err != nil {
-		return fmt.Errorf("adding cluster configuration: %w", err)
-	}
-
-	componentSet := &componentSetResolver{
+	configuration := &ConfigurationResolver{
 		Q:         r.Q,
 		StackID:   r.ID,
-		Recursive: recursive,
+		Recursive: isTrue(args.Recursive),
+		Final:     isTrue(args.Final),
 	}
-	components, err := componentSet.Items(ctx)
-	if err != nil {
-		return fmt.Errorf("resolving components: %w", err)
-	}
-	for _, component := range components {
-		b.AddComponent(component.ID, component.Name, component.Type, component.Spec.String(), component.ParentID)
-	}
-
-	resources, err := r.Resources(ctx)
-	if err != nil {
-		return fmt.Errorf("resolving resources: %w", err)
-	}
-	for _, resource := range resources {
-		b.AddResource(resource.ID, resource.Type, resource.IRI, resource.ComponentID)
-	}
-	return nil
+	return configuration.ComponentAsString(ctx, r.ID)
 }
 
 func (r *StackResolver) Environment(ctx context.Context) (*EnvironmentResolver, error) {
+	// XXX figure me out!
 	// XXX implement me
 	// XXX This now does network requests and non-trivial parsing work. Therefore,
 	// it is no longer appropriate to call deep in the call stack.

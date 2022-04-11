@@ -9,7 +9,6 @@ import (
 
 	"cuelang.org/go/cue"
 	"github.com/deref/exo/internal/gensym"
-	"github.com/deref/exo/internal/manifest/exocue"
 	. "github.com/deref/exo/internal/scalars"
 	"github.com/deref/exo/internal/util/hashutil"
 	"github.com/deref/exo/internal/util/jsonutil"
@@ -399,31 +398,21 @@ func (r *ComponentResolver) Configuration(ctx context.Context, args struct {
 	Recursive *bool
 	Final     *bool
 }) (string, error) {
-	cfg, err := r.configuration(ctx, isTrue(args.Recursive))
-	if err != nil {
-		return "", err
+	configuration := &ConfigurationResolver{
+		Q:         r.Q,
+		StackID:   r.StackID,
+		Recursive: isTrue(args.Recursive),
+		Final:     isTrue(args.Final),
 	}
-	return formatConfiguration(cue.Value(cfg), isTrue(args.Final))
-}
-
-func (r *ComponentResolver) configuration(ctx context.Context, recursive bool) (exocue.Component, error) {
-	stack, err := r.Stack(ctx)
-	if err != nil {
-		return exocue.Component{}, fmt.Errorf("resolving stack: %w", err)
-	}
-	b := exocue.NewBuilder()
-	if err := stack.addConfiguration(ctx, b, recursive); err != nil {
-		return exocue.Component{}, fmt.Errorf("adding stack configuration: %w", err)
-	}
-	return b.Build().Component(r.ID), nil
+	return configuration.StackAsString(ctx)
 }
 
 func (r *ComponentResolver) Environment(ctx context.Context) (*EnvironmentResolver, error) {
-	cfg, err := r.configuration(ctx, false)
+	cfg, err := r.Q.fullConfigurationAsCueValue(ctx, r.StackID)
 	if err != nil {
 		return nil, fmt.Errorf("resolving configuration: %w", err)
 	}
-	env, err := cfg.Environment()
+	env, err := cfg.Stack().FullEnvironment()
 	if err != nil {
 		return nil, err
 	}
@@ -456,19 +445,20 @@ func (r *MutationResolver) controlComponent(ctx context.Context, component *Comp
 		return nil, fmt.Errorf("resolving controller: %w", err)
 	}
 
-	configuration, err := component.configuration(ctx, true)
+	configuration, err := r.fullConfigurationAsCueValue(ctx, component.StackID)
 	if err != nil {
 		return nil, fmt.Errorf("resolving configuration: %w", err)
 	}
+	componentValue := configuration.Component(component.ID)
 
-	var cfg *sdk.ComponentConfig
-	if err := cue.Value(configuration).Decode(&cfg); err != nil {
+	var componentCfg *sdk.ComponentConfig
+	if err := cue.Value(componentValue).Decode(&componentCfg); err != nil {
 		return nil, fmt.Errorf("decoding configuration: %w", err)
 	}
 
 	// Invoke controller, which mutates model.
-	model := configuration.Model()
-	fErr := f(controller, cfg, &model)
+	model := componentValue.Model()
+	fErr := f(controller, componentCfg, &model)
 
 	// Update model, regardless of controller errors.
 	var row ComponentRow

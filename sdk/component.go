@@ -32,8 +32,9 @@ type ComponentConfig struct {
 	Type string `json:"type"`
 	Name string `json:"name"`
 
-	Run         bool
-	Environment map[string]string `json:"environment"`
+	Run bool
+	// TODO: ParitalEnvironment cue.Value `json:"environment"`
+	FullEnvironment map[string]string `json:"fullEnvironment"`
 
 	Resources map[string]ComponentConfigResource `json:"resources"`
 }

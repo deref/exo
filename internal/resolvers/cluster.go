@@ -6,8 +6,6 @@ import (
 	"net/http"
 	"time"
 
-	"cuelang.org/go/cue"
-	"github.com/deref/exo/internal/manifest/exocue"
 	. "github.com/deref/exo/internal/scalars"
 	"github.com/deref/exo/internal/util/errutil"
 	"github.com/deref/exo/internal/util/shellutil"
@@ -135,6 +133,9 @@ func (r *MutationResolver) updateCluster(ctx context.Context, ref string, enviro
 
 const clusterTTL = 3 * time.Second
 
+// Cluster environments are not influenced by manifest files and so can be resolved directly.
+// XXX If the environment is observed to change, should that trigger a reconciliation?
+// XXX Alternatively, should it alert the user and allow them to take some action?
 func (r *ClusterResolver) Environment(ctx context.Context) (*EnvironmentResolver, error) {
 	variables := r.EnvironmentVariables
 
@@ -166,31 +167,4 @@ func (r *MutationResolver) refreshCluster(ctx context.Context, ref string) (*Clu
 		envObj[k] = v
 	}
 	return r.updateCluster(ctx, ref, &envObj)
-}
-
-func (r *ClusterResolver) Configuration(ctx context.Context, args struct {
-	Final *bool
-}) (string, error) {
-	cfg, err := r.configuration(ctx)
-	if err != nil {
-		return "", err
-	}
-	return formatConfiguration(cue.Value(cfg), isTrue(args.Final))
-}
-
-func (r *ClusterResolver) configuration(ctx context.Context) (exocue.Cluster, error) {
-	b := exocue.NewBuilder()
-	if err := r.addConfiguration(ctx, b); err != nil {
-		return exocue.Cluster{}, err
-	}
-	return b.Build().Cluster(), nil
-}
-
-func (r *ClusterResolver) addConfiguration(ctx context.Context, b *exocue.Builder) error {
-	env, err := r.Environment(ctx)
-	if err != nil {
-		return fmt.Errorf("resolving environment: %w", err)
-	}
-	b.AddCluster(r.ID, r.Name, env.asMap())
-	return nil
 }

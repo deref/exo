@@ -52,6 +52,9 @@ type Query {
 type Mutation {
   stopDaemon: Void
 
+  # TODO: These should probably cause a reconciliation, since changes to the
+  # cluster can include environment variables, which may cause all components
+  # to need to be updated.
   updateCluster(ref: String!, environment: JSONObject): Cluster!
   refreshCluster(ref: String!): Cluster!
 
@@ -209,8 +212,6 @@ type Cluster {
   name: String!
   default: Boolean!
   environment: Environment!
-
-  configuration(final: Boolean): String!
 }
 
 type Template {

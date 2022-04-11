@@ -77,7 +77,6 @@ func lookupCluster(cmd *cobra.Command) (*clusterFragment, error) {
 	}
 }
 
-// TODO: Should this show the cue configuration?
 func showCluster(cluster *clusterFragment) {
 	env := make(map[string]any, len(cluster.Environment.Variables))
 	for _, v := range cluster.Environment.Variables {
