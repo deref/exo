@@ -21,15 +21,16 @@ type ComponentResolver struct {
 }
 
 type ComponentRow struct {
-	ID       string   `db:"id"`
-	StackID  string   `db:"stack_id"`
-	ParentID *string  `db:"parent_id"`
-	Type     string   `db:"type"`
-	Name     string   `db:"name"`
-	Key      string   `db:"key"`
-	Spec     CueValue `db:"spec"`
-	RawModel RawJSON  `db:"model"`
-	Disposed *Instant `db:"disposed"`
+	ID                   string     `db:"id"`
+	StackID              string     `db:"stack_id"`
+	ParentID             *string    `db:"parent_id"`
+	Type                 string     `db:"type"`
+	Name                 string     `db:"name"`
+	Key                  string     `db:"key"`
+	Spec                 CueValue   `db:"spec"`
+	RawModel             RawJSON    `db:"model"`
+	EnvironmentVariables JSONObject `db:"environment_variables"`
+	Disposed             *Instant   `db:"disposed"`
 }
 
 func (r *QueryResolver) ComponentByID(ctx context.Context, args struct {
@@ -188,21 +189,28 @@ func (r *ComponentResolver) Resources(ctx context.Context) ([]*ResourceResolver,
 }
 
 func (r *MutationResolver) CreateComponent(ctx context.Context, args struct {
-	Stack string
-	Name  string
-	Type  string
-	Spec  CueValue
+	Stack       string
+	Name        string
+	Type        string
+	Spec        CueValue
+	Environment *JSONObject
 }) (*ReconciliationResolver, error) {
 	stack, err := r.stackByRef(ctx, &args.Stack)
 	if err := validateResolve("stack", args.Stack, stack, err); err != nil {
 		return nil, err
 	}
 
-	row, err := r.createComponent(ctx, stack.ID /* parentID: */, nil, ComponentDefinition{
+	definition := ComponentDefinition{
 		Type: args.Type,
 		Name: args.Name,
 		Spec: args.Spec,
-	})
+	}
+	if args.Environment == nil {
+		definition.Environment = make(JSONObject)
+	} else {
+		definition.Environment = *args.Environment
+	}
+	row, err := r.createComponent(ctx, stack.ID /* parentID: */, nil, definition)
 	if err != nil {
 		return nil, err
 	}
@@ -214,10 +222,11 @@ func (r *MutationResolver) CreateComponent(ctx context.Context, args struct {
 }
 
 type ComponentDefinition struct {
-	Type string
-	Name string
-	Key  string
-	Spec CueValue
+	Type        string
+	Name        string
+	Key         string
+	Spec        CueValue
+	Environment JSONObject
 }
 
 // Composite-key for uniquely identifying components within a parent.  If a
@@ -408,16 +417,22 @@ func (r *ComponentResolver) Configuration(ctx context.Context, args struct {
 }
 
 func (r *ComponentResolver) Environment(ctx context.Context) (*EnvironmentResolver, error) {
-	cfg, err := r.Q.fullConfigurationAsCueValue(ctx, r.StackID)
-	if err != nil {
-		return nil, fmt.Errorf("resolving configuration: %w", err)
-	}
-	env, err := cfg.Stack().FullEnvironment()
-	if err != nil {
+	stack, err := r.Stack(ctx)
+	if err := validateResolve("stack", r.StackID, stack, err); err != nil {
 		return nil, err
 	}
-	source := "" // XXX
-	return EnvMapToEnvironment(env, source), nil
+
+	parent, err := stack.Environment(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("resolving stack environment: %w", err)
+	}
+
+	environment := &EnvironmentResolver{
+		Parent: parent,
+		Source: r,
+	}
+	environment.initLocalsFromJSONObject(r.EnvironmentVariables)
+	return environment, nil
 }
 
 func (r *ComponentResolver) controller(ctx context.Context) (sdk.AComponentController, error) {
@@ -531,12 +546,17 @@ func (r *ComponentResolver) render(ctx context.Context) (definitions []Component
 
 		definitions = make([]ComponentDefinition, len(rendered))
 		for i, child := range rendered {
-			definitions[i] = ComponentDefinition{
-				Type: child.Type,
-				Name: child.Name,
-				Key:  child.Key,
-				Spec: EncodeCueValue(child.Spec),
+			def := ComponentDefinition{
+				Type:        child.Type,
+				Name:        child.Name,
+				Key:         child.Key,
+				Spec:        EncodeCueValue(child.Spec),
+				Environment: child.Environment,
 			}
+			if def.Environment == nil {
+				def.Environment = make(JSONObject)
+			}
+			definitions[i] = def
 		}
 		return nil
 	})

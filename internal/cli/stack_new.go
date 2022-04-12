@@ -45,10 +45,11 @@ cluster.`,
 		} else {
 			vars["cluster"] = (*string)(nil)
 		}
+		vars["environment"] = (*api.JSONObject)(nil) // TODO: Some way to provide this?
 		var m struct {
 			Stack struct {
 				ID string `json:"id"`
-			} `graphql:"createStack(name: $name, workspace: $workspace, cluster: $cluster)"`
+			} `graphql:"createStack(name: $name, workspace: $workspace, cluster: $cluster, environment: $environment)"`
 		}
 		if err := api.Mutate(ctx, svc, &m, vars); err != nil {
 			return err

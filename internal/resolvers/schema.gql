@@ -117,15 +117,23 @@ type Mutation {
   cancelJob(id: String!): Void
   cancelTask(id: String!): Void
 
-  createStack(cluster: String, workspace: String, name: String): Stack!
+  createStack(
+    cluster: String
+    workspace: String
+    name: String
+    environment: JSONObject # Record<string, string | null>
+  ): Stack!
   refreshStack(ref: String!): Reconciliation!
   destroyStack(ref: String!): Reconciliation!
+
+  # TODO: applyManifest(stack: String!, manifest: String!, format: String): Reconciliation!
 
   createComponent(
     stack: String!
     name: String!
     type: String!
     spec: CueValue!
+    environment: JSONObject # Record<string, string | null>
   ): Reconciliation!
   updateComponent(
     stack: String
@@ -388,17 +396,30 @@ type NetworkComponent implements ComponentLike {
   component: Component!
 }
 
-type Environment {
-  asMap: JSONObject!
-  variables: [Variable!]!
+interface EnvironmentSource {
+  environment: Environment!
 }
 
-# TODO: Rename to EnvironmentVariable.
-type Variable {
+type Environment {
+  parent: Environment
+  source: EnvironmentSource!
+  # Variables defined specifically in this scope.
+  # Ordered by name ascending.
+  # Contains "unset" variables, where values may be null.
+  locals: [EnvironmentVariable!]!
+  # All variables, including inherited from parent.
+  # Ordered by name ascending.
+  # Does not contain "unset" variables; all values are strings.
+  variables: [EnvironmentVariable!]!
+  # Like variables, but reduced to Record<string, string> for name/value pairs.
+  asMap: JSONObject!
+}
+
+type EnvironmentVariable {
   name: String!
   value: String!
-  source: String! # TODO: EnvironmentVariableSource union/interface.
-  # TODO: sensitive: Boolean!
+  source: EnvironmentSource!
+  sensitive: Boolean!
 }
 
 type Resource {

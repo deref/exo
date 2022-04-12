@@ -83,6 +83,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 			name TEXT NOT NULL,
 			project_id TEXT,
 			workspace_id TEXT,
+			environment_variables TEXT,
 			disposed TEXT
 	);`); err != nil {
 		return fmt.Errorf("creating stack table: %w", err)
@@ -107,6 +108,7 @@ func (r *MutationResolver) Migrate(ctx context.Context) error {
 			key TEXT NOT NULL,
 			spec TEXT NOT NULL,
 			model TEXT NOT NULL,
+			environment_variables TEXT,
 			disposed TEXT
 	);`); err != nil {
 		return fmt.Errorf("creating component table: %w", err)

@@ -46,10 +46,11 @@ type ComponentConfigResource struct {
 }
 
 type RenderedComponent struct {
-	Type string
-	Name string
-	Key  string
-	Spec any
+	Type        string
+	Name        string
+	Key         string
+	Spec        any
+	Environment JSONObject
 }
 
 // Utilty struct to embed no-op methods for the common case of components that

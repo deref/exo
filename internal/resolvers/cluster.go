@@ -137,7 +137,7 @@ const clusterTTL = 3 * time.Second
 // XXX If the environment is observed to change, should that trigger a reconciliation?
 // XXX Alternatively, should it alert the user and allow them to take some action?
 func (r *ClusterResolver) Environment(ctx context.Context) (*EnvironmentResolver, error) {
-	variables := r.EnvironmentVariables
+	locals := r.EnvironmentVariables
 
 	now := Now(ctx)
 	if r.EnvironmentVariables == nil || now.Sub(r.Updated) < clusterTTL {
@@ -145,10 +145,15 @@ func (r *ClusterResolver) Environment(ctx context.Context) (*EnvironmentResolver
 		if err != nil {
 			return nil, err
 		}
-		variables = r.EnvironmentVariables
+		locals = r.EnvironmentVariables
 	}
 
-	return JSONObjectToEnvironment(variables, "Cluster")
+	environment := &EnvironmentResolver{
+		Parent: nil,
+		Source: r,
+	}
+	environment.initLocalsFromJSONObject(locals)
+	return environment, nil
 }
 
 func (r *MutationResolver) RefreshCluster(ctx context.Context, args struct {

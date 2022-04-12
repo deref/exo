@@ -166,10 +166,11 @@ func (r *MutationResolver) reconcileChildren(ctx context.Context, parent *Compon
 
 	for _, oldChild := range oldChildren {
 		def := ComponentDefinition{
-			Type: oldChild.Type,
-			Name: oldChild.Name,
-			Key:  oldChild.Key,
-			Spec: oldChild.Spec,
+			Type:        oldChild.Type,
+			Name:        oldChild.Name,
+			Key:         oldChild.Key,
+			Spec:        oldChild.Spec,
+			Environment: oldChild.EnvironmentVariables,
 		}
 		ident := def.Ident()
 		if _, exists := children[ident]; exists {

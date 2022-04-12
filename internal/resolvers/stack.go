@@ -19,12 +19,13 @@ type StackResolver struct {
 }
 
 type StackRow struct {
-	ID          string   `db:"id"`
-	Name        string   `db:"name"`
-	ClusterID   string   `db:"cluster_id"`
-	ProjectID   *string  `db:"project_id"`
-	WorkspaceID *string  `db:"workspace_id"`
-	Disposed    *Instant `db:"disposed"`
+	ID                   string     `db:"id"`
+	Name                 string     `db:"name"`
+	ClusterID            string     `db:"cluster_id"`
+	ProjectID            *string    `db:"project_id"`
+	WorkspaceID          *string    `db:"workspace_id"`
+	EnvironmentVariables JSONObject `db:"environment_variables"`
+	Disposed             *Instant   `db:"disposed"`
 }
 
 func stackRowsToResolvers(r *RootResolver, rows []StackRow) []*StackResolver {
@@ -181,9 +182,10 @@ func (r *StackResolver) Networks(ctx context.Context) ([]*NetworkComponentResolv
 }
 
 func (r *MutationResolver) CreateStack(ctx context.Context, args struct {
-	Workspace *string
-	Name      *string
-	Cluster   *string
+	Workspace   *string
+	Name        *string
+	Cluster     *string
+	Environment *JSONObject
 }) (*StackResolver, error) {
 	var workspace *WorkspaceResolver
 	if args.Workspace != nil {
@@ -220,8 +222,14 @@ func (r *MutationResolver) CreateStack(ctx context.Context, args struct {
 		row.WorkspaceID = &workspace.ID
 		row.ProjectID = &workspace.ProjectID
 	}
+	if args.Environment == nil {
+		row.EnvironmentVariables = make(JSONObject)
+	} else {
+		row.EnvironmentVariables = *args.Environment
+	}
 
 	// TODO: Validate name.
+	// TODO: Validate variables.
 
 	if _, err := r.db.ExecContext(ctx, `
 		BEGIN;
@@ -230,11 +238,11 @@ func (r *MutationResolver) CreateStack(ctx context.Context, args struct {
 		SET workspace_id = NULL
 		WHERE workspace_id = ?;
 
-		INSERT INTO stack ( id, name, cluster_id, project_id, workspace_id )
-		VALUES ( ?, ?, ?, ?, ? );
+		INSERT INTO stack ( id, name, cluster_id, project_id, workspace_id, environment_variables )
+		VALUES ( ?, ?, ?, ?, ?, ? );
 
 		COMMIT
-	`, row.WorkspaceID, row.ID, row.Name, row.ClusterID, row.ProjectID, row.WorkspaceID); err != nil {
+	`, row.WorkspaceID, row.ID, row.Name, row.ClusterID, row.ProjectID, row.WorkspaceID, row.EnvironmentVariables); err != nil {
 		return nil, fmt.Errorf("inserting: %w", err)
 	}
 	return &StackResolver{
@@ -346,8 +354,23 @@ func (r *StackResolver) Configuration(ctx context.Context, args struct {
 }
 
 func (r *StackResolver) Environment(ctx context.Context) (*EnvironmentResolver, error) {
-	// XXX figure me out!
-	// XXX implement me
+	cluster, err := r.Cluster(ctx)
+	if err := validateResolve("cluster", r.ClusterID, cluster, err); err != nil {
+		return nil, err
+	}
+
+	parent, err := cluster.Environment(ctx)
+	if err != nil {
+		return nil, fmt.Errorf("resolving cluster environment: %w", err)
+	}
+
+	environment := &EnvironmentResolver{
+		Parent: parent,
+		Source: r,
+	}
+	environment.initLocalsFromJSONObject(r.EnvironmentVariables)
+	return environment, nil
+
 	// XXX This now does network requests and non-trivial parsing work. Therefore,
 	// it is no longer appropriate to call deep in the call stack.
 	/*
@@ -417,15 +440,6 @@ func (r *StackResolver) Environment(ctx context.Context) (*EnvironmentResolver, 
 		}
 		return b.Environment, nil
 	*/
-
-	return &EnvironmentResolver{
-		Variables: []*VariableResolver{
-			{
-				Name:  "X",
-				Value: "a\b",
-			},
-		}, // XXX
-	}, nil
 }
 
 func (r *StackResolver) Vaults(ctx context.Context) ([]*VaultResolver, error) {
