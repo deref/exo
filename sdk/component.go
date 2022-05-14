@@ -3,6 +3,7 @@ package sdk
 import (
 	"context"
 
+	"cuelang.org/go/cue"
 	. "github.com/deref/exo/internal/scalars"
 )
 
@@ -32,9 +33,11 @@ type ComponentConfig struct {
 	Type string `json:"type"`
 	Name string `json:"name"`
 
-	Run bool
-	// TODO: ParitalEnvironment cue.Value `json:"environment"`
-	FullEnvironment map[string]string `json:"fullEnvironment"`
+	RawSpec  cue.Value `json:"spec"`
+	RawModel RawJSON   `json:"model"`
+
+	Run         bool
+	Environment map[string]string `json:"environment"`
 
 	Resources map[string]ComponentConfigResource `json:"resources"`
 }

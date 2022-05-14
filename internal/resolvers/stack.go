@@ -340,19 +340,6 @@ func (r *MutationResolver) SetWorkspaceStack(ctx context.Context, args struct {
 	}, nil
 }
 
-func (r *StackResolver) Configuration(ctx context.Context, args struct {
-	Recursive *bool
-	Final     *bool
-}) (string, error) {
-	configuration := &ConfigurationResolver{
-		Q:         r.Q,
-		StackID:   r.ID,
-		Recursive: isTrue(args.Recursive),
-		Final:     isTrue(args.Final),
-	}
-	return configuration.ComponentAsString(ctx, r.ID)
-}
-
 func (r *StackResolver) Environment(ctx context.Context) (*EnvironmentResolver, error) {
 	cluster, err := r.Cluster(ctx)
 	if err := validateResolve("cluster", r.ClusterID, cluster, err); err != nil {
@@ -433,6 +420,7 @@ func (r *StackResolver) Environment(ctx context.Context) (*EnvironmentResolver, 
 			}
 		}
 
+		XXX Make sure to mark variables from secrets providers as Sensitive=true.
 		for _, source := range sources {
 			if err := source.ExtendEnvironment(b); err != nil {
 				return nil, fmt.Errorf("extending environment from %s: %w", source.EnvironmentSource(), err)

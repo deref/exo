@@ -1,11 +1,12 @@
+// TODO: Explicitly include manifest.cue?
+
 #EnvironmentValue: { [string]: #EnvironmentVariableValue }
 
 // TODO: What, if anything, should manifests be allowed to say about clusters?
 #Cluster: {
   id: string
   name: string
-  environment: #EnvironmentExpression
-  fullEnvironment: #EnvironmentValue
+  environment: #EnvironmentValue
 }
 
 // TODO: How do manifests specify adoption of resources?
@@ -19,7 +20,7 @@
   id: string
   spec: _
   model: spec // Effectively spec & state.
-  fullEnvironment: #EnvironmentValue
+  environment: #EnvironmentValue
   resources: #ResourcesById
   children: #ComponentsByName
 }
@@ -39,7 +40,7 @@
 #Stack: {
   id: string
   name: string
-  fullEnvironment: #EnvironmentValue
+  environment: #EnvironmentValue
   components: #ComponentsByName
   detachedResources: #ResourcesById
 }

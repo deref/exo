@@ -67,6 +67,5 @@ func (cv CueValue) Bytes() []byte {
 }
 
 func EncodeCueValue(v any) CueValue {
-	cc := cuecontext.New()
-	return CueValue(cc.Encode(v))
+	return CueValue(cueutil.EncodeValue(v))
 }

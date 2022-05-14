@@ -10,6 +10,7 @@ import (
 	"cuelang.org/go/cue"
 	"github.com/deref/exo/internal/gensym"
 	. "github.com/deref/exo/internal/scalars"
+	"github.com/deref/exo/internal/util/cueutil"
 	"github.com/deref/exo/internal/util/hashutil"
 	"github.com/deref/exo/internal/util/jsonutil"
 	"github.com/deref/exo/sdk"
@@ -407,13 +408,80 @@ func (r *ComponentResolver) Configuration(ctx context.Context, args struct {
 	Recursive *bool
 	Final     *bool
 }) (string, error) {
-	configuration := &ConfigurationResolver{
-		Q:         r.Q,
-		StackID:   r.StackID,
-		Recursive: isTrue(args.Recursive),
-		Final:     isTrue(args.Final),
+	v, err := r.configuration(ctx, isTrue(args.Recursive), isTrue(args.Final))
+	if err != nil {
+		return "", err
 	}
-	return configuration.StackAsString(ctx)
+	return cueutil.ValueToString(cueutil.EncodeValue(v))
+}
+
+func (r *ComponentResolver) configuration(ctx context.Context, recursive, final bool) (map[string]any, error) {
+	// TODO: Preserve comments from manifests at top-level (above spec).
+	component := map[string]any{
+		"id":   r.ID,
+		"type": r.Type,
+		"name": r.Name,
+	}
+
+	if len(r.EnvironmentVariables) > 0 {
+		if final {
+			environmentResolver, err := r.Environment(ctx)
+			if err != nil {
+				return nil, fmt.Errorf("resolving environment: %w", err)
+			}
+			component["environment"] = environmentResolver.AsMap()
+		} else {
+			component["environment"] = r.EnvironmentVariables
+		}
+	}
+
+	spec := cue.Value(r.Spec)
+	if final {
+		component["spec"] = spec.Syntax()
+	} else {
+		component["spec"] = spec.Syntax(cue.Final())
+	}
+
+	if final {
+		model, err := r.Model()
+		if err != nil {
+			return nil, fmt.Errorf("resolving model: %w", err)
+		}
+		component["model"] = model
+	}
+
+	if recursive {
+		childResolvers, err := r.Children(ctx)
+		if err != nil {
+			return nil, fmt.Errorf("resolving children: %w", err)
+		}
+		children := make([]any, len(childResolvers))
+		for i, childResolver := range childResolvers {
+			var err error
+			children[i], err = childResolver.configuration(ctx, recursive, final)
+			if err != nil {
+				return nil, err
+			}
+		}
+		component["children"] = children
+	}
+
+	return component, nil
+}
+
+func (r *ComponentResolver) finalConfiguration(ctx context.Context) (*sdk.ComponentConfig, error) {
+	recursive := false
+	final := true
+	value, err := r.configuration(ctx, recursive, final)
+	if err != nil {
+		return nil, err
+	}
+
+	var result *sdk.ComponentConfig
+	if err := cueutil.EncodeValue(value).Decode(&result); err != nil {
+		return nil, fmt.Errorf("decoding: %w", err)
+	}
+	return result, nil
 }
 
 func (r *ComponentResolver) Environment(ctx context.Context) (*EnvironmentResolver, error) {
@@ -460,20 +528,14 @@ func (r *MutationResolver) controlComponent(ctx context.Context, component *Comp
 		return nil, fmt.Errorf("resolving controller: %w", err)
 	}
 
-	configuration, err := r.fullConfigurationAsCueValue(ctx, component.StackID)
+	configuration, err := component.finalConfiguration(ctx)
 	if err != nil {
 		return nil, fmt.Errorf("resolving configuration: %w", err)
 	}
-	componentValue := configuration.Component(component.ID)
-
-	var componentCfg *sdk.ComponentConfig
-	if err := cue.Value(componentValue).Decode(&componentCfg); err != nil {
-		return nil, fmt.Errorf("decoding configuration: %w", err)
-	}
 
 	// Invoke controller, which mutates model.
-	model := componentValue.Model()
-	fErr := f(controller, componentCfg, &model)
+	model := &configuration.RawModel
+	fErr := f(controller, configuration, model)
 
 	// Update model, regardless of controller errors.
 	var row ComponentRow

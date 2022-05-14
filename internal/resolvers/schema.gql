@@ -292,8 +292,6 @@ type Stack {
 
   resources: [Resource!]!
 
-  configuration(recursive: Boolean, final: Boolean): String!
-
   environment: Environment!
 
   disposed: Instant
@@ -417,7 +415,7 @@ type Environment {
 
 type EnvironmentVariable {
   name: String!
-  value: String!
+  value: String
   source: EnvironmentSource!
   sensitive: Boolean!
 }

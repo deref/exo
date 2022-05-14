@@ -1,38 +1,39 @@
 package cli
 
 import (
+	"github.com/deref/exo/internal/api"
 	"github.com/deref/exo/internal/util/cmdutil"
 	"github.com/spf13/cobra"
 )
 
 func init() {
 	stackCmd.AddCommand(stackShowCmd)
-	stackShowCmd.Flags().BoolVar(&stackShowFlags.Recursive, "recursive", false, "include subcomponents")
-	stackShowCmd.Flags().BoolVar(&stackShowFlags.Final, "final", false, "fully evaluate to a concrete value")
-}
-
-var stackShowFlags struct {
-	Recursive bool
-	Final     bool
 }
 
 var stackShowCmd = &cobra.Command{
 	Use:   "show",
-	Short: "Show stack configuration",
-	Long:  `Show a stacks's effective configuration.`,
+	Short: "Show stack details",
+	Long:  `Show details about a stack.`,
 	Args:  cobra.NoArgs,
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := cmd.Context()
 		var q struct {
 			Stack *struct {
-				Configuration string `graphql:"configuration(recursive: $recursive, final: $final)"`
+				ID          string `json:"id"`
+				Name        string `json:"name"`
+				DisplayName string `json:"displayName"`
+				Cluster     struct {
+					ID   string `json:"id"`
+					Name string `json:"name"`
+				} `json:"cluster"`
+				Project *struct {
+					ID string `json:"id"`
+				} `json:"project"`
+				Disposed *api.Instant `json:"disposed"`
 			} `graphql:"stackByRef(ref: $currentStack)"`
 		}
-		mustQueryStack(ctx, &q, map[string]any{
-			"recursive": stackShowFlags.Recursive,
-			"final":     stackShowFlags.Final,
-		})
-		cmdutil.Show(q.Stack.Configuration)
+		mustQueryStack(ctx, &q, nil)
+		cmdutil.PrintCueStruct(q.Stack)
 		return nil
 	},
 }

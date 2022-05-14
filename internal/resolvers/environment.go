@@ -20,9 +20,10 @@ type EnvironmentResolver struct {
 }
 
 type EnvironmentVariableResolver struct {
-	Name   string
-	Value  *string
-	Source EnvironmentSource
+	Name      string
+	Value     *string
+	Source    EnvironmentSource
+	Sensitive bool
 }
 
 func sortEnvironmentVariables(variables []*EnvironmentVariableResolver) {
@@ -44,7 +45,7 @@ func (r *EnvironmentResolver) initLocalsFromJSONObject(obj JSONObject) {
 		case string:
 			local.Value = &v
 		default:
-			panic(fmt.Errorf("variable %q has invalid value type: %T", v))
+			panic(fmt.Errorf("variable %q has invalid value type: %T", k, v))
 		}
 		r.Locals = append(r.Locals, local)
 	}
