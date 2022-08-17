@@ -63,3 +63,8 @@ can be disabled by adding the following setting to your exo config (located at
 disable: true
 ```
 
+
+
+### Infrastructure model
+
+![Infrastructure model](.infragenie/infrastructure_model.png)
